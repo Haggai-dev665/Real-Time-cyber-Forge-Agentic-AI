@@ -1,0 +1,47 @@
+{
+  "name": "cyber-forge-desktop",
+  "version": "1.0.0",
+  "description": "Real-Time Cyber Forge Agentic AI Desktop Application",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": ["cybersecurity", "ai", "electron", "browser-monitoring"],
+  "author": "Haggai-dev665",
+  "license": "MIT",
+  "homepage": "./",
+  "build": {
+    "appId": "com.cyberforge.desktop",
+    "productName": "Cyber Forge AI",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.13.0",
+    "electron-store": "^8.1.0",
+    "axios": "^1.4.0"
+  }
+}

@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: cyberforge
+      POSTGRES_USER: cyberforge
+      POSTGRES_PASSWORD: cyberforge_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - cyberforge_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cyberforge_network
+
+  # Backend Services
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - DATABASE_URL=postgresql://cyberforge:cyberforge_password@postgres:5432/cyberforge
+      - REDIS_URL=redis://redis:6379
+      - AI_SERVICE_URL=http://ml-services:8001
+      - JWT_SECRET=your-production-jwt-secret
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cyberforge_network
+    restart: unless-stopped
+
+  # ML/AI Services
+  ml-services:
+    build:
+      context: ./ml-services
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DATABASE_URL=postgresql://cyberforge:cyberforge_password@postgres:5432/cyberforge
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cyberforge_network
+    restart: unless-stopped
+
+  # Landing Page
+  landing-page:
+    build:
+      context: ./landing-page
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - cyberforge_network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - ml-services
+      - landing-page
+    networks:
+      - cyberforge_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  cyberforge_network:
+    driver: bridge

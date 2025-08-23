@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Forge AI - Enhanced UI Demo</title>
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    
+    <!-- Modern Styles -->
+    <style>
+        /* Modern Cyber Forge UI Styles */
+        :root {
+            /* Enhanced Color Palette */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            
+            /* Modern Colors */
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            /* Text Colors */
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.6);
+            
+            /* Shadows */
+            --glow-primary: 0 0 20px rgba(102, 126, 234, 0.3);
+            --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.25);
+            
+            /* Spacing */
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            
+            /* Border Radius */
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+            
+            /* Transitions */
+            --transition-normal: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-md) var(--space-xl);
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--primary-gradient);
+            opacity: 0.6;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 500px;
+            flex: 1;
+            margin: 0 var(--space-xl);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--space-md) var(--space-lg);
+            padding-left: 3rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: var(--transition-normal);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: var(--glow-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-container::before {
+            content: '\f002';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            left: var(--space-md);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--glass-bg);
+            border: 1px solid rgba(67, 233, 123, 0.3);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            color: #43e97b;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--warning-gradient);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            width: 280px;
+            padding: var(--space-lg);
+            position: relative;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0.3;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md) var(--space-lg);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: var(--transition-normal);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: var(--transition-normal);
+        }
+
+        .nav-item:hover {
+            background: var(--glass-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-item:hover::before {
+            left: 0;
+            opacity: 0.1;
+        }
+
+        .nav-item.active {
+            background: var(--glass-bg);
+            border-color: rgba(102, 126, 234, 0.3);
+            color: var(--text-primary);
+            box-shadow: var(--glow-primary);
+        }
+
+        .nav-item.active::before {
+            left: 0;
+            opacity: 0.15;
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-item span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .new-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: var(--warning-gradient);
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            animation: glow 2s ease-in-out infinite alternate;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(67, 233, 123, 0.5); }
+            to { box-shadow: 0 0 15px rgba(67, 233, 123, 0.8); }
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: var(--space-xl);
+            background: var(--bg-primary);
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .content-area::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .content-area::after {
+            content: '';
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(240, 147, 251, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .dashboard-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header {
+            margin-bottom: var(--space-xl);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            margin-top: var(--space-sm);
+            font-size: 1.1rem;
+        }
+
+        /* Cards and Components */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            backdrop-filter: blur(20px);
+            transition: var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .metric-card:nth-child(2)::before {
+            background: var(--secondary-gradient);
+        }
+
+        .metric-card:nth-child(3)::before {
+            background: var(--success-gradient);
+        }
+
+        .metric-card:nth-child(4)::before {
+            background: var(--warning-gradient);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .metric-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .metric-card:nth-child(2) .metric-icon {
+            background: var(--secondary-gradient);
+        }
+
+        .metric-card:nth-child(3) .metric-icon {
+            background: var(--success-gradient);
+        }
+
+        .metric-card:nth-child(4) .metric-icon {
+            background: var(--warning-gradient);
+        }
+
+        .metric-details h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .metric-details p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 4px 0 0 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            backdrop-filter: blur(20px);
+            transition: var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .feature-card h3 {
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--space-md);
+        }
+
+        .feature-tags {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .demo-map {
+            width: 100%;
+            height: 300px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-top: var(--space-lg);
+            background: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: var(--space-md);
+            }
+            
+            .nav-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: var(--space-sm);
+            }
+            
+            .nav-item {
+                flex-shrink: 0;
+            }
+            
+            .content-area {
+                padding: var(--space-md);
+            }
+            
+            .search-container {
+                margin: var(--space-sm) 0;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: var(--space-md);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Cyber Forge AI</span>
+                    <span style="font-size: 0.8rem; opacity: 0.7;">v2.0</span>
+                </div>
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search or ask AI... Try 'web search google.com'" />
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>System Online</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Enhanced Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <div class="nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-tasks"></i>
+                        <span>AI Tasks</span>
+                        <span class="new-badge">3</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analysis</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Threats</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Network Scan</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>Web Search</span>
+                        <span class="new-badge">NEW</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-brain"></i>
+                        <span>ML Dashboard</span>
+                        <span class="new-badge">NEW</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-comments"></i>
+                        <span>AI Chat</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="dashboard-content">
+                    <div class="page-header">
+                        <h1>Enhanced Cyber Security Dashboard</h1>
+                        <p>Real-time threat detection with advanced AI and modern UI design</p>
+                    </div>
+                    
+                    <!-- Metrics Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-content">
+                                <div class="metric-icon">
+                                    <i class="fas fa-globe"></i>
+                                </div>
+                                <div class="metric-details">
+                                    <h3>1,247</h3>
+                                    <p>Websites Scanned</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-content">
+                                <div class="metric-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="metric-details">
+                                    <h3>23</h3>
+                                    <p>Threats Blocked</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-content">
+                                <div class="metric-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="metric-details">
+                                    <h3>98.7%</h3>
+                                    <p>Detection Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-content">
+                                <div class="metric-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="metric-details">
+                                    <h3>47</h3>
+                                    <p>Countries Mapped</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Features Grid -->
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <h3><i class="fas fa-search" style="color: #667eea; margin-right: 8px;"></i>Enhanced Web Search</h3>
+                            <p>Advanced web search functionality with DuckDuckGo integration, domain analysis, and real-time threat detection. Search the web safely with built-in security scanning.</p>
+                            <div class="feature-tags">
+                                <span class="tag">DuckDuckGo API</span>
+                                <span class="tag">Domain Lookup</span>
+                                <span class="tag">Security Scan</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3><i class="fas fa-map" style="color: #f093fb; margin-right: 8px;"></i>Interactive Location Mapping</h3>
+                            <p>Leaflet-powered interactive maps showing geographic origins of websites and threats. Visualize global cybersecurity data with custom markers and detailed popups.</p>
+                            <div class="feature-tags">
+                                <span class="tag">Leaflet Maps</span>
+                                <span class="tag">Geolocation</span>
+                                <span class="tag">Real-time</span>
+                            </div>
+                            <div class="demo-map">
+                                <i class="fas fa-map" style="font-size: 2rem; margin-right: 12px; color: #667eea;"></i>
+                                Interactive Map Component
+                            </div>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3><i class="fab fa-google" style="color: #4facfe; margin-right: 8px;"></i>Firebase Authentication</h3>
+                            <p>Secure Google authentication powered by Firebase. No more complex password management - sign in with your Google account for enhanced security and convenience.</p>
+                            <div class="feature-tags">
+                                <span class="tag">Firebase Auth</span>
+                                <span class="tag">Google OAuth</span>
+                                <span class="tag">Secure</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3><i class="fas fa-brain" style="color: #43e97b; margin-right: 8px;"></i>Advanced ML Models</h3>
+                            <p>Enhanced machine learning notebooks with deep learning models, ensemble methods, and real-time threat scoring. State-of-the-art cybersecurity AI.</p>
+                            <div class="feature-tags">
+                                <span class="tag">Deep Learning</span>
+                                <span class="tag">Ensemble Models</span>
+                                <span class="tag">Real-time</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3><i class="fas fa-palette" style="color: #764ba2; margin-right: 8px;"></i>Modern UI Design</h3>
+                            <p>Completely redesigned interface with glass morphism, gradients, animations, and responsive design. Professional and competitive aesthetic for enterprise use.</p>
+                            <div class="feature-tags">
+                                <span class="tag">Glass Morphism</span>
+                                <span class="tag">Responsive</span>
+                                <span class="tag">Animations</span>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3><i class="fas fa-server" style="color: #f5576c; margin-right: 8px;"></i>Enhanced Backend</h3>
+                            <p>Updated backend with Firebase Admin SDK integration, improved authentication middleware, and enhanced API endpoints for modern security requirements.</p>
+                            <div class="feature-tags">
+                                <span class="tag">Firebase Admin</span>
+                                <span class="tag">RESTful API</span>
+                                <span class="tag">Middleware</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Simple demo interactions
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Search demo
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                alert(`Demo: Would search for "${this.value}"\n\nIn the actual app, this would:\n- Switch to Web Search tab if query contains "web", "search", or "domain"\n- Perform real web search with DuckDuckGo API\n- Show results on interactive map\n- Analyze domains for security threats`);
+            }
+        });
+
+        console.log('🚀 Cyber Forge AI Enhanced UI Demo loaded');
+        console.log('✅ Modern design system active');
+        console.log('🗺️ Leaflet maps ready');
+        console.log('🔍 Web search functionality available');
+        console.log('🔒 Firebase authentication integrated');
+        console.log('🧠 Enhanced ML models ready');
+    </script>
+</body>
+</html>

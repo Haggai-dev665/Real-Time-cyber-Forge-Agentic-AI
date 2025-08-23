@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cyber Forge AI - Real-Time Security Analysis</title>
     <link rel="stylesheet" href="enhanced-styles.css">
+    <link rel="stylesheet" href="theme-system.css">
+    <link rel="stylesheet" href="notification-system.css">
+    <link rel="stylesheet" href="advanced-effects.css">
+    <link rel="stylesheet" href="tutorial.css">
+    <link rel="stylesheet" href="profile-screen.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -88,6 +93,11 @@
                     <button class="nav-item" data-tab="settings">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
+                    </button>
+                    <button class="nav-item" data-tab="profile">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                        <span class="new-badge">NEW</span>
                     </button>
                 </nav>
                 
@@ -615,6 +625,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="advanced-theme.js"></script>
+    <script src="tutorial.js"></script>
     <script src="enhanced-app.js"></script>
 </body>
 </html>
@@ -774,6 +786,170 @@
                 <div class="tab-content" id="analytics-tab">
                     <div id="analytics">
                         <!-- Analytics content will be populated by advanced-screens/real-time-analytics.js -->
+                    </div>
+                </div>
+
+                <!-- Profile Tab -->
+                <div class="tab-content" id="profile-tab">
+                    <div class="profile-screen">
+                        <div class="profile-header stagger-item">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h1 class="profile-name">Security Administrator</h1>
+                                <p class="profile-role">Cyber Security Specialist</p>
+                                <div class="profile-stats">
+                                    <div class="profile-stat">
+                                        <span class="profile-stat-value" id="profile-threats-blocked">247</span>
+                                        <span class="profile-stat-label">Threats Blocked</span>
+                                    </div>
+                                    <div class="profile-stat">
+                                        <span class="profile-stat-value" id="profile-scans-completed">156</span>
+                                        <span class="profile-stat-label">Scans Completed</span>
+                                    </div>
+                                    <div class="profile-stat">
+                                        <span class="profile-stat-value" id="profile-uptime">99.8%</span>
+                                        <span class="profile-stat-label">System Uptime</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn-primary">
+                                    <i class="fas fa-edit"></i>
+                                    Edit Profile
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="profile-grid">
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Security Level
+                                    </h3>
+                                </div>
+                                <div class="security-level">
+                                    <div class="security-level-header">
+                                        <span class="security-level-title">Current Protection</span>
+                                        <span class="security-level-badge high">EXCELLENT</span>
+                                    </div>
+                                    <div class="security-progress">
+                                        <div class="security-progress-fill"></div>
+                                    </div>
+                                    <div class="security-details">
+                                        <div class="security-detail">
+                                            <span class="security-detail-value">98%</span>
+                                            <span class="security-detail-label">AI Accuracy</span>
+                                        </div>
+                                        <div class="security-detail">
+                                            <span class="security-detail-value">24/7</span>
+                                            <span class="security-detail-label">Monitoring</span>
+                                        </div>
+                                        <div class="security-detail">
+                                            <span class="security-detail-value">Real-time</span>
+                                            <span class="security-detail-label">Detection</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-history"></i>
+                                        Recent Activity
+                                    </h3>
+                                </div>
+                                <div class="activity-timeline">
+                                    <div class="timeline-item">
+                                        <div class="timeline-time">2 hours ago</div>
+                                        <div class="timeline-title">Threat Detected & Blocked</div>
+                                        <div class="timeline-description">Malicious script blocked on suspicious website</div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-time">5 hours ago</div>
+                                        <div class="timeline-title">Network Scan Completed</div>
+                                        <div class="timeline-description">Full network security assessment finished</div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-time">1 day ago</div>
+                                        <div class="timeline-title">AI Model Updated</div>
+                                        <div class="timeline-description">Machine learning model enhanced with new threat patterns</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-sliders-h"></i>
+                                        Preferences
+                                    </h3>
+                                </div>
+                                <div class="preferences-form">
+                                    <div class="preference-group">
+                                        <div class="preference-info">
+                                            <div class="preference-title">Real-time Notifications</div>
+                                            <div class="preference-description">Get instant alerts for security events</div>
+                                        </div>
+                                        <div class="preference-toggle active"></div>
+                                    </div>
+                                    <div class="preference-group">
+                                        <div class="preference-info">
+                                            <div class="preference-title">Automatic Threat Response</div>
+                                            <div class="preference-description">Let AI automatically handle low-risk threats</div>
+                                        </div>
+                                        <div class="preference-toggle active"></div>
+                                    </div>
+                                    <div class="preference-group">
+                                        <div class="preference-info">
+                                            <div class="preference-title">Weekly Reports</div>
+                                            <div class="preference-description">Receive comprehensive security summaries</div>
+                                        </div>
+                                        <div class="preference-toggle"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-trophy"></i>
+                                        Achievements
+                                    </h3>
+                                </div>
+                                <div class="achievements-grid">
+                                    <div class="achievement unlocked">
+                                        <div class="achievement-icon">🛡️</div>
+                                        <div class="achievement-title">Security Expert</div>
+                                        <div class="achievement-description">Blocked 100+ threats</div>
+                                    </div>
+                                    <div class="achievement unlocked">
+                                        <div class="achievement-icon">🔍</div>
+                                        <div class="achievement-title">Threat Hunter</div>
+                                        <div class="achievement-description">Completed 50 scans</div>
+                                    </div>
+                                    <div class="achievement">
+                                        <div class="achievement-icon">🚀</div>
+                                        <div class="achievement-title">AI Master</div>
+                                        <div class="achievement-description">Train 10 AI models</div>
+                                        <div class="achievement-progress">
+                                            <div class="achievement-progress-fill" style="width: 60%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="achievement">
+                                        <div class="achievement-icon">🌟</div>
+                                        <div class="achievement-title">Security Guru</div>
+                                        <div class="achievement-description">30 days threat-free</div>
+                                        <div class="achievement-progress">
+                                            <div class="achievement-progress-fill" style="width: 80%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

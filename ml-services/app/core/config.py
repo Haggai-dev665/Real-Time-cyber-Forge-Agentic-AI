@@ -16,14 +16,19 @@ class Settings(BaseSettings):
     # CORS settings
     ALLOWED_HOSTS: List[str] = ["*"]
     
-    # AI/ML Configuration
+    # AI/ML Configuration - Gemini API
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-pro"
+    GEMINI_TEMPERATURE: float = 0.3
+    GEMINI_MAX_TOKENS: int = 2048
+    
+    # Custom training data configuration
+    TRAINING_DATA_PATH: str = "./training_data"
+    CUSTOM_KNOWLEDGE_BASE: str = "./knowledge_base"
+    
+    # Deprecated Hugging Face settings (kept for backward compatibility)
     HUGGINGFACE_API_TOKEN: Optional[str] = None
     TRANSFORMERS_CACHE_DIR: str = "./models/cache"
-    
-    # Free AI model configuration
-    DEFAULT_TEXT_MODEL: str = "microsoft/DialoGPT-medium"
-    THREAT_DETECTION_MODEL: str = "distilbert-base-uncased"
-    SENTIMENT_MODEL: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
     
     # Database configuration
     DATABASE_URL: str = "sqlite:///./cyber_forge.db"

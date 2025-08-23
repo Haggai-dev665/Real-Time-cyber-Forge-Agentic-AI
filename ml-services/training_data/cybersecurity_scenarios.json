@@ -1,0 +1,26 @@
+[
+  {
+    "input": "User clicked on a suspicious link in an email claiming to be from their bank asking them to update their password",
+    "output": "RISK LEVEL: High\nTHREAT TYPE: Phishing Attack\nCONFIDENCE: 0.95\nANALYSIS: Classic phishing attempt using financial institution impersonation with urgency tactics. The request to update passwords via email link is a major red flag as legitimate banks never request this via email.\nRECOMMENDATIONS: 1) Do not click the link or enter any credentials 2) Forward the suspicious email to the bank's official fraud reporting address 3) Contact bank directly using official phone number to verify any account issues 4) Enable two-factor authentication on banking accounts 5) Report the phishing attempt to anti-phishing organizations"
+  },
+  {
+    "input": "Network monitoring detected unusual outbound traffic to multiple IP addresses in different countries during off-hours",
+    "output": "RISK LEVEL: Critical\nTHREAT TYPE: Data Exfiltration / Command & Control\nCONFIDENCE: 0.88\nANALYSIS: Unusual outbound traffic patterns during off-hours to foreign IPs strongly indicates potential data exfiltration or malware communicating with command and control servers. This could indicate an active breach.\nRECOMMENDATIONS: 1) Immediately isolate affected systems from the network 2) Capture network traffic for forensic analysis 3) Run comprehensive malware scans on all systems 4) Check for signs of data theft or credential compromise 5) Engage incident response team and consider law enforcement notification if sensitive data involved"
+  },
+  {
+    "input": "Employee received a USB drive in the mail from an unknown sender claiming to contain important business documents",
+    "output": "RISK LEVEL: Critical\nTHREAT TYPE: Physical Malware Delivery / Social Engineering\nCONFIDENCE: 0.92\nANALYSIS: Unsolicited USB drives are a common malware delivery method. These devices often contain auto-executing malware that can compromise systems upon insertion. This is a classic social engineering attack vector.\nRECOMMENDATIONS: 1) Do not insert the USB drive into any company computer 2) Isolate the device and report to IT security immediately 3) Investigate the sender and delivery method 4) Provide additional training to employees about physical security threats 5) Consider implementing USB port restrictions on critical systems"
+  },
+  {
+    "input": "Website certificate validation failed and browser is showing security warnings for a commonly used business application",
+    "output": "RISK LEVEL: Medium\nTHREAT TYPE: SSL/TLS Certificate Issue / Potential Man-in-the-Middle\nCONFIDENCE: 0.75\nANALYSIS: Certificate validation failures can indicate expired certificates, configuration issues, or potentially active man-in-the-middle attacks. While it could be a benign configuration issue, it creates a security vulnerability.\nRECOMMENDATIONS: 1) Do not proceed past the security warning 2) Contact the application vendor to verify certificate status 3) Check if other users are experiencing the same issue 4) Use alternative secure communication methods until resolved 5) Monitor for any signs of data interception or unauthorized access"
+  },
+  {
+    "input": "Anti-virus software detected a potentially unwanted program (PUP) that was downloaded alongside legitimate software",
+    "output": "RISK LEVEL: Medium\nTHREAT TYPE: Potentially Unwanted Program / Bundled Malware\nCONFIDENCE: 0.80\nANALYSIS: PUPs are often bundled with legitimate software downloads and can compromise system security, privacy, or performance. While not always malicious, they can serve as entry points for more serious threats.\nRECOMMENDATIONS: 1) Allow antivirus to quarantine or remove the detected PUP 2) Review recently installed software for any unwanted programs 3) Run a full system scan to check for additional threats 4) Only download software from official sources and read installation prompts carefully 5) Keep antivirus definitions updated and enable real-time protection"
+  },
+  {
+    "input": "System administrator noticed multiple failed SSH login attempts from the same IP address targeting the server",
+    "output": "RISK LEVEL: High\nTHREAT TYPE: Brute Force Attack / Credential Stuffing\nCONFIDENCE: 0.90\nANALYSIS: Multiple failed SSH login attempts from a single IP address indicates an automated brute force or credential stuffing attack attempting to gain unauthorized access to the server.\nRECOMMENDATIONS: 1) Immediately block the attacking IP address at firewall level 2) Implement fail2ban or similar intrusion prevention system 3) Disable password authentication and use SSH keys only 4) Change SSH to a non-standard port 5) Enable two-factor authentication for SSH access 6) Review and strengthen password policies 7) Monitor for any successful logins from suspicious IPs"
+  }
+]

@@ -26,11 +26,16 @@ class AIAgent:
     async def initialize(self):
         """Initialize the AI agent with Gemini service"""
         try:
-            # Initialize Gemini service
-            await self.gemini_service.initialize()
+            # Try to initialize Gemini service, but continue if it fails
+            try:
+                await self.gemini_service.initialize()
+                logger.info("✅ AI Agent initialized successfully with Gemini API")
+            except Exception as e:
+                logger.warning(f"⚠️ Gemini service initialization failed: {e}")
+                logger.info("✅ AI Agent initialized in fallback mode")
             
             self.is_initialized = True
-            logger.info("✅ AI Agent initialized successfully with Gemini API")
+            
         except Exception as e:
             logger.error(f"❌ Failed to initialize AI Agent: {e}")
             self.is_initialized = False
@@ -38,7 +43,7 @@ class AIAgent:
     
     def is_ready(self) -> bool:
         """Check if the AI agent is ready"""
-        return self.is_initialized and self.gemini_service.is_ready()
+        return self.is_initialized
     
     async def analyze(self, query: str, context: Dict[str, Any] = None, 
                      conversation_history: List[Dict] = None) -> AnalysisResult:

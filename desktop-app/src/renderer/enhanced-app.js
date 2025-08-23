@@ -15,6 +15,10 @@ class EnhancedCyberForgeUI {
         this.insights = [];
         this.taskUpdateInterval = null;
         
+        // Initialize advanced screens
+        this.mlDashboard = null;
+        this.analyticsScreen = null;
+        
         this.metrics = {
             pagesCount: 0,
             threatsCount: 0,
@@ -368,6 +372,12 @@ class EnhancedCyberForgeUI {
                 break;
             case 'dashboard':
                 this.refreshDashboard();
+                break;
+            case 'ml-dashboard':
+                await this.initializeMLDashboard();
+                break;
+            case 'analytics':
+                await this.initializeAnalytics();
                 break;
         }
     }
@@ -1268,6 +1278,40 @@ class EnhancedCyberForgeUI {
         // Handle messages from Electron backend
     }
 
+    // Initialize ML Dashboard
+    async initializeMLDashboard() {
+        try {
+            if (!this.mlDashboard && typeof MLDashboardScreen !== 'undefined') {
+                this.mlDashboard = new MLDashboardScreen(this);
+                await this.mlDashboard.initialize();
+                console.log('✅ ML Dashboard initialized');
+            } else if (this.mlDashboard) {
+                // Dashboard already initialized, just refresh
+                await this.mlDashboard.loadAvailableModels();
+            }
+        } catch (error) {
+            console.error('Failed to initialize ML Dashboard:', error);
+            this.showNotification('Error', 'Failed to load ML Dashboard', 'error');
+        }
+    }
+
+    // Initialize Real-time Analytics
+    async initializeAnalytics() {
+        try {
+            if (!this.analyticsScreen && typeof RealTimeAnalyticsScreen !== 'undefined') {
+                this.analyticsScreen = new RealTimeAnalyticsScreen(this);
+                await this.analyticsScreen.initialize();
+                console.log('✅ Real-time Analytics initialized');
+            } else if (this.analyticsScreen) {
+                // Analytics already initialized, just refresh
+                await this.analyticsScreen.loadHistoricalData('24h');
+            }
+        } catch (error) {
+            console.error('Failed to initialize Analytics:', error);
+            this.showNotification('Error', 'Failed to load Analytics', 'error');
+        }
+    }
+
     // Cleanup
     destroy() {
         if (this.taskUpdateInterval) {
@@ -1276,6 +1320,15 @@ class EnhancedCyberForgeUI {
         
         if (this.websocket) {
             this.websocket.close();
+        }
+
+        // Cleanup advanced screens
+        if (this.mlDashboard) {
+            this.mlDashboard.destroy();
+        }
+        
+        if (this.analyticsScreen) {
+            this.analyticsScreen.destroy();
         }
     }
 }

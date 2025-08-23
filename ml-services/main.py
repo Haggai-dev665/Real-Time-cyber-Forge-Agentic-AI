@@ -42,6 +42,7 @@ app.add_middleware(
 
 # Global services
 ai_agent = None
+enhanced_ai_agent = None
 threat_analyzer = None
 ml_manager = None
 memory_store = None
@@ -49,7 +50,7 @@ memory_store = None
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    global ai_agent, threat_analyzer, ml_manager, memory_store
+    global ai_agent, enhanced_ai_agent, threat_analyzer, ml_manager, memory_store
     
     logger.info("🚀 Starting Cyber Forge AI ML/AI Services...")
     
@@ -65,9 +66,14 @@ async def startup_event():
         # Initialize threat analyzer
         threat_analyzer = ThreatAnalyzer(ml_manager)
         
-        # Initialize AI agent
+        # Initialize original AI agent
         ai_agent = AIAgent(memory_store, threat_analyzer)
         await ai_agent.initialize()
+        
+        # Initialize enhanced AI agent
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent as enhanced_agent
+        enhanced_ai_agent = enhanced_agent
+        await enhanced_ai_agent.initialize()
         
         logger.info("✅ All services initialized successfully")
         
@@ -181,6 +187,253 @@ async def scan_threats(request: ThreatScanRequest):
         
     except Exception as e:
         logger.error(f"Threat scanning error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Enhanced AI Agent Endpoints
+
+@app.post("/ai/create-task")
+async def create_ai_task(
+    task_type: str,
+    title: str,
+    description: str,
+    parameters: dict = {},
+    priority: str = "medium"
+):
+    """Create a new AI task"""
+    try:
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent, TaskType, TaskPriority
+        
+        if not enhanced_ai_agent.is_ready():
+            raise HTTPException(status_code=503, detail="Enhanced AI agent not ready")
+        
+        # Convert string to enums
+        task_type_enum = TaskType(task_type.lower().replace(' ', '_'))
+        priority_enum = TaskPriority(priority.lower())
+        
+        task_id = await enhanced_ai_agent.create_task(
+            task_type=task_type_enum,
+            title=title,
+            description=description,
+            parameters=parameters,
+            priority=priority_enum
+        )
+        
+        return {
+            "task_id": task_id,
+            "status": "created",
+            "message": f"Task '{title}' created successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Task creation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/ai/tasks")
+async def list_ai_tasks(status: str = None):
+    """List AI tasks with optional status filter"""
+    try:
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent, TaskStatus
+        
+        if not enhanced_ai_agent.is_ready():
+            raise HTTPException(status_code=503, detail="Enhanced AI agent not ready")
+        
+        status_filter = TaskStatus(status) if status else None
+        tasks = await enhanced_ai_agent.list_tasks(status_filter)
+        
+        return {
+            "tasks": tasks,
+            "total": len(tasks),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Task listing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/ai/tasks/{task_id}")
+async def get_ai_task_status(task_id: str):
+    """Get status of a specific AI task"""
+    try:
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent
+        
+        if not enhanced_ai_agent.is_ready():
+            raise HTTPException(status_code=503, detail="Enhanced AI agent not ready")
+        
+        task_status = await enhanced_ai_agent.get_task_status(task_id)
+        
+        if not task_status:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        return task_status
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Task status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/ai/tasks/{task_id}/start")
+async def start_ai_task(task_id: str):
+    """Start a pending AI task"""
+    try:
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent
+        
+        if not enhanced_ai_agent.is_ready():
+            raise HTTPException(status_code=503, detail="Enhanced AI agent not ready")
+        
+        success = await enhanced_ai_agent.start_task(task_id)
+        
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to start task")
+        
+        return {
+            "task_id": task_id,
+            "status": "started",
+            "message": "Task started successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Task start error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/ai/tasks/{task_id}")
+async def cancel_ai_task(task_id: str):
+    """Cancel a pending or in-progress AI task"""
+    try:
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent
+        
+        if not enhanced_ai_agent.is_ready():
+            raise HTTPException(status_code=503, detail="Enhanced AI agent not ready")
+        
+        success = await enhanced_ai_agent.cancel_task(task_id)
+        
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to cancel task")
+        
+        return {
+            "task_id": task_id,
+            "status": "cancelled",
+            "message": "Task cancelled successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Task cancellation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Dataset Management Endpoints
+
+@app.get("/datasets/available")
+async def list_available_datasets():
+    """List all available datasets for download"""
+    try:
+        from .app.services.dataset_manager import dataset_manager
+        
+        return {
+            "datasets": dataset_manager.list_available_datasets(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Dataset listing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/datasets/downloaded")
+async def list_downloaded_datasets():
+    """List all downloaded datasets"""
+    try:
+        from .app.services.dataset_manager import dataset_manager
+        
+        return {
+            "datasets": dataset_manager.list_downloaded_datasets(),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Downloaded datasets listing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/datasets/{dataset_name}/download")
+async def download_dataset(dataset_name: str, force_refresh: bool = False):
+    """Download a dataset from Kaggle"""
+    try:
+        from .app.services.dataset_manager import dataset_manager
+        
+        result = await dataset_manager.download_dataset(dataset_name, force_refresh)
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Dataset not found or download failed")
+        
+        return {
+            "dataset_name": dataset_name,
+            "status": "downloaded",
+            "details": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Dataset download error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/datasets/{dataset_name}/summary")
+async def get_dataset_summary(dataset_name: str):
+    """Get summary statistics for a dataset"""
+    try:
+        from .app.services.dataset_manager import dataset_manager
+        
+        summary = await dataset_manager.get_dataset_summary(dataset_name)
+        
+        if not summary:
+            raise HTTPException(status_code=404, detail="Dataset not found or not downloaded")
+        
+        return summary
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Dataset summary error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Enhanced Analysis Endpoint
+@app.post("/analyze-enhanced")
+async def analyze_data_enhanced(request: AnalysisRequest, background_tasks: BackgroundTasks):
+    """Enhanced analysis using the new AI agent with task management"""
+    try:
+        from .app.services.enhanced_ai_agent import enhanced_ai_agent
+        
+        if not enhanced_ai_agent.is_ready():
+            raise HTTPException(status_code=503, detail="Enhanced AI agent not ready")
+        
+        # Use enhanced AI agent for analysis
+        result = await enhanced_ai_agent.analyze_with_context(
+            query=request.query,
+            context=request.context,
+            conversation_history=request.conversation_history
+        )
+        
+        # Store analysis result in background
+        if memory_store:
+            background_tasks.add_task(
+                memory_store.store_analysis,
+                request.dict(),
+                result
+            )
+        
+        return {
+            "response": result.response,
+            "confidence": result.confidence,
+            "insights": result.insights,
+            "recommendations": result.recommendations,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Enhanced analysis error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Memory query endpoint

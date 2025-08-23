@@ -379,6 +379,9 @@ class EnhancedCyberForgeUI {
             case 'analytics':
                 await this.initializeAnalytics();
                 break;
+            case 'profile':
+                this.initializeProfile();
+                break;
         }
     }
 
@@ -1309,6 +1312,145 @@ class EnhancedCyberForgeUI {
         } catch (error) {
             console.error('Failed to initialize Analytics:', error);
             this.showNotification('Error', 'Failed to load Analytics', 'error');
+        }
+    }
+
+    initializeProfile() {
+        // Initialize profile interactions
+        this.setupProfileInteractions();
+        this.updateProfileStats();
+        this.animateProfileElements();
+    }
+
+    setupProfileInteractions() {
+        // Profile preference toggles
+        document.querySelectorAll('.preference-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggle.classList.toggle('active');
+                
+                // Get preference info
+                const preferenceGroup = toggle.closest('.preference-group');
+                const title = preferenceGroup.querySelector('.preference-title').textContent;
+                const isActive = toggle.classList.contains('active');
+                
+                // Show toast notification
+                if (window.advancedThemeSystem && window.advancedThemeSystem.notificationSystem) {
+                    window.advancedThemeSystem.notificationSystem.toast(
+                        `${title} ${isActive ? 'enabled' : 'disabled'}`,
+                        'info'
+                    );
+                }
+                
+                // Save preference (you could implement actual saving here)
+                this.updateSetting(title.toLowerCase().replace(/\s+/g, '_'), isActive);
+            });
+        });
+
+        // Profile avatar click
+        const profileAvatar = document.querySelector('.profile-avatar');
+        if (profileAvatar) {
+            profileAvatar.addEventListener('click', () => {
+                if (window.advancedThemeSystem && window.advancedThemeSystem.notificationSystem) {
+                    window.advancedThemeSystem.notificationSystem.toast(
+                        'Avatar customization coming soon!',
+                        'info'
+                    );
+                }
+            });
+        }
+
+        // Achievement clicks
+        document.querySelectorAll('.achievement').forEach(achievement => {
+            achievement.addEventListener('click', () => {
+                const title = achievement.querySelector('.achievement-title').textContent;
+                const description = achievement.querySelector('.achievement-description').textContent;
+                const isUnlocked = achievement.classList.contains('unlocked');
+                
+                if (window.advancedThemeSystem && window.advancedThemeSystem.notificationSystem) {
+                    window.advancedThemeSystem.notificationSystem.show(
+                        isUnlocked ? `🏆 ${title}` : `🔒 ${title}`,
+                        description,
+                        isUnlocked ? 'success' : 'info',
+                        4000
+                    );
+                }
+            });
+        });
+    }
+
+    updateProfileStats() {
+        // Update profile statistics with current data
+        const threatsBlocked = document.getElementById('profile-threats-blocked');
+        const scansCompleted = document.getElementById('profile-scans-completed');
+        const uptime = document.getElementById('profile-uptime');
+
+        if (threatsBlocked) {
+            this.animateCounter(threatsBlocked, parseInt(threatsBlocked.textContent) || 0, this.metrics.threatsCount + 247);
+        }
+        
+        if (scansCompleted) {
+            this.animateCounter(scansCompleted, parseInt(scansCompleted.textContent) || 0, 156);
+        }
+        
+        if (uptime) {
+            // Calculate uptime based on connection status
+            const uptimeValue = this.isConnected ? 99.8 : 95.2;
+            uptime.textContent = uptimeValue + '%';
+        }
+    }
+
+    animateCounter(element, start, end, duration = 1500) {
+        const startTime = performance.now();
+        const difference = end - start;
+
+        const step = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function for smooth animation
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = Math.floor(start + difference * easeOut);
+            
+            element.textContent = current.toLocaleString();
+            
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            }
+        };
+        
+        requestAnimationFrame(step);
+    }
+
+    animateProfileElements() {
+        // Add stagger animation to profile elements
+        const staggerItems = document.querySelectorAll('.profile-screen .stagger-item');
+        staggerItems.forEach((item, index) => {
+            setTimeout(() => {
+                item.style.animation = `staggerFadeIn 0.6s ease-out forwards`;
+            }, index * 100);
+        });
+
+        // Animate achievement progress bars
+        setTimeout(() => {
+            document.querySelectorAll('.achievement-progress-fill').forEach(fill => {
+                const width = fill.style.width || '0%';
+                fill.style.width = '0%';
+                setTimeout(() => {
+                    fill.style.width = width;
+                }, 100);
+            });
+        }, 500);
+
+        // Animate security progress
+        const securityProgress = document.querySelector('.security-progress-fill');
+        if (securityProgress) {
+            setTimeout(() => {
+                securityProgress.style.width = '0%';
+                setTimeout(() => {
+                    securityProgress.style.width = '85%';
+                }, 100);
+            }, 300);
         }
     }
 

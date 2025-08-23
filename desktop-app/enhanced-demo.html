@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Forge AI - Enhanced Demo</title>
+    
+    <!-- Include all our new stylesheets -->
+    <link rel="stylesheet" href="src/renderer/enhanced-styles.css">
+    <link rel="stylesheet" href="src/renderer/theme-system.css">
+    <link rel="stylesheet" href="src/renderer/notification-system.css">
+    <link rel="stylesheet" href="src/renderer/advanced-effects.css">
+    <link rel="stylesheet" href="src/renderer/tutorial.css">
+    <link rel="stylesheet" href="src/renderer/profile-screen.css">
+    <link rel="stylesheet" href="src/renderer/advanced-animations.css">
+    
+    <!-- External resources -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Demo-specific styles */
+        .demo-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            font-weight: 600;
+            z-index: 60000;
+            font-size: 0.9rem;
+        }
+        
+        #app {
+            margin-top: 40px;
+        }
+        
+        .demo-data {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Enhanced demo interactions */
+        .demo-feature-highlight {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demo-feature-highlight::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .demo-feature-highlight:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle System Background -->
+    <div class="particle-system" id="particle-system"></div>
+    
+    <!-- Demo Banner -->
+    <div class="demo-banner">
+        🚀 Enhanced Cyber Forge AI - Interactive Demo with Advanced Animations, Themes & Features
+    </div>
+    
+    <div id="app">
+        <!-- Header with new theme switcher and message icons -->
+        <header class="header glass-card">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-halved floating"></i>
+                    <span>Cyber Forge AI</span>
+                    <span class="version">v2.0</span>
+                </div>
+                <div class="header-center">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="global-search" placeholder="Search or ask AI..." />
+                    </div>
+                </div>
+                
+                <!-- New Message Icons -->
+                <div class="header-messages">
+                    <div class="message-icon hover-glow" id="notifications-icon">
+                        <i class="fas fa-bell"></i>
+                        <div class="message-badge breathing">3</div>
+                        <div class="message-dropdown">
+                            <h3>Notifications <span class="btn-icon" onclick="this.closest('.message-dropdown').parentElement.classList.remove('active')"><i class="fas fa-times"></i></span></h3>
+                            <div class="message-list">
+                                <div class="message-item unread">
+                                    <div class="message-item-title">New Threat Detected</div>
+                                    <div class="message-item-content">Potential malware detected on website: example.com</div>
+                                    <div class="message-item-time">2 minutes ago</div>
+                                </div>
+                                <div class="message-item">
+                                    <div class="message-item-title">Analysis Complete</div>
+                                    <div class="message-item-content">Network scan completed successfully</div>
+                                    <div class="message-item-time">15 minutes ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-icon hover-glow" id="messages-icon">
+                        <i class="fas fa-envelope"></i>
+                        <div class="message-badge breathing">1</div>
+                        <div class="message-dropdown">
+                            <h3>Messages <span class="btn-icon" onclick="this.closest('.message-dropdown').parentElement.classList.remove('active')"><i class="fas fa-times"></i></span></h3>
+                            <div class="message-list">
+                                <div class="message-item unread">
+                                    <div class="message-item-title">System Update Available</div>
+                                    <div class="message-item-content">Cyber Forge AI v2.1 is now available</div>
+                                    <div class="message-item-time">Just now</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-icon hover-glow" id="alerts-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="message-dropdown">
+                            <h3>System Alerts <span class="btn-icon" onclick="this.closest('.message-dropdown').parentElement.classList.remove('active')"><i class="fas fa-times"></i></span></h3>
+                            <div class="message-list">
+                                <div class="message-item">
+                                    <div class="message-item-title">All Systems Operational</div>
+                                    <div class="message-item-content">No alerts at this time</div>
+                                    <div class="message-item-time">Current status</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- New Theme Switcher -->
+                <div class="theme-switcher hover-lift">
+                    <div class="theme-option light" data-theme="light">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="theme-option dark active" data-theme="dark">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="theme-option auto" data-theme="auto">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <div class="theme-slider dark"></div>
+                </div>
+                
+                <div class="status-indicators">
+                    <div class="status-item" id="backend-status">
+                        <div class="status-dot breathing" style="background: #00b894;"></div>
+                        <span>Backend</span>
+                    </div>
+                    <div class="status-item" id="ai-status">
+                        <div class="status-dot breathing" style="background: #00b894;"></div>
+                        <span>AI Agent</span>
+                    </div>
+                    <div class="status-item" id="monitor-status">
+                        <div class="status-dot breathing" style="background: #00b894;"></div>
+                        <span>Monitor</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Enhanced Sidebar -->
+            <aside class="sidebar glass-card">
+                <nav class="nav-menu">
+                    <button class="nav-item active hover-glow stagger-item" data-tab="dashboard">
+                        <i class="fas fa-home floating"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="tasks">
+                        <i class="fas fa-tasks floating"></i>
+                        <span>AI Tasks</span>
+                        <span class="task-count demo-data">3</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="analysis">
+                        <i class="fas fa-chart-line floating"></i>
+                        <span>Analysis</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="threats">
+                        <i class="fas fa-exclamation-triangle floating"></i>
+                        <span>Threats</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="network">
+                        <i class="fas fa-network-wired floating"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="datasets">
+                        <i class="fas fa-database floating"></i>
+                        <span>Datasets</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="ml-dashboard">
+                        <i class="fas fa-brain floating"></i>
+                        <span>ML Dashboard</span>
+                        <span class="new-badge breathing">NEW</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="analytics">
+                        <i class="fas fa-chart-area floating"></i>
+                        <span>Analytics</span>
+                        <span class="new-badge breathing">NEW</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="chat">
+                        <i class="fas fa-comments floating"></i>
+                        <span>AI Chat</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="profile">
+                        <i class="fas fa-user floating"></i>
+                        <span>Profile</span>
+                        <span class="new-badge breathing">NEW</span>
+                    </button>
+                    <button class="nav-item hover-glow stagger-item" data-tab="settings">
+                        <i class="fas fa-cog floating"></i>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+                
+                <!-- Quick Actions with enhanced animations -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="quick-action-btn ripple hover-lift demo-feature-highlight">
+                        <i class="fas fa-radar"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="quick-action-btn ripple hover-lift demo-feature-highlight">
+                        <i class="fas fa-globe"></i>
+                        <span>Analyze Website</span>
+                    </button>
+                    <button class="quick-action-btn ripple hover-lift demo-feature-highlight">
+                        <i class="fas fa-shield-virus"></i>
+                        <span>Threat Scan</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Enhanced Dashboard Tab -->
+                <div class="tab-content active" id="dashboard-tab">
+                    <div class="tab-header slide-in-top">
+                        <h1 class="text-reveal">Security Dashboard</h1>
+                        <div class="tab-actions">
+                            <button class="btn-secondary ripple hover-lift">
+                                <i class="fas fa-sync"></i>
+                                Refresh
+                            </button>
+                            <button class="btn-primary liquid-button" onclick="showTutorial()">
+                                <i class="fas fa-graduation-cap"></i>
+                                Start Tutorial
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Metrics Cards with advanced animations -->
+                    <div class="metrics-grid">
+                        <div class="metric-card glass-card hover-lift slide-in-bottom demo-feature-highlight">
+                            <div class="metric-icon">
+                                <i class="fas fa-eye floating"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="pages-count" class="demo-data">49</h3>
+                                <p>Pages Monitored</p>
+                                <span class="metric-trend">+12% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card glass-card hover-lift slide-in-bottom demo-feature-highlight" style="animation-delay: 0.2s;">
+                            <div class="metric-icon threat">
+                                <i class="fas fa-exclamation-triangle floating"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="threats-count" class="demo-data">0</h3>
+                                <p>Threats Detected</p>
+                                <span class="metric-trend">-5% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card glass-card hover-lift slide-in-bottom demo-feature-highlight" style="animation-delay: 0.4s;">
+                            <div class="metric-icon insights">
+                                <i class="fas fa-lightbulb floating"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="insights-count" class="demo-data">3</h3>
+                                <p>AI Insights</p>
+                                <span class="metric-trend">+28% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card glass-card hover-lift slide-in-bottom demo-feature-highlight" style="animation-delay: 0.6s;">
+                            <div class="metric-icon tasks">
+                                <i class="fas fa-tasks floating"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="active-tasks-count" class="demo-data">2</h3>
+                                <p>Active Tasks</p>
+                                <span class="metric-trend">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dashboard Grid with enhanced cards -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card glass-card hover-lift fade-in-up ambient-glow">
+                            <div class="card-header">
+                                <h3>Risk Assessment</h3>
+                                <div class="risk-badge">Low</div>
+                            </div>
+                            <div class="risk-display">
+                                <div class="risk-circle">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="8" 
+                                                stroke-dasharray="283" stroke-dashoffset="226" class="risk-progress">
+                                            <animate attributeName="stroke-dashoffset" from="283" to="226" dur="2s" begin="0s"/>
+                                        </circle>
+                                        <defs>
+                                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#00d4ff"/>
+                                                <stop offset="100%" style="stop-color:#0099cc"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="risk-score">
+                                        <span class="demo-data">20</span>
+                                        <small>/100</small>
+                                    </div>
+                                </div>
+                                <div class="risk-details">
+                                    <div class="risk-item">
+                                        <span class="risk-label">Network Security</span>
+                                        <span class="risk-value">Good</span>
+                                    </div>
+                                    <div class="risk-item">
+                                        <span class="risk-label">Website Safety</span>
+                                        <span class="risk-value">Excellent</span>
+                                    </div>
+                                    <div class="risk-item">
+                                        <span class="risk-label">Data Protection</span>
+                                        <span class="risk-value">Good</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional enhanced cards would go here -->
+                        <div class="dashboard-card glass-card hover-lift fade-in-up" style="animation-delay: 0.3s;">
+                            <div class="card-header">
+                                <h3>Live Activity</h3>
+                                <button class="btn-icon ripple">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="activity-feed">
+                                <div class="activity-item stagger-item">
+                                    <div class="activity-time">2 min ago</div>
+                                    <div class="activity-content">
+                                        <div class="activity-icon high">
+                                            <i class="fas fa-shield-virus"></i>
+                                        </div>
+                                        <div class="activity-details">
+                                            <div class="activity-title">Network Scan Started</div>
+                                            <div class="activity-description">Scanning 192.168.1.0/24 for security vulnerabilities</div>
+                                        </div>
+                                        <div class="activity-status active">ACTIVE</div>
+                                    </div>
+                                </div>
+                                <div class="activity-item stagger-item">
+                                    <div class="activity-time">5 min ago</div>
+                                    <div class="activity-content">
+                                        <div class="activity-icon info">
+                                            <i class="fas fa-database"></i>
+                                        </div>
+                                        <div class="activity-details">
+                                            <div class="activity-title">Dataset Downloaded</div>
+                                            <div class="activity-description">NSL-KDD dataset ready for analysis</div>
+                                        </div>
+                                        <div class="activity-status completed">COMPLETED</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Center -->
+    <div class="notification-center" id="notification-center"></div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Theme Transition Overlay -->
+    <div class="theme-transition"></div>
+
+    <!-- Scripts -->
+    <script>
+        // Demo-specific functionality
+        let currentTheme = 'dark';
+        
+        // Initialize particle system
+        function initParticleSystem() {
+            const container = document.getElementById('particle-system');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Random size
+                const size = Math.random() > 0.7 ? 'large' : Math.random() > 0.5 ? 'small' : '';
+                if (size) particle.classList.add(size);
+                
+                // Random position and timing
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        // Theme switching
+        function setTheme(theme) {
+            const root = document.documentElement;
+            const transition = document.querySelector('.theme-transition');
+            const slider = document.querySelector('.theme-slider');
+            const options = document.querySelectorAll('.theme-option');
+            
+            // Show transition
+            transition.classList.add('active');
+            
+            setTimeout(() => {
+                root.setAttribute('data-theme', theme);
+                currentTheme = theme;
+                
+                // Update slider position
+                slider.className = `theme-slider ${theme}`;
+                
+                // Update active option
+                options.forEach(option => {
+                    option.classList.toggle('active', option.dataset.theme === theme);
+                });
+                
+                // Hide transition
+                setTimeout(() => {
+                    transition.classList.remove('active');
+                }, 300);
+            }, 150);
+        }
+        
+        // Tab switching with animations
+        function switchTab(tabName) {
+            // Add exit animation to current tab
+            const currentTab = document.querySelector('.tab-content.active');
+            if (currentTab) {
+                currentTab.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    currentTab.classList.remove('active');
+                    currentTab.style.animation = '';
+                }, 300);
+            }
+            
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Show new tab with entrance animation
+            setTimeout(() => {
+                const newTab = document.getElementById(`${tabName}-tab`);
+                if (newTab) {
+                    newTab.classList.add('active');
+                    newTab.style.animation = 'fadeIn 0.3s ease-out';
+                    setTimeout(() => {
+                        newTab.style.animation = '';
+                    }, 300);
+                }
+            }, 300);
+        }
+        
+        // Show notification
+        function showNotification(title, message, type = 'info') {
+            const container = document.getElementById('notification-center');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const iconMap = {
+                success: 'fas fa-check',
+                warning: 'fas fa-exclamation-triangle',
+                error: 'fas fa-times',
+                info: 'fas fa-info'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="${iconMap[type]}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                    <div class="notification-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+                <button class="notification-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Trigger entrance animation
+            requestAnimationFrame(() => {
+                notification.classList.add('show');
+            });
+            
+            // Auto remove
+            setTimeout(() => {
+                notification.classList.add('hide');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 600);
+            }, 5000);
+        }
+        
+        // Show tutorial
+        function showTutorial() {
+            showNotification(
+                'Tutorial Coming Soon!',
+                'The interactive tutorial will guide you through all the advanced features of Cyber Forge AI.',
+                'info'
+            );
+        }
+        
+        // Initialize demo
+        document.addEventListener('DOMContentLoaded', () => {
+            initParticleSystem();
+            
+            // Set up theme switcher
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    const theme = e.target.closest('.theme-option').dataset.theme;
+                    setTheme(theme);
+                });
+            });
+            
+            // Set up navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const tab = e.target.closest('.nav-item').dataset.tab;
+                    switchTab(tab);
+                    showNotification('Tab Switched', `Switched to ${tab} - Enhanced animations and features active!`, 'info');
+                });
+            });
+            
+            // Set up message dropdowns
+            document.querySelectorAll('.message-icon').forEach(icon => {
+                icon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.message-icon.active').forEach(other => {
+                        if (other !== icon) other.classList.remove('active');
+                    });
+                    icon.classList.toggle('active');
+                });
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.message-icon.active').forEach(icon => {
+                    icon.classList.remove('active');
+                });
+            });
+            
+            // Welcome notification
+            setTimeout(() => {
+                showNotification(
+                    'Welcome to Enhanced Cyber Forge AI!',
+                    'Experience advanced animations, theme switching, and modern UI design.',
+                    'success'
+                );
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

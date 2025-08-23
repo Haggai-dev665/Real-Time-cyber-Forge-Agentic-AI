@@ -29,6 +29,11 @@ class CyberForgeApp {
       title: 'Cyber Forge AI - Real-Time Security Analysis'
     });
 
+    // Disable sandbox for development environment
+    if (process.env.NODE_ENV === 'development' || process.argv.includes('--no-sandbox')) {
+      app.commandLine.appendSwitch('--no-sandbox');
+    }
+
     await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
     if (process.argv.includes('--dev')) {

@@ -1,0 +1,288 @@
+/* Advanced Theme System for Cyber Forge AI */
+
+/* Light Theme Variables */
+:root[data-theme="light"] {
+    --primary-color: #0066cc;
+    --primary-dark: #004499;
+    --secondary-color: #5a4fcf;
+    --success-color: #00a085;
+    --warning-color: #e67e22;
+    --danger-color: #c0392b;
+    --dark-bg: #ffffff;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --sidebar-bg: rgba(248, 249, 250, 0.95);
+    --text-primary: #2c3e50;
+    --text-secondary: rgba(44, 62, 80, 0.8);
+    --text-muted: rgba(44, 62, 80, 0.6);
+    --border-color: rgba(44, 62, 80, 0.1);
+    --shadow-light: 0 4px 20px rgba(0, 102, 204, 0.15);
+    --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --particle-color: rgba(0, 102, 204, 0.6);
+    --glow-color: rgba(0, 102, 204, 0.4);
+    --gradient-start: #f8f9fa;
+    --gradient-end: #e9ecef;
+    --input-bg: rgba(255, 255, 255, 0.8);
+    --hover-bg: rgba(0, 102, 204, 0.05);
+}
+
+/* Dark Theme Variables (Enhanced) */
+:root[data-theme="dark"] {
+    --primary-color: #00d4ff;
+    --primary-dark: #0099cc;
+    --secondary-color: #6c5ce7;
+    --success-color: #00b894;
+    --warning-color: #fdcb6e;
+    --danger-color: #e17055;
+    --dark-bg: #0f0f23;
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-bg: rgba(0, 0, 0, 0.4);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --shadow-light: 0 4px 20px rgba(0, 212, 255, 0.15);
+    --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --particle-color: rgba(0, 212, 255, 0.8);
+    --glow-color: rgba(0, 212, 255, 0.6);
+    --gradient-start: #0f0f23;
+    --gradient-end: #1a1a3a;
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --hover-bg: rgba(0, 212, 255, 0.1);
+}
+
+/* Auto Theme (System Preference) */
+:root[data-theme="auto"] {
+    --primary-color: #00d4ff;
+    --primary-dark: #0099cc;
+    --secondary-color: #6c5ce7;
+    --success-color: #00b894;
+    --warning-color: #fdcb6e;
+    --danger-color: #e17055;
+    --dark-bg: #0f0f23;
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-bg: rgba(0, 0, 0, 0.4);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --shadow-light: 0 4px 20px rgba(0, 212, 255, 0.15);
+    --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --particle-color: rgba(0, 212, 255, 0.8);
+    --glow-color: rgba(0, 212, 255, 0.6);
+    --gradient-start: #0f0f23;
+    --gradient-end: #1a1a3a;
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --hover-bg: rgba(0, 212, 255, 0.1);
+}
+
+/* Auto theme with system light preference */
+@media (prefers-color-scheme: light) {
+    :root[data-theme="auto"] {
+        --primary-color: #0066cc;
+        --primary-dark: #004499;
+        --secondary-color: #5a4fcf;
+        --success-color: #00a085;
+        --warning-color: #e67e22;
+        --danger-color: #c0392b;
+        --dark-bg: #ffffff;
+        --card-bg: rgba(255, 255, 255, 0.9);
+        --sidebar-bg: rgba(248, 249, 250, 0.95);
+        --text-primary: #2c3e50;
+        --text-secondary: rgba(44, 62, 80, 0.8);
+        --text-muted: rgba(44, 62, 80, 0.6);
+        --border-color: rgba(44, 62, 80, 0.1);
+        --shadow-light: 0 4px 20px rgba(0, 102, 204, 0.15);
+        --shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --glass-bg: rgba(255, 255, 255, 0.25);
+        --glass-border: rgba(255, 255, 255, 0.18);
+        --particle-color: rgba(0, 102, 204, 0.6);
+        --glow-color: rgba(0, 102, 204, 0.4);
+        --gradient-start: #f8f9fa;
+        --gradient-end: #e9ecef;
+        --input-bg: rgba(255, 255, 255, 0.8);
+        --hover-bg: rgba(0, 102, 204, 0.05);
+    }
+}
+
+/* Theme transition animation */
+* {
+    transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                backdrop-filter 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Theme switcher component */
+.theme-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 2rem;
+    padding: 0.25rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.theme-switcher:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.theme-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+    z-index: 2;
+}
+
+.theme-option i {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    transition: var(--transition);
+}
+
+.theme-option.active i {
+    color: var(--text-primary);
+}
+
+.theme-slider {
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--primary-color);
+    border-radius: 50%;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-slider.light {
+    transform: translateX(0);
+}
+
+.theme-slider.dark {
+    transform: translateX(3rem);
+}
+
+.theme-slider.auto {
+    transform: translateX(6rem);
+}
+
+/* Theme-aware body background */
+body {
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+    transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light theme specific styles */
+:root[data-theme="light"] body {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+:root[data-theme="light"] .header {
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid rgba(44, 62, 80, 0.1);
+}
+
+:root[data-theme="light"] .sidebar {
+    background: rgba(248, 249, 250, 0.95);
+    border-right: 1px solid rgba(44, 62, 80, 0.1);
+}
+
+:root[data-theme="light"] .nav-item.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+:root[data-theme="light"] .metric-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(44, 62, 80, 0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Enhanced glass morphism for both themes */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-light);
+}
+
+/* Neumorphism effect */
+.neomorphic {
+    background: var(--card-bg);
+    box-shadow: 
+        inset 5px 5px 10px rgba(0, 0, 0, 0.1),
+        inset -5px -5px 10px rgba(255, 255, 255, 0.1),
+        5px 5px 15px rgba(0, 0, 0, 0.1),
+        -5px -5px 15px rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.neomorphic:hover {
+    box-shadow: 
+        inset 2px 2px 5px rgba(0, 0, 0, 0.1),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.1),
+        8px 8px 20px rgba(0, 0, 0, 0.15),
+        -8px -8px 20px rgba(255, 255, 255, 0.1);
+}
+
+/* Theme transition loading animation */
+.theme-transition {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--primary-color);
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.theme-transition.active {
+    opacity: 0.1;
+}
+
+.theme-transition::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    border: 3px solid transparent;
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

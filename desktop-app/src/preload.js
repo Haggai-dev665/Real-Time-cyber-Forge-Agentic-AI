@@ -12,6 +12,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI interface
   queryAI: (query) => ipcRenderer.invoke('query-ai', query),
   
+  // Authentication
+  auth: {
+    login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
+    register: (userData) => ipcRenderer.invoke('auth:register', userData),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    getCurrentUser: () => ipcRenderer.invoke('auth:getCurrentUser'),
+    isAuthenticated: () => ipcRenderer.invoke('auth:isAuthenticated'),
+    updateProfile: (profileData) => ipcRenderer.invoke('auth:updateProfile', profileData),
+    changePassword: (passwordData) => ipcRenderer.invoke('auth:changePassword', passwordData)
+  },
+  
   // Event listeners
   onBackendStatus: (callback) => ipcRenderer.on('backend-status', callback),
   onAnalysisResult: (callback) => ipcRenderer.on('analysis-result', callback),

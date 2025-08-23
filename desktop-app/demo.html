@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Forge AI - Enhanced UI Demo</title>
+    <link rel="stylesheet" href="src/renderer/enhanced-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Demo-specific styles */
+        .demo-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #00d4ff, #6c5ce7);
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            font-weight: 600;
+            z-index: 9999;
+            font-size: 0.9rem;
+        }
+        
+        #app {
+            margin-top: 40px;
+        }
+        
+        .demo-data {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-banner">
+        🚀 Enhanced Cyber Forge AI - Interactive Demo | All UI features functional with demo data
+    </div>
+    
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Cyber Forge AI</span>
+                    <span class="version">v2.0</span>
+                </div>
+                <div class="header-center">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="global-search" placeholder="Search or ask AI..." />
+                    </div>
+                </div>
+                <div class="status-indicators">
+                    <div class="status-item" id="backend-status">
+                        <div class="status-dot" style="background: #00b894;"></div>
+                        <span>Backend</span>
+                    </div>
+                    <div class="status-item" id="ai-status">
+                        <div class="status-dot" style="background: #00b894;"></div>
+                        <span>AI Agent</span>
+                    </div>
+                    <div class="status-item" id="monitor-status">
+                        <div class="status-dot" style="background: #00b894;"></div>
+                        <span>Monitor</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Enhanced Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-tab="dashboard">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-tab="tasks">
+                        <i class="fas fa-tasks"></i>
+                        <span>AI Tasks</span>
+                        <span class="task-count">3</span>
+                    </button>
+                    <button class="nav-item" data-tab="analysis">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analysis</span>
+                    </button>
+                    <button class="nav-item" data-tab="threats">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Threats</span>
+                    </button>
+                    <button class="nav-item" data-tab="network">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="nav-item" data-tab="datasets">
+                        <i class="fas fa-database"></i>
+                        <span>Datasets</span>
+                    </button>
+                    <button class="nav-item" data-tab="chat">
+                        <i class="fas fa-comments"></i>
+                        <span>AI Chat</span>
+                    </button>
+                    <button class="nav-item" data-tab="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="quick-action-btn">
+                        <i class="fas fa-radar"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="quick-action-btn">
+                        <i class="fas fa-globe"></i>
+                        <span>Analyze Website</span>
+                    </button>
+                    <button class="quick-action-btn">
+                        <i class="fas fa-shield-virus"></i>
+                        <span>Threat Scan</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div class="tab-content active" id="dashboard-tab">
+                    <div class="tab-header">
+                        <h1>Security Dashboard</h1>
+                        <div class="tab-actions">
+                            <button class="btn-secondary">
+                                <i class="fas fa-sync"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Metrics Cards -->
+                    <div class="metrics-grid">
+                        <div class="metric-card demo-data">
+                            <div class="metric-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3>1,247</h3>
+                                <p>Pages Monitored</p>
+                                <span class="metric-trend">+12% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card demo-data">
+                            <div class="metric-icon threat">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3>23</h3>
+                                <p>Threats Detected</p>
+                                <span class="metric-trend">-5% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card demo-data">
+                            <div class="metric-icon insights">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3>89</h3>
+                                <p>AI Insights</p>
+                                <span class="metric-trend">+28% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card demo-data">
+                            <div class="metric-icon tasks">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3>3</h3>
+                                <p>Active Tasks</p>
+                                <span class="metric-trend">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Assessment -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Risk Assessment</h3>
+                                <div class="risk-badge">Low</div>
+                            </div>
+                            <div class="risk-display">
+                                <div class="risk-circle">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="8" 
+                                                stroke-dasharray="283" stroke-dashoffset="226"/>
+                                        <defs>
+                                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#00d4ff"/>
+                                                <stop offset="100%" style="stop-color:#0099cc"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="risk-score">
+                                        <span>20</span>
+                                        <small>/100</small>
+                                    </div>
+                                </div>
+                                <div class="risk-details">
+                                    <div class="risk-item">
+                                        <span class="risk-label">Network Security</span>
+                                        <span class="risk-value">Good</span>
+                                    </div>
+                                    <div class="risk-item">
+                                        <span class="risk-label">Website Safety</span>
+                                        <span class="risk-value">Excellent</span>
+                                    </div>
+                                    <div class="risk-item">
+                                        <span class="risk-label">Data Protection</span>
+                                        <span class="risk-value">Good</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Live Activity Feed -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Live Activity</h3>
+                                <button class="btn-icon">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="activity-feed">
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Network Scan Started</div>
+                                        <div class="activity-description">Scanning 192.168.1.0/24 for security vulnerabilities</div>
+                                    </div>
+                                    <div class="activity-time">2 min ago</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-download"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Dataset Downloaded</div>
+                                        <div class="activity-description">NSL-KDD dataset ready for analysis</div>
+                                    </div>
+                                    <div class="activity-time">5 min ago</div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Threat Analysis Complete</div>
+                                        <div class="activity-description">No high-risk threats detected</div>
+                                    </div>
+                                    <div class="activity-time">8 min ago</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Tasks -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Recent AI Tasks</h3>
+                                <a href="#" class="view-all">View All</a>
+                            </div>
+                            <div class="task-list">
+                                <div class="task-card" style="margin-bottom: 1rem; padding: 1rem;">
+                                    <div class="task-header">
+                                        <div class="task-title">Network Security Scan</div>
+                                        <div class="task-status in_progress">IN PROGRESS</div>
+                                    </div>
+                                    <div class="task-progress">
+                                        <div class="task-progress-bar" style="width: 75%"></div>
+                                    </div>
+                                </div>
+                                <div class="task-card" style="margin-bottom: 1rem; padding: 1rem;">
+                                    <div class="task-header">
+                                        <div class="task-title">Website Analysis - google.com</div>
+                                        <div class="task-status completed">COMPLETED</div>
+                                    </div>
+                                    <div class="task-progress">
+                                        <div class="task-progress-bar" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Insights -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>AI Insights</h3>
+                                <button class="btn-icon">
+                                    <i class="fas fa-magic"></i>
+                                </button>
+                            </div>
+                            <div class="insights-list">
+                                <div class="insight-item" style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                                    <div class="insight-text">Network security posture is strong with no critical vulnerabilities detected</div>
+                                    <div class="insight-time">3 min ago</div>
+                                </div>
+                                <div class="insight-item" style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                                    <div class="insight-text">Consider enabling additional security headers for enhanced protection</div>
+                                    <div class="insight-time">12 min ago</div>
+                                </div>
+                                <div class="insight-item" style="padding: 1rem 0;">
+                                    <div class="insight-text">Dataset analysis reveals emerging threat patterns worth monitoring</div>
+                                    <div class="insight-time">1 hour ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Demo functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active from all items
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    // Add active to clicked item
+                    this.classList.add('active');
+                    
+                    // Show notification
+                    showNotification('Demo Mode', `Switched to ${this.textContent.trim()} - Full functionality available in desktop app!`, 'info');
+                });
+            });
+            
+            // Quick actions
+            document.querySelectorAll('.quick-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showNotification('Quick Action', `${this.textContent.trim()} - Feature available in full desktop app!`, 'info');
+                });
+            });
+            
+            // Search functionality
+            document.getElementById('global-search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    showNotification('Search Demo', `Searching for: "${this.value}" - Full search in desktop app!`, 'info');
+                }
+            });
+            
+            // Animate metrics
+            animateMetrics();
+        });
+        
+        function showNotification(title, message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.style.position = 'fixed';
+            notification.style.top = '60px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '10000';
+            notification.innerHTML = `
+                <div class="notification-title">${title}</div>
+                <div class="notification-message">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 4000);
+        }
+        
+        function animateMetrics() {
+            // Animate numbers counting up
+            const metrics = document.querySelectorAll('.metric-info h3');
+            metrics.forEach((metric, index) => {
+                const finalValue = parseInt(metric.textContent.replace(',', ''));
+                let currentValue = 0;
+                const increment = finalValue / 50;
+                
+                const timer = setInterval(() => {
+                    currentValue += increment;
+                    if (currentValue >= finalValue) {
+                        currentValue = finalValue;
+                        clearInterval(timer);
+                    }
+                    
+                    if (finalValue > 1000) {
+                        metric.textContent = currentValue.toLocaleString();
+                    } else {
+                        metric.textContent = Math.floor(currentValue);
+                    }
+                }, 50);
+            });
+        }
+        
+        // Demo data updates
+        setInterval(() => {
+            // Update activity times
+            const times = document.querySelectorAll('.activity-time');
+            times.forEach((time, index) => {
+                const minutes = (index + 1) * 2 + Math.floor(Date.now() / 60000) % 10;
+                time.textContent = `${minutes} min ago`;
+            });
+        }, 30000);
+        
+        // Show welcome message
+        setTimeout(() => {
+            showNotification('Welcome!', 'This is a demo of the enhanced UI. Download and run the full desktop app for complete functionality!', 'success');
+        }, 1000);
+    </script>
+</body>
+</html>

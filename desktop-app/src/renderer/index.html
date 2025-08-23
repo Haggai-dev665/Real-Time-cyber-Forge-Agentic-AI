@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="advanced-effects.css">
     <link rel="stylesheet" href="tutorial.css">
     <link rel="stylesheet" href="profile-screen.css">
+    <link rel="stylesheet" href="browser-monitoring.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -256,6 +257,53 @@
                             </div>
                             <div class="insights-list" id="ai-insights">
                                 <!-- AI insights will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Browser Monitoring Section -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card full-width">
+                            <div class="card-header">
+                                <h3><i class="fas fa-globe"></i> Browser Monitoring</h3>
+                                <div class="browser-controls">
+                                    <button class="btn-secondary" id="select-browsers-btn">
+                                        <i class="fas fa-cog"></i>
+                                        Select Browsers
+                                    </button>
+                                    <button class="btn-primary" id="start-monitoring-btn" disabled>
+                                        <i class="fas fa-play"></i>
+                                        Start Monitoring
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="browser-monitoring-content">
+                                <div class="monitoring-status" id="monitoring-status">
+                                    <div class="status-message">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No browsers selected. Click "Select Browsers" to get started.</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="browser-tabs" id="browser-tabs" style="display: none;">
+                                    <!-- Browser monitoring tabs will be populated here -->
+                                </div>
+                                
+                                <div class="monitoring-data" id="monitoring-data" style="display: none;">
+                                    <div class="monitored-pages">
+                                        <h4>Recent Pages Visited</h4>
+                                        <div class="pages-list" id="pages-list">
+                                            <!-- Recent pages will be listed here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="security-alerts" id="security-alerts">
+                                        <h4>Security Alerts</h4>
+                                        <div class="alerts-list" id="alerts-list">
+                                            <!-- Security alerts will be listed here -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -965,6 +1013,9 @@
     <!-- Include advanced screens -->
     <script src="advanced-screens/ml-dashboard.js"></script>
     <script src="advanced-screens/real-time-analytics.js"></script>
+    
+    <!-- Browser selection dialog -->
+    <script src="browser-selection-dialog.js"></script>
     
     <!-- Main application scripts -->
     <script src="enhanced-app.js"></script>

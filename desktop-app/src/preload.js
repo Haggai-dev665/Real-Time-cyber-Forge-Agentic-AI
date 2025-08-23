@@ -9,6 +9,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Analysis data
   getAnalysisData: () => ipcRenderer.invoke('get-analysis-data'),
   
+  // Browser selection and monitoring
+  getBrowserList: () => ipcRenderer.invoke('get-browser-list'),
+  selectBrowsers: (browserNames) => ipcRenderer.invoke('select-browsers', browserNames),
+  checkDashboardAccess: () => ipcRenderer.invoke('check-dashboard-access'),
+  getMonitoringData: () => ipcRenderer.invoke('get-monitoring-data'),
+  
   // AI interface
   queryAI: (query) => ipcRenderer.invoke('query-ai', query),
   
@@ -28,6 +34,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAnalysisResult: (callback) => ipcRenderer.on('analysis-result', callback),
   onThreatAlert: (callback) => ipcRenderer.on('threat-alert', callback),
   onAIInsight: (callback) => ipcRenderer.on('ai-insight', callback),
+  
+  // Enhanced monitoring event listeners
+  onEnhancedPageVisited: (callback) => ipcRenderer.on('enhanced-page-visited', callback),
+  onNetworkResponseData: (callback) => ipcRenderer.on('network-response-data', callback),
+  onNetworkRequestData: (callback) => ipcRenderer.on('network-request-data', callback),
+  onSecurityWarning: (callback) => ipcRenderer.on('security-warning', callback),
   
   // Remove listeners
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),

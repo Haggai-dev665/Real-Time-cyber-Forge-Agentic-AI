@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { setupBrowserMonitoring } = require('./browser-monitor/monitor');
+const { setupEnhancedBrowserMonitoring } = require('./browser-monitor/enhanced-monitor');
+const BrowserSelector = require('./browser-monitor/browser-selector');
 const { setupAIInterface } = require('./ai-interface/ai-client');
 const AuthService = require('./auth/AuthService');
 const WebSocket = require('ws');
@@ -11,7 +13,10 @@ class CyberForgeApp {
     this.wsConnection = null;
     this.aiInterface = null;
     this.browserMonitor = null;
+    this.enhancedBrowserMonitor = null;
+    this.browserSelector = new BrowserSelector();
     this.authService = new AuthService();
+    this.dashboardAccessGranted = false;
   }
 
   async createMainWindow() {
@@ -40,12 +45,18 @@ class CyberForgeApp {
       this.mainWindow.webContents.openDevTools();
     }
 
-    // Set up browser monitoring
+    // Set up browser monitoring (traditional)
     this.browserMonitor = setupBrowserMonitoring(this.mainWindow);
+    
+    // Set up enhanced browser monitoring for external browsers
+    this.enhancedBrowserMonitor = setupEnhancedBrowserMonitoring(this.mainWindow);
     
     // Set up AI interface
     this.aiInterface = setupAIInterface();
 
+    // Set up IPC handlers
+    this.setupIPCHandlers();
+    
     // Connect to backend
     this.connectToBackend();
 
@@ -108,6 +119,48 @@ class CyberForgeApp {
       default:
         console.log('Unknown message type:', message.type);
     }
+  }
+
+  setupIPCHandlers() {
+    // Browser selection handlers
+    ipcMain.handle('get-browser-list', async () => {
+      try {
+        const browsers = await this.browserSelector.detectInstalledBrowsers();
+        return browsers;
+      } catch (error) {
+        console.error('Error getting browser list:', error);
+        return [];
+      }
+    });
+
+    ipcMain.handle('select-browsers', async (event, browserNames) => {
+      try {
+        const selectedBrowsers = this.browserSelector.setSelectedBrowsers(browserNames);
+        
+        // Start enhanced monitoring for selected browsers
+        await this.enhancedBrowserMonitor.setupBrowserMonitoring(selectedBrowsers);
+        this.enhancedBrowserMonitor.startMonitoring();
+        
+        // Grant dashboard access
+        this.dashboardAccessGranted = true;
+        
+        return { success: true, browsers: selectedBrowsers };
+      } catch (error) {
+        console.error('Error selecting browsers:', error);
+        return { success: false, error: error.message };
+      }
+    });
+
+    ipcMain.handle('check-dashboard-access', () => {
+      return this.dashboardAccessGranted;
+    });
+
+    ipcMain.handle('get-monitoring-data', () => {
+      if (this.enhancedBrowserMonitor) {
+        return this.enhancedBrowserMonitor.getMonitoringData();
+      }
+      return this.browserMonitor?.getAnalysisData() || [];
+    });
   }
 
   setupEventHandlers() {

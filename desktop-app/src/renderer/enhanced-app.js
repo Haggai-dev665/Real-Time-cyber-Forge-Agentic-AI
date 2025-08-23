@@ -74,6 +74,9 @@ class EnhancedCyberForgeUI {
         // Settings
         this.setupSettingsEventListeners();
         
+        // Browser selection and monitoring
+        this.setupBrowserMonitoringEventListeners();
+        
         // Modal handling
         this.setupModalEventListeners();
     }
@@ -236,6 +239,38 @@ class EnhancedCyberForgeUI {
         const saveSettings = document.getElementById('save-settings');
         if (saveSettings) {
             saveSettings.addEventListener('click', () => this.saveAllSettings());
+        }
+    }
+
+    setupBrowserMonitoringEventListeners() {
+        const selectBrowsersBtn = document.getElementById('select-browsers-btn');
+        const startMonitoringBtn = document.getElementById('start-monitoring-btn');
+
+        if (selectBrowsersBtn) {
+            selectBrowsersBtn.addEventListener('click', async () => {
+                await this.showBrowserSelectionDialog();
+            });
+        }
+
+        if (startMonitoringBtn) {
+            startMonitoringBtn.addEventListener('click', () => {
+                this.startBrowserMonitoring();
+            });
+        }
+
+        // Set up enhanced monitoring event listeners
+        if (window.electronAPI) {
+            window.electronAPI.onEnhancedPageVisited((event, pageData) => {
+                this.handleEnhancedPageVisited(pageData);
+            });
+
+            window.electronAPI.onNetworkResponseData((event, responseData) => {
+                this.handleNetworkResponse(responseData);
+            });
+
+            window.electronAPI.onSecurityWarning((event, warningData) => {
+                this.handleSecurityWarning(warningData);
+            });
         }
     }
 
@@ -1452,6 +1487,183 @@ class EnhancedCyberForgeUI {
                 }, 100);
             }, 300);
         }
+    }
+
+    // Browser Monitoring Methods
+    async showBrowserSelectionDialog() {
+        try {
+            const result = await window.browserSelectionDialog.show();
+            
+            if (!result.cancelled && result.browsers.length > 0) {
+                const response = await window.electronAPI.selectBrowsers(result.browsers.map(b => b.name));
+                
+                if (response.success) {
+                    this.updateBrowserMonitoringUI(response.browsers);
+                    this.showNotification(
+                        'Success', 
+                        `Started monitoring ${response.browsers.length} browser(s)`, 
+                        'success'
+                    );
+                } else {
+                    this.showNotification(
+                        'Error', 
+                        'Failed to start browser monitoring: ' + response.error, 
+                        'error'
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Error showing browser selection dialog:', error);
+            this.showNotification('Error', 'Failed to show browser selection dialog', 'error');
+        }
+    }
+
+    updateBrowserMonitoringUI(browsers) {
+        const monitoringStatus = document.getElementById('monitoring-status');
+        const browserTabs = document.getElementById('browser-tabs');
+        const monitoringData = document.getElementById('monitoring-data');
+        const startMonitoringBtn = document.getElementById('start-monitoring-btn');
+
+        // Update status
+        monitoringStatus.innerHTML = `
+            <div class="status-message active">
+                <i class="fas fa-check-circle"></i>
+                <span>Monitoring ${browsers.length} browser(s): ${browsers.map(b => b.name).join(', ')}</span>
+            </div>
+        `;
+
+        // Show browser tabs
+        browserTabs.style.display = 'block';
+        browserTabs.innerHTML = browsers.map(browser => `
+            <div class="browser-tab" data-browser="${browser.name}">
+                <i class="fab fa-${browser.icon}"></i>
+                <span>${browser.name}</span>
+                <div class="browser-status active">
+                    <i class="fas fa-circle"></i>
+                </div>
+            </div>
+        `).join('');
+
+        // Show monitoring data section
+        monitoringData.style.display = 'block';
+
+        // Update button state
+        startMonitoringBtn.disabled = false;
+        startMonitoringBtn.innerHTML = `
+            <i class="fas fa-stop"></i>
+            Stop Monitoring
+        `;
+    }
+
+    handleEnhancedPageVisited(pageData) {
+        const pagesList = document.getElementById('pages-list');
+        
+        const pageElement = document.createElement('div');
+        pageElement.className = 'page-visit-item';
+        pageElement.innerHTML = `
+            <div class="page-info">
+                <div class="page-url">
+                    <i class="fas fa-globe"></i>
+                    <a href="${pageData.url}" target="_blank">${pageData.hostname}</a>
+                </div>
+                <div class="page-details">
+                    <span class="page-ip">
+                        <i class="fas fa-server"></i>
+                        IP: ${pageData.ipAddress}
+                    </span>
+                    <span class="page-protocol">
+                        <i class="fas fa-shield-alt"></i>
+                        ${pageData.protocol.toUpperCase()}
+                    </span>
+                    <span class="page-browser">
+                        <i class="fas fa-browser"></i>
+                        ${pageData.browser}
+                    </span>
+                </div>
+                <div class="page-timestamp">
+                    ${new Date(pageData.timestamp).toLocaleTimeString()}
+                </div>
+            </div>
+        `;
+
+        // Add to beginning of list
+        if (pagesList.firstChild) {
+            pagesList.insertBefore(pageElement, pagesList.firstChild);
+        } else {
+            pagesList.appendChild(pageElement);
+        }
+
+        // Keep only last 20 entries
+        while (pagesList.children.length > 20) {
+            pagesList.removeChild(pagesList.lastChild);
+        }
+
+        // Update pages count metric
+        this.metrics.pagesCount++;
+        this.updateMetrics();
+    }
+
+    handleNetworkResponse(responseData) {
+        console.log('Network response:', responseData);
+        // Additional handling for network response data can be added here
+    }
+
+    handleSecurityWarning(warningData) {
+        const alertsList = document.getElementById('alerts-list');
+        
+        const alertElement = document.createElement('div');
+        alertElement.className = `security-alert severity-${warningData.warnings[0]?.severity || 'low'}`;
+        alertElement.innerHTML = `
+            <div class="alert-header">
+                <div class="alert-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="alert-info">
+                    <h5>${warningData.url}</h5>
+                    <span class="alert-browser">${warningData.browser}</span>
+                </div>
+                <div class="alert-risk">
+                    Risk: ${warningData.riskScore || 0}%
+                </div>
+            </div>
+            <div class="alert-warnings">
+                ${warningData.warnings.map(warning => `
+                    <div class="warning-item">
+                        <strong>${warning.type}:</strong> ${warning.message}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Add to beginning of list
+        if (alertsList.firstChild) {
+            alertsList.insertBefore(alertElement, alertsList.firstChild);
+        } else {
+            alertsList.appendChild(alertElement);
+        }
+
+        // Keep only last 10 alerts
+        while (alertsList.children.length > 10) {
+            alertsList.removeChild(alertsList.lastChild);
+        }
+
+        // Update threats count
+        this.metrics.threatsCount++;
+        this.updateMetrics();
+
+        // Show notification for high-severity threats
+        if (warningData.warnings.some(w => w.severity === 'high')) {
+            this.showNotification(
+                'Security Alert',
+                `High-risk activity detected on ${warningData.url}`,
+                'error'
+            );
+        }
+    }
+
+    startBrowserMonitoring() {
+        // This will be triggered when browsers are already selected
+        console.log('Browser monitoring started');
     }
 
     // Cleanup

@@ -1,0 +1,86 @@
+{
+  "threat_classification": {
+    "malware": {
+      "types": ["virus", "trojan", "ransomware", "spyware", "adware", "rootkit", "worm"],
+      "indicators": ["unknown_executables", "suspicious_downloads", "system_modifications", "registry_changes", "network_communications"],
+      "risk_levels": {
+        "ransomware": "critical",
+        "trojan": "high",
+        "virus": "high",
+        "spyware": "high",
+        "adware": "medium",
+        "rootkit": "critical"
+      }
+    },
+    "phishing": {
+      "types": ["email_phishing", "spear_phishing", "whaling", "smishing", "vishing"],
+      "indicators": ["suspicious_links", "impersonation", "urgency_tactics", "credential_requests", "attachment_requests"],
+      "common_targets": ["financial_institutions", "social_media", "email_providers", "government_agencies", "healthcare"]
+    },
+    "network_attacks": {
+      "types": ["ddos", "man_in_the_middle", "packet_sniffing", "port_scanning", "dns_spoofing"],
+      "indicators": ["unusual_traffic", "failed_authentications", "network_latency", "connection_timeouts", "certificate_errors"]
+    }
+  },
+  "risk_assessment_matrix": {
+    "critical": {
+      "score_range": [9, 10],
+      "response_time": "immediate",
+      "escalation": "auto_escalate",
+      "actions": ["isolate_system", "notify_security_team", "preserve_evidence", "assess_damage"]
+    },
+    "high": {
+      "score_range": [7, 8],
+      "response_time": "within_1_hour",
+      "escalation": "notify_supervisor",
+      "actions": ["detailed_analysis", "implement_containment", "monitor_closely", "prepare_response"]
+    },
+    "medium": {
+      "score_range": [4, 6],
+      "response_time": "within_24_hours",
+      "escalation": "standard_process",
+      "actions": ["investigate_further", "apply_patches", "update_policies", "user_education"]
+    },
+    "low": {
+      "score_range": [1, 3],
+      "response_time": "routine_review",
+      "escalation": "log_and_monitor",
+      "actions": ["document_finding", "schedule_review", "update_awareness"]
+    }
+  },
+  "security_controls": {
+    "preventive": {
+      "technical": ["firewalls", "antivirus", "access_controls", "encryption", "authentication"],
+      "administrative": ["policies", "procedures", "training", "background_checks", "security_awareness"],
+      "physical": ["locks", "cameras", "guards", "environmental_controls", "device_security"]
+    },
+    "detective": {
+      "technical": ["intrusion_detection", "log_monitoring", "vulnerability_scanning", "network_monitoring", "endpoint_detection"],
+      "administrative": ["audits", "reviews", "compliance_checks", "incident_analysis", "risk_assessments"],
+      "physical": ["motion_sensors", "access_logs", "surveillance", "environmental_monitoring", "tamper_detection"]
+    },
+    "corrective": {
+      "technical": ["backup_restore", "patch_management", "malware_removal", "system_rebuild", "configuration_correction"],
+      "administrative": ["incident_response", "business_continuity", "disaster_recovery", "policy_updates", "training_updates"],
+      "physical": ["facility_repair", "device_replacement", "environment_restoration", "access_revocation", "security_enhancement"]
+    }
+  },
+  "compliance_frameworks": {
+    "ISO_27001": {
+      "focus": "information_security_management",
+      "key_controls": ["risk_management", "access_control", "cryptography", "incident_management", "business_continuity"]
+    },
+    "NIST_CSF": {
+      "focus": "cybersecurity_framework",
+      "functions": ["identify", "protect", "detect", "respond", "recover"]
+    },
+    "SOC_2": {
+      "focus": "service_organization_controls",
+      "trust_criteria": ["security", "availability", "processing_integrity", "confidentiality", "privacy"]
+    },
+    "GDPR": {
+      "focus": "data_protection",
+      "principles": ["lawfulness", "purpose_limitation", "data_minimization", "accuracy", "storage_limitation", "integrity", "accountability"]
+    }
+  }
+}

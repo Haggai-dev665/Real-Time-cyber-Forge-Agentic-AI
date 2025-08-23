@@ -2,7 +2,7 @@
 Configuration settings for ML/AI Services
 """
 import os
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: List[str] = ["*"]
     
     # AI/ML Configuration
-    HUGGINGFACE_API_TOKEN: str = None
+    HUGGINGFACE_API_TOKEN: Optional[str] = None
     TRANSFORMERS_CACHE_DIR: str = "./models/cache"
     
     # Free AI model configuration

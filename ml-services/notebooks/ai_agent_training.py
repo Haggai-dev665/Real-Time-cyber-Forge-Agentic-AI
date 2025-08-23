@@ -37,11 +37,13 @@ required_packages = [
     'requests>=2.31.0',
     'selenium>=4.10.0',
     'scrapy>=2.9.0',
-    'openai>=0.27.0',
     'langchain>=0.0.200',
     'chromadb>=0.4.0',
     'faiss-cpu>=1.7.4',
-    'huggingface_hub>=0.16.0'
+    'huggingface_hub>=0.16.0',
+    'sentence-transformers>=2.2.2',
+    'accelerate>=0.20.0',
+    'joblib>=1.3.0'
 ]
 
 print("🚀 Installing required packages...")

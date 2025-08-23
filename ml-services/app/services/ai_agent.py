@@ -1,14 +1,10 @@
 """
-AI Agent with memory capabilities for cybersecurity analysis
+AI Agent with memory capabilities for cybersecurity analysis using free models
 """
 import asyncio
 import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-import openai
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.schema import BaseMessage, HumanMessage, AIMessage
-from pydantic import BaseModel
 
 from ..core.config import settings
 from ..models.schemas import AnalysisResult
@@ -16,17 +12,14 @@ from ..models.schemas import AnalysisResult
 logger = logging.getLogger(__name__)
 
 class AIAgent:
-    """Advanced AI agent with memory and reasoning capabilities"""
+    """Advanced AI agent with memory and reasoning capabilities using free models"""
     
-    def __init__(self, memory_store, threat_analyzer):
+    def __init__(self, memory_store, threat_analyzer, ml_manager=None):
         self.memory_store = memory_store
         self.threat_analyzer = threat_analyzer
-        self.conversation_memory = ConversationBufferWindowMemory(k=10)
+        self.ml_manager = ml_manager
+        self.conversation_history = []  # Simple list instead of langchain memory
         self.is_initialized = False
-        
-        # Initialize OpenAI client
-        if settings.OPENAI_API_KEY:
-            openai.api_key = settings.OPENAI_API_KEY
         
         # System prompt for cybersecurity analysis
         self.system_prompt = """You are an advanced cybersecurity AI assistant with deep expertise in:
@@ -131,27 +124,40 @@ class AIAgent:
         return "\n\n".join(context_parts)
     
     async def _generate_response(self, query: str, context: str) -> str:
-        """Generate AI response using OpenAI"""
+        """Generate AI response using free Hugging Face models"""
         try:
-            if not settings.OPENAI_API_KEY:
-                return await self._generate_fallback_response(query, context)
+            # Use local ML models if available
+            if self.ml_manager and self.ml_manager.is_ready():
+                # Create a cybersecurity-focused prompt
+                prompt = f"Cybersecurity Expert: {query}\nAnalysis:"
+                response = await self.ml_manager.generate_text(prompt, max_length=300)
+                
+                if response and len(response.strip()) > 10:
+                    return self._enhance_response(response, query)
             
-            # Use OpenAI GPT for response generation
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": context},
-                    {"role": "user", "content": query}
-                ],
-                max_tokens=1000,
-                temperature=0.3
-            )
-            
-            return response.choices[0].message.content.strip()
+            # Fallback to rule-based response
+            return await self._generate_fallback_response(query, context)
             
         except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
+            logger.error(f"Response generation error: {e}")
             return await self._generate_fallback_response(query, context)
+    
+    def _enhance_response(self, response: str, query: str) -> str:
+        """Enhance the generated response with cybersecurity context"""
+        # Clean up the response
+        response = response.strip()
+        
+        # Add security context if missing
+        query_lower = query.lower()
+        if any(word in query_lower for word in ['threat', 'malware', 'phishing', 'attack']):
+            if 'security' not in response.lower():
+                response += "\n\nSecurity Recommendation: Always verify the source and avoid suspicious links or downloads."
+        
+        # Ensure reasonable length
+        if len(response) > 500:
+            response = response[:500] + "..."
+        
+        return response
     
     async def _generate_fallback_response(self, query: str, context: Dict[str, Any]) -> str:
         """Generate fallback response when AI service is unavailable"""

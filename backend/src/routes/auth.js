@@ -6,7 +6,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const authController = require('../controllers/authController');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();

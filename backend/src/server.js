@@ -16,7 +16,7 @@ const analysisRoutes = require('./routes/analysis');
 const threatRoutes = require('./routes/threats');
 const aiRoutes = require('./routes/ai');
 const { errorHandler } = require('./middleware/errorHandler');
-const { authenticate } = require('./middleware/auth');
+const { auth } = require('./middleware/auth');
 
 class CyberForgeServer {
   constructor() {
@@ -73,9 +73,9 @@ class CyberForgeServer {
 
     // API routes
     this.app.use('/api/auth', authRoutes);
-    this.app.use('/api/analysis', authenticate, analysisRoutes);
-    this.app.use('/api/threats', authenticate, threatRoutes);
-    this.app.use('/api/ai', authenticate, aiRoutes);
+    this.app.use('/api/analysis', auth, analysisRoutes);
+    this.app.use('/api/threats', auth, threatRoutes);
+    this.app.use('/api/ai', auth, aiRoutes);
 
     // WebSocket endpoint info
     this.app.get('/ws/info', (req, res) => {

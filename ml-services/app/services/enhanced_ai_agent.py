@@ -11,7 +11,6 @@ from enum import Enum
 from pydantic import BaseModel
 import json
 
-from .dataset_manager import dataset_manager
 from ..models.schemas import AnalysisResult
 from ..core.config import settings
 

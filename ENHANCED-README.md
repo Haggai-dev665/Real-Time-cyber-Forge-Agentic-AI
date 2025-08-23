@@ -387,7 +387,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **OpenAI**: For GPT models and AI capabilities
+- **Hugging Face**: For free transformers and machine learning models
+- **ChromaDB**: For free vector database capabilities
 - **Kaggle**: For cybersecurity datasets
 - **Electron**: For desktop application framework
 - **FastAPI**: For high-performance Python APIs

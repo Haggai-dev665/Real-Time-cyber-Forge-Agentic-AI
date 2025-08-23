@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import authService from './AuthService';
 
 const DesktopConnectionContext = createContext();
 
@@ -15,10 +16,14 @@ export const DesktopConnectionProvider = ({ children }) => {
   const [desktopData, setDesktopData] = useState(null);
   const [ws, setWs] = useState(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const connectToDesktop = (desktopUrl = 'ws://192.168.1.100:8000') => {
     try {
-      const websocket = new WebSocket(`${desktopUrl}/mobile`);
+      // Include auth headers if authenticated
+      const headers = authService.isAuthenticated() ? authService.getAuthHeaders() : {};
+      
+      const websocket = new WebSocket(`${desktopUrl}/mobile`, undefined, { headers });
       
       websocket.onopen = () => {
         console.log('Connected to desktop application');
@@ -26,14 +31,26 @@ export const DesktopConnectionProvider = ({ children }) => {
         setReconnectAttempts(0);
         setWs(websocket);
         
-        // Send mobile app identification
-        websocket.send(JSON.stringify({
+        // Send mobile app identification with auth info
+        const connectionData = {
           type: 'mobile_connected',
           device_info: {
             platform: 'mobile',
             timestamp: new Date().toISOString()
           }
-        }));
+        };
+
+        // Add authentication if available
+        if (authService.isAuthenticated()) {
+          connectionData.auth = {
+            token: authService.getAuthToken(),
+            user: authService.currentUser
+          };
+          setIsAuthenticated(true);
+        }
+
+        websocket.send(JSON.stringify(connectionData));
+      };
       };
 
       websocket.onmessage = (event) => {
@@ -136,7 +153,8 @@ export const DesktopConnectionProvider = ({ children }) => {
     sendToDesktop,
     requestDesktopData,
     disconnect,
-    reconnectAttempts
+    reconnectAttempts,
+    isAuthenticated
   };
 
   return (

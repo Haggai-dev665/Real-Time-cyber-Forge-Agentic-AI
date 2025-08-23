@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { setupBrowserMonitoring } = require('./browser-monitor/monitor');
 const { setupAIInterface } = require('./ai-interface/ai-client');
+const AuthService = require('./auth/AuthService');
 const WebSocket = require('ws');
 
 class CyberForgeApp {
@@ -10,6 +11,7 @@ class CyberForgeApp {
     this.wsConnection = null;
     this.aiInterface = null;
     this.browserMonitor = null;
+    this.authService = new AuthService();
   }
 
   async createMainWindow() {
@@ -49,11 +51,21 @@ class CyberForgeApp {
     const backendUrl = process.env.BACKEND_URL || 'ws://localhost:8000';
     
     try {
-      this.wsConnection = new WebSocket(`${backendUrl}/ws`);
+      this.wsConnection = new WebSocket(`${backendUrl}/ws`, {
+        headers: this.authService.getAuthHeaders()
+      });
       
       this.wsConnection.on('open', () => {
         console.log('Connected to backend');
         this.mainWindow.webContents.send('backend-status', 'connected');
+        
+        // Send authentication info if logged in
+        if (this.authService.isAuthenticated()) {
+          this.wsConnection.send(JSON.stringify({
+            type: 'authenticate',
+            token: this.authService.getAuthToken()
+          }));
+        }
       });
 
       this.wsConnection.on('message', (data) => {
@@ -123,6 +135,10 @@ class CyberForgeApp {
 
   async initialize() {
     await app.whenReady();
+    
+    // Initialize authentication service
+    await this.authService.initialize();
+    
     await this.createMainWindow();
 
     app.on('window-all-closed', () => {

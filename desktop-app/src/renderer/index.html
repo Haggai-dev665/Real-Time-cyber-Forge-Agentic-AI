@@ -71,6 +71,16 @@
                         <i class="fas fa-database"></i>
                         <span>Datasets</span>
                     </button>
+                    <button class="nav-item" data-tab="ml-dashboard">
+                        <i class="fas fa-brain"></i>
+                        <span>ML Dashboard</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="analytics">
+                        <i class="fas fa-chart-area"></i>
+                        <span>Analytics</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
                     <button class="nav-item" data-tab="chat">
                         <i class="fas fa-comments"></i>
                         <span>AI Chat</span>
@@ -752,10 +762,35 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ML Dashboard Tab -->
+                <div class="tab-content" id="ml-dashboard-tab">
+                    <div id="ml-dashboard">
+                        <!-- ML Dashboard content will be populated by advanced-screens/ml-dashboard.js -->
+                    </div>
+                </div>
+
+                <!-- Real-time Analytics Tab -->
+                <div class="tab-content" id="analytics-tab">
+                    <div id="analytics">
+                        <!-- Analytics content will be populated by advanced-screens/real-time-analytics.js -->
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Include advanced animations CSS -->
+    <link rel="stylesheet" href="advanced-animations.css">
+    
+    <!-- Include Chart.js for advanced charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Include advanced screens -->
+    <script src="advanced-screens/ml-dashboard.js"></script>
+    <script src="advanced-screens/real-time-analytics.js"></script>
+    
+    <!-- Main application scripts -->
+    <script src="enhanced-app.js"></script>
 </body>
 </html>

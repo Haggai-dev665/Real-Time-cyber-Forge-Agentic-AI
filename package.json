@@ -3,12 +3,7 @@
   "version": "1.0.0",
   "description": "Real-Time Cyber Forge Agentic AI Platform - Complete cybersecurity solution",
   "private": true,
-  "workspaces": [
-    "desktop-app",
-    "mobile-app", 
-    "landing-page",
-    "backend"
-  ],
+
   "scripts": {
     "install:all": "npm install && npm run install:desktop && npm run install:mobile && npm run install:landing && npm run install:backend && npm run install:ml",
     "install:desktop": "cd desktop-app && npm install",

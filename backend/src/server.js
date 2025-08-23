@@ -14,6 +14,7 @@ const { connectRedis } = require('./services/redis');
 const authRoutes = require('./routes/auth');
 const analysisRoutes = require('./routes/analysis');
 const threatRoutes = require('./routes/threats');
+const aiRoutes = require('./routes/ai');
 const { errorHandler } = require('./middleware/errorHandler');
 const { authenticate } = require('./middleware/auth');
 
@@ -74,6 +75,7 @@ class CyberForgeServer {
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/analysis', authenticate, analysisRoutes);
     this.app.use('/api/threats', authenticate, threatRoutes);
+    this.app.use('/api/ai', authenticate, aiRoutes);
 
     // WebSocket endpoint info
     this.app.get('/ws/info', (req, res) => {

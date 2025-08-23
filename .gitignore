@@ -181,8 +181,8 @@ Desktop.ini
 *.db
 *.sqlite
 
-# AI Models and Data
-models/
+# AI Models and Data (but not backend models)
+ml-services/models/
 data/
 checkpoints/
 *.pkl

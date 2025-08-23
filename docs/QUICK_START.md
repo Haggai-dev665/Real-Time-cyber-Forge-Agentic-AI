@@ -116,7 +116,7 @@ AI_SERVICE_URL=http://localhost:8001
 #### ML Services (.env)
 ```bash
 PORT=8001
-OPENAI_API_KEY=your-openai-api-key
+HUGGINGFACE_API_TOKEN=your-huggingface-token-optional
 DATABASE_URL=postgresql://user:pass@localhost:5432/cyberforge
 REDIS_URL=redis://localhost:6379
 LOG_LEVEL=info

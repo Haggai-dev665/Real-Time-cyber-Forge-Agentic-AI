@@ -6,6 +6,8 @@
     <title>Cyber Forge AI - Real-Time Security Analysis</title>
     <link rel="stylesheet" href="enhanced-styles.css">
     <link rel="stylesheet" href="theme-system.css">
+    <link rel="stylesheet" href="modern-styles.css">
+    <link rel="stylesheet" href="web-search-styles.css">
     <link rel="stylesheet" href="notification-system.css">
     <link rel="stylesheet" href="advanced-effects.css">
     <link rel="stylesheet" href="tutorial.css">
@@ -13,6 +15,16 @@
     <link rel="stylesheet" href="browser-monitoring.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <div id="app">
@@ -85,6 +97,11 @@
                     <button class="nav-item" data-tab="analytics">
                         <i class="fas fa-chart-area"></i>
                         <span>Analytics</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="websearch">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>Web Search</span>
                         <span class="new-badge">NEW</span>
                     </button>
                     <button class="nav-item" data-tab="chat">
@@ -1000,6 +1017,129 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Web Search Tab -->
+                <div class="tab-content" id="websearch-tab">
+                    <div class="tab-header">
+                        <h1>Web Search & Location Mapping</h1>
+                        <div class="tab-actions">
+                            <button class="btn-secondary" id="clear-search-btn">
+                                <i class="fas fa-trash"></i>
+                                Clear Results
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Authentication Section -->
+                    <div id="login-section" class="auth-hidden card" style="margin-bottom: 2rem;">
+                        <h2>Sign In Required</h2>
+                        <p>Please sign in with Google to access advanced web search features.</p>
+                        <button id="google-login-btn" class="btn-primary">
+                            <i class="fab fa-google"></i>
+                            Sign in with Google
+                        </button>
+                        <div id="auth-error" class="error-message" style="display: none;"></div>
+                        <div id="auth-loading" class="loading-spinner" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Signing in...</p>
+                        </div>
+                    </div>
+
+                    <!-- User Section -->
+                    <div id="user-section" class="auth-required" style="display: none;">
+                        <div class="card" style="margin-bottom: 2rem;">
+                            <div id="user-info"></div>
+                            <button id="logout-btn" class="btn-secondary">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Interface -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <h3>Advanced Web Search</h3>
+                        <div class="search-interface">
+                            <div class="search-input-group">
+                                <input type="text" id="web-search-input" placeholder="Search the web, analyze domains, find security information...">
+                                <button id="web-search-btn" class="btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    Search
+                                </button>
+                            </div>
+                            <div class="search-options">
+                                <label>
+                                    <input type="checkbox" id="include-security" checked>
+                                    Include security analysis
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="include-geolocation" checked>
+                                    Show geographic locations
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Content Layout -->
+                    <div class="search-content-layout">
+                        <!-- Search Results -->
+                        <div class="search-results-section">
+                            <div class="section-header">
+                                <h3>Search Results</h3>
+                                <div class="search-stats" id="search-stats"></div>
+                            </div>
+                            
+                            <div id="search-loading" class="loading-card" style="display: none;">
+                                <div class="spinner"></div>
+                                <p>Searching...</p>
+                            </div>
+                            
+                            <div id="search-results" class="search-results">
+                                <div class="search-placeholder">
+                                    <i class="fas fa-search"></i>
+                                    <h4>Enter a search query to get started</h4>
+                                    <p>Search for websites, domains, security information, and more.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Location Map -->
+                        <div class="map-section">
+                            <div class="section-header">
+                                <h3>Geographic Locations</h3>
+                                <div class="map-controls">
+                                    <button class="btn-secondary" id="center-map">
+                                        <i class="fas fa-crosshairs"></i>
+                                        Center Map
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="location-map" class="location-map"></div>
+                            <div class="map-legend">
+                                <div class="legend-item">
+                                    <div class="legend-marker instant"></div>
+                                    <span>Instant Results</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker domain"></div>
+                                    <span>Domains</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker security"></div>
+                                    <span>Security Info</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search History -->
+                    <div class="card">
+                        <h3>Recent Searches</h3>
+                        <div id="search-history" class="search-history">
+                            <p class="no-history">No recent searches</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -1016,6 +1156,10 @@
     
     <!-- Browser selection dialog -->
     <script src="browser-selection-dialog.js"></script>
+    
+    <!-- New features -->
+    <script src="firebase-auth.js"></script>
+    <script src="web-search.js"></script>
     
     <!-- Main application scripts -->
     <script src="enhanced-app.js"></script>

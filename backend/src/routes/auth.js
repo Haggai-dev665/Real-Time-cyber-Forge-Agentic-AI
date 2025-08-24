@@ -7,6 +7,12 @@ const express = require('express');
 const { body } = require('express-validator');
 const authController = require('../controllers/authController');
 const { auth } = require('../middleware/auth');
+const { 
+  verifyFirebaseToken, 
+  handleFirebaseSync, 
+  getCurrentUser,
+  optionalFirebaseAuth 
+} = require('../middleware/firebaseAuth');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -142,5 +148,48 @@ router.put('/change-password', auth, changePasswordValidation, authController.ch
  * @access  Private
  */
 router.post('/logout', auth, authController.logout);
+
+// Firebase Authentication Routes
+
+/**
+ * @route   POST /api/auth/firebase-sync
+ * @desc    Sync Firebase user with local database
+ * @access  Private (Firebase authenticated)
+ */
+router.post('/firebase-sync', 
+  authLimiter,
+  [
+    body('uid').notEmpty().withMessage('Firebase UID is required'),
+    body('email').isEmail().withMessage('Valid email is required')
+  ],
+  verifyFirebaseToken,
+  handleFirebaseSync
+);
+
+/**
+ * @route   GET /api/auth/me
+ * @desc    Get current user profile
+ * @access  Private (Firebase authenticated)
+ */
+router.get('/me', verifyFirebaseToken, getCurrentUser);
+
+/**
+ * @route   GET /api/auth/verify-token
+ * @desc    Verify Firebase token validity
+ * @access  Private (Firebase authenticated)
+ */
+router.get('/verify-token', verifyFirebaseToken, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Token is valid',
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      displayName: req.user.displayName,
+      role: req.user.role,
+      emailVerified: req.user.emailVerified
+    }
+  });
+});
 
 module.exports = router;

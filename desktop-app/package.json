@@ -11,7 +11,12 @@
     "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps"
   },
-  "keywords": ["cybersecurity", "ai", "electron", "browser-monitoring"],
+  "keywords": [
+    "cybersecurity",
+    "ai",
+    "electron",
+    "browser-monitoring"
+  ],
   "author": "Haggai-dev665",
   "license": "MIT",
   "homepage": "./",
@@ -40,8 +45,10 @@
     "electron-builder": "^24.0.0"
   },
   "dependencies": {
-    "ws": "^8.13.0",
+    "axios": "^1.4.0",
     "electron-store": "^8.1.0",
-    "axios": "^1.4.0"
+    "firebase": "^12.1.0",
+    "leaflet": "^1.9.4",
+    "ws": "^8.13.0"
   }
 }

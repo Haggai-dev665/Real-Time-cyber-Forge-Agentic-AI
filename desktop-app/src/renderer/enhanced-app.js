@@ -417,6 +417,9 @@ class EnhancedCyberForgeUI {
             case 'profile':
                 this.initializeProfile();
                 break;
+            case 'websearch':
+                this.initializeWebSearch();
+                break;
         }
     }
 
@@ -898,6 +901,17 @@ class EnhancedCyberForgeUI {
             this.switchTab('datasets');
         } else if (query.toLowerCase().includes('threat')) {
             this.switchTab('threats');
+        } else if (query.toLowerCase().includes('search') || query.toLowerCase().includes('web') || query.toLowerCase().includes('domain')) {
+            // Redirect to web search tab and perform search
+            this.switchTab('websearch');
+            const webSearchInput = document.getElementById('web-search-input');
+            if (webSearchInput) {
+                webSearchInput.value = query;
+                // Trigger search if webSearchManager is available
+                if (typeof webSearchManager !== 'undefined') {
+                    webSearchManager.performWebSearch(query);
+                }
+            }
         } else {
             // Send to AI chat
             this.switchTab('chat');
@@ -1664,6 +1678,52 @@ class EnhancedCyberForgeUI {
     startBrowserMonitoring() {
         // This will be triggered when browsers are already selected
         console.log('Browser monitoring started');
+    }
+
+    initializeWebSearch() {
+        console.log('Initializing Web Search tab');
+        
+        // Set up clear search button
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                if (typeof webSearchManager !== 'undefined') {
+                    webSearchManager.clearSearchResults();
+                }
+            });
+        }
+
+        // Set up center map button
+        const centerMapBtn = document.getElementById('center-map');
+        if (centerMapBtn) {
+            centerMapBtn.addEventListener('click', () => {
+                if (typeof webSearchManager !== 'undefined' && webSearchManager.map) {
+                    webSearchManager.map.setView([51.505, -0.09], 2);
+                }
+            });
+        }
+
+        // Initialize authentication state UI
+        this.updateWebSearchAuthUI();
+    }
+
+    updateWebSearchAuthUI() {
+        // This will be called by the Firebase auth manager
+        const isAuthenticated = typeof firebaseAuthManager !== 'undefined' && 
+                               firebaseAuthManager.isAuthenticated();
+        
+        const loginSection = document.getElementById('login-section');
+        const userSection = document.getElementById('user-section');
+        
+        if (loginSection && userSection) {
+            if (isAuthenticated) {
+                loginSection.style.display = 'none';
+                userSection.style.display = 'block';
+            } else {
+                loginSection.style.display = 'block';
+                userSection.style.display = 'none';
+            }
+        }
     }
 
     // Cleanup

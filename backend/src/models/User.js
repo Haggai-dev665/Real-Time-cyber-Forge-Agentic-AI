@@ -16,8 +16,33 @@ const userSchema = new mongoose.Schema({
   },
   passwordHash: {
     type: String,
-    required: true,
+    required: false, // Made optional for Firebase auth
     select: false // Don't include in queries by default
+  },
+  // Firebase-specific fields
+  firebaseUid: {
+    type: String,
+    unique: true,
+    sparse: true, // Allows null values while maintaining uniqueness
+    index: true
+  },
+  provider: {
+    type: String,
+    enum: ['local', 'google.com', 'firebase'],
+    default: 'local'
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  displayName: {
+    type: String,
+    trim: true,
+    maxlength: 100
+  },
+  photoURL: {
+    type: String,
+    trim: true
   },
   firstName: {
     type: String,

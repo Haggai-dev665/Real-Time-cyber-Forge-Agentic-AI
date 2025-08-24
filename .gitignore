@@ -201,3 +201,6 @@ web-build/
 # Temporary files
 tmp/
 temp/
+test_datasets/
+__pycache__/
+.pytest_cache/

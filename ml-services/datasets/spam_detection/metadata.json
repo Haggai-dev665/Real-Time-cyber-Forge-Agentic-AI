@@ -1,0 +1,15 @@
+{
+  "dataset_id": "spam_detection",
+  "processed_at": "2025-08-24T04:14:02.222512",
+  "samples": 4601,
+  "features": [
+    "word_freq_make",
+    "word_freq_address",
+    "word_freq_all",
+    "char_freq_$",
+    "capital_run_avg",
+    "is_spam"
+  ],
+  "type": "spam",
+  "file_path": "..\\datasets\\spam_detection\\spam_detection_processed.csv"
+}

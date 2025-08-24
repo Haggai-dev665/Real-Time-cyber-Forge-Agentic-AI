@@ -1,0 +1,18 @@
+{
+  "dataset_id": "network_intrusion",
+  "processed_at": "2025-08-24T04:13:30.378840",
+  "samples": 125973,
+  "features": [
+    "duration",
+    "protocol_type",
+    "service",
+    "flag",
+    "src_bytes",
+    "dst_bytes",
+    "land",
+    "wrong_fragment",
+    "urgent"
+  ],
+  "type": "network",
+  "file_path": "..\\datasets\\network_intrusion\\network_intrusion_processed.csv"
+}

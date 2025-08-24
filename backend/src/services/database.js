@@ -1,38 +1,43 @@
 /**
- * Database connection service for PostgreSQL
+ * Database connection service for MongoDB
  */
 
-const { Pool } = require('pg');
+const mongoose = require('mongoose');
 
 class DatabaseService {
   constructor() {
-    this.pool = null;
     this.isConnected = false;
   }
 
   /**
-   * Connect to PostgreSQL database
+   * Connect to MongoDB database
    */
   async connectDatabase() {
     try {
       const connectionString = process.env.DATABASE_URL || 
-        'postgresql://cyberforge:cyberforge_password@localhost:5432/cyberforge';
+        'mongodb://localhost:27017/cyberforge';
 
-      this.pool = new Pool({
-        connectionString,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-      });
+      // MongoDB connection options
+      const options = {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        family: 4 // Use IPv4, skip trying IPv6
+      };
 
-      // Test connection
-      const client = await this.pool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
+      await mongoose.connect(connectionString, options);
 
       this.isConnected = true;
-      console.log('✅ Database connected successfully');
+      console.log('✅ MongoDB connected successfully');
+
+      // Handle connection events
+      mongoose.connection.on('error', (error) => {
+        console.error('❌ MongoDB connection error:', error);
+      });
+
+      mongoose.connection.on('disconnected', () => {
+        console.log('⚠️ MongoDB disconnected');
+      });
 
     } catch (error) {
       console.error('❌ Database connection failed:', error.message);
@@ -47,52 +52,23 @@ class DatabaseService {
    * Setup mock database for development/fallback
    */
   setupMockDatabase() {
-    this.pool = {
-      query: async (text, params) => {
-        console.log('Mock DB Query:', text, params);
-        return { rows: [], rowCount: 0 };
-      },
-      connect: async () => ({
-        query: async () => ({ rows: [], rowCount: 0 }),
-        release: () => {}
-      })
+    // Create mock mongoose connection
+    this.mockDb = {
+      isConnected: true,
+      models: new Map()
     };
     this.isConnected = true;
     console.log('✅ Mock database initialized');
   }
 
   /**
-   * Execute a query
+   * Get connection status
    */
-  async query(text, params) {
-    try {
-      if (!this.pool) {
-        throw new Error('Database not connected');
-      }
-
-      const result = await this.pool.query(text, params);
-      return result;
-
-    } catch (error) {
-      console.error('Database query error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get a client from the pool
-   */
-  async getClient() {
-    try {
-      if (!this.pool) {
-        throw new Error('Database not connected');
-      }
-
-      return await this.pool.connect();
-
-    } catch (error) {
-      console.error('Error getting database client:', error);
-      throw error;
+  getConnectionStatus() {
+    if (mongoose.connection.readyState === 1) {
+      return { connected: true, state: 'connected' };
+    } else {
+      return { connected: false, state: mongoose.connection.readyState };
     }
   }
 
@@ -101,8 +77,8 @@ class DatabaseService {
    */
   async close() {
     try {
-      if (this.pool) {
-        await this.pool.end();
+      if (mongoose.connection.readyState !== 0) {
+        await mongoose.connection.close();
         this.isConnected = false;
         console.log('✅ Database connection closed');
       }
@@ -115,56 +91,22 @@ class DatabaseService {
    * Check if database is connected
    */
   isReady() {
-    return this.isConnected;
+    return this.isConnected && mongoose.connection.readyState === 1;
   }
 
   /**
-   * Initialize database tables (if needed)
+   * Check if database is healthy
    */
-  async initializeTables() {
+  async healthCheck() {
     try {
-      // Users table
-      await this.query(`
-        CREATE TABLE IF NOT EXISTS users (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          email VARCHAR(255) UNIQUE NOT NULL,
-          password_hash VARCHAR(255) NOT NULL,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-        )
-      `);
-
-      // Analysis results table
-      await this.query(`
-        CREATE TABLE IF NOT EXISTS analysis_results (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id UUID REFERENCES users(id),
-          url TEXT NOT NULL,
-          risk_level VARCHAR(20) NOT NULL,
-          security_score INTEGER,
-          threats JSONB,
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `);
-
-      // Threats table
-      await this.query(`
-        CREATE TABLE IF NOT EXISTS threats (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id UUID REFERENCES users(id),
-          type VARCHAR(100) NOT NULL,
-          severity VARCHAR(20) NOT NULL,
-          description TEXT,
-          url TEXT,
-          status VARCHAR(20) DEFAULT 'active',
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `);
-
-      console.log('✅ Database tables initialized');
-
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.db.admin().ping();
+        return { healthy: true, message: 'Database connection is healthy' };
+      } else {
+        return { healthy: false, message: 'Database not connected' };
+      }
     } catch (error) {
-      console.warn('Database table initialization failed (may already exist):', error.message);
+      return { healthy: false, message: error.message };
     }
   }
 }
@@ -174,9 +116,9 @@ const databaseService = new DatabaseService();
 
 module.exports = {
   connectDatabase: () => databaseService.connectDatabase(),
-  query: (text, params) => databaseService.query(text, params),
-  getClient: () => databaseService.getClient(),
+  getConnectionStatus: () => databaseService.getConnectionStatus(),
   close: () => databaseService.close(),
   isReady: () => databaseService.isReady(),
-  pool: databaseService.pool
+  healthCheck: () => databaseService.healthCheck(),
+  mongoose: mongoose
 };

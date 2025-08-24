@@ -23,8 +23,7 @@ const userSchema = new mongoose.Schema({
   firebaseUid: {
     type: String,
     unique: true,
-    sparse: true, // Allows null values while maintaining uniqueness
-    index: true
+    sparse: true // Allows null values while maintaining uniqueness
   },
   provider: {
     type: String,
@@ -230,8 +229,7 @@ userSchema.pre('save', function(next) {
   next();
 });
 
-// Index for efficient queries
-userSchema.index({ email: 1 });
+// Index for efficient queries (email index is already created by unique: true)
 userSchema.index({ 'activity.lastActiveAt': 1 });
 userSchema.index({ role: 1 });
 

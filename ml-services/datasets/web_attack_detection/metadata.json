@@ -1,0 +1,15 @@
+{
+  "dataset_id": "web_attack_detection",
+  "processed_at": "2025-08-24T04:17:27.198704",
+  "samples": 8000,
+  "features": [
+    "request_method",
+    "url",
+    "payload",
+    "user_agent",
+    "response_code",
+    "is_attack"
+  ],
+  "type": "web_attack",
+  "file_path": "..\\datasets\\web_attack_detection\\web_attack_detection_processed.csv"
+}

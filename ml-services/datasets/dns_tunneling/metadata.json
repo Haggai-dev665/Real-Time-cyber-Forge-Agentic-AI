@@ -1,0 +1,15 @@
+{
+  "dataset_id": "dns_tunneling",
+  "processed_at": "2025-08-24T04:17:07.693713",
+  "samples": 10000,
+  "features": [
+    "query_name",
+    "query_type",
+    "response_code",
+    "query_length",
+    "subdomain_count",
+    "is_tunneling"
+  ],
+  "type": "dns",
+  "file_path": "..\\datasets\\dns_tunneling\\dns_tunneling_processed.csv"
+}

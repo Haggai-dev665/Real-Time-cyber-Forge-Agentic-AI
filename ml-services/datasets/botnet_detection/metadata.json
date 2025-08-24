@@ -1,0 +1,15 @@
+{
+  "dataset_id": "botnet_detection",
+  "processed_at": "2025-08-24T04:15:19.804127",
+  "samples": 80000,
+  "features": [
+    "flow_duration",
+    "total_fwd_packets",
+    "total_bwd_packets",
+    "flow_bytes_s",
+    "flow_packets_s",
+    "label"
+  ],
+  "type": "botnet",
+  "file_path": "..\\datasets\\botnet_detection\\botnet_detection_processed.csv"
+}

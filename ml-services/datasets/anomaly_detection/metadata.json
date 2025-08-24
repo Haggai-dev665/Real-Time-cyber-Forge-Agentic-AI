@@ -1,0 +1,16 @@
+{
+  "dataset_id": "anomaly_detection",
+  "processed_at": "2025-08-24T04:16:34.424551",
+  "samples": 25000,
+  "features": [
+    "timestamp",
+    "event_id",
+    "user",
+    "action",
+    "resource",
+    "status",
+    "anomaly_score"
+  ],
+  "type": "anomaly",
+  "file_path": "..\\datasets\\anomaly_detection\\anomaly_detection_processed.csv"
+}

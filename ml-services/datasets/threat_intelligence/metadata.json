@@ -1,0 +1,15 @@
+{
+  "dataset_id": "threat_intelligence",
+  "processed_at": "2025-08-24T04:15:57.193998",
+  "samples": 15000,
+  "features": [
+    "ip_address",
+    "threat_type",
+    "confidence",
+    "first_seen",
+    "last_seen",
+    "source"
+  ],
+  "type": "threat_intel",
+  "file_path": "..\\datasets\\threat_intelligence\\threat_intelligence_processed.csv"
+}

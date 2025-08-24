@@ -81,7 +81,26 @@ class CyberForgeUI {
     initializeUI() {
         this.updateMetrics();
         this.addActivityItem('System initialized', 'info');
+        this.checkMLServiceHealth();
         this.switchTab('dashboard');
+    }
+
+    async checkMLServiceHealth() {
+        try {
+            if (window.electronAPI && window.electronAPI.mlService) {
+                const healthStatus = await window.electronAPI.mlService.checkHealth();
+                
+                if (healthStatus.success && healthStatus.data && healthStatus.data.available) {
+                    this.addActivityItem('🤖 Advanced AI services connected', 'success');
+                    console.log('ML Services Status:', healthStatus.data.status);
+                } else {
+                    this.addActivityItem('⚠️ Basic mode: Advanced AI services unavailable', 'warning');
+                }
+            }
+        } catch (error) {
+            console.error('ML service health check failed:', error);
+            this.addActivityItem('⚠️ Basic mode: AI services check failed', 'warning');
+        }
     }
 
     switchTab(tabName) {
@@ -193,6 +212,42 @@ class CyberForgeUI {
             this.metrics.threatsCount++;
             this.updateMetrics();
         }
+        
+        // Enhanced: Use ML service for deeper analysis if available
+        this.enhancedAnalysis(data);
+    }
+
+    async enhancedAnalysis(data) {
+        try {
+            if (window.electronAPI && window.electronAPI.mlService && data.url) {
+                const response = await window.electronAPI.mlService.analyzeWebsite(data.url, data.content);
+                
+                if (response.success && response.data) {
+                    // Process ML analysis results
+                    if (response.data.threat_level && response.data.threat_level !== 'low') {
+                        this.handleThreatAlert({
+                            type: `AI-Detected: ${response.data.threat_type || 'Security Risk'}`,
+                            description: response.data.analysis_summary || 'Advanced AI analysis detected potential security concerns',
+                            severity: response.data.threat_level,
+                            url: data.url,
+                            timestamp: new Date().toISOString(),
+                            ai_powered: true
+                        });
+                    }
+                    
+                    // Generate insights
+                    if (response.data.insights) {
+                        this.handleAIInsight({
+                            summary: `Security Analysis: ${data.url}`,
+                            details: response.data.insights
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Enhanced analysis error:', error);
+            // Silently fail, basic analysis already completed
+        }
     }
 
     handleThreatAlert(data) {
@@ -255,7 +310,36 @@ class CyberForgeUI {
         const loadingId = this.addChatMessage('Thinking...', 'ai', true);
         
         try {
-            if (window.electronAPI) {
+            if (window.electronAPI && window.electronAPI.mlService) {
+                // Use ML service for enhanced AI chat
+                const response = await window.electronAPI.mlService.chatWithAI(
+                    message, 
+                    null, // conversation_id
+                    { 
+                        source: 'desktop_app',
+                        timestamp: new Date().toISOString()
+                    }
+                );
+                
+                // Remove loading message
+                document.getElementById(loadingId).remove();
+                
+                if (response.success && response.data) {
+                    // Add AI response
+                    this.addChatMessage(response.data.response || response.data, 'ai');
+                    
+                    // If it's a cybersecurity-related response, add to insights
+                    if (response.data.insights_generated) {
+                        this.handleAIInsight({
+                            summary: 'Security analysis completed',
+                            details: response.data.response
+                        });
+                    }
+                } else {
+                    this.addChatMessage(response.data?.response || 'Sorry, I encountered an error. Please try again.', 'ai');
+                }
+            } else if (window.electronAPI) {
+                // Fallback to basic AI
                 const response = await window.electronAPI.queryAI(message);
                 
                 // Remove loading message
@@ -332,16 +416,24 @@ class CyberForgeUI {
         const container = document.getElementById('threats-list');
         
         if (!threats || threats.length === 0) {
-            container.innerHTML = '<div class="no-threats">No threats detected</div>';
+            container.innerHTML = '<div class="no-threats">✅ No threats detected</div>';
             return;
         }
         
         const threatsHTML = threats.map(threat => `
-            <div class="threat-item">
+            <div class="threat-item ${threat.ai_powered ? 'ai-powered' : ''}">
                 <div class="threat-info">
-                    <div class="threat-type">${threat.type}</div>
+                    <div class="threat-type">
+                        ${threat.ai_powered ? '🤖 ' : ''}${threat.type}
+                        ${threat.ai_powered ? '<span class="ai-badge">AI-Powered</span>' : ''}
+                    </div>
                     <div class="threat-description">${threat.description}</div>
                     <div class="threat-url">${threat.url}</div>
+                    ${threat.ai_recommendations ? `
+                        <div class="threat-recommendations">
+                            <strong>AI Recommendations:</strong> ${threat.ai_recommendations}
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="threat-severity ${threat.severity}">${threat.severity.toUpperCase()}</div>
             </div>
@@ -383,10 +475,55 @@ class CyberForgeUI {
 }
 
 // Global functions
-window.scanForThreats = function() {
+window.scanForThreats = async function() {
     const ui = window.cyberForgeUI;
-    ui.loadThreatsData();
-    ui.addActivityItem('Manual threat scan initiated', 'info');
+    ui.addActivityItem('Enhanced threat scan initiated', 'info');
+    
+    // Show loading in threats list
+    const container = document.getElementById('threats-list');
+    container.innerHTML = '<div class="loading">🔍 Running advanced threat scan using AI...</div>';
+    
+    try {
+        if (window.electronAPI && window.electronAPI.mlService) {
+            // Use ML service for enhanced threat scanning
+            const scanData = {
+                scan_type: 'comprehensive',
+                include_network: true,
+                include_websites: true,
+                timestamp: new Date().toISOString()
+            };
+            
+            const response = await window.electronAPI.mlService.scanForThreats(scanData);
+            
+            if (response.success && response.data) {
+                const threats = response.data.threats || [];
+                ui.displayThreats(threats);
+                
+                // Update threat count
+                ui.metrics.threatsCount = threats.length;
+                ui.updateMetrics();
+                
+                ui.addActivityItem(`Advanced scan complete: ${threats.length} threats detected`, 'info');
+                
+                // Show AI insights if available
+                if (response.data.ai_insights) {
+                    ui.handleAIInsight({
+                        summary: 'Threat Scan Insights',
+                        details: response.data.ai_insights
+                    });
+                }
+            } else {
+                throw new Error(response.error || 'Threat scan failed');
+            }
+        } else {
+            // Fallback to basic threat detection
+            ui.loadThreatsData();
+        }
+    } catch (error) {
+        console.error('Enhanced threat scan error:', error);
+        ui.addActivityItem('Threat scan failed - using basic detection', 'warning');
+        ui.loadThreatsData(); // Fallback to basic method
+    }
 };
 
 // Initialize the application when DOM is loaded

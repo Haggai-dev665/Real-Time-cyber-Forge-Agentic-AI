@@ -1,0 +1,16 @@
+{
+  "dataset_id": "phishing_detection",
+  "processed_at": "2025-08-24T04:13:51.350532",
+  "samples": 11055,
+  "features": [
+    "url_length",
+    "num_dots",
+    "subdomain_level",
+    "https",
+    "shortening_service",
+    "prefix_suffix",
+    "result"
+  ],
+  "type": "phishing",
+  "file_path": "..\\datasets\\phishing_detection\\phishing_detection_processed.csv"
+}

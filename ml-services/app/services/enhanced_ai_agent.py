@@ -13,6 +13,8 @@ import json
 
 from ..models.schemas import AnalysisResult
 from ..core.config import settings
+from .advanced_dataset_manager import AdvancedDatasetManager
+from .advanced_dataset_manager import AdvancedDatasetManager
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +107,7 @@ You can execute tasks autonomously while keeping users informed of progress and 
             logger.info("Initializing Enhanced AI Agent...")
             
             # Initialize dataset manager
-            self.dataset_manager = dataset_manager
+            self.dataset_manager = AdvancedDatasetManager("./datasets")
             
             # Load any persisted tasks
             await self._load_persisted_tasks()

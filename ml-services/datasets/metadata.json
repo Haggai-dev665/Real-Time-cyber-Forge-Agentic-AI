@@ -1,0 +1,231 @@
+{
+  "malware_detection": {
+    "name": "Malware Detection Dataset",
+    "description": "Collection of malware samples and features for detection",
+    "url": "https://raw.githubusercontent.com/Haggai-dev665/cybersecurity-datasets/main/malware_detection_sample.csv",
+    "backup_urls": [
+      "https://github.com/fabriceyhc/SilkRoad/raw/master/data/sr2_drugs_A_Z.csv",
+      "https://raw.githubusercontent.com/rshipp/awesome-malware-analysis/master/README.md"
+    ],
+    "type": "malware",
+    "size_mb": 15,
+    "samples": 10000,
+    "features": [
+      "file_hash",
+      "file_size",
+      "entropy",
+      "pe_sections",
+      "imports",
+      "exports",
+      "strings_count",
+      "is_malware"
+    ],
+    "downloaded_at": "2025-08-24T04:08:53.231337",
+    "status": "available",
+    "local_path": "..\\datasets\\malware_detection"
+  },
+  "network_intrusion": {
+    "name": "Network Intrusion Detection",
+    "description": "Network traffic data for intrusion detection - NSL-KDD Dataset",
+    "url": "https://raw.githubusercontent.com/defcom17/NSL_KDD/master/KDDTrain%2B.csv",
+    "backup_urls": [
+      "https://github.com/jmnwong/NSL-KDD-Dataset/raw/master/KDDTrain%2B.csv",
+      "https://www.unb.ca/cic/datasets/nsl.html"
+    ],
+    "type": "network",
+    "size_mb": 25,
+    "samples": 125973,
+    "features": [
+      "duration",
+      "protocol_type",
+      "service",
+      "flag",
+      "src_bytes",
+      "dst_bytes",
+      "land",
+      "wrong_fragment",
+      "urgent"
+    ],
+    "downloaded_at": "2025-08-24T04:13:30.389265",
+    "status": "available",
+    "local_path": "..\\datasets\\network_intrusion"
+  },
+  "phishing_detection": {
+    "name": "Phishing Website Detection",
+    "description": "Features extracted from websites for phishing detection",
+    "url": "https://raw.githubusercontent.com/shreyagopal/Phishing-Website-Detection-by-Machine-Learning-Techniques/master/dataset.csv",
+    "backup_urls": [
+      "https://github.com/ebubekirbbr/pdd/raw/master/Phishing_Legitimate_full.csv"
+    ],
+    "type": "phishing",
+    "size_mb": 8,
+    "samples": 11055,
+    "features": [
+      "url_length",
+      "num_dots",
+      "subdomain_level",
+      "https",
+      "shortening_service",
+      "prefix_suffix",
+      "result"
+    ],
+    "downloaded_at": "2025-08-24T04:13:51.358553",
+    "status": "available",
+    "local_path": "..\\datasets\\phishing_detection"
+  },
+  "spam_detection": {
+    "name": "Spam Email Detection",
+    "description": "Email features for spam classification",
+    "url": "https://raw.githubusercontent.com/MWiechmann/enron_spam_data/master/enron_spam_data.csv",
+    "backup_urls": [
+      "https://github.com/jbrownlee/Datasets/raw/master/spambase.csv"
+    ],
+    "type": "spam",
+    "size_mb": 5,
+    "samples": 4601,
+    "features": [
+      "word_freq_make",
+      "word_freq_address",
+      "word_freq_all",
+      "char_freq_$",
+      "capital_run_avg",
+      "is_spam"
+    ],
+    "downloaded_at": "2025-08-24T04:14:02.230888",
+    "status": "available",
+    "local_path": "..\\datasets\\spam_detection"
+  },
+  "botnet_detection": {
+    "name": "Botnet Traffic Detection",
+    "description": "Network flows for botnet detection - CICIDS Dataset",
+    "url": "https://raw.githubusercontent.com/AhmadMamduhh/CICIDS2017-Dataset/main/MachineLearningCVE/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv",
+    "backup_urls": [
+      "https://github.com/RUCD/CICIDS2017_ML/raw/master/dataset/CICIDS2017_sample.csv"
+    ],
+    "type": "botnet",
+    "size_mb": 50,
+    "samples": 80000,
+    "features": [
+      "flow_duration",
+      "total_fwd_packets",
+      "total_bwd_packets",
+      "flow_bytes_s",
+      "flow_packets_s",
+      "label"
+    ],
+    "downloaded_at": "2025-08-24T04:15:19.808350",
+    "status": "available",
+    "local_path": "..\\datasets\\botnet_detection"
+  },
+  "vulnerability_assessment": {
+    "name": "CVE Vulnerability Database",
+    "description": "Common Vulnerabilities and Exposures database entries",
+    "url": "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2023/0xxx/CVE-2023-0001.json",
+    "backup_urls": [
+      "https://raw.githubusercontent.com/olbat/nvdcve/master/nvdcve/cve_feeds.py"
+    ],
+    "type": "vulnerability",
+    "size_mb": 20,
+    "samples": 5000,
+    "features": [
+      "cve_id",
+      "description",
+      "severity",
+      "cvss_score",
+      "attack_vector",
+      "attack_complexity"
+    ],
+    "downloaded_at": "2025-08-24T04:15:31.245378",
+    "status": "available",
+    "local_path": "..\\datasets\\vulnerability_assessment"
+  },
+  "threat_intelligence": {
+    "name": "Threat Intelligence Feeds",
+    "description": "Malicious IP addresses and indicators of compromise",
+    "url": "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
+    "backup_urls": [
+      "https://github.com/firehol/blocklist-ipsets/raw/master/firehol_level1.netset"
+    ],
+    "type": "threat_intel",
+    "size_mb": 5,
+    "samples": 15000,
+    "features": [
+      "ip_address",
+      "threat_type",
+      "confidence",
+      "first_seen",
+      "last_seen",
+      "source"
+    ],
+    "downloaded_at": "2025-08-24T04:15:57.202336",
+    "status": "available",
+    "local_path": "..\\datasets\\threat_intelligence"
+  },
+  "anomaly_detection": {
+    "name": "System Anomaly Detection",
+    "description": "System logs and behavior for anomaly detection",
+    "url": "https://raw.githubusercontent.com/logpai/loghub/master/Windows/Windows_2k.log_structured.csv",
+    "backup_urls": [
+      "https://github.com/elastic/examples/raw/master/Machine%20Learning/Security%20Analytics/suspicious_login_data.csv"
+    ],
+    "type": "anomaly",
+    "size_mb": 30,
+    "samples": 25000,
+    "features": [
+      "timestamp",
+      "event_id",
+      "user",
+      "action",
+      "resource",
+      "status",
+      "anomaly_score"
+    ],
+    "downloaded_at": "2025-08-24T04:16:34.439455",
+    "status": "available",
+    "local_path": "..\\datasets\\anomaly_detection"
+  },
+  "dns_tunneling": {
+    "name": "DNS Tunneling Detection",
+    "description": "DNS queries analysis for detecting tunneling attacks",
+    "url": "https://raw.githubusercontent.com/Yara-Rules/rules/master/malware/APT_DNS_Tunneling.yar",
+    "backup_urls": [
+      "https://github.com/gamelinux/passivedns/archive/master.zip"
+    ],
+    "type": "dns",
+    "size_mb": 15,
+    "samples": 10000,
+    "features": [
+      "query_name",
+      "query_type",
+      "response_code",
+      "query_length",
+      "subdomain_count",
+      "is_tunneling"
+    ],
+    "downloaded_at": "2025-08-24T04:17:07.702230",
+    "status": "available",
+    "local_path": "..\\datasets\\dns_tunneling"
+  },
+  "web_attack_detection": {
+    "name": "Web Application Attack Detection",
+    "description": "HTTP requests classified for web attack detection",
+    "url": "https://raw.githubusercontent.com/cure53/HTTPLeaks/master/payloads.txt",
+    "backup_urls": [
+      "https://github.com/foospidy/payloads/raw/master/other/injection/sql_injection/payloads.txt"
+    ],
+    "type": "web_attack",
+    "size_mb": 12,
+    "samples": 8000,
+    "features": [
+      "request_method",
+      "url",
+      "payload",
+      "user_agent",
+      "response_code",
+      "is_attack"
+    ],
+    "downloaded_at": "2025-08-24T04:17:27.205436",
+    "status": "available",
+    "local_path": "..\\datasets\\web_attack_detection"
+  }
+}

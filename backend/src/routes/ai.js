@@ -8,6 +8,7 @@ const { body, query } = require('express-validator');
 const { auth, authorize } = require('../middleware/auth');
 const AIAnalysisService = require('../services/ai/AIAnalysisService');
 const ThreatMonitoringService = require('../services/ai/ThreatMonitoringService');
+const { mlService } = require('../services/mlService');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -430,6 +431,562 @@ router.get('/models/status',
       res.status(500).json({
         success: false,
         message: 'Internal server error'
+      });
+    }
+  }
+);
+
+// =======================================================
+// ML SERVICE INTEGRATION ENDPOINTS
+// =======================================================
+
+/**
+ * @route   GET /api/ai/ml-health
+ * @desc    Check ML services health
+ * @access  Private
+ */
+router.get('/ml-health',
+  auth,
+  async (req, res) => {
+    try {
+      const healthStatus = await mlService.checkHealth();
+      
+      res.json({
+        success: true,
+        data: healthStatus
+      });
+    } catch (error) {
+      console.error('ML health check error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check ML services health'
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/ai/chat-ml
+ * @desc    Chat with AI using ML services
+ * @access  Private
+ */
+router.post('/chat-ml',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('message').notEmpty().withMessage('Message is required'),
+    body('conversation_id').optional().isString(),
+    body('context').optional().isObject()
+  ],
+  async (req, res) => {
+    try {
+      const { message, conversation_id, context } = req.body;
+      
+      // Add user context
+      const enrichedContext = {
+        ...context,
+        user_id: req.user.id,
+        timestamp: new Date().toISOString()
+      };
+      
+      const result = await mlService.chatWithAI(message, conversation_id, enrichedContext);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          data: {
+            response: result.fallback_response || "I'm having technical difficulties. Please try again.",
+            conversation_id: conversation_id,
+            source: 'fallback'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('ML chat error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Chat service temporarily unavailable'
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/ai/analyze-website-ml
+ * @desc    Analyze website using ML services
+ * @access  Private
+ */
+router.post('/analyze-website-ml',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('url').isURL().withMessage('Valid URL is required'),
+    body('content').optional().isString()
+  ],
+  async (req, res) => {
+    try {
+      const { url, content } = req.body;
+      
+      const result = await mlService.analyzeWebsite(url, content);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.error || 'Website analysis failed'
+        });
+      }
+    } catch (error) {
+      console.error('ML website analysis error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Website analysis service unavailable'
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/ai/scan-threats-ml
+ * @desc    Scan for threats using ML models
+ * @access  Private
+ */
+router.post('/scan-threats-ml',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('data').isObject().withMessage('Scan data is required')
+  ],
+  async (req, res) => {
+    try {
+      const { data } = req.body;
+      
+      // Add user context to scan data
+      const enrichedData = {
+        ...data,
+        user_id: req.user.id,
+        scan_timestamp: new Date().toISOString()
+      };
+      
+      const result = await mlService.scanForThreats(enrichedData);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.error || 'Threat scan failed'
+        });
+      }
+    } catch (error) {
+      console.error('ML threat scan error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Threat scanning service unavailable'
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/ai/insights-ml
+ * @desc    Generate AI insights using ML services
+ * @access  Private
+ */
+router.post('/insights-ml',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('query').notEmpty().withMessage('Query is required'),
+    body('context').optional().isObject()
+  ],
+  async (req, res) => {
+    try {
+      const { query, context } = req.body;
+      
+      // Add user context
+      const enrichedContext = {
+        ...context,
+        user_id: req.user.id,
+        request_timestamp: new Date().toISOString()
+      };
+      
+      const result = await mlService.getAIInsights(query, enrichedContext);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.error || 'Insights generation failed'
+        });
+      }
+    } catch (error) {
+      console.error('ML insights error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'AI insights service unavailable'
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/ai/network-analysis-ml
+ * @desc    Analyze network traffic using ML models
+ * @access  Private
+ */
+router.post('/network-analysis-ml',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('traffic_data').isObject().withMessage('Traffic data is required')
+  ],
+  async (req, res) => {
+    try {
+      const { traffic_data } = req.body;
+      
+      const result = await mlService.analyzeNetworkTraffic(traffic_data);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.error || 'Network analysis failed'
+        });
+      }
+    } catch (error) {
+      console.error('ML network analysis error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Network analysis service unavailable'
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/ai/execute-task-ml
+ * @desc    Execute AI task using Enhanced AI Agent
+ * @access  Private
+ */
+router.post('/execute-task-ml',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('task_type').notEmpty().withMessage('Task type is required'),
+    body('task_data').isObject().withMessage('Task data is required')
+  ],
+  async (req, res) => {
+    try {
+      const { task_type, task_data } = req.body;
+      
+      // Add user context to task data
+      const enrichedTaskData = {
+        ...task_data,
+        user_id: req.user.id,
+        initiated_at: new Date().toISOString()
+      };
+      
+      const result = await mlService.executeAITask(task_type, enrichedTaskData);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          data: result.data
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.error || 'Task execution failed'
+        });
+      }
+    } catch (error) {
+      console.error('ML task execution error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'AI task execution service unavailable'
+      });
+    }
+  }
+);
+
+module.exports = router;
+
+/**
+ * @route POST /api/ai/chat
+ * @desc Chat with AI assistant using ML services
+ * @access Public
+ */
+router.post('/chat',
+  aiAnalysisLimiter,
+  [
+    body('message').notEmpty().withMessage('Message is required'),
+    body('conversationId').optional().isString(),
+    body('context').optional().isObject()
+  ],
+  async (req, res) => {
+    try {
+      const { message, conversationId, context } = req.body;
+      
+      console.log('🤖 AI Chat Request:', { message, conversationId });
+      
+      // Try ML service first
+      const mlResult = await mlService.chatWithAI(message, conversationId, context);
+      
+      if (mlResult.success) {
+        return res.json({
+          success: true,
+          response: mlResult.data.response || mlResult.data,
+          conversationId: mlResult.data.conversation_id || conversationId,
+          source: 'ml_service'
+        });
+      }
+      
+      // Fallback to local AI service
+      console.log('ML service unavailable, using fallback');
+      const fallbackResponse = mlResult.fallback_response || 
+        "I'm currently experiencing technical difficulties. Please try again in a moment.";
+      
+      res.json({
+        success: true,
+        response: fallbackResponse,
+        conversationId: conversationId || `conv_${Date.now()}`,
+        source: 'fallback'
+      });
+      
+    } catch (error) {
+      console.error('AI chat route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process chat request',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/ai/analyze-website
+ * @desc Analyze website using ML services
+ * @access Private
+ */
+router.post('/analyze-website',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('url').isURL().withMessage('Valid URL is required'),
+    body('content').optional().isString()
+  ],
+  async (req, res) => {
+    try {
+      const { url, content } = req.body;
+      
+      console.log('🔍 Website Analysis Request:', url);
+      
+      const result = await mlService.analyzeWebsite(url, content);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          analysis: result.data,
+          source: 'ml_service'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Website analysis failed',
+          error: result.error
+        });
+      }
+      
+    } catch (error) {
+      console.error('Website analysis route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to analyze website',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/ai/scan-threats
+ * @desc Scan for threats using ML models
+ * @access Private
+ */
+router.post('/scan-threats',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('data').isObject().withMessage('Analysis data is required')
+  ],
+  async (req, res) => {
+    try {
+      const { data } = req.body;
+      
+      console.log('🛡️ Threat Scan Request');
+      
+      const result = await mlService.scanForThreats(data);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          threats: result.data,
+          source: 'ml_service'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Threat scan failed',
+          error: result.error
+        });
+      }
+      
+    } catch (error) {
+      console.error('Threat scan route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to scan for threats',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/ai/insights
+ * @desc Get AI insights using ML services
+ * @access Private
+ */
+router.post('/insights',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('query').notEmpty().withMessage('Query is required'),
+    body('context').optional().isObject()
+  ],
+  async (req, res) => {
+    try {
+      const { query, context } = req.body;
+      
+      console.log('💡 AI Insights Request:', query);
+      
+      const result = await mlService.getAIInsights(query, context);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          insights: result.data,
+          source: 'ml_service'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to generate insights',
+          error: result.error
+        });
+      }
+      
+    } catch (error) {
+      console.error('AI insights route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get AI insights',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route GET /api/ai/ml-status
+ * @desc Check ML services health status
+ * @access Private
+ */
+router.get('/ml-status',
+  auth,
+  async (req, res) => {
+    try {
+      const health = await mlService.checkHealth();
+      
+      res.json({
+        success: true,
+        ml_services: health,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('ML status route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to check ML services status',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/ai/execute-task
+ * @desc Execute AI task using enhanced AI agent
+ * @access Private
+ */
+router.post('/execute-task',
+  auth,
+  aiAnalysisLimiter,
+  [
+    body('taskType').notEmpty().withMessage('Task type is required'),
+    body('taskData').isObject().withMessage('Task data is required')
+  ],
+  async (req, res) => {
+    try {
+      const { taskType, taskData } = req.body;
+      
+      console.log('🚀 AI Task Execution:', taskType);
+      
+      const result = await mlService.executeAITask(taskType, taskData);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          result: result.data,
+          source: 'ml_service'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'AI task execution failed',
+          error: result.error
+        });
+      }
+      
+    } catch (error) {
+      console.error('AI task execution route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to execute AI task',
+        error: error.message
       });
     }
   }

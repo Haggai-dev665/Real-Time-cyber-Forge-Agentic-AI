@@ -3,6 +3,17 @@ const { contextBridge, ipcRenderer } = require('electron');
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
+  // System and health
+  getSystemStats: () => ipcRenderer.invoke('get-system-stats'),
+  healthCheck: () => ipcRenderer.invoke('health-check'),
+  getThreats: () => ipcRenderer.invoke('get-threats'),
+  
+  // Window controls
+  toggleFullscreen: () => ipcRenderer.invoke('toggle-fullscreen'),
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
+  closeWindow: () => ipcRenderer.invoke('close-window'),
+  
   // Backend communication
   sendToBackend: (data) => ipcRenderer.invoke('send-to-backend', data),
   
@@ -18,12 +29,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI interface
   queryAI: (query) => ipcRenderer.invoke('query-ai', query),
   
+  // ML Service integration
+  mlService: {
+    healthCheck: () => ipcRenderer.invoke('ml:checkHealth'),
+    chat: (message, conversationId, context) => ipcRenderer.invoke('ml:chatWithAI', { message, conversationId, context }),
+    analyzeWebsite: (url, content) => ipcRenderer.invoke('ml:analyzeWebsite', { url, content }),
+    scanThreats: (data) => ipcRenderer.invoke('ml:scanForThreats', data),
+    getInsights: (query, context) => ipcRenderer.invoke('ml:getAIInsights', { query, context }),
+    analyzeNetwork: (trafficData) => ipcRenderer.invoke('ml:analyzeNetworkTraffic', trafficData),
+    executeTask: (taskType, taskData) => ipcRenderer.invoke('ml:executeAITask', { taskType, taskData })
+  },
+  
   // Authentication
   auth: {
     login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
     register: (userData) => ipcRenderer.invoke('auth:register', userData),
     logout: () => ipcRenderer.invoke('auth:logout'),
-    getCurrentUser: () => ipcRenderer.invoke('auth:getCurrentUser'),
+    getUser: () => ipcRenderer.invoke('auth:getCurrentUser'),
     isAuthenticated: () => ipcRenderer.invoke('auth:isAuthenticated'),
     updateProfile: (profileData) => ipcRenderer.invoke('auth:updateProfile', profileData),
     changePassword: (passwordData) => ipcRenderer.invoke('auth:changePassword', passwordData)

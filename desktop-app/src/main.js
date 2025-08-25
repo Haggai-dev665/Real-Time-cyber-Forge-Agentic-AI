@@ -44,8 +44,8 @@ class CyberForgeApp {
       app.commandLine.appendSwitch('--no-sandbox');
     }
 
-    // Load the advanced interface
-    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'advanced-index.html'));
+    // Load the main interface
+    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
     if (process.argv.includes('--dev')) {
       this.mainWindow.webContents.openDevTools();

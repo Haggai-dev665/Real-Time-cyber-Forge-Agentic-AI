@@ -290,7 +290,7 @@ class CyberForgeApp {
             'ml-models': MLModelsScreen,
             'ai-insights': AIInsightsScreen,
             'predictions': PredictionsScreen,
-            'vulnerability-scanner': VulnerabilityScreen,
+            'vulnerability-scanner': VulnerabilityScannerScreen,
             'network-analysis': NetworkAnalysisScreen,
             'malware-detection': MalwareDetectionScreen,
             'digital-forensics': DigitalForensicsScreen,
@@ -299,14 +299,18 @@ class CyberForgeApp {
             'compliance': ComplianceScreen,
             'settings': SettingsScreen,
             'profile': ProfileScreen,
-            'system-logs': SystemLogsScreen
+            'system-logs': SystemLogsScreen,
+            'incident-response': IncidentResponseScreen,
+            'risk-assessment': RiskAssessmentScreen,
+            'security-metrics': SecurityMetricsScreen,
+            'penetration-testing': PenetrationTestingScreen
         };
 
         // Only initialize screens that have classes defined
-        Object.keys(screenClasses).forEach(screenName => {
-            if (window[screenClasses[screenName]]) {
+        Object.entries(screenClasses).forEach(([screenName, ScreenClass]) => {
+            if (ScreenClass) {
                 try {
-                    const screen = new window[screenClasses[screenName]]();
+                    const screen = new ScreenClass();
                     this.screens.set(screenName, screen);
                     console.log(`✅ ${screenName} screen initialized`);
                 } catch (error) {
@@ -755,9 +759,9 @@ const appStyles = `
 `;
 
 // Inject styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = appStyles;
-document.head.appendChild(styleSheet);
+const appStyleSheet = document.createElement('style');
+appStyleSheet.textContent = appStyles;
+document.head.appendChild(appStyleSheet);
 
 // Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {

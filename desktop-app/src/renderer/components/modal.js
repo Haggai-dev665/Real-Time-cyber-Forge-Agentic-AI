@@ -511,9 +511,9 @@ const modalStyles = `
 `;
 
 // Inject styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = modalStyles;
-document.head.appendChild(styleSheet);
+const modalStyleSheet = document.createElement('style');
+modalStyleSheet.textContent = modalStyles;
+document.head.appendChild(modalStyleSheet);
 
 // Export singleton instance
 window.modal = new Modal();

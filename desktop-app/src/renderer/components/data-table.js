@@ -805,9 +805,9 @@ const dataTableStyles = `
 `;
 
 // Inject styles
-const styleSheet = document.createElement('style');
-styleSheet.textContent = dataTableStyles;
-document.head.appendChild(styleSheet);
+const dataTableStyleSheet = document.createElement('style');
+dataTableStyleSheet.textContent = dataTableStyles;
+document.head.appendChild(dataTableStyleSheet);
 
 // Export class
 window.DataTable = DataTable;

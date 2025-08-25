@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Forge AI - Real-Time Security Analysis</title>
+    <link rel="stylesheet" href="enhanced-styles.css">
+    <link rel="stylesheet" href="theme-system.css">
+    <link rel="stylesheet" href="modern-styles.css">
+    <link rel="stylesheet" href="web-search-styles.css">
+    <link rel="stylesheet" href="notification-system.css">
+    <link rel="stylesheet" href="advanced-effects.css">
+    <link rel="stylesheet" href="tutorial.css">
+    <link rel="stylesheet" href="profile-screen.css">
+    <link rel="stylesheet" href="browser-monitoring.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Cyber Forge AI</span>
+                    <span class="version">v2.0</span>
+                </div>
+                <div class="header-center">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="global-search" placeholder="Search or ask AI..." />
+                    </div>
+                </div>
+                <div class="status-indicators">
+                    <div class="status-item" id="backend-status">
+                        <div class="status-dot"></div>
+                        <span>Backend</span>
+                    </div>
+                    <div class="status-item" id="ai-status">
+                        <div class="status-dot"></div>
+                        <span>AI Agent</span>
+                    </div>
+                    <div class="status-item" id="monitor-status">
+                        <div class="status-dot"></div>
+                        <span>Monitor</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Enhanced Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-tab="dashboard">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-tab="tasks">
+                        <i class="fas fa-tasks"></i>
+                        <span>AI Tasks</span>
+                        <span class="task-count" id="task-count">0</span>
+                    </button>
+                    <button class="nav-item" data-tab="analysis">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analysis</span>
+                    </button>
+                    <button class="nav-item" data-tab="threats">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Threats</span>
+                    </button>
+                    <button class="nav-item" data-tab="network">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="nav-item" data-tab="datasets">
+                        <i class="fas fa-database"></i>
+                        <span>Datasets</span>
+                    </button>
+                    <button class="nav-item" data-tab="ml-dashboard">
+                        <i class="fas fa-brain"></i>
+                        <span>ML Dashboard</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="analytics">
+                        <i class="fas fa-chart-area"></i>
+                        <span>Analytics</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="websearch">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>Web Search</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="chat">
+                        <i class="fas fa-comments"></i>
+                        <span>AI Chat</span>
+                    </button>
+                    <button class="nav-item" data-tab="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                    <button class="nav-item" data-tab="profile">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                </nav>
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="quick-action-btn" id="quick-network-scan">
+                        <i class="fas fa-radar"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="quick-action-btn" id="quick-website-analysis">
+                        <i class="fas fa-globe"></i>
+                        <span>Analyze Website</span>
+                    </button>
+                    <button class="quick-action-btn" id="quick-threat-scan">
+                        <i class="fas fa-shield-virus"></i>
+                        <span>Threat Scan</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div class="tab-content active" id="dashboard-tab">
+                    <div class="tab-header">
+                        <h1>Security Dashboard</h1>
+                        <div class="tab-actions">
+                            <button class="btn-secondary" id="refresh-dashboard">
+                                <i class="fas fa-sync"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Metrics Cards -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="pages-count">0</h3>
+                                <p>Pages Monitored</p>
+                                <span class="metric-trend">+12% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-icon threat">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="threats-count">0</h3>
+                                <p>Threats Detected</p>
+                                <span class="metric-trend">-5% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-icon insights">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="insights-count">0</h3>
+                                <p>AI Insights</p>
+                                <span class="metric-trend">+28% this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-icon tasks">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="metric-info">
+                                <h3 id="active-tasks-count">0</h3>
+                                <p>Active Tasks</p>
+                                <span class="metric-trend">Real-time</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Assessment -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Risk Assessment</h3>
+                                <div class="risk-badge" id="risk-level">Low</div>
+                            </div>
+                            <div class="risk-display">
+                                <div class="risk-circle">
+                                    <svg viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="8" 
+                                                stroke-dasharray="283" stroke-dashoffset="226" id="risk-progress"/>
+                                        <defs>
+                                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" style="stop-color:#00d4ff"/>
+                                                <stop offset="100%" style="stop-color:#0099cc"/>
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="risk-score">
+                                        <span id="risk-score-number">20</span>
+                                        <small>/100</small>
+                                    </div>
+                                </div>
+                                <div class="risk-details">
+                                    <div class="risk-item">
+                                        <span class="risk-label">Network Security</span>
+                                        <span class="risk-value" id="network-risk">Good</span>
+                                    </div>
+                                    <div class="risk-item">
+                                        <span class="risk-label">Website Safety</span>
+                                        <span class="risk-value" id="website-risk">Excellent</span>
+                                    </div>
+                                    <div class="risk-item">
+                                        <span class="risk-label">Data Protection</span>
+                                        <span class="risk-value" id="data-risk">Good</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Live Activity Feed -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Live Activity</h3>
+                                <button class="btn-icon" id="clear-activity">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="activity-feed" id="activity-feed">
+                                <!-- Activities will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Tasks -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>Recent AI Tasks</h3>
+                                <a href="#" class="view-all" data-tab="tasks">View All</a>
+                            </div>
+                            <div class="task-list" id="recent-tasks">
+                                <!-- Recent tasks will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Insights -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3>AI Insights</h3>
+                                <button class="btn-icon" id="generate-insights">
+                                    <i class="fas fa-magic"></i>
+                                </button>
+                            </div>
+                            <div class="insights-list" id="ai-insights">
+                                <!-- AI insights will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Browser Monitoring Section -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card full-width">
+                            <div class="card-header">
+                                <h3><i class="fas fa-globe"></i> Browser Monitoring</h3>
+                                <div class="browser-controls">
+                                    <button class="btn-secondary" id="select-browsers-btn">
+                                        <i class="fas fa-cog"></i>
+                                        Select Browsers
+                                    </button>
+                                    <button class="btn-primary" id="start-monitoring-btn" disabled>
+                                        <i class="fas fa-play"></i>
+                                        Start Monitoring
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="browser-monitoring-content">
+                                <div class="monitoring-status" id="monitoring-status">
+                                    <div class="status-message">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No browsers selected. Click "Select Browsers" to get started.</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="browser-tabs" id="browser-tabs" style="display: none;">
+                                    <!-- Browser monitoring tabs will be populated here -->
+                                </div>
+                                
+                                <div class="monitoring-data" id="monitoring-data" style="display: none;">
+                                    <div class="monitored-pages">
+                                        <h4>Recent Pages Visited</h4>
+                                        <div class="pages-list" id="pages-list">
+                                            <!-- Recent pages will be listed here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="security-alerts" id="security-alerts">
+                                        <h4>Security Alerts</h4>
+                                        <div class="alerts-list" id="alerts-list">
+                                            <!-- Security alerts will be listed here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Tasks Tab -->
+                <div class="tab-content" id="tasks-tab">
+                    <div class="tab-header">
+                        <h1>AI Task Management</h1>
+                        <div class="tab-actions">
+                            <button class="btn-primary" id="create-task-btn">
+                                <i class="fas fa-plus"></i>
+                                Create Task
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Task Filters -->
+                    <div class="task-filters">
+                        <button class="filter-btn active" data-filter="all">All Tasks</button>
+                        <button class="filter-btn" data-filter="pending">Pending</button>
+                        <button class="filter-btn" data-filter="in_progress">In Progress</button>
+                        <button class="filter-btn" data-filter="completed">Completed</button>
+                        <button class="filter-btn" data-filter="failed">Failed</button>
+                    </div>
+                    
+                    <!-- Tasks Grid -->
+                    <div class="tasks-grid" id="tasks-grid">
+                        <!-- Tasks will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Network Scan Tab -->
+                <div class="tab-content" id="network-tab">
+                    <div class="tab-header">
+                        <h1>Network Security Scanner</h1>
+                        <div class="tab-actions">
+                            <button class="btn-primary" id="start-network-scan">
+                                <i class="fas fa-play"></i>
+                                Start Scan
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Scan Configuration -->
+                    <div class="scan-config">
+                        <div class="config-group">
+                            <label for="scan-target">Target:</label>
+                            <input type="text" id="scan-target" placeholder="IP address or hostname" value="127.0.0.1">
+                        </div>
+                        <div class="config-group">
+                            <label for="scan-ports">Ports:</label>
+                            <input type="text" id="scan-ports" placeholder="22,80,443 or 1-1000" value="22,23,53,80,443,993,995">
+                        </div>
+                        <div class="config-group">
+                            <label for="scan-type">Scan Type:</label>
+                            <select id="scan-type">
+                                <option value="tcp">TCP Connect</option>
+                                <option value="syn">SYN Scan</option>
+                                <option value="udp">UDP Scan</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Scan Results -->
+                    <div class="scan-results" id="scan-results">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Datasets Tab -->
+                <div class="tab-content" id="datasets-tab">
+                    <div class="tab-header">
+                        <h1>Security Datasets</h1>
+                        <div class="tab-actions">
+                            <button class="btn-primary" id="refresh-datasets">
+                                <i class="fas fa-sync"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Dataset Categories -->
+                    <div class="dataset-categories">
+                        <div class="category-card" data-category="network-security">
+                            <i class="fas fa-network-wired"></i>
+                            <h3>Network Security</h3>
+                            <p>Intrusion detection and network traffic datasets</p>
+                        </div>
+                        <div class="category-card" data-category="cybersecurity">
+                            <i class="fas fa-shield-virus"></i>
+                            <h3>Cybersecurity</h3>
+                            <p>Malware detection and phishing datasets</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Available Datasets -->
+                    <div class="datasets-grid" id="datasets-grid">
+                        <!-- Datasets will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Enhanced Analysis Tab -->
+                <div class="tab-content" id="analysis-tab">
+                    <div class="tab-header">
+                        <h1>Security Analysis</h1>
+                        <div class="tab-actions">
+                            <button class="btn-primary" id="run-analysis">
+                                <i class="fas fa-play"></i>
+                                Run Analysis
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="analysis-container">
+                        <div class="analysis-input">
+                            <textarea id="analysis-query" placeholder="Enter your analysis request or security question..."></textarea>
+                            <button class="btn-primary" id="submit-analysis">
+                                <i class="fas fa-paper-plane"></i>
+                                Analyze
+                            </button>
+                        </div>
+                        
+                        <div class="analysis-results" id="analysis-results">
+                            <!-- Analysis results will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threats Tab -->
+                <div class="tab-content" id="threats-tab">
+                    <div class="tab-header">
+                        <h1>Threat Detection</h1>
+                        <div class="tab-actions">
+                            <button class="btn-primary" id="scan-threats">
+                                <i class="fas fa-shield-virus"></i>
+                                Scan Threats
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="threats-container">
+                        <div class="threat-filters">
+                            <button class="filter-btn active" data-threat-filter="all">All</button>
+                            <button class="filter-btn" data-threat-filter="high">High Risk</button>
+                            <button class="filter-btn" data-threat-filter="medium">Medium Risk</button>
+                            <button class="filter-btn" data-threat-filter="low">Low Risk</button>
+                        </div>
+                        
+                        <div class="threats-list" id="threats-list">
+                            <!-- Threats will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Chat Tab -->
+                <div class="tab-content" id="chat-tab">
+                    <div class="tab-header">
+                        <h1>AI Assistant Chat</h1>
+                        <div class="tab-actions">
+                            <button class="btn-secondary" id="clear-chat">
+                                <i class="fas fa-trash"></i>
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-message ai">
+                                <div class="message-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content">
+                                    <p>Hello! I'm your Cyber Forge AI assistant. I can help you with:</p>
+                                    <ul>
+                                        <li>🔍 Network security scanning</li>
+                                        <li>🌐 Website security analysis</li>
+                                        <li>📊 Dataset analysis and insights</li>
+                                        <li>🛡️ Threat detection and mitigation</li>
+                                        <li>📝 Security reports and recommendations</li>
+                                    </ul>
+                                    <p>Just ask me anything or give me a task to work on!</p>
+                                </div>
+                                <div class="message-time">
+                                    <span>Just now</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" placeholder="Ask me anything about cybersecurity or give me a task..." />
+                            <button id="send-message" class="btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Quick Action Buttons -->
+                        <div class="chat-quick-actions">
+                            <button class="quick-chat-btn" data-action="scan network">
+                                🔍 Scan Network
+                            </button>
+                            <button class="quick-chat-btn" data-action="analyze website">
+                                🌐 Analyze Website
+                            </button>
+                            <button class="quick-chat-btn" data-action="check threats">
+                                ⚠️ Check Threats
+                            </button>
+                            <button class="quick-chat-btn" data-action="security report">
+                                📊 Security Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-content" id="settings-tab">
+                    <div class="tab-header">
+                        <h1>Settings</h1>
+                        <div class="tab-actions">
+                            <button class="btn-primary" id="save-settings">
+                                <i class="fas fa-save"></i>
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-container">
+                        <div class="settings-section">
+                            <h3>Monitoring</h3>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="monitoring-enabled" checked>
+                                    <span class="checkmark"></span>
+                                    Enable Real-time Monitoring
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="threat-alerts" checked>
+                                    <span class="checkmark"></span>
+                                    Threat Alerts
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="ai-insights" checked>
+                                    <span class="checkmark"></span>
+                                    AI Insights
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>AI Agent</h3>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="auto-tasks" checked>
+                                    <span class="checkmark"></span>
+                                    Auto-execute High Priority Tasks
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>Task Concurrency Limit:</label>
+                                <input type="number" id="max-concurrent-tasks" value="5" min="1" max="10">
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>Notifications</h3>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="desktop-notifications" checked>
+                                    <span class="checkmark"></span>
+                                    Desktop Notifications
+                                </label>
+                            </div>
+                            <div class="setting-group">
+                                <label>
+                                    <input type="checkbox" id="sound-alerts" checked>
+                                    <span class="checkmark"></span>
+                                    Sound Alerts
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>API Configuration</h3>
+                            <div class="setting-group">
+                                <label>Backend URL:</label>
+                                <input type="text" id="backend-url" value="ws://localhost:8000">
+                            </div>
+                            <div class="setting-group">
+                                <label>AI Service URL:</label>
+                                <input type="text" id="ai-service-url" value="http://localhost:8001">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Task Creation Modal -->
+        <div class="modal" id="task-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create New AI Task</h2>
+                    <button class="modal-close" id="close-task-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="task-form">
+                    <div class="form-group">
+                        <label for="task-type">Task Type:</label>
+                        <select id="task-type" required>
+                            <option value="network_scan">Network Scan</option>
+                            <option value="website_analysis">Website Analysis</option>
+                            <option value="dataset_analysis">Dataset Analysis</option>
+                            <option value="threat_detection">Threat Detection</option>
+                            <option value="security_report">Security Report</option>
+                            <option value="custom_analysis">Custom Analysis</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-title">Title:</label>
+                        <input type="text" id="task-title" required placeholder="Enter task title">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-description">Description:</label>
+                        <textarea id="task-description" required placeholder="Describe what you want the AI to do"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-priority">Priority:</label>
+                        <select id="task-priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Dynamic parameters based on task type -->
+                    <div id="task-parameters">
+                        <!-- Parameters will be populated based on task type -->
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" id="cancel-task">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notification Container -->
+        <div id="notification-container"></div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loading-spinner">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="advanced-theme.js"></script>
+    <script src="tutorial.js"></script>
+    <script src="enhanced-app.js"></script>
+</body>
+</html>
+                        <span>Threats</span>
+                    </button>
+                    <button class="nav-item" data-tab="ai-chat">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Assistant</span>
+                    </button>
+                    <button class="nav-item" data-tab="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div class="tab-content active" id="dashboard">
+                    <div class="dashboard-grid">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h3>Pages Monitored</h3>
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div class="metric-value" id="pages-count">0</div>
+                            <div class="metric-change">Today</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h3>Threats Detected</h3>
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="metric-value" id="threats-count">0</div>
+                            <div class="metric-change">Last 24h</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h3>Risk Score</h3>
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="metric-value" id="risk-score">Low</div>
+                            <div class="risk-bar">
+                                <div class="risk-fill" id="risk-fill"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <h3>AI Insights</h3>
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="metric-value" id="insights-count">0</div>
+                            <div class="metric-change">Generated</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-activity">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-list" id="activity-list">
+                            <!-- Activity items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Tab -->
+                <div class="tab-content" id="analysis">
+                    <div class="analysis-container">
+                        <div class="chart-container">
+                            <h3>Browsing Patterns</h3>
+                            <div id="browsing-chart" class="chart-placeholder">
+                                Chart will be displayed here
+                            </div>
+                        </div>
+                        <div class="analysis-details">
+                            <h3>Detailed Analysis</h3>
+                            <div id="analysis-results">
+                                <!-- Analysis results will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threats Tab -->
+                <div class="tab-content" id="threats">
+                    <div class="threats-container">
+                        <div class="threats-header">
+                            <h3>Security Threats</h3>
+                            <button class="btn-primary" onclick="scanForThreats()">
+                                <i class="fas fa-search"></i>
+                                Scan Now
+                            </button>
+                        </div>
+                        <div class="threats-list" id="threats-list">
+                            <!-- Threat items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Chat Tab -->
+                <div class="tab-content" id="ai-chat">
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message ai-message">
+                                <div class="message-content">
+                                    <strong>AI Assistant:</strong> Hello! I'm your cybersecurity AI assistant. 
+                                    Ask me about security analysis, threats, or browsing patterns.
+                                </div>
+                                <div class="message-time">Just now</div>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" placeholder="Ask the AI about security insights...">
+                            <button id="send-message" class="btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-content" id="settings">
+                    <div class="settings-container">
+                        <h3>Settings</h3>
+                        <div class="settings-grid">
+                            <div class="setting-group">
+                                <label for="monitoring-enabled">Browser Monitoring</label>
+                                <input type="checkbox" id="monitoring-enabled" checked>
+                            </div>
+                            <div class="setting-group">
+                                <label for="threat-alerts">Threat Alerts</label>
+                                <input type="checkbox" id="threat-alerts" checked>
+                            </div>
+                            <div class="setting-group">
+                                <label for="ai-insights">AI Insights</label>
+                                <input type="checkbox" id="ai-insights" checked>
+                            </div>
+                            <div class="setting-group">
+                                <label for="backend-url">Backend URL</label>
+                                <input type="text" id="backend-url" value="ws://localhost:8000">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ML Dashboard Tab -->
+                <div class="tab-content" id="ml-dashboard-tab">
+                    <div id="ml-dashboard">
+                        <!-- ML Dashboard content will be populated by advanced-screens/ml-dashboard.js -->
+                    </div>
+                </div>
+
+                <!-- Real-time Analytics Tab -->
+                <div class="tab-content" id="analytics-tab">
+                    <div id="analytics">
+                        <!-- Analytics content will be populated by advanced-screens/real-time-analytics.js -->
+                    </div>
+                </div>
+
+                <!-- Profile Tab -->
+                <div class="tab-content" id="profile-tab">
+                    <div class="profile-screen">
+                        <div class="profile-header stagger-item">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h1 class="profile-name">Security Administrator</h1>
+                                <p class="profile-role">Cyber Security Specialist</p>
+                                <div class="profile-stats">
+                                    <div class="profile-stat">
+                                        <span class="profile-stat-value" id="profile-threats-blocked">247</span>
+                                        <span class="profile-stat-label">Threats Blocked</span>
+                                    </div>
+                                    <div class="profile-stat">
+                                        <span class="profile-stat-value" id="profile-scans-completed">156</span>
+                                        <span class="profile-stat-label">Scans Completed</span>
+                                    </div>
+                                    <div class="profile-stat">
+                                        <span class="profile-stat-value" id="profile-uptime">99.8%</span>
+                                        <span class="profile-stat-label">System Uptime</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn-primary">
+                                    <i class="fas fa-edit"></i>
+                                    Edit Profile
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="profile-grid">
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Security Level
+                                    </h3>
+                                </div>
+                                <div class="security-level">
+                                    <div class="security-level-header">
+                                        <span class="security-level-title">Current Protection</span>
+                                        <span class="security-level-badge high">EXCELLENT</span>
+                                    </div>
+                                    <div class="security-progress">
+                                        <div class="security-progress-fill"></div>
+                                    </div>
+                                    <div class="security-details">
+                                        <div class="security-detail">
+                                            <span class="security-detail-value">98%</span>
+                                            <span class="security-detail-label">AI Accuracy</span>
+                                        </div>
+                                        <div class="security-detail">
+                                            <span class="security-detail-value">24/7</span>
+                                            <span class="security-detail-label">Monitoring</span>
+                                        </div>
+                                        <div class="security-detail">
+                                            <span class="security-detail-value">Real-time</span>
+                                            <span class="security-detail-label">Detection</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-history"></i>
+                                        Recent Activity
+                                    </h3>
+                                </div>
+                                <div class="activity-timeline">
+                                    <div class="timeline-item">
+                                        <div class="timeline-time">2 hours ago</div>
+                                        <div class="timeline-title">Threat Detected & Blocked</div>
+                                        <div class="timeline-description">Malicious script blocked on suspicious website</div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-time">5 hours ago</div>
+                                        <div class="timeline-title">Network Scan Completed</div>
+                                        <div class="timeline-description">Full network security assessment finished</div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-time">1 day ago</div>
+                                        <div class="timeline-title">AI Model Updated</div>
+                                        <div class="timeline-description">Machine learning model enhanced with new threat patterns</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-sliders-h"></i>
+                                        Preferences
+                                    </h3>
+                                </div>
+                                <div class="preferences-form">
+                                    <div class="preference-group">
+                                        <div class="preference-info">
+                                            <div class="preference-title">Real-time Notifications</div>
+                                            <div class="preference-description">Get instant alerts for security events</div>
+                                        </div>
+                                        <div class="preference-toggle active"></div>
+                                    </div>
+                                    <div class="preference-group">
+                                        <div class="preference-info">
+                                            <div class="preference-title">Automatic Threat Response</div>
+                                            <div class="preference-description">Let AI automatically handle low-risk threats</div>
+                                        </div>
+                                        <div class="preference-toggle active"></div>
+                                    </div>
+                                    <div class="preference-group">
+                                        <div class="preference-info">
+                                            <div class="preference-title">Weekly Reports</div>
+                                            <div class="preference-description">Receive comprehensive security summaries</div>
+                                        </div>
+                                        <div class="preference-toggle"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-card stagger-item">
+                                <div class="profile-card-header">
+                                    <h3 class="profile-card-title">
+                                        <i class="fas fa-trophy"></i>
+                                        Achievements
+                                    </h3>
+                                </div>
+                                <div class="achievements-grid">
+                                    <div class="achievement unlocked">
+                                        <div class="achievement-icon">🛡️</div>
+                                        <div class="achievement-title">Security Expert</div>
+                                        <div class="achievement-description">Blocked 100+ threats</div>
+                                    </div>
+                                    <div class="achievement unlocked">
+                                        <div class="achievement-icon">🔍</div>
+                                        <div class="achievement-title">Threat Hunter</div>
+                                        <div class="achievement-description">Completed 50 scans</div>
+                                    </div>
+                                    <div class="achievement">
+                                        <div class="achievement-icon">🚀</div>
+                                        <div class="achievement-title">AI Master</div>
+                                        <div class="achievement-description">Train 10 AI models</div>
+                                        <div class="achievement-progress">
+                                            <div class="achievement-progress-fill" style="width: 60%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="achievement">
+                                        <div class="achievement-icon">🌟</div>
+                                        <div class="achievement-title">Security Guru</div>
+                                        <div class="achievement-description">30 days threat-free</div>
+                                        <div class="achievement-progress">
+                                            <div class="achievement-progress-fill" style="width: 80%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Web Search Tab -->
+                <div class="tab-content" id="websearch-tab">
+                    <div class="tab-header">
+                        <h1>Web Search & Location Mapping</h1>
+                        <div class="tab-actions">
+                            <button class="btn-secondary" id="clear-search-btn">
+                                <i class="fas fa-trash"></i>
+                                Clear Results
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Authentication Section -->
+                    <div id="login-section" class="auth-hidden card" style="margin-bottom: 2rem;">
+                        <h2>Sign In Required</h2>
+                        <p>Please sign in with Google to access advanced web search features.</p>
+                        <button id="google-login-btn" class="btn-primary">
+                            <i class="fab fa-google"></i>
+                            Sign in with Google
+                        </button>
+                        <div id="auth-error" class="error-message" style="display: none;"></div>
+                        <div id="auth-loading" class="loading-spinner" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Signing in...</p>
+                        </div>
+                    </div>
+
+                    <!-- User Section -->
+                    <div id="user-section" class="auth-required" style="display: none;">
+                        <div class="card" style="margin-bottom: 2rem;">
+                            <div id="user-info"></div>
+                            <button id="logout-btn" class="btn-secondary">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Interface -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <h3>Advanced Web Search</h3>
+                        <div class="search-interface">
+                            <div class="search-input-group">
+                                <input type="text" id="web-search-input" placeholder="Search the web, analyze domains, find security information...">
+                                <button id="web-search-btn" class="btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    Search
+                                </button>
+                            </div>
+                            <div class="search-options">
+                                <label>
+                                    <input type="checkbox" id="include-security" checked>
+                                    Include security analysis
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="include-geolocation" checked>
+                                    Show geographic locations
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Content Layout -->
+                    <div class="search-content-layout">
+                        <!-- Search Results -->
+                        <div class="search-results-section">
+                            <div class="section-header">
+                                <h3>Search Results</h3>
+                                <div class="search-stats" id="search-stats"></div>
+                            </div>
+                            
+                            <div id="search-loading" class="loading-card" style="display: none;">
+                                <div class="spinner"></div>
+                                <p>Searching...</p>
+                            </div>
+                            
+                            <div id="search-results" class="search-results">
+                                <div class="search-placeholder">
+                                    <i class="fas fa-search"></i>
+                                    <h4>Enter a search query to get started</h4>
+                                    <p>Search for websites, domains, security information, and more.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Location Map -->
+                        <div class="map-section">
+                            <div class="section-header">
+                                <h3>Geographic Locations</h3>
+                                <div class="map-controls">
+                                    <button class="btn-secondary" id="center-map">
+                                        <i class="fas fa-crosshairs"></i>
+                                        Center Map
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="location-map" class="location-map"></div>
+                            <div class="map-legend">
+                                <div class="legend-item">
+                                    <div class="legend-marker instant"></div>
+                                    <span>Instant Results</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker domain"></div>
+                                    <span>Domains</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-marker security"></div>
+                                    <span>Security Info</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search History -->
+                    <div class="card">
+                        <h3>Recent Searches</h3>
+                        <div id="search-history" class="search-history">
+                            <p class="no-history">No recent searches</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Include advanced animations CSS -->
+    <link rel="stylesheet" href="advanced-animations.css">
+    
+    <!-- Include Chart.js for advanced charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Include advanced screens -->
+    <script src="advanced-screens/ml-dashboard.js"></script>
+    <script src="advanced-screens/real-time-analytics.js"></script>
+    
+    <!-- Browser selection dialog -->
+    <script src="browser-selection-dialog.js"></script>
+    
+    <!-- New features -->
+    <script src="firebase-auth.js"></script>
+    <script src="web-search.js"></script>
+    
+    <!-- Main application scripts -->
+    <script src="enhanced-app.js"></script>
+</body>
+</html>

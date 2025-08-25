@@ -1,533 +1,768 @@
-class CyberForgeUI {
+/**
+ * Cyber Forge AI Desktop Application
+ * Main application controller
+ */
+
+class CyberForgeApp {
     constructor() {
-        this.currentTab = 'dashboard';
+        this.currentScreen = 'dashboard';
+        this.isInitialized = false;
+        this.screens = new Map();
         this.isConnected = false;
-        this.metrics = {
-            pagesCount: 0,
-            threatsCount: 0,
-            riskScore: 0,
-            insightsCount: 0
+        this.systemStats = {
+            cpu: 0,
+            memory: 0,
+            threats: 0,
+            analyses: 0
         };
+        
+        // Loading progress tracking
+        this.loadingSteps = [
+            'Initializing security systems...',
+            'Loading threat intelligence...',
+            'Connecting to backend services...',
+            'Setting up real-time monitoring...',
+            'Starting AI analysis engines...',
+            'Finalizing initialization...'
+        ];
+        this.currentStep = 0;
+        
         this.init();
     }
 
-    init() {
-        this.setupEventListeners();
-        this.setupElectronAPI();
-        this.initializeUI();
+    async init() {
+        console.log('🚀 Starting Cyber Forge AI Application...');
+        
+        try {
+            // Show loading screen
+            this.showLoadingScreen();
+            
+            // Initialize core systems
+            await this.initializeCore();
+            
+            // Setup event listeners
+            this.setupEventListeners();
+            
+            // Connect to services
+            await this.connectToServices();
+            
+            // Initialize screens
+            await this.initializeScreens();
+            
+            // Start periodic updates
+            this.startPeriodicUpdates();
+            
+            // Show initial screen
+            this.showScreen('dashboard');
+            
+            // Hide loading screen
+            this.hideLoadingScreen();
+            
+            this.isInitialized = true;
+            console.log('✅ Application initialized successfully');
+            
+        } catch (error) {
+            console.error('❌ Application initialization failed:', error);
+            this.showErrorScreen(error);
+        }
+    }
+
+    showLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.display = 'flex';
+            this.updateLoadingProgress(0);
+        }
+    }
+
+    hideLoadingScreen() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            this.updateLoadingProgress(100);
+            setTimeout(() => {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }, 500);
+        }
+    }
+
+    updateLoadingProgress(percentage) {
+        const progressFill = document.querySelector('.progress-fill');
+        const progressText = document.querySelector('.progress-text');
+        const loadingText = document.querySelector('.loading-text');
+        
+        if (progressFill) {
+            progressFill.style.width = `${percentage}%`;
+        }
+        
+        if (progressText) {
+            progressText.textContent = `${percentage}%`;
+        }
+        
+        if (loadingText && this.currentStep < this.loadingSteps.length) {
+            loadingText.textContent = this.loadingSteps[this.currentStep];
+            this.currentStep++;
+        }
+    }
+
+    async initializeCore() {
+        this.updateLoadingProgress(15);
+        
+        // Initialize utilities
+        if (window.themeManager) {
+            window.themeManager.respectSystemPreferences();
+        }
+        
+        if (window.notificationSystem) {
+            console.log('✅ Notification system ready');
+        }
+        
+        if (window.websocketManager) {
+            window.websocketManager.setupDefaultHandlers();
+            console.log('✅ WebSocket manager ready');
+        }
+        
+        this.updateLoadingProgress(30);
     }
 
     setupEventListeners() {
-        // Tab navigation
+        // Navigation events
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                this.switchTab(e.target.closest('.nav-item').dataset.tab);
+                const screenName = e.currentTarget.dataset.screen;
+                if (screenName) {
+                    this.showScreen(screenName);
+                }
             });
         });
 
-        // Chat functionality
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-message');
-        
-        sendButton.addEventListener('click', () => this.sendChatMessage());
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendChatMessage();
-            }
-        });
-
-        // Settings
-        document.getElementById('monitoring-enabled').addEventListener('change', (e) => {
-            this.updateSetting('monitoring', e.target.checked);
-        });
-
-        document.getElementById('threat-alerts').addEventListener('change', (e) => {
-            this.updateSetting('threatAlerts', e.target.checked);
-        });
-
-        document.getElementById('ai-insights').addEventListener('change', (e) => {
-            this.updateSetting('aiInsights', e.target.checked);
-        });
-    }
-
-    setupElectronAPI() {
-        if (window.electronAPI) {
-            // Backend status updates
-            window.electronAPI.onBackendStatus((event, status) => {
-                this.updateBackendStatus(status);
+        // Global search
+        const globalSearch = document.getElementById('global-search');
+        if (globalSearch) {
+            globalSearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleGlobalSearch(e.target.value);
+                }
             });
-
-            // Analysis results
-            window.electronAPI.onAnalysisResult((event, data) => {
-                this.handleAnalysisResult(data);
+            
+            globalSearch.addEventListener('input', (e) => {
+                this.handleSearchSuggestions(e.target.value);
             });
-
-            // Threat alerts
-            window.electronAPI.onThreatAlert((event, data) => {
-                this.handleThreatAlert(data);
-            });
-
-            // AI insights
-            window.electronAPI.onAIInsight((event, data) => {
-                this.handleAIInsight(data);
-            });
-
-            console.log('Electron API initialized');
-        } else {
-            console.warn('Electron API not available');
         }
-    }
 
-    initializeUI() {
-        this.updateMetrics();
-        this.addActivityItem('System initialized', 'info');
-        this.checkMLServiceHealth();
-        this.switchTab('dashboard');
-    }
-
-    async checkMLServiceHealth() {
-        try {
-            if (window.electronAPI && window.electronAPI.mlService) {
-                const healthStatus = await window.electronAPI.mlService.checkHealth();
+        // Search type toggle
+        document.querySelectorAll('.search-type').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.search-type').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
                 
-                if (healthStatus.success && healthStatus.data && healthStatus.data.available) {
-                    this.addActivityItem('🤖 Advanced AI services connected', 'success');
-                    console.log('ML Services Status:', healthStatus.data.status);
+                const searchType = e.currentTarget.dataset.type;
+                this.updateSearchPlaceholder(searchType);
+            });
+        });
+
+        // Header controls
+        const notificationsBtn = document.getElementById('notifications-btn');
+        if (notificationsBtn) {
+            notificationsBtn.addEventListener('click', () => this.showNotificationsPanel());
+        }
+
+        const fullscreenToggle = document.getElementById('fullscreen-toggle');
+        if (fullscreenToggle) {
+            fullscreenToggle.addEventListener('click', () => this.toggleFullscreen());
+        }
+
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => this.showQuickSettings());
+        }
+
+        // Sidebar toggle
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+        }
+
+        // FAB actions
+        const fab = document.getElementById('quick-scan-fab');
+        if (fab) {
+            fab.addEventListener('click', () => this.toggleFabMenu());
+        }
+
+        document.querySelectorAll('.fab-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const action = e.currentTarget.dataset.action;
+                this.handleFabAction(action);
+            });
+        });
+
+        // Real-time data events
+        window.addEventListener('realtimeData', (e) => {
+            this.handleRealtimeData(e.detail);
+        });
+
+        window.addEventListener('taskUpdate', (e) => {
+            this.handleTaskUpdate(e.detail);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            this.handleKeyboardShortcuts(e);
+        });
+
+        // Window resize
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+    }
+
+    async connectToServices() {
+        this.updateLoadingProgress(45);
+        
+        try {
+            // Connect WebSocket
+            if (window.websocketManager) {
+                window.websocketManager.connect();
+                
+                // Wait for connection with timeout
+                await this.waitForConnection(5000);
+            }
+            
+            // Check backend health
+            if (window.apiClient) {
+                const health = await window.apiClient.checkBackendHealth();
+                if (health.success) {
+                    this.updateConnectionStatus('backend', true);
+                    console.log('✅ Backend connection established');
                 } else {
-                    this.addActivityItem('⚠️ Basic mode: Advanced AI services unavailable', 'warning');
+                    console.warn('⚠️ Backend health check failed');
                 }
             }
+            
+            // Check ML service health
+            if (window.apiClient) {
+                const mlHealth = await window.apiClient.mlHealthCheck();
+                if (mlHealth.success) {
+                    this.updateConnectionStatus('ml', true);
+                    console.log('✅ ML service connection established');
+                } else {
+                    console.warn('⚠️ ML service health check failed');
+                }
+            }
+            
+            this.updateLoadingProgress(60);
+            
         } catch (error) {
-            console.error('ML service health check failed:', error);
-            this.addActivityItem('⚠️ Basic mode: AI services check failed', 'warning');
+            console.error('Service connection error:', error);
+            window.notificationSystem?.warning('Connection Warning', 'Some services are not available. Features may be limited.');
         }
     }
 
-    switchTab(tabName) {
+    async waitForConnection(timeout = 5000) {
+        return new Promise((resolve) => {
+            const checkConnection = () => {
+                if (window.websocketManager?.isConnected) {
+                    resolve(true);
+                } else {
+                    setTimeout(checkConnection, 100);
+                }
+            };
+            
+            checkConnection();
+            
+            // Timeout fallback
+            setTimeout(() => resolve(false), timeout);
+        });
+    }
+
+    async initializeScreens() {
+        this.updateLoadingProgress(75);
+        
+        // Initialize all screens
+        const screenClasses = {
+            'dashboard': DashboardScreen,
+            'real-time-monitor': RealTimeMonitorScreen,
+            'threat-center': ThreatCenterScreen,
+            'deep-analysis': DeepAnalysisScreen,
+            'ai-assistant': AIAssistantScreen,
+            'ml-models': MLModelsScreen,
+            'ai-insights': AIInsightsScreen,
+            'predictions': PredictionsScreen,
+            'vulnerability-scanner': VulnerabilityScreen,
+            'network-analysis': NetworkAnalysisScreen,
+            'malware-detection': MalwareDetectionScreen,
+            'digital-forensics': DigitalForensicsScreen,
+            'datasets': DatasetsScreen,
+            'reports': ReportsScreen,
+            'compliance': ComplianceScreen,
+            'settings': SettingsScreen,
+            'profile': ProfileScreen,
+            'system-logs': SystemLogsScreen
+        };
+
+        // Only initialize screens that have classes defined
+        Object.keys(screenClasses).forEach(screenName => {
+            if (window[screenClasses[screenName]]) {
+                try {
+                    const screen = new window[screenClasses[screenName]]();
+                    this.screens.set(screenName, screen);
+                    console.log(`✅ ${screenName} screen initialized`);
+                } catch (error) {
+                    console.error(`❌ Failed to initialize ${screenName} screen:`, error);
+                }
+            }
+        });
+
+        this.updateLoadingProgress(90);
+    }
+
+    showScreen(screenName, options = {}) {
+        if (!this.isInitialized && screenName !== 'dashboard') {
+            console.warn('Application not fully initialized');
+            return;
+        }
+
         // Update navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-        // Update content
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        document.getElementById(tabName).classList.add('active');
+        const navItem = document.querySelector(`[data-screen="${screenName}"]`);
+        if (navItem) {
+            navItem.classList.add('active');
+        }
 
-        this.currentTab = tabName;
+        // Get screen container
+        const screenContainer = document.getElementById('screen-container');
+        if (!screenContainer) {
+            console.error('Screen container not found');
+            return;
+        }
 
-        // Load tab-specific data
-        this.loadTabData(tabName);
+        // Hide current screen
+        if (this.currentScreen && this.screens.has(this.currentScreen)) {
+            const currentScreenObj = this.screens.get(this.currentScreen);
+            if (currentScreenObj && currentScreenObj.hide) {
+                currentScreenObj.hide();
+            }
+        }
+
+        // Show new screen
+        this.currentScreen = screenName;
+        
+        if (this.screens.has(screenName)) {
+            const screen = this.screens.get(screenName);
+            if (screen && screen.show) {
+                screen.show(screenContainer, options);
+            }
+        } else {
+            // Fallback for screens not yet implemented
+            this.showPlaceholderScreen(screenName, screenContainer);
+        }
+
+        // Update page title
+        document.title = `Cyber Forge AI - ${this.formatScreenName(screenName)}`;
     }
 
-    loadTabData(tabName) {
-        switch (tabName) {
-            case 'dashboard':
-                this.loadDashboardData();
+    showPlaceholderScreen(screenName, container) {
+        const formattedName = this.formatScreenName(screenName);
+        container.innerHTML = `
+            <div class="screen-placeholder">
+                <div class="placeholder-content">
+                    <div class="placeholder-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h2>${formattedName}</h2>
+                    <p>This screen is currently under development.</p>
+                    <div class="placeholder-features">
+                        <h3>Planned Features:</h3>
+                        <ul>
+                            <li>Real-time data integration</li>
+                            <li>Advanced analytics and visualization</li>
+                            <li>Interactive controls and management</li>
+                            <li>Export and reporting capabilities</li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.app.showScreen('dashboard')">
+                        <i class="fas fa-home"></i> Return to Dashboard
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    formatScreenName(screenName) {
+        return screenName.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    }
+
+    handleGlobalSearch(query) {
+        if (!query.trim()) return;
+
+        const searchType = document.querySelector('.search-type.active')?.dataset.type || 'search';
+        
+        switch (searchType) {
+            case 'search':
+                this.performGlobalSearch(query);
                 break;
-            case 'analysis':
-                this.loadAnalysisData();
+            case 'ai':
+                this.showScreen('ai-assistant', { query });
                 break;
-            case 'threats':
-                this.loadThreatsData();
+            case 'analyze':
+                this.performQuickAnalysis(query);
+                break;
+        }
+    }
+
+    performGlobalSearch(query) {
+        // Search across all data and show results
+        window.notificationSystem?.info('Search', `Searching for: ${query}`);
+        // TODO: Implement global search
+    }
+
+    performQuickAnalysis(url) {
+        if (!url.match(/^https?:\/\//)) {
+            url = 'http://' + url;
+        }
+        
+        this.showScreen('deep-analysis', { url });
+    }
+
+    handleSearchSuggestions(query) {
+        // TODO: Implement search suggestions
+    }
+
+    updateSearchPlaceholder(type) {
+        const searchInput = document.getElementById('global-search');
+        if (!searchInput) return;
+
+        const placeholders = {
+            search: 'Search threats, analyze URLs, or ask AI...',
+            ai: 'Ask AI anything about cybersecurity...',
+            analyze: 'Enter URL to analyze...'
+        };
+
+        searchInput.placeholder = placeholders[type] || placeholders.search;
+    }
+
+    updateConnectionStatus(service, connected) {
+        const statusElement = document.getElementById(`${service}-status`);
+        if (statusElement) {
+            const statusDot = statusElement.querySelector('.status-dot');
+            if (statusDot) {
+                statusDot.classList.toggle('connected', connected);
+            }
+            statusElement.title = `${service.toUpperCase()}: ${connected ? 'Connected' : 'Disconnected'}`;
+        }
+    }
+
+    startPeriodicUpdates() {
+        // Update system stats every 10 seconds
+        setInterval(() => {
+            this.updateSystemStats();
+        }, 10000);
+
+        // Update threat count every 30 seconds
+        setInterval(() => {
+            this.updateThreatCount();
+        }, 30000);
+
+        // Initial updates
+        this.updateSystemStats();
+        this.updateThreatCount();
+    }
+
+    async updateSystemStats() {
+        try {
+            // Mock system stats - replace with actual Electron IPC calls
+            this.systemStats.cpu = Math.floor(Math.random() * 100);
+            this.systemStats.memory = Math.floor(Math.random() * 100);
+            
+            const cpuElement = document.getElementById('cpu-usage');
+            const memoryElement = document.getElementById('memory-usage');
+            
+            if (cpuElement) cpuElement.textContent = `${this.systemStats.cpu}%`;
+            if (memoryElement) memoryElement.textContent = `${this.systemStats.memory}%`;
+            
+        } catch (error) {
+            console.error('Failed to update system stats:', error);
+        }
+    }
+
+    async updateThreatCount() {
+        try {
+            if (window.apiClient) {
+                const stats = await window.apiClient.getThreatStats();
+                if (stats.success) {
+                    const threatCount = stats.data.active_threats || 0;
+                    const threatElement = document.getElementById('threat-count');
+                    if (threatElement) {
+                        threatElement.textContent = threatCount;
+                        threatElement.style.display = threatCount > 0 ? 'inline' : 'none';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to update threat count:', error);
+        }
+    }
+
+    handleRealtimeData(data) {
+        // Route real-time data to appropriate screens
+        if (this.screens.has(this.currentScreen)) {
+            const screen = this.screens.get(this.currentScreen);
+            if (screen && screen.handleRealtimeData) {
+                screen.handleRealtimeData(data);
+            }
+        }
+    }
+
+    handleTaskUpdate(data) {
+        // Handle task updates
+        console.log('Task update received:', data);
+    }
+
+    handleKeyboardShortcuts(e) {
+        // Global keyboard shortcuts
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key) {
+                case 'k':
+                    e.preventDefault();
+                    document.getElementById('global-search')?.focus();
+                    break;
+                case '1':
+                    e.preventDefault();
+                    this.showScreen('dashboard');
+                    break;
+                case '2':
+                    e.preventDefault();
+                    this.showScreen('real-time-monitor');
+                    break;
+                case '3':
+                    e.preventDefault();
+                    this.showScreen('threat-center');
+                    break;
+                case ',':
+                    e.preventDefault();
+                    this.showScreen('settings');
+                    break;
+            }
+        }
+        
+        if (e.key === 'Escape') {
+            // Close any open modals or panels
+            this.closeFabMenu();
+        }
+    }
+
+    handleResize() {
+        // Handle responsive behavior
+        const sidebar = document.getElementById('sidebar');
+        if (window.innerWidth < 1024) {
+            sidebar?.classList.add('collapsed');
+        } else {
+            sidebar?.classList.remove('collapsed');
+        }
+    }
+
+    toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar?.classList.toggle('collapsed');
+    }
+
+    toggleFullscreen() {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else {
+            document.documentElement.requestFullscreen();
+        }
+    }
+
+    toggleFabMenu() {
+        const fabMenu = document.getElementById('fab-menu');
+        fabMenu?.classList.toggle('active');
+    }
+
+    closeFabMenu() {
+        const fabMenu = document.getElementById('fab-menu');
+        fabMenu?.classList.remove('active');
+    }
+
+    handleFabAction(action) {
+        this.closeFabMenu();
+        
+        switch (action) {
+            case 'scan-url':
+                this.showQuickUrlScan();
+                break;
+            case 'scan-file':
+                this.showQuickFileScan();
                 break;
             case 'ai-chat':
-                // Chat is always loaded
-                break;
-            case 'settings':
-                // Settings are always loaded
+                this.showScreen('ai-assistant');
                 break;
         }
     }
 
-    async loadDashboardData() {
-        try {
-            if (window.electronAPI) {
-                const data = await window.electronAPI.getAnalysisData();
-                this.metrics.pagesCount = data.totalVisits || 0;
-                this.updateMetrics();
+    showQuickUrlScan() {
+        window.modal?.prompt('Quick URL Scan', 'Enter URL to scan:', '', {
+            placeholder: 'https://example.com',
+            confirmLabel: 'Scan',
+            confirmClass: 'btn-primary'
+        }).then(url => {
+            if (url) {
+                this.performQuickAnalysis(url);
             }
-        } catch (error) {
-            console.error('Failed to load dashboard data:', error);
-        }
+        });
     }
 
-    async loadAnalysisData() {
-        const container = document.getElementById('analysis-results');
-        container.innerHTML = '<div class="loading">Loading analysis data...</div>';
-        
-        try {
-            if (window.electronAPI) {
-                const data = await window.electronAPI.getAnalysisData();
-                this.displayAnalysisResults(data);
+    showQuickFileScan() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '*/*';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                this.showScreen('malware-detection', { file });
             }
-        } catch (error) {
-            container.innerHTML = '<div class="error">Failed to load analysis data</div>';
-        }
+        };
+        input.click();
     }
 
-    loadThreatsData() {
-        const container = document.getElementById('threats-list');
-        container.innerHTML = '<div class="loading">Scanning for threats...</div>';
-        
-        // Simulate threat detection
-        setTimeout(() => {
-            this.displayThreats([
-                {
-                    type: 'Suspicious Domain',
-                    description: 'Detected access to potentially malicious domain',
-                    severity: 'medium',
-                    url: 'example-suspicious.com',
-                    timestamp: new Date().toISOString()
-                }
-            ]);
-        }, 1000);
+    showNotificationsPanel() {
+        // TODO: Implement notifications panel
+        window.notificationSystem?.info('Notifications', 'Notifications panel coming soon!');
     }
 
-    updateBackendStatus(status) {
-        const statusElement = document.getElementById('backend-status');
-        statusElement.className = 'status-item';
-        
-        switch (status) {
-            case 'connected':
-                statusElement.classList.add('connected');
-                this.isConnected = true;
-                break;
-            case 'disconnected':
-                statusElement.classList.add('disconnected');
-                this.isConnected = false;
-                break;
-            case 'error':
-                statusElement.classList.add('warning');
-                this.isConnected = false;
-                break;
-        }
+    showQuickSettings() {
+        // TODO: Implement quick settings panel
+        this.showScreen('settings');
     }
 
-    handleAnalysisResult(data) {
-        this.addActivityItem(`Analysis completed for ${data.url}`, 'info');
-        if (data.security && data.security.hasWarnings) {
-            this.metrics.threatsCount++;
-            this.updateMetrics();
-        }
-        
-        // Enhanced: Use ML service for deeper analysis if available
-        this.enhancedAnalysis(data);
-    }
-
-    async enhancedAnalysis(data) {
-        try {
-            if (window.electronAPI && window.electronAPI.mlService && data.url) {
-                const response = await window.electronAPI.mlService.analyzeWebsite(data.url, data.content);
-                
-                if (response.success && response.data) {
-                    // Process ML analysis results
-                    if (response.data.threat_level && response.data.threat_level !== 'low') {
-                        this.handleThreatAlert({
-                            type: `AI-Detected: ${response.data.threat_type || 'Security Risk'}`,
-                            description: response.data.analysis_summary || 'Advanced AI analysis detected potential security concerns',
-                            severity: response.data.threat_level,
-                            url: data.url,
-                            timestamp: new Date().toISOString(),
-                            ai_powered: true
-                        });
-                    }
-                    
-                    // Generate insights
-                    if (response.data.insights) {
-                        this.handleAIInsight({
-                            summary: `Security Analysis: ${data.url}`,
-                            details: response.data.insights
-                        });
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Enhanced analysis error:', error);
-            // Silently fail, basic analysis already completed
-        }
-    }
-
-    handleThreatAlert(data) {
-        this.metrics.threatsCount++;
-        this.updateMetrics();
-        this.addActivityItem(`Threat detected: ${data.type}`, 'warning');
-        
-        // Show notification
-        this.showNotification('Security Alert', `Threat detected: ${data.type}`, 'warning');
-    }
-
-    handleAIInsight(data) {
-        this.metrics.insightsCount++;
-        this.updateMetrics();
-        this.addActivityItem(`AI Insight: ${data.summary}`, 'info');
-    }
-
-    updateMetrics() {
-        document.getElementById('pages-count').textContent = this.metrics.pagesCount;
-        document.getElementById('threats-count').textContent = this.metrics.threatsCount;
-        document.getElementById('insights-count').textContent = this.metrics.insightsCount;
-        
-        // Update risk score
-        const riskScore = Math.min(this.metrics.threatsCount * 10, 100);
-        const riskLevel = riskScore < 30 ? 'Low' : riskScore < 70 ? 'Medium' : 'High';
-        
-        document.getElementById('risk-score').textContent = riskLevel;
-        document.getElementById('risk-fill').style.width = `${riskScore}%`;
-    }
-
-    addActivityItem(message, type = 'info') {
-        const activityList = document.getElementById('activity-list');
-        const item = document.createElement('div');
-        item.className = `activity-item ${type}`;
-        
-        item.innerHTML = `
-            <div class="activity-message">${message}</div>
-            <div class="activity-time">${new Date().toLocaleTimeString()}</div>
-        `;
-        
-        activityList.insertBefore(item, activityList.firstChild);
-        
-        // Keep only last 50 items
-        while (activityList.children.length > 50) {
-            activityList.removeChild(activityList.lastChild);
-        }
-    }
-
-    async sendChatMessage() {
-        const input = document.getElementById('chat-input');
-        const message = input.value.trim();
-        
-        if (!message) return;
-        
-        // Add user message
-        this.addChatMessage(message, 'user');
-        input.value = '';
-        
-        // Add loading indicator
-        const loadingId = this.addChatMessage('Thinking...', 'ai', true);
-        
-        try {
-            if (window.electronAPI && window.electronAPI.mlService) {
-                // Use ML service for enhanced AI chat
-                const response = await window.electronAPI.mlService.chatWithAI(
-                    message, 
-                    null, // conversation_id
-                    { 
-                        source: 'desktop_app',
-                        timestamp: new Date().toISOString()
-                    }
-                );
-                
-                // Remove loading message
-                document.getElementById(loadingId).remove();
-                
-                if (response.success && response.data) {
-                    // Add AI response
-                    this.addChatMessage(response.data.response || response.data, 'ai');
-                    
-                    // If it's a cybersecurity-related response, add to insights
-                    if (response.data.insights_generated) {
-                        this.handleAIInsight({
-                            summary: 'Security analysis completed',
-                            details: response.data.response
-                        });
-                    }
-                } else {
-                    this.addChatMessage(response.data?.response || 'Sorry, I encountered an error. Please try again.', 'ai');
-                }
-            } else if (window.electronAPI) {
-                // Fallback to basic AI
-                const response = await window.electronAPI.queryAI(message);
-                
-                // Remove loading message
-                document.getElementById(loadingId).remove();
-                
-                // Add AI response
-                this.addChatMessage(response.response || response, 'ai');
-            } else {
-                // Remove loading message
-                document.getElementById(loadingId).remove();
-                
-                // Fallback response
-                this.addChatMessage('AI service is not available. Please check your connection.', 'ai');
-            }
-        } catch (error) {
-            // Remove loading message
-            document.getElementById(loadingId).remove();
-            
-            this.addChatMessage('Sorry, I encountered an error. Please try again.', 'ai');
-            console.error('Chat error:', error);
-        }
-    }
-
-    addChatMessage(message, sender, isLoading = false) {
-        const chatMessages = document.getElementById('chat-messages');
-        const messageElement = document.createElement('div');
-        const messageId = `msg-${Date.now()}`;
-        
-        messageElement.id = messageId;
-        messageElement.className = `message ${sender}-message${isLoading ? ' loading' : ''}`;
-        
-        messageElement.innerHTML = `
-            <div class="message-content">
-                <strong>${sender === 'user' ? 'You' : 'AI Assistant'}:</strong> ${message}
-            </div>
-            <div class="message-time">${new Date().toLocaleTimeString()}</div>
-        `;
-        
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        return messageId;
-    }
-
-    displayAnalysisResults(data) {
-        const container = document.getElementById('analysis-results');
-        
-        if (!data || !data.visitedPages || data.visitedPages.length === 0) {
-            container.innerHTML = '<div class="no-data">No analysis data available</div>';
-            return;
-        }
-        
-        const results = `
-            <div class="analysis-summary">
-                <h4>Analysis Summary</h4>
-                <p>Total pages analyzed: ${data.totalVisits}</p>
-                <p>Monitoring status: ${data.isMonitoring ? 'Active' : 'Inactive'}</p>
-            </div>
-            <div class="recent-pages">
-                <h4>Recent Pages</h4>
-                ${data.visitedPages.slice(-10).map(page => `
-                    <div class="page-item">
-                        <div class="page-url">${page.url}</div>
-                        <div class="page-time">${new Date(page.timestamp).toLocaleString()}</div>
+    showErrorScreen(error) {
+        const container = document.getElementById('screen-container') || document.body;
+        container.innerHTML = `
+            <div class="error-screen">
+                <div class="error-content">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
                     </div>
-                `).join('')}
-            </div>
-        `;
-        
-        container.innerHTML = results;
-    }
-
-    displayThreats(threats) {
-        const container = document.getElementById('threats-list');
-        
-        if (!threats || threats.length === 0) {
-            container.innerHTML = '<div class="no-threats">✅ No threats detected</div>';
-            return;
-        }
-        
-        const threatsHTML = threats.map(threat => `
-            <div class="threat-item ${threat.ai_powered ? 'ai-powered' : ''}">
-                <div class="threat-info">
-                    <div class="threat-type">
-                        ${threat.ai_powered ? '🤖 ' : ''}${threat.type}
-                        ${threat.ai_powered ? '<span class="ai-badge">AI-Powered</span>' : ''}
+                    <h2>Application Error</h2>
+                    <p>An error occurred while initializing the application:</p>
+                    <div class="error-details">
+                        <code>${error.message}</code>
                     </div>
-                    <div class="threat-description">${threat.description}</div>
-                    <div class="threat-url">${threat.url}</div>
-                    ${threat.ai_recommendations ? `
-                        <div class="threat-recommendations">
-                            <strong>AI Recommendations:</strong> ${threat.ai_recommendations}
-                        </div>
-                    ` : ''}
+                    <div class="error-actions">
+                        <button class="btn btn-primary" onclick="location.reload()">
+                            <i class="fas fa-refresh"></i> Reload Application
+                        </button>
+                    </div>
                 </div>
-                <div class="threat-severity ${threat.severity}">${threat.severity.toUpperCase()}</div>
             </div>
-        `).join('');
-        
-        container.innerHTML = threatsHTML;
-    }
-
-    showNotification(title, message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <div class="notification-title">${title}</div>
-            <div class="notification-message">${message}</div>
         `;
-        
-        document.body.appendChild(notification);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 5000);
     }
 
-    updateSetting(setting, value) {
-        console.log(`Setting ${setting} updated to:`, value);
-        
-        if (window.electronAPI) {
-            window.electronAPI.sendToBackend({
-                type: 'setting_update',
-                setting: setting,
-                value: value
-            });
-        }
+    // Cleanup
+    destroy() {
+        this.screens.forEach(screen => {
+            if (screen.destroy) {
+                screen.destroy();
+            }
+        });
+        this.screens.clear();
     }
 }
 
-// Global functions
-window.scanForThreats = async function() {
-    const ui = window.cyberForgeUI;
-    ui.addActivityItem('Enhanced threat scan initiated', 'info');
-    
-    // Show loading in threats list
-    const container = document.getElementById('threats-list');
-    container.innerHTML = '<div class="loading">🔍 Running advanced threat scan using AI...</div>';
-    
-    try {
-        if (window.electronAPI && window.electronAPI.mlService) {
-            // Use ML service for enhanced threat scanning
-            const scanData = {
-                scan_type: 'comprehensive',
-                include_network: true,
-                include_websites: true,
-                timestamp: new Date().toISOString()
-            };
-            
-            const response = await window.electronAPI.mlService.scanForThreats(scanData);
-            
-            if (response.success && response.data) {
-                const threats = response.data.threats || [];
-                ui.displayThreats(threats);
-                
-                // Update threat count
-                ui.metrics.threatsCount = threats.length;
-                ui.updateMetrics();
-                
-                ui.addActivityItem(`Advanced scan complete: ${threats.length} threats detected`, 'info');
-                
-                // Show AI insights if available
-                if (response.data.ai_insights) {
-                    ui.handleAIInsight({
-                        summary: 'Threat Scan Insights',
-                        details: response.data.ai_insights
-                    });
-                }
-            } else {
-                throw new Error(response.error || 'Threat scan failed');
-            }
-        } else {
-            // Fallback to basic threat detection
-            ui.loadThreatsData();
-        }
-    } catch (error) {
-        console.error('Enhanced threat scan error:', error);
-        ui.addActivityItem('Threat scan failed - using basic detection', 'warning');
-        ui.loadThreatsData(); // Fallback to basic method
-    }
-};
+// CSS for placeholder and error screens
+const appStyles = `
+.screen-placeholder,
+.error-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+}
 
-// Initialize the application when DOM is loaded
+.placeholder-content,
+.error-content {
+    text-align: center;
+    max-width: 600px;
+}
+
+.placeholder-icon,
+.error-icon {
+    font-size: 4rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.error-icon {
+    color: var(--error);
+}
+
+.placeholder-features {
+    margin: 2rem 0;
+    text-align: left;
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+}
+
+.placeholder-features h3 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.placeholder-features ul {
+    list-style: none;
+    padding: 0;
+}
+
+.placeholder-features li {
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.placeholder-features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--success);
+    font-weight: bold;
+}
+
+.error-details {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    margin: 1rem 0;
+    border-left: 4px solid var(--error);
+}
+
+.error-details code {
+    color: var(--error);
+    font-family: var(--font-mono);
+}
+
+.error-actions {
+    margin-top: 2rem;
+}
+`;
+
+// Inject styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = appStyles;
+document.head.appendChild(styleSheet);
+
+// Initialize application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.cyberForgeUI = new CyberForgeUI();
-    console.log('Cyber Forge UI initialized');
+    window.app = new CyberForgeApp();
 });
+
+// Export for global access
+window.CyberForgeApp = CyberForgeApp;

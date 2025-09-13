@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< Updated upstream
     <title>Cyber Forge AI - Advanced Security Platform</title>
     
     <!-- Core Stylesheets -->
@@ -34,6 +35,21 @@
     <!-- Lottie Animations -->
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+=======
+    <title>Cyber Forge AI - Real-Time Security Analysis</title>
+    <link rel="stylesheet" href="enhanced-styles.css">
+    <link rel="stylesheet" href="advanced-dashboard.css">
+    <link rel="stylesheet" href="theme-system.css">
+    <link rel="stylesheet" href="notification-system.css">
+    <link rel="stylesheet" href="advanced-effects.css">
+    <link rel="stylesheet" href="tutorial.css">
+    <link rel="stylesheet" href="profile-screen.css">
+    <link rel="stylesheet" href="browser-monitoring.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="loading-screen.js"></script>
+>>>>>>> Stashed changes
 </head>
 <body>
     <div id="app" class="app">
@@ -139,6 +155,7 @@
                 </div>
 
                 <nav class="nav-menu">
+<<<<<<< Updated upstream
                     <!-- Core Features -->
                     <div class="nav-section">
                         <div class="nav-section-title">
@@ -218,6 +235,268 @@
                             </button>
                         </div>
                     </div>
+=======
+                    <button class="nav-item active" data-tab="dashboard">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-tab="tasks">
+                        <i class="fas fa-tasks"></i>
+                        <span>AI Tasks</span>
+                        <span class="task-count" id="task-count">0</span>
+                    </button>
+                    <button class="nav-item" data-tab="analysis">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analysis</span>
+                    </button>
+                    <button class="nav-item" data-tab="threats">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Threats</span>
+                    </button>
+                    <button class="nav-item" data-tab="network">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="nav-item" data-tab="datasets">
+                        <i class="fas fa-database"></i>
+                        <span>Datasets</span>
+                    </button>
+                    <button class="nav-item" data-tab="ml-dashboard">
+                        <i class="fas fa-brain"></i>
+                        <span>ML Dashboard</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="analytics">
+                        <i class="fas fa-chart-area"></i>
+                        <span>Analytics</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                    <button class="nav-item" data-tab="chat">
+                        <i class="fas fa-comments"></i>
+                        <span>AI Chat</span>
+                    </button>
+                    <button class="nav-item" data-tab="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                    <button class="nav-item" data-tab="profile">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                        <span class="new-badge">NEW</span>
+                    </button>
+                </nav>
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <button class="quick-action-btn" id="quick-network-scan">
+                        <i class="fas fa-radar"></i>
+                        <span>Network Scan</span>
+                    </button>
+                    <button class="quick-action-btn" id="quick-website-analysis">
+                        <i class="fas fa-globe"></i>
+                        <span>Analyze Website</span>
+                    </button>
+                    <button class="quick-action-btn" id="quick-threat-scan">
+                        <i class="fas fa-shield-virus"></i>
+                        <span>Threat Scan</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div class="tab-content active" id="dashboard-tab">
+                    <div class="dashboard-container">
+                        <!-- Enhanced Header Section -->
+                        <div class="dashboard-header">
+                            <div class="welcome-section">
+                                <div class="welcome-content">
+                                    <div class="welcome-text">
+                                        <h1>Welcome to Cyber Forge AI</h1>
+                                        <p>Advanced real-time cybersecurity monitoring and threat detection powered by AI</p>
+                                        <div class="system-status">
+                                            <span class="status-indicator online">
+                                                <i class="fas fa-circle"></i>
+                                                All Systems Operational
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="quick-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-number" id="quick-pages">0</span>
+                                            <span class="stat-label">Pages Scanned</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-number" id="quick-threats">0</span>
+                                            <span class="stat-label">Threats Blocked</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-number" id="quick-score">95</span>
+                                            <span class="stat-label">Security Score</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Metrics Grid -->
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <div class="metric-title">
+                                        <div class="metric-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                            <i class="fas fa-eye"></i>
+                                        </div>
+                                        Pages Monitored
+                                    </div>
+                                </div>
+                                <div class="metric-value" style="color: var(--cyber-blue);" id="pages-count">0</div>
+                                <div class="metric-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    +12% this week
+                                </div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <div class="metric-title">
+                                        <div class="metric-icon" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                        Threats Detected
+                                    </div>
+                                </div>
+                                <div class="metric-value" style="color: var(--cyber-red);" id="threats-count">0</div>
+                                <div class="metric-change negative">
+                                    <i class="fas fa-arrow-down"></i>
+                                    -5% this week
+                                </div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <div class="metric-title">
+                                        <div class="metric-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                                            <i class="fas fa-brain"></i>
+                                        </div>
+                                        AI Insights
+                                    </div>
+                                </div>
+                                <div class="metric-value" style="color: var(--cyber-purple);" id="insights-count">0</div>
+                                <div class="metric-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    +28% this week
+                                </div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <div class="metric-title">
+                                        <div class="metric-icon" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                                            <i class="fas fa-tasks"></i>
+                                        </div>
+                                        Active Tasks
+                                    </div>
+                                </div>
+                                <div class="metric-value" style="color: var(--cyber-orange);" id="active-tasks-count">0</div>
+                                <div class="metric-change">
+                                    <i class="fas fa-clock"></i>
+                                    Real-time
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Chart Section -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h3 class="chart-title">Security Analytics Overview</h3>
+                                <div class="chart-controls">
+                                    <button class="chart-btn active" data-period="24h">24H</button>
+                                    <button class="chart-btn" data-period="7d">7D</button>
+                                    <button class="chart-btn" data-period="30d">30D</button>
+                                    <button class="chart-btn" data-period="90d">90D</button>
+                                </div>
+                            </div>
+                            <div class="chart-canvas" id="main-chart">
+                                <canvas id="security-chart" width="800" height="300"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Activity and Threat Overview Section -->
+                        <div class="activity-section">
+                            <div class="activity-feed">
+                                <div class="activity-header">
+                                    <h3>Live Activity Feed</h3>
+                                    <button class="btn-icon" id="clear-activity">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div id="activity-feed">
+                                    <div class="activity-item">
+                                        <div class="activity-icon success">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">System Initialized</div>
+                                            <div class="activity-description">Cyber Forge AI successfully started and all modules loaded</div>
+                                            <div class="activity-time">Just now</div>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon info">
+                                            <i class="fas fa-info"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">AI Agent Ready</div>
+                                            <div class="activity-description">Advanced AI agent is ready to process security tasks</div>
+                                            <div class="activity-time">1 minute ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="threat-overview">
+                                <div class="threat-header">
+                                    <h3>Threat Level</h3>
+                                </div>
+                                <div class="threat-level">
+                                    <div class="threat-score" id="threat-score">LOW</div>
+                                </div>
+                                <div class="threat-categories">
+                                    <div class="threat-category">
+                                        <span class="category-name">Malware</span>
+                                        <span class="category-count" style="background: var(--cyber-green);">0</span>
+                                    </div>
+                                    <div class="threat-category">
+                                        <span class="category-name">Phishing</span>
+                                        <span class="category-count" style="background: var(--cyber-green);">0</span>
+                                    </div>
+                                    <div class="threat-category">
+                                        <span class="category-name">Suspicious</span>
+                                        <span class="category-count" style="background: var(--cyber-orange);">2</span>
+                                    </div>
+                                    <div class="threat-category">
+                                        <span class="category-name">Blocked</span>
+                                        <span class="category-count" style="background: var(--cyber-blue);">5</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                                        <h4>Security Alerts</h4>
+                                        <div class="alerts-list" id="alerts-list">
+                                            <!-- Security alerts will be listed here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+>>>>>>> Stashed changes
 
                     <!-- Security Tools -->
                     <div class="nav-section">
@@ -515,11 +794,17 @@
     <script src="screens/security-metrics.js"></script>
     <script src="screens/penetration-testing.js"></script>
     
+<<<<<<< Updated upstream
     <!-- Backend Integration Screens -->
     <script src="screens/api-management.js"></script>
     <script src="screens/database-connector.js"></script>
     
     <!-- Main Application Controller -->
     <script src="app.js"></script>
+=======
+    <!-- Main application scripts -->
+    <script src="advanced-dashboard.js"></script>
+    <script src="enhanced-app.js"></script>
+>>>>>>> Stashed changes
 </body>
 </html>

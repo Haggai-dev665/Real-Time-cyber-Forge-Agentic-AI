@@ -1,0 +1,14 @@
+{
+  "dataset_id": "cryptomining_detection",
+  "processed_at": "2025-08-24T03:10:20.544187",
+  "samples": 30000,
+  "features": [
+    "cpu_usage",
+    "memory_usage",
+    "network_connections",
+    "process_behavior",
+    "file_modifications"
+  ],
+  "type": "cryptomining",
+  "file_path": "..\\datasets\\cryptomining_detection\\cryptomining_detection_processed.csv"
+}

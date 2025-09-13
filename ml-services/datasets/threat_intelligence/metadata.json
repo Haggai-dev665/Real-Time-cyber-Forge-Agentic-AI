@@ -1,14 +1,23 @@
 {
   "dataset_id": "threat_intelligence",
+<<<<<<< Updated upstream
   "processed_at": "2025-08-24T04:15:57.193998",
   "samples": 15000,
+=======
+  "processed_at": "2025-08-24T03:07:20.954707",
+  "samples": 50000,
+>>>>>>> Stashed changes
   "features": [
     "ip_address",
     "threat_type",
     "confidence",
     "first_seen",
+<<<<<<< Updated upstream
     "last_seen",
     "source"
+=======
+    "last_seen"
+>>>>>>> Stashed changes
   ],
   "type": "threat_intel",
   "file_path": "..\\datasets\\threat_intelligence\\threat_intelligence_processed.csv"

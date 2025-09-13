@@ -1,14 +1,22 @@
 {
   "dataset_id": "spam_detection",
+<<<<<<< Updated upstream
   "processed_at": "2025-08-24T04:14:02.222512",
+=======
+  "processed_at": "2025-08-24T03:01:05.401684",
+>>>>>>> Stashed changes
   "samples": 4601,
   "features": [
     "word_freq_make",
     "word_freq_address",
     "word_freq_all",
     "char_freq_$",
+<<<<<<< Updated upstream
     "capital_run_avg",
     "is_spam"
+=======
+    "capital_run_avg"
+>>>>>>> Stashed changes
   ],
   "type": "spam",
   "file_path": "..\\datasets\\spam_detection\\spam_detection_processed.csv"

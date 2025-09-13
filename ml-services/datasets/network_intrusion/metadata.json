@@ -1,17 +1,26 @@
 {
   "dataset_id": "network_intrusion",
+<<<<<<< Updated upstream
   "processed_at": "2025-08-24T04:13:30.378840",
   "samples": 125973,
+=======
+  "processed_at": "2025-08-24T03:00:40.252527",
+  "samples": 494021,
+>>>>>>> Stashed changes
   "features": [
     "duration",
     "protocol_type",
     "service",
     "flag",
     "src_bytes",
+<<<<<<< Updated upstream
     "dst_bytes",
     "land",
     "wrong_fragment",
     "urgent"
+=======
+    "dst_bytes"
+>>>>>>> Stashed changes
   ],
   "type": "network",
   "file_path": "..\\datasets\\network_intrusion\\network_intrusion_processed.csv"

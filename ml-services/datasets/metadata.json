@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "malware_detection": {
     "name": "Malware Detection Dataset",
     "description": "Collection of malware samples and features for detection",
@@ -35,51 +36,82 @@
     "type": "network",
     "size_mb": 25,
     "samples": 125973,
+=======
+  "network_intrusion": {
+    "name": "Network Intrusion Detection",
+    "description": "Network traffic data for intrusion detection",
+    "url": "http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data_10_percent.gz",
+    "type": "network",
+    "size_mb": 75,
+    "samples": 494021,
+>>>>>>> Stashed changes
     "features": [
       "duration",
       "protocol_type",
       "service",
       "flag",
       "src_bytes",
+<<<<<<< Updated upstream
       "dst_bytes",
       "land",
       "wrong_fragment",
       "urgent"
     ],
     "downloaded_at": "2025-08-24T04:13:30.389265",
+=======
+      "dst_bytes"
+    ],
+    "downloaded_at": "2025-08-24T03:00:40.259137",
+>>>>>>> Stashed changes
     "status": "available",
     "local_path": "..\\datasets\\network_intrusion"
   },
   "phishing_detection": {
     "name": "Phishing Website Detection",
     "description": "Features extracted from websites for phishing detection",
+<<<<<<< Updated upstream
     "url": "https://raw.githubusercontent.com/shreyagopal/Phishing-Website-Detection-by-Machine-Learning-Techniques/master/dataset.csv",
     "backup_urls": [
       "https://github.com/ebubekirbbr/pdd/raw/master/Phishing_Legitimate_full.csv"
     ],
     "type": "phishing",
     "size_mb": 8,
+=======
+    "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/00327/Training%20Dataset.arff",
+    "type": "phishing",
+    "size_mb": 12,
+>>>>>>> Stashed changes
     "samples": 11055,
     "features": [
       "url_length",
       "num_dots",
       "subdomain_level",
       "https",
+<<<<<<< Updated upstream
       "shortening_service",
       "prefix_suffix",
       "result"
     ],
     "downloaded_at": "2025-08-24T04:13:51.358553",
+=======
+      "shortening_service"
+    ],
+    "downloaded_at": "2025-08-24T03:00:53.776547",
+>>>>>>> Stashed changes
     "status": "available",
     "local_path": "..\\datasets\\phishing_detection"
   },
   "spam_detection": {
     "name": "Spam Email Detection",
     "description": "Email features for spam classification",
+<<<<<<< Updated upstream
     "url": "https://raw.githubusercontent.com/MWiechmann/enron_spam_data/master/enron_spam_data.csv",
     "backup_urls": [
       "https://github.com/jbrownlee/Datasets/raw/master/spambase.csv"
     ],
+=======
+    "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/spambase/spambase.data",
+>>>>>>> Stashed changes
     "type": "spam",
     "size_mb": 5,
     "samples": 4601,
@@ -88,6 +120,7 @@
       "word_freq_address",
       "word_freq_all",
       "char_freq_$",
+<<<<<<< Updated upstream
       "capital_run_avg",
       "is_spam"
     ],
@@ -127,20 +160,43 @@
     "type": "vulnerability",
     "size_mb": 20,
     "samples": 5000,
+=======
+      "capital_run_avg"
+    ],
+    "downloaded_at": "2025-08-24T03:01:05.413316",
+    "status": "available",
+    "local_path": "..\\datasets\\spam_detection"
+  },
+  "vulnerability_assessment": {
+    "name": "Vulnerability Assessment Data",
+    "description": "System vulnerabilities and CVE data",
+    "url": "https://cve.mitre.org/data/downloads/allitems.csv",
+    "type": "vulnerability",
+    "size_mb": 80,
+    "samples": 200000,
+>>>>>>> Stashed changes
     "features": [
       "cve_id",
       "description",
       "severity",
+<<<<<<< Updated upstream
       "cvss_score",
       "attack_vector",
       "attack_complexity"
     ],
     "downloaded_at": "2025-08-24T04:15:31.245378",
+=======
+      "impact",
+      "exploitability"
+    ],
+    "downloaded_at": "2025-08-24T03:05:15.065965",
+>>>>>>> Stashed changes
     "status": "available",
     "local_path": "..\\datasets\\vulnerability_assessment"
   },
   "threat_intelligence": {
     "name": "Threat Intelligence Feeds",
+<<<<<<< Updated upstream
     "description": "Malicious IP addresses and indicators of compromise",
     "url": "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
     "backup_urls": [
@@ -149,11 +205,19 @@
     "type": "threat_intel",
     "size_mb": 5,
     "samples": 15000,
+=======
+    "description": "IOCs and threat indicators",
+    "url": "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
+    "type": "threat_intel",
+    "size_mb": 25,
+    "samples": 50000,
+>>>>>>> Stashed changes
     "features": [
       "ip_address",
       "threat_type",
       "confidence",
       "first_seen",
+<<<<<<< Updated upstream
       "last_seen",
       "source"
     ],
@@ -194,11 +258,27 @@
     "type": "dns",
     "size_mb": 15,
     "samples": 10000,
+=======
+      "last_seen"
+    ],
+    "downloaded_at": "2025-08-24T03:07:20.977810",
+    "status": "available",
+    "local_path": "..\\datasets\\threat_intelligence"
+  },
+  "dns_tunneling": {
+    "name": "DNS Tunneling Detection",
+    "description": "DNS queries for tunneling detection",
+    "url": "https://github.com/gamelinux/passivedns/archive/master.zip",
+    "type": "dns",
+    "size_mb": 100,
+    "samples": 150000,
+>>>>>>> Stashed changes
     "features": [
       "query_name",
       "query_type",
       "response_code",
       "query_length",
+<<<<<<< Updated upstream
       "subdomain_count",
       "is_tunneling"
     ],
@@ -227,5 +307,30 @@
     "downloaded_at": "2025-08-24T04:17:27.205436",
     "status": "available",
     "local_path": "..\\datasets\\web_attack_detection"
+=======
+      "subdomain_count"
+    ],
+    "downloaded_at": "2025-08-24T03:09:42.432718",
+    "status": "available",
+    "local_path": "..\\datasets\\dns_tunneling"
+  },
+  "cryptomining_detection": {
+    "name": "Cryptocurrency Mining Detection",
+    "description": "System behavior patterns for cryptomining detection",
+    "url": "https://github.com/JPCERTCC/MalConfScan/archive/master.zip",
+    "type": "cryptomining",
+    "size_mb": 60,
+    "samples": 30000,
+    "features": [
+      "cpu_usage",
+      "memory_usage",
+      "network_connections",
+      "process_behavior",
+      "file_modifications"
+    ],
+    "downloaded_at": "2025-08-24T03:10:20.625272",
+    "status": "available",
+    "local_path": "..\\datasets\\cryptomining_detection"
+>>>>>>> Stashed changes
   }
 }

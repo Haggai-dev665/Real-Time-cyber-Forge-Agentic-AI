@@ -1,14 +1,23 @@
 {
   "dataset_id": "dns_tunneling",
+<<<<<<< Updated upstream
   "processed_at": "2025-08-24T04:17:07.693713",
   "samples": 10000,
+=======
+  "processed_at": "2025-08-24T03:09:42.416761",
+  "samples": 150000,
+>>>>>>> Stashed changes
   "features": [
     "query_name",
     "query_type",
     "response_code",
     "query_length",
+<<<<<<< Updated upstream
     "subdomain_count",
     "is_tunneling"
+=======
+    "subdomain_count"
+>>>>>>> Stashed changes
   ],
   "type": "dns",
   "file_path": "..\\datasets\\dns_tunneling\\dns_tunneling_processed.csv"

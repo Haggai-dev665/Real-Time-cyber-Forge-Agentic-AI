@@ -39,9 +39,9 @@ export default function HowItWorks() {
   ]
 
   return (
-    <section id="how-it-works" className="py-20 relative overflow-hidden">
+    <section id="how-it-works" className="py-20 relative overflow-hidden bg-white">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/30 to-transparent"></div>
+      <div className="absolute inset-0 bg-white/95"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -52,10 +52,10 @@ export default function HowItWorks() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
             How <span className="text-gradient">It Works</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Get started with Cyber Forge AI in just a few simple steps and experience 
             next-generation cybersecurity protection.
           </p>
@@ -86,12 +86,12 @@ export default function HowItWorks() {
                   </div>
                   
                   {/* Title */}
-                  <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                     {step.title}
                   </h3>
                   
                   {/* Description */}
-                  <p className="text-gray-300 text-lg leading-relaxed">
+                  <p className="text-gray-600 text-lg leading-relaxed">
                     {step.description}
                   </p>
                 </motion.div>
@@ -134,10 +134,10 @@ export default function HowItWorks() {
           className="text-center mt-20"
         >
           <div className="glass-effect rounded-xl p-8 max-w-3xl mx-auto">
-            <h3 className="text-3xl font-bold text-white mb-4">
+            <h3 className="text-3xl font-bold text-gray-900 mb-4">
               Advanced AI Protection in Minutes
             </h3>
-            <p className="text-gray-300 text-lg mb-8">
+            <p className="text-gray-600 text-lg mb-8">
               Our intelligent system adapts to your browsing habits and provides 
               personalized security recommendations powered by machine learning.
             </p>

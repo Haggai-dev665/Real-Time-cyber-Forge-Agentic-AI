@@ -46,9 +46,9 @@ export default function Download() {
   }
 
   return (
-    <section id="download" className="py-20 relative overflow-hidden">
+    <section id="download" className="py-20 relative overflow-hidden bg-white">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-black/40"></div>
+      <div className="absolute inset-0 bg-white/95"></div>
       <div className="absolute inset-0 bg-cyber-radial opacity-30"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,10 +60,10 @@ export default function Download() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
             Download <span className="text-gradient">Cyber Forge AI</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Get started with our comprehensive cybersecurity platform. 
             Choose your platform and begin protecting your digital life today.
           </p>
@@ -85,7 +85,7 @@ export default function Download() {
                 className={`flex items-center space-x-2 px-6 py-3 rounded-md transition-all duration-300 ${
                   selectedPlatform === key
                     ? 'bg-cyber-blue text-white'
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 <platform.icon className="h-5 w-5" />
@@ -106,17 +106,17 @@ export default function Download() {
           {/* Platform Info */}
           <div className="space-y-8">
             <div>
-              <h3 className="text-3xl font-bold text-white mb-2">
+              <h3 className="text-3xl font-bold text-gray-900 mb-2">
                 {platforms[selectedPlatform].title}
               </h3>
-              <p className="text-xl text-gray-300">
+              <p className="text-xl text-gray-600">
                 {platforms[selectedPlatform].subtitle}
               </p>
             </div>
 
             {/* Features */}
             <div className="space-y-4">
-              <h4 className="text-xl font-semibold text-white">Key Features:</h4>
+              <h4 className="text-xl font-semibold text-gray-900">Key Features:</h4>
               <ul className="space-y-3">
                 {platforms[selectedPlatform].features.map((feature, index) => (
                   <motion.li
@@ -127,7 +127,7 @@ export default function Download() {
                     className="flex items-center space-x-3"
                   >
                     <CheckCircleIcon className="h-5 w-5 text-cyber-blue flex-shrink-0" />
-                    <span className="text-gray-300">{feature}</span>
+                    <span className="text-gray-600">{feature}</span>
                   </motion.li>
                 ))}
               </ul>

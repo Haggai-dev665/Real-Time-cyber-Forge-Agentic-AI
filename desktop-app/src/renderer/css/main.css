@@ -14,21 +14,21 @@
     --info: #6b7280;
     
     /* Black and White Theme Colors */
-    --bg-primary: #000000;
-    --bg-secondary: #0a0a0a;
-    --bg-tertiary: #1a1a1a;
-    --bg-card: #1f1f1f;
-    --bg-hover: #2a2a2a;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #e2e8f0;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f5f9;
     
     /* Text Colors */
-    --text-primary: #ffffff;
-    --text-secondary: #e5e5e5;
-    --text-muted: #999999;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
     --text-accent: var(--primary);
     
     /* Border Colors */
-    --border-color: #333333;
-    --border-hover: #555555;
+    --border-color: #e2e8f0;
+    --border-hover: #cbd5e1;
     --border-focus: var(--primary);
     
     /* Shadows */
@@ -132,8 +132,8 @@ html {
 
 body {
     font-family: var(--font-family);
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: #ffffff;
+    color: #1e293b;
     line-height: 1.6;
     overflow: hidden;
     user-select: none;

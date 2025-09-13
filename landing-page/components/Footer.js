@@ -37,9 +37,9 @@ export default function Footer() {
   }
 
   return (
-    <footer id="contact" className="relative py-20 bg-black/50 backdrop-blur-sm">
+    <footer id="contact" className="relative py-20 bg-white backdrop-blur-sm">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-cyber-radial opacity-20"></div>
+      <div className="absolute inset-0 bg-white/95 opacity-20"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Contact Section */}

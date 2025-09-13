@@ -8,6 +8,8 @@
     <!-- Core Stylesheets -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/enhanced-sidebar.css">
+    <link rel="stylesheet" href="css/backend-integration.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/dashboard.css">
@@ -28,6 +30,10 @@
     
     <!-- Three.js for 3D visualizations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Lottie Animations -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 <body>
     <div id="app" class="app">
@@ -135,121 +141,267 @@
                 <nav class="nav-menu">
                     <!-- Core Features -->
                     <div class="nav-section">
-                        <div class="nav-section-title">Core</div>
-                        <button class="nav-item active" data-screen="dashboard">
+                        <div class="nav-section-title">
                             <i class="fas fa-home"></i>
-                            <span>Dashboard</span>
-                        </button>
-                        <button class="nav-item" data-screen="real-time-monitor">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Real-time Monitor</span>
-                        </button>
-                        <button class="nav-item" data-screen="threat-center">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>Threat Center</span>
-                            <span class="alert-badge" id="threat-count">0</span>
-                        </button>
-                        <button class="nav-item" data-screen="deep-analysis">
-                            <i class="fas fa-microscope"></i>
-                            <span>Deep Analysis</span>
-                        </button>
+                            <span>Core Features</span>
+                            <button class="section-toggle" data-section="core">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="core">
+                            <button class="nav-item active" data-screen="dashboard">
+                                <i class="fas fa-home"></i>
+                                <span>Dashboard</span>
+                                <div class="item-animation" data-animation="pulse"></div>
+                            </button>
+                            <button class="nav-item" data-screen="real-time-monitor">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Real-time Monitor</span>
+                                <div class="item-animation" data-animation="data-stream"></div>
+                            </button>
+                            <button class="nav-item" data-screen="threat-center">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Threat Center</span>
+                                <span class="alert-badge" id="threat-count">0</span>
+                                <div class="item-animation" data-animation="alert-pulse"></div>
+                            </button>
+                            <button class="nav-item" data-screen="deep-analysis">
+                                <i class="fas fa-microscope"></i>
+                                <span>Deep Analysis</span>
+                                <div class="item-animation" data-animation="scanner"></div>
+                            </button>
+                            <button class="nav-item" data-screen="overview">
+                                <i class="fas fa-th-large"></i>
+                                <span>System Overview</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- AI & ML -->
+                    <!-- AI & Machine Learning -->
                     <div class="nav-section">
-                        <div class="nav-section-title">AI & ML</div>
-                        <button class="nav-item" data-screen="ai-assistant">
-                            <i class="fas fa-robot"></i>
-                            <span>AI Assistant</span>
-                        </button>
-                        <button class="nav-item" data-screen="ml-models">
+                        <div class="nav-section-title">
                             <i class="fas fa-brain"></i>
-                            <span>ML Models</span>
-                        </button>
-                        <button class="nav-item" data-screen="ai-insights">
-                            <i class="fas fa-lightbulb"></i>
-                            <span>AI Insights</span>
-                        </button>
-                        <button class="nav-item" data-screen="predictions">
-                            <i class="fas fa-crystal-ball"></i>
-                            <span>Predictions</span>
-                        </button>
+                            <span>AI & Machine Learning</span>
+                            <button class="section-toggle" data-section="ai">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="ai">
+                            <button class="nav-item" data-screen="ai-assistant">
+                                <i class="fas fa-robot"></i>
+                                <span>AI Assistant</span>
+                                <div class="item-animation" data-animation="ai-thinking"></div>
+                            </button>
+                            <button class="nav-item" data-screen="ml-models">
+                                <i class="fas fa-brain"></i>
+                                <span>ML Models</span>
+                            </button>
+                            <button class="nav-item" data-screen="ai-insights">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>AI Insights</span>
+                            </button>
+                            <button class="nav-item" data-screen="predictions">
+                                <i class="fas fa-crystal-ball"></i>
+                                <span>Predictions</span>
+                            </button>
+                            <button class="nav-item" data-screen="neural-networks">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Neural Networks</span>
+                            </button>
+                            <button class="nav-item" data-screen="training-data">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span>Training Data</span>
+                            </button>
+                            <button class="nav-item" data-screen="model-evaluation">
+                                <i class="fas fa-chart-pie"></i>
+                                <span>Model Evaluation</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Security Tools -->
                     <div class="nav-section">
-                        <div class="nav-section-title">Security Tools</div>
-                        <button class="nav-item" data-screen="vulnerability-scanner">
-                            <i class="fas fa-bug"></i>
-                            <span>Vuln Scanner</span>
-                        </button>
-                        <button class="nav-item" data-screen="network-analysis">
-                            <i class="fas fa-network-wired"></i>
-                            <span>Network Analysis</span>
-                        </button>
-                        <button class="nav-item" data-screen="malware-detection">
-                            <i class="fas fa-virus"></i>
-                            <span>Malware Detection</span>
-                        </button>
-                        <button class="nav-item" data-screen="digital-forensics">
-                            <i class="fas fa-fingerprint"></i>
-                            <span>Digital Forensics</span>
-                        </button>
-                        <button class="nav-item" data-screen="penetration-testing">
-                            <i class="fas fa-user-ninja"></i>
-                            <span>Pentest Tools</span>
-                        </button>
+                        <div class="nav-section-title">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Security Tools</span>
+                            <button class="section-toggle" data-section="security">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="security">
+                            <button class="nav-item" data-screen="vulnerability-scanner">
+                                <i class="fas fa-bug"></i>
+                                <span>Vuln Scanner</span>
+                            </button>
+                            <button class="nav-item" data-screen="network-analysis">
+                                <i class="fas fa-network-wired"></i>
+                                <span>Network Analysis</span>
+                            </button>
+                            <button class="nav-item" data-screen="malware-detection">
+                                <i class="fas fa-virus"></i>
+                                <span>Malware Detection</span>
+                            </button>
+                            <button class="nav-item" data-screen="digital-forensics">
+                                <i class="fas fa-fingerprint"></i>
+                                <span>Digital Forensics</span>
+                            </button>
+                            <button class="nav-item" data-screen="penetration-testing">
+                                <i class="fas fa-user-ninja"></i>
+                                <span>Pentest Tools</span>
+                            </button>
+                            <button class="nav-item" data-screen="web-security">
+                                <i class="fas fa-globe-americas"></i>
+                                <span>Web Security</span>
+                            </button>
+                            <button class="nav-item" data-screen="email-security">
+                                <i class="fas fa-envelope-open-text"></i>
+                                <span>Email Security</span>
+                            </button>
+                            <button class="nav-item" data-screen="endpoint-security">
+                                <i class="fas fa-laptop"></i>
+                                <span>Endpoint Security</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Advanced Security -->
                     <div class="nav-section">
-                        <div class="nav-section-title">Advanced Security</div>
-                        <button class="nav-item" data-screen="incident-response">
-                            <i class="fas fa-ambulance"></i>
-                            <span>Incident Response</span>
-                        </button>
-                        <button class="nav-item" data-screen="risk-assessment">
-                            <i class="fas fa-balance-scale"></i>
-                            <span>Risk Assessment</span>
-                        </button>
-                        <button class="nav-item" data-screen="security-metrics">
-                            <i class="fas fa-chart-bar"></i>
-                            <span>Security Metrics</span>
-                        </button>
+                        <div class="nav-section-title">
+                            <i class="fas fa-user-secret"></i>
+                            <span>Advanced Security</span>
+                            <button class="section-toggle" data-section="advanced">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="advanced">
+                            <button class="nav-item" data-screen="incident-response">
+                                <i class="fas fa-ambulance"></i>
+                                <span>Incident Response</span>
+                            </button>
+                            <button class="nav-item" data-screen="risk-assessment">
+                                <i class="fas fa-balance-scale"></i>
+                                <span>Risk Assessment</span>
+                            </button>
+                            <button class="nav-item" data-screen="security-metrics">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Security Metrics</span>
+                            </button>
+                            <button class="nav-item" data-screen="threat-intelligence">
+                                <i class="fas fa-eye"></i>
+                                <span>Threat Intelligence</span>
+                            </button>
+                            <button class="nav-item" data-screen="security-orchestration">
+                                <i class="fas fa-cogs"></i>
+                                <span>SOAR Platform</span>
+                            </button>
+                            <button class="nav-item" data-screen="deception-technology">
+                                <i class="fas fa-mask"></i>
+                                <span>Deception Tech</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Data & Reports -->
+                    <!-- Backend Integration -->
                     <div class="nav-section">
-                        <div class="nav-section-title">Data & Reports</div>
-                        <button class="nav-item" data-screen="datasets">
-                            <i class="fas fa-database"></i>
-                            <span>Datasets</span>
-                        </button>
-                        <button class="nav-item" data-screen="reports">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Reports</span>
-                        </button>
-                        <button class="nav-item" data-screen="compliance">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span>Compliance</span>
-                        </button>
+                        <div class="nav-section-title">
+                            <i class="fas fa-server"></i>
+                            <span>Backend Integration</span>
+                            <button class="section-toggle" data-section="backend">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="backend">
+                            <button class="nav-item" data-screen="api-management">
+                                <i class="fas fa-code"></i>
+                                <span>API Management</span>
+                            </button>
+                            <button class="nav-item" data-screen="database-connector">
+                                <i class="fas fa-database"></i>
+                                <span>Database Connector</span>
+                            </button>
+                            <button class="nav-item" data-screen="webhook-manager">
+                                <i class="fas fa-link"></i>
+                                <span>Webhook Manager</span>
+                            </button>
+                            <button class="nav-item" data-screen="service-health">
+                                <i class="fas fa-heartbeat"></i>
+                                <span>Service Health</span>
+                            </button>
+                            <button class="nav-item" data-screen="data-pipeline">
+                                <i class="fas fa-stream"></i>
+                                <span>Data Pipeline</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- System -->
+                    <!-- Data & Analytics -->
                     <div class="nav-section">
-                        <div class="nav-section-title">System</div>
-                        <button class="nav-item" data-screen="settings">
-                            <i class="fas fa-cog"></i>
-                            <span>Settings</span>
-                        </button>
-                        <button class="nav-item" data-screen="profile">
-                            <i class="fas fa-user-circle"></i>
-                            <span>Profile</span>
-                        </button>
-                        <button class="nav-item" data-screen="system-logs">
-                            <i class="fas fa-terminal"></i>
-                            <span>System Logs</span>
-                        </button>
+                        <div class="nav-section-title">
+                            <i class="fas fa-chart-area"></i>
+                            <span>Data & Analytics</span>
+                            <button class="section-toggle" data-section="data">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="data">
+                            <button class="nav-item" data-screen="datasets">
+                                <i class="fas fa-database"></i>
+                                <span>Datasets</span>
+                            </button>
+                            <button class="nav-item" data-screen="reports">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Reports</span>
+                            </button>
+                            <button class="nav-item" data-screen="compliance">
+                                <i class="fas fa-clipboard-check"></i>
+                                <span>Compliance</span>
+                            </button>
+                            <button class="nav-item" data-screen="data-visualization">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Data Visualization</span>
+                            </button>
+                            <button class="nav-item" data-screen="export-tools">
+                                <i class="fas fa-download"></i>
+                                <span>Export Tools</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Administration -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">
+                            <i class="fas fa-tools"></i>
+                            <span>System Administration</span>
+                            <button class="section-toggle" data-section="system">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="system">
+                            <button class="nav-item" data-screen="settings">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </button>
+                            <button class="nav-item" data-screen="profile">
+                                <i class="fas fa-user-circle"></i>
+                                <span>User Profile</span>
+                            </button>
+                            <button class="nav-item" data-screen="system-logs">
+                                <i class="fas fa-terminal"></i>
+                                <span>System Logs</span>
+                            </button>
+                            <button class="nav-item" data-screen="user-management">
+                                <i class="fas fa-users"></i>
+                                <span>User Management</span>
+                            </button>
+                            <button class="nav-item" data-screen="backup-restore">
+                                <i class="fas fa-archive"></i>
+                                <span>Backup & Restore</span>
+                            </button>
+                            <button class="nav-item" data-screen="license-manager">
+                                <i class="fas fa-key"></i>
+                                <span>License Manager</span>
+                            </button>
+                        </div>
                     </div>
                 </nav>
 
@@ -335,6 +487,7 @@
     <script src="components/modal.js"></script>
     <script src="components/chart-factory.js"></script>
     <script src="components/data-table.js"></script>
+    <script src="components/lottie-manager.js"></script>
     
     <!-- Screen Scripts -->
     <script src="screens/dashboard.js"></script>
@@ -361,6 +514,10 @@
     <script src="screens/risk-assessment.js"></script>
     <script src="screens/security-metrics.js"></script>
     <script src="screens/penetration-testing.js"></script>
+    
+    <!-- Backend Integration Screens -->
+    <script src="screens/api-management.js"></script>
+    <script src="screens/database-connector.js"></script>
     
     <!-- Main Application Controller -->
     <script src="app.js"></script>

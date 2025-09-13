@@ -49,6 +49,15 @@ class CyberForgeApp {
             // Initialize screens
             await this.initializeScreens();
             
+            // Initialize Lottie animations
+            this.initializeLottieAnimations();
+            
+            // Restore sidebar state
+            this.restoreSidebarState();
+            
+            // Add navigation enhancements
+            this.addNavigationEnhancements();
+            
             // Start periodic updates
             this.startPeriodicUpdates();
             
@@ -184,6 +193,28 @@ class CyberForgeApp {
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', () => this.toggleSidebar());
         }
+
+        // Enhanced sidebar section toggles
+        document.querySelectorAll('.section-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const section = e.currentTarget.dataset.section;
+                this.toggleSidebarSection(section);
+            });
+        });
+
+        // Enhanced sidebar navigation
+        document.querySelectorAll('.nav-section-title').forEach(title => {
+            title.addEventListener('click', (e) => {
+                if (!e.target.matches('.section-toggle') && !e.target.matches('.section-toggle i')) {
+                    const section = title.querySelector('.section-toggle')?.dataset.section;
+                    if (section) {
+                        this.toggleSidebarSection(section);
+                    }
+                }
+            });
+        });
 
         // FAB actions
         const fab = document.getElementById('quick-scan-fab');
@@ -677,6 +708,195 @@ class CyberForgeApp {
             }
         });
         this.screens.clear();
+    }
+
+    // Enhanced Sidebar Methods
+    toggleSidebarSection(section) {
+        const sectionElement = document.querySelector(`[data-section-content="${section}"]`);
+        const parentSection = sectionElement?.closest('.nav-section');
+        
+        if (parentSection && sectionElement) {
+            parentSection.classList.toggle('collapsed');
+            
+            // Save section state
+            const collapsedSections = JSON.parse(localStorage.getItem('collapsedSidebarSections') || '[]');
+            if (parentSection.classList.contains('collapsed')) {
+                if (!collapsedSections.includes(section)) {
+                    collapsedSections.push(section);
+                }
+            } else {
+                const index = collapsedSections.indexOf(section);
+                if (index > -1) {
+                    collapsedSections.splice(index, 1);
+                }
+            }
+            localStorage.setItem('collapsedSidebarSections', JSON.stringify(collapsedSections));
+        }
+    }
+
+    restoreSidebarState() {
+        const collapsedSections = JSON.parse(localStorage.getItem('collapsedSidebarSections') || '[]');
+        collapsedSections.forEach(section => {
+            const sectionElement = document.querySelector(`[data-section-content="${section}"]`);
+            const parentSection = sectionElement?.closest('.nav-section');
+            if (parentSection) {
+                parentSection.classList.add('collapsed');
+            }
+        });
+    }
+
+    // Lottie Animation Methods
+    initializeLottieAnimations() {
+        console.log('🎬 Initializing Lottie animations...');
+        
+        // Initialize the Lottie Animation Manager
+        if (window.LottieAnimationManager) {
+            this.lottieManager = new window.LottieAnimationManager();
+            
+            // Set up loading screen animation
+            this.setupLoadingAnimation();
+            
+            // Set up sidebar item animations
+            this.setupSidebarAnimations();
+            
+            console.log('✅ Lottie animations initialized');
+        } else {
+            console.warn('⚠️ LottieAnimationManager not available');
+        }
+    }
+
+    setupLoadingAnimation() {
+        const loadingContainer = document.querySelector('.loading-spinner');
+        if (loadingContainer && this.lottieManager) {
+            // Replace spinner with Lottie animation
+            loadingContainer.innerHTML = '<div id="loading-lottie"></div>';
+            const lottieContainer = document.getElementById('loading-lottie');
+            this.lottieManager.createLoadingAnimation(lottieContainer);
+        }
+    }
+
+    setupSidebarAnimations() {
+        // Start animations for visible nav items with animation data
+        document.querySelectorAll('.nav-item[data-animation]').forEach(item => {
+            const animationType = item.dataset.animation;
+            if (this.lottieManager && animationType) {
+                this.lottieManager.startAnimation(item, animationType);
+            }
+        });
+
+        // Set up intersection observer for better performance
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const animationType = entry.target.dataset.animation;
+                if (animationType && this.lottieManager) {
+                    if (entry.isIntersecting) {
+                        this.lottieManager.startAnimation(entry.target, animationType);
+                    } else {
+                        this.lottieManager.pauseAnimation(entry.target, animationType);
+                    }
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('[data-animation]').forEach(el => {
+            observer.observe(el);
+        });
+    }
+
+    // Enhanced Navigation Methods
+    addNavigationEnhancements() {
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                        e.preventDefault();
+                        this.navigateToScreenByIndex(parseInt(e.key) - 1);
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        this.toggleSidebar();
+                        break;
+                }
+            }
+        });
+
+        // Add search in sidebar
+        this.addSidebarSearch();
+    }
+
+    navigateToScreenByIndex(index) {
+        const navItems = document.querySelectorAll('.nav-item[data-screen]');
+        if (navItems[index]) {
+            const screen = navItems[index].dataset.screen;
+            this.showScreen(screen);
+        }
+    }
+
+    addSidebarSearch() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'sidebar-search';
+        searchContainer.innerHTML = `
+            <div class="search-input-container">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search navigation..." id="sidebar-search">
+                <button class="clear-search" id="clear-sidebar-search" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+        const sidebarHeader = sidebar.querySelector('.sidebar-header');
+        if (sidebarHeader) {
+            sidebarHeader.appendChild(searchContainer);
+        }
+
+        // Add search functionality
+        const searchInput = document.getElementById('sidebar-search');
+        const clearButton = document.getElementById('clear-sidebar-search');
+
+        searchInput.addEventListener('input', (e) => {
+            this.filterSidebarItems(e.target.value);
+            clearButton.style.display = e.target.value ? 'block' : 'none';
+        });
+
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            this.filterSidebarItems('');
+            clearButton.style.display = 'none';
+            searchInput.focus();
+        });
+    }
+
+    filterSidebarItems(searchTerm) {
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.nav-section');
+
+        navItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            const matches = text.includes(searchTerm.toLowerCase());
+            item.style.display = matches ? 'flex' : 'none';
+        });
+
+        // Show/hide sections based on visible items
+        sections.forEach(section => {
+            const visibleItems = section.querySelectorAll('.nav-item[style*="flex"], .nav-item:not([style])');
+            const hasVisibleItems = Array.from(visibleItems).some(item => 
+                !item.style.display || item.style.display === 'flex'
+            );
+            section.style.display = hasVisibleItems ? 'block' : 'none';
+        });
     }
 }
 

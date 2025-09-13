@@ -15,6 +15,9 @@ const authRoutes = require('./routes/auth');
 const analysisRoutes = require('./routes/analysis');
 const threatRoutes = require('./routes/threats');
 const aiRoutes = require('./routes/ai');
+const webScrapingRoutes = require('./routes/web-scraping');
+const domainIntelligenceRoutes = require('./routes/domain-intelligence');
+const threatHuntingRoutes = require('./routes/threat-hunting');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 
@@ -76,6 +79,9 @@ class CyberForgeServer {
     this.app.use('/api/analysis', analysisRoutes); // Remove global auth - let routes handle their own auth
     this.app.use('/api/threats', threatRoutes);    // Remove global auth - let routes handle their own auth
     this.app.use('/api/ai', aiRoutes);             // Remove global auth for all AI routes
+    this.app.use('/api/scraping', webScrapingRoutes);
+    this.app.use('/api/domain-intel', domainIntelligenceRoutes);
+    this.app.use('/api/threat-hunting', threatHuntingRoutes);
 
     // WebSocket endpoint info
     this.app.get('/ws/info', (req, res) => {

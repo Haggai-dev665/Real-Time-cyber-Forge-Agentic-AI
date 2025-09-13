@@ -16,7 +16,7 @@ from app.services.ai_agent import AIAgent
 from app.services.threat_analyzer import ThreatAnalyzer
 from app.services.ml_models import MLModelManager
 from app.services.memory_store import MemoryStore
-from app.routers import analysis, threats, insights
+from app.routers import analysis, threats, insights, web_scraping
 from app.models.schemas import AnalysisRequest, ThreatScanRequest, HealthResponse
 
 # Configure logging
@@ -465,6 +465,7 @@ async def query_memory(query: str, limit: int = 10):
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(threats.router, prefix="/api/threats", tags=["threats"])
 app.include_router(insights.router, prefix="/api/insights", tags=["insights"])
+app.include_router(web_scraping.router, prefix="/api", tags=["web-scraping"])
 
 # Root endpoint
 @app.get("/")

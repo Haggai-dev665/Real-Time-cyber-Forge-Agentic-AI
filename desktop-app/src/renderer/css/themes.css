@@ -8,18 +8,18 @@
 
 [data-theme="dark"],
 :root {
-    /* Primary Colors */
-    --primary: #00d4ff;
-    --primary-dark: #0099cc;
-    --primary-light: #33ddff;
-    --secondary: #7c3aed;
-    --secondary-dark: #5b21b6;
-    --secondary-light: #a855f7;
+    /* Primary Colors - White Primary, Black Secondary */
+    --primary: #ffffff;
+    --primary-dark: #e5e5e5;
+    --primary-light: #ffffff;
+    --secondary: #000000;
+    --secondary-dark: #0a0a0a;
+    --secondary-light: #333333;
     
     /* Accent Colors */
-    --accent: #f59e0b;
-    --accent-dark: #d97706;
-    --accent-light: #fbbf24;
+    --accent: #666666;
+    --accent-dark: #444444;
+    --accent-light: #888888;
     
     /* Status Colors */
     --success: #10b981;
@@ -86,18 +86,18 @@
    =========================== */
 
 [data-theme="light"] {
-    /* Primary Colors */
-    --primary: #0891b2;
-    --primary-dark: #0e7490;
-    --primary-light: #06b6d4;
-    --secondary: #7c3aed;
-    --secondary-dark: #5b21b6;
-    --secondary-light: #a855f7;
+    /* Primary Colors - White Primary, Black Secondary */
+    --primary: #ffffff;
+    --primary-dark: #e5e5e5;
+    --primary-light: #ffffff;
+    --secondary: #000000;
+    --secondary-dark: #0a0a0a;
+    --secondary-light: #333333;
     
     /* Accent Colors */
-    --accent: #f59e0b;
-    --accent-dark: #d97706;
-    --accent-light: #fbbf24;
+    --accent: #666666;
+    --accent-dark: #444444;
+    --accent-light: #888888;
     
     /* Status Colors */
     --success: #059669;

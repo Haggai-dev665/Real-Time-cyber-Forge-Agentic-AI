@@ -18,8 +18,11 @@
     
     <!-- External Dependencies -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -577,6 +580,84 @@
                                 <i class="fas fa-mask"></i>
                                 <span>Deception Tech</span>
                             </button>
+                            <button class="nav-item secondary-component" data-screen="behavioral-analysis">
+                                <i class="fas fa-user-check"></i>
+                                <span>Behavioral Analysis</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="dark-web-monitoring">
+                                <i class="fas fa-user-secret"></i>
+                                <span>Dark Web Monitor</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Threat Hunting & Intelligence -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">
+                            <i class="fas fa-search"></i>
+                            <span>Threat Hunting</span>
+                            <button class="section-toggle" data-section="hunting">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="hunting">
+                            <button class="nav-item" data-screen="threat-hunting">
+                                <i class="fas fa-crosshairs"></i>
+                                <span>Threat Hunting</span>
+                            </button>
+                            <button class="nav-item" data-screen="ioc-analysis">
+                                <i class="fas fa-fingerprint"></i>
+                                <span>IOC Analysis</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="yara-rules">
+                                <i class="fas fa-code-branch"></i>
+                                <span>YARA Rules</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="mitre-attack">
+                                <i class="fas fa-shield-virus"></i>
+                                <span>MITRE ATT&CK</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="osint-tools">
+                                <i class="fas fa-globe"></i>
+                                <span>OSINT Tools</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="sandbox-analysis">
+                                <i class="fas fa-cube"></i>
+                                <span>Sandbox Analysis</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Web Scraping & Data Collection -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">
+                            <i class="fas fa-spider"></i>
+                            <span>Web Intelligence</span>
+                            <button class="section-toggle" data-section="webintel">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="nav-items" data-section-content="webintel">
+                            <button class="nav-item" data-screen="web-scraper">
+                                <i class="fas fa-spider"></i>
+                                <span>Web Scraper</span>
+                            </button>
+                            <button class="nav-item" data-screen="domain-intelligence">
+                                <i class="fas fa-globe-americas"></i>
+                                <span>Domain Intelligence</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="social-media-monitor">
+                                <i class="fas fa-hashtag"></i>
+                                <span>Social Media Monitor</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="phishing-kit-detection">
+                                <i class="fas fa-fish"></i>
+                                <span>Phishing Kit Detection</span>
+                            </button>
+                            <button class="nav-item secondary-component" data-screen="breach-monitoring">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Breach Monitoring</span>
+                            </button>
                         </div>
                     </div>
 
@@ -793,6 +874,21 @@
     <script src="screens/risk-assessment.js"></script>
     <script src="screens/security-metrics.js"></script>
     <script src="screens/penetration-testing.js"></script>
+    
+    <!-- New Advanced Screens -->
+    <script src="screens/web-scraper.js"></script>
+    <script src="screens/threat-hunting.js"></script>
+    <script src="screens/domain-intelligence.js"></script>
+    <script src="screens/behavioral-analysis.js"></script>
+    <script src="screens/dark-web-monitoring.js"></script>
+    <script src="screens/ioc-analysis.js"></script>
+    <script src="screens/yara-rules.js"></script>
+    <script src="screens/mitre-attack.js"></script>
+    <script src="screens/osint-tools.js"></script>
+    <script src="screens/sandbox-analysis.js"></script>
+    <script src="screens/social-media-monitor.js"></script>
+    <script src="screens/phishing-kit-detection.js"></script>
+    <script src="screens/breach-monitoring.js"></script>
     
 <<<<<<< Updated upstream
     <!-- Backend Integration Screens -->

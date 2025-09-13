@@ -30,7 +30,7 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
-      <div className="min-h-screen bg-cyber-gradient">
+      <div className="min-h-screen bg-white">
         <Navbar />
         <Hero />
         <Features />

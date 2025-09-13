@@ -9,7 +9,7 @@
   }
   
   body {
-    @apply bg-cyber-gradient min-h-screen text-white;
+    @apply bg-white min-h-screen text-gray-900;
   }
 }
 

@@ -49,9 +49,9 @@ export default function Features() {
   ]
 
   return (
-    <section id="features" className="py-20 relative overflow-hidden">
+    <section id="features" className="py-20 relative overflow-hidden bg-white">
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-black/20"></div>
+      <div className="absolute inset-0 bg-white/95"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -62,10 +62,10 @@ export default function Features() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
             Powerful <span className="text-gradient">Security Features</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Our comprehensive cybersecurity platform combines cutting-edge AI technology 
             with real-time monitoring to keep you safe online.
           </p>
@@ -92,10 +92,10 @@ export default function Features() {
               </motion.div>
 
               {/* Content */}
-              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-cyber-blue transition-colors duration-300">
+              <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-cyber-blue transition-colors duration-300">
                 {feature.title}
               </h3>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-gray-600 leading-relaxed">
                 {feature.description}
               </p>
 
@@ -118,10 +118,10 @@ export default function Features() {
           className="text-center mt-16"
         >
           <div className="glass-effect rounded-xl p-8 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Ready to Secure Your Digital Life?
             </h3>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-600 mb-6">
               Join thousands of users who trust Cyber Forge AI to protect their online activities.
             </p>
             <motion.a

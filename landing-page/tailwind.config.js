@@ -35,8 +35,8 @@ module.exports = {
         },
       },
       backgroundImage: {
-        'cyber-gradient': 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        'cyber-radial': 'radial-gradient(circle at center, rgba(0, 212, 255, 0.1) 0%, transparent 70%)',
+        'cyber-gradient': 'linear-gradient(135deg, #ffffff 0%, #ffffff 100%)',
+        'cyber-radial': 'radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 1) 70%)',
       },
     },
   },

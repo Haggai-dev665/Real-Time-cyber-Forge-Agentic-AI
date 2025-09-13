@@ -1,7 +1,7 @@
 {
   "name": "cyber-forge-ai-platform",
   "version": "1.0.0",
-  "description": "Real-Time Cyber Forge Agentic AI Platform - Complete cybersecurity solution",
+  "description": "🛡️ Advanced Real-Time Cybersecurity Platform with AI-Powered Threat Detection | Cross-platform desktop application featuring intelligent security monitoring, machine learning-based threat analysis, and agentic AI assistant | Built with Electron, React, TensorFlow, and LangChain | Comprehensive security analytics, real-time threat intelligence, and automated incident response capabilities",
   "private": true,
   "scripts": {
     "install:all": "npm install && npm run install:desktop && npm run install:mobile && npm run install:landing && npm run install:backend && npm run install:ml",

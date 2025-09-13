@@ -6,7 +6,6 @@
 class APIClient {
     constructor() {
         this.backendUrl = 'http://localhost:8000';
-        this.mlServiceUrl = 'http://localhost:8001';
         this.authToken = localStorage.getItem('authToken');
         this.refreshToken = localStorage.getItem('refreshToken');
         
@@ -323,10 +322,11 @@ class APIClient {
         }
     }
 
-    // ML Service methods (direct communication with ML service)
+    // ML Service methods (via backend)
     async mlHealthCheck() {
         try {
-            return await this.request(`${this.mlServiceUrl}/health`);
+            // Route through backend instead of direct ML service call
+            return await this.request(`${this.backendUrl}/api/ai/ml-health`);
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -334,9 +334,10 @@ class APIClient {
 
     async mlAnalyze(query, context = 'general') {
         try {
-            return await this.request(`${this.mlServiceUrl}/analyze`, {
+            // Route through backend instead of direct ML service call
+            return await this.request(`${this.backendUrl}/api/ai/chat`, {
                 method: 'POST',
-                body: JSON.stringify({ query, context })
+                body: JSON.stringify({ message: query, context })
             });
         } catch (error) {
             return { success: false, error: error.message };
@@ -345,7 +346,8 @@ class APIClient {
 
     async mlAnalyzeUrl(url, context = 'website_analysis') {
         try {
-            return await this.request(`${this.mlServiceUrl}/analyze-url`, {
+            // Route through backend instead of direct ML service call
+            return await this.request(`${this.backendUrl}/api/ai/analyze-website`, {
                 method: 'POST',
                 body: JSON.stringify({ url, context })
             });
@@ -356,7 +358,8 @@ class APIClient {
 
     async mlGetModels() {
         try {
-            return await this.request(`${this.mlServiceUrl}/models`);
+            // Route through backend instead of direct ML service call
+            return await this.request(`${this.backendUrl}/api/ai/models/status`);
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -364,9 +367,10 @@ class APIClient {
 
     async mlTrainModel(modelConfig) {
         try {
-            return await this.request(`${this.mlServiceUrl}/train`, {
+            // Route through backend instead of direct ML service call
+            return await this.request(`${this.backendUrl}/api/ai/execute-task`, {
                 method: 'POST',
-                body: JSON.stringify(modelConfig)
+                body: JSON.stringify({ task: 'train_model', config: modelConfig })
             });
         } catch (error) {
             return { success: false, error: error.message };
@@ -375,7 +379,8 @@ class APIClient {
 
     async mlPredictThreat(data) {
         try {
-            return await this.request(`${this.mlServiceUrl}/predict`, {
+            // Route through backend instead of direct ML service call
+            return await this.request(`${this.backendUrl}/api/ai/scan-threats`, {
                 method: 'POST',
                 body: JSON.stringify(data)
             });

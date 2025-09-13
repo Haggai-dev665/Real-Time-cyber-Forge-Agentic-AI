@@ -12,7 +12,20 @@ const router = express.Router();
 
 // Get all threats for user
 router.get('/',
-  auth,
+  // Optional auth - allow desktop apps to access basic threats
+  (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
+    
+    if (isDesktopApp) {
+      // Skip auth for desktop app
+      req.isDesktopApp = true;
+      return next();
+    } else {
+      // Require auth for web/mobile
+      return auth(req, res, next);
+    }
+  },
   [
     query('page').optional().isInt({ min: 1 }),
     query('limit').optional().isInt({ min: 1, max: 100 }),
@@ -58,10 +71,35 @@ router.get('/',
 
 // Get threat statistics
 router.get('/stats',
-  auth,
+  // Optional auth - allow desktop apps to access basic stats
+  (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
+    
+    console.log('🔍 Threats Stats Auth Check:', { userAgent, isDesktopApp });
+    
+    if (isDesktopApp) {
+      // Skip auth for desktop app
+      req.isDesktopApp = true;
+      console.log('✅ Desktop app detected, skipping auth');
+      return next();
+    } else {
+      // Require auth for web/mobile
+      console.log('🔐 Web/mobile client, requiring auth');
+      return auth(req, res, next);
+    }
+  },
   asyncHandler(async (req, res) => {
     try {
-      const stats = await getThreatStats(req.user.userId);
+      let stats;
+      
+      if (req.isDesktopApp) {
+        // Return basic stats for desktop app
+        stats = await getThreatStats();
+      } else {
+        // Return user-specific stats for authenticated users
+        stats = await getThreatStats(req.user.userId);
+      }
       
       res.json({
         success: true,

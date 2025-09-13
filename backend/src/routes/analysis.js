@@ -18,7 +18,24 @@ const router = express.Router();
 
 // Get analysis statistics
 router.get('/stats', 
-  auth,
+  // Optional auth - allow desktop apps to access basic stats
+  (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
+    
+    console.log('🔍 Analysis Stats Auth Check:', { userAgent, isDesktopApp });
+    
+    if (isDesktopApp) {
+      // Skip auth for desktop app
+      req.isDesktopApp = true;
+      console.log('✅ Desktop app detected, skipping auth');
+      return next();
+    } else {
+      // Require auth for web/mobile
+      console.log('🔐 Web/mobile client, requiring auth');
+      return auth(req, res, next);
+    }
+  },
   asyncHandler(async (req, res) => {
     try {
       // Mock stats for now
@@ -45,7 +62,24 @@ router.get('/stats',
 
 // Get user analyses with pagination
 router.get('/history', 
-  auth,
+  // Optional auth - allow desktop apps to access basic analysis history
+  (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
+    
+    console.log('🔍 Analysis History Auth Check:', { userAgent, isDesktopApp });
+    
+    if (isDesktopApp) {
+      // Skip auth for desktop app
+      req.isDesktopApp = true;
+      console.log('✅ Desktop app detected, skipping auth for history');
+      return next();
+    } else {
+      // Require auth for web/mobile
+      console.log('🔐 Web/mobile client, requiring auth for history');
+      return auth(req, res, next);
+    }
+  },
   [
     query('page').optional().isInt({ min: 1 }),
     query('limit').optional().isInt({ min: 1, max: 100 }),

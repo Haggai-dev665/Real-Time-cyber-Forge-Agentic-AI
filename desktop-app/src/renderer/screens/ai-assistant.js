@@ -324,11 +324,13 @@ class AIAssistantScreen {
             try {
                 const response = await window.apiClient.chatWithAI(message, this.currentConversationId);
                 if (response.success) {
+                    this.currentConversationId = response.conversationId;
                     return {
-                        message: response.data.response,
+                        message: response.response,
                         metadata: {
-                            confidence: response.data.confidence,
-                            sources: response.data.sources
+                            confidence: response.confidence,
+                            sources: response.sources,
+                            source: response.source || 'backend'
                         }
                     };
                 }
@@ -337,18 +339,39 @@ class AIAssistantScreen {
             }
         }
 
-        // Fallback to ML service direct
+        // Fallback to ML service via IPC (electron API)
+        if (window.electronAPI && window.electronAPI.mlService && window.electronAPI.mlService.chat) {
+            try {
+                const response = await window.electronAPI.mlService.chat(
+                    message,
+                    this.currentConversationId,
+                    'chat'
+                );
+                
+                if (response.success && response.data) {
+                    this.currentConversationId = response.data.conversation_id || this.currentConversationId;
+                    return {
+                        message: response.data.response || 'I received your message.',
+                        metadata: { source: 'ml-service-ipc' }
+                    };
+                }
+            } catch (error) {
+                console.error('ML service IPC request failed:', error);
+            }
+        }
+
+        // Fallback to ML service direct HTTP call
         if (window.apiClient) {
             try {
                 const response = await window.apiClient.mlAnalyze(message, 'chat');
                 if (response.success) {
                     return {
                         message: response.response || response.result || 'I received your message but couldn\'t generate a proper response.',
-                        metadata: { source: 'ml-service' }
+                        metadata: { source: 'ml-service-direct' }
                     };
                 }
             } catch (error) {
-                console.error('ML service request failed:', error);
+                console.error('ML service direct request failed:', error);
             }
         }
 

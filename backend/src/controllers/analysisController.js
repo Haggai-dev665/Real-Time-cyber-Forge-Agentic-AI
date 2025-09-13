@@ -158,7 +158,27 @@ class AnalysisController {
       } = req.query;
 
       // Build query
-      const query = { userId: req.user.userId };
+      let query = {};
+      
+      // For authenticated users, filter by userId
+      if (req.user && req.user.userId) {
+        query.userId = req.user.userId;
+      } else if (req.isDesktopApp) {
+        // For desktop apps, return mock data or public analysis data
+        return res.json({
+          success: true,
+          data: {
+            analyses: [], // Empty array for now - can be populated with mock data
+            pagination: {
+              currentPage: parseInt(page),
+              totalPages: 0,
+              totalCount: 0,
+              hasNext: false,
+              hasPrev: false
+            }
+          }
+        });
+      }
       
       if (status) query.status = status;
       if (analysisType) query.analysisType = analysisType;

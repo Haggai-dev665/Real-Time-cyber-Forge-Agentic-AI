@@ -110,6 +110,14 @@ class CyberForgeApp {
     async initializeCore() {
         this.updateLoadingProgress(15);
         
+        // Initialize API client
+        if (typeof APIClient !== 'undefined') {
+            window.apiClient = new APIClient();
+            console.log('✅ API client initialized');
+        } else {
+            console.warn('⚠️ APIClient not available');
+        }
+        
         // Initialize utilities
         if (window.themeManager) {
             window.themeManager.respectSystemPreferences();

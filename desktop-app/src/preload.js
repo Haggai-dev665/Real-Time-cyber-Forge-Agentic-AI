@@ -29,17 +29,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI interface
   queryAI: (query) => ipcRenderer.invoke('query-ai', query),
   
-  // ML Service integration
-  mlService: {
-    healthCheck: () => ipcRenderer.invoke('ml:checkHealth'),
-    chat: (message, conversationId, context) => ipcRenderer.invoke('ml:chatWithAI', { message, conversationId, context }),
-    analyzeWebsite: (url, content) => ipcRenderer.invoke('ml:analyzeWebsite', { url, content }),
-    scanThreats: (data) => ipcRenderer.invoke('ml:scanForThreats', data),
-    getInsights: (query, context) => ipcRenderer.invoke('ml:getAIInsights', { query, context }),
-    analyzeNetwork: (trafficData) => ipcRenderer.invoke('ml:analyzeNetworkTraffic', trafficData),
-    executeTask: (taskType, taskData) => ipcRenderer.invoke('ml:executeAITask', { taskType, taskData })
-  },
-  
   // Authentication
   auth: {
     login: (credentials) => ipcRenderer.invoke('auth:login', credentials),

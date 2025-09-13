@@ -134,6 +134,18 @@ class WebSocketManager {
         await this.handleSettingUpdate(clientId, message);
         break;
       
+      case 'heartbeat':
+        await this.handleHeartbeat(clientId, message);
+        break;
+      
+      case 'connection_established':
+        // Acknowledge connection establishment
+        client.socket.send(JSON.stringify({
+          type: 'connection_acknowledged',
+          timestamp: new Date().toISOString()
+        }));
+        break;
+      
       default:
         console.log(`Unknown message type: ${message.type} from client ${clientId}`);
     }
@@ -372,6 +384,21 @@ class WebSocketManager {
 
     // Alert mobile clients
     this.broadcastToMobiles(threatAlert);
+  }
+
+  async handleHeartbeat(clientId, message) {
+    const client = this.clients.get(clientId);
+    if (client) {
+      // Update last activity
+      client.lastActivity = new Date();
+      
+      // Send heartbeat response
+      client.socket.send(JSON.stringify({
+        type: 'heartbeat_response',
+        timestamp: new Date().toISOString(),
+        clientId: clientId
+      }));
+    }
   }
 
   broadcastToDesktops(message) {

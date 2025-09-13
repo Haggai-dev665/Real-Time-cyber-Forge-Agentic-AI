@@ -14,8 +14,7 @@ class SettingsScreen {
             scanFrequency: 'daily',
             threatAlerts: true,
             dataRetention: '30',
-            apiEndpoint: 'http://localhost:8000',
-            mlEndpoint: 'http://localhost:8001'
+            apiEndpoint: 'http://localhost:8000'
         };
         this.originalSettings = {};
     }
@@ -297,12 +296,6 @@ class SettingsScreen {
                             </div>
 
                             <div class="setting-group">
-                                <label class="setting-label">ML Service Endpoint</label>
-                                <input type="url" class="form-input" id="ml-endpoint" placeholder="http://localhost:8001">
-                                <p class="setting-description">URL of the ML analysis service</p>
-                            </div>
-
-                            <div class="setting-group">
                                 <label class="setting-label">
                                     <input type="checkbox" id="debug-mode">
                                     Enable debug mode
@@ -544,8 +537,7 @@ class SettingsScreen {
             scanFrequency: 'daily',
             threatAlerts: true,
             dataRetention: '30',
-            apiEndpoint: 'http://localhost:8000',
-            mlEndpoint: 'http://localhost:8001'
+            apiEndpoint: 'http://localhost:8000'
         };
 
         // Update form

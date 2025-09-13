@@ -68,9 +68,10 @@ class MLService {
      */
     async analyzeWebsite(url, content = null) {
         try {
-            const response = await this.axiosInstance.post('/api/analysis/website', {
+            const response = await this.axiosInstance.post('/analyze-url', {
                 url,
                 content,
+                context: 'website_analysis',
                 timestamp: new Date().toISOString()
             });
             
@@ -92,8 +93,9 @@ class MLService {
      */
     async scanForThreats(data) {
         try {
-            const response = await this.axiosInstance.post('/api/threats/scan', {
+            const response = await this.axiosInstance.post('/scan-threats', {
                 ...data,
+                context: 'threat_scan',
                 timestamp: new Date().toISOString()
             });
             
@@ -139,11 +141,10 @@ class MLService {
      */
     async chatWithAI(message, conversationId = null, context = {}) {
         try {
-            const response = await this.axiosInstance.post('/api/ai/chat', {
-                message,
-                conversation_id: conversationId,
-                context,
-                timestamp: new Date().toISOString()
+            const response = await this.axiosInstance.post('/analyze', {
+                query: message,
+                conversation_history: conversationId ? [conversationId] : [],
+                context: typeof context === 'string' ? { type: context } : context
             });
             
             return {

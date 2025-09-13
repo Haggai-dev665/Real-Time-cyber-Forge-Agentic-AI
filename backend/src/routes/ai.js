@@ -443,10 +443,9 @@ router.get('/models/status',
 /**
  * @route   GET /api/ai/ml-health
  * @desc    Check ML services health
- * @access  Private
+ * @access  Public
  */
 router.get('/ml-health',
-  auth,
   async (req, res) => {
     try {
       const healthStatus = await mlService.checkHealth();

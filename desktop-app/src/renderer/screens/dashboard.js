@@ -500,9 +500,9 @@ class DashboardScreen {
         try {
             if (window.apiClient) {
                 const analyses = await window.apiClient.getAnalysisHistory({ limit: 5 });
-                if (analyses.success && analyses.data) {
-                    this.renderActivityList(list, analyses.data, 'analysis');
-                    count.textContent = analyses.data.length;
+                if (analyses.success && analyses.data && analyses.data.analyses) {
+                    this.renderActivityList(list, analyses.data.analyses, 'analysis');
+                    count.textContent = analyses.data.analyses.length;
                     return;
                 }
             }
@@ -534,7 +534,8 @@ class DashboardScreen {
     }
 
     renderActivityList(container, items, type) {
-        if (!items || items.length === 0) {
+        // Ensure items is an array
+        if (!items || !Array.isArray(items) || items.length === 0) {
             container.innerHTML = '<div class="activity-item empty">No recent activity</div>';
             return;
         }

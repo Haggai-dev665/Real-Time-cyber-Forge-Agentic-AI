@@ -3,7 +3,6 @@ const path = require('path');
 const { setupBrowserMonitoring } = require('./browser-monitor/monitor');
 const { setupEnhancedBrowserMonitoring } = require('./browser-monitor/enhanced-monitor');
 const BrowserSelector = require('./browser-monitor/browser-selector');
-const { setupAIInterface } = require('./ai-interface/ai-client');
 const AuthService = require('./auth/AuthService');
 const WebSocket = require('ws');
 
@@ -57,9 +56,6 @@ class CyberForgeApp {
     // Set up enhanced browser monitoring for external browsers
     this.enhancedBrowserMonitor = setupEnhancedBrowserMonitoring(this.mainWindow);
     
-    // Set up AI interface
-    this.aiInterface = setupAIInterface();
-    
     // Connect to backend
     this.connectToBackend();
   }
@@ -75,6 +71,15 @@ class CyberForgeApp {
       this.wsConnection.on('open', () => {
         console.log('Connected to backend');
         this.mainWindow.webContents.send('backend-status', 'connected');
+        
+        // Send client identification
+        this.wsConnection.send(JSON.stringify({
+          type: 'identify',
+          client_type: 'desktop',
+          version: require('../package.json').version || '1.0.0',
+          platform: process.platform,
+          timestamp: new Date().toISOString()
+        }));
         
         // Send authentication info if logged in
         if (this.authService.isAuthenticated()) {
@@ -108,6 +113,12 @@ class CyberForgeApp {
 
   handleBackendMessage(message) {
     switch (message.type) {
+      case 'connection_established':
+        console.log('Backend connection established:', message.clientId);
+        break;
+      case 'identification_confirmed':
+        console.log('Client identification confirmed:', message.clientType);
+        break;
       case 'analysis_result':
         this.mainWindow.webContents.send('analysis-result', message.data);
         break;
@@ -116,6 +127,9 @@ class CyberForgeApp {
         break;
       case 'ai_insight':
         this.mainWindow.webContents.send('ai-insight', message.data);
+        break;
+      case 'heartbeat_response':
+        // Handle heartbeat response
         break;
       default:
         console.log('Unknown message type:', message.type);
@@ -183,24 +197,6 @@ class CyberForgeApp {
       } catch (error) {
         console.error('Get threats error:', error);
         return { success: false, error: error.message, data: [] };
-      }
-    });
-
-    // ML Service Health Check
-    ipcMain.handle('ml:checkHealth', async () => {
-      console.log('ML health check requested');
-      try {
-        const response = await fetch('http://127.0.0.1:8001/health');
-        const data = await response.json();
-        console.log('ML health check successful:', data);
-        return { success: true, data };
-      } catch (error) {
-        console.error('ML health check error:', error.message);
-        return { 
-          success: false, 
-          error: 'ML service not available',
-          data: { status: 'offline', message: 'AI service unavailable: ' + error.message }
-        };
       }
     });
 
@@ -273,89 +269,6 @@ class CyberForgeApp {
         return this.enhancedBrowserMonitor.getMonitoringData();
       }
       return this.browserMonitor?.getAnalysisData() || [];
-    });
-
-    // ML Service Integration Handlers
-    ipcMain.handle('ml:chatWithAI', async (event, { message, conversationId, context }) => {
-      try {
-        const response = await fetch('http://127.0.0.1:8001/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            query: message, 
-            context: context || 'chat', 
-            conversation_history: conversationId ? [conversationId] : []
-          })
-        });
-        
-        const data = await response.json();
-        return { success: true, data: { response: data.response || data.result || "Response received" } };
-      } catch (error) {
-        console.error('ML chat error:', error);
-        return { 
-          success: false, 
-          error: error.message,
-          data: { response: "I'm having technical difficulties. Please try again later." }
-        };
-      }
-    });
-
-    ipcMain.handle('ml:analyzeWebsite', async (event, { url, content }) => {
-      try {
-        const response = await fetch('http://127.0.0.1:8001/analyze-url', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ url, context: 'website_analysis' })
-        });
-        
-        return await response.json();
-      } catch (error) {
-        console.error('ML website analysis error:', error);
-        return { success: false, error: error.message };
-      }
-    });
-
-    ipcMain.handle('ml:scanForThreats', async (event, data) => {
-      try {
-        const response = await fetch('http://127.0.0.1:8001/scan-threats', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            urls: Array.isArray(data) ? data : [data],
-            context: 'threat_scan',
-            scan_id: Date.now().toString()
-          })
-        });
-        
-        return await response.json();
-      } catch (error) {
-        console.error('ML threat scan error:', error);
-        return { success: false, error: error.message };
-      }
-    });
-
-    ipcMain.handle('ml:getAIInsights', async (event, { query, context }) => {
-      try {
-        const response = await fetch('http://127.0.0.1:8001/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ query, context: context || 'insights' })
-        });
-        
-        const data = await response.json();
-        return { success: true, data: { insights: data.insights, recommendations: data.recommendations } };
-      } catch (error) {
-        console.error('ML insights error:', error);
-        return { success: false, error: error.message };
-      }
     });
 
     // Window Controls

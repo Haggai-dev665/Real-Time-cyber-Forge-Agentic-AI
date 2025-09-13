@@ -73,9 +73,9 @@ class CyberForgeServer {
 
     // API routes
     this.app.use('/api/auth', authRoutes);
-    this.app.use('/api/analysis', auth, analysisRoutes);
-    this.app.use('/api/threats', auth, threatRoutes);
-    this.app.use('/api/ai', auth, aiRoutes);
+    this.app.use('/api/analysis', analysisRoutes); // Remove global auth - let routes handle their own auth
+    this.app.use('/api/threats', threatRoutes);    // Remove global auth - let routes handle their own auth
+    this.app.use('/api/ai', aiRoutes);             // Remove global auth for all AI routes
 
     // WebSocket endpoint info
     this.app.get('/ws/info', (req, res) => {

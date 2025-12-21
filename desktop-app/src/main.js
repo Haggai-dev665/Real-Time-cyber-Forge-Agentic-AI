@@ -43,8 +43,8 @@ class CyberForgeApp {
       app.commandLine.appendSwitch('--no-sandbox');
     }
 
-    // Load the main interface
-    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+    // Load the Caido-style interface
+    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'caido-index.html'));
 
     if (process.argv.includes('--dev')) {
       this.mainWindow.webContents.openDevTools();

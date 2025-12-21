@@ -36,8 +36,8 @@ class RedisService {
       });
 
       this.client.on('error', (error) => {
-        console.warn('Redis connection error:', error.message);
-        this.setupMockRedis();
+        console.error('Redis connection error:', error.message);
+        this.isConnected = false;
       });
 
       this.client.on('connect', () => {
@@ -53,8 +53,8 @@ class RedisService {
       await this.client.connect();
 
     } catch (error) {
-      console.warn('❌ Redis connection failed:', error.message);
-      this.setupMockRedis();
+      console.error('❌ Redis connection failed:', error.message);
+      throw new Error(`Redis connection failed: ${error.message}`);
     }
   }
 

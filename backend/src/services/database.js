@@ -41,10 +41,7 @@ class DatabaseService {
 
     } catch (error) {
       console.error('❌ Database connection failed:', error.message);
-      
-      // If connection fails, use fallback mock database
-      console.log('🔄 Using fallback mock database...');
-      this.setupMockDatabase();
+      throw new Error(`MongoDB connection failed: ${error.message}`);
     }
   }
 

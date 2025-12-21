@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' http://localhost:* ws://localhost:*">
+    <title>Cyberforge - Security Testing Tool</title>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/caido-theme.css">
+    
+    <!-- External Dependencies -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="caido-app" id="app">
+        <!-- Top Header Bar -->
+        <header class="caido-header">
+            <div class="caido-header-left">
+                <div class="caido-logo">
+                    <div class="caido-logo-icon">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <span>Cyberforge</span>
+                </div>
+                
+                <div class="scope-selector" id="scope-selector">
+                    <i class="fas fa-filter"></i>
+                    <span>Unset Scope</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+            
+            <div class="caido-header-center">
+                <div class="header-controls">
+                    <button class="header-btn" id="record-btn" title="Record">
+                        <i class="fas fa-circle"></i>
+                    </button>
+                    <button class="header-btn active" id="pause-btn" title="Pause">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                </div>
+                
+                <div class="queue-status" id="queue-status">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Queuing</span>
+                </div>
+            </div>
+            
+            <div class="caido-header-right">
+                <span class="caido-badge green" id="backend-status" title="Backend Connection">Connecting...</span>
+                <button class="header-btn" id="theme-toggle" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="env-selector" id="env-selector">
+                    <i class="fas fa-globe"></i>
+                    <span>Environment</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                
+                <div class="project-selector" id="project-selector">
+                    <i class="fas fa-crosshairs"></i>
+                    <span>Hackers-Arise ...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                
+                <div class="user-avatar" id="user-avatar" title="User Menu">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="caido-main">
+            <!-- Left Sidebar -->
+            <aside class="caido-sidebar" id="sidebar">
+                <!-- Overview Section -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Overview</div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="dashboard">
+                                <i class="fas fa-gauge"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="sitemap">
+                                <i class="fas fa-sitemap"></i>
+                                <span>Sitemap</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="scopes">
+                                <i class="fas fa-bullseye"></i>
+                                <span>Scopes</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="filters">
+                                <i class="fas fa-filter"></i>
+                                <span>Filters</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Proxy Section -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Proxy</div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="intercept">
+                                <i class="fas fa-hand"></i>
+                                <span>Intercept</span>
+                                <span class="sidebar-nav-badge">5</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link active" data-screen="http-history">
+                                <i class="fas fa-history"></i>
+                                <span>HTTP History</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="ws-history">
+                                <i class="fas fa-plug"></i>
+                                <span>WS History</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="match-replace">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>Match & Replace</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Testing Section -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Testing</div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="replay">
+                                <i class="fas fa-redo"></i>
+                                <span>Replay</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="automate">
+                                <i class="fas fa-robot"></i>
+                                <span>Automate</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="workflows">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Workflows</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="assistant">
+                                <i class="fas fa-magic"></i>
+                                <span>Assistant</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="ai-models">
+                                <i class="fas fa-brain"></i>
+                                <span>AI Models</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="threat-intel">
+                                <i class="fas fa-radiation"></i>
+                                <span>Threat Intel</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="environment">
+                                <i class="fas fa-cog"></i>
+                                <span>Environment</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Logging Section -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Logging</div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="search">
+                                <i class="fas fa-search"></i>
+                                <span>Search</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="findings">
+                                <i class="fas fa-flag"></i>
+                                <span>Findings</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="exports">
+                                <i class="fas fa-download"></i>
+                                <span>Exports</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Workspace Section -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Workspace</div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="files">
+                                <i class="fas fa-folder"></i>
+                                <span>Files</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="plugins">
+                                <i class="fas fa-puzzle-piece"></i>
+                                <span>Plugins</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="workspace">
+                                <i class="fas fa-briefcase"></i>
+                                <span>Workspace</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="sync-status">
+                                <i class="fas fa-cloud"></i>
+                                <span>Sync Status</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="browser-extension">
+                                <i class="fas fa-globe"></i>
+                                <span>Browser Extension</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="mobile-companion">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Mobile Companion</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- AI Agent Section -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">AI Agent</div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="ai-agent">
+                                <i class="fas fa-brain"></i>
+                                <span>Agent Console</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Sidebar Footer -->
+                <div class="sidebar-footer">
+                    <button class="sidebar-collapse-btn" id="collapse-sidebar">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Collapse Sidebar</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content Panel -->
+            <div class="caido-content">
+                <!-- Tab Bar -->
+                <div class="caido-tabs">
+                    <button class="caido-tab active" data-tab="requests">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Requests</span>
+                    </button>
+                    <button class="caido-tab" data-tab="responses">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Responses</span>
+                    </button>
+                    <button class="caido-tab" data-tab="websockets">
+                        <i class="fas fa-plug"></i>
+                        <span>Websockets</span>
+                    </button>
+                </div>
+                
+                <!-- Query Bar -->
+                <div class="query-bar">
+                    <input type="text" class="query-input" id="query-input" placeholder="Enter an HTTPQL query...">
+                </div>
+                
+                <!-- Screen Container -->
+                <div id="screen-container" class="caido-split-view">
+                    <!-- HTTP History Screen (Default) -->
+                    <div class="caido-split-horizontal" id="http-history-screen">
+                        <!-- Requests Table Panel -->
+                        <div class="caido-panel" style="flex: 1;">
+                            <div class="caido-table-container">
+                                <table class="caido-table" id="requests-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Host</th>
+                                            <th>Method</th>
+                                            <th>Path</th>
+                                            <th>Query</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="requests-tbody">
+                                        <!-- Requests will be populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Resizer -->
+                        <div class="caido-resizer" id="main-resizer"></div>
+                        
+                        <!-- Request Detail Panel -->
+                        <div class="caido-panel" id="detail-panel" style="width: 50%;">
+                            <div class="caido-panel-header">
+                                <div class="caido-panel-title">Request Details</div>
+                                <div class="caido-panel-actions">
+                                    <button class="panel-action-btn" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="panel-action-btn" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="caido-panel-content" id="request-detail-content">
+                                <div class="empty-state">
+                                    <i class="fas fa-mouse-pointer empty-state-icon"></i>
+                                    <div class="empty-state-title">Select a request</div>
+                                    <div class="empty-state-description">Click on a request in the table to view its details</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bottom Action Bar -->
+                <div class="action-buttons" id="action-bar">
+                    <div class="collection-dropdown">
+                        <span>Default Collection</span>
+                        <span class="text-muted">*R</span>
+                    </div>
+                    
+                    <div style="flex: 1;"></div>
+                    
+                    <button class="action-btn" id="drop-btn">
+                        <i class="fas fa-trash"></i>
+                        <span>Drop</span>
+                    </button>
+                    <button class="action-btn primary" id="forward-btn">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Forward</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Context Menu (Hidden by default) -->
+        <div class="context-menu" id="context-menu" style="display: none;">
+            <div class="context-menu-item" data-action="copy-url">
+                <i class="fas fa-link"></i>
+                <span>Copy URL</span>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send to Replay</span>
+                </div>
+                <div class="context-menu">
+                    <div class="context-menu-item" data-action="replay-new">New Tab</div>
+                    <div class="context-menu-item" data-action="replay-existing">Existing Tab</div>
+                </div>
+            </div>
+            <div class="context-menu-item" data-action="send-automate">
+                <i class="fas fa-robot"></i>
+                <span>Send to Automate</span>
+                <span class="shortcut">^M</span>
+            </div>
+            <div class="context-menu-item" data-action="send-findings">
+                <i class="fas fa-flag"></i>
+                <span>Send to Findings...</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" data-action="replay-browser">
+                <i class="fas fa-globe"></i>
+                <span>Replay in browser</span>
+            </div>
+            <div class="context-menu-item" data-action="view-response">
+                <i class="fas fa-eye"></i>
+                <span>View response in browser</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" data-action="highlight">
+                <i class="fas fa-highlighter"></i>
+                <span>Highlight</span>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add in Scope</span>
+                </div>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-minus-circle"></i>
+                    <span>Add out of Scope</span>
+                </div>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" data-action="run-workflow">
+                <i class="fas fa-play"></i>
+                <span>Run workflow</span>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <span>Plugins</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="api-client.js"></script>
+    <script src="caido-app.js"></script>
+</body>
+</html>

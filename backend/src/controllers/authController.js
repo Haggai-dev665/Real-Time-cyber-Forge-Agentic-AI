@@ -338,6 +338,224 @@ class AuthController {
       });
     }
   }
+
+  /**
+   * Google OAuth Authentication
+   * Handles both new user registration and existing user login via Google
+   */
+  async googleAuth(req, res) {
+    try {
+      const { email, uid, displayName, photoURL, provider } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is required for Google authentication'
+        });
+      }
+
+      // Check if user exists
+      let user = await User.findOne({ email });
+
+      if (user) {
+        // Update existing user with Google info
+        user.googleId = uid;
+        user.photoURL = photoURL;
+        user.lastLoginAt = new Date();
+        user.provider = provider || 'google.com';
+        await user.save();
+      } else {
+        // Create new user
+        const nameParts = (displayName || email.split('@')[0]).split(' ');
+        user = new User({
+          email,
+          googleId: uid,
+          firstName: nameParts[0] || 'User',
+          lastName: nameParts.slice(1).join(' ') || '',
+          role: 'user',
+          provider: provider || 'google.com',
+          photoURL,
+          emailVerified: true,
+          isActive: true,
+          profile: {
+            preferences: {
+              theme: 'dark',
+              notifications: true,
+              securityLevel: 'standard'
+            }
+          }
+        });
+        await user.save();
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { 
+          userId: user._id, 
+          email: user.email,
+          role: user.role 
+        },
+        process.env.JWT_SECRET || 'cyber-forge-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        success: true,
+        message: 'Google authentication successful',
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            displayName: displayName || `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            photoURL: user.photoURL,
+            provider: user.provider
+          },
+          token
+        }
+      });
+
+    } catch (error) {
+      console.error('Google auth error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error during Google authentication'
+      });
+    }
+  }
+
+  /**
+   * Exchange Google OAuth authorization code for tokens
+   */
+  async exchangeGoogleToken(req, res) {
+    try {
+      const { code, redirect_uri } = req.body;
+
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          message: 'Authorization code is required'
+        });
+      }
+
+      // Exchange code for tokens using Google OAuth API
+      const axios = require('axios');
+      const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri,
+        grant_type: 'authorization_code'
+      });
+
+      const { access_token, id_token } = tokenResponse.data;
+
+      // Get user info from Google
+      const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      });
+
+      const googleUser = userInfoResponse.data;
+
+      // Find or create user
+      let user = await User.findOne({ email: googleUser.email });
+
+      if (user) {
+        // Update existing user
+        user.googleId = googleUser.id;
+        user.photoURL = googleUser.picture;
+        user.lastLoginAt = new Date();
+        user.provider = 'google.com';
+        await user.save();
+      } else {
+        // Create new user
+        user = new User({
+          email: googleUser.email,
+          googleId: googleUser.id,
+          firstName: googleUser.given_name || googleUser.name?.split(' ')[0] || 'User',
+          lastName: googleUser.family_name || googleUser.name?.split(' ').slice(1).join(' ') || '',
+          role: 'user',
+          provider: 'google.com',
+          photoURL: googleUser.picture,
+          emailVerified: googleUser.verified_email || true,
+          isActive: true,
+          profile: {
+            preferences: {
+              theme: 'dark',
+              notifications: true,
+              securityLevel: 'standard'
+            }
+          }
+        });
+        await user.save();
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { 
+          userId: user._id, 
+          email: user.email,
+          role: user.role 
+        },
+        process.env.JWT_SECRET || 'cyber-forge-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        success: true,
+        message: 'Google authentication successful',
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            displayName: googleUser.name || `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            photoURL: user.photoURL,
+            provider: 'google.com'
+          },
+          token
+        }
+      });
+
+    } catch (error) {
+      console.error('Google token exchange error:', error.response?.data || error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to exchange Google authorization code'
+      });
+    }
+  }
+
+  /**
+   * Handle Google OAuth callback (redirect from Google)
+   */
+  async googleCallback(req, res) {
+    try {
+      const { code, error } = req.query;
+
+      if (error) {
+        return res.redirect(`http://localhost:3000/auth/error?message=${encodeURIComponent(error)}`);
+      }
+
+      if (!code) {
+        return res.redirect('http://localhost:3000/auth/error?message=No authorization code received');
+      }
+
+      // For desktop app, redirect back with the code
+      // The desktop app will handle the code exchange
+      res.redirect(`http://localhost:8000/api/auth/google/callback?code=${code}`);
+
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect('http://localhost:3000/auth/error?message=Authentication failed');
+    }
+  }
 }
 
 module.exports = new AuthController();

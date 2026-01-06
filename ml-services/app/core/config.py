@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # AI/ML Configuration - Gemini API
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-pro"
+    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
     GEMINI_TEMPERATURE: float = 0.3
     GEMINI_MAX_TOKENS: int = 2048
     
@@ -44,5 +44,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields in .env file
 
 settings = Settings()

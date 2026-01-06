@@ -18,6 +18,7 @@ const aiRoutes = require('./routes/ai');
 const webScrapingRoutes = require('./routes/web-scraping');
 const domainIntelligenceRoutes = require('./routes/domain-intelligence');
 const threatHuntingRoutes = require('./routes/threat-hunting');
+const mlTrainingRoutes = require('./routes/ml-training');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 
@@ -82,6 +83,7 @@ class CyberForgeServer {
     this.app.use('/api/scraping', webScrapingRoutes);
     this.app.use('/api/domain-intel', domainIntelligenceRoutes);
     this.app.use('/api/threat-hunting', threatHuntingRoutes);
+    this.app.use('/api/ml', mlTrainingRoutes);
 
     // WebSocket endpoint info
     this.app.get('/ws/info', (req, res) => {

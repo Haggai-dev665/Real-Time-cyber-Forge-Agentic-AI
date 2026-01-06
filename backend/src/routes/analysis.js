@@ -25,16 +25,19 @@ router.get('/stats',
     
     console.log('🔍 Analysis Stats Auth Check:', { userAgent, isDesktopApp });
     
+    if (isDesktopApp && req.headers.authorization) {
+      console.log('🔐 Desktop app with token, enforcing auth');
+      return auth(req, res, next);
+    }
+
     if (isDesktopApp) {
-      // Skip auth for desktop app
       req.isDesktopApp = true;
       console.log('✅ Desktop app detected, skipping auth');
       return next();
-    } else {
-      // Require auth for web/mobile
-      console.log('🔐 Web/mobile client, requiring auth');
-      return auth(req, res, next);
     }
+
+    console.log('🔐 Web/mobile client, requiring auth');
+    return auth(req, res, next);
   },
   asyncHandler(async (req, res) => {
     try {
@@ -69,16 +72,19 @@ router.get('/history',
     
     console.log('🔍 Analysis History Auth Check:', { userAgent, isDesktopApp });
     
+    if (isDesktopApp && req.headers.authorization) {
+      console.log('🔐 Desktop app with token, enforcing auth');
+      return auth(req, res, next);
+    }
+
     if (isDesktopApp) {
-      // Skip auth for desktop app
       req.isDesktopApp = true;
       console.log('✅ Desktop app detected, skipping auth for history');
       return next();
-    } else {
-      // Require auth for web/mobile
-      console.log('🔐 Web/mobile client, requiring auth for history');
-      return auth(req, res, next);
     }
+
+    console.log('🔐 Web/mobile client, requiring auth for history');
+    return auth(req, res, next);
   },
   [
     query('page').optional().isInt({ min: 1 }),

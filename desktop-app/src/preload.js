@@ -1,8 +1,18 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Share core configuration with renderer without exposing the full process
+const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+const wsUrl = `${backendUrl.replace('http', 'ws')}/ws`;
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Shared config
+  config: {
+    backendUrl,
+    wsUrl
+  },
+
   // System and health
   getSystemStats: () => ipcRenderer.invoke('get-system-stats'),
   healthCheck: () => ipcRenderer.invoke('health-check'),
@@ -29,15 +39,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI interface
   queryAI: (query) => ipcRenderer.invoke('query-ai', query),
   
-  // Authentication
+  // Authentication (enhanced with Google OAuth)
   auth: {
     login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
     register: (userData) => ipcRenderer.invoke('auth:register', userData),
     logout: () => ipcRenderer.invoke('auth:logout'),
+    fullLogout: () => ipcRenderer.invoke('auth:fullLogout'),
     getUser: () => ipcRenderer.invoke('auth:getCurrentUser'),
+    getToken: () => ipcRenderer.invoke('auth:getToken'),
     isAuthenticated: () => ipcRenderer.invoke('auth:isAuthenticated'),
     updateProfile: (profileData) => ipcRenderer.invoke('auth:updateProfile', profileData),
-    changePassword: (passwordData) => ipcRenderer.invoke('auth:changePassword', passwordData)
+    changePassword: (passwordData) => ipcRenderer.invoke('auth:changePassword', passwordData),
+    googleAuth: () => ipcRenderer.invoke('auth:googleAuth'),
+    onAuthSuccess: () => ipcRenderer.invoke('auth:onAuthSuccess'),
+    checkSession: () => ipcRenderer.invoke('auth:checkSession')
   },
   
   // Event listeners
@@ -45,6 +60,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAnalysisResult: (callback) => ipcRenderer.on('analysis-result', callback),
   onThreatAlert: (callback) => ipcRenderer.on('threat-alert', callback),
   onAIInsight: (callback) => ipcRenderer.on('ai-insight', callback),
+  
+  // Auth events
+  onAuthStateChanged: (callback) => ipcRenderer.on('auth-state-changed', callback),
   
   // Enhanced monitoring event listeners
   onEnhancedPageVisited: (callback) => ipcRenderer.on('enhanced-page-visited', callback),

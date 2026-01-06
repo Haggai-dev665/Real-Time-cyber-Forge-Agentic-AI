@@ -15,6 +15,61 @@
 
 **Real-Time Cyber Forge Agentic AI** is a cutting-edge, comprehensive cybersecurity platform that harnesses the power of artificial intelligence and machine learning to provide unparalleled threat detection, real-time security monitoring, and intelligent incident response capabilities. Built for the modern digital landscape, this platform combines advanced AI agents with sophisticated analytics to create an adaptive security ecosystem.
 
+## ⚡ Quick Start
+
+### 🎯 One-Command Setup
+
+**macOS/Linux:**
+```bash
+./start-all-services.sh
+```
+
+**Windows:**
+```powershell
+.\start-all-services.ps1
+```
+
+### 📖 First Time Setup
+
+1. **Install Dependencies:**
+   ```bash
+   # Backend
+   cd backend && npm install
+   
+   # Desktop App
+   cd ../desktop-app && npm install
+   
+   # ML Services
+   cd ../ml-services && pip install -r requirements.txt
+   ```
+
+2. **Configure Environment:**
+   ```bash
+   # Backend - Add MongoDB URI
+   cp backend/.env.example backend/.env
+   
+   # ML Services - Add Gemini API Key (REQUIRED!)
+   cp ml-services/.env.example ml-services/.env
+   # Edit ml-services/.env and add GEMINI_API_KEY
+   ```
+   
+   Get Gemini API Key: https://makersuite.google.com/app/apikey
+
+3. **Start Services:**
+   ```bash
+   ./start-all-services.sh
+   ```
+
+4. **Train Your First Model:**
+   - Open the Desktop App
+   - Login/Register
+   - Go to "ML Models" → "Train New Model"
+   - Select "Phishing Detection" dataset
+   - Click "Start Training"
+   - Watch progress in real-time! 🎉
+
+📚 **Full Documentation:** See [SETUP_GUIDE.md](SETUP_GUIDE.md) for detailed instructions
+
 ### 🌟 Groundbreaking Features
 
 #### 🔍 **Intelligent Threat Detection**

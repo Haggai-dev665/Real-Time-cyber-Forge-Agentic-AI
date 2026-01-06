@@ -47,25 +47,28 @@ class AIInsightsScreen {
     }
 
     async loadInsights() {
-        this.insights = [
-            {
-                id: 1,
-                title: 'Suspicious Network Activity Detected',
-                type: 'warning',
-                description: 'AI detected unusual network patterns that may indicate reconnaissance activity.',
-                confidence: 87,
-                timestamp: new Date()
-            },
-            {
-                id: 2,
-                title: 'Malware Signature Updated',
-                type: 'info',
-                description: 'Machine learning model identified new malware variant and updated signatures.',
-                confidence: 94,
-                timestamp: new Date()
+        if (!window.apiClient) {
+            this.insights = [];
+            return;
+        }
+
+        try {
+            const response = await window.apiClient.getAIInsights('latest security insights');
+            if (response.success) {
+                const items = response.data?.insights || response.data || [];
+                this.insights = items.map((insight, idx) => ({
+                    id: insight.id || idx,
+                    title: insight.title || insight.name || 'Insight',
+                    type: (insight.type || 'info').toLowerCase(),
+                    description: insight.description || insight.summary || 'No description provided.',
+                    confidence: insight.confidence ?? 0,
+                    timestamp: insight.timestamp ? new Date(insight.timestamp) : new Date()
+                }));
             }
-        ];
-        
+        } catch (error) {
+            console.error('Failed to load AI insights:', error);
+        }
+
         this.renderInsights();
     }
 

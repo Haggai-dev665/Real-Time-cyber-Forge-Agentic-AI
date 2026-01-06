@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
+const axios = require('axios');
 const { setupBrowserMonitoring } = require('./browser-monitor/monitor');
 const { setupEnhancedBrowserMonitoring } = require('./browser-monitor/enhanced-monitor');
 const BrowserSelector = require('./browser-monitor/browser-selector');
@@ -9,6 +10,7 @@ const WebSocket = require('ws');
 class CyberForgeApp {
   constructor() {
     this.mainWindow = null;
+    this.authWindow = null;
     this.wsConnection = null;
     this.aiInterface = null;
     this.browserMonitor = null;
@@ -16,6 +18,8 @@ class CyberForgeApp {
     this.browserSelector = new BrowserSelector();
     this.authService = new AuthService();
     this.dashboardAccessGranted = false;
+    this.isAuthenticated = false;
+    this.dashboardLoaded = false;
     this.backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   }
 
@@ -23,6 +27,7 @@ class CyberForgeApp {
     this.mainWindow = new BrowserWindow({
       width: 1600,
       height: 1000,
+      show: false, // Don't show until we determine auth state
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
@@ -43,12 +48,53 @@ class CyberForgeApp {
       app.commandLine.appendSwitch('--no-sandbox');
     }
 
-    // Load the Caido-style interface
-    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'caido-index.html'));
+    // Set main window reference in auth service
+    this.authService.setMainWindow(this.mainWindow);
+
+    // Set callback for successful authentication
+    this.authService.setOnAuthSuccess(() => {
+      this.onAuthenticationSuccess();
+    });
+
+    // Check if user is already authenticated
+    const authResult = await this.authService.getCurrentUser();
+    
+    if (authResult.success && authResult.user) {
+      console.log('✅ User already authenticated:', authResult.user.email);
+      this.isAuthenticated = true;
+      await this.loadDashboard();
+    } else {
+      console.log('🔐 User not authenticated, showing login page');
+      await this.loadAuthPage();
+    }
+
+    // Show window after loading appropriate page
+    this.mainWindow.show();
 
     if (process.argv.includes('--dev')) {
       this.mainWindow.webContents.openDevTools();
     }
+  }
+
+  async loadAuthPage() {
+    console.log('📄 Loading authentication page...');
+    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'auth-page.html'));
+    this.mainWindow.setTitle('Cyber Forge AI - Sign In');
+  }
+
+  async loadDashboard() {
+    // Prevent loading dashboard multiple times
+    if (this.dashboardLoaded) {
+      console.log('⚠️ Dashboard already loaded, skipping...');
+      return;
+    }
+    
+    console.log('📊 Loading main dashboard...');
+    
+    // Load the Caido-style interface
+    await this.mainWindow.loadFile(path.join(__dirname, 'renderer', 'caido-index.html'));
+    this.mainWindow.setTitle('Cyber Forge AI - Advanced Security Platform');
+    this.dashboardLoaded = true;
 
     // Set up browser monitoring (traditional)
     this.browserMonitor = setupBrowserMonitoring(this.mainWindow);
@@ -58,6 +104,36 @@ class CyberForgeApp {
     
     // Connect to backend
     this.connectToBackend();
+  }
+
+  async onAuthenticationSuccess() {
+    console.log('🎉 Authentication successful! Loading dashboard...');
+    this.isAuthenticated = true;
+    
+    // Only load dashboard if not already loaded
+    if (!this.dashboardLoaded) {
+      await this.loadDashboard();
+    } else {
+      console.log('✅ Dashboard already loaded');
+    }
+  }
+
+  async handleLogout() {
+    console.log('👋 User logging out...');
+    await this.authService.logout();
+    this.isAuthenticated = false;
+    
+    // Disconnect from backend
+    if (this.wsConnection) {
+      this.wsConnection.close();
+    }
+    
+    // Clear monitoring
+    this.browserMonitor = null;
+    this.enhancedBrowserMonitor = null;
+    
+    // Load auth page
+    await this.loadAuthPage();
   }
 
   connectToBackend() {
@@ -119,6 +195,12 @@ class CyberForgeApp {
       case 'identification_confirmed':
         console.log('Client identification confirmed:', message.clientType);
         break;
+      case 'authentication_confirmed':
+        console.log('Client authentication confirmed:', message.userId);
+        break;
+      case 'connection_acknowledged':
+        console.log('Connection acknowledged');
+        break;
       case 'analysis_result':
         this.mainWindow.webContents.send('analysis-result', message.data);
         break;
@@ -129,6 +211,7 @@ class CyberForgeApp {
         this.mainWindow.webContents.send('ai-insight', message.data);
         break;
       case 'heartbeat_response':
+      case 'heartbeat':
         // Handle heartbeat response
         break;
       default:
@@ -145,15 +228,18 @@ class CyberForgeApp {
     // Health Check
     ipcMain.handle('health-check', async () => {
       console.log('Health check requested');
+      const headers = { 'User-Agent': 'cyber-forge-desktop/1.0' };
+      const token = this.authService.getAuthToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       try {
-        const response = await fetch(`${this.backendUrl}/health`);
-        const data = await response.json();
-        console.log('Backend health check successful:', data);
-        return { success: true, data };
+        const response = await axios.get(`${this.backendUrl}/health`, { headers });
+        console.log('Backend health check successful:', response.data);
+        return { success: true, data: response.data };
       } catch (error) {
         console.error('Backend health check error:', error.message);
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: 'Backend not available',
           data: { status: 'offline', message: 'Backend service unavailable: ' + error.message }
         };
@@ -163,39 +249,16 @@ class CyberForgeApp {
     // Get Threats
     ipcMain.handle('get-threats', async () => {
       console.log('Get threats requested');
+      const headers = { 'User-Agent': 'cyber-forge-desktop/1.0' };
+      const token = this.authService.getAuthToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       try {
-        // Mock threats data for now - replace with actual backend call
-        const mockThreats = [
-          {
-            id: '1',
-            type: 'Malware Detection',
-            severity: 'high',
-            description: 'Suspicious JavaScript execution detected',
-            timestamp: new Date().toISOString(),
-            status: 'active'
-          },
-          {
-            id: '2',
-            type: 'Network Intrusion',
-            severity: 'medium',
-            description: 'Unusual network traffic pattern',
-            timestamp: new Date(Date.now() - 300000).toISOString(),
-            status: 'investigating'
-          },
-          {
-            id: '3',
-            type: 'Data Exfiltration',
-            severity: 'low',
-            description: 'Potential data leak attempt blocked',
-            timestamp: new Date(Date.now() - 600000).toISOString(),
-            status: 'resolved'
-          }
-        ];
-        
-        console.log('Returning threats data:', mockThreats);
-        return { success: true, data: mockThreats };
+        const response = await axios.get(`${this.backendUrl}/api/threats?status=all&limit=100`, { headers });
+        const threats = response.data?.data?.threats || response.data?.threats || [];
+        return { success: true, data: threats };
       } catch (error) {
-        console.error('Get threats error:', error);
+        console.error('Get threats error:', error.message);
         return { success: false, error: error.message, data: [] };
       }
     });
@@ -340,6 +403,12 @@ class CyberForgeApp {
 
     ipcMain.handle('query-ai', async (event, query) => {
       return this.aiInterface?.queryAI(query) || 'AI service unavailable';
+    });
+
+    // Logout and return to auth page
+    ipcMain.handle('auth:fullLogout', async () => {
+      await this.handleLogout();
+      return { success: true };
     });
 
     // Handle browser monitoring events

@@ -8,8 +8,8 @@ import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from google import genai
+from google.genai.types import SafetySetting, HarmCategory, HarmBlockThreshold
 
 from ..core.config import settings
 
@@ -19,18 +19,18 @@ class GeminiService:
     """Google Gemini AI Service with custom training data integration"""
     
     def __init__(self):
-        self.model = None
+        self.client = None
         self.is_initialized = False
         self.custom_knowledge = {}
         self.training_examples = []
         
         # Safety settings for cybersecurity analysis
-        self.safety_settings = {
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        }
+        self.safety_settings = [
+            SafetySetting(category=HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=HarmBlockThreshold.BLOCK_NONE),
+            SafetySetting(category=HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=HarmBlockThreshold.BLOCK_NONE),
+            SafetySetting(category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=HarmBlockThreshold.BLOCK_NONE),
+            SafetySetting(category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=HarmBlockThreshold.BLOCK_NONE),
+        ]
         
         # Cybersecurity-focused system prompt
         self.system_prompt = """You are CyberForge AI, an advanced cybersecurity expert specializing in:
@@ -74,14 +74,8 @@ Focus on practical, actionable cybersecurity guidance based on current threat la
                 logger.error("GEMINI_API_KEY not found in configuration")
                 raise ValueError("Gemini API key is required")
             
-            # Configure Gemini
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            
-            # Initialize model
-            self.model = genai.GenerativeModel(
-                model_name=settings.GEMINI_MODEL,
-                safety_settings=self.safety_settings
-            )
+            # Configure Gemini client
+            self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
             
             # Load custom training data
             await self._load_custom_training_data()
@@ -99,7 +93,7 @@ Focus on practical, actionable cybersecurity guidance based on current threat la
     
     def is_ready(self) -> bool:
         """Check if Gemini service is ready"""
-        return self.is_initialized and self.model is not None
+        return self.is_initialized and self.client is not None
     
     async def _load_custom_training_data(self):
         """Load custom cybersecurity training data and knowledge base"""
@@ -172,7 +166,10 @@ Focus on practical, actionable cybersecurity guidance based on current threat la
         """Test Gemini API connection"""
         try:
             test_prompt = "Test connection. Respond with 'OK' if you can receive this message."
-            response = await self.model.generate_content_async(test_prompt)
+            response = self.client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=test_prompt
+            )
             if response.text:
                 logger.info("✅ Gemini API connection test successful")
             else:
@@ -191,12 +188,14 @@ Focus on practical, actionable cybersecurity guidance based on current threat la
             enhanced_prompt = self._create_enhanced_prompt(query, context)
             
             # Generate response
-            response = await self.model.generate_content_async(
-                enhanced_prompt,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=settings.GEMINI_TEMPERATURE,
-                    max_output_tokens=settings.GEMINI_MAX_TOKENS,
-                )
+            response = self.client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=enhanced_prompt,
+                config={
+                    "temperature": settings.GEMINI_TEMPERATURE,
+                    "max_output_tokens": settings.GEMINI_MAX_TOKENS,
+                    "safety_settings": self.safety_settings
+                }
             )
             
             # Parse and structure response
@@ -338,12 +337,14 @@ Provide a comprehensive cybersecurity analysis following the response format abo
             return "Gemini service not available"
         
         try:
-            response = await self.model.generate_content_async(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=settings.GEMINI_TEMPERATURE,
-                    max_output_tokens=min(max_length, settings.GEMINI_MAX_TOKENS),
-                )
+            response = self.client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=prompt,
+                config={
+                    "temperature": settings.GEMINI_TEMPERATURE,
+                    "max_output_tokens": min(max_length, settings.GEMINI_MAX_TOKENS),
+                    "safety_settings": self.safety_settings
+                }
             )
             return response.text if response.text else "No response generated"
         except Exception as e:

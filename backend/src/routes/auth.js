@@ -149,6 +149,41 @@ router.put('/change-password', auth, changePasswordValidation, authController.ch
  */
 router.post('/logout', auth, authController.logout);
 
+/**
+ * @route   POST /api/auth/google
+ * @desc    Authenticate with Google (Firebase token)
+ * @access  Public
+ */
+router.post('/google',
+  authLimiter,
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('uid').optional().notEmpty().withMessage('Firebase UID is required for new users')
+  ],
+  authController.googleAuth
+);
+
+/**
+ * @route   POST /api/auth/google/token
+ * @desc    Exchange Google OAuth code for tokens
+ * @access  Public
+ */
+router.post('/google/token',
+  authLimiter,
+  [
+    body('code').notEmpty().withMessage('Authorization code is required'),
+    body('redirect_uri').notEmpty().withMessage('Redirect URI is required')
+  ],
+  authController.exchangeGoogleToken
+);
+
+/**
+ * @route   GET /api/auth/google/callback
+ * @desc    Handle Google OAuth callback
+ * @access  Public
+ */
+router.get('/google/callback', authController.googleCallback);
+
 // Firebase Authentication Routes
 
 /**

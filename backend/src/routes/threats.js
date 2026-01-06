@@ -17,14 +17,16 @@ router.get('/',
     const userAgent = req.get('User-Agent') || '';
     const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
     
-    if (isDesktopApp) {
-      // Skip auth for desktop app
-      req.isDesktopApp = true;
-      return next();
-    } else {
-      // Require auth for web/mobile
+    if (isDesktopApp && req.headers.authorization) {
       return auth(req, res, next);
     }
+
+    if (isDesktopApp) {
+      req.isDesktopApp = true;
+      return next();
+    }
+
+    return auth(req, res, next);
   },
   [
     query('page').optional().isInt({ min: 1 }),
@@ -78,16 +80,19 @@ router.get('/stats',
     
     console.log('🔍 Threats Stats Auth Check:', { userAgent, isDesktopApp });
     
+    if (isDesktopApp && req.headers.authorization) {
+      console.log('🔐 Desktop app with token, enforcing auth');
+      return auth(req, res, next);
+    }
+
     if (isDesktopApp) {
-      // Skip auth for desktop app
       req.isDesktopApp = true;
       console.log('✅ Desktop app detected, skipping auth');
       return next();
-    } else {
-      // Require auth for web/mobile
-      console.log('🔐 Web/mobile client, requiring auth');
-      return auth(req, res, next);
     }
+
+    console.log('🔐 Web/mobile client, requiring auth');
+    return auth(req, res, next);
   },
   asyncHandler(async (req, res) => {
     try {

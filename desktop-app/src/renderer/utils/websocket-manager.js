@@ -5,7 +5,9 @@
 
 class WebSocketManager {
     constructor() {
-        this.url = 'ws://localhost:8000/ws';
+        const config = (typeof window !== 'undefined' && window.electronAPI?.config) || {};
+        this.url = (window.apiClient?.wsUrl) || config.wsUrl || 'ws://localhost:8000/ws';
+        this.authToken = window.apiClient?.token || localStorage.getItem('cyberforge_token');
         this.websocket = null;
         this.isConnected = false;
         this.reconnectAttempts = 0;
@@ -28,10 +30,13 @@ class WebSocketManager {
         });
     }
 
-    connect() {
+    async connect() {
         if (this.websocket && (this.websocket.readyState === WebSocket.CONNECTING || this.websocket.readyState === WebSocket.OPEN)) {
             return;
         }
+
+        // Refresh token from native store if possible
+        await this.ensureAuthToken();
 
         try {
             console.log('🔌 Connecting to WebSocket...', this.url);
@@ -60,6 +65,13 @@ class WebSocketManager {
             timestamp: new Date().toISOString()
         });
 
+        if (this.authToken) {
+            this.send('authenticate', {
+                token: this.authToken,
+                source: 'desktop-app'
+            });
+        }
+
         // Start heartbeat
         this.startHeartbeat();
         
@@ -73,11 +85,26 @@ class WebSocketManager {
     onMessage(event) {
         try {
             const message = JSON.parse(event.data);
-            console.log('📨 WebSocket message received:', message);
+            console.log('📨 WebSocket message received:', message.type);
             
             // Handle system messages
             if (message.type === 'connection_established') {
-                console.log('🤝 Connection established:', message.data);
+                console.log('🤝 Connection established:', message.clientId);
+                return;
+            }
+            
+            if (message.type === 'identification_confirmed') {
+                console.log('✅ Client identification confirmed:', message.clientType);
+                return;
+            }
+            
+            if (message.type === 'authentication_confirmed') {
+                console.log('✅ Authentication confirmed:', message.userId);
+                return;
+            }
+            
+            if (message.type === 'connection_acknowledged') {
+                console.log('✅ Connection acknowledged');
                 return;
             }
             
@@ -87,7 +114,7 @@ class WebSocketManager {
             }
             
             // Emit message to listeners
-            this.emit(message.type, message.data);
+            this.emit(message.type, message.data || message);
             
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
@@ -152,6 +179,27 @@ class WebSocketManager {
         
         // Exponential backoff
         this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxReconnectDelay);
+    }
+
+    async ensureAuthToken() {
+        try {
+            if (this.authToken) return;
+            if (window.apiClient?.token) {
+                this.authToken = window.apiClient.token;
+                return;
+            }
+            if (window.electronAPI?.auth) {
+                const response = await window.electronAPI.auth.getToken();
+                if (response?.token) {
+                    this.authToken = response.token;
+                    if (window.apiClient?.setToken) {
+                        window.apiClient.setToken(response.token);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Unable to resolve auth token for WebSocket:', error.message);
+        }
     }
 
     startHeartbeat() {

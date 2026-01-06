@@ -164,6 +164,9 @@ class RealTimeMonitorScreen {
         
         // Initialize filters
         this.initializeFilters();
+
+        // Realtime handlers (WebSocket + polling)
+        this.setupRealtimeHandlers();
     }
 
     initializeCharts() {
@@ -264,32 +267,75 @@ class RealTimeMonitorScreen {
         document.getElementById('type-filter').value = this.filters.type;
     }
 
+    setupRealtimeHandlers() {
+        if (window.websocketManager) {
+            window.websocketManager.on('threat_alert', (data) => this.addEventFromRealtime({ ...data, type: data?.threatType || 'threat' }));
+            window.websocketManager.on('analysis_result', (data) => this.addEventFromRealtime({ ...data, type: 'analysis' }));
+            window.websocketManager.connect();
+        } else if (window.apiClient?.connectWebSocket) {
+            window.apiClient.on('threat:alert', (data) => this.addEventFromRealtime(data));
+            window.apiClient.on('analysis:result', (data) => this.addEventFromRealtime(data));
+            window.apiClient.connectWebSocket();
+        }
+    }
+
     async loadData() {
-        // Simulate loading real-time data
-        this.updateStats();
-        this.updateCharts();
-        this.loadEvents();
+        const hasClient = typeof window !== 'undefined' && window.apiClient;
+        if (!hasClient) {
+            this.updateStats({});
+            return;
+        }
+
+        try {
+            const [statsRes, threatsRes, mlRes] = await Promise.allSettled([
+                window.apiClient.getThreatStats(),
+                window.apiClient.getThreats({ limit: 20 }),
+                window.apiClient.mlHealthCheck()
+            ]);
+
+            const stats = statsRes.value?.success ? statsRes.value.data : {};
+            this.updateStats(stats);
+
+            const threats = threatsRes.value?.success ? (threatsRes.value.data?.threats || []) : [];
+            if (threats.length) {
+                this.eventLog = threats.map(threat => ({
+                    id: threat.id || threat._id || Date.now(),
+                    type: threat.type || 'threat',
+                    severity: threat.severity || 'medium',
+                    message: threat.description || threat.message || 'Threat detected',
+                    timestamp: threat.createdAt ? new Date(threat.createdAt) : new Date(),
+                    source: threat.source || threat.url || 'unknown'
+                }));
+            }
+
+            this.renderEvents();
+            this.updateChartsFromStats(stats);
+
+            if (mlRes.value?.success) {
+                this.updateMLStatus(mlRes.value.data || {});
+            }
+        } catch (error) {
+            console.error('Failed to load real-time data:', error);
+        }
     }
 
-    updateStats() {
-        document.getElementById('threats-blocked').textContent = Math.floor(Math.random() * 100);
-        document.getElementById('active-connections').textContent = Math.floor(Math.random() * 500);
-        document.getElementById('security-alerts').textContent = Math.floor(Math.random() * 20);
-        document.getElementById('system-load').textContent = Math.floor(Math.random() * 100) + '%';
+    updateStats(stats = {}) {
+        document.getElementById('threats-blocked').textContent = stats.resolved_threats ?? stats.total_threats ?? 0;
+        document.getElementById('active-connections').textContent = stats.active_connections ?? stats.active_threats ?? 0;
+        document.getElementById('security-alerts').textContent = stats.high_severity ?? stats.active_threats ?? 0;
+        document.getElementById('system-load').textContent = (stats.system_load ?? 0) + '%';
     }
 
-    updateCharts() {
+    updateChartsFromStats(stats = {}) {
         if (this.charts.traffic) {
             const now = new Date();
             const labels = this.charts.traffic.data.labels;
             const datasets = this.charts.traffic.data.datasets;
 
-            // Add new data point
             labels.push(now.toLocaleTimeString());
-            datasets[0].data.push(Math.random() * 100);
-            datasets[1].data.push(Math.random() * 80);
+            datasets[0].data.push(stats.network_in ?? Math.random() * 50);
+            datasets[1].data.push(stats.network_out ?? Math.random() * 50);
 
-            // Keep only last 20 points
             if (labels.length > 20) {
                 labels.shift();
                 datasets[0].data.shift();
@@ -301,37 +347,39 @@ class RealTimeMonitorScreen {
 
         if (this.charts.threats) {
             const data = this.charts.threats.data.datasets[0].data;
-            for (let i = 0; i < data.length; i++) {
-                data[i] = Math.floor(Math.random() * 10);
-            }
+            data[0] = stats.malware ?? data[0];
+            data[1] = stats.intrusion ?? data[1];
+            data[2] = stats.phishing ?? data[2];
+            data[3] = stats.ddos ?? data[3];
+            data[4] = stats.other ?? data[4];
             this.charts.threats.update('none');
         }
     }
 
-    loadEvents() {
-        const eventsList = document.getElementById('events-list');
-        if (!eventsList) return;
+    updateMLStatus(health = {}) {
+        const mlStatus = document.getElementById('ml-status');
+        const statusDot = mlStatus?.querySelector('.status-dot');
+        if (statusDot) {
+            const healthy = health.success !== false;
+            statusDot.className = `status-dot ${healthy ? 'connected' : 'offline'}`;
+            mlStatus.title = healthy ? 'ML Service Online' : 'ML Service Offline';
+        }
+    }
 
-        // Simulate real-time events
-        const eventTypes = ['malware', 'intrusion', 'anomaly', 'phishing'];
-        const severities = ['critical', 'high', 'medium', 'low'];
-        
-        const newEvent = {
-            id: Date.now(),
-            type: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-            severity: severities[Math.floor(Math.random() * severities.length)],
-            message: 'Security event detected',
-            timestamp: new Date(),
-            source: '192.168.1.' + Math.floor(Math.random() * 255)
+    addEventFromRealtime(event) {
+        const parsed = {
+            id: event.id || Date.now(),
+            type: event.type || 'event',
+            severity: event.severity || 'medium',
+            message: event.message || 'Security event detected',
+            timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+            source: event.source || event.url || 'unknown'
         };
 
-        this.eventLog.unshift(newEvent);
-        
-        // Keep only last 100 events
-        if (this.eventLog.length > 100) {
-            this.eventLog = this.eventLog.slice(0, 100);
+        this.eventLog.unshift(parsed);
+        if (this.eventLog.length > 200) {
+            this.eventLog = this.eventLog.slice(0, 200);
         }
-
         this.renderEvents();
     }
 
@@ -380,15 +428,9 @@ class RealTimeMonitorScreen {
     startRealTimeUpdates() {
         this.updateInterval = setInterval(() => {
             if (this.isActive) {
-                this.updateStats();
-                this.updateCharts();
-                
-                // Add new event occasionally
-                if (Math.random() < 0.3) {
-                    this.loadEvents();
-                }
+                this.loadData();
             }
-        }, 2000);
+        }, 5000);
     }
 
     stopRealTimeUpdates() {

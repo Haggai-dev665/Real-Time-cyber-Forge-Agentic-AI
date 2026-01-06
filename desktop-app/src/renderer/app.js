@@ -85,6 +85,7 @@ class CyberForgeApp {
     }
 
     hideLoadingScreen() {
+        console.log('🎬 Hiding loading screen...');
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
             this.updateLoadingProgress(100);
@@ -92,8 +93,11 @@ class CyberForgeApp {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
+                    console.log('✅ Loading screen hidden');
                 }, 500);
             }, 500);
+        } else {
+            console.warn('⚠️ Loading screen element not found');
         }
     }
 
@@ -145,12 +149,22 @@ class CyberForgeApp {
     }
 
     setupEventListeners() {
-        // Navigation events
+        // Navigation events with better error handling
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent default anchor behavior
+                e.stopPropagation(); // Stop event bubbling
+                
                 const screenName = e.currentTarget.dataset.screen;
+                console.log('Navigation clicked:', screenName);
+                
                 if (screenName) {
-                    this.showScreen(screenName);
+                    try {
+                        this.showScreen(screenName);
+                    } catch (error) {
+                        console.error('Error showing screen:', error);
+                        window.notificationSystem?.error('Navigation Error', 'Failed to load screen: ' + screenName);
+                    }
                 }
             });
         });
@@ -321,28 +335,28 @@ class CyberForgeApp {
         
         // Initialize all screens
         const screenClasses = {
-            'dashboard': DashboardScreen,
-            'real-time-monitor': RealTimeMonitorScreen,
-            'threat-center': ThreatCenterScreen,
-            'deep-analysis': DeepAnalysisScreen,
-            'ai-assistant': AIAssistantScreen,
-            'ml-models': MLModelsScreen,
-            'ai-insights': AIInsightsScreen,
-            'predictions': PredictionsScreen,
-            'vulnerability-scanner': VulnerabilityScannerScreen,
-            'network-analysis': NetworkAnalysisScreen,
-            'malware-detection': MalwareDetectionScreen,
-            'digital-forensics': DigitalForensicsScreen,
-            'datasets': DatasetsScreen,
-            'reports': ReportsScreen,
-            'compliance': ComplianceScreen,
-            'settings': SettingsScreen,
-            'profile': ProfileScreen,
-            'system-logs': SystemLogsScreen,
-            'incident-response': IncidentResponseScreen,
-            'risk-assessment': RiskAssessmentScreen,
-            'security-metrics': SecurityMetricsScreen,
-            'penetration-testing': PenetrationTestingScreen
+            'dashboard': typeof DashboardScreen !== 'undefined' ? DashboardScreen : null,
+            'real-time-monitor': typeof RealTimeMonitorScreen !== 'undefined' ? RealTimeMonitorScreen : null,
+            'threat-center': typeof ThreatCenterScreen !== 'undefined' ? ThreatCenterScreen : null,
+            'deep-analysis': typeof DeepAnalysisScreen !== 'undefined' ? DeepAnalysisScreen : null,
+            'ai-assistant': typeof AIAssistantScreen !== 'undefined' ? AIAssistantScreen : null,
+            'ml-models': typeof MLModelsScreen !== 'undefined' ? MLModelsScreen : null,
+            'ai-insights': typeof AIInsightsScreen !== 'undefined' ? AIInsightsScreen : null,
+            'predictions': typeof PredictionsScreen !== 'undefined' ? PredictionsScreen : null,
+            'vulnerability-scanner': typeof VulnerabilityScannerScreen !== 'undefined' ? VulnerabilityScannerScreen : null,
+            'network-analysis': typeof NetworkAnalysisScreen !== 'undefined' ? NetworkAnalysisScreen : null,
+            'malware-detection': typeof MalwareDetectionScreen !== 'undefined' ? MalwareDetectionScreen : null,
+            'digital-forensics': typeof DigitalForensicsScreen !== 'undefined' ? DigitalForensicsScreen : null,
+            'datasets': typeof DatasetsScreen !== 'undefined' ? DatasetsScreen : null,
+            'reports': typeof ReportsScreen !== 'undefined' ? ReportsScreen : null,
+            'compliance': typeof ComplianceScreen !== 'undefined' ? ComplianceScreen : null,
+            'settings': typeof SettingsScreen !== 'undefined' ? SettingsScreen : null,
+            'profile': typeof ProfileScreen !== 'undefined' ? ProfileScreen : null,
+            'system-logs': typeof SystemLogsScreen !== 'undefined' ? SystemLogsScreen : null,
+            'incident-response': typeof IncidentResponseScreen !== 'undefined' ? IncidentResponseScreen : null,
+            'risk-assessment': typeof RiskAssessmentScreen !== 'undefined' ? RiskAssessmentScreen : null,
+            'security-metrics': typeof SecurityMetricsScreen !== 'undefined' ? SecurityMetricsScreen : null,
+            'penetration-testing': typeof PenetrationTestingScreen !== 'undefined' ? PenetrationTestingScreen : null
         };
 
         // Only initialize screens that have classes defined
@@ -353,21 +367,28 @@ class CyberForgeApp {
                     this.screens.set(screenName, screen);
                     console.log(`✅ ${screenName} screen initialized`);
                 } catch (error) {
-                    console.error(`❌ Failed to initialize ${screenName} screen:`, error);
+                    console.warn(`⚠️ Failed to initialize ${screenName} screen:`, error);
                 }
+            } else {
+                console.log(`ℹ️ ${screenName} screen class not found (placeholder will be used)`);
             }
         });
 
+        console.log(`📱 Initialized ${this.screens.size} screens successfully`);
         this.updateLoadingProgress(90);
     }
 
     showScreen(screenName, options = {}) {
+        console.log(`🎯 Attempting to show screen: ${screenName}`);
+        
         if (!this.isInitialized && screenName !== 'dashboard') {
-            console.warn('Application not fully initialized');
+            console.warn('Application not fully initialized, waiting...');
+            // Wait for initialization and try again
+            setTimeout(() => this.showScreen(screenName, options), 100);
             return;
         }
 
-        // Update navigation
+        // Update navigation highlighting
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
@@ -375,12 +396,13 @@ class CyberForgeApp {
         const navItem = document.querySelector(`[data-screen="${screenName}"]`);
         if (navItem) {
             navItem.classList.add('active');
+            console.log(`✅ Navigation item highlighted: ${screenName}`);
         }
 
         // Get screen container
         const screenContainer = document.getElementById('screen-container');
         if (!screenContainer) {
-            console.error('Screen container not found');
+            console.error('❌ Screen container not found in DOM');
             return;
         }
 
@@ -389,6 +411,7 @@ class CyberForgeApp {
             const currentScreenObj = this.screens.get(this.currentScreen);
             if (currentScreenObj && currentScreenObj.hide) {
                 currentScreenObj.hide();
+                console.log(`👋 Hidden previous screen: ${this.currentScreen}`);
             }
         }
 
@@ -396,12 +419,20 @@ class CyberForgeApp {
         this.currentScreen = screenName;
         
         if (this.screens.has(screenName)) {
+            console.log(`📄 Loading initialized screen: ${screenName}`);
             const screen = this.screens.get(screenName);
             if (screen && screen.show) {
-                screen.show(screenContainer, options);
+                try {
+                    screen.show(screenContainer, options);
+                    console.log(`✅ Successfully showed screen: ${screenName}`);
+                } catch (error) {
+                    console.error(`❌ Error showing screen ${screenName}:`, error);
+                    this.showPlaceholderScreen(screenName, screenContainer);
+                }
             }
         } else {
             // Fallback for screens not yet implemented
+            console.log(`⚠️ Screen not initialized, showing placeholder: ${screenName}`);
             this.showPlaceholderScreen(screenName, screenContainer);
         }
 

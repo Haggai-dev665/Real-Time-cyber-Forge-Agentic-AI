@@ -46,7 +46,6 @@ class AdvancedDatasetManager:
         datasets_info = {
             "malware_detection": {
                 "name": "Malware Detection Dataset",
-<<<<<<< Updated upstream
                 "description": "Collection of malware samples and features for detection",
                 "url": "https://raw.githubusercontent.com/Haggai-dev665/cybersecurity-datasets/main/malware_detection_sample.csv",
                 "backup_urls": [
@@ -66,19 +65,6 @@ class AdvancedDatasetManager:
                     "https://github.com/jmnwong/NSL-KDD-Dataset/raw/master/KDDTrain%2B.csv",
                     "https://www.unb.ca/cic/datasets/nsl.html"
                 ],
-=======
-                "description": "PE malware features for detection",
-                "url": "https://raw.githubusercontent.com/rshipp/awesome-malware-analysis/master/README.md",
-                "type": "malware",
-                "size_mb": 5,
-                "samples": 1000,
-                "features": ["file_hash", "file_size", "entropy", "pe_characteristics", "strings"]
-            },
-            "network_intrusion": {
-                "name": "KDD Cup 99 Network Intrusion",
-                "description": "Network intrusion detection dataset",
-                "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/kddcup99-mld/kddcup.data_10_percent.gz",
->>>>>>> Stashed changes
                 "type": "network",
                 "size_mb": 25,
                 "samples": 125973,
@@ -88,12 +74,9 @@ class AdvancedDatasetManager:
                 "name": "Phishing Website Detection",
                 "description": "Features extracted from websites for phishing detection",
                 "url": "https://raw.githubusercontent.com/shreyagopal/Phishing-Website-Detection-by-Machine-Learning-Techniques/master/dataset.csv",
-<<<<<<< Updated upstream
                 "backup_urls": [
                     "https://github.com/ebubekirbbr/pdd/raw/master/Phishing_Legitimate_full.csv"
                 ],
-=======
->>>>>>> Stashed changes
                 "type": "phishing",
                 "size_mb": 8,
                 "samples": 11055,
@@ -111,7 +94,6 @@ class AdvancedDatasetManager:
                 "samples": 4601,
                 "features": ["word_freq_make", "word_freq_address", "word_freq_all", "char_freq_$", "capital_run_avg", "is_spam"]
             },
-<<<<<<< Updated upstream
             "botnet_detection": {
                 "name": "Botnet Traffic Detection", 
                 "description": "Network flows for botnet detection - CICIDS Dataset",
@@ -135,25 +117,6 @@ class AdvancedDatasetManager:
                 "size_mb": 20,
                 "samples": 5000,
                 "features": ["cve_id", "description", "severity", "cvss_score", "attack_vector", "attack_complexity"]
-=======
-            "android_malware": {
-                "name": "Android Malware Detection",
-                "description": "Android app features for malware detection",
-                "url": "https://raw.githubusercontent.com/ashishpatel26/Android-Malware-Detection/master/MalwareDataset.csv",
-                "type": "android_malware",
-                "size_mb": 25,
-                "samples": 15036,
-                "features": ["app_name", "category", "rating", "reviews", "size", "installs"]
-            },
-            "credit_card_fraud": {
-                "name": "Credit Card Fraud Detection",
-                "description": "Credit card transactions for fraud detection",
-                "url": "https://raw.githubusercontent.com/nsethi31/Kaggle-Data-Credit-Card-Fraud-Detection/master/creditcard.csv",
-                "type": "fraud",
-                "size_mb": 150,
-                "samples": 284807,
-                "features": ["time", "v1", "v2", "v3", "v4", "amount", "class"]
->>>>>>> Stashed changes
             },
             "threat_intelligence": {
                 "name": "Threat Intelligence Feeds",
@@ -236,7 +199,6 @@ class AdvancedDatasetManager:
         }
     
     async def _download_dataset(self, dataset_id: str, info: Dict[str, Any]) -> bool:
-<<<<<<< Updated upstream
         """Download individual dataset with backup URL support"""
         dataset_dir = self.data_dir / dataset_id
         dataset_dir.mkdir(exist_ok=True)
@@ -312,9 +274,6 @@ class AdvancedDatasetManager:
         
         # If all URLs failed, create synthetic dataset as fallback
         logger.warning(f"All download attempts failed for {dataset_id}. Creating synthetic dataset...")
-        try:
-=======
-        """Download individual dataset with improved error handling"""
         try:
             dataset_dir = self.data_dir / dataset_id
             dataset_dir.mkdir(exist_ok=True)
@@ -428,24 +387,17 @@ class AdvancedDatasetManager:
             # Fallback: copy as is
             import shutil
             shutil.copy(arff_path, csv_path)
-                    if chunk:
-                        await f.write(chunk)
-                        downloaded_size += len(chunk)
-                        
-                        if total_size > 0:
-                            progress = (downloaded_size / total_size) * 100
-                            if downloaded_size % (1024 * 1024) == 0:  # Log every MB
-                                logger.info(f"Download progress for {dataset_id}: {progress:.1f}%")
+    
+    async def _create_synthetic_dataset(self, dataset_id: str, info: Dict[str, Any]) -> bool:
+        """Create a synthetic dataset when download fails"""
+        try:
+            dataset_dir = self.data_dir / dataset_id
+            dataset_dir.mkdir(exist_ok=True)
             
-            # Extract if it's an archive
-            if filename.endswith('.zip'):
-                with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                    zip_ref.extractall(dataset_dir)
-                # Remove the zip file after extraction
-                file_path.unlink()
+            # Create a synthetic CSV with sample data
+            file_path = dataset_dir / f"{dataset_id}.csv"
             
-            # Create a processed version for ML
->>>>>>> Stashed changes
+            # Generate sample data based on dataset type
             await self._process_dataset(dataset_id, dataset_dir, info)
             logger.info(f"Created synthetic dataset for {dataset_id}")
             return True

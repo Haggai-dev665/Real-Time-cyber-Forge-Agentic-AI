@@ -197,7 +197,35 @@ class MLModelsScreen {
     }
 
     async loadModels() {
-        // Simulate loading models from backend
+        // Try to load from backend
+        if (window.apiClient) {
+            try {
+                const response = await window.apiClient.getModels();
+                if (response.success && response.data && response.data.models) {
+                    this.models = response.data.models.map(model => ({
+                        id: model.id,
+                        name: model.name,
+                        type: model.type || 'Classification',
+                        accuracy: model.accuracy || model.metrics?.accuracy || 0.9,
+                        status: model.status || 'active',
+                        lastTrained: new Date(model.trained_at || model.registered_at || Date.now()),
+                        description: model.description || 'ML model for cybersecurity',
+                        size: model.size || 'N/A',
+                        framework: model.framework || 'sklearn',
+                        version: model.version || '1.0.0'
+                    }));
+                    this.renderModels();
+                    
+                    // Also load training jobs
+                    await this.loadTrainingJobs();
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to load models from backend:', error);
+            }
+        }
+        
+        // Fallback: Simulate loading models from backend
         this.models = [
             {
                 id: 'malware-detector-v1',
@@ -238,6 +266,63 @@ class MLModelsScreen {
         ];
 
         this.renderModels();
+        await this.loadTrainingJobs();
+    }
+
+    async loadTrainingJobs() {
+        const jobsList = document.getElementById('training-jobs');
+        if (!jobsList) return;
+        
+        if (window.apiClient) {
+            try {
+                const response = await window.apiClient.getTrainingHistory(10);
+                if (response.success && response.data && response.data.history) {
+                    this.trainingJobs = response.data.history;
+                    this.renderTrainingJobs();
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to load training jobs:', error);
+            }
+        }
+        
+        // Fallback with empty or mock jobs
+        this.trainingJobs = [];
+        this.renderTrainingJobs();
+    }
+
+    renderTrainingJobs() {
+        const jobsList = document.getElementById('training-jobs');
+        if (!jobsList) return;
+        
+        if (this.trainingJobs.length === 0) {
+            jobsList.innerHTML = `
+                <div class="no-jobs">
+                    <i class="fas fa-robot"></i>
+                    <p>No training jobs yet. Start training a model!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        jobsList.innerHTML = this.trainingJobs.map(job => `
+            <div class="training-job ${job.status}">
+                <div class="job-header">
+                    <span class="job-name">${job.dataset_id || job.model_type || 'Training Job'}</span>
+                    <span class="job-status ${job.status}">${job.status}</span>
+                </div>
+                <div class="job-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${job.progress || 100}%"></div>
+                    </div>
+                    <span class="progress-text">${job.progress || 100}%</span>
+                </div>
+                <div class="job-meta">
+                    <span>${job.started_at ? new Date(job.started_at).toLocaleString() : 'N/A'}</span>
+                    ${job.metrics ? `<span>Accuracy: ${(job.metrics.accuracy * 100).toFixed(1)}%</span>` : ''}
+                </div>
+            </div>
+        `).join('');
     }
 
     renderModels() {
@@ -423,26 +508,118 @@ class MLModelsScreen {
         }
     }
 
-    startTraining() {
+    async startTraining() {
         const modelName = document.getElementById('model-name')?.value || 'New Model';
         const modelType = document.getElementById('model-type')?.value || 'classification';
-        const dataset = document.getElementById('training-dataset')?.value || 'malware-samples';
+        const datasetSelect = document.getElementById('training-dataset');
+        const dataset = datasetSelect?.value || 'malware_detection';
         
-        // Create training job
+        const epochs = parseInt(document.getElementById('epochs')?.value) || 10;
+        const batchSize = parseInt(document.getElementById('batch-size')?.value) || 32;
+        const learningRate = parseFloat(document.getElementById('learning-rate')?.value) || 0.001;
+        
+        // Map UI dataset names to backend dataset IDs
+        const datasetMapping = {
+            'malware-samples': 'malware_detection',
+            'network-logs': 'network_intrusion',
+            'phishing-urls': 'phishing_detection',
+            'custom': 'custom'
+        };
+        
+        const datasetId = datasetMapping[dataset] || dataset;
+        
+        // Try to start training via backend API
+        if (window.apiClient) {
+            try {
+                const response = await window.apiClient.trainModel(
+                    datasetId,
+                    modelType === 'anomaly' ? 'neural_network' : 'auto',
+                    { epochs, batch_size: batchSize, learning_rate: learningRate },
+                    { model_name: modelName }
+                );
+                
+                if (response.success && response.data) {
+                    // Create training job with backend job ID
+                    const trainingJob = {
+                        id: response.data.job_id,
+                        modelName,
+                        modelType,
+                        dataset: datasetId,
+                        dataset_id: datasetId,
+                        status: response.data.status || 'running',
+                        progress: 0,
+                        startTime: new Date(),
+                        started_at: new Date().toISOString(),
+                        estimatedTime: '10-20 minutes'
+                    };
+
+                    this.trainingJobs.unshift(trainingJob);
+                    this.renderTrainingJobs();
+                    this.pollTrainingStatus(trainingJob.id);
+                    
+                    window.notificationSystem?.success('Training Started', `Started training ${modelName} on ${datasetId}`);
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to start training via API:', error);
+            }
+        }
+        
+        // Fallback: Create local training job with simulation
         const trainingJob = {
-            id: Date.now(),
+            id: Date.now().toString(),
             modelName,
             modelType,
             dataset,
+            dataset_id: datasetMapping[dataset] || dataset,
             status: 'running',
             progress: 0,
             startTime: new Date(),
+            started_at: new Date().toISOString(),
             estimatedTime: '45 minutes'
         };
 
         this.trainingJobs.unshift(trainingJob);
         this.renderTrainingJobs();
         this.simulateTraining(trainingJob.id);
+    }
+
+    async pollTrainingStatus(jobId) {
+        if (!window.apiClient) return;
+        
+        const poll = async () => {
+            try {
+                const response = await window.apiClient.getTrainingStatus(jobId);
+                if (response.success && response.data && response.data.job) {
+                    const job = this.trainingJobs.find(j => j.id === jobId);
+                    if (job) {
+                        job.status = response.data.job.status;
+                        job.progress = response.data.job.progress || 0;
+                        
+                        if (response.data.job.metrics) {
+                            job.metrics = response.data.job.metrics;
+                        }
+                        
+                        this.renderTrainingJobs();
+                        
+                        // Continue polling if still running
+                        if (job.status === 'running' || job.status === 'queued') {
+                            setTimeout(poll, 3000);
+                        } else if (job.status === 'completed') {
+                            // Reload models to get the new trained model
+                            await this.loadModels();
+                            window.notificationSystem?.success('Training Complete', `Model training completed with ${(job.metrics?.accuracy * 100 || 95).toFixed(1)}% accuracy`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to poll training status:', error);
+            }
+        };
+        
+        // Start polling after a short delay
+        setTimeout(poll, 2000);
+    }
     }
 
     renderTrainingJobs() {

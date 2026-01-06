@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' http://localhost:* ws://localhost:* https://accounts.google.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src 'self' https://accounts.google.com;">
+    <title>Cyber Forge AI - Authentication</title>
+    
+    <!-- External Dependencies -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Auth Page Styles -->
+    <link rel="stylesheet" href="css/auth-styles.css">
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Animated Background -->
+        <div class="cyber-background">
+            <div class="cyber-grid"></div>
+            <div class="cyber-lines">
+                <div class="cyber-line"></div>
+                <div class="cyber-line"></div>
+                <div class="cyber-line"></div>
+                <div class="cyber-line"></div>
+                <div class="cyber-line"></div>
+            </div>
+            <div class="cyber-particles" id="particles"></div>
+        </div>
+
+        <!-- Left Side - Branding -->
+        <div class="auth-branding">
+            <div class="branding-content">
+                <div class="brand-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-shield-halved"></i>
+                        <div class="logo-pulse"></div>
+                    </div>
+                    <h1>Cyber Forge</h1>
+                    <span class="brand-tagline">Agentic AI Security Platform</span>
+                </div>
+                
+                <div class="brand-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>AI-Powered Analysis</h3>
+                            <p>Advanced machine learning models for threat detection</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-satellite-dish"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Real-Time Monitoring</h3>
+                            <p>Continuous security surveillance and alerts</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Autonomous Protection</h3>
+                            <p>Self-learning agents that adapt to new threats</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Network Intelligence</h3>
+                            <p>Deep analysis of network traffic and patterns</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="brand-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="threats-stat">12M+</span>
+                        <span class="stat-label">Threats Analyzed</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="models-stat">15+</span>
+                        <span class="stat-label">ML Models</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="accuracy-stat">99.7%</span>
+                        <span class="stat-label">Detection Rate</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Auth Forms -->
+        <div class="auth-forms">
+            <div class="form-container">
+                <!-- Connection Status -->
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting to server...</span>
+                </div>
+
+                <!-- Login Form -->
+                <div class="auth-form" id="login-form">
+                    <div class="form-header">
+                        <h2>Welcome Back</h2>
+                        <p>Sign in to access your security dashboard</p>
+                    </div>
+
+                    <form id="login-form-element" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="login-email">
+                                <i class="fas fa-envelope"></i>
+                                Email Address
+                            </label>
+                            <input type="email" id="login-email" name="email" placeholder="analyst@company.com" required autocomplete="email">
+                            <span class="input-validation"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="login-password">
+                                <i class="fas fa-lock"></i>
+                                Password
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="login-password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                                <button type="button" class="toggle-password" onclick="togglePassword('login-password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span class="input-validation"></span>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="remember-me">
+                                <input type="checkbox" id="remember-me" name="remember">
+                                <span class="checkmark"></span>
+                                Remember me
+                            </label>
+                            <a href="#" class="forgot-password" onclick="showResetPassword()">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="login-btn" onclick="handleLogin()">
+                            <span class="btn-text">Sign In</span>
+                            <span class="btn-loader"><i class="fas fa-spinner fa-spin"></i></span>
+                            <i class="fas fa-arrow-right btn-arrow"></i>
+                        </button>
+                    </form>
+
+                    <div class="auth-divider">
+                        <span>or continue with</span>
+                    </div>
+
+                    <div class="social-auth">
+                        <button class="btn-google" id="google-login-btn" onclick="handleGoogleAuth()">
+                            <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            <span>Continue with Google</span>
+                        </button>
+                    </div>
+
+                    <div class="auth-switch">
+                        <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Create Account</a></p>
+                    </div>
+                </div>
+
+                <!-- Register Form -->
+                <div class="auth-form hidden" id="register-form">
+                    <div class="form-header">
+                        <h2>Create Account</h2>
+                        <p>Join the next generation of cybersecurity</p>
+                    </div>
+
+                    <form id="register-form-element" onsubmit="return false;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="register-firstname">
+                                    <i class="fas fa-user"></i>
+                                    First Name
+                                </label>
+                                <input type="text" id="register-firstname" name="firstName" placeholder="John" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="register-lastname">
+                                    <i class="fas fa-user"></i>
+                                    Last Name
+                                </label>
+                                <input type="text" id="register-lastname" name="lastName" placeholder="Doe" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-email">
+                                <i class="fas fa-envelope"></i>
+                                Email Address
+                            </label>
+                            <input type="email" id="register-email" name="email" placeholder="analyst@company.com" required autocomplete="email">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-role">
+                                <i class="fas fa-briefcase"></i>
+                                Role
+                            </label>
+                            <select id="register-role" name="role" required>
+                                <option value="">Select your role</option>
+                                <option value="user">Security User</option>
+                                <option value="analyst">Security Analyst</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-password">
+                                <i class="fas fa-lock"></i>
+                                Password
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="register-password" name="password" placeholder="Create a strong password" required autocomplete="new-password">
+                                <button type="button" class="toggle-password" onclick="togglePassword('register-password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength" id="password-strength">
+                                <div class="strength-bar">
+                                    <div class="strength-fill" id="strength-fill"></div>
+                                </div>
+                                <span class="strength-text" id="strength-text">Password strength</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-confirm-password">
+                                <i class="fas fa-lock"></i>
+                                Confirm Password
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="register-confirm-password" name="confirmPassword" placeholder="Confirm your password" required autocomplete="new-password">
+                                <button type="button" class="toggle-password" onclick="togglePassword('register-confirm-password')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-options">
+                            <label class="remember-me">
+                                <input type="checkbox" id="terms-agree" name="terms" required>
+                                <span class="checkmark"></span>
+                                I agree to the <a href="#" onclick="showTerms()">Terms of Service</a> and <a href="#" onclick="showPrivacy()">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="register-btn" onclick="handleRegister()">
+                            <span class="btn-text">Create Account</span>
+                            <span class="btn-loader"><i class="fas fa-spinner fa-spin"></i></span>
+                            <i class="fas fa-arrow-right btn-arrow"></i>
+                        </button>
+                    </form>
+
+                    <div class="auth-divider">
+                        <span>or continue with</span>
+                    </div>
+
+                    <div class="social-auth">
+                        <button class="btn-google" id="google-register-btn" onclick="handleGoogleAuth()">
+                            <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            <span>Continue with Google</span>
+                        </button>
+                    </div>
+
+                    <div class="auth-switch">
+                        <p>Already have an account? <a href="#" onclick="showLoginForm()">Sign In</a></p>
+                    </div>
+                </div>
+
+                <!-- Reset Password Form -->
+                <div class="auth-form hidden" id="reset-form">
+                    <div class="form-header">
+                        <button class="back-btn" onclick="showLoginForm()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h2>Reset Password</h2>
+                        <p>Enter your email to receive reset instructions</p>
+                    </div>
+
+                    <form id="reset-form-element" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="reset-email">
+                                <i class="fas fa-envelope"></i>
+                                Email Address
+                            </label>
+                            <input type="email" id="reset-email" name="email" placeholder="analyst@company.com" required>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="reset-btn" onclick="handleResetPassword()">
+                            <span class="btn-text">Send Reset Link</span>
+                            <span class="btn-loader"><i class="fas fa-spinner fa-spin"></i></span>
+                            <i class="fas fa-paper-plane btn-arrow"></i>
+                        </button>
+                    </form>
+
+                    <div class="auth-switch">
+                        <p>Remember your password? <a href="#" onclick="showLoginForm()">Sign In</a></p>
+                    </div>
+                </div>
+
+                <!-- Message Display -->
+                <div class="auth-message hidden" id="auth-message">
+                    <div class="message-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="message-content">
+                        <h3 id="message-title">Success!</h3>
+                        <p id="message-text">Your action was completed successfully.</p>
+                    </div>
+                    <button class="btn-primary" onclick="dismissMessage()">Continue</button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="auth-footer">
+                <p>&copy; 2024 Cyber Forge AI. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#">Privacy</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Support</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Auth Page Script -->
+    <script src="auth-page.js"></script>
+</body>
+</html>

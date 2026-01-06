@@ -3,18 +3,22 @@
  * Handles all communication between the desktop app and backend services
  */
 
-const API_BASE_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000/ws';
+const FALLBACK_API_BASE_URL = 'http://localhost:8000';
+const FALLBACK_WS_URL = 'ws://localhost:8000/ws';
 
 class CyberForgeAPI {
   constructor() {
-    this.baseUrl = API_BASE_URL;
-    this.wsUrl = WS_URL;
+    const config = (typeof window !== 'undefined' && window.electronAPI?.config) || {};
+    this.baseUrl = config.backendUrl || FALLBACK_API_BASE_URL;
+    this.wsUrl = config.wsUrl || FALLBACK_WS_URL;
     this.token = localStorage.getItem('cyberforge_token');
     this.ws = null;
     this.wsReconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.eventHandlers = new Map();
+
+    // Sync token from native store if the renderer does not have it yet
+    this.syncTokenFromNative();
   }
 
   // =========================================
@@ -32,6 +36,26 @@ class CyberForgeAPI {
     return headers;
   }
 
+  async syncTokenFromNative() {
+    try {
+      if (!this.token && window.electronAPI?.auth) {
+        const response = await window.electronAPI.auth.getToken();
+        if (response?.token) {
+          this.setToken(response.token);
+        }
+      }
+    } catch (error) {
+      console.warn('Token sync from native store failed:', error.message);
+    }
+  }
+
+  setToken(token) {
+    if (token) {
+      this.token = token;
+      localStorage.setItem('cyberforge_token', token);
+    }
+  }
+
   async request(method, endpoint, data = null) {
     const url = `${this.baseUrl}${endpoint}`;
     const options = {
@@ -47,11 +71,14 @@ class CyberForgeAPI {
       const response = await fetch(url, options);
       const json = await response.json();
 
-      if (!response.ok) {
-        throw new Error(json.message || `HTTP ${response.status}`);
+      if (!response.ok || json.success === false) {
+        throw new Error(json.message || json.error || `HTTP ${response.status}`);
       }
 
-      return { success: true, data: json };
+      // Unwrap common API shape { success, data }
+      const payload = json.data !== undefined ? json.data : json;
+
+      return { success: true, data: payload, raw: json };
     } catch (error) {
       console.error(`API Error [${method} ${endpoint}]:`, error.message);
       return { success: false, error: error.message };
@@ -82,6 +109,10 @@ class CyberForgeAPI {
     return this.get('/health');
   }
 
+  async mlHealthCheck() {
+    return this.get('/api/ai/ml-health');
+  }
+
   async getServerStatus() {
     return this.get('/ws/info');
   }
@@ -93,8 +124,7 @@ class CyberForgeAPI {
   async login(email, password) {
     const result = await this.post('/api/auth/login', { email, password });
     if (result.success && result.data.token) {
-      this.token = result.data.token;
-      localStorage.setItem('cyberforge_token', this.token);
+      this.setToken(result.data.token);
     }
     return result;
   }
@@ -102,8 +132,7 @@ class CyberForgeAPI {
   async register(userData) {
     const result = await this.post('/api/auth/register', userData);
     if (result.success && result.data.token) {
-      this.token = result.data.token;
-      localStorage.setItem('cyberforge_token', this.token);
+      this.setToken(result.data.token);
     }
     return result;
   }
@@ -134,8 +163,15 @@ class CyberForgeAPI {
     return this.get('/api/analysis/stats');
   }
 
-  async getAnalysisHistory(page = 1, limit = 20) {
-    return this.get(`/api/analysis/history?page=${page}&limit=${limit}`);
+  async getAnalysisHistory(params = {}) {
+    const { page = 1, limit = 20, status, analysisType, priority } = typeof params === 'object' ? params : { page: params, limit: 20 };
+    const search = new URLSearchParams();
+    search.set('page', page);
+    search.set('limit', limit);
+    if (status) search.set('status', status);
+    if (analysisType) search.set('analysisType', analysisType);
+    if (priority) search.set('priority', priority);
+    return this.get(`/api/analysis/history?${search.toString()}`);
   }
 
   async analyzeUrl(url, options = {}) {
@@ -165,6 +201,14 @@ class CyberForgeAPI {
 
   async getThreatStats() {
     return this.get('/api/threats/stats');
+  }
+
+  async resolveThreat(threatId, payload = {}) {
+    return this.put(`/api/threats/${threatId}/resolve`, payload);
+  }
+
+  async dismissThreat(threatId, payload = {}) {
+    return this.put(`/api/threats/${threatId}/dismiss`, payload);
   }
 
   async scanForThreats(urls = [], scanType = 'quick') {
@@ -205,6 +249,59 @@ class CyberForgeAPI {
 
   async executeAITask(taskType, taskData) {
     return this.post('/api/ai/execute-task-ml', { task_type: taskType, task_data: taskData });
+  }
+
+  async mlExecuteTask(taskType, taskData) {
+    return this.post('/api/ai/execute-task-ml', { task_type: taskType, task_data: taskData });
+  }
+
+  async getAIRecommendations(query) {
+    return this.post('/api/ai/recommendations', { query });
+  }
+
+  // =========================================
+  // ML & Training Endpoints
+  // =========================================
+
+  async getDatasets() {
+    return this.get('/api/ml/datasets');
+  }
+
+  async getDataset(datasetId) {
+    return this.get(`/api/ml/datasets/${datasetId}`);
+  }
+
+  async downloadDataset(datasetId, forceRefresh = false) {
+    return this.post('/api/ml/datasets/download', { datasetId, forceRefresh });
+  }
+
+  async getModels() {
+    return this.get('/api/ml/models');
+  }
+
+  async getModelDetails(modelId) {
+    return this.get(`/api/ml/models/${modelId}`);
+  }
+
+  async startTraining(datasetId, modelType, hyperparameters = {}, trainAll = false) {
+    return this.post('/api/ml/train', { datasetId, modelType, hyperparameters, trainAll });
+  }
+
+  async getTrainingStatus(jobId) {
+    return this.get(`/api/ml/train/status/${jobId}`);
+  }
+
+  async getTrainingHistory(limit = 20, offset = 0) {
+    const params = new URLSearchParams({ limit, offset }).toString();
+    return this.get(`/api/ml/train/history?${params}`);
+  }
+
+  async predict(modelId, data, context = {}) {
+    return this.post('/api/ml/predict', { modelId, data, context });
+  }
+
+  async batchPredict(modelId, dataArray, context = {}) {
+    return this.post('/api/ml/predict/batch', { modelId, dataArray, context });
   }
 
   // =========================================
@@ -291,6 +388,13 @@ class CyberForgeAPI {
           clientType: 'desktop',
           version: '1.0.0'
         }));
+
+        if (this.token) {
+          this.ws.send(JSON.stringify({
+            type: 'authenticate',
+            token: this.token
+          }));
+        }
 
         this.emit('ws:connected');
       };
@@ -434,12 +538,134 @@ class CyberForgeAPI {
   async pageVisit(pageData) {
     this.sendWebSocketMessage('page_visit', pageData);
   }
+
+  // =========================================
+  // ML Training Endpoints
+  // =========================================
+
+  async getDatasets() {
+    return this.get('/api/ml/datasets');
+  }
+
+  async getDatasetDetails(datasetId) {
+    return this.get(`/api/ml/datasets/${datasetId}`);
+  }
+
+  async downloadDataset(datasetId) {
+    return this.get(`/api/ml/datasets/${datasetId}/download`);
+  }
+
+  async previewDataset(datasetId, limit = 10) {
+    return this.get(`/api/ml/datasets/${datasetId}/preview?limit=${limit}`);
+  }
+
+  async getModels() {
+    return this.get('/api/ml/models');
+  }
+
+  async getModelDetails(modelId) {
+    return this.get(`/api/ml/models/${modelId}`);
+  }
+
+  async getModelMetrics(modelId) {
+    return this.get(`/api/ml/models/${modelId}/metrics`);
+  }
+
+  async trainModel(datasetId, modelType = 'auto', hyperparameters = {}, config = {}) {
+    return this.post('/api/ml/train', {
+      dataset_id: datasetId,
+      model_type: modelType,
+      hyperparameters,
+      config
+    });
+  }
+
+  async getTrainingStatus(jobId) {
+    return this.get(`/api/ml/train/${jobId}/status`);
+  }
+
+  async getTrainingHistory(limit = 20) {
+    return this.get(`/api/ml/train/history?limit=${limit}`);
+  }
+
+  async stopTraining(jobId) {
+    return this.post(`/api/ml/train/${jobId}/stop`);
+  }
+
+  async evaluateModel(modelId, datasetId = null) {
+    const params = datasetId ? `?dataset_id=${datasetId}` : '';
+    return this.post(`/api/ml/evaluate/${modelId}${params}`);
+  }
+
+  async predict(modelId, data, format = 'json') {
+    return this.post('/api/ml/predict', {
+      model_id: modelId,
+      data,
+      format
+    });
+  }
+
+  async batchPredict(modelId, samples) {
+    return this.post('/api/ml/predict/batch', {
+      model_id: modelId,
+      samples
+    });
+  }
+
+  // =========================================
+  // Threat Detection ML Endpoints
+  // =========================================
+
+  async detectMalware(sample, fileHash = null) {
+    return this.post('/api/ml/detect/malware', { sample, file_hash: fileHash });
+  }
+
+  async detectPhishing(url, emailContent = null) {
+    return this.post('/api/ml/detect/phishing', { url, email_content: emailContent });
+  }
+
+  async detectIntrusion(networkData, realtime = false) {
+    return this.post('/api/ml/detect/intrusion', { network_data: networkData, realtime });
+  }
+
+  async detectAnomaly(data, sensitivity = 0.5) {
+    return this.post('/api/ml/detect/anomaly', { data, sensitivity });
+  }
+
+  async getDetectionStatus() {
+    return this.get('/api/ml/detect/status');
+  }
+
+  // =========================================
+  // Dashboard Statistics
+  // =========================================
+
+  async getDashboardStats() {
+    return this.get('/api/dashboard/stats');
+  }
+
+  async getRealTimeThreats() {
+    return this.get('/api/dashboard/threats/realtime');
+  }
+
+  async getSystemStatus() {
+    return this.get('/api/dashboard/system/status');
+  }
+
+  async getRecentActivity(limit = 50) {
+    return this.get(`/api/dashboard/activity?limit=${limit}`);
+  }
 }
 
 // Create singleton instance
 const cyberforgeAPI = new CyberForgeAPI();
 
-// Export for use in other modules
+// Export for Node/Electron require
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { cyberforgeAPI, CyberForgeAPI };
+}
+
+// Expose to window for browser context (Electron renderer with nodeIntegration=false)
+if (typeof window !== 'undefined') {
+  window.cyberforgeAPI = cyberforgeAPI;
 }

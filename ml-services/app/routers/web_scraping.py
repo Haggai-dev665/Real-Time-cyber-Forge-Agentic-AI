@@ -56,7 +56,7 @@ class SocialMediaScrapingRequest(BaseModel):
     hashtags: Optional[List[str]] = []
     accounts: Optional[List[str]] = []
     max_results_per_platform: int = Field(default=100, ge=10, le=1000)
-    time_range: str = Field(default="24h", regex=r"^\d+[hdwm]$")
+    time_range: str = Field(default="24h", pattern=r"^\d+[hdwm]$")
     include_sentiment: bool = True
     filter_language: Optional[str] = "en"
     detect_threats: bool = True
@@ -87,9 +87,15 @@ class AdvancedWebScraper:
     """Advanced AI-powered web scraper"""
     
     def __init__(self):
-        self.ai_agent = AIAgent()
-        self.threat_analyzer = ThreatAnalyzer()
+        # Initialize in correct order: ml_models -> threat_analyzer -> ai_agent
+        self.memory_store = {}  # Simple in-memory store
         self.ml_models = MLModelManager()
+        self.threat_analyzer = ThreatAnalyzer(ml_manager=self.ml_models)
+        self.ai_agent = AIAgent(
+            memory_store=self.memory_store,
+            threat_analyzer=self.threat_analyzer,
+            ml_manager=self.ml_models
+        )
         self.session = None
         
     async def create_session(self):

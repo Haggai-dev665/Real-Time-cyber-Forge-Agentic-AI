@@ -319,18 +319,20 @@ class AIAssistantScreen {
     }
 
     async sendToAI(message) {
-        // Try backend AI endpoint first
+        // Backend AI endpoint (preferred)
         if (window.apiClient) {
             try {
                 const response = await window.apiClient.chatWithAI(message, this.currentConversationId);
-                if (response.success) {
-                    this.currentConversationId = response.conversationId;
+                if (response?.success) {
+                    const data = response.data || {};
+                    this.currentConversationId = data.conversationId || data.conversation_id || this.currentConversationId;
+                    const reply = data.response || data.message || data.answer || 'I received your message.';
                     return {
-                        message: response.response,
+                        message: reply,
                         metadata: {
-                            confidence: response.confidence,
-                            sources: response.sources,
-                            source: response.source || 'backend'
+                            confidence: data.confidence,
+                            sources: data.sources,
+                            source: data.source || 'backend'
                         }
                     };
                 }
@@ -339,16 +341,11 @@ class AIAssistantScreen {
             }
         }
 
-        // Fallback to ML service via IPC (electron API)
-        if (window.electronAPI && window.electronAPI.mlService && window.electronAPI.mlService.chat) {
+        // Fallback to ML service via IPC (if exposed)
+        if (window.electronAPI?.mlService?.chat) {
             try {
-                const response = await window.electronAPI.mlService.chat(
-                    message,
-                    this.currentConversationId,
-                    'chat'
-                );
-                
-                if (response.success && response.data) {
+                const response = await window.electronAPI.mlService.chat(message, this.currentConversationId, 'chat');
+                if (response?.success && response.data) {
                     this.currentConversationId = response.data.conversation_id || this.currentConversationId;
                     return {
                         message: response.data.response || 'I received your message.',
@@ -357,21 +354,6 @@ class AIAssistantScreen {
                 }
             } catch (error) {
                 console.error('ML service IPC request failed:', error);
-            }
-        }
-
-        // Fallback to ML service direct HTTP call
-        if (window.apiClient) {
-            try {
-                const response = await window.apiClient.mlAnalyze(message, 'chat');
-                if (response.success) {
-                    return {
-                        message: response.response || response.result || 'I received your message but couldn\'t generate a proper response.',
-                        metadata: { source: 'ml-service-direct' }
-                    };
-                }
-            } catch (error) {
-                console.error('ML service direct request failed:', error);
             }
         }
 

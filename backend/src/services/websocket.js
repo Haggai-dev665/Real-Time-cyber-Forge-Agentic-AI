@@ -138,6 +138,10 @@ class WebSocketManager {
         await this.handleHeartbeat(clientId, message);
         break;
       
+      case 'authenticate':
+        await this.handleAuthentication(clientId, message);
+        break;
+      
       case 'connection_established':
         // Acknowledge connection establishment
         client.socket.send(JSON.stringify({
@@ -173,6 +177,24 @@ class WebSocketManager {
     }));
 
     logActivity('info', `Client identified: ${clientId} as ${clientType}`);
+  }
+
+  async handleAuthentication(clientId, message) {
+    const client = this.clients.get(clientId);
+    
+    // Store authentication info
+    client.userId = message.userId;
+    client.token = message.token;
+    client.authenticated = true;
+
+    // Send authentication confirmation
+    client.socket.send(JSON.stringify({
+      type: 'authentication_confirmed',
+      userId: message.userId,
+      timestamp: new Date().toISOString()
+    }));
+
+    logActivity('info', `Client authenticated: ${clientId} as user ${message.userId}`);
   }
 
   async handleDesktopConnection(clientId, message) {

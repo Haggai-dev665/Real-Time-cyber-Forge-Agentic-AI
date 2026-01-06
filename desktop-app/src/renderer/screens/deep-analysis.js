@@ -377,8 +377,14 @@ class DeepAnalysisScreen {
 
     async startAnalysis() {
         const resultsContent = document.getElementById('results-content');
-        
-        // Show loading state
+        if (!window.apiClient) {
+            resultsContent.innerHTML = '<p class="text-danger">API client not available. Please restart the app.</p>';
+            return;
+        }
+
+        const payload = await this.buildAnalysisPayload();
+        if (!payload) return;
+
         resultsContent.innerHTML = `
             <div class="analysis-loading">
                 <div class="spinner"></div>
@@ -387,56 +393,78 @@ class DeepAnalysisScreen {
                 <div class="progress-bar">
                     <div class="progress-fill" id="progress-fill"></div>
                 </div>
-                <p class="progress-text" id="progress-text">Initializing...</p>
+                <p class="progress-text" id="progress-text">Submitting to backend...</p>
             </div>
         `;
 
-        // Simulate analysis progress
-        await this.simulateAnalysis();
-        
-        // Show results
-        this.showAnalysisResults();
-    }
+        try {
+            const response = await window.apiClient.analyzeUrl(payload.url, payload.options);
+            if (!response.success) {
+                resultsContent.innerHTML = `<p class="text-danger">${response.error || 'Analysis failed. Please try again.'}</p>`;
+                return;
+            }
 
-    async simulateAnalysis() {
-        const progressFill = document.getElementById('progress-fill');
-        const progressText = document.getElementById('progress-text');
-        
-        const steps = [
-            'Initializing analysis engine...',
-            'Scanning for threats...',
-            'Analyzing file structure...',
-            'Checking signatures...',
-            'Running behavioral analysis...',
-            'Generating report...',
-            'Analysis complete!'
-        ];
+            const analysis = response.data?.analysis || response.data || {};
+            this.currentAnalysis = analysis;
 
-        for (let i = 0; i < steps.length; i++) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const progress = ((i + 1) / steps.length) * 100;
-            progressFill.style.width = progress + '%';
-            progressText.textContent = steps[i];
+            this.showAnalysisResults(analysis);
+            this.addToHistory(analysis);
+            window.notificationSystem?.success('Analysis Submitted', 'ML service is processing your request.');
+            await this.loadAnalysisHistory();
+        } catch (error) {
+            console.error('Analysis request failed:', error);
+            resultsContent.innerHTML = `<p class="text-danger">${error.message || 'Analysis failed.'}</p>`;
         }
     }
 
-    showAnalysisResults() {
+    async buildAnalysisPayload() {
+        switch (this.analysisType) {
+            case 'url': {
+                const urlInput = document.getElementById('url-input');
+                const url = urlInput?.value?.trim();
+                if (!url) {
+                    window.notificationSystem?.warning('Enter URL', 'Please enter a URL to analyze.');
+                    return null;
+                }
+                return { url, options: { analysisType: 'url', priority: 'medium' } };
+            }
+            case 'file':
+            case 'network':
+            case 'memory':
+            case 'behavioral':
+                window.notificationSystem?.info('URL Analysis Available', 'Backend currently accepts URL analyses. Other types are coming soon.');
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    showAnalysisResults(analysis) {
         const resultsContent = document.getElementById('results-content');
-        
-        // Generate mock results based on analysis type
-        const results = this.generateMockResults();
-        
+        const results = analysis?.results || {};
+
+        const threatLevel = (results.riskLevel || results.threatLevel || 'medium').toLowerCase();
+        const confidence = Math.round((results.confidence || results.confidenceScore || 0.5) * 100);
+        const icon = threatLevel === 'low' ? 'shield-alt' : threatLevel === 'critical' ? 'skull-crossbones' : 'exclamation-triangle';
+        const findings = results.insights || results.findings || [];
+        const recommendations = results.recommendations || results.actions || [];
+        const technicalDetails = results.technicalDetails || {
+            URL: analysis.url || 'N/A',
+            Risk: results.riskLevel || 'unknown',
+            SecurityScore: results.securityScore ?? 'n/a'
+        };
+
         resultsContent.innerHTML = `
             <div class="analysis-results">
                 <div class="results-summary">
-                    <div class="threat-level ${results.threatLevel}">
-                        <i class="fas fa-${results.icon}"></i>
-                        <span>${results.threatLevel.toUpperCase()}</span>
+                    <div class="threat-level ${threatLevel}">
+                        <i class="fas fa-${icon}"></i>
+                        <span>${threatLevel.toUpperCase()}</span>
                     </div>
                     <div class="confidence-score">
                         <h4>Confidence Score</h4>
                         <div class="score-circle">
-                            <span>${results.confidence}%</span>
+                            <span>${confidence}%</span>
                         </div>
                     </div>
                 </div>
@@ -445,15 +473,15 @@ class DeepAnalysisScreen {
                     <div class="detail-section">
                         <h4>Key Findings</h4>
                         <ul>
-                            ${results.findings.map(finding => `<li>${finding}</li>`).join('')}
+                            ${findings.length ? findings.map(finding => `<li>${finding}</li>`).join('') : '<li>No findings reported yet.</li>'}
                         </ul>
                     </div>
                     
                     <div class="detail-section">
                         <h4>Technical Details</h4>
                         <table class="results-table">
-                            ${Object.entries(results.technicalDetails).map(([key, value]) => 
-                                `<tr><td>${key}</td><td>${value}</td></tr>`
+                            ${Object.entries(technicalDetails).map(([key, value]) => 
+                                `<tr><td>${key}</td><td>${value ?? 'n/a'}</td></tr>`
                             ).join('')}
                         </table>
                     </div>
@@ -461,85 +489,22 @@ class DeepAnalysisScreen {
                     <div class="detail-section">
                         <h4>Recommendations</h4>
                         <ul>
-                            ${results.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            ${recommendations.length ? recommendations.map(rec => `<li>${rec}</li>`).join('') : '<li>Awaiting ML recommendations.</li>'}
                         </ul>
                     </div>
                 </div>
             </div>
         `;
-
-        // Add to history
-        this.addToHistory(results);
     }
 
-    generateMockResults() {
-        const threatLevels = ['low', 'medium', 'high', 'critical'];
-        const threatLevel = threatLevels[Math.floor(Math.random() * threatLevels.length)];
-        
-        const results = {
-            threatLevel,
-            confidence: Math.floor(Math.random() * 30) + 70,
-            icon: threatLevel === 'low' ? 'shield-alt' : threatLevel === 'critical' ? 'skull-crossbones' : 'exclamation-triangle',
-            findings: [],
-            technicalDetails: {},
-            recommendations: []
-        };
-
-        // Generate type-specific results
-        switch (this.analysisType) {
-            case 'file':
-                results.findings = [
-                    'File signature matches known malware family',
-                    'Suspicious API calls detected',
-                    'No digital signature present'
-                ];
-                results.technicalDetails = {
-                    'File Type': 'PE32 Executable',
-                    'Size': '2.4 MB',
-                    'MD5': 'a1b2c3d4e5f6...',
-                    'Entropy': '7.2 (High)',
-                    'Packed': 'Yes (UPX)'
-                };
-                results.recommendations = [
-                    'Quarantine the file immediately',
-                    'Scan all systems for similar files',
-                    'Update antivirus definitions'
-                ];
-                break;
-            case 'url':
-                results.findings = [
-                    'Domain recently registered',
-                    'Suspicious redirects detected',
-                    'Phishing indicators present'
-                ];
-                results.technicalDetails = {
-                    'Domain Age': '3 days',
-                    'IP Address': '192.168.1.100',
-                    'SSL Certificate': 'Invalid',
-                    'Response Time': '2.3s'
-                };
-                results.recommendations = [
-                    'Block URL in firewall',
-                    'Report to security team',
-                    'Educate users about phishing'
-                ];
-                break;
-            default:
-                results.findings = ['Analysis completed successfully'];
-                results.technicalDetails = { 'Status': 'Complete' };
-                results.recommendations = ['Review results carefully'];
-        }
-
-        return results;
-    }
-
-    addToHistory(results) {
+    addToHistory(analysis) {
+        if (!analysis) return;
         const historyItem = {
-            id: Date.now(),
-            type: this.analysisType,
-            timestamp: new Date(),
-            threatLevel: results.threatLevel,
-            confidence: results.confidence
+            id: analysis.id || analysis._id || Date.now(),
+            type: analysis.analysisType || this.analysisType,
+            timestamp: analysis.createdAt ? new Date(analysis.createdAt) : new Date(),
+            threatLevel: analysis.results?.riskLevel || analysis.results?.threatLevel || 'medium',
+            confidence: Math.round((analysis.results?.confidence || 0.5) * 100)
         };
 
         this.analysisHistory.unshift(historyItem);
@@ -550,23 +515,26 @@ class DeepAnalysisScreen {
         const historyList = document.getElementById('history-list');
         if (!historyList) return;
 
-        historyList.innerHTML = this.analysisHistory.slice(0, 10).map(item => `
-            <div class="history-item" data-id="${item.id}">
-                <div class="history-icon">
-                    <i class="fas fa-${this.getAnalysisIcon(item.type)}"></i>
-                </div>
-                <div class="history-content">
-                    <div class="history-header">
-                        <span class="history-type">${item.type.toUpperCase()}</span>
-                        <span class="history-threat ${item.threatLevel}">${item.threatLevel.toUpperCase()}</span>
+        historyList.innerHTML = this.analysisHistory.slice(0, 10).map(item => {
+            const ts = item.timestamp ? new Date(item.timestamp) : new Date();
+            return `
+                <div class="history-item" data-id="${item.id}">
+                    <div class="history-icon">
+                        <i class="fas fa-${this.getAnalysisIcon(item.analysisType || item.type)}"></i>
                     </div>
-                    <div class="history-details">
-                        <span class="history-time">${item.timestamp.toLocaleString()}</span>
-                        <span class="history-confidence">${item.confidence}% confidence</span>
+                    <div class="history-content">
+                        <div class="history-header">
+                            <span class="history-type">${(item.analysisType || item.type || 'analysis').toString().toUpperCase()}</span>
+                            <span class="history-threat ${(item.threatLevel || 'medium').toLowerCase()}">${(item.threatLevel || 'medium').toString().toUpperCase()}</span>
+                        </div>
+                        <div class="history-details">
+                            <span class="history-time">${ts.toLocaleString()}</span>
+                            <span class="history-confidence">${item.confidence ?? '–'}% confidence</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     getAnalysisIcon(type) {
@@ -581,9 +549,13 @@ class DeepAnalysisScreen {
     }
 
     async loadAnalysisHistory() {
-        // Simulate loading history from storage
-        this.analysisHistory = [];
-        this.updateHistoryDisplay();
+        if (!window.apiClient) return;
+
+        const response = await window.apiClient.getAnalysisHistory({ limit: 10 });
+        if (response.success) {
+            this.analysisHistory = response.data?.analyses || [];
+            this.updateHistoryDisplay();
+        }
     }
 
     newAnalysis() {

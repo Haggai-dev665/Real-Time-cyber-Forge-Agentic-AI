@@ -324,14 +324,12 @@ class ThreatCenterScreen {
                     status: 'all'
                 });
                 
-                if (response.success && response.data.threats) {
-                    this.threats = response.data.threats;
-                } else {
-                    // Fallback to mock data
-                    this.threats = this.generateMockThreats();
+                if (response.success) {
+                    this.threats = response.data?.threats || response.data || [];
                 }
-            } else {
-                // Use mock data
+            }
+
+            if (!this.threats || this.threats.length === 0) {
                 this.threats = this.generateMockThreats();
             }
             
@@ -350,7 +348,7 @@ class ThreatCenterScreen {
         try {
             if (window.apiClient) {
                 const response = await window.apiClient.getThreatStats();
-                if (response.success) {
+                if (response.success && response.data) {
                     this.updateStatsDisplay(response.data);
                     return;
                 }
@@ -366,10 +364,10 @@ class ThreatCenterScreen {
     }
 
     updateStatsDisplay(stats) {
-        document.getElementById('critical-threats').textContent = stats.critical_threats || 0;
-        document.getElementById('high-threats').textContent = stats.high_threats || 0;
-        document.getElementById('medium-threats').textContent = stats.medium_threats || 0;
-        document.getElementById('blocked-threats').textContent = stats.blocked_today || 0;
+        document.getElementById('critical-threats').textContent = stats.critical_threats || stats.critical || 0;
+        document.getElementById('high-threats').textContent = stats.high_threats || stats.high || 0;
+        document.getElementById('medium-threats').textContent = stats.medium_threats || stats.medium || 0;
+        document.getElementById('blocked-threats').textContent = stats.blocked_today || stats.blocked || 0;
     }
 
     calculateStatsFromThreats() {
@@ -651,7 +649,7 @@ class ThreatCenterScreen {
         
         try {
             if (window.apiClient) {
-                const response = await window.apiClient.resolveThreat(threatId, 'Resolved by user', '');
+                const response = await window.apiClient.resolveThreat(threatId, { resolution: 'Resolved by user' });
                 if (response.success) {
                     this.updateThreatStatus(threatId, 'resolved');
                     window.notificationSystem?.success('Threat Resolved', 'Threat has been marked as resolved');
@@ -679,7 +677,7 @@ class ThreatCenterScreen {
         
         try {
             if (window.apiClient) {
-                const response = await window.apiClient.dismissThreat(threatId, 'Dismissed by user', '');
+                const response = await window.apiClient.dismissThreat(threatId, { reason: 'Dismissed by user' });
                 if (response.success) {
                     this.updateThreatStatus(threatId, 'dismissed');
                     window.notificationSystem?.success('Threat Dismissed', 'Threat has been dismissed');

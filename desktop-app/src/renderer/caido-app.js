@@ -275,28 +275,12 @@
   // =========================================
 
   async function init() {
-    // Check authentication status first
-    const isAuthenticated = await checkAuthentication();
-    
-    if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to auth page...');
-      // If using electron, redirect via IPC
-      if (window.electronAPI && window.electronAPI.auth) {
-        // Redirect to auth page - main process handles this
-        window.location.href = 'auth-page.html';
-        return;
-      }
-    }
-    
     initTheme();
     bindHeaderControls();
     bindSidebarNav();
     bindTabs();
     bindQueryInput();
     bindActionBar();
-    
-    // Setup logout handler
-    setupLogoutHandler();
     
     // Connect to backend and load data
     await connectToBackend();
@@ -306,82 +290,6 @@
     // Request notification permission
     if (Notification.permission === 'default') {
       Notification.requestPermission();
-    }
-  }
-
-  async function checkAuthentication() {
-    try {
-      // Check if we have a token
-      const token = localStorage.getItem('cyberforge_token');
-      if (!token) {
-        return false;
-      }
-      
-      // Validate token with backend if API client available
-      if (cyberforgeAPI && cyberforgeAPI.isAuthenticated()) {
-        // Try to get profile to verify token is still valid
-        const profileResult = await cyberforgeAPI.getProfile();
-        if (profileResult.success) {
-          console.log('User authenticated:', profileResult.data?.email || 'unknown');
-          return true;
-        }
-      }
-      
-      // Check via electron API
-      if (window.electronAPI && window.electronAPI.auth && window.electronAPI.auth.checkSession) {
-        const session = await window.electronAPI.auth.checkSession();
-        if (session && (session.isAuthenticated || session.valid || session.user)) {
-          return true;
-        }
-      }
-
-      // If we have a token in localStorage, treat as authenticated (backend will reject if invalid)
-      return !!token;
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      return false;
-    }
-  }
-
-  function setupLogoutHandler() {
-    // Look for logout button in the UI
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async () => {
-        await handleLogout();
-      });
-    }
-    
-    // Also add to any user menu
-    const userMenu = document.querySelector('.user-menu-item[data-action="logout"]');
-    if (userMenu) {
-      userMenu.addEventListener('click', async () => {
-        await handleLogout();
-      });
-    }
-  }
-
-  async function handleLogout() {
-    try {
-      // Clear local auth state
-      if (cyberforgeAPI) {
-        cyberforgeAPI.logout();
-      }
-      
-      localStorage.removeItem('cyberforge_token');
-      localStorage.removeItem('cyberforge_user');
-      
-      // Logout via electron API if available
-      if (window.electronAPI && window.electronAPI.auth && window.electronAPI.auth.fullLogout) {
-        await window.electronAPI.auth.fullLogout();
-      }
-      
-      // Redirect to auth page
-      window.location.href = 'auth-page.html';
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Force redirect anyway
-      window.location.href = 'auth-page.html';
     }
   }
 
@@ -803,7 +711,7 @@
       messages.appendChild(wrapper);
       messages.scrollTop = messages.scrollHeight;
     };
-    const send = async () => {
+    const send = () => {
       const text = input.value.trim();
       if (!text) return;
       addMessage('user', text);

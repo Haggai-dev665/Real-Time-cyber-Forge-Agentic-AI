@@ -227,7 +227,7 @@
                         <p>Sign in to access your security dashboard</p>
                     </div>
                     
-                    <form id="login-form-element" onsubmit="handleLogin(event); return false;">
+                    <form id="login-form-element" onsubmit="return false;">
                         <!-- Email -->
                         <div class="form-group">
                             <label class="form-label" for="login-email">
@@ -266,7 +266,7 @@
                         <!-- Options Row -->
                         <div class="form-options">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="remember-me" name="remember" class="checkbox-input">
+                                <input type="checkbox" id="remember-me" name="remember" class="checkbox-input" checked>
                                 <span class="checkbox-custom"><i class="fas fa-check"></i></span>
                                 Remember me
                             </label>
@@ -302,7 +302,7 @@
                         <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Create Account</a></p>
                     </div>
                 </div>
-
+                
                 <!-- REGISTER FORM -->
                 <div class="auth-form-card hidden" id="register-form">
                     <div class="form-header">
@@ -310,7 +310,7 @@
                         <p>Join the next generation of cybersecurity</p>
                     </div>
                     
-                    <form id="register-form-element" onsubmit="handleRegister(event); return false;">
+                    <form id="register-form-element" onsubmit="return false;">
                         <!-- Name Row -->
                         <div class="form-row">
                             <div class="form-group">
@@ -418,14 +418,14 @@
                         <!-- Terms Checkbox -->
                         <div class="form-options" style="margin-top: 16px;">
                             <label class="checkbox-label terms-label">
-                                <input type="checkbox" id="terms-agree" name="terms" class="checkbox-input">
+                                <input type="checkbox" id="terms-agree" name="terms" class="checkbox-input" required>
                                 <span class="checkbox-custom"><i class="fas fa-check"></i></span>
-                                I agree to the <a href="#" onclick="event.preventDefault()">Terms of Service</a> and <a href="#" onclick="event.preventDefault()">Privacy Policy</a>
+                                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
                             </label>
                         </div>
                         
                         <!-- Submit Button -->
-                        <button type="submit" class="btn-primary" id="register-btn" onclick="handleRegister(event)">
+                        <button type="submit" class="btn-primary" id="register-btn" onclick="handleRegister()">
                             <span class="btn-text">Create Account</span>
                             <span class="btn-loader"><div class="spinner"></div></span>
                             <i class="fas fa-arrow-right btn-icon"></i>

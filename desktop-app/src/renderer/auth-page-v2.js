@@ -1,0 +1,604 @@
+/**
+ * Cyber Forge AI - Enhanced Authentication Page V2
+ * Modern glassmorphism design with AI visualization
+ */
+
+// =====================================================
+// CONFIGURATION
+// =====================================================
+
+const API_BASE_URL = 'http://localhost:8000/api';
+const WS_URL = 'ws://localhost:8000';
+
+// =====================================================
+// STATE MANAGEMENT
+// =====================================================
+
+const authState = {
+    isConnected: false,
+    isLoading: false,
+    currentForm: 'login' // 'login', 'register', 'reset'
+};
+
+// =====================================================
+// DOM ELEMENTS
+// =====================================================
+
+const elements = {
+    // Forms
+    loginForm: null,
+    registerForm: null,
+    resetForm: null,
+    
+    // Buttons
+    loginBtn: null,
+    registerBtn: null,
+    resetBtn: null,
+    googleLoginBtn: null,
+    
+    // Connection
+    connectionStatus: null,
+    connectionText: null,
+    
+    // Toast
+    toastContainer: null
+};
+
+// =====================================================
+// INITIALIZATION
+// =====================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeElements();
+    checkServerConnection();
+    setupEventListeners();
+    animateEntrance();
+});
+
+function initializeElements() {
+    elements.loginForm = document.getElementById('login-form');
+    elements.registerForm = document.getElementById('register-form');
+    elements.resetForm = document.getElementById('reset-form');
+    
+    elements.loginBtn = document.getElementById('login-btn');
+    elements.registerBtn = document.getElementById('register-btn');
+    elements.resetBtn = document.getElementById('reset-btn');
+    elements.googleLoginBtn = document.getElementById('google-login-btn');
+    
+    elements.connectionStatus = document.getElementById('connection-status');
+    elements.connectionText = document.getElementById('connection-text');
+    
+    elements.toastContainer = document.getElementById('toast-container');
+}
+
+function setupEventListeners() {
+    // Form submissions via Enter key
+    document.getElementById('login-form-element')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+    });
+    
+    document.getElementById('register-form-element')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleRegister();
+    });
+    
+    document.getElementById('reset-form-element')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleResetPassword();
+    });
+}
+
+function animateEntrance() {
+    const formCard = document.querySelector('.auth-form-card:not(.hidden)');
+    if (formCard) {
+        formCard.classList.add('slide-up');
+    }
+}
+
+// =====================================================
+// SERVER CONNECTION
+// =====================================================
+
+async function checkServerConnection() {
+    updateConnectionStatus('connecting');
+    
+    try {
+        const fetchWithTimeout = async (url, timeoutMs = 5000) => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { method: 'GET', signal: controller.signal });
+            } finally {
+                clearTimeout(timeout);
+            }
+        };
+
+        const baseUrl = API_BASE_URL.replace('/api', '');
+        const candidates = [baseUrl, baseUrl.replace('localhost', '127.0.0.1')];
+
+        let connected = false;
+        for (const url of candidates) {
+            try {
+                const response = await fetchWithTimeout(`${url}/health`);
+                if (response.ok) {
+                    connected = true;
+                    break;
+                }
+            } catch (err) {
+                // try next candidate
+            }
+        }
+
+        authState.isConnected = connected;
+        updateConnectionStatus(connected ? 'connected' : 'disconnected');
+    } catch (error) {
+        console.error('Server connection error:', error);
+        authState.isConnected = false;
+        updateConnectionStatus('disconnected');
+    }
+    
+    // Retry connection every 30 seconds if disconnected
+    if (!authState.isConnected) {
+        setTimeout(checkServerConnection, 30000);
+    }
+}
+
+function updateConnectionStatus(status) {
+    if (!elements.connectionStatus || !elements.connectionText) return;
+    
+    elements.connectionStatus.classList.remove('connected', 'disconnected', 'connecting');
+    
+    switch (status) {
+        case 'connected':
+            elements.connectionStatus.classList.add('connected');
+            elements.connectionText.textContent = 'Connected to server';
+            break;
+        case 'disconnected':
+            elements.connectionStatus.classList.add('disconnected');
+            elements.connectionText.textContent = 'Server unavailable';
+            break;
+        case 'connecting':
+            elements.connectionStatus.classList.add('connecting');
+            elements.connectionText.textContent = 'Connecting...';
+            break;
+    }
+}
+
+// =====================================================
+// FORM SWITCHING
+// =====================================================
+
+function showLoginForm() {
+    hideAllForms();
+    elements.loginForm?.classList.remove('hidden');
+    elements.loginForm?.classList.add('fade-in');
+    authState.currentForm = 'login';
+}
+
+function showRegisterForm() {
+    hideAllForms();
+    elements.registerForm?.classList.remove('hidden');
+    elements.registerForm?.classList.add('fade-in');
+    authState.currentForm = 'register';
+}
+
+function showResetPassword() {
+    hideAllForms();
+    elements.resetForm?.classList.remove('hidden');
+    elements.resetForm?.classList.add('fade-in');
+    authState.currentForm = 'reset';
+}
+
+function hideAllForms() {
+    elements.loginForm?.classList.add('hidden');
+    elements.registerForm?.classList.add('hidden');
+    elements.resetForm?.classList.add('hidden');
+    
+    // Remove animation classes
+    elements.loginForm?.classList.remove('fade-in', 'slide-up');
+    elements.registerForm?.classList.remove('fade-in', 'slide-up');
+    elements.resetForm?.classList.remove('fade-in', 'slide-up');
+}
+
+// =====================================================
+// AUTHENTICATION HANDLERS
+// =====================================================
+
+async function handleLogin(event) {
+    if (event) {
+        event.preventDefault();
+    }
+    
+    if (authState.isLoading) return;
+    
+    const email = document.getElementById('login-email')?.value?.trim();
+    const password = document.getElementById('login-password')?.value;
+    const rememberMe = document.getElementById('remember-me')?.checked;
+    
+    // Validation
+    if (!email || !password) {
+        showToast('error', 'Missing Fields', 'Please enter your email and password.');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showToast('error', 'Invalid Email', 'Please enter a valid email address.');
+        return;
+    }
+    
+    setButtonLoading(elements.loginBtn, true);
+    authState.isLoading = true;
+    
+    try {
+        console.log('🔐 Attempting login:', { email, url: `${API_BASE_URL}/auth/login` });
+        
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        console.log('📡 Login response status:', response.status, response.statusText);
+        
+        const data = await response.json();
+        console.log('📦 Login response data:', data);
+        
+        if (response.ok && data.success) {
+            // Store tokens - default to localStorage for persistence
+            const rememberMe = document.getElementById('remember-me')?.checked ?? true; // Default to true
+            const storage = rememberMe ? localStorage : sessionStorage;
+            storage.setItem('authToken', data.data.token);
+            if (data.data.refreshToken) {
+                storage.setItem('refreshToken', data.data.refreshToken);
+            }
+            storage.setItem('user', JSON.stringify(data.data.user));
+            
+            showToast('success', 'Welcome Back!', `Signed in as ${data.data.user.email}`);
+            
+            // Redirect to main app after short delay
+            setTimeout(() => {
+                window.location.href = 'caido-index.html';
+            }, 1000);
+        } else {
+            showToast('error', 'Login Failed', data.message || 'Invalid credentials. Please try again.');
+        }
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        showToast('error', 'Connection Error', 'Unable to connect to server. Please try again.');
+    } finally {
+        setButtonLoading(elements.loginBtn, false);
+        authState.isLoading = false;
+    }
+}
+
+async function handleRegister(event) {
+    if (event) {
+        event.preventDefault();
+    }
+    
+    if (authState.isLoading) return;
+    
+    const firstName = document.getElementById('register-firstname')?.value?.trim();
+    const lastName = document.getElementById('register-lastname')?.value?.trim();
+    const email = document.getElementById('register-email')?.value?.trim();
+    const role = document.getElementById('register-role')?.value;
+    const password = document.getElementById('register-password')?.value;
+    const confirmPassword = document.getElementById('register-confirm-password')?.value;
+    const termsAgreed = document.getElementById('terms-agree')?.checked;
+    
+    // Validation
+    if (!firstName || !lastName || !email || !role || !password || !confirmPassword) {
+        showToast('error', 'Missing Fields', 'Please fill in all required fields.');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showToast('error', 'Invalid Email', 'Please enter a valid email address.');
+        return;
+    }
+    
+    if (password.length < 8) {
+        showToast('error', 'Weak Password', 'Password must be at least 8 characters long.');
+        return;
+    }
+
+    // Must match backend validation in backend/src/routes/auth.js
+    // At least: 1 lowercase, 1 uppercase, 1 number, 1 special character
+    const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (!passwordPolicy.test(password)) {
+        showToast(
+            'error',
+            'Weak Password',
+            'Password must include lowercase, uppercase, number, and a special character (@$!%*?&).'
+        );
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showToast('error', 'Password Mismatch', 'Passwords do not match.');
+        return;
+    }
+    
+    if (!termsAgreed) {
+        showToast('error', 'Terms Required', 'Please agree to the Terms of Service and Privacy Policy.');
+        // Highlight the checkbox area
+        const termsCheckbox = document.getElementById('terms-agree');
+        const termsLabel = termsCheckbox?.parentElement;
+        if (termsLabel) {
+            termsLabel.style.border = '1px solid #ef4444';
+            termsLabel.style.borderRadius = '8px';
+            termsLabel.style.padding = '8px';
+            setTimeout(() => {
+                termsLabel.style.border = '';
+                termsLabel.style.padding = '';
+            }, 3000);
+        }
+        return;
+    }
+    
+    setButtonLoading(elements.registerBtn, true);
+    authState.isLoading = true;
+    
+    try {
+        console.log('📝 Attempting registration:', { email, firstName, lastName, role, url: `${API_BASE_URL}/auth/register` });
+        
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                firstName,
+                lastName,
+                email,
+                password,
+                role
+            })
+        });
+        
+        console.log('📡 Register response status:', response.status, response.statusText);
+        
+        const data = await response.json();
+        console.log('📦 Register response data:', data);
+        
+        if (response.ok && data.success) {
+            showToast('success', 'Account Created!', 'You are now signed in.');
+            
+            // Store tokens and log in automatically
+            const storage = localStorage;
+            storage.setItem('authToken', data.data.token);
+            if (data.data.refreshToken) {
+                storage.setItem('refreshToken', data.data.refreshToken);
+            }
+            storage.setItem('user', JSON.stringify(data.data.user));
+            
+            // Redirect to main app after short delay
+            setTimeout(() => {
+                window.location.href = 'caido-index.html';
+            }, 1000);
+        } else {
+            const validationMsg = Array.isArray(data?.errors) && data.errors.length > 0
+                ? (data.errors[0].msg || data.errors[0].message)
+                : null;
+            showToast(
+                'error',
+                'Registration Failed',
+                validationMsg || data.message || 'Unable to create account. Please try again.'
+            );
+        }
+    } catch (error) {
+        console.error('❌ Registration error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        showToast('error', 'Connection Error', 'Unable to connect to server. Please try again.');
+    } finally {
+        setButtonLoading(elements.registerBtn, false);
+        authState.isLoading = false;
+    }
+}
+
+async function handleResetPassword() {
+    if (authState.isLoading) return;
+    
+    const email = document.getElementById('reset-email')?.value?.trim();
+    
+    // Validation
+    if (!email) {
+        showToast('error', 'Missing Email', 'Please enter your email address.');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showToast('error', 'Invalid Email', 'Please enter a valid email address.');
+        return;
+    }
+    
+    setButtonLoading(elements.resetBtn, true);
+    authState.isLoading = true;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        // Always show success to prevent email enumeration
+        showToast('success', 'Check Your Email', 'If an account exists with this email, you will receive reset instructions.');
+        
+        // Clear form and switch to login
+        document.getElementById('reset-form-element')?.reset();
+        setTimeout(() => {
+            showLoginForm();
+        }, 2000);
+    } catch (error) {
+        console.error('Reset password error:', error);
+        // Still show success for security
+        showToast('success', 'Check Your Email', 'If an account exists with this email, you will receive reset instructions.');
+    } finally {
+        setButtonLoading(elements.resetBtn, false);
+        authState.isLoading = false;
+    }
+}
+
+async function handleGoogleAuth() {
+    showToast('info', 'Google Sign-In', 'Google authentication is being configured...');
+    
+    // TODO: Implement Google OAuth flow
+    // This would typically open a popup or redirect to Google's OAuth endpoint
+    // and handle the callback with the authorization code
+}
+
+// =====================================================
+// PASSWORD UTILITIES
+// =====================================================
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const toggle = input?.parentElement?.querySelector('.password-toggle i');
+    
+    if (!input || !toggle) return;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        toggle.classList.remove('fa-eye');
+        toggle.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        toggle.classList.remove('fa-eye-slash');
+        toggle.classList.add('fa-eye');
+    }
+}
+
+function checkPasswordStrength(password) {
+    const strengthFill = document.getElementById('strength-fill');
+    const strengthText = document.getElementById('strength-text');
+    
+    if (!strengthFill || !strengthText) return;
+    
+    // Remove all strength classes
+    strengthFill.classList.remove('weak', 'fair', 'good', 'strong');
+    
+    if (!password) {
+        strengthText.textContent = 'Password strength';
+        return;
+    }
+    
+    let strength = 0;
+    
+    // Length check
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    
+    // Character variety
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    
+    // Determine strength level
+    let level, text;
+    if (strength <= 2) {
+        level = 'weak';
+        text = 'Weak - Add more characters';
+    } else if (strength <= 3) {
+        level = 'fair';
+        text = 'Fair - Add uppercase or symbols';
+    } else if (strength <= 5) {
+        level = 'good';
+        text = 'Good - Almost there!';
+    } else {
+        level = 'strong';
+        text = 'Strong password!';
+    }
+    
+    strengthFill.classList.add(level);
+    strengthText.textContent = text;
+}
+
+// =====================================================
+// UI UTILITIES
+// =====================================================
+
+function setButtonLoading(button, isLoading) {
+    if (!button) return;
+    
+    if (isLoading) {
+        button.classList.add('loading');
+        button.disabled = true;
+    } else {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+function showToast(type, title, message) {
+    const container = elements.toastContainer;
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const iconMap = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    
+    toast.innerHTML = `
+        <i class="toast-icon fas ${iconMap[type] || iconMap.info}"></i>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// =====================================================
+// VALIDATION UTILITIES
+// =====================================================
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// =====================================================
+// EXPOSE FUNCTIONS GLOBALLY
+// =====================================================
+
+// These functions are called from onclick handlers in HTML
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.handleResetPassword = handleResetPassword;
+window.handleGoogleAuth = handleGoogleAuth;
+window.showLoginForm = showLoginForm;
+window.showRegisterForm = showRegisterForm;
+window.showResetPassword = showResetPassword;
+window.togglePassword = togglePassword;
+window.checkPasswordStrength = checkPasswordStrength;

@@ -340,6 +340,97 @@ class AuthController {
   }
 
   /**
+   * Refresh JWT token
+   * Issues a new token if the old one is still valid or recently expired
+   */
+  async refreshToken(req, res) {
+    try {
+      const { refreshToken } = req.body;
+      const authHeader = req.header('Authorization');
+      
+      // Try to get token from header or body
+      let oldToken = refreshToken;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        oldToken = authHeader.substring(7);
+      }
+
+      if (!oldToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token is required'
+        });
+      }
+
+      try {
+        // Verify the token (allow expired tokens for refresh)
+        const decoded = jwt.verify(oldToken, process.env.JWT_SECRET || 'cyber-forge-secret-key', {
+          ignoreExpiration: true
+        });
+
+        // Check if token is not too old (max 7 days for refresh)
+        const tokenAge = Date.now() / 1000 - decoded.iat;
+        const maxRefreshAge = 7 * 24 * 60 * 60; // 7 days in seconds
+        
+        if (tokenAge > maxRefreshAge) {
+          return res.status(401).json({
+            success: false,
+            message: 'Token is too old to refresh. Please log in again.'
+          });
+        }
+
+        // Get user from database
+        const user = await User.findById(decoded.userId);
+        if (!user || !user.isActive) {
+          return res.status(401).json({
+            success: false,
+            message: 'User not found or inactive'
+          });
+        }
+
+        // Generate new JWT token
+        const newToken = jwt.sign(
+          { 
+            userId: user._id, 
+            email: user.email,
+            role: user.role 
+          },
+          process.env.JWT_SECRET || 'cyber-forge-secret-key',
+          { expiresIn: '24h' }
+        );
+
+        res.json({
+          success: true,
+          message: 'Token refreshed successfully',
+          data: {
+            token: newToken,
+            user: {
+              id: user._id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              role: user.role
+            }
+          }
+        });
+
+      } catch (jwtError) {
+        console.error('JWT verification error:', jwtError);
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token'
+        });
+      }
+
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  /**
    * Google OAuth Authentication
    * Handles both new user registration and existing user login via Google
    */

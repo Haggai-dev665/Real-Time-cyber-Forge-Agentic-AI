@@ -15,6 +15,13 @@
     wsHistory: [],
     matchRules: [],
     findings: [],
+    automations: [],
+    workflows: [],
+    scopes: [],
+    filters: [],
+    plugins: [],
+    exports: [],
+    environment: [],
     files: [],
     threats: [],
     analysisStats: null,
@@ -22,100 +29,122 @@
     selectedRequestId: null,
     sidebarCollapsed: false,
     backendConnected: false,
-    conversationId: null
+    conversationId: null,
+    loading: {}
   };
 
-  const sampleRequests = [
-    {
-      id: 1,
-      host: 'www.gstatic.com',
-      method: 'GET',
-      path: '/generate_204',
-      query: '',
-      status: 204,
-      scheme: 'https',
-      headers: [
-        'GET /generate_204 HTTP/1.1',
-        'Host: www.gstatic.com',
-        'Connection: keep-alive',
-        'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-        'Accept: */*'
-      ]
-    },
-    {
-      id: 2,
-      host: 'download.vsa.vw',
-      method: 'GET',
-      path: '/ddg/tds-v2-current.json',
-      query: '',
-      status: 200,
-      scheme: 'https',
-      headers: [
-        'GET /ddg/tds-v2-current.json HTTP/1.1',
-        'Host: download.vsa.vw',
-        'Connection: keep-alive',
-        'User-Agent: Mozilla/5.0',
-        'Accept: application/json'
-      ]
-    },
-    {
-      id: 3,
-      host: 'rosneft.ru',
-      method: 'GET',
-      path: '/443',
-      query: '',
-      status: 301,
-      scheme: 'http',
-      headers: [
-        'GET /443 HTTP/1.1',
-        'Host: rosneft.ru',
-        'Connection: keep-alive',
-        'User-Agent: Mozilla/5.0',
-        'Accept: text/html,application/xhtml+xml'
-      ]
-    },
-    {
-      id: 4,
-      host: 'www.google-analytics.com',
-      method: 'POST',
-      path: '/g/collect',
-      query: 'v=2&tid=G-NQLTER54VR...',
-      status: 200,
-      scheme: 'https',
-      headers: [
-        'POST /g/collect HTTP/1.1',
-        'Host: www.google-analytics.com',
-        'Content-Type: application/json',
-        'User-Agent: Mozilla/5.0',
-        'Accept: */*'
-      ]
+  // =========================================
+  // TOAST NOTIFICATION SYSTEM
+  // =========================================
+
+  function initToastContainer() {
+    if (!document.getElementById('toast-container')) {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
     }
-  ];
+  }
 
-  const sampleIntercepts = [
-    { id: 'I-101', host: 'login.example.com', method: 'POST', path: '/session', status: 200, action: 'Queued' },
-    { id: 'I-102', host: 'api.example.com', method: 'GET', path: '/profile', status: 200, action: 'Paused' }
-  ];
+  function showToast(type, title, message = '') {
+    initToastContainer();
+    const container = document.getElementById('toast-container');
+    
+    const icons = {
+      success: 'fa-check-circle',
+      error: 'fa-exclamation-circle',
+      warning: 'fa-exclamation-triangle',
+      info: 'fa-info-circle'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <i class="fas ${icons[type]} toast-icon"></i>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        ${message ? `<div class="toast-message">${message}</div>` : ''}
+      </div>
+      <button class="toast-close"><i class="fas fa-times"></i></button>
+    `;
+    
+    container.appendChild(toast);
+    
+    toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
+    setTimeout(() => toast.remove(), 5000);
+  }
 
-  const sampleWs = [
-    { id: 'WS-1', host: 'chat.example.com', path: '/socket', messages: 42, status: 'Open' },
-    { id: 'WS-2', host: 'events.example.com', path: '/stream', messages: 15, status: 'Closed' }
-  ];
+  // =========================================
+  // MODAL SYSTEM
+  // =========================================
 
-  const sampleRules = [
-    { id: 1, type: 'Replace', match: 'User-Agent', replace: 'Caido-Client/1.0' },
-    { id: 2, type: 'Match', match: 'Authorization', replace: '[redacted]' }
-  ];
+  function showModal(title, content, onSubmit, submitText = 'Save') {
+    // Remove existing modal
+    document.querySelector('.modal-overlay')?.remove();
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">${title}</div>
+          <button class="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">${content}</div>
+        <div class="modal-footer">
+          <button class="caido-btn modal-cancel">Cancel</button>
+          <button class="caido-btn primary modal-submit">${submitText}</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Animate in
+    requestAnimationFrame(() => overlay.classList.add('active'));
+    
+    const closeModal = () => {
+      overlay.classList.remove('active');
+      setTimeout(() => overlay.remove(), 200);
+    };
+    
+    overlay.querySelector('.modal-close').addEventListener('click', closeModal);
+    overlay.querySelector('.modal-cancel').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+    
+    overlay.querySelector('.modal-submit').addEventListener('click', async () => {
+      const form = overlay.querySelector('.modal-body');
+      const formData = {};
+      form.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.type === 'checkbox') {
+          formData[el.name] = el.checked;
+        } else {
+          formData[el.name] = el.value;
+        }
+      });
+      
+      const submitBtn = overlay.querySelector('.modal-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading-spinner"></span>';
+      
+      try {
+        await onSubmit(formData);
+        closeModal();
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = submitText;
+      }
+    });
+    
+    return overlay;
+  }
 
-  const sampleFindings = [
-    { id: 'F-21', severity: 'High', title: 'Insecure Redirect', path: '/login?next=http://evil.test', status: 'Open' },
-    { id: 'F-22', severity: 'Medium', title: 'Missing CSP', path: '/dashboard', status: 'Open' }
-  ];
-
-  const sampleFiles = [
-    { name: 'collections', children: [ { name: 'default.json' }, { name: 'qa.json' } ] },
-    { name: 'plugins', children: [ { name: 'custom-header.js' } ] }
-  ];
+  function showConfirmModal(title, message, onConfirm) {
+    return showModal(title, `<p>${message}</p>`, onConfirm, 'Confirm');
+  }
 
   // =========================================
   // Backend Integration Functions
@@ -128,6 +157,7 @@
         state.backendConnected = true;
         console.log('✅ Connected to CyberForge backend');
         updateConnectionStatus(true);
+        showToast('success', 'Connected', 'Successfully connected to CyberForge backend');
         
         // Connect WebSocket for real-time updates
         cyberforgeAPI.connectWebSocket();
@@ -136,84 +166,108 @@
         cyberforgeAPI.subscribeToThreats(handleThreatAlert);
         cyberforgeAPI.subscribeToAnalysis(handleAnalysisResult);
         
+        // Subscribe to WebSocket events for real-time updates
+        cyberforgeAPI.on('ws:request_captured', handleRequestCaptured);
+        cyberforgeAPI.on('ws:intercept_added', handleInterceptAdded);
+        cyberforgeAPI.on('sync:update', handleSyncUpdate);
+        
         // Load initial data from backend
         await loadBackendData();
       } else {
         throw new Error('Backend health check failed');
       }
     } catch (error) {
-      console.warn('⚠️ Backend not available, using sample data:', error.message);
+      console.warn('⚠️ Backend not available:', error.message);
       state.backendConnected = false;
       updateConnectionStatus(false);
-      loadSampleData();
+      showToast('warning', 'Offline Mode', 'Backend not available. Connect to start capturing.');
     }
   }
 
   async function loadBackendData() {
     try {
-      // Load analysis stats
-      const statsResult = await cyberforgeAPI.getAnalysisStats();
-      if (statsResult.success) {
-        state.analysisStats = statsResult.data.data;
-      }
+      // Load all data in parallel for better performance
+      const [
+        requestsRes,
+        interceptsRes,
+        matchRulesRes,
+        automationsRes,
+        workflowsRes,
+        findingsRes,
+        scopesRes,
+        filtersRes,
+        pluginsRes,
+        exportsRes,
+        environmentRes,
+        statsRes,
+        threatStatsRes
+      ] = await Promise.all([
+        cyberforgeAPI.getHttpRequests(1, 100),
+        cyberforgeAPI.getIntercepts(),
+        cyberforgeAPI.getMatchRules(),
+        cyberforgeAPI.getAutomations(),
+        cyberforgeAPI.getWorkflows(),
+        cyberforgeAPI.getFindings(),
+        cyberforgeAPI.getScopes(),
+        cyberforgeAPI.getFilters(),
+        cyberforgeAPI.getPlugins(),
+        cyberforgeAPI.getExports(),
+        cyberforgeAPI.getEnvironmentVariables(),
+        cyberforgeAPI.getAnalysisStats(),
+        cyberforgeAPI.getThreatStats()
+      ]);
 
-      // Load threat stats
-      const threatStatsResult = await cyberforgeAPI.getThreatStats();
-      if (threatStatsResult.success) {
-        state.threatStats = threatStatsResult.data.data;
-      }
-
-      // Load threats
-      const threatsResult = await cyberforgeAPI.getThreats({ limit: 50 });
-      if (threatsResult.success && threatsResult.data.data) {
-        state.threats = threatsResult.data.data.threats || [];
-        // Convert threats to findings format for display
-        state.findings = state.threats.map(t => ({
-          id: t.id || t._id,
-          severity: t.severity || 'Medium',
-          title: t.type || t.description || 'Unknown Threat',
-          path: t.source || t.url || '',
-          status: t.status || 'active'
-        }));
-      }
-
-      // Load analysis history
-      const historyResult = await cyberforgeAPI.getAnalysisHistory(1, 50);
-      if (historyResult.success && historyResult.data.data) {
-        // Convert analysis history to request format for display
-        const analyses = historyResult.data.data.analyses || [];
-        state.requests = analyses.map((a, idx) => ({
-          id: idx + 1,
-          host: extractHost(a.target),
-          method: 'GET',
-          path: extractPath(a.target),
-          query: '',
-          status: a.results?.safe ? 200 : 403,
-          scheme: 'https',
-          analysisId: a._id,
-          riskScore: a.results?.risk_score || 0,
-          headers: [`Analysis ID: ${a._id}`, `Type: ${a.type}`, `Status: ${a.status}`]
-        }));
-      }
+      // Update state with loaded data
+      if (requestsRes.success) state.requests = requestsRes.data?.data?.requests || [];
+      if (interceptsRes.success) state.intercepts = interceptsRes.data?.data?.intercepts || [];
+      if (matchRulesRes.success) state.matchRules = matchRulesRes.data?.data?.rules || [];
+      if (automationsRes.success) state.automations = automationsRes.data?.data?.automations || [];
+      if (workflowsRes.success) state.workflows = workflowsRes.data?.data?.workflows || [];
+      if (findingsRes.success) state.findings = findingsRes.data?.data?.findings || [];
+      if (scopesRes.success) state.scopes = scopesRes.data?.data?.scopes || [];
+      if (filtersRes.success) state.filters = filtersRes.data?.data?.filters || [];
+      if (pluginsRes.success) state.plugins = pluginsRes.data?.data?.plugins || [];
+      if (exportsRes.success) state.exports = exportsRes.data?.data?.exports || [];
+      if (environmentRes.success) state.environment = environmentRes.data?.data?.variables || [];
+      if (statsRes.success) state.analysisStats = statsRes.data?.data || {};
+      if (threatStatsRes.success) state.threatStats = threatStatsRes.data?.data || {};
 
       console.log('📊 Backend data loaded:', {
-        threats: state.threats.length,
+        requests: state.requests.length,
+        intercepts: state.intercepts.length,
+        matchRules: state.matchRules.length,
+        automations: state.automations.length,
+        workflows: state.workflows.length,
         findings: state.findings.length,
-        requests: state.requests.length
+        scopes: state.scopes.length,
+        filters: state.filters.length,
+        plugins: state.plugins.length
       });
 
     } catch (error) {
       console.error('Failed to load backend data:', error);
+      showToast('error', 'Data Load Error', error.message);
     }
   }
 
-  function loadSampleData() {
-    state.requests = sampleRequests;
-    state.intercepts = sampleIntercepts;
-    state.wsHistory = sampleWs;
-    state.matchRules = sampleRules;
-    state.findings = sampleFindings;
-    state.files = sampleFiles;
+  // Real-time event handlers
+  function handleRequestCaptured(request) {
+    state.requests.unshift(request);
+    if (state.activeScreen === 'http-history') {
+      renderRequestsTable();
+    }
+  }
+
+  function handleInterceptAdded(intercept) {
+    state.intercepts.unshift(intercept);
+    if (state.activeScreen === 'intercept') {
+      renderIntercepts();
+    }
+    showToast('info', 'Request Intercepted', `${intercept.method} ${intercept.host}${intercept.path}`);
+  }
+
+  function handleSyncUpdate(data) {
+    console.log('Sync update received:', data);
   }
 
   function extractHost(url) {
@@ -276,11 +330,15 @@
 
   async function init() {
     initTheme();
+    initUserMenu();
     bindHeaderControls();
     bindSidebarNav();
     bindTabs();
     bindQueryInput();
     bindActionBar();
+    
+    // Listen for auth expiry
+    cyberforgeAPI.on('auth:expired', handleAuthExpired);
     
     // Connect to backend and load data
     await connectToBackend();
@@ -291,6 +349,110 @@
     if (Notification.permission === 'default') {
       Notification.requestPermission();
     }
+  }
+
+  function initUserMenu() {
+    const userAvatar = document.getElementById('user-avatar');
+    if (!userAvatar) return;
+
+    // Create dropdown menu
+    const dropdown = document.createElement('div');
+    dropdown.className = 'user-dropdown';
+    dropdown.id = 'user-dropdown';
+    dropdown.style.display = 'none';
+    
+    const user = cyberforgeAPI.getCurrentUser();
+    const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'User';
+    const userEmail = user?.email || '';
+    
+    dropdown.innerHTML = `
+      <div class="user-dropdown-header">
+        <div class="user-dropdown-avatar"><i class="fas fa-user"></i></div>
+        <div class="user-dropdown-info">
+          <div class="user-dropdown-name">${userName}</div>
+          <div class="user-dropdown-email">${userEmail}</div>
+        </div>
+      </div>
+      <div class="user-dropdown-divider"></div>
+      <div class="user-dropdown-item" data-action="profile">
+        <i class="fas fa-user-circle"></i>
+        <span>Profile</span>
+      </div>
+      <div class="user-dropdown-item" data-action="settings">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </div>
+      <div class="user-dropdown-divider"></div>
+      <div class="user-dropdown-item logout" data-action="logout">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Sign Out</span>
+      </div>
+    `;
+    
+    document.body.appendChild(dropdown);
+    
+    // Toggle dropdown on avatar click
+    userAvatar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = dropdown.style.display === 'block';
+      dropdown.style.display = isVisible ? 'none' : 'block';
+      
+      if (!isVisible) {
+        const rect = userAvatar.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + 8}px`;
+        dropdown.style.right = `${window.innerWidth - rect.right}px`;
+      }
+    });
+    
+    // Handle dropdown actions
+    dropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.user-dropdown-item');
+      if (!item) return;
+      
+      const action = item.dataset.action;
+      dropdown.style.display = 'none';
+      
+      switch (action) {
+        case 'profile':
+          renderScreen('profile');
+          break;
+        case 'settings':
+          renderScreen('settings');
+          break;
+        case 'logout':
+          handleLogout();
+          break;
+      }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && e.target !== userAvatar) {
+        dropdown.style.display = 'none';
+      }
+    });
+  }
+
+  async function handleLogout() {
+    try {
+      // Call backend logout endpoint
+      await cyberforgeAPI.post('/api/auth/logout', {});
+    } catch (e) {
+      // Ignore errors - we're logging out anyway
+    }
+    
+    // Clear local auth state
+    cyberforgeAPI.logout();
+    
+    // Redirect to login page
+    window.location.href = 'auth-page.html';
+  }
+
+  function handleAuthExpired() {
+    showNotification('Session Expired', 'Please log in again.');
+    setTimeout(() => {
+      window.location.href = 'auth-page.html';
+    }, 1500);
   }
 
   function bindHeaderControls() {
@@ -324,6 +486,11 @@
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('cyberforge-theme', next);
     updateThemeIcon(next);
+    
+    // Update globe theme if it exists
+    if (window.cyberforgeGlobe) {
+      window.cyberforgeGlobe.setTheme(next === 'dark');
+    }
   }
 
   function updateThemeIcon(mode) {
@@ -395,20 +562,24 @@
     } else if (screen === 'intercept') {
       container.innerHTML = buildInterceptLayout();
       renderIntercepts();
+      bindInterceptEvents();
     } else if (screen === 'ws-history') {
       container.innerHTML = buildWsLayout();
       renderWsHistory();
     } else if (screen === 'match-replace') {
       container.innerHTML = buildMatchReplaceLayout();
       renderMatchRules();
+      bindMatchReplaceEvents();
     } else if (screen === 'replay') {
       container.innerHTML = buildReplayLayout();
       renderRequestsTable();
       bindRequestTableEvents();
     } else if (screen === 'automate') {
       container.innerHTML = buildAutomateLayout();
+      bindAutomationsEvents();
     } else if (screen === 'workflows') {
       container.innerHTML = buildWorkflowsLayout();
+      bindWorkflowsEvents();
     } else if (screen === 'assistant') {
       container.innerHTML = buildAssistantLayout();
       bindAssistant();
@@ -417,18 +588,52 @@
     } else if (screen === 'findings') {
       container.innerHTML = buildFindingsLayout();
       renderFindings();
+      bindFindingsEvents();
     } else if (screen === 'exports') {
       container.innerHTML = buildExportsLayout();
+      bindExportsEvents();
     } else if (screen === 'files') {
       container.innerHTML = buildFilesLayout();
       renderFiles();
     } else if (screen === 'plugins') {
       container.innerHTML = buildPluginsLayout();
+      bindPluginsEvents();
     } else if (screen === 'workspace') {
       container.innerHTML = buildWorkspaceLayout();
     } else if (screen === 'ai-agent') {
       container.innerHTML = buildAIAgentLayout();
       bindAgentConsole();
+    } else if (screen === 'dashboard') {
+      container.innerHTML = buildDashboardLayout();
+      bindDashboard();
+    } else if (screen === 'sitemap') {
+      container.innerHTML = buildSitemapLayout();
+      bindSitemapEvents();
+    } else if (screen === 'scopes') {
+      container.innerHTML = buildScopesLayout();
+      bindScopesEvents();
+    } else if (screen === 'filters') {
+      container.innerHTML = buildFiltersLayout();
+      bindFiltersEvents();
+    } else if (screen === 'ai-models') {
+      container.innerHTML = buildAIModelsLayout();
+      bindAIModelsEvents();
+    } else if (screen === 'threat-intel') {
+      container.innerHTML = buildThreatIntelLayout();
+      bindThreatIntelEvents();
+    } else if (screen === 'environment') {
+      container.innerHTML = buildEnvironmentLayout();
+      bindEnvironmentEvents();
+    } else if (screen === 'sync-status') {
+      container.innerHTML = buildSyncStatusLayout();
+    } else if (screen === 'browser-extension') {
+      container.innerHTML = buildBrowserExtensionLayout();
+    } else if (screen === 'mobile-companion') {
+      container.innerHTML = buildMobileCompanionLayout();
+    } else if (screen === 'profile') {
+      container.innerHTML = buildProfileLayout();
+    } else if (screen === 'settings') {
+      container.innerHTML = buildSettingsLayout();
     } else {
       container.innerHTML = buildPlaceholder(screen);
     }
@@ -517,17 +722,61 @@
         <div class="caido-panel-header">
           <div class="caido-panel-title">Match & Replace Rules</div>
           <div class="caido-panel-actions">
-            <button class="panel-action-btn" id="add-rule"><i class="fas fa-plus"></i></button>
+            <button class="caido-btn primary" id="add-rule"><i class="fas fa-plus"></i> Add Rule</button>
           </div>
         </div>
         <div class="caido-table-container">
           <table class="caido-table" id="rules-table">
-            <thead><tr><th>ID</th><th>Type</th><th>Match</th><th>Replace</th></tr></thead>
+            <thead><tr><th>ID</th><th>Type</th><th>Match</th><th>Replace</th><th>Enabled</th><th>Actions</th></tr></thead>
             <tbody id="rules-tbody"></tbody>
           </table>
         </div>
       </div>
     `;
+  }
+
+  function bindMatchReplaceEvents() {
+    document.getElementById('add-rule')?.addEventListener('click', () => {
+      showModal('Add Match & Replace Rule', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
+            <select class="caido-input" name="type" style="width:100%;">
+              <option value="request-header">Request Header</option>
+              <option value="request-body">Request Body</option>
+              <option value="response-header">Response Header</option>
+              <option value="response-body">Response Body</option>
+              <option value="url">URL</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Match Pattern (regex)</label>
+            <input class="caido-input" name="match" placeholder="Authorization: Bearer .*" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Replace With</label>
+            <input class="caido-input" name="replace" placeholder="Authorization: Bearer NEW_TOKEN" style="width:100%;">
+          </div>
+          <div>
+            <label><input type="checkbox" name="enabled" checked> Enable rule</label>
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.createMatchRule({
+          type: formData.get('type'),
+          match: formData.get('match'),
+          replace: formData.get('replace'),
+          enabled: formData.get('enabled') === 'on'
+        });
+        if (result.success) {
+          state.matchRules.unshift(result.data.data.rule);
+          showToast('success', 'Created', 'Rule added successfully');
+          renderScreen('match-replace');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to add rule');
+        }
+      });
+    });
   }
 
   function buildReplayLayout() {
@@ -565,28 +814,429 @@
   }
 
   function buildAutomateLayout() {
-    return buildPlaceholder('Automate (configure jobs and schedules)');
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Automate</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn primary" id="new-automation"><i class="fas fa-plus"></i> New Job</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div class="automation-grid" id="automations-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
+            ${state.automations.length === 0 ? `
+              <div class="empty-state" style="grid-column: 1/-1;">
+                <i class="fas fa-robot empty-state-icon"></i>
+                <div class="empty-state-title">No automations yet</div>
+                <div class="empty-state-description">Create your first automation to run scheduled tasks</div>
+              </div>
+            ` : state.automations.map(auto => `
+              <div class="automation-card" data-id="${auto.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                  <i class="fas fa-${auto.type === 'scheduled' ? 'clock' : 'robot'}" style="color:var(--caido-accent-${auto.status === 'active' ? 'blue' : 'orange'});"></i>
+                  <div>
+                    <div style="font-weight:600;">${auto.name}</div>
+                    <div style="font-size:11px; color:var(--caido-text-muted);">${auto.schedule || auto.trigger || 'Manual'}</div>
+                  </div>
+                  <span class="caido-badge ${auto.status === 'active' ? 'green' : 'orange'}" style="margin-left:auto;">${auto.status}</span>
+                </div>
+                <div style="font-size:12px; color:var(--caido-text-secondary); margin-bottom:12px;">${auto.description || 'No description'}</div>
+                <div style="display:flex; gap:8px;">
+                  <button class="caido-btn automation-run" data-id="${auto.id}"><i class="fas fa-play"></i> Run</button>
+                  <button class="caido-btn automation-pause" data-id="${auto.id}"><i class="fas fa-${auto.status === 'active' ? 'pause' : 'play'}"></i></button>
+                  <button class="caido-btn automation-delete" data-id="${auto.id}"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindAutomationsEvents() {
+    // New automation button
+    document.getElementById('new-automation')?.addEventListener('click', () => {
+      showModal('Create Automation', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
+            <input class="caido-input" name="name" placeholder="My Automation" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
+            <select class="caido-input" name="type" style="width:100%;">
+              <option value="scheduled">Scheduled</option>
+              <option value="triggered">Triggered</option>
+              <option value="manual">Manual</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Schedule/Trigger</label>
+            <input class="caido-input" name="schedule" placeholder="Every 6 hours / On new endpoint" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
+            <textarea class="caido-input" name="description" rows="3" placeholder="What does this automation do?" style="width:100%;"></textarea>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Target URL (optional)</label>
+            <input class="caido-input" name="target" placeholder="https://example.com" style="width:100%;">
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.createAutomation({
+          name: formData.get('name'),
+          type: formData.get('type'),
+          schedule: formData.get('schedule'),
+          description: formData.get('description'),
+          target: formData.get('target'),
+          status: 'active'
+        });
+        if (result.success) {
+          state.automations.unshift(result.data.data.automation);
+          showToast('success', 'Created', 'Automation created successfully');
+          switchScreen('automate');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to create automation');
+        }
+      });
+    });
+
+    // Run, pause, delete handlers
+    document.querySelectorAll('.automation-run').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const result = await cyberforgeAPI.runAutomation(id);
+        if (result.success) {
+          showToast('success', 'Running', 'Automation started');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to run automation');
+        }
+      });
+    });
+
+    document.querySelectorAll('.automation-pause').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const auto = state.automations.find(a => a.id === id);
+        const newStatus = auto?.status === 'active' ? 'paused' : 'active';
+        const result = await cyberforgeAPI.updateAutomation(id, { status: newStatus });
+        if (result.success) {
+          auto.status = newStatus;
+          showToast('success', 'Updated', `Automation ${newStatus}`);
+          switchScreen('automate');
+        }
+      });
+    });
+
+    document.querySelectorAll('.automation-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Automation', 'Are you sure you want to delete this automation?', async () => {
+          const result = await cyberforgeAPI.deleteAutomation(id);
+          if (result.success) {
+            state.automations = state.automations.filter(a => a.id !== id);
+            showToast('success', 'Deleted', 'Automation deleted');
+            switchScreen('automate');
+          }
+        });
+      });
+    });
   }
 
   function buildWorkflowsLayout() {
-    return buildPlaceholder('Workflows (compose multi-step tests)');
+    const workflowsHtml = state.workflows.length === 0 ? `
+      <div class="empty-state">
+        <i class="fas fa-project-diagram empty-state-icon"></i>
+        <div class="empty-state-title">No workflows yet</div>
+        <div class="empty-state-description">Create your first workflow to automate security testing</div>
+      </div>
+    ` : state.workflows.map(wf => `
+      <div class="workflow-card" data-id="${wf.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <i class="fas fa-project-diagram" style="color:var(--caido-accent-${wf.status === 'active' ? 'cyan' : 'gray'}); font-size:20px;"></i>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${wf.name}</div>
+            <div style="font-size:11px; color:var(--caido-text-muted);">${wf.steps?.length || 0} steps • ${wf.lastRun ? 'Last run: ' + new Date(wf.lastRun).toLocaleString() : 'Never run'}</div>
+          </div>
+          <span class="caido-badge ${wf.status === 'active' ? 'green' : 'orange'}">${wf.status}</span>
+          <button class="caido-btn workflow-run" data-id="${wf.id}"><i class="fas fa-play"></i> Run</button>
+          <button class="caido-btn workflow-edit" data-id="${wf.id}"><i class="fas fa-edit"></i></button>
+          <button class="caido-btn workflow-delete" data-id="${wf.id}"><i class="fas fa-trash"></i></button>
+        </div>
+        <div style="font-size:12px; color:var(--caido-text-secondary); margin-top:8px;">${wf.description || 'No description'}</div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Workflows</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn primary" id="new-workflow"><i class="fas fa-plus"></i> New Workflow</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div id="workflows-container" style="display:flex; flex-direction:column; gap:12px;">
+            ${workflowsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindWorkflowsEvents() {
+    // New workflow button
+    document.getElementById('new-workflow')?.addEventListener('click', () => {
+      showModal('Create Workflow', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
+            <input class="caido-input" name="name" placeholder="My Security Workflow" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
+            <textarea class="caido-input" name="description" rows="3" placeholder="What does this workflow do?" style="width:100%;"></textarea>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Steps (one per line)</label>
+            <textarea class="caido-input" name="steps" rows="5" placeholder="Step 1: Check authentication\nStep 2: Test SQL injection\nStep 3: Verify CSRF protection" style="width:100%;"></textarea>
+          </div>
+        </div>
+      `, async (formData) => {
+        const steps = formData.get('steps')?.split('\n').filter(s => s.trim()) || [];
+        const result = await cyberforgeAPI.createWorkflow({
+          name: formData.get('name'),
+          description: formData.get('description'),
+          steps: steps.map((s, i) => ({ id: i + 1, name: s.trim() })),
+          status: 'active'
+        });
+        if (result.success) {
+          state.workflows.unshift(result.data.data.workflow);
+          showToast('success', 'Created', 'Workflow created successfully');
+          renderScreen('workflows');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to create workflow');
+        }
+      });
+    });
+
+    // Run, edit, delete handlers
+    document.querySelectorAll('.workflow-run').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const result = await cyberforgeAPI.runWorkflow(id);
+        if (result.success) {
+          showToast('success', 'Running', 'Workflow started');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to run workflow');
+        }
+      });
+    });
+
+    document.querySelectorAll('.workflow-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Workflow', 'Are you sure you want to delete this workflow?', async () => {
+          const result = await cyberforgeAPI.deleteWorkflow(id);
+          if (result.success) {
+            state.workflows = state.workflows.filter(w => w.id !== id);
+            showToast('success', 'Deleted', 'Workflow deleted');
+            renderScreen('workflows');
+          }
+        });
+      });
+    });
   }
 
   function buildAssistantLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Assistant</div>
-        </div>
-        <div class="caido-panel-content" id="assistant-messages" style="padding:16px; overflow:auto;"></n+          <div class="empty-state">
-            <i class="fas fa-magic empty-state-icon"></i>
-            <div class="empty-state-title">Ask the assistant</div>
-            <div class="empty-state-description">Type a prompt and get guidance</div>
+      <style>
+        .ai-chat-wrapper { display:flex; height:100%; width:100%; overflow:hidden; }
+        .ai-chat-sidebar { 
+          width:260px; min-width:180px; 
+          transition: width 0.2s ease, opacity 0.2s ease; 
+          will-change: width;
+        }
+        .ai-chat-list-item { 
+          transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease; 
+          cursor:pointer;
+        }
+        .ai-chat-list-item:hover { 
+          transform: translateX(3px); 
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          background: var(--caido-bg-medium) !important;
+        }
+        .ai-chat-list-item:active { transform: scale(0.98); }
+        .ai-message-animated { animation: aiMessageSlide 0.2s ease-out; }
+        .ai-phase-indicator { animation: aiPulse 0.8s ease-in-out infinite; }
+        .ai-btn-bounce { transition: transform 0.1s ease, box-shadow 0.1s ease; }
+        .ai-btn-bounce:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .ai-btn-bounce:active { transform: scale(0.96); }
+        .ai-input-glow { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
+        .ai-input-glow:focus { 
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); 
+          border-color: var(--caido-accent-purple) !important;
+        }
+        .ai-quick-action { transition: all 0.1s ease; }
+        .ai-quick-action:hover { 
+          transform: translateY(-1px); 
+          background: var(--caido-accent-purple) !important;
+          color: white !important;
+        }
+        .ai-quick-action:active { transform: scale(0.95); }
+        @keyframes aiMessageSlide { 
+          from { opacity: 0; transform: translateY(8px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
+        @keyframes aiPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+        @keyframes aiTypingDot {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-4px); }
+        }
+        .ai-typing-dot { 
+          display: inline-block; 
+          width: 6px; height: 6px; 
+          border-radius: 50%; 
+          background: var(--caido-accent-purple);
+          margin: 0 2px;
+        }
+        .ai-typing-dot:nth-child(1) { animation: aiTypingDot 1s infinite 0s; }
+        .ai-typing-dot:nth-child(2) { animation: aiTypingDot 1s infinite 0.15s; }
+        .ai-typing-dot:nth-child(3) { animation: aiTypingDot 1s infinite 0.3s; }
+        .ai-welcome-card {
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+          cursor: pointer;
+        }
+        .ai-welcome-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        @media (max-width: 1100px) {
+          .ai-chat-sidebar { width:200px; }
+        }
+        @media (max-width: 900px) {
+          .ai-chat-sidebar { position:absolute; right:0; top:0; bottom:0; z-index:100; display:none; }
+          .ai-chat-sidebar.open { display:flex; }
+        }
+        @media (max-width: 600px) {
+          .ai-quick-actions-bar { display:none !important; }
+        }
+      </style>
+      <div class="caido-panel ai-chat-wrapper" style="flex:1; display:flex; height:100%;">
+        <!-- Main Chat Panel -->
+        <div style="flex:1; display:flex; flex-direction:column; height:100%; min-width:0;">
+          <!-- Header with Status -->
+          <div class="caido-panel-header" style="border-bottom:1px solid var(--caido-border); flex-shrink:0;">
+            <div class="caido-panel-title" style="display:flex; align-items:center; gap:12px;">
+              <i class="fas fa-robot" style="color:var(--caido-accent-purple);"></i>
+              CyberForge AI Assistant
+            </div>
+            <div class="caido-panel-actions" style="display:flex; gap:8px; align-items:center;">
+              <span id="ai-status" class="caido-badge green" style="display:flex; align-items:center; gap:4px;">
+                <span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:#22c55e;"></span>
+                Online
+              </span>
+              <button class="caido-btn ai-btn-bounce" id="toggle-sidebar-mobile" title="Toggle history" style="display:none;">
+                <i class="fas fa-history"></i>
+              </button>
+              <button class="caido-btn ai-btn-bounce" id="clear-chat" title="Clear conversation"><i class="fas fa-trash-alt"></i></button>
+              <button class="caido-btn ai-btn-bounce" id="export-chat" title="Export conversation"><i class="fas fa-download"></i></button>
+            </div>
+          </div>
+
+          <!-- Chat Meta -->
+          <div style="padding:8px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-medium); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+            <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
+              <span id="ai-chat-title" style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">New Chat</span>
+              <span id="ai-chat-subtitle" style="font-size:11px; color:var(--caido-text-muted);">No messages yet</span>
+            </div>
+            <button class="caido-btn ai-btn-bounce" id="ai-new-chat-inline" title="Start new chat"><i class="fas fa-plus"></i></button>
+          </div>
+
+          <!-- AI Phase Indicator -->
+          <div id="ai-phase-indicator" class="ai-phase-indicator" style="display:none; padding:8px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-dark); font-size:11px; color:var(--caido-text-muted); flex-shrink:0;">
+            <span id="ai-phase-text"></span>
+          </div>
+
+          <!-- Quick Actions Bar -->
+          <div class="ai-quick-actions-bar" style="padding:10px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-medium); flex-shrink:0;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="caido-btn ai-quick-action" data-action="scan-url" style="font-size:11px; padding:6px 10px;">
+                <i class="fas fa-globe"></i> Scan URL
+              </button>
+              <button class="caido-btn ai-quick-action" data-action="analyze-request" style="font-size:11px; padding:6px 10px;">
+                <i class="fas fa-code"></i> Analyze Request
+              </button>
+              <button class="caido-btn ai-quick-action" data-action="find-vulns" style="font-size:11px; padding:6px 10px;">
+                <i class="fas fa-bug"></i> Find Vulnerabilities
+              </button>
+              <button class="caido-btn ai-quick-action" data-action="generate-payload" style="font-size:11px; padding:6px 10px;">
+                <i class="fas fa-bolt"></i> Generate Payload
+              </button>
+              <button class="caido-btn ai-quick-action" data-action="threat-hunt" style="font-size:11px; padding:6px 10px;">
+                <i class="fas fa-search"></i> Threat Hunt
+              </button>
+              <button class="caido-btn ai-quick-action" data-action="explain-vuln" style="font-size:11px; padding:6px 10px;">
+                <i class="fas fa-graduation-cap"></i> Explain Vuln
+              </button>
+            </div>
+          </div>
+
+          <!-- Context Panel -->
+          <div id="ai-context-panel" style="padding:8px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-dark); display:none; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-paperclip" style="color:var(--caido-accent-blue);"></i>
+              <span id="ai-context-text" style="font-size:12px; flex:1;"></span>
+              <button class="panel-action-btn" id="clear-context" title="Clear context"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+
+          <!-- Chat Messages -->
+          <div class="caido-panel-content" id="assistant-messages" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth;"></div>
+
+          <!-- Input Area -->
+          <div style="padding:12px 16px; border-top:1px solid var(--caido-border); background:var(--caido-bg-medium); flex-shrink:0;">
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+              <div style="flex:1; position:relative;">
+                <textarea id="assistant-input" class="caido-input ai-input-glow" rows="2" placeholder="Ask me anything about security... (Shift+Enter for new line)" 
+                  style="width:100%; resize:none; padding-right:40px; transition: height 0.1s ease;"></textarea>
+                <button class="panel-action-btn" id="attach-context" title="Attach request/finding" 
+                  style="position:absolute; right:8px; bottom:8px;">
+                  <i class="fas fa-paperclip"></i>
+                </button>
+              </div>
+              <button id="assistant-send" class="caido-btn primary ai-btn-bounce" style="height:52px; padding:0 20px;">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--caido-text-muted);">
+              <span>Powered by CyberForge AI + ML Models</span>
+              <span id="ai-typing-indicator" style="display:none;">
+                <span class="ai-typing-dot"></span>
+                <span class="ai-typing-dot"></span>
+                <span class="ai-typing-dot"></span>
+              </span>
+            </div>
           </div>
         </div>
-        <div style="padding:12px; border-top:1px solid var(--caido-border); display:flex; gap:8px;">
-          <input id="assistant-input" class="caido-input" placeholder="Ask about a request, finding, or workflow..." style="flex:1;">
-          <button id="assistant-send" class="caido-btn primary">Send</button>
+
+        <!-- Chat History Sidebar -->
+        <div id="ai-chat-sidebar" class="ai-chat-sidebar" style="width:260px; border-left:1px solid var(--caido-border); background:var(--caido-bg-dark); display:flex; flex-direction:column;">
+          <div style="padding:14px; border-bottom:1px solid var(--caido-border); flex-shrink:0;">
+            <div style="font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+              <i class="fas fa-comments" style="color:var(--caido-accent-blue);"></i>
+              Chats
+            </div>
+            <button id="ai-new-chat" class="caido-btn primary ai-btn-bounce" style="width:100%; display:flex; gap:8px; align-items:center; justify-content:center;">
+              <i class="fas fa-plus"></i> New Chat
+            </button>
+            <div style="margin-top:10px;">
+              <input id="ai-chat-search" class="caido-input ai-input-glow" placeholder="Search chats..." style="width:100%;">
+            </div>
+          </div>
+          <div id="ai-chat-list" style="flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:5px;"></div>
         </div>
       </div>
     `;
@@ -596,22 +1246,755 @@
     const sendBtn = document.getElementById('assistant-send');
     const input = document.getElementById('assistant-input');
     const messages = document.getElementById('assistant-messages');
-    const addMessage = (role, text) => {
+    const typingIndicator = document.getElementById('ai-typing-indicator');
+    const statusBadge = document.getElementById('ai-status');
+    const contextPanel = document.getElementById('ai-context-panel');
+    const contextText = document.getElementById('ai-context-text');
+    const phaseIndicator = document.getElementById('ai-phase-indicator');
+    const phaseText = document.getElementById('ai-phase-text');
+    const chatList = document.getElementById('ai-chat-list');
+    const newChatBtn = document.getElementById('ai-new-chat');
+    const newChatInlineBtn = document.getElementById('ai-new-chat-inline');
+    const chatSearch = document.getElementById('ai-chat-search');
+    const chatTitle = document.getElementById('ai-chat-title');
+    const chatSubtitle = document.getElementById('ai-chat-subtitle');
+
+    const CHAT_STORAGE_KEY = 'cyberforge_ai_chats';
+
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text) => {
       const div = document.createElement('div');
-      div.style.marginBottom = '8px';
-      div.innerHTML = `<div class="caido-badge ${role === 'user' ? 'blue' : 'orange'}">${role}</div><div style="margin-top:4px;">${text}</div>`;
-      messages.appendChild(div);
+      div.textContent = text ?? '';
+      return div.innerHTML;
+    };
+
+    const loadChats = () => {
+      try {
+        const stored = localStorage.getItem(CHAT_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const saveChats = () => {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(state.aiChats || []));
+    };
+
+    const createChat = () => {
+      const id = `chat_${Date.now()}`;
+      const chat = {
+        id,
+        title: 'New Chat',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messages: []
+      };
+      state.aiChats = [chat, ...(state.aiChats || [])];
+      state.activeChatId = id;
+      saveChats();
+      return chat;
+    };
+
+    const getActiveChat = () => {
+      return (state.aiChats || []).find(c => c.id === state.activeChatId);
+    };
+
+    const updateChatMeta = () => {
+      const activeChat = getActiveChat();
+      if (!activeChat) return;
+      chatTitle.textContent = activeChat.title || 'New Chat';
+      if (activeChat.messages.length === 0) {
+        chatSubtitle.textContent = 'No messages yet';
+      } else {
+        const last = activeChat.messages[activeChat.messages.length - 1];
+        chatSubtitle.textContent = `Last message • ${new Date(last.timestamp).toLocaleTimeString()}`;
+      }
+    };
+
+    const renderChatList = (filter = '') => {
+      if (!chatList) return;
+      const normalized = filter.trim().toLowerCase();
+      chatList.innerHTML = '';
+      (state.aiChats || []).forEach(chat => {
+        if (normalized && !chat.title.toLowerCase().includes(normalized)) return;
+        const preview = chat.messages?.[chat.messages.length - 1]?.content || 'No messages yet';
+        const item = document.createElement('div');
+        const isActive = chat.id === state.activeChatId;
+        item.className = `ai-chat-list-item ${isActive ? 'active' : ''}`;
+        item.style.cssText = `
+          padding:10px 12px;
+          border-radius:10px;
+          cursor:pointer;
+          border:1px solid var(--caido-border);
+          background:${isActive ? 'var(--caido-bg-medium)' : 'transparent'};
+        `;
+        item.innerHTML = `
+          <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml(chat.title || 'New Chat')}
+          </div>
+          <div style="font-size:11px; color:var(--caido-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml(preview)}
+          </div>
+        `;
+        item.addEventListener('click', () => {
+          state.activeChatId = chat.id;
+          saveChats();
+          renderChatList(chatSearch?.value || '');
+          renderChatMessages();
+        });
+        chatList.appendChild(item);
+      });
+    };
+
+    const renderWelcome = () => {
+      messages.innerHTML = `
+        <div class="ai-welcome-message" style="text-align:center; padding:32px 20px;">
+          <div style="width:72px; height:72px; margin:0 auto 14px; background:linear-gradient(135deg, var(--caido-accent-purple), var(--caido-accent-blue)); border-radius:18px; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 24px rgba(99,102,241,0.3);">
+            <i class="fas fa-brain" style="font-size:32px; color:white;"></i>
+          </div>
+          <h3 style="margin-bottom:6px; font-size:18px;">CyberForge AI Assistant</h3>
+          <p style="color:var(--caido-text-muted); margin-bottom:20px; max-width:480px; margin-left:auto; margin-right:auto; font-size:13px; line-height:1.5;">
+            I'm your AI-powered security analyst. I can analyze URLs, scan for vulnerabilities, 
+            generate payloads, explain security concepts, and help with threat hunting.
+          </p>
+          <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:600px; margin:0 auto;">
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Analyze https://example.com for security vulnerabilities" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+              🔍 Scan a website
+            </div>
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Explain SQL injection attacks and how to prevent them" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+              📚 Learn about SQL injection
+            </div>
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Generate XSS test payloads for input field testing" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+              💉 Generate XSS payloads
+            </div>
+            <div class="ai-suggestion ai-welcome-card" data-prompt="What are the OWASP Top 10 vulnerabilities?" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+              📋 OWASP Top 10
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll('.ai-suggestion').forEach(chip => {
+        chip.addEventListener('click', () => {
+          input.value = chip.dataset.prompt;
+          sendMessage();
+        });
+      });
+    };
+
+    const renderChatMessages = () => {
+      const activeChat = getActiveChat();
+      messages.innerHTML = '';
+      if (!activeChat || activeChat.messages.length === 0) {
+        renderWelcome();
+        updateChatMeta();
+        return;
+      }
+
+      activeChat.messages.forEach(msg => {
+        appendMessage(msg);
+      });
+      updateChatMeta();
       messages.scrollTop = messages.scrollHeight;
     };
-    const send = () => {
+
+    // Initialize chat state
+    state.aiChats = state.aiChats || loadChats();
+    if (!state.aiChats || state.aiChats.length === 0) {
+      createChat();
+    }
+    if (!state.activeChatId) {
+      state.activeChatId = state.aiChats[0].id;
+    }
+    if (!state.aiContext) {
+      state.aiContext = null;
+    }
+    // Initial render will happen after message helpers are defined
+
+    const appendMessage = (msg) => {
+      const { role, content, timestamp, meta } = msg;
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `ai-message ai-message-${role} ai-message-animated`;
+      msgDiv.style.cssText = `
+        display: flex;
+        gap: 12px;
+        ${role === 'user' ? 'flex-direction: row-reverse;' : ''}
+      `;
+
+      const avatarStyle = role === 'user'
+        ? 'background: var(--caido-accent-blue);'
+        : 'background: linear-gradient(135deg, var(--caido-accent-purple), var(--caido-accent-orange));';
+
+      const icon = role === 'user' ? 'fa-user' : 'fa-robot';
+      const displayTime = new Date(timestamp || Date.now()).toLocaleTimeString();
+      const displayContent = role === 'assistant'
+        ? formatAIResponse(content)
+        : `<div style="white-space:pre-wrap;">${escapeHtml(content)}</div>`;
+
+      const metaHtml = meta ? `
+        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+          ${typeof meta.confidence === 'number' ? `<span class="caido-badge" style="font-size:10px;">Confidence ${(meta.confidence * 100).toFixed(0)}%</span>` : ''}
+          ${Array.isArray(meta.insights) && meta.insights.length ? `<span class="caido-badge" style="font-size:10px;">${meta.insights[0]}</span>` : ''}
+          ${Array.isArray(meta.recommendations) && meta.recommendations.length ? `<span class="caido-badge" style="font-size:10px;">${meta.recommendations[0]}</span>` : ''}
+        </div>
+      ` : '';
+
+      msgDiv.innerHTML = `
+        <div style="width:36px; height:36px; border-radius:10px; ${avatarStyle} display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+          <i class="fas ${icon}" style="color:white; font-size:14px;"></i>
+        </div>
+        <div style="flex:1; max-width:72%;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; ${role === 'user' ? 'justify-content:flex-end;' : ''}">
+            <span style="font-weight:600; font-size:12px;">${role === 'user' ? 'You' : 'CyberForge AI'}</span>
+            <span style="font-size:10px; color:var(--caido-text-muted);">${displayTime}</span>
+          </div>
+          <div class="ai-message-content" style="background:var(--caido-bg-${role === 'user' ? 'dark' : 'medium'}); padding:14px 16px; border-radius:14px; border:1px solid var(--caido-border); ${role === 'user' ? 'border-bottom-right-radius:6px;' : 'border-bottom-left-radius:6px;'}">
+            ${displayContent}
+          </div>
+          ${metaHtml}
+        </div>
+      `;
+
+      messages.appendChild(msgDiv);
+      messages.scrollTop = messages.scrollHeight;
+    };
+
+    // Add message to chat and persist
+    const addMessage = (role, content, meta = null) => {
+      const activeChat = getActiveChat();
+      if (!activeChat) return;
+
+      const welcomeMsg = messages.querySelector('.ai-welcome-message');
+      if (welcomeMsg) welcomeMsg.remove();
+
+      if (activeChat.messages.length === 0 && role === 'user' && activeChat.title === 'New Chat') {
+        activeChat.title = content.length > 36 ? `${content.slice(0, 36)}...` : content;
+      }
+
+      const msg = {
+        role,
+        content: typeof content === 'string' ? content : JSON.stringify(content, null, 2),
+        timestamp: new Date().toISOString(),
+        meta
+      };
+      activeChat.messages.push(msg);
+      activeChat.updatedAt = new Date().toISOString();
+      saveChats();
+      renderChatList(chatSearch?.value || '');
+      updateChatMeta();
+      appendMessage(msg);
+    };
+
+    const renderStreamingContent = (text) => {
+      return escapeHtml(text).replace(/\n/g, '<br>');
+    };
+
+    const sanitizeAssistantText = (text) => {
+      if (typeof text !== 'string') return text;
+      return text.replace(/gemini/gi, 'AI model');
+    };
+
+    const setPhase = (phase, tools = []) => {
+      if (!phaseIndicator || !phaseText) return;
+      const toolsText = tools.length ? ` • Tools: ${tools.join(', ')}` : '';
+      phaseText.textContent = `${phase}${toolsText}`;
+      phaseIndicator.style.display = 'block';
+    };
+
+    const clearPhase = () => {
+      if (!phaseIndicator) return;
+      phaseIndicator.style.display = 'none';
+      if (phaseText) phaseText.textContent = '';
+    };
+
+    const getStreamSpeed = (text) => {
+      const len = text.length;
+      // Much faster streaming - almost instant but still visible
+      if (len > 2000) return 1;  // Very long: blazing fast
+      if (len > 1000) return 2;  // Long: very fast  
+      if (len > 500) return 3;   // Medium: fast
+      return 4;                   // Short: readable but quick
+    };
+
+    const streamAssistantMessage = (text, meta = null) => {
+      return new Promise((resolve) => {
+        const activeChat = getActiveChat();
+        if (!activeChat) return resolve();
+
+        const finalTextRaw = typeof text === 'string' ? text : JSON.stringify(text, null, 2);
+        const finalText = sanitizeAssistantText(finalTextRaw);
+        const speedMs = getStreamSpeed(finalText);
+        
+        // For very long responses, stream in chunks instead of character by character
+        const chunkSize = finalText.length > 1000 ? 3 : 1;
+        
+        const msg = {
+          role: 'assistant',
+          content: finalText,
+          timestamp: new Date().toISOString(),
+          meta
+        };
+        activeChat.messages.push(msg);
+        activeChat.updatedAt = new Date().toISOString();
+        saveChats();
+        renderChatList(chatSearch?.value || '');
+        updateChatMeta();
+
+        const tempMsg = {
+          role: 'assistant',
+          content: '',
+          timestamp: msg.timestamp,
+          meta
+        };
+        const metaHtml = meta ? `
+          <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+            ${typeof meta.confidence === 'number' ? `<span class=\"caido-badge\" style=\"font-size:10px;\">Confidence ${(meta.confidence * 100).toFixed(0)}%</span>` : ''}
+            ${Array.isArray(meta.insights) && meta.insights.length ? `<span class=\"caido-badge\" style=\"font-size:10px;\">${meta.insights[0]}</span>` : ''}
+            ${Array.isArray(meta.recommendations) && meta.recommendations.length ? `<span class=\"caido-badge\" style=\"font-size:10px;\">${meta.recommendations[0]}</span>` : ''}
+          </div>
+        ` : '';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'ai-message ai-message-assistant ai-message-animated';
+        msgDiv.style.cssText = `display:flex; gap:12px;`;
+        msgDiv.innerHTML = `
+          <div style="width:36px; height:36px; border-radius:10px; background: linear-gradient(135deg, var(--caido-accent-purple), var(--caido-accent-orange)); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+            <i class="fas fa-robot" style="color:white; font-size:14px;"></i>
+          </div>
+          <div style="flex:1; max-width:72%;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <span style="font-weight:600; font-size:12px;">CyberForge AI</span>
+              <span style="font-size:10px; color:var(--caido-text-muted);">${new Date(tempMsg.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <div class="ai-message-content" style="background:var(--caido-bg-medium); padding:14px 16px; border-radius:14px; border:1px solid var(--caido-border); border-bottom-left-radius:6px;"></div>
+            ${metaHtml}
+          </div>
+        `;
+        messages.appendChild(msgDiv);
+        messages.scrollTop = messages.scrollHeight;
+
+        const contentEl = msgDiv.querySelector('.ai-message-content');
+        let i = 0;
+        const timer = setInterval(() => {
+          i += chunkSize;
+          if (i > finalText.length) i = finalText.length;
+          contentEl.innerHTML = renderStreamingContent(finalText.slice(0, i));
+          messages.scrollTop = messages.scrollHeight;
+          if (i >= finalText.length) {
+            clearInterval(timer);
+            contentEl.innerHTML = formatAIResponse(finalText);
+            resolve();
+          }
+        }, speedMs);
+      });
+    };
+
+    // Format AI response with markdown-like styling
+    function formatAIResponse(text) {
+      // Convert code blocks
+      text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        return `<div style="background:var(--caido-bg-dark); padding:12px; border-radius:8px; margin:8px 0; overflow-x:auto;">
+          ${lang ? `<div style="font-size:10px; color:var(--caido-text-muted); margin-bottom:8px;">${lang}</div>` : ''}
+          <pre style="margin:0; font-family:monospace; font-size:13px;"><code>${escapeHtml(code.trim())}</code></pre>
+        </div>`;
+      });
+
+      // Convert inline code
+      text = text.replace(/`([^`]+)`/g, '<code style="background:var(--caido-bg-dark); padding:2px 6px; border-radius:4px; font-size:12px;">$1</code>');
+
+      // Convert bold
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+      // Convert bullet points
+      text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex; gap:8px; margin:4px 0;"><span style="color:var(--caido-accent-blue);">•</span><span>$1</span></div>');
+
+      // Convert numbered lists
+      text = text.replace(/^\d+\.\s+(.+)$/gm, '<div style="display:flex; gap:8px; margin:4px 0;"><span style="color:var(--caido-accent-orange); font-weight:600;">$&</span></div>');
+
+      // Convert headers
+      text = text.replace(/^###\s+(.+)$/gm, '<h4 style="color:var(--caido-accent-purple); margin:12px 0 8px;">$1</h4>');
+      text = text.replace(/^##\s+(.+)$/gm, '<h3 style="margin:12px 0 8px;">$1</h3>');
+
+      // Convert line breaks
+      text = text.replace(/\n/g, '<br>');
+
+      return text;
+    }
+
+    // Send message to AI
+    const sendMessage = async () => {
       const text = input.value.trim();
       if (!text) return;
+
+      // Add user message
       addMessage('user', text);
       input.value = '';
-      setTimeout(() => addMessage('assistant', 'Acknowledged. I will analyze this request soon.'), 400);
+      input.style.height = 'auto';
+
+      // Show typing indicator
+      typingIndicator.style.display = 'inline';
+      sendBtn.disabled = true;
+
+      setPhase('Thinking', ['ai_agent', 'threat_analyzer', 'ml_models', 'memory_store', 'api:/analyze']);
+
+      try {
+        // Prepare context
+        const context = {
+          source: 'desktop_assistant',
+          timestamp: new Date().toISOString(),
+          ...state.aiContext
+        };
+
+        // Add captured requests context if available
+        if (state.requests.length > 0) {
+          context.captured_requests_count = state.requests.length;
+          context.recent_hosts = [...new Set(state.requests.slice(0, 10).map(r => r.host))];
+        }
+
+        // Add findings context
+        if (state.findings.length > 0) {
+          context.active_findings = state.findings.filter(f => f.status === 'Open').length;
+        }
+
+        const activeChat = getActiveChat();
+        if (!activeChat) throw new Error('No active chat');
+
+        const conversationHistory = activeChat.messages
+          .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
+          .slice(-10);
+
+        // Call the AI endpoint
+        const result = await cyberforgeAPI.chatWithAI(text, conversationHistory, context);
+
+        if (result.success) {
+          const response = result.data?.response || result.data || 'No response received';
+
+          // Stream assistant response slowly
+          setPhase('Responding', ['ai_agent', 'ml_models', 'api:/analyze']);
+          await streamAssistantMessage(response, {
+            confidence: result.data?.confidence,
+            insights: result.data?.insights,
+            recommendations: result.data?.recommendations
+          });
+
+          setPhase('Completed');
+          setTimeout(clearPhase, 1200);
+
+          // Check if response contains actionable items
+          checkForActionableItems(response);
+        } else {
+          addMessage('assistant', `❌ Error: ${result.error || 'Failed to get response from AI'}`);
+          updateAIStatus(false);
+          clearPhase();
+        }
+      } catch (error) {
+        console.error('AI chat error:', error);
+        addMessage('assistant', `❌ Connection error: ${error.message}. Make sure the backend and ML services are running.`);
+        updateAIStatus(false);
+        clearPhase();
+      } finally {
+        typingIndicator.style.display = 'none';
+        sendBtn.disabled = false;
+        input.focus();
+      }
     };
-    sendBtn?.addEventListener('click', send);
-    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+
+    // Check for actionable items in response
+    const checkForActionableItems = (response) => {
+      const lowerResponse = (typeof response === 'string' ? response : JSON.stringify(response)).toLowerCase();
+      
+      // If response mentions creating a finding
+      if (lowerResponse.includes('vulnerability') || lowerResponse.includes('finding')) {
+        // Could auto-suggest creating a finding
+      }
+    };
+
+    // Update AI status indicator
+    const updateAIStatus = async (online = null) => {
+      if (online === null) {
+        try {
+          const health = await cyberforgeAPI.getMLHealth();
+          online = health.success;
+        } catch {
+          online = false;
+        }
+      }
+      
+      statusBadge.className = `caido-badge ${online ? 'green' : 'red'}`;
+      statusBadge.innerHTML = `<span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:${online ? '#22c55e' : '#ef4444'};"></span> ${online ? 'Online' : 'Offline'}`;
+    };
+
+    // Quick action handlers
+    const quickActionHandlers = {
+      'scan-url': () => {
+        showModal('Scan URL', `
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label style="display:block; font-weight:600; margin-bottom:8px;">Target URL</label>
+              <input class="caido-input" name="url" placeholder="https://example.com" style="width:100%;">
+            </div>
+            <div>
+              <label style="display:block; font-weight:600; margin-bottom:8px;">Scan Type</label>
+              <select class="caido-input" name="scanType" style="width:100%;">
+                <option value="quick">Quick Scan</option>
+                <option value="deep">Deep Scan</option>
+                <option value="passive">Passive Analysis</option>
+              </select>
+            </div>
+          </div>
+        `, async (formData) => {
+          const url = formData.get('url');
+          const scanType = formData.get('scanType');
+          input.value = `Perform a ${scanType} security scan on ${url}. Check for common vulnerabilities including XSS, SQL injection, CSRF, and security misconfigurations.`;
+          sendMessage();
+        });
+      },
+      'analyze-request': () => {
+        if (state.selectedRequestId) {
+          const req = state.requests.find(r => r.id === state.selectedRequestId);
+          if (req) {
+            state.aiContext = { request: req };
+            contextPanel.style.display = 'block';
+            contextText.textContent = `Attached: ${req.method} ${req.host}${req.path}`;
+            input.value = 'Analyze this HTTP request for security vulnerabilities and potential attack vectors.';
+            input.focus();
+          }
+        } else {
+          showToast('warning', 'No Request Selected', 'Select a request from HTTP History first');
+        }
+      },
+      'find-vulns': () => {
+        input.value = 'Based on my captured traffic, identify potential security vulnerabilities and misconfigurations. Provide detailed findings with severity ratings.';
+        sendMessage();
+      },
+      'generate-payload': () => {
+        showModal('Generate Payload', `
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label style="display:block; font-weight:600; margin-bottom:8px;">Vulnerability Type</label>
+              <select class="caido-input" name="vulnType" style="width:100%;">
+                <option value="xss">Cross-Site Scripting (XSS)</option>
+                <option value="sqli">SQL Injection</option>
+                <option value="xxe">XML External Entity (XXE)</option>
+                <option value="ssrf">Server-Side Request Forgery (SSRF)</option>
+                <option value="lfi">Local File Inclusion (LFI)</option>
+                <option value="rce">Remote Code Execution (RCE)</option>
+                <option value="ssti">Server-Side Template Injection (SSTI)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-weight:600; margin-bottom:8px;">Context (optional)</label>
+              <input class="caido-input" name="context" placeholder="e.g., PHP backend, JSON API, etc." style="width:100%;">
+            </div>
+          </div>
+        `, (formData) => {
+          const vulnType = formData.get('vulnType');
+          const context = formData.get('context');
+          input.value = `Generate a comprehensive list of ${vulnType.toUpperCase()} test payloads${context ? ` for a ${context} environment` : ''}. Include bypass techniques and encoding variations.`;
+          sendMessage();
+        });
+      },
+      'threat-hunt': () => {
+        input.value = 'Start an AI-powered threat hunting session. Analyze my captured traffic for indicators of compromise (IOCs), suspicious patterns, and potential threats.';
+        sendMessage();
+      },
+      'explain-vuln': () => {
+        showModal('Explain Vulnerability', `
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label style="display:block; font-weight:600; margin-bottom:8px;">Vulnerability</label>
+              <select class="caido-input" name="vuln" style="width:100%;">
+                <option value="XSS">Cross-Site Scripting (XSS)</option>
+                <option value="SQL Injection">SQL Injection</option>
+                <option value="CSRF">Cross-Site Request Forgery (CSRF)</option>
+                <option value="SSRF">Server-Side Request Forgery (SSRF)</option>
+                <option value="XXE">XML External Entity (XXE)</option>
+                <option value="IDOR">Insecure Direct Object Reference (IDOR)</option>
+                <option value="Authentication Bypass">Authentication Bypass</option>
+                <option value="Broken Access Control">Broken Access Control</option>
+                <option value="Deserialization">Insecure Deserialization</option>
+              </select>
+            </div>
+          </div>
+        `, (formData) => {
+          const vuln = formData.get('vuln');
+          input.value = `Explain ${vuln} in detail. Include: 1) How the vulnerability works, 2) Real-world attack examples, 3) Detection techniques, 4) Prevention and remediation strategies.`;
+          sendMessage();
+        });
+      }
+    };
+
+    // Bind quick action buttons
+    document.querySelectorAll('.ai-quick-action').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        if (quickActionHandlers[action]) {
+          quickActionHandlers[action]();
+        }
+      });
+    });
+
+    // Bind suggestion chips
+    renderChatList();
+    renderChatMessages();
+
+    document.querySelectorAll('.ai-suggestion').forEach(chip => {
+      chip.addEventListener('click', () => {
+        input.value = chip.dataset.prompt;
+        sendMessage();
+      });
+    });
+
+    // New chat handlers
+    const handleNewChat = () => {
+      createChat();
+      renderChatList(chatSearch?.value || '');
+      renderChatMessages();
+    };
+    newChatBtn?.addEventListener('click', handleNewChat);
+    newChatInlineBtn?.addEventListener('click', handleNewChat);
+
+    // Chat search
+    chatSearch?.addEventListener('input', (e) => {
+      renderChatList(e.target.value || '');
+    });
+
+    // Bind send button
+    sendBtn?.addEventListener('click', sendMessage);
+
+    // Bind input events
+    input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Auto-resize textarea
+    input?.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+
+    // Clear chat
+    document.getElementById('clear-chat')?.addEventListener('click', () => {
+      showConfirmModal('Clear Conversation', 'Clear messages in this chat?', () => {
+        const activeChat = getActiveChat();
+        if (activeChat) {
+          activeChat.messages = [];
+          activeChat.updatedAt = new Date().toISOString();
+          saveChats();
+          renderChatMessages();
+          renderChatList(chatSearch?.value || '');
+        }
+        state.aiContext = null;
+        contextPanel.style.display = 'none';
+        showToast('success', 'Cleared', 'Conversation cleared');
+      });
+    });
+
+    // Export chat
+    document.getElementById('export-chat')?.addEventListener('click', () => {
+      const activeChat = getActiveChat();
+      if (!activeChat || activeChat.messages.length === 0) {
+        showToast('warning', 'No Messages', 'No conversation to export');
+        return;
+      }
+
+      let exportText = `CyberForge AI Assistant - Conversation Export\n`;
+      exportText += `Date: ${new Date().toLocaleString()}\n`;
+      exportText += `${'='.repeat(50)}\n\n`;
+
+      activeChat.messages.forEach(msg => {
+        const role = msg.role === 'user' ? 'User' : 'AI';
+        exportText += `[${role}]\n${msg.content}\n\n`;
+      });
+
+      const blob = new Blob([exportText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cyberforge-chat-${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('success', 'Exported', 'Conversation exported');
+    });
+
+    // Attach context
+    document.getElementById('attach-context')?.addEventListener('click', () => {
+      showModal('Attach Context', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Context Type</label>
+            <select class="caido-input" name="type" id="context-type-select" style="width:100%;">
+              <option value="request">HTTP Request</option>
+              <option value="finding">Finding</option>
+              <option value="custom">Custom Text</option>
+            </select>
+          </div>
+          <div id="context-request-select" style="display:block;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Select Request</label>
+            <select class="caido-input" name="requestId" style="width:100%;">
+              ${state.requests.slice(0, 20).map(r => `<option value="${r.id}">${r.method} ${r.host}${r.path}</option>`).join('')}
+            </select>
+          </div>
+          <div id="context-finding-select" style="display:none;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Select Finding</label>
+            <select class="caido-input" name="findingId" style="width:100%;">
+              ${state.findings.map(f => `<option value="${f.id}">${f.severity}: ${f.title}</option>`).join('')}
+            </select>
+          </div>
+          <div id="context-custom-input" style="display:none;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Custom Context</label>
+            <textarea class="caido-input" name="customContext" rows="4" placeholder="Paste any relevant context..." style="width:100%;"></textarea>
+          </div>
+        </div>
+      `, (formData) => {
+        const type = formData.get('type');
+        if (type === 'request') {
+          const reqId = formData.get('requestId');
+          const req = state.requests.find(r => r.id == reqId);
+          if (req) {
+            state.aiContext = { type: 'request', request: req };
+            contextPanel.style.display = 'block';
+            contextText.textContent = `Request: ${req.method} ${req.host}${req.path}`;
+          }
+        } else if (type === 'finding') {
+          const findingId = formData.get('findingId');
+          const finding = state.findings.find(f => f.id == findingId);
+          if (finding) {
+            state.aiContext = { type: 'finding', finding };
+            contextPanel.style.display = 'block';
+            contextText.textContent = `Finding: ${finding.severity} - ${finding.title}`;
+          }
+        } else if (type === 'custom') {
+          const customContext = formData.get('customContext');
+          state.aiContext = { type: 'custom', text: customContext };
+          contextPanel.style.display = 'block';
+          contextText.textContent = `Custom context attached`;
+        }
+        showToast('success', 'Attached', 'Context attached to conversation');
+      });
+
+      // Handle context type switching
+      setTimeout(() => {
+        document.getElementById('context-type-select')?.addEventListener('change', (e) => {
+          document.getElementById('context-request-select').style.display = e.target.value === 'request' ? 'block' : 'none';
+          document.getElementById('context-finding-select').style.display = e.target.value === 'finding' ? 'block' : 'none';
+          document.getElementById('context-custom-input').style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+      }, 100);
+    });
+
+    // Clear context
+    document.getElementById('clear-context')?.addEventListener('click', () => {
+      state.aiContext = null;
+      contextPanel.style.display = 'none';
+      showToast('success', 'Cleared', 'Context removed');
+    });
+
+    // Check AI status on load
+    updateAIStatus();
   }
 
   function buildSearchLayout() {
@@ -636,10 +2019,16 @@
   function buildFindingsLayout() {
     return `
       <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header"><div class="caido-panel-title">Findings</div></div>
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Findings</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn" id="export-findings"><i class="fas fa-download"></i> Export</button>
+            <button class="caido-btn primary" id="new-finding"><i class="fas fa-plus"></i> Add Finding</button>
+          </div>
+        </div>
         <div class="caido-table-container">
           <table class="caido-table" id="findings-table">
-            <thead><tr><th>ID</th><th>Severity</th><th>Title</th><th>Path</th><th>Status</th></tr></thead>
+            <thead><tr><th>ID</th><th>Severity</th><th>Title</th><th>Path</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="findings-tbody"></tbody>
           </table>
         </div>
@@ -647,8 +2036,175 @@
     `;
   }
 
+  function bindFindingsEvents() {
+    document.getElementById('new-finding')?.addEventListener('click', () => {
+      showModal('Add Finding', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Title</label>
+            <input class="caido-input" name="title" placeholder="SQL Injection in login endpoint" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Severity</label>
+            <select class="caido-input" name="severity" style="width:100%;">
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+              <option value="Info">Informational</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Path/URL</label>
+            <input class="caido-input" name="path" placeholder="/api/login" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
+            <textarea class="caido-input" name="description" rows="4" placeholder="Detailed description of the finding..." style="width:100%;"></textarea>
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.createFinding({
+          title: formData.get('title'),
+          severity: formData.get('severity'),
+          path: formData.get('path'),
+          description: formData.get('description'),
+          status: 'Open'
+        });
+        if (result.success) {
+          state.findings.unshift(result.data.data.finding);
+          showToast('success', 'Created', 'Finding added successfully');
+          renderScreen('findings');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to add finding');
+        }
+      });
+    });
+
+    document.getElementById('export-findings')?.addEventListener('click', async () => {
+      const result = await cyberforgeAPI.createExport({ name: 'Findings Export', format: 'json', includeFindings: true });
+      if (result.success) {
+        showToast('success', 'Export Started', 'Findings export is being generated');
+      }
+    });
+  }
+
   function buildExportsLayout() {
-    return buildPlaceholder('Exports (generate reports and bundles)');
+    const formatIcon = (format) => {
+      const icons = { pdf: 'fa-file-pdf', har: 'fa-file-code', json: 'fa-file-code', csv: 'fa-file-csv', xml: 'fa-file-alt' };
+      const colors = { pdf: 'red', har: 'blue', json: 'green', csv: 'orange', xml: 'purple' };
+      return { icon: icons[format] || 'fa-file', color: colors[format] || 'gray' };
+    };
+
+    const exportsHtml = state.exports.length === 0 ? `
+      <div class="empty-state">
+        <i class="fas fa-file-export empty-state-icon"></i>
+        <div class="empty-state-title">No exports yet</div>
+        <div class="empty-state-description">Create an export to download your data</div>
+      </div>
+    ` : state.exports.map(exp => {
+      const { icon, color } = formatIcon(exp.format);
+      return `
+        <div class="export-card" data-id="${exp.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <i class="fas ${icon}" style="color:var(--caido-accent-${color}); font-size:24px;"></i>
+            <div style="flex:1;">
+              <div style="font-weight:600;">${exp.name}</div>
+              <div style="font-size:11px; color:var(--caido-text-muted);">Generated: ${new Date(exp.createdAt).toLocaleString()} • ${exp.format?.toUpperCase() || 'Unknown'} • ${exp.size || 'N/A'}</div>
+            </div>
+            <span class="caido-badge ${exp.status === 'ready' ? 'green' : 'orange'}">${exp.status}</span>
+            <button class="caido-btn export-download" data-id="${exp.id}" ${exp.status !== 'ready' ? 'disabled' : ''}><i class="fas fa-download"></i></button>
+            <button class="caido-btn export-delete" data-id="${exp.id}"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Exports</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn primary" id="new-export"><i class="fas fa-plus"></i> New Export</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div id="exports-container" style="display:flex; flex-direction:column; gap:12px;">
+            ${exportsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindExportsEvents() {
+    document.getElementById('new-export')?.addEventListener('click', () => {
+      showModal('Create Export', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
+            <input class="caido-input" name="name" placeholder="Security Report" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Format</label>
+            <select class="caido-input" name="format" style="width:100%;">
+              <option value="pdf">PDF Report</option>
+              <option value="har">HAR (HTTP Archive)</option>
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+              <option value="xml">XML</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Include</label>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label><input type="checkbox" name="includeRequests" checked> HTTP Requests</label>
+              <label><input type="checkbox" name="includeFindings" checked> Findings</label>
+              <label><input type="checkbox" name="includeIntercepts"> Intercepts</label>
+            </div>
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.createExport({
+          name: formData.get('name'),
+          format: formData.get('format'),
+          includeRequests: formData.get('includeRequests') === 'on',
+          includeFindings: formData.get('includeFindings') === 'on',
+          includeIntercepts: formData.get('includeIntercepts') === 'on'
+        });
+        if (result.success) {
+          state.exports.unshift(result.data.data.export);
+          showToast('success', 'Export Started', 'Your export is being generated');
+          renderScreen('exports');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to create export');
+        }
+      });
+    });
+
+    document.querySelectorAll('.export-download').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const result = await cyberforgeAPI.downloadExport(id);
+        if (result.success) {
+          showToast('success', 'Download Started', 'Your export is downloading');
+        }
+      });
+    });
+
+    document.querySelectorAll('.export-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Export', 'Are you sure you want to delete this export?', async () => {
+          const result = await cyberforgeAPI.deleteExport(id);
+          if (result.success) {
+            state.exports = state.exports.filter(e => e.id !== id);
+            showToast('success', 'Deleted', 'Export deleted');
+            renderScreen('exports');
+          }
+        });
+      });
+    });
   }
 
   function buildFilesLayout() {
@@ -662,11 +2218,160 @@
   }
 
   function buildPluginsLayout() {
-    return buildPlaceholder('Plugins (manage extensions)');
+    const pluginsHtml = state.plugins.length === 0 ? `
+      <div class="empty-state" style="grid-column:1/-1;">
+        <i class="fas fa-puzzle-piece empty-state-icon"></i>
+        <div class="empty-state-title">No plugins installed</div>
+        <div class="empty-state-description">Browse the store to find useful extensions</div>
+      </div>
+    ` : state.plugins.map(plugin => `
+      <div class="plugin-card" data-id="${plugin.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <div style="width:40px;height:40px;background:var(--caido-accent-${plugin.color || 'purple'});border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-${plugin.icon || 'puzzle-piece'}" style="color:white;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${plugin.name}</div>
+            <div style="font-size:11px; color:var(--caido-text-muted);">v${plugin.version || '1.0.0'} • ${plugin.enabled ? 'Active' : 'Disabled'}</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" class="plugin-toggle" data-id="${plugin.id}" ${plugin.enabled ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div style="font-size:12px; color:var(--caido-text-secondary); margin-bottom:12px;">${plugin.description || 'No description'}</div>
+        <div style="display:flex; gap:8px;">
+          <button class="caido-btn plugin-settings" data-id="${plugin.id}"><i class="fas fa-cog"></i> Settings</button>
+          <button class="caido-btn plugin-uninstall" data-id="${plugin.id}"><i class="fas fa-trash"></i> Uninstall</button>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Plugins</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn" id="browse-store"><i class="fas fa-store"></i> Browse Store</button>
+            <button class="caido-btn primary" id="install-plugin"><i class="fas fa-upload"></i> Install</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div id="plugins-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+            ${pluginsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindPluginsEvents() {
+    document.getElementById('browse-store')?.addEventListener('click', async () => {
+      const result = await cyberforgeAPI.getPluginStore();
+      if (result.success) {
+        const storePlugins = result.data.data?.plugins || [];
+        showModal('Plugin Store', `
+          <div style="display:flex; flex-direction:column; gap:12px; max-height:400px; overflow:auto;">
+            ${storePlugins.length === 0 ? '<p>No plugins available in store</p>' : storePlugins.map(p => `
+              <div style="background:var(--caido-bg-dark); border-radius:8px; padding:12px; display:flex; align-items:center; gap:12px;">
+                <i class="fas fa-${p.icon || 'puzzle-piece'}" style="font-size:24px; color:var(--caido-accent-${p.color || 'blue'});"></i>
+                <div style="flex:1;">
+                  <div style="font-weight:600;">${p.name}</div>
+                  <div style="font-size:11px; color:var(--caido-text-muted);">${p.description || ''}</div>
+                </div>
+                <button class="caido-btn store-install" data-id="${p.id}"><i class="fas fa-download"></i> Install</button>
+              </div>
+            `).join('')}
+          </div>
+        `, null);
+        
+        // Bind install buttons after modal is shown
+        setTimeout(() => {
+          document.querySelectorAll('.store-install').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const id = btn.dataset.id;
+              const installResult = await cyberforgeAPI.installPlugin(id);
+              if (installResult.success) {
+                state.plugins.push(installResult.data.data.plugin);
+                showToast('success', 'Installed', 'Plugin installed successfully');
+                document.querySelector('.modal-overlay')?.remove();
+                renderScreen('plugins');
+              }
+            });
+          });
+        }, 100);
+      }
+    });
+
+    document.getElementById('install-plugin')?.addEventListener('click', () => {
+      showModal('Install Plugin', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <p>Enter the plugin ID or URL to install:</p>
+          <input class="caido-input" name="pluginId" placeholder="plugin-id or https://..." style="width:100%;">
+        </div>
+      `, async (formData) => {
+        const pluginId = formData.get('pluginId');
+        const result = await cyberforgeAPI.installPlugin(pluginId);
+        if (result.success) {
+          state.plugins.push(result.data.data.plugin);
+          showToast('success', 'Installed', 'Plugin installed successfully');
+          renderScreen('plugins');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to install plugin');
+        }
+      });
+    });
+
+    document.querySelectorAll('.plugin-toggle').forEach(toggle => {
+      toggle.addEventListener('change', async () => {
+        const id = toggle.dataset.id;
+        const result = await cyberforgeAPI.togglePlugin(id);
+        if (result.success) {
+          const plugin = state.plugins.find(p => p.id === id);
+          if (plugin) plugin.enabled = !plugin.enabled;
+          showToast('success', 'Updated', `Plugin ${plugin?.enabled ? 'enabled' : 'disabled'}`);
+        }
+      });
+    });
+
+    document.querySelectorAll('.plugin-uninstall').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Uninstall Plugin', 'Are you sure you want to uninstall this plugin?', async () => {
+          const result = await cyberforgeAPI.uninstallPlugin(id);
+          if (result.success) {
+            state.plugins = state.plugins.filter(p => p.id !== id);
+            showToast('success', 'Uninstalled', 'Plugin removed');
+            renderScreen('plugins');
+          }
+        });
+      });
+    });
   }
 
   function buildWorkspaceLayout() {
-    return buildPlaceholder('Workspace settings');
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Workspace Settings</div>
+        </div>
+        <div class="caido-panel-content" style="padding:24px; max-width:600px;">
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Workspace Name</label>
+            <input class="caido-input" value="Hackers-Arise" style="width:100%;">
+          </div>
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Default Target</label>
+            <input class="caido-input" placeholder="https://example.com" style="width:100%;">
+          </div>
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Proxy Port</label>
+            <input class="caido-input" value="8080" type="number" style="width:150px;">
+          </div>
+          <button class="caido-btn primary"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+      </div>
+    `;
   }
 
   function buildAIAgentLayout() {
@@ -711,7 +2416,7 @@
       messages.appendChild(wrapper);
       messages.scrollTop = messages.scrollHeight;
     };
-    const send = () => {
+    const send = async () => {
       const text = input.value.trim();
       if (!text) return;
       addMessage('user', text);
@@ -726,12 +2431,11 @@
       
       // Call real backend AI
       try {
-        const result = await cyberforgeAPI.chatWithAI(text, state.conversationId, { source: 'desktop' });
+        const result = await cyberforgeAPI.chatWithAI(text, [], { source: 'desktop' });
         typingDiv.remove();
         
         if (result.success) {
           const response = result.data.response || result.data;
-          state.conversationId = result.data.conversationId || state.conversationId;
           addMessage('agent', typeof response === 'string' ? response : JSON.stringify(response, null, 2));
         } else {
           addMessage('agent', `Error: ${result.error || 'Failed to get response'}`);
@@ -758,6 +2462,1129 @@
     sendBtn?.addEventListener('click', send);
     runBtn?.addEventListener('click', run);
     input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+  }
+
+  // =========================================
+  // NEW SCREEN LAYOUTS
+  // =========================================
+
+  function buildDashboardLayout() {
+    const user = cyberforgeAPI.getCurrentUser();
+    const userName = user ? user.firstName || user.email?.split('@')[0] : 'User';
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="caido-panel-content" style="padding:24px; display:flex; flex-direction:column; height:100%; overflow:hidden;">
+          <!-- Header -->
+          <div style="margin-bottom:20px; flex-shrink:0;">
+            <h2 style="margin-bottom:4px;">Welcome back, ${userName}!</h2>
+            <p style="color:var(--caido-text-muted);">Global Network Traffic Monitor • Real-time OpenStreetMap data</p>
+          </div>
+          
+          <!-- Main Grid Layout -->
+          <div style="display:grid; grid-template-columns:1fr 380px; gap:20px; flex:1; min-height:0; overflow:hidden;">
+            
+            <!-- Left: Globe Container -->
+            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:16px; overflow:hidden; position:relative; min-height:400px;">
+              <div id="globe-container" style="width:100%; height:100%; min-height:400px;"></div>
+              
+              <!-- Globe Controls Overlay -->
+              <div style="position:absolute; bottom:16px; left:16px; display:flex; gap:8px; z-index:10;">
+                <button class="caido-btn" id="globe-reset" title="Reset View" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                  <i class="fas fa-compress-arrows-alt"></i>
+                </button>
+                <button class="caido-btn" id="globe-toggle-rotation" title="Toggle Rotation" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                  <i class="fas fa-sync"></i>
+                </button>
+                <button class="caido-btn" id="globe-add-traffic" title="Add Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <button class="caido-btn" id="globe-clear-traffic" title="Clear Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+              
+              <!-- Zoom Level Indicator -->
+              <div style="position:absolute; bottom:16px; right:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:8px 12px; border-radius:8px; font-size:11px; z-index:10; border:1px solid rgba(255,255,255,0.1);">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <i class="fas fa-search" style="color:var(--caido-accent-blue);"></i>
+                  <span>Zoom: <span id="globe-zoom-level">2</span></span>
+                </div>
+              </div>
+              
+              <!-- Legend Overlay -->
+              <div style="position:absolute; top:16px; right:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:12px 16px; border-radius:10px; font-size:11px; z-index:10; border:1px solid rgba(255,255,255,0.1);">
+                <div style="font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                  <i class="fas fa-globe" style="color:var(--caido-accent-purple);"></i> Network Traffic
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;"></span> Source</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444;"></span> Destination</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 6px #8b5cf6;"></span> Active Arc</div>
+                </div>
+                <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:10px; color:var(--caido-text-muted);">
+                  <i class="fas fa-map"></i> OpenStreetMap Data
+                </div>
+              </div>
+              
+              <!-- Map Source Badge -->
+              <div style="position:absolute; top:16px; left:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:6px 10px; border-radius:6px; font-size:10px; z-index:10; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-layer-group" style="color:var(--caido-accent-green);"></i>
+                <span>Hybrid 3D • Leaflet + Three.js</span>
+              </div>
+            </div>
+            
+            <!-- Right: Stats & Activity Panel -->
+            <div style="display:flex; flex-direction:column; gap:16px; overflow-y:auto;">
+              
+              <!-- Stats Cards -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                    <i class="fas fa-shield-alt" style="color:var(--caido-accent-green); font-size:16px;"></i>
+                    <span style="color:var(--caido-text-muted); font-size:11px;">Security Score</span>
+                  </div>
+                  <div style="font-size:24px; font-weight:700;" id="dashboard-score">--</div>
+                </div>
+                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                    <i class="fas fa-bug" style="color:var(--caido-accent-red); font-size:16px;"></i>
+                    <span style="color:var(--caido-text-muted); font-size:11px;">Active Threats</span>
+                  </div>
+                  <div style="font-size:24px; font-weight:700;" id="dashboard-threats">--</div>
+                </div>
+                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                    <i class="fas fa-exchange-alt" style="color:var(--caido-accent-blue); font-size:16px;"></i>
+                    <span style="color:var(--caido-text-muted); font-size:11px;">Requests</span>
+                  </div>
+                  <div style="font-size:24px; font-weight:700;" id="dashboard-requests">--</div>
+                </div>
+                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                    <i class="fas fa-flag" style="color:var(--caido-accent-orange); font-size:16px;"></i>
+                    <span style="color:var(--caido-text-muted); font-size:11px;">Findings</span>
+                  </div>
+                  <div style="font-size:24px; font-weight:700;" id="dashboard-findings">--</div>
+                </div>
+              </div>
+              
+              <!-- Active Connections -->
+              <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px; flex:1; min-height:180px; display:flex; flex-direction:column;">
+                <h4 style="margin-bottom:12px; display:flex; align-items:center; gap:8px; font-size:14px;">
+                  <i class="fas fa-network-wired" style="color:var(--caido-accent-purple);"></i>
+                  Active Connections
+                </h4>
+                <div id="dashboard-connections" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1;">
+                  <!-- Real connections will be populated here -->
+                  <div class="empty-connections" style="text-align:center; padding:20px; color:var(--caido-text-muted);">
+                    <i class="fas fa-plug" style="font-size:24px; opacity:0.5; margin-bottom:8px; display:block;"></i>
+                    <span style="font-size:12px;">No active connections</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Quick Actions -->
+              <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                <h4 style="margin-bottom:12px; display:flex; align-items:center; gap:8px; font-size:14px;">
+                  <i class="fas fa-bolt" style="color:var(--caido-accent-orange);"></i>
+                  Quick Actions
+                </h4>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <button class="caido-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=http-history]').click()">
+                    <i class="fas fa-history"></i> View HTTP History
+                  </button>
+                  <button class="caido-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=assistant]').click()">
+                    <i class="fas fa-robot"></i> AI Assistant
+                  </button>
+                  <button class="caido-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=threat-intel]').click()">
+                    <i class="fas fa-radiation"></i> Threat Intelligence
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindDashboard() {
+    // Update stats from real data only
+    const scoreEl = document.getElementById('dashboard-score');
+    const threatsEl = document.getElementById('dashboard-threats');
+    const requestsEl = document.getElementById('dashboard-requests');
+    const findingsEl = document.getElementById('dashboard-findings');
+
+    // Calculate actual security score based on real data
+    const threatCount = state.threats?.length || 0;
+    const findingCount = state.findings?.length || 0;
+    const score = threatCount === 0 && findingCount === 0 ? 100 : Math.max(50, 100 - threatCount * 5 - findingCount * 2);
+    
+    if (scoreEl) scoreEl.textContent = `${score}%`;
+    if (threatsEl) threatsEl.textContent = threatCount;
+    if (requestsEl) requestsEl.textContent = state.requests?.length || 0;
+    if (findingsEl) findingsEl.textContent = findingCount;
+
+    // Initialize globe with slight delay to ensure container is ready
+    setTimeout(() => initializeGlobe(), 100);
+
+    // Setup OTX threat listeners
+    setupOTXThreatListeners();
+
+    // Globe control buttons
+    document.getElementById('globe-reset')?.addEventListener('click', () => {
+      if (window.cyberforgeGlobe) {
+        // Use resetCamera if available (AdvancedEarthGlobe), otherwise fallback
+        if (typeof window.cyberforgeGlobe.resetCamera === 'function') {
+          window.cyberforgeGlobe.resetCamera();
+        } else if (window.cyberforgeGlobe.controls) {
+          window.cyberforgeGlobe.controls.reset();
+        }
+        showToast('info', 'Globe', 'View reset');
+      }
+    });
+
+    document.getElementById('globe-toggle-rotation')?.addEventListener('click', () => {
+      if (window.cyberforgeGlobe) {
+        // Use toggleRotation if available (AdvancedEarthGlobe)
+        let isRotating;
+        if (typeof window.cyberforgeGlobe.toggleRotation === 'function') {
+          isRotating = window.cyberforgeGlobe.toggleRotation();
+        } else {
+          window.cyberforgeGlobe.config = window.cyberforgeGlobe.config || {};
+          window.cyberforgeGlobe.config.autoRotate = !window.cyberforgeGlobe.config.autoRotate;
+          if (window.cyberforgeGlobe.controls) {
+            window.cyberforgeGlobe.controls.autoRotate = window.cyberforgeGlobe.config.autoRotate;
+          }
+          isRotating = window.cyberforgeGlobe.config.autoRotate;
+        }
+        showToast('info', 'Globe Rotation', isRotating ? 'Enabled' : 'Disabled');
+      }
+    });
+
+    document.getElementById('globe-add-traffic')?.addEventListener('click', () => {
+      if (window.cyberforgeGlobe) {
+        // Add random traffic between major cities
+        const cities = [
+          { name: 'New York', lat: 40.7128, lon: -74.0060 },
+          { name: 'London', lat: 51.5074, lon: -0.1278 },
+          { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
+          { name: 'Sydney', lat: -33.8688, lon: 151.2093 },
+          { name: 'Paris', lat: 48.8566, lon: 2.3522 },
+          { name: 'Singapore', lat: 1.3521, lon: 103.8198 },
+          { name: 'Dubai', lat: 25.2048, lon: 55.2708 },
+          { name: 'São Paulo', lat: -23.5505, lon: -46.6333 },
+          { name: 'Berlin', lat: 52.5200, lon: 13.4050 },
+          { name: 'Moscow', lat: 55.7558, lon: 37.6173 },
+          { name: 'Hong Kong', lat: 22.3193, lon: 114.1694 },
+          { name: 'Mumbai', lat: 19.0760, lon: 72.8777 }
+        ];
+        const from = cities[Math.floor(Math.random() * cities.length)];
+        let to = cities[Math.floor(Math.random() * cities.length)];
+        while (to === from) {
+          to = cities[Math.floor(Math.random() * cities.length)];
+        }
+        const colors = [0x22c55e, 0x3b82f6, 0xf59e0b, 0x8b5cf6, 0xef4444, 0x06b6d4, 0xec4899];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Use addConnection if available (AdvancedEarthGlobe), otherwise addArc
+        if (typeof window.cyberforgeGlobe.addConnection === 'function') {
+          window.cyberforgeGlobe.addConnection([from.lat, from.lon], [to.lat, to.lon], { color });
+        } else if (typeof window.cyberforgeGlobe.addArc === 'function') {
+          window.cyberforgeGlobe.addArc(from.lat, from.lon, to.lat, to.lon, { color });
+        }
+        
+        showToast('success', 'Traffic Added', `${from.name} → ${to.name}`);
+      }
+    });
+
+    // Add clear traffic button functionality if it exists
+    document.getElementById('globe-clear-traffic')?.addEventListener('click', () => {
+      if (window.cyberforgeGlobe && typeof window.cyberforgeGlobe.clearConnections === 'function') {
+        window.cyberforgeGlobe.clearConnections();
+        showToast('info', 'Traffic Cleared', 'All connections removed');
+      }
+    });
+  }
+
+  // Setup OTX threat listeners
+  function setupOTXThreatListeners() {
+    // Listen for initial threats
+    cyberforgeAPI.on('otx:initial_threats', (threats) => {
+      console.log(`Received ${threats.length} initial threats from OTX`);
+      visualizeThreatsOnGlobe(threats);
+    });
+
+    // Listen for real-time threats
+    cyberforgeAPI.on('otx:threat', (threat) => {
+      console.log('New OTX threat:', threat);
+      visualizeThreatOnGlobe(threat);
+      
+      // Show notification
+      showToast('warning', 'New Threat Detected', 
+        `${threat.threat} (${threat.severity.toUpperCase()})`, 5000);
+      
+      // Update threat count
+      const threatsEl = document.getElementById('dashboard-threats');
+      if (threatsEl) {
+        const currentCount = parseInt(threatsEl.textContent) || 0;
+        threatsEl.textContent = currentCount + 1;
+      }
+    });
+  }
+
+  // Visualize multiple threats on globe
+  function visualizeThreatsOnGlobe(threats) {
+    if (!window.cyberforgeGlobe || threats.length === 0) return;
+
+    threats.forEach((threat, index) => {
+      // Add with slight delay for animation effect
+      setTimeout(() => visualizeThreatOnGlobe(threat), index * 100);
+    });
+  }
+
+  // Visualize single threat on globe
+  function visualizeThreatOnGlobe(threat) {
+    if (!window.cyberforgeGlobe) return;
+
+    const { origin, destination, severity } = threat;
+    
+    // Color based on severity
+    const severityColors = {
+      'high': 0xef4444,    // red
+      'medium': 0xf59e0b,  // amber
+      'low': 0x3b82f6      // blue
+    };
+    const color = severityColors[severity] || 0x8b5cf6; // purple default
+
+    // Add connection on globe
+    if (typeof window.cyberforgeGlobe.addConnection === 'function') {
+      window.cyberforgeGlobe.addConnection(
+        [origin.lat, origin.lon],
+        [destination.lat, destination.lon],
+        { color, animated: true }
+      );
+    } else if (typeof window.cyberforgeGlobe.addArc === 'function') {
+      window.cyberforgeGlobe.addArc(
+        origin.lat, origin.lon,
+        destination.lat, destination.lon,
+        { color }
+      );
+    }
+  }
+
+  // Initialize the 3D Globe with Leaflet integration
+  function initializeGlobe() {
+    const container = document.getElementById('globe-container');
+    if (!container) return;
+
+    // Check if Three.js is loaded
+    if (typeof THREE === 'undefined') {
+      console.warn('Three.js not loaded, globe will not render');
+      container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--caido-text-muted);">
+          <div style="text-align:center;">
+            <i class="fas fa-globe" style="font-size:48px; opacity:0.5; margin-bottom:16px;"></i>
+            <div>3D Globe requires Three.js</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+      console.warn('Leaflet not loaded, using basic globe');
+    }
+
+    // Check for globe classes (prefer HybridEarthGlobe for real map data)
+    const GlobeClass = typeof HybridEarthGlobe !== 'undefined' ? HybridEarthGlobe :
+                       typeof AdvancedEarthGlobe !== 'undefined' ? AdvancedEarthGlobe : 
+                       typeof CyberForgeGlobe !== 'undefined' ? CyberForgeGlobe : null;
+    
+    if (!GlobeClass) {
+      console.warn('Globe component not loaded');
+      container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--caido-text-muted);">
+          <div style="text-align:center;">
+            <i class="fas fa-globe" style="font-size:48px; opacity:0.5; margin-bottom:16px;"></i>
+            <div>Globe component not available</div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Cleanup existing globe
+    if (window.cyberforgeGlobe) {
+      try {
+        window.cyberforgeGlobe.dispose();
+      } catch (e) {
+        console.warn('Error disposing previous globe:', e);
+      }
+    }
+
+    // Detect current theme
+    const isDarkTheme = document.body.classList.contains('dark') ||
+      document.documentElement.getAttribute('data-theme') === 'dark' ||
+      localStorage.getItem('cyberforge-theme') === 'dark';
+
+    // Initialize globe with real map data (no mock traffic)
+    try {
+      window.cyberforgeGlobe = new GlobeClass('globe-container', {
+        isDarkTheme: isDarkTheme,
+        autoRotate: true,
+        rotationSpeed: 0.0003,
+        showTraffic: true,
+        showSampleTraffic: false, // Disable mock sample traffic
+        initialZoom: 2,
+        initialCenter: [20, 0]
+      });
+      console.log('Hybrid Earth Globe with Leaflet initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize globe:', error);
+      container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--caido-text-muted);">
+          <div style="text-align:center;">
+            <i class="fas fa-exclamation-triangle" style="font-size:48px; opacity:0.5; margin-bottom:16px; color:var(--caido-accent-orange);"></i>
+            <div>Failed to initialize globe</div>
+            <div style="font-size:12px; margin-top:8px;">${error.message}</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function buildSitemapLayout() {
+    // Build sitemap tree from captured requests
+    const buildSitemapTree = () => {
+      if (state.requests.length === 0) {
+        return `
+          <div class="empty-state">
+            <i class="fas fa-sitemap empty-state-icon"></i>
+            <div class="empty-state-title">No sitemap data</div>
+            <div class="empty-state-description">Capture some requests to build the sitemap</div>
+          </div>
+        `;
+      }
+
+      // Group requests by host
+      const hosts = {};
+      state.requests.forEach(req => {
+        if (!hosts[req.host]) hosts[req.host] = {};
+        const parts = (req.path || '/').split('/').filter(p => p);
+        let current = hosts[req.host];
+        parts.forEach((part, i) => {
+          if (!current[part]) current[part] = {};
+          current = current[part];
+        });
+      });
+
+      const renderTree = (node, depth = 0) => {
+        return Object.keys(node).map(key => {
+          const hasChildren = Object.keys(node[key]).length > 0;
+          const isFile = !hasChildren;
+          return `
+            <div style="margin-left:${depth * 20}px; padding:4px 0;">
+              <i class="fas fa-${isFile ? 'file-code' : 'folder'}" style="color:var(--caido-accent-${isFile ? 'blue' : 'orange'}); margin-right:8px;"></i>
+              <span>${key}</span>
+              ${hasChildren ? renderTree(node[key], depth + 1) : ''}
+            </div>
+          `;
+        }).join('');
+      };
+
+      return Object.keys(hosts).map(host => `
+        <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+            <i class="fas fa-globe" style="color:var(--caido-accent-green);"></i>
+            <span style="font-weight:600;">${host}</span>
+            <span class="caido-badge blue" style="margin-left:auto;">${state.requests.filter(r => r.host === host).length} requests</span>
+          </div>
+          <div style="border-left:2px solid var(--caido-border); padding-left:12px;">
+            ${renderTree(hosts[host])}
+          </div>
+        </div>
+      `).join('');
+    };
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Sitemap</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn" id="refresh-sitemap"><i class="fas fa-sync"></i> Refresh</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px; overflow:auto;" id="sitemap-container">
+          ${buildSitemapTree()}
+        </div>
+      </div>
+    `;
+  }
+
+  function bindSitemapEvents() {
+    document.getElementById('refresh-sitemap')?.addEventListener('click', async () => {
+      showToast('info', 'Building', 'Generating sitemap from captured traffic...');
+      // Re-render the sitemap from current requests
+      renderScreen('sitemap');
+      showToast('success', 'Complete', 'Sitemap refreshed');
+    });
+  }
+
+  function buildScopesLayout() {
+    const scopesHtml = state.scopes.length === 0 ? `
+      <div class="empty-state">
+        <i class="fas fa-crosshairs empty-state-icon"></i>
+        <div class="empty-state-title">No scopes defined</div>
+        <div class="empty-state-description">Add scopes to define which targets to include or exclude</div>
+      </div>
+    ` : state.scopes.map(scope => `
+      <div class="scope-card" data-id="${scope.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-accent-${scope.type === 'include' ? 'green' : 'red'}); border-radius:8px; padding:16px; display:flex; align-items:center; gap:12px;">
+        <i class="fas fa-${scope.type === 'include' ? 'check' : 'times'}-circle" style="color:var(--caido-accent-${scope.type === 'include' ? 'green' : 'red'}); font-size:20px;"></i>
+        <div style="flex:1;">
+          <div style="font-weight:600;">${scope.pattern}</div>
+          <div style="font-size:11px; color:var(--caido-text-muted);">${scope.type === 'include' ? 'In Scope' : 'Out of Scope'} • ${scope.matchCount || 0} matches</div>
+        </div>
+        <button class="caido-btn scope-edit" data-id="${scope.id}"><i class="fas fa-edit"></i></button>
+        <button class="caido-btn scope-delete" data-id="${scope.id}"><i class="fas fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Scopes</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn primary" id="add-scope"><i class="fas fa-plus"></i> Add Scope</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div id="scopes-container" style="display:flex; flex-direction:column; gap:12px;">
+            ${scopesHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindScopesEvents() {
+    document.getElementById('add-scope')?.addEventListener('click', () => {
+      showModal('Add Scope', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Pattern</label>
+            <input class="caido-input" name="pattern" placeholder="*.example.com" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
+            <select class="caido-input" name="type" style="width:100%;">
+              <option value="include">Include (In Scope)</option>
+              <option value="exclude">Exclude (Out of Scope)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
+            <input class="caido-input" name="description" placeholder="Optional description" style="width:100%;">
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.createScope({
+          pattern: formData.get('pattern'),
+          type: formData.get('type'),
+          description: formData.get('description')
+        });
+        if (result.success) {
+          state.scopes.unshift(result.data.data.scope);
+          showToast('success', 'Created', 'Scope added successfully');
+          renderScreen('scopes');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to add scope');
+        }
+      });
+    });
+
+    document.querySelectorAll('.scope-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Scope', 'Are you sure you want to delete this scope?', async () => {
+          const result = await cyberforgeAPI.deleteScope(id);
+          if (result.success) {
+            state.scopes = state.scopes.filter(s => s.id !== id);
+            showToast('success', 'Deleted', 'Scope removed');
+            renderScreen('scopes');
+          }
+        });
+      });
+    });
+  }
+
+  // Additional bind functions for remaining screens
+  function bindInterceptEvents() {
+    // Forward and Drop buttons for intercepts
+    document.querySelectorAll('.intercept-forward').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const result = await cyberforgeAPI.forwardIntercept(id);
+        if (result.success) {
+          state.intercepts = state.intercepts.filter(i => i.id !== id);
+          showToast('success', 'Forwarded', 'Request forwarded');
+          renderIntercepts();
+        }
+      });
+    });
+
+    document.querySelectorAll('.intercept-drop').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const result = await cyberforgeAPI.dropIntercept(id);
+        if (result.success) {
+          state.intercepts = state.intercepts.filter(i => i.id !== id);
+          showToast('success', 'Dropped', 'Request dropped');
+          renderIntercepts();
+        }
+      });
+    });
+  }
+
+  function bindAIModelsEvents() {
+    // Test AI model buttons
+    document.querySelectorAll('.caido-btn.primary').forEach(btn => {
+      if (btn.textContent.includes('Test')) {
+        btn.addEventListener('click', async () => {
+          showToast('info', 'Testing', 'Running AI model test...');
+          try {
+            const result = await cyberforgeAPI.chatWithAI('Test: Analyze a sample HTTP request for security issues', [], { source: 'model-test' });
+            if (result.success) {
+              showToast('success', 'Model Online', 'AI model is responding correctly');
+            } else {
+              showToast('error', 'Test Failed', result.error || 'Model not responding');
+            }
+          } catch (error) {
+            showToast('error', 'Connection Error', error.message);
+          }
+        });
+      }
+    });
+  }
+
+  function bindThreatIntelEvents() {
+    // Update feeds button
+    document.getElementById('update-feeds')?.addEventListener('click', async () => {
+      showToast('info', 'Updating', 'Refreshing threat intelligence feeds...');
+      try {
+        const result = await cyberforgeAPI.getThreatStats();
+        if (result.success) {
+          state.threatStats = result.data.data || {};
+          showToast('success', 'Updated', 'Threat feeds refreshed');
+          renderScreen('threat-intel');
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    });
+
+    // IOC Lookup button
+    document.getElementById('lookup-ioc')?.addEventListener('click', () => {
+      showModal('Lookup IOC', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Indicator Type</label>
+            <select class="caido-input" name="type" style="width:100%;">
+              <option value="ip">IP Address</option>
+              <option value="domain">Domain</option>
+              <option value="url">URL</option>
+              <option value="hash">File Hash</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Value</label>
+            <input class="caido-input" name="value" placeholder="Enter IP, domain, URL, or hash" style="width:100%;">
+          </div>
+        </div>
+      `, async (formData) => {
+        const type = formData.get('type');
+        const value = formData.get('value');
+        showToast('info', 'Looking up', `Checking ${type}: ${value}...`);
+        try {
+          const result = await cyberforgeAPI.analyzeUrl(value);
+          if (result.success) {
+            const data = result.data.data || result.data;
+            showModal('IOC Lookup Result', `
+              <div style="background:var(--caido-bg-dark); padding:16px; border-radius:8px;">
+                <pre style="margin:0; white-space:pre-wrap;">${JSON.stringify(data, null, 2)}</pre>
+              </div>
+            `, null);
+          } else {
+            showToast('warning', 'Not Found', 'No threat data found for this indicator');
+          }
+        } catch (error) {
+          showToast('error', 'Error', error.message);
+        }
+      });
+    });
+  }
+
+  function buildFiltersLayout() {
+    const filtersHtml = state.filters.length === 0 ? `
+      <div class="empty-state">
+        <i class="fas fa-filter empty-state-icon"></i>
+        <div class="empty-state-title">No filters defined</div>
+        <div class="empty-state-description">Create filters to hide or show specific traffic</div>
+      </div>
+    ` : state.filters.map(filter => `
+      <div class="filter-card" data-id="${filter.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label class="switch">
+            <input type="checkbox" class="filter-toggle" data-id="${filter.id}" ${filter.enabled ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${filter.name}</div>
+            <div style="font-size:11px; color:var(--caido-text-muted);">${filter.pattern || filter.description || 'No pattern'}</div>
+          </div>
+          <button class="caido-btn filter-edit" data-id="${filter.id}"><i class="fas fa-edit"></i></button>
+          <button class="caido-btn filter-delete" data-id="${filter.id}"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Filters</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn primary" id="new-filter"><i class="fas fa-plus"></i> New Filter</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div id="filters-container" style="display:flex; flex-direction:column; gap:12px;">
+            ${filtersHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindFiltersEvents() {
+    document.getElementById('new-filter')?.addEventListener('click', () => {
+      showModal('Create Filter', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
+            <input class="caido-input" name="name" placeholder="Hide Image Requests" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Pattern (regex)</label>
+            <input class="caido-input" name="pattern" placeholder="\\.(png|jpg|gif|svg)$" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
+            <select class="caido-input" name="type" style="width:100%;">
+              <option value="hide">Hide matching</option>
+              <option value="show">Show only matching</option>
+            </select>
+          </div>
+          <div>
+            <label><input type="checkbox" name="enabled" checked> Enable filter</label>
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.createFilter({
+          name: formData.get('name'),
+          pattern: formData.get('pattern'),
+          type: formData.get('type'),
+          enabled: formData.get('enabled') === 'on'
+        });
+        if (result.success) {
+          state.filters.unshift(result.data.data.filter);
+          showToast('success', 'Created', 'Filter created successfully');
+          renderScreen('filters');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to create filter');
+        }
+      });
+    });
+
+    document.querySelectorAll('.filter-toggle').forEach(toggle => {
+      toggle.addEventListener('change', async () => {
+        const id = toggle.dataset.id;
+        const result = await cyberforgeAPI.toggleFilter(id);
+        if (result.success) {
+          const filter = state.filters.find(f => f.id === id);
+          if (filter) filter.enabled = !filter.enabled;
+          showToast('success', 'Updated', `Filter ${filter?.enabled ? 'enabled' : 'disabled'}`);
+        }
+      });
+    });
+
+    document.querySelectorAll('.filter-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Filter', 'Are you sure you want to delete this filter?', async () => {
+          const result = await cyberforgeAPI.deleteFilter(id);
+          if (result.success) {
+            state.filters = state.filters.filter(f => f.id !== id);
+            showToast('success', 'Deleted', 'Filter removed');
+            renderScreen('filters');
+          }
+        });
+      });
+    });
+  }
+
+  function buildAIModelsLayout() {
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">AI Models</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn"><i class="fas fa-sync"></i> Refresh Status</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
+            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <div style="width:48px;height:48px;background:linear-gradient(135deg, #4285f4, #34a853);border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:white; font-size:20px;"></i></div>
+                <div>
+                  <div style="font-weight:600;">Gemini Pro</div>
+                  <div style="font-size:11px; color:var(--caido-text-muted);">Google AI</div>
+                </div>
+                <span class="caido-badge green" style="margin-left:auto;">Active</span>
+              </div>
+              <div style="font-size:13px; color:var(--caido-text-secondary); margin-bottom:12px;">Primary AI model for security analysis and threat detection.</div>
+              <div style="display:flex; gap:8px;">
+                <button class="caido-btn" style="flex:1;"><i class="fas fa-cog"></i> Configure</button>
+                <button class="caido-btn primary" style="flex:1;"><i class="fas fa-play"></i> Test</button>
+              </div>
+            </div>
+            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <div style="width:48px;height:48px;background:linear-gradient(135deg, #764ba2, #667eea);border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-network-wired" style="color:white; font-size:20px;"></i></div>
+                <div>
+                  <div style="font-weight:600;">Threat Detector</div>
+                  <div style="font-size:11px; color:var(--caido-text-muted);">Custom ML</div>
+                </div>
+                <span class="caido-badge green" style="margin-left:auto;">Active</span>
+              </div>
+              <div style="font-size:13px; color:var(--caido-text-secondary); margin-bottom:12px;">Custom trained model for malware and intrusion detection.</div>
+              <div style="display:flex; gap:8px;">
+                <button class="caido-btn" style="flex:1;"><i class="fas fa-cog"></i> Configure</button>
+                <button class="caido-btn primary" style="flex:1;"><i class="fas fa-play"></i> Test</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildThreatIntelLayout() {
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Threat Intelligence</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn" id="update-feeds"><i class="fas fa-download"></i> Update Feeds</button>
+            <button class="caido-btn primary" id="lookup-ioc"><i class="fas fa-search"></i> Lookup IOC</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:24px;">
+            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; text-align:center;">
+              <div style="font-size:32px; font-weight:700; color:var(--caido-accent-red);" id="threat-ips">${state.threatStats?.maliciousIps || 0}</div>
+              <div style="font-size:12px; color:var(--caido-text-muted);">Known Malicious IPs</div>
+            </div>
+            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; text-align:center;">
+              <div style="font-size:32px; font-weight:700; color:var(--caido-accent-orange);" id="threat-domains">${state.threatStats?.suspiciousDomains || 0}</div>
+              <div style="font-size:12px; color:var(--caido-text-muted);">Suspicious Domains</div>
+            </div>
+            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; text-align:center;">
+              <div style="font-size:32px; font-weight:700; color:var(--caido-accent-purple);" id="threat-iocs">${state.threatStats?.totalIocs || 0}</div>
+              <div style="font-size:12px; color:var(--caido-text-muted);">IOCs in Database</div>
+            </div>
+          </div>
+          <h3 style="margin-bottom:12px;">Recent Threat Feeds</h3>
+          <div class="caido-table-container">
+            <table class="caido-table">
+              <thead><tr><th>Feed</th><th>Last Updated</th><th>Entries</th><th>Status</th></tr></thead>
+              <tbody id="threat-feeds-tbody">
+                ${state.threatStats?.feeds?.length ? state.threatStats.feeds.map(f => `
+                  <tr>
+                    <td>${f.name}</td>
+                    <td>${f.lastUpdated || 'Never'}</td>
+                    <td>${f.entries || 0}</td>
+                    <td><span class="caido-badge ${f.status === 'active' ? 'green' : 'orange'}">${f.status || 'Unknown'}</span></td>
+                  </tr>
+                `).join('') : `
+                  <tr><td>AbuseIPDB</td><td>Ready to update</td><td>-</td><td><span class="caido-badge blue">Available</span></td></tr>
+                  <tr><td>URLhaus</td><td>Ready to update</td><td>-</td><td><span class="caido-badge blue">Available</span></td></tr>
+                  <tr><td>PhishTank</td><td>Ready to update</td><td>-</td><td><span class="caido-badge blue">Available</span></td></tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildEnvironmentLayout() {
+    const envHtml = state.environment.length === 0 ? `
+      <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No environment variables defined</td></tr>
+    ` : state.environment.map(env => `
+      <tr data-id="${env.id}">
+        <td><code>${env.name}</code></td>
+        <td><code>${env.secret ? '••••••••••••' : env.value}</code></td>
+        <td><span class="caido-badge ${env.scope === 'global' ? 'blue' : env.scope === 'session' ? 'orange' : 'purple'}">${env.scope || 'Global'}</span></td>
+        <td>
+          <button class="panel-action-btn env-edit" data-id="${env.id}"><i class="fas fa-edit"></i></button>
+          <button class="panel-action-btn env-delete" data-id="${env.id}"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Environment Variables</div>
+          <div class="caido-panel-actions">
+            <button class="caido-btn primary" id="add-variable"><i class="fas fa-plus"></i> Add Variable</button>
+          </div>
+        </div>
+        <div class="caido-panel-content" style="padding:16px;">
+          <div class="caido-table-container">
+            <table class="caido-table">
+              <thead><tr><th>Name</th><th>Value</th><th>Scope</th><th>Actions</th></tr></thead>
+              <tbody id="env-tbody">
+                ${envHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindEnvironmentEvents() {
+    document.getElementById('add-variable')?.addEventListener('click', () => {
+      showModal('Add Environment Variable', `
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
+            <input class="caido-input" name="name" placeholder="API_KEY" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Value</label>
+            <input class="caido-input" name="value" placeholder="your-secret-value" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Scope</label>
+            <select class="caido-input" name="scope" style="width:100%;">
+              <option value="global">Global</option>
+              <option value="session">Session</option>
+              <option value="workspace">Workspace</option>
+            </select>
+          </div>
+          <div>
+            <label><input type="checkbox" name="secret"> Secret (hide value)</label>
+          </div>
+        </div>
+      `, async (formData) => {
+        const result = await cyberforgeAPI.setEnvironmentVariable(
+          formData.get('name'),
+          formData.get('value'),
+          formData.get('scope')
+        );
+        if (result.success) {
+          state.environment.push({
+            id: result.data.data?.id || Date.now().toString(),
+            name: formData.get('name'),
+            value: formData.get('value'),
+            scope: formData.get('scope'),
+            secret: formData.get('secret') === 'on'
+          });
+          showToast('success', 'Created', 'Variable added successfully');
+          renderScreen('environment');
+        } else {
+          showToast('error', 'Error', result.error || 'Failed to add variable');
+        }
+      });
+    });
+
+    document.querySelectorAll('.env-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const env = state.environment.find(e => e.id === id);
+        showConfirmModal('Delete Variable', `Are you sure you want to delete ${env?.name}?`, async () => {
+          const result = await cyberforgeAPI.deleteEnvironmentVariable(env?.name);
+          if (result.success) {
+            state.environment = state.environment.filter(e => e.id !== id);
+            showToast('success', 'Deleted', 'Variable removed');
+            renderScreen('environment');
+          }
+        });
+      });
+    });
+  }
+
+  function buildSyncStatusLayout() {
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Sync Status</div>
+        </div>
+        <div class="caido-panel-content" style="padding:24px;">
+          <div style="text-align:center; margin-bottom:24px;">
+            <i class="fas fa-cloud-upload-alt" style="font-size:48px; color:var(--caido-accent-green); margin-bottom:16px;"></i>
+            <h3>All Synced</h3>
+            <p style="color:var(--caido-text-muted);">Your workspace is up to date with the cloud.</p>
+          </div>
+          <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+              <span>Last sync:</span>
+              <span style="color:var(--caido-text-muted);">2 minutes ago</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+              <span>Pending changes:</span>
+              <span style="color:var(--caido-accent-green);">0</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span>Sync mode:</span>
+              <span>Automatic</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildBrowserExtensionLayout() {
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Browser Extension</div>
+        </div>
+        <div class="caido-panel-content" style="padding:24px;">
+          <div style="text-align:center; max-width:400px; margin:0 auto;">
+            <i class="fas fa-puzzle-piece" style="font-size:48px; color:var(--caido-accent-blue); margin-bottom:16px;"></i>
+            <h3>Install Browser Extension</h3>
+            <p style="color:var(--caido-text-muted); margin-bottom:24px;">Capture browser traffic directly and send it to Cyberforge for analysis.</p>
+            <div style="display:flex; gap:12px; justify-content:center;">
+              <button class="caido-btn"><i class="fab fa-chrome"></i> Chrome</button>
+              <button class="caido-btn"><i class="fab fa-firefox"></i> Firefox</button>
+              <button class="caido-btn"><i class="fab fa-edge"></i> Edge</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildMobileCompanionLayout() {
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Mobile Companion</div>
+        </div>
+        <div class="caido-panel-content" style="padding:24px;">
+          <div style="text-align:center; max-width:400px; margin:0 auto;">
+            <i class="fas fa-mobile-alt" style="font-size:48px; color:var(--caido-accent-purple); margin-bottom:16px;"></i>
+            <h3>Connect Mobile Device</h3>
+            <p style="color:var(--caido-text-muted); margin-bottom:24px;">Scan the QR code with the Cyberforge mobile app to connect your device.</p>
+            <div style="background:white; width:150px; height:150px; margin:0 auto 24px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+              <i class="fas fa-qrcode" style="font-size:80px; color:#333;"></i>
+            </div>
+            <p style="font-size:12px; color:var(--caido-text-muted);">Or enter code: <strong>CYBER-1234-FORGE</strong></p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildProfileLayout() {
+    const user = cyberforgeAPI.getCurrentUser();
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Profile</div>
+        </div>
+        <div class="caido-panel-content" style="padding:24px; max-width:600px;">
+          <div style="display:flex; align-items:center; gap:20px; margin-bottom:32px;">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--caido-accent-orange), var(--caido-accent-orange-dim));display:flex;align-items:center;justify-content:center;">
+              <i class="fas fa-user" style="font-size:32px; color:white;"></i>
+            </div>
+            <div>
+              <h2>${user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'User'}</h2>
+              <p style="color:var(--caido-text-muted);">${user?.email || ''}</p>
+              <span class="caido-badge blue">${user?.role || 'User'}</span>
+            </div>
+          </div>
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">First Name</label>
+            <input class="caido-input" value="${user?.firstName || ''}" style="width:100%;">
+          </div>
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Last Name</label>
+            <input class="caido-input" value="${user?.lastName || ''}" style="width:100%;">
+          </div>
+          <div style="margin-bottom:24px;">
+            <label style="display:block; font-weight:600; margin-bottom:8px;">Email</label>
+            <input class="caido-input" value="${user?.email || ''}" disabled style="width:100%; opacity:0.7;">
+          </div>
+          <button class="caido-btn primary"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildSettingsLayout() {
+    return `
+      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="caido-panel-header">
+          <div class="caido-panel-title">Settings</div>
+        </div>
+        <div class="caido-panel-content" style="padding:24px; max-width:600px;">
+          <h3 style="margin-bottom:16px;">Appearance</h3>
+          <div style="margin-bottom:24px; background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div>
+                <div style="font-weight:600;">Dark Mode</div>
+                <div style="font-size:12px; color:var(--caido-text-muted);">Use dark theme</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="setting-dark-mode"><span class="slider"></span></label>
+            </div>
+          </div>
+          
+          <h3 style="margin-bottom:16px;">Notifications</h3>
+          <div style="margin-bottom:24px; background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div>
+                <div style="font-weight:600;">Threat Alerts</div>
+                <div style="font-size:12px; color:var(--caido-text-muted);">Show notifications for new threats</div>
+              </div>
+              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-weight:600;">Sound Effects</div>
+                <div style="font-size:12px; color:var(--caido-text-muted);">Play sounds for alerts</div>
+              </div>
+              <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+            </div>
+          </div>
+          
+          <h3 style="margin-bottom:16px;">Security</h3>
+          <div style="margin-bottom:24px; background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+            <button class="caido-btn" style="width:100%; margin-bottom:8px;"><i class="fas fa-key"></i> Change Password</button>
+            <button class="caido-btn" style="width:100%;"><i class="fas fa-shield-alt"></i> Two-Factor Authentication</button>
+          </div>
+          
+          <button class="caido-btn primary"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+      </div>
+    `;
   }
 
   function buildPlaceholder(screen) {
@@ -852,15 +3679,24 @@
     const tbody = document.getElementById('intercept-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
+    
+    if (state.intercepts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No intercepted requests. Enable intercept mode to capture requests.</td></tr>';
+      return;
+    }
+    
     state.intercepts.forEach(item => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${item.id}</td>
         <td>${item.host}</td>
-        <td><span class="method-badge ${item.method.toLowerCase()}">${item.method}</span></td>
+        <td><span class="method-badge ${(item.method || 'GET').toLowerCase()}">${item.method || 'GET'}</span></td>
         <td>${item.path}</td>
-        <td>${item.status}</td>
-        <td>${item.action}</td>
+        <td><span class="caido-badge ${item.status === 'pending' ? 'orange' : 'blue'}">${item.status || 'pending'}</span></td>
+        <td>
+          <button class="caido-btn intercept-forward" data-id="${item.id}" title="Forward"><i class="fas fa-arrow-right"></i></button>
+          <button class="caido-btn intercept-drop" data-id="${item.id}" title="Drop"><i class="fas fa-trash"></i></button>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -887,15 +3723,57 @@
     const tbody = document.getElementById('rules-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
+    
+    if (state.matchRules.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No rules defined. Add a rule to modify requests/responses.</td></tr>';
+      return;
+    }
+    
     state.matchRules.forEach(rule => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${rule.id}</td>
         <td>${rule.type}</td>
-        <td>${rule.match}</td>
-        <td>${rule.replace}</td>
+        <td><code>${rule.match}</code></td>
+        <td><code>${rule.replace}</code></td>
+        <td>
+          <label class="switch">
+            <input type="checkbox" class="rule-toggle" data-id="${rule.id}" ${rule.enabled ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+        </td>
+        <td>
+          <button class="caido-btn rule-delete" data-id="${rule.id}"><i class="fas fa-trash"></i></button>
+        </td>
       `;
       tbody.appendChild(tr);
+    });
+    
+    // Bind toggle and delete events
+    document.querySelectorAll('.rule-toggle').forEach(toggle => {
+      toggle.addEventListener('change', async () => {
+        const id = toggle.dataset.id;
+        const result = await cyberforgeAPI.toggleMatchRule(id);
+        if (result.success) {
+          const rule = state.matchRules.find(r => r.id === id);
+          if (rule) rule.enabled = !rule.enabled;
+          showToast('success', 'Updated', `Rule ${rule?.enabled ? 'enabled' : 'disabled'}`);
+        }
+      });
+    });
+    
+    document.querySelectorAll('.rule-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Rule', 'Are you sure you want to delete this rule?', async () => {
+          const result = await cyberforgeAPI.deleteMatchRule(id);
+          if (result.success) {
+            state.matchRules = state.matchRules.filter(r => r.id !== id);
+            showToast('success', 'Deleted', 'Rule removed');
+            renderMatchRules();
+          }
+        });
+      });
     });
   }
 
@@ -903,16 +3781,76 @@
     const tbody = document.getElementById('findings-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
+    
+    if (state.findings.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No findings yet. Scan for vulnerabilities or add findings manually.</td></tr>';
+      return;
+    }
+    
     state.findings.forEach(f => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${f.id}</td>
         <td><span class="caido-badge ${severityColor(f.severity)}">${f.severity}</span></td>
         <td>${f.title}</td>
-        <td>${f.path}</td>
-        <td>${f.status}</td>
+        <td>${f.path || '-'}</td>
+        <td><span class="caido-badge ${f.status === 'Open' ? 'orange' : f.status === 'Resolved' ? 'green' : 'gray'}">${f.status}</span></td>
+        <td>
+          <button class="caido-btn finding-view" data-id="${f.id}" title="View"><i class="fas fa-eye"></i></button>
+          <button class="caido-btn finding-resolve" data-id="${f.id}" title="${f.status === 'Open' ? 'Resolve' : 'Reopen'}"><i class="fas fa-${f.status === 'Open' ? 'check' : 'undo'}"></i></button>
+          <button class="caido-btn finding-delete" data-id="${f.id}" title="Delete"><i class="fas fa-trash"></i></button>
+        </td>
       `;
       tbody.appendChild(tr);
+    });
+    
+    // Bind action events
+    document.querySelectorAll('.finding-resolve').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const finding = state.findings.find(f => f.id === id);
+        const newStatus = finding?.status === 'Open' ? 'Resolved' : 'Open';
+        const result = await cyberforgeAPI.resolveFinding(id);
+        if (result.success) {
+          if (finding) finding.status = newStatus;
+          showToast('success', 'Updated', `Finding ${newStatus.toLowerCase()}`);
+          renderFindings();
+        }
+      });
+    });
+    
+    document.querySelectorAll('.finding-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        showConfirmModal('Delete Finding', 'Are you sure you want to delete this finding?', async () => {
+          const result = await cyberforgeAPI.deleteFinding(id);
+          if (result.success) {
+            state.findings = state.findings.filter(f => f.id !== id);
+            showToast('success', 'Deleted', 'Finding removed');
+            renderFindings();
+          }
+        });
+      });
+    });
+    
+    document.querySelectorAll('.finding-view').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const finding = state.findings.find(f => f.id === id);
+        if (finding) {
+          showModal(`Finding: ${finding.title}`, `
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; gap:12px;">
+                <span class="caido-badge ${severityColor(finding.severity)}">${finding.severity}</span>
+                <span class="caido-badge ${finding.status === 'Open' ? 'orange' : 'green'}">${finding.status}</span>
+              </div>
+              <div><strong>Path:</strong> ${finding.path || '-'}</div>
+              <div><strong>Description:</strong><br>${finding.description || 'No description'}</div>
+              ${finding.request ? `<div><strong>Request:</strong><pre style="background:var(--caido-bg-dark); padding:8px; border-radius:4px; overflow:auto;">${finding.request}</pre></div>` : ''}
+            </div>
+          `, null);
+        }
+      });
     });
   }
 

@@ -701,3 +701,122 @@
 .ai-sidebar::-webkit-scrollbar-thumb:hover {
     background: var(--border-hover);
 }
+
+/* =========================
+   NEW AI ASSISTANT STYLES
+   ========================= */
+
+/* Quick Action Buttons */
+.ai-quick-action {
+    transition: all 0.2s ease;
+    border: 1px solid var(--caido-border);
+}
+
+.ai-quick-action:hover {
+    background: var(--caido-accent-purple) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Suggestion Chips */
+.ai-suggestion {
+    transition: all 0.2s ease;
+}
+
+.ai-suggestion:hover {
+    background: var(--caido-bg-dark) !important;
+    border-color: var(--caido-accent-blue) !important;
+    transform: translateY(-2px);
+}
+
+/* AI Messages Animation */
+.ai-message {
+    animation: aiMessageSlide 0.3s ease-out;
+}
+
+@keyframes aiMessageSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Welcome Message Gradient Animation */
+.ai-welcome-message > div:first-child {
+    animation: glowPulse 3s infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+    }
+}
+
+/* Typing indicator animation */
+#ai-typing-indicator {
+    color: var(--caido-accent-purple);
+}
+
+/* Context panel styling */
+#ai-context-panel {
+    transition: all 0.2s ease;
+}
+
+/* Input focus styling */
+#assistant-input:focus {
+    border-color: var(--caido-accent-purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* Code block styling in AI responses */
+.ai-message code {
+    font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+}
+
+.ai-message pre {
+    scrollbar-width: thin;
+    scrollbar-color: var(--caido-border) transparent;
+}
+
+.ai-message pre::-webkit-scrollbar {
+    height: 6px;
+}
+
+.ai-message pre::-webkit-scrollbar-thumb {
+    background: var(--caido-border);
+    border-radius: 3px;
+}
+
+/* Status badge pulse for online */
+.caido-badge.green .status-dot {
+    animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* AI Avatar gradient animation */
+.ai-message-assistant > div:first-child {
+    background-size: 200% 200%;
+    animation: gradientShift 5s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}

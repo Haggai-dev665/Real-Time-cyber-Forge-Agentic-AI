@@ -3,12 +3,14 @@ const { v4: uuidv4 } = require('uuid');
 const { analyzePageData } = require('./analysisService');
 const { detectThreats } = require('./threatService');
 const { logActivity } = require('../utils/logger');
+const otxService = require('./otx');
 
 class WebSocketManager {
   constructor() {
     this.clients = new Map();
     this.desktopClients = new Map();
     this.mobileClients = new Map();
+    this.otxInitialized = false;
   }
 
   setupWebSocketServer(wss, clientsMap) {
@@ -93,6 +95,59 @@ class WebSocketManager {
     }, 30000);
 
     console.log('✅ WebSocket server initialized');
+    
+    // Initialize OTX threat streaming
+    this.initializeOTXStreaming();
+  }
+
+  initializeOTXStreaming() {
+    if (this.otxInitialized) return;
+    
+    console.log('🌐 Starting OTX threat intelligence streaming...');
+    
+    // Listen for new threats from OTX service
+    otxService.on('threat', (threatEvent) => {
+      // Broadcast threat to all connected dashboard clients
+      this.broadcastThreat(threatEvent);
+    });
+    
+    // Start polling OTX API every 30 seconds
+    otxService.startPolling(30000);
+    
+    this.otxInitialized = true;
+    console.log('✅ OTX threat streaming initialized');
+  }
+
+  broadcastThreat(threatEvent) {
+    const message = JSON.stringify({
+      type: 'otx_threat',
+      threat: threatEvent,
+      timestamp: new Date().toISOString()
+    });
+
+    // Send to all connected clients
+    this.clients.forEach((client) => {
+      if (client.socket.readyState === WebSocket.OPEN) {
+        client.socket.send(message);
+      }
+    });
+  }
+
+  async sendInitialThreats(clientId) {
+    try {
+      const recentThreats = await otxService.getRecentThreats(20);
+      const client = this.clients.get(clientId);
+      
+      if (client && client.socket.readyState === WebSocket.OPEN) {
+        client.socket.send(JSON.stringify({
+          type: 'initial_threats',
+          threats: recentThreats,
+          timestamp: new Date().toISOString()
+        }));
+      }
+    } catch (error) {
+      console.error('Error sending initial threats:', error);
+    }
   }
 
   async handleMessage(clientId, message) {
@@ -140,6 +195,10 @@ class WebSocketManager {
       
       case 'authenticate':
         await this.handleAuthentication(clientId, message);
+        break;
+      
+      case 'request_initial_threats':
+        await this.sendInitialThreats(clientId);
         break;
       
       case 'connection_established':

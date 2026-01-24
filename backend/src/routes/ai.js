@@ -729,8 +729,6 @@ router.post('/execute-task-ml',
   }
 );
 
-module.exports = router;
-
 /**
  * @route POST /api/ai/chat
  * @desc Chat with AI assistant using ML services
@@ -740,23 +738,25 @@ router.post('/chat',
   aiAnalysisLimiter,
   [
     body('message').notEmpty().withMessage('Message is required'),
-    body('conversationId').optional().isString(),
+    body('conversationHistory').optional().isArray(),
     body('context').optional().isObject()
   ],
   async (req, res) => {
     try {
-      const { message, conversationId, context } = req.body;
+      const { message, conversationHistory = [], context } = req.body;
       
-      console.log('🤖 AI Chat Request:', { message, conversationId });
+      console.log('🤖 AI Chat Request:', { message, historyLength: conversationHistory.length });
       
       // Try ML service first
-      const mlResult = await mlService.chatWithAI(message, conversationId, context);
+      const mlResult = await mlService.chatWithAI(message, conversationHistory, context);
       
       if (mlResult.success) {
         return res.json({
           success: true,
           response: mlResult.data.response || mlResult.data,
-          conversationId: mlResult.data.conversation_id || conversationId,
+          confidence: mlResult.data.confidence,
+          insights: mlResult.data.insights,
+          recommendations: mlResult.data.recommendations,
           source: 'ml_service'
         });
       }
@@ -769,7 +769,6 @@ router.post('/chat',
       res.json({
         success: true,
         response: fallbackResponse,
-        conversationId: conversationId || `conv_${Date.now()}`,
         source: 'fallback'
       });
       

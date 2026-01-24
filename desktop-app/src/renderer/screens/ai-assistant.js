@@ -322,10 +322,12 @@ class AIAssistantScreen {
         // Backend AI endpoint (preferred)
         if (window.apiClient) {
             try {
-                const response = await window.apiClient.chatWithAI(message, this.currentConversationId);
+                const history = (this.chatHistory || [])
+                    .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
+                    .slice(-10);
+                const response = await window.apiClient.chatWithAI(message, history);
                 if (response?.success) {
                     const data = response.data || {};
-                    this.currentConversationId = data.conversationId || data.conversation_id || this.currentConversationId;
                     const reply = data.response || data.message || data.answer || 'I received your message.';
                     return {
                         message: reply,

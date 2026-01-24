@@ -139,11 +139,18 @@ class MLService {
     /**
      * Chat with AI assistant
      */
-    async chatWithAI(message, conversationId = null, context = {}) {
+    async chatWithAI(message, conversationHistory = [], context = {}) {
         try {
+            // conversation_history should be array of {role, content} objects
+            // If it's a string (old conversationId), convert to empty array
+            let formattedHistory = [];
+            if (Array.isArray(conversationHistory)) {
+                formattedHistory = conversationHistory;
+            }
+            
             const response = await this.axiosInstance.post('/analyze', {
                 query: message,
-                conversation_history: conversationId ? [conversationId] : [],
+                conversation_history: formattedHistory,
                 context: typeof context === 'string' ? { type: context } : context
             });
             

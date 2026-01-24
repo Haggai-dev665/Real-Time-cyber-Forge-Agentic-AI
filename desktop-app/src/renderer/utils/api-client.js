@@ -247,8 +247,8 @@ class APIClient {
                 // AI Endpoints
                 // =========================================
 
-                async chatWithAI(message, conversationId = null, context = {}) {
-                    return this.post('/api/ai/chat', { message, conversationId, context });
+                async chatWithAI(message, conversationHistory = [], context = {}) {
+                    return this.post('/api/ai/chat', { message, conversationHistory, context });
                 }
 
                 async analyzeWebsiteAI(url, content = null) {

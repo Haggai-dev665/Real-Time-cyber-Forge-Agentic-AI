@@ -10,11 +10,24 @@ class CyberForgeAPI {
   constructor() {
     this.baseUrl = API_BASE_URL;
     this.wsUrl = WS_URL;
-    this.token = localStorage.getItem('cyberforge_token');
+    // Check both localStorage and sessionStorage for token (auth-page-v2.js stores as 'authToken')
+    this.token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    this.refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
+    this.user = this.loadUser();
     this.ws = null;
     this.wsReconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.eventHandlers = new Map();
+    this.isRefreshing = false;
+  }
+
+  loadUser() {
+    try {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   // =========================================
@@ -32,7 +45,7 @@ class CyberForgeAPI {
     return headers;
   }
 
-  async request(method, endpoint, data = null) {
+  async request(method, endpoint, data = null, retryOnAuth = true) {
     const url = `${this.baseUrl}${endpoint}`;
     const options = {
       method,
@@ -46,6 +59,20 @@ class CyberForgeAPI {
     try {
       const response = await fetch(url, options);
       const json = await response.json();
+
+      // Handle 401 - try to refresh token and retry once
+      if (response.status === 401 && retryOnAuth && !endpoint.includes('/auth/')) {
+        console.log('🔄 Token expired, attempting refresh...');
+        const refreshed = await this.refreshAuthToken();
+        if (refreshed) {
+          // Retry the request with new token
+          return this.request(method, endpoint, data, false);
+        } else {
+          // Refresh failed, emit event so UI can redirect to login
+          this.emit('auth:expired');
+          throw new Error('Session expired. Please log in again.');
+        }
+      }
 
       if (!response.ok) {
         throw new Error(json.message || `HTTP ${response.status}`);
@@ -92,18 +119,20 @@ class CyberForgeAPI {
 
   async login(email, password) {
     const result = await this.post('/api/auth/login', { email, password });
-    if (result.success && result.data.token) {
-      this.token = result.data.token;
-      localStorage.setItem('cyberforge_token', this.token);
+    if (result.success && result.data?.data?.token) {
+      this.setAuthData(result.data.data.token, result.data.data.user, result.data.data.refreshToken);
+    } else if (result.success && result.data?.token) {
+      this.setAuthData(result.data.token, result.data.user, result.data.refreshToken);
     }
     return result;
   }
 
   async register(userData) {
     const result = await this.post('/api/auth/register', userData);
-    if (result.success && result.data.token) {
-      this.token = result.data.token;
-      localStorage.setItem('cyberforge_token', this.token);
+    if (result.success && result.data?.data?.token) {
+      this.setAuthData(result.data.data.token, result.data.data.user, result.data.data.refreshToken);
+    } else if (result.success && result.data?.token) {
+      this.setAuthData(result.data.token, result.data.user, result.data.refreshToken);
     }
     return result;
   }
@@ -118,8 +147,71 @@ class CyberForgeAPI {
 
   logout() {
     this.token = null;
+    this.refreshToken = null;
+    this.user = null;
+    // Clear all auth-related storage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('user');
+    // Legacy cleanup
     localStorage.removeItem('cyberforge_token');
     this.disconnectWebSocket();
+    this.emit('auth:logout');
+  }
+
+  setAuthData(token, user, refreshToken = null) {
+    this.token = token;
+    this.user = user;
+    this.refreshToken = refreshToken;
+    localStorage.setItem('authToken', token);
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    }
+    this.emit('auth:login', { user });
+  }
+
+  getCurrentUser() {
+    return this.user;
+  }
+
+  async refreshAuthToken() {
+    if (this.isRefreshing) return false;
+    this.isRefreshing = true;
+    
+    try {
+      // If we have a refresh token, try to use it
+      if (this.refreshToken) {
+        const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: this.refreshToken })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.token) {
+            this.setAuthData(data.data.token, data.data.user || this.user, data.data.refreshToken || this.refreshToken);
+            this.isRefreshing = false;
+            return true;
+          }
+        }
+      }
+      
+      // Token refresh failed - user needs to re-authenticate
+      this.logout();
+      this.isRefreshing = false;
+      return false;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      this.isRefreshing = false;
+      return false;
+    }
   }
 
   isAuthenticated() {
@@ -155,6 +247,289 @@ class CyberForgeAPI {
   }
 
   // =========================================
+  // HTTP Requests/History Endpoints
+  // =========================================
+
+  async getHttpRequests(page = 1, limit = 50, filters = {}) {
+    const params = new URLSearchParams({ page, limit, ...filters }).toString();
+    return this.get(`/api/requests?${params}`);
+  }
+
+  async getHttpRequest(requestId) {
+    return this.get(`/api/requests/${requestId}`);
+  }
+
+  async createHttpRequest(requestData) {
+    return this.post('/api/requests', requestData);
+  }
+
+  async replayRequest(requestId, modifications = {}) {
+    return this.post(`/api/requests/${requestId}/replay`, modifications);
+  }
+
+  async deleteHttpRequest(requestId) {
+    return this.delete(`/api/requests/${requestId}`);
+  }
+
+  // =========================================
+  // Intercept Endpoints
+  // =========================================
+
+  async getIntercepts(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.get(`/api/intercepts${params ? '?' + params : ''}`);
+  }
+
+  async getInterceptSettings() {
+    return this.get('/api/intercepts/settings');
+  }
+
+  async updateInterceptSettings(settings) {
+    return this.put('/api/intercepts/settings', settings);
+  }
+
+  async forwardIntercept(interceptId, modifications = {}) {
+    return this.post(`/api/intercepts/${interceptId}/forward`, modifications);
+  }
+
+  async dropIntercept(interceptId) {
+    return this.delete(`/api/intercepts/${interceptId}`);
+  }
+
+  async forwardAllIntercepts() {
+    return this.post('/api/intercepts/forward-all');
+  }
+
+  async dropAllIntercepts() {
+    return this.delete('/api/intercepts/all');
+  }
+
+  // =========================================
+  // Match & Replace Rules
+  // =========================================
+
+  async getMatchRules() {
+    return this.get('/api/match-rules');
+  }
+
+  async createMatchRule(rule) {
+    return this.post('/api/match-rules', rule);
+  }
+
+  async updateMatchRule(ruleId, rule) {
+    return this.put(`/api/match-rules/${ruleId}`, rule);
+  }
+
+  async deleteMatchRule(ruleId) {
+    return this.delete(`/api/match-rules/${ruleId}`);
+  }
+
+  async toggleMatchRule(ruleId, enabled) {
+    return this.put(`/api/match-rules/${ruleId}/toggle`, { enabled });
+  }
+
+  // =========================================
+  // Automation Jobs
+  // =========================================
+
+  async getAutomations() {
+    return this.get('/api/automations');
+  }
+
+  async createAutomation(automation) {
+    return this.post('/api/automations', automation);
+  }
+
+  async updateAutomation(automationId, automation) {
+    return this.put(`/api/automations/${automationId}`, automation);
+  }
+
+  async deleteAutomation(automationId) {
+    return this.delete(`/api/automations/${automationId}`);
+  }
+
+  async runAutomation(automationId) {
+    return this.post(`/api/automations/${automationId}/run`);
+  }
+
+  async pauseAutomation(automationId) {
+    return this.post(`/api/automations/${automationId}/pause`);
+  }
+
+  async getAutomationLogs(automationId, page = 1) {
+    return this.get(`/api/automations/${automationId}/logs?page=${page}`);
+  }
+
+  // =========================================
+  // Workflows
+  // =========================================
+
+  async getWorkflows() {
+    return this.get('/api/workflows');
+  }
+
+  async createWorkflow(workflow) {
+    return this.post('/api/workflows', workflow);
+  }
+
+  async updateWorkflow(workflowId, workflow) {
+    return this.put(`/api/workflows/${workflowId}`, workflow);
+  }
+
+  async deleteWorkflow(workflowId) {
+    return this.delete(`/api/workflows/${workflowId}`);
+  }
+
+  async runWorkflow(workflowId, params = {}) {
+    return this.post(`/api/workflows/${workflowId}/run`, params);
+  }
+
+  async getWorkflowRuns(workflowId, page = 1) {
+    return this.get(`/api/workflows/${workflowId}/runs?page=${page}`);
+  }
+
+  // =========================================
+  // Findings
+  // =========================================
+
+  async getFindings(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.get(`/api/findings${params ? '?' + params : ''}`);
+  }
+
+  async createFinding(finding) {
+    return this.post('/api/findings', finding);
+  }
+
+  async updateFinding(findingId, finding) {
+    return this.put(`/api/findings/${findingId}`, finding);
+  }
+
+  async deleteFinding(findingId) {
+    return this.delete(`/api/findings/${findingId}`);
+  }
+
+  async resolveFinding(findingId, resolution) {
+    return this.post(`/api/findings/${findingId}/resolve`, resolution);
+  }
+
+  // =========================================
+  // Scopes
+  // =========================================
+
+  async getScopes() {
+    return this.get('/api/scopes');
+  }
+
+  async createScope(scope) {
+    return this.post('/api/scopes', scope);
+  }
+
+  async updateScope(scopeId, scope) {
+    return this.put(`/api/scopes/${scopeId}`, scope);
+  }
+
+  async deleteScope(scopeId) {
+    return this.delete(`/api/scopes/${scopeId}`);
+  }
+
+  // =========================================
+  // Filters
+  // =========================================
+
+  async getFilters() {
+    return this.get('/api/filters');
+  }
+
+  async createFilter(filter) {
+    return this.post('/api/filters', filter);
+  }
+
+  async updateFilter(filterId, filter) {
+    return this.put(`/api/filters/${filterId}`, filter);
+  }
+
+  async deleteFilter(filterId) {
+    return this.delete(`/api/filters/${filterId}`);
+  }
+
+  async toggleFilter(filterId, enabled) {
+    return this.put(`/api/filters/${filterId}/toggle`, { enabled });
+  }
+
+  // =========================================
+  // Plugins
+  // =========================================
+
+  async getPlugins() {
+    return this.get('/api/plugins');
+  }
+
+  async getPluginStore() {
+    return this.get('/api/plugins/store');
+  }
+
+  async installPlugin(pluginId) {
+    return this.post('/api/plugins/install', { pluginId });
+  }
+
+  async uninstallPlugin(pluginId) {
+    return this.delete(`/api/plugins/${pluginId}`);
+  }
+
+  async togglePlugin(pluginId, enabled) {
+    return this.put(`/api/plugins/${pluginId}/toggle`, { enabled });
+  }
+
+  // =========================================
+  // Exports
+  // =========================================
+
+  async getExports() {
+    return this.get('/api/exports');
+  }
+
+  async createExport(exportConfig) {
+    return this.post('/api/exports', exportConfig);
+  }
+
+  async downloadExport(exportId) {
+    return this.get(`/api/exports/${exportId}/download`);
+  }
+
+  async deleteExport(exportId) {
+    return this.delete(`/api/exports/${exportId}`);
+  }
+
+  // =========================================
+  // Environment Variables
+  // =========================================
+
+  async getEnvironmentVariables() {
+    return this.get('/api/environment');
+  }
+
+  async setEnvironmentVariable(key, value, scope = 'session') {
+    return this.post('/api/environment', { key, value, scope });
+  }
+
+  async deleteEnvironmentVariable(key) {
+    return this.delete(`/api/environment/${key}`);
+  }
+
+  // =========================================
+  // Sitemap
+  // =========================================
+
+  async getSitemap(domain) {
+    return this.get(`/api/sitemap/${encodeURIComponent(domain)}`);
+  }
+
+  async buildSitemap(domain, options = {}) {
+    return this.post('/api/sitemap/build', { domain, ...options });
+  }
+
+  // =========================================
   // Threat Endpoints
   // =========================================
 
@@ -183,8 +558,8 @@ class CyberForgeAPI {
   // AI Endpoints
   // =========================================
 
-  async chatWithAI(message, conversationId = null, context = {}) {
-    return this.post('/api/ai/chat', { message, conversationId, context });
+  async chatWithAI(message, conversationHistory = [], context = {}) {
+    return this.post('/api/ai/chat', { message, conversationHistory, context });
   }
 
   async analyzeWebsiteAI(url, content = null) {
@@ -285,11 +660,31 @@ class CyberForgeAPI {
         console.log('✅ WebSocket connected');
         this.wsReconnectAttempts = 0;
         
-        // Identify as desktop client
-        this.ws.send(JSON.stringify({
+        // Identify as desktop client with auth token
+        const identifyMessage = {
           type: 'identify',
           clientType: 'desktop',
           version: '1.0.0'
+        };
+        
+        // Include auth token if available
+        if (this.token) {
+          identifyMessage.token = this.token;
+        }
+        
+        this.ws.send(JSON.stringify(identifyMessage));
+
+        // Also send separate authenticate message for backend compatibility
+        if (this.token) {
+          this.ws.send(JSON.stringify({
+            type: 'authenticate',
+            token: this.token
+          }));
+        }
+
+        // Request initial OTX threat data
+        this.ws.send(JSON.stringify({
+          type: 'request_initial_threats'
         }));
 
         this.emit('ws:connected');
@@ -366,6 +761,14 @@ class CyberForgeAPI {
       case 'sync_update':
         this.emit('sync:update', payload);
         break;
+      case 'otx_threat':
+        // Real-time threat from OTX
+        this.emit('otx:threat', payload.threat);
+        break;
+      case 'initial_threats':
+        // Initial batch of threats on connection
+        this.emit('otx:initial_threats', payload.threats);
+        break;
       default:
         this.emit(`ws:${type}`, payload);
     }
@@ -438,6 +841,11 @@ class CyberForgeAPI {
 
 // Create singleton instance
 const cyberforgeAPI = new CyberForgeAPI();
+
+// Expose on window for renderer usage when nodeIntegration is disabled
+if (typeof window !== 'undefined') {
+  window.cyberforgeAPI = cyberforgeAPI;
+}
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

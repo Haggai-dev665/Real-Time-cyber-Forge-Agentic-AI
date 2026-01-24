@@ -57,6 +57,8 @@ cd ..
 ```bash
 cd ml-services
 python main.py
+
+cd /Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/ml-services && source venv/bin/activate && python main.py
 ```
 ✅ Starts on http://localhost:8001
 

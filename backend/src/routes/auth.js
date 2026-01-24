@@ -150,6 +150,13 @@ router.put('/change-password', auth, changePasswordValidation, authController.ch
 router.post('/logout', auth, authController.logout);
 
 /**
+ * @route   POST /api/auth/refresh
+ * @desc    Refresh JWT token
+ * @access  Public (uses old token in body/header)
+ */
+router.post('/refresh', authController.refreshToken);
+
+/**
  * @route   POST /api/auth/google
  * @desc    Authenticate with Google (Firebase token)
  * @access  Public

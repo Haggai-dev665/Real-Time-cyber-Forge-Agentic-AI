@@ -9,6 +9,7 @@ const { auth, authorize } = require('../middleware/auth');
 const AIAnalysisService = require('../services/ai/AIAnalysisService');
 const ThreatMonitoringService = require('../services/ai/ThreatMonitoringService');
 const { mlService } = require('../services/mlService');
+const { webScraperAPIService } = require('../services/WebScraperAPIService');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -19,6 +20,80 @@ const threatMonitoringService = new ThreatMonitoringService();
 
 // Start threat monitoring
 threatMonitoringService.startMonitoring();
+
+/**
+ * Helper function to build security findings from scraped data
+ */
+function buildSecurityFindings(scrapedData) {
+  const findings = [];
+  const ss = scrapedData.security_summary || {};
+  
+  // HTTPS check
+  if (!ss.is_https) {
+    findings.push({
+      title: 'No HTTPS',
+      description: 'Website is not using HTTPS encryption. All data is transmitted in plain text.',
+      severity: 'critical'
+    });
+  }
+  
+  // Mixed content
+  if (ss.has_mixed_content) {
+    findings.push({
+      title: 'Mixed Content',
+      description: 'Website loads some resources over insecure HTTP connections.',
+      severity: 'high'
+    });
+  }
+  
+  // Insecure cookies
+  if (ss.has_insecure_cookies) {
+    findings.push({
+      title: 'Insecure Cookies',
+      description: 'Some cookies are not marked as Secure or HttpOnly.',
+      severity: 'medium'
+    });
+  }
+  
+  // Missing security headers
+  const missingHeaders = ss.missing_security_headers || scrapedData.missing_headers || [];
+  missingHeaders.forEach(header => {
+    findings.push({
+      title: `Missing ${header}`,
+      description: `The ${header} security header is not set.`,
+      severity: 'medium'
+    });
+  });
+  
+  // Suspicious requests
+  if (ss.suspicious_requests_count > 0) {
+    findings.push({
+      title: 'Suspicious Network Requests',
+      description: `${ss.suspicious_requests_count} potentially suspicious requests detected.`,
+      severity: 'high'
+    });
+  }
+  
+  // External domains
+  if (ss.external_domains_count > 20) {
+    findings.push({
+      title: 'Excessive External Domains',
+      description: `Website connects to ${ss.external_domains_count} external domains.`,
+      severity: 'low'
+    });
+  }
+  
+  // Console errors
+  if (ss.console_errors_count > 0) {
+    findings.push({
+      title: 'JavaScript Errors',
+      description: `${ss.console_errors_count} JavaScript errors detected on the page.`,
+      severity: 'info'
+    });
+  }
+  
+  return findings;
+}
 
 // Rate limiting for AI analysis routes
 const aiAnalysisLimiter = rateLimit({
@@ -743,21 +818,141 @@ router.post('/chat',
   ],
   async (req, res) => {
     try {
-      const { message, conversationHistory = [], context } = req.body;
+      const { message, conversationHistory = [], context = {} } = req.body;
       
       console.log('🤖 AI Chat Request:', { message, historyLength: conversationHistory.length });
       
+      // Detect if user is requesting a website scan/analysis
+      const urlPattern = /(?:scan|analyze|check|review|audit|scrape|inspect|investigate|assess)\s+(?:the\s+)?(?:website|site|url|page|domain)?\s*:?\s*(https?:\/\/[^\s]+)/i;
+      const simpleUrlPattern = /(?:scan|analyze|check|security\s+(?:of|for|on)|vulnerabilities?\s+(?:of|for|on|in))\s+(https?:\/\/[^\s]+)/i;
+      const urlOnlyPattern = /(https?:\/\/[^\s]+)/i;
+      
+      // Check for scanning intent keywords
+      const scanKeywords = ['scan', 'analyze', 'check', 'security', 'vulnerab', 'audit', 'inspect', 'threat', 'assess', 'review', 'scrape'];
+      const hasScanIntent = scanKeywords.some(kw => message.toLowerCase().includes(kw));
+      
+      let websiteContext = null;
+      let urlMatch = message.match(urlPattern) || message.match(simpleUrlPattern);
+      
+      // If no explicit scan pattern but has URL and scan-related intent
+      if (!urlMatch && hasScanIntent) {
+        urlMatch = message.match(urlOnlyPattern);
+      }
+      
+      if (urlMatch) {
+        const targetUrl = urlMatch[1];
+        console.log(`🌐 Detected URL for scanning: ${targetUrl}`);
+        
+        try {
+          // Call the web scraper API
+          const scrapeResult = await webScraperAPIService.scrapeWebsite(targetUrl);
+          
+          if (scrapeResult.success) {
+            // Format the scraped data for AI analysis
+            const analysisData = webScraperAPIService.formatForAIAnalysis(scrapeResult);
+            const aiContext = webScraperAPIService.generateAIContext(analysisData);
+            
+            console.log(`✅ Website scraped successfully. Risk Score: ${analysisData.risk_score}/100`);
+            
+            // Add scraped data to context for AI
+            websiteContext = {
+              type: 'website_security_scan',
+              url: targetUrl,
+              scraped_data: analysisData,
+              formatted_context: aiContext
+            };
+          } else {
+            console.log(`⚠️ Website scraping failed: ${scrapeResult.error}`);
+            websiteContext = {
+              type: 'website_security_scan',
+              url: targetUrl,
+              error: scrapeResult.error,
+              formatted_context: `Website scraping failed for ${targetUrl}: ${scrapeResult.error}. Provide general security advice.`
+            };
+          }
+        } catch (scrapeError) {
+          console.error('Web scraper error:', scrapeError.message);
+          websiteContext = {
+            type: 'website_security_scan',
+            url: targetUrl,
+            error: scrapeError.message,
+            formatted_context: `Unable to scrape ${targetUrl}. Error: ${scrapeError.message}. Provide general security analysis advice.`
+          };
+        }
+      }
+      
+      // Merge website context with existing context
+      const enrichedContext = {
+        ...context,
+        ...(websiteContext && { website_scan: websiteContext })
+      };
+      
+      // If we have website scan data, prepend it to the message for better AI context
+      let enrichedMessage = message;
+      if (websiteContext && websiteContext.formatted_context) {
+        enrichedMessage = `[WEBSITE SECURITY SCAN DATA]\n${websiteContext.formatted_context}\n\n[USER REQUEST]\n${message}\n\nPlease analyze the security scan results above and provide a comprehensive security assessment including vulnerabilities, recommendations, and risk analysis.`;
+      }
+      
       // Try ML service first
-      const mlResult = await mlService.chatWithAI(message, conversationHistory, context);
+      const mlResult = await mlService.chatWithAI(enrichedMessage, conversationHistory, enrichedContext);
       
       if (mlResult.success) {
+        // Build comprehensive website scan data for frontend
+        let websiteScanResponse = null;
+        if (websiteContext && websiteContext.scraped_data) {
+          const sd = websiteContext.scraped_data;
+          websiteScanResponse = {
+            url: websiteContext.url,
+            title: sd.title || websiteContext.url,
+            description: sd.description || sd.meta_description || '',
+            risk_score: sd.risk_score || 0,
+            risk_level: sd.risk_level || 'low',
+            scanned: !websiteContext.error,
+            summary: sd.summary || `Security analysis of ${websiteContext.url}`,
+            
+            // Security data
+            findings: buildSecurityFindings(sd),
+            headers: sd.security_summary ? {
+              csp: sd.security_summary.missing_security_headers?.includes('Content-Security-Policy') ? null : 'Present',
+              hsts: sd.security_summary.missing_security_headers?.includes('Strict-Transport-Security') ? null : 'Present',
+              xFrameOptions: sd.security_summary.missing_security_headers?.includes('X-Frame-Options') ? null : 'Present',
+              xContentType: sd.security_summary.missing_security_headers?.includes('X-Content-Type-Options') ? null : 'Present',
+              xssProtection: sd.security_summary.missing_security_headers?.includes('X-XSS-Protection') ? null : 'Present',
+              referrerPolicy: sd.security_summary.missing_security_headers?.includes('Referrer-Policy') ? null : 'Present'
+            } : {},
+            ssl: {
+              valid: sd.security_summary?.is_https || false,
+              issuer: sd.ssl_issuer || null,
+              expires: sd.ssl_expires || null
+            },
+            
+            // Technologies (mock for now, can be enhanced)
+            technologies: sd.technologies || [],
+            
+            // Performance
+            performance: {
+              loadTime: sd.performance?.total_load_time_ms ? `${sd.performance.total_load_time_ms}ms` : 'N/A',
+              pageSize: sd.performance?.total_size_kb ? `${sd.performance.total_size_kb}KB` : 'N/A',
+              requestCount: sd.network_summary?.total_requests || 0,
+              score: sd.performance_score || null
+            },
+            
+            // Assets
+            images: sd.images || [],
+            scripts: sd.scripts || [],
+            stylesheets: sd.stylesheets || [],
+            requests: sd.network_requests || []
+          };
+        }
+        
         return res.json({
           success: true,
           response: mlResult.data.response || mlResult.data,
           confidence: mlResult.data.confidence,
           insights: mlResult.data.insights,
           recommendations: mlResult.data.recommendations,
-          source: 'ml_service'
+          source: 'ml_service',
+          website_scan: websiteScanResponse
         });
       }
       
@@ -984,6 +1179,64 @@ router.post('/execute-task',
       res.status(500).json({
         success: false,
         message: 'Failed to execute AI task',
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route POST /api/ai/scrape-website
+ * @desc Scrape and analyze a website for security issues
+ * @access Public
+ */
+router.post('/scrape-website',
+  aiAnalysisLimiter,
+  [
+    body('url').isURL().withMessage('Valid URL is required')
+  ],
+  async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      console.log('🕷️ Website Scrape Request:', url);
+      
+      // Call the web scraper API
+      const scrapeResult = await webScraperAPIService.scrapeWebsite(url);
+      
+      if (scrapeResult.success) {
+        // Format the scraped data for analysis
+        const analysisData = webScraperAPIService.formatForAIAnalysis(scrapeResult);
+        const aiContext = webScraperAPIService.generateAIContext(analysisData);
+        
+        res.json({
+          success: true,
+          data: {
+            url: url,
+            analysis: analysisData,
+            formatted_report: aiContext,
+            raw_data: {
+              network_requests_count: scrapeResult.data.network_requests.length,
+              console_logs_count: scrapeResult.data.console_logs.length,
+              html_size: scrapeResult.data.html_content.length
+            }
+          },
+          source: 'webscrapper_api'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Website scraping failed',
+          error: scrapeResult.error,
+          url: url
+        });
+      }
+      
+    } catch (error) {
+      console.error('Website scrape route error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to scrape website',
         error: error.message
       });
     }

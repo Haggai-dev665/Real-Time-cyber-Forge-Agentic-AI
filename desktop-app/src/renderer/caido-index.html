@@ -9,6 +9,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/caido-theme.css">
     <link rel="stylesheet" href="css/ai-assistant.css">
+    <link rel="stylesheet" href="css/ai-assistant-v2.css">
     
     <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -26,11 +27,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
-<body>
+<body data-theme="dark">
     <div class="caido-app" id="app">
+        <!-- Mobile Overlay for Sidebar -->
+        <div class="mobile-overlay" id="mobile-overlay"></div>
+        
         <!-- Top Header Bar -->
         <header class="caido-header">
             <div class="caido-header-left">
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Toggle Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
                 <div class="caido-logo">
                     <div class="caido-logo-icon">
                         <i class="fas fa-shield-halved"></i>
@@ -455,6 +464,7 @@
     <script src="interaction-fix.js"></script>
     <script src="api-client.js"></script>
     <script src="components/hybrid-globe.js"></script>
+    <script src="components/ai-assistant-v2.js"></script>
     <script src="caido-app.js"></script>
 </body>
 </html>

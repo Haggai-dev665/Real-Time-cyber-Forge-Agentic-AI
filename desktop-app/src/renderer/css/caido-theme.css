@@ -301,40 +301,53 @@ body {
 }
 
 [data-theme="dark"] {
-    --caido-bg-darkest: #0d0d0f;
-    --caido-bg-darker: #131316;
-    --caido-bg-dark: #1a1a1f;
-    --caido-bg-medium: #1e1e24;
-    --caido-bg-light: #252530;
-    --caido-bg-lighter: #2d2d3a;
-    --caido-bg-hover: #35354a;
+    /* Enhanced Dark Theme Colors */
+    --caido-bg-darkest: #0a0a0f;
+    --caido-bg-darker: #0f0f15;
+    --caido-bg-dark: #141420;
+    --caido-bg-medium: #1a1a28;
+    --caido-bg-light: #222235;
+    --caido-bg-lighter: #2a2a42;
+    --caido-bg-hover: #323250;
 
-    --caido-text-primary: #e4e4e7;
-    --caido-text-secondary: #a1a1aa;
-    --caido-text-muted: #71717a;
-    --caido-text-dim: #52525b;
+    --caido-text-primary: #f0f0f5;
+    --caido-text-secondary: #a8a8b8;
+    --caido-text-muted: #6b6b82;
+    --caido-text-dim: #4a4a60;
 
-    --caido-accent-orange: #f97316;
-    --caido-accent-orange-dim: #ea580c;
-    --caido-accent-blue: #3b82f6;
-    --caido-accent-green: #22c55e;
-    --caido-accent-red: #ef4444;
-    --caido-accent-yellow: #eab308;
-    --caido-accent-purple: #a855f7;
-    --caido-accent-cyan: #06b6d4;
-    --caido-accent-pink: #ec4899;
+    /* Modern Accent Colors */
+    --caido-accent-orange: #ff6b35;
+    --caido-accent-orange-dim: #e55a25;
+    --caido-accent-blue: #4d9fff;
+    --caido-accent-green: #2dd4bf;
+    --caido-accent-red: #ff5757;
+    --caido-accent-yellow: #fbbf24;
+    --caido-accent-purple: #a78bfa;
+    --caido-accent-cyan: #22d3ee;
+    --caido-accent-pink: #f472b6;
 
-    --method-get: #22c55e;
-    --method-post: #3b82f6;
-    --method-put: #f97316;
-    --method-delete: #ef4444;
-    --method-patch: #a855f7;
-    --method-options: #71717a;
-    --method-head: #06b6d4;
+    --method-get: #2dd4bf;
+    --method-post: #4d9fff;
+    --method-put: #ff6b35;
+    --method-delete: #ff5757;
+    --method-patch: #a78bfa;
+    --method-options: #6b6b82;
+    --method-head: #22d3ee;
 
-    --caido-border: #27272a;
-    --caido-border-light: #3f3f46;
-    --caido-border-focus: #f97316;
+    --caido-border: #1f1f30;
+    --caido-border-light: #2d2d45;
+    --caido-border-focus: #ff6b35;
+    
+    /* Glassmorphism Effects */
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-blur: blur(20px);
+    
+    /* Enhanced Shadows */
+    --caido-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --caido-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --caido-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --caido-shadow-glow: 0 0 30px rgba(255, 107, 53, 0.15);
 }
 
 .env-selector {
@@ -384,6 +397,44 @@ body {
     font-size: var(--text-xs);
     font-weight: 600;
     color: white;
+    transition: var(--transition-fast);
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px rgba(77, 159, 255, 0.4);
+}
+
+/* Mobile Menu Toggle - Hidden on Desktop */
+.mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--caido-border);
+    border-radius: var(--radius-md);
+    color: var(--caido-text-primary);
+    cursor: pointer;
+    font-size: var(--text-lg);
+    transition: var(--transition-fast);
+}
+
+.mobile-menu-toggle:hover {
+    background: var(--caido-bg-medium);
+    border-color: var(--caido-border-light);
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: var(--header-height);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: calc(var(--z-sidebar) - 1);
 }
 
 /* ===========================
@@ -1781,4 +1832,455 @@ code {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+/* Large Screens (1400px+) */
+@media (min-width: 1400px) {
+    :root {
+        --sidebar-width: 240px;
+        --text-base: 14px;
+    }
+    
+    .caido-header {
+        padding: 0 var(--space-lg);
+    }
+}
+
+/* Medium-Large Screens (1200px - 1400px) */
+@media (max-width: 1400px) {
+    :root {
+        --sidebar-width: 200px;
+    }
+}
+
+/* Medium Screens (992px - 1200px) */
+@media (max-width: 1200px) {
+    :root {
+        --sidebar-width: 180px;
+    }
+    
+    .caido-header-center {
+        display: none;
+    }
+    
+    .scope-selector {
+        display: none;
+    }
+    
+    .env-selector {
+        display: none;
+    }
+    
+    .project-selector span {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* Tablet Screens (768px - 992px) */
+@media (max-width: 992px) {
+    :root {
+        --sidebar-width: 60px;
+        --header-height: 48px;
+    }
+    
+    .caido-sidebar {
+        width: var(--sidebar-width);
+    }
+    
+    .sidebar-section-title {
+        display: none;
+    }
+    
+    .sidebar-nav-link span {
+        display: none;
+    }
+    
+    .sidebar-nav-link {
+        justify-content: center;
+        padding: var(--space-md);
+    }
+    
+    .sidebar-nav-link i {
+        font-size: var(--text-lg);
+    }
+    
+    .sidebar-nav-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        padding: 1px 4px;
+        font-size: 9px;
+    }
+    
+    .sidebar-collapse-btn {
+        display: none;
+    }
+    
+    .sidebar-footer {
+        padding: var(--space-sm);
+    }
+    
+    .caido-logo span {
+        display: none;
+    }
+    
+    .caido-logo-icon {
+        margin: 0;
+    }
+    
+    .caido-header-right {
+        gap: var(--space-sm);
+    }
+    
+    .project-selector span,
+    .project-selector i:last-child {
+        display: none;
+    }
+    
+    .caido-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .caido-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .query-bar {
+        flex-wrap: wrap;
+    }
+    
+    .query-input {
+        width: 100%;
+        order: 1;
+        margin-top: var(--space-sm);
+    }
+    
+    /* Make panels stack vertically on tablet */
+    .caido-split-horizontal {
+        flex-direction: column;
+    }
+    
+    .caido-panel {
+        min-width: auto;
+        min-height: 200px;
+    }
+    
+    .caido-resizer {
+        width: 100%;
+        height: 4px;
+        cursor: row-resize;
+    }
+}
+
+/* Mobile Screens (max-width: 768px) */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 0px;
+        --header-height: 56px;
+        --text-base: 13px;
+    }
+    
+    .caido-app {
+        position: relative;
+    }
+    
+    /* Show mobile menu toggle */
+    .mobile-menu-toggle {
+        display: flex;
+    }
+    
+    .caido-sidebar {
+        position: fixed;
+        left: -280px;
+        top: var(--header-height);
+        width: 280px;
+        height: calc(100vh - var(--header-height));
+        z-index: var(--z-sidebar);
+        transition: left 0.3s ease;
+        box-shadow: var(--caido-shadow-lg);
+    }
+    
+    .caido-sidebar.mobile-open {
+        left: 0;
+    }
+    
+    /* Show full sidebar nav items when open */
+    .caido-sidebar.mobile-open .sidebar-section-title {
+        display: block;
+    }
+    
+    .caido-sidebar.mobile-open .sidebar-nav-link span {
+        display: inline;
+    }
+    
+    .caido-sidebar.mobile-open .sidebar-nav-link {
+        justify-content: flex-start;
+        padding: var(--space-sm) var(--space-md);
+    }
+    
+    .caido-header {
+        padding: 0 var(--space-md);
+    }
+    
+    .caido-header-left {
+        flex: 1;
+    }
+    
+    .caido-logo {
+        margin-left: 0;
+    }
+    
+    .caido-header-right {
+        gap: var(--space-sm);
+    }
+    
+    .caido-badge {
+        display: none;
+    }
+    
+    .theme-toggle {
+        display: none;
+    }
+    
+    .caido-main {
+        flex-direction: column;
+    }
+    
+    .caido-content {
+        width: 100%;
+    }
+    
+    .caido-tabs {
+        padding: 0 var(--space-sm);
+    }
+    
+    .caido-tab {
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--text-sm);
+    }
+    
+    .caido-tab span {
+        display: none;
+    }
+    
+    .caido-tab i {
+        margin-right: 0;
+    }
+    
+    .action-buttons {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: var(--space-sm);
+    }
+    
+    .action-btn {
+        flex-shrink: 0;
+        padding: var(--space-sm) var(--space-md);
+        font-size: var(--text-xs);
+    }
+    
+    /* Stack table view */
+    .caido-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .caido-table {
+        min-width: 600px;
+    }
+    
+    .caido-table th,
+    .caido-table td {
+        padding: var(--space-sm);
+        font-size: var(--text-xs);
+    }
+    
+    /* Request viewer responsive */
+    .request-viewer {
+        font-size: var(--text-sm);
+    }
+    
+    .request-meta {
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+    }
+    
+    /* Modal responsive */
+    .caido-modal {
+        padding: var(--space-md);
+    }
+    
+    .modal-content {
+        width: calc(100vw - 32px);
+        max-height: calc(100vh - 100px);
+        border-radius: var(--radius-lg);
+    }
+    
+    /* Context menu mobile */
+    .context-menu {
+        position: fixed;
+        left: 50% !important;
+        top: auto !important;
+        bottom: 16px;
+        transform: translateX(-50%);
+        width: calc(100vw - 32px);
+        max-width: 360px;
+        border-radius: var(--radius-lg);
+    }
+    
+    /* Toast mobile */
+    .toast-container {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+    }
+    
+    .toast {
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+/* Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+    :root {
+        --header-height: 52px;
+        --text-xs: 10px;
+        --text-sm: 11px;
+        --text-base: 12px;
+    }
+    
+    .caido-header {
+        padding: 0 var(--space-sm);
+    }
+    
+    .caido-logo-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .caido-tabs {
+        height: 40px;
+    }
+    
+    .caido-tab {
+        padding: var(--space-xs) var(--space-sm);
+    }
+    
+    .query-bar {
+        padding: var(--space-xs) var(--space-sm);
+    }
+    
+    .query-input {
+        padding: var(--space-sm);
+        font-size: var(--text-sm);
+    }
+    
+    .caido-panel-header {
+        height: 28px;
+        padding: 0 var(--space-sm);
+    }
+    
+    .caido-panel-title {
+        font-size: var(--text-xs);
+    }
+    
+    .empty-state {
+        padding: var(--space-lg);
+    }
+    
+    .empty-state-icon {
+        font-size: 36px;
+    }
+    
+    .empty-state-title {
+        font-size: var(--text-base);
+    }
+    
+    .empty-state-description {
+        font-size: var(--text-xs);
+    }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --header-height: 40px;
+    }
+    
+    .caido-sidebar {
+        top: var(--header-height);
+        height: calc(100vh - var(--header-height));
+    }
+    
+    .mobile-overlay {
+        top: var(--header-height);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .caido-sidebar,
+    .caido-header,
+    .caido-tabs,
+    .action-buttons {
+        display: none !important;
+    }
+    
+    .caido-content {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .caido-table {
+        font-size: 10pt;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --caido-border: #555;
+        --caido-text-primary: #fff;
+        --caido-text-secondary: #ccc;
+    }
+    
+    .caido-btn,
+    .action-btn,
+    .header-btn {
+        border-width: 2px;
+    }
 }

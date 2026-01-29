@@ -331,6 +331,7 @@
   async function init() {
     initTheme();
     initUserMenu();
+    initMobileMenu();
     bindHeaderControls();
     bindSidebarNav();
     bindTabs();
@@ -349,6 +350,64 @@
     if (Notification.permission === 'default') {
       Notification.requestPermission();
     }
+  }
+
+  // =========================================
+  // MOBILE MENU
+  // =========================================
+  
+  function initMobileMenu() {
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    
+    if (!menuToggle || !sidebar) return;
+    
+    const closeMobileMenu = () => {
+      sidebar.classList.remove('mobile-open');
+      if (overlay) overlay.style.display = 'none';
+      menuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+    };
+    
+    const openMobileMenu = () => {
+      sidebar.classList.add('mobile-open');
+      if (overlay) overlay.style.display = 'block';
+      menuToggle.querySelector('i').classList.replace('fa-bars', 'fa-times');
+    };
+    
+    menuToggle.addEventListener('click', () => {
+      if (sidebar.classList.contains('mobile-open')) {
+        closeMobileMenu();
+      } else {
+        openMobileMenu();
+      }
+    });
+    
+    // Close on overlay click
+    if (overlay) {
+      overlay.addEventListener('click', closeMobileMenu);
+    }
+    
+    // Close on sidebar link click (mobile)
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.closest('.sidebar-nav-link') && window.innerWidth <= 768) {
+        closeMobileMenu();
+      }
+    });
+    
+    // Close on window resize
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        closeMobileMenu();
+      }
+    });
+    
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+        closeMobileMenu();
+      }
+    });
   }
 
   function initUserMenu() {
@@ -581,8 +640,18 @@
       container.innerHTML = buildWorkflowsLayout();
       bindWorkflowsEvents();
     } else if (screen === 'assistant') {
-      container.innerHTML = buildAssistantLayout();
-      bindAssistant();
+      // Use new V2 AI Assistant if available
+      if (window.AIAssistantV2) {
+        container.innerHTML = buildAssistantLayoutV2();
+        const v2Container = document.getElementById('ai-assistant-v2-container');
+        if (v2Container) {
+          initAIAssistantV2(v2Container);
+        }
+      } else {
+        // Fall back to legacy layout
+        container.innerHTML = buildAssistantLayout();
+        bindAssistant();
+      }
     } else if (screen === 'search') {
       container.innerHTML = buildSearchLayout();
     } else if (screen === 'findings') {
@@ -1242,6 +1311,22 @@
     `;
   }
 
+  // NEW: AI Assistant V2 Layout Builder
+  function buildAssistantLayoutV2() {
+    return `<div id="ai-assistant-v2-container" class="ai-assistant-v2-root" style="height:100%; width:100%;"></div>`;
+  }
+
+  // Global AI Assistant V2 instance
+  let aiAssistantV2Instance = null;
+
+  function initAIAssistantV2(container) {
+    if (window.AIAssistantV2 && cyberforgeAPI) {
+      aiAssistantV2Instance = new window.AIAssistantV2(container, cyberforgeAPI);
+      return true;
+    }
+    return false;
+  }
+
   function bindAssistant() {
     const sendBtn = document.getElementById('assistant-send');
     const input = document.getElementById('assistant-input');
@@ -1354,13 +1439,14 @@
             <i class="fas fa-brain" style="font-size:32px; color:white;"></i>
           </div>
           <h3 style="margin-bottom:6px; font-size:18px;">CyberForge AI Assistant</h3>
-          <p style="color:var(--caido-text-muted); margin-bottom:20px; max-width:480px; margin-left:auto; margin-right:auto; font-size:13px; line-height:1.5;">
-            I'm your AI-powered security analyst. I can analyze URLs, scan for vulnerabilities, 
-            generate payloads, explain security concepts, and help with threat hunting.
+          <p style="color:var(--caido-text-muted); margin-bottom:20px; max-width:520px; margin-left:auto; margin-right:auto; font-size:13px; line-height:1.5;">
+            I'm your AI-powered security analyst with <strong>live website scanning</strong> capabilities. 
+            Enter any URL and I'll scrape it in real-time to analyze security headers, network requests, 
+            vulnerabilities, and more.
           </p>
-          <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:600px; margin:0 auto;">
-            <div class="ai-suggestion ai-welcome-card" data-prompt="Analyze https://example.com for security vulnerabilities" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
-              🔍 Scan a website
+          <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:650px; margin:0 auto;">
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Scan https://example.com for security vulnerabilities and analyze its security headers, network requests, and potential threats" style="background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1)); padding:12px 18px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid rgba(99,102,241,0.4);">
+              🌐 Live Website Security Scan
             </div>
             <div class="ai-suggestion ai-welcome-card" data-prompt="Explain SQL injection attacks and how to prevent them" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
               📚 Learn about SQL injection
@@ -1370,6 +1456,9 @@
             </div>
             <div class="ai-suggestion ai-welcome-card" data-prompt="What are the OWASP Top 10 vulnerabilities?" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
               📋 OWASP Top 10
+            </div>
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Analyze https://github.com for security headers and HTTPS configuration" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+              🔒 Security Headers Check
             </div>
           </div>
         </div>
@@ -1635,7 +1724,17 @@
       typingIndicator.style.display = 'inline';
       sendBtn.disabled = true;
 
-      setPhase('Thinking', ['ai_agent', 'threat_analyzer', 'ml_models', 'memory_store', 'api:/analyze']);
+      // Check if message contains a URL for scanning
+      const urlPattern = /(https?:\/\/[^\s]+)/i;
+      const hasUrl = urlPattern.test(text);
+      const scanKeywords = ['scan', 'analyze', 'check', 'security', 'vulnerab', 'audit', 'inspect', 'threat', 'assess', 'review'];
+      const hasScanIntent = scanKeywords.some(kw => text.toLowerCase().includes(kw));
+      
+      if (hasUrl && hasScanIntent) {
+        setPhase('Scraping Website', ['webscraper', 'network_analyzer', 'security_scanner']);
+      } else {
+        setPhase('Thinking', ['ai_agent', 'threat_analyzer', 'ml_models', 'memory_store', 'api:/analyze']);
+      }
 
       try {
         // Prepare context
@@ -1663,11 +1762,23 @@
           .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
           .slice(-10);
 
+        // Update phase for AI analysis
+        if (hasUrl && hasScanIntent) {
+          setPhase('Analyzing Security Data', ['ai_agent', 'vulnerability_scanner', 'threat_analyzer']);
+        }
+
         // Call the AI endpoint
         const result = await cyberforgeAPI.chatWithAI(text, conversationHistory, context);
 
         if (result.success) {
           const response = result.data?.response || result.data || 'No response received';
+          
+          // Show scan result indicator if website was scanned
+          if (result.data?.website_scan?.scanned) {
+            const ws = result.data.website_scan;
+            setPhase(`Website Scanned: ${ws.risk_level?.toUpperCase() || 'ANALYZED'} (Score: ${ws.risk_score || 'N/A'})`, ['security_report']);
+            await new Promise(r => setTimeout(r, 1500));
+          }
 
           // Stream assistant response slowly
           setPhase('Responding', ['ai_agent', 'ml_models', 'api:/analyze']);
@@ -1727,8 +1838,18 @@
     // Quick action handlers
     const quickActionHandlers = {
       'scan-url': () => {
-        showModal('Scan URL', `
+        showModal('🔍 Live Website Security Scan', `
           <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); padding:12px; border-radius:8px; border:1px solid rgba(99,102,241,0.3);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <i class="fas fa-globe" style="color: var(--caido-accent-purple);"></i>
+                <span style="font-weight:600; color: var(--caido-accent-purple);">Real-Time Website Scraping</span>
+              </div>
+              <p style="font-size:12px; color:var(--caido-text-muted); margin:0;">
+                This will scrape the live website and analyze security headers, network requests, 
+                third-party scripts, console errors, and more.
+              </p>
+            </div>
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Target URL</label>
               <input class="caido-input" name="url" placeholder="https://example.com" style="width:100%;">
@@ -1736,16 +1857,33 @@
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Scan Type</label>
               <select class="caido-input" name="scanType" style="width:100%;">
-                <option value="quick">Quick Scan</option>
-                <option value="deep">Deep Scan</option>
-                <option value="passive">Passive Analysis</option>
+                <option value="comprehensive">Comprehensive Security Audit</option>
+                <option value="quick">Quick Security Check</option>
+                <option value="headers">Security Headers Only</option>
+                <option value="network">Network Request Analysis</option>
               </select>
             </div>
           </div>
         `, async (formData) => {
           const url = formData.get('url');
           const scanType = formData.get('scanType');
-          input.value = `Perform a ${scanType} security scan on ${url}. Check for common vulnerabilities including XSS, SQL injection, CSRF, and security misconfigurations.`;
+          
+          let scanPrompt = '';
+          switch (scanType) {
+            case 'comprehensive':
+              scanPrompt = `Perform a comprehensive security audit on ${url}. Analyze ALL security aspects including: security headers, HTTPS configuration, mixed content, third-party scripts, network requests, cookies, console errors, and provide detailed vulnerability assessment with remediation steps.`;
+              break;
+            case 'headers':
+              scanPrompt = `Analyze the security headers of ${url}. Focus on missing headers like CSP, HSTS, X-Frame-Options, X-Content-Type-Options, and provide specific implementation recommendations.`;
+              break;
+            case 'network':
+              scanPrompt = `Analyze all network requests made by ${url}. Identify suspicious third-party scripts, tracking pixels, potential data leakage, and external resource security.`;
+              break;
+            default:
+              scanPrompt = `Perform a quick security scan on ${url}. Check for major vulnerabilities and security misconfigurations.`;
+          }
+          
+          input.value = scanPrompt;
           sendMessage();
         });
       },

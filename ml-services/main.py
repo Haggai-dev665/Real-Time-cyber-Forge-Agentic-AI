@@ -1,6 +1,10 @@
 """
 Cyber Forge AI - ML/AI Services
 Advanced machine learning and AI services for cybersecurity analysis
+
+Real-Time Agentic AI Cyber Forge for Web Security
+A continuously running, autonomous AI agent that observes, reasons, decides, 
+and acts on web security risks in real time.
 """
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,13 +23,24 @@ from app.services.memory_store import MemoryStore
 from app.routers import analysis, threats, insights, web_scraping, training
 from app.models.schemas import AnalysisRequest, ThreatScanRequest, HealthResponse
 
+# Import autonomous agent components
+from app.agent import (
+    AutonomousAgent, TaskScheduler, ToolRegistry, 
+    AgentPlanner, AgentMemory, AgentObserver, TaskExecutor,
+    # Real-time agentic components
+    agent_state, observation_loop, action_executor,
+    intelligence_feed, scan_mode_manager, operational_assistant,
+)
+from app.routers.agent import router as agent_router, init_agent_components
+from app.routers.control_center import router as control_center_router, init_control_center
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Cyber Forge AI - ML/AI Services",
-    description="Advanced machine learning and AI services for cybersecurity analysis",
+    description="Real-Time Agentic AI Cyber Forge for Web Security - A continuously running, autonomous AI agent",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -47,10 +62,21 @@ threat_analyzer = None
 ml_manager = None
 memory_store = None
 
+# Autonomous agent services
+autonomous_agent = None
+task_scheduler = None
+tool_registry = None
+agent_planner = None
+agent_memory = None
+agent_observer = None
+task_executor = None
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
     global ai_agent, enhanced_ai_agent, threat_analyzer, ml_manager, memory_store
+    global autonomous_agent, task_scheduler, tool_registry, agent_planner
+    global agent_memory, agent_observer, task_executor
     
     logger.info("🚀 Starting Cyber Forge AI ML/AI Services...")
     
@@ -80,6 +106,77 @@ async def startup_event():
             logger.warning("Enhanced AI agent not available")
             enhanced_ai_agent = None
         
+        # Initialize autonomous agent components
+        logger.info("🤖 Initializing Autonomous Agent...")
+        
+        try:
+            # Initialize agent memory
+            agent_memory = AgentMemory()
+            await agent_memory.initialize()
+            
+            # Initialize tool registry
+            tool_registry = ToolRegistry()
+            await tool_registry.initialize()
+            
+            # Initialize observability
+            agent_observer = AgentObserver()
+            await agent_observer.start()
+            
+            # Initialize task executor
+            task_executor = TaskExecutor()
+            
+            # Initialize planner
+            agent_planner = AgentPlanner(
+                memory=agent_memory,
+                tool_registry=tool_registry
+            )
+            
+            # Initialize scheduler
+            task_scheduler = TaskScheduler()
+            
+            # Initialize autonomous agent
+            autonomous_agent = AutonomousAgent(
+                memory=agent_memory,
+                tool_registry=tool_registry,
+                observer=agent_observer,
+                executor=task_executor,
+            )
+            await autonomous_agent.start()
+            
+            # Initialize API components
+            init_agent_components(
+                agent=autonomous_agent,
+                scheduler=task_scheduler,
+                planner=agent_planner,
+                memory=agent_memory,
+                observer=agent_observer,
+                executor=task_executor,
+            )
+            
+            # Initialize real-time agentic components
+            logger.info("🌐 Initializing Real-Time Agentic System...")
+            
+            # Start observation loop with action executor
+            observation_loop.action_executor = action_executor
+            await observation_loop.start()
+            
+            # Initialize Control Center API
+            init_control_center(
+                state_manager=agent_state,
+                observation_loop=observation_loop,
+                action_executor=action_executor,
+                intelligence_feed=intelligence_feed,
+                scan_mode_manager=scan_mode_manager,
+                assistant=operational_assistant,
+            )
+            
+            logger.info("✅ Autonomous Agent initialized successfully")
+            logger.info("🚀 Real-Time Agentic System ACTIVE - Agent is now monitoring")
+            
+        except Exception as e:
+            logger.error(f"⚠️ Autonomous Agent initialization failed: {e}")
+            logger.warning("Continuing without autonomous agent capabilities")
+        
         logger.info("✅ All services initialized successfully")
         
     except Exception as e:
@@ -91,10 +188,45 @@ async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("🔄 Shutting down services...")
     
+    # Stop observation loop
+    try:
+        await observation_loop.stop()
+        logger.info("✅ Observation loop stopped")
+    except Exception as e:
+        logger.error(f"Error stopping observation loop: {e}")
+    
+    # Stop autonomous agent
+    if autonomous_agent:
+        try:
+            await autonomous_agent.stop()
+            logger.info("✅ Autonomous agent stopped")
+        except Exception as e:
+            logger.error(f"Error stopping autonomous agent: {e}")
+    
+    # Stop observer
+    if agent_observer:
+        try:
+            await agent_observer.stop()
+        except Exception as e:
+            logger.error(f"Error stopping observer: {e}")
+    
+    # Cleanup memory
+    if agent_memory:
+        try:
+            await agent_memory.cleanup()
+        except Exception as e:
+            logger.error(f"Error cleaning up agent memory: {e}")
+    
     if memory_store:
         await memory_store.cleanup()
     
     logger.info("✅ Shutdown complete")
+
+# Include agent router
+app.include_router(agent_router)
+
+# Include Control Center router for real-time agentic system
+app.include_router(control_center_router)
 
 # Health check endpoint
 @app.get("/health", response_model=HealthResponse)
@@ -107,7 +239,9 @@ async def health_check():
             "ai_agent": ai_agent.is_ready() if ai_agent else False,
             "threat_analyzer": threat_analyzer.is_ready() if threat_analyzer else False,
             "ml_models": ml_manager.is_ready() if ml_manager else False,
-            "memory_store": memory_store.is_ready() if memory_store else False
+            "memory_store": memory_store.is_ready() if memory_store else False,
+            "observation_loop": observation_loop.running if observation_loop else False,
+            "agent_state": agent_state.status.value if agent_state else "unknown",
         },
         version="1.0.0"
     )

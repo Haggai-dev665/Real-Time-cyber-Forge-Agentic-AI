@@ -1,0 +1,404 @@
+{
+  "url_phishing_kaggle": {
+    "name": "Malicious vs Benign URLs (Kaggle)",
+    "description": "URLs classified as malicious or benign with extracted features",
+    "urls": [
+      "https://raw.githubusercontent.com/hex-plex/Malicious-URL-Classification/master/url_data.csv"
+    ],
+    "category": "phishing",
+    "samples": 450000,
+    "features": [
+      "url",
+      "url_length",
+      "hostname_length",
+      "path_length",
+      "fd_length",
+      "tld_count",
+      "params_count",
+      "fragment_count",
+      "suspicious_words",
+      "digits_ratio",
+      "special_chars_ratio",
+      "is_malicious"
+    ],
+    "target": "is_malicious",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:00.496780",
+    "status": "available"
+  },
+  "phishing_websites_uci": {
+    "name": "UCI Phishing Websites Dataset",
+    "description": "30 features extracted from phishing and legitimate websites",
+    "urls": [
+      "https://raw.githubusercontent.com/shreyagopal/Phishing-Website-Detection-by-Machine-Learning-Techniques/master/dataset.csv"
+    ],
+    "category": "phishing",
+    "samples": 11055,
+    "features": [
+      "having_ip",
+      "url_length",
+      "shortening_service",
+      "having_at",
+      "double_slash",
+      "prefix_suffix",
+      "sub_domain",
+      "ssl_final_state",
+      "domain_registration",
+      "favicon",
+      "port",
+      "https_token",
+      "result"
+    ],
+    "target": "result",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:00.843897",
+    "status": "available"
+  },
+  "malware_pe_features": {
+    "name": "PE Header Malware Features",
+    "description": "Windows PE file features for malware classification",
+    "urls": [
+      "https://raw.githubusercontent.com/urwithajit9/ClaMP/master/dataset/malware.csv"
+    ],
+    "category": "malware",
+    "samples": 4500,
+    "features": [
+      "md5",
+      "file_size",
+      "e_lfanew",
+      "machine",
+      "sections",
+      "characteristics",
+      "timestamp",
+      "entry_point",
+      "image_base",
+      "subsystem",
+      "dll_characteristics",
+      "size_of_code",
+      "size_of_init_data",
+      "size_of_uninit_data",
+      "legitimate"
+    ],
+    "target": "legitimate",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:01.006557",
+    "status": "available"
+  },
+  "android_malware_drebin": {
+    "name": "Android Malware (Drebin-style Features)",
+    "description": "Android app permission features for malware detection",
+    "urls": [
+      "https://raw.githubusercontent.com/cloudhubs/static-malware-analysis/main/Data/android_data.csv"
+    ],
+    "category": "malware",
+    "samples": 15000,
+    "features": [
+      "pkg_name",
+      "permissions",
+      "api_calls",
+      "intents",
+      "is_malware"
+    ],
+    "target": "is_malware",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:01.484651",
+    "status": "available"
+  },
+  "cicids2017_ddos": {
+    "name": "CICIDS 2017 DDoS Detection",
+    "description": "Network flows with DDoS and benign traffic",
+    "urls": [
+      "https://raw.githubusercontent.com/AbdullahTarique/CICIDS-2017-Dataset/main/Sample/Friday-WorkingHours-Afternoon-DDos.csv"
+    ],
+    "category": "intrusion",
+    "samples": 128000,
+    "features": [
+      "flow_duration",
+      "total_fwd_packets",
+      "total_bwd_packets",
+      "flow_bytes_s",
+      "flow_packets_s",
+      "avg_packet_size",
+      "label"
+    ],
+    "target": "label",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:01.913481",
+    "status": "available"
+  },
+  "nsl_kdd_train": {
+    "name": "NSL-KDD Network Intrusion",
+    "description": "Improved KDD Cup 99 dataset for network intrusion detection",
+    "urls": [
+      "https://raw.githubusercontent.com/defcom17/NSL_KDD/master/KDDTrain%2B.txt"
+    ],
+    "category": "intrusion",
+    "samples": 125973,
+    "features": [
+      "duration",
+      "protocol_type",
+      "service",
+      "flag",
+      "src_bytes",
+      "dst_bytes",
+      "land",
+      "wrong_fragment",
+      "urgent",
+      "hot",
+      "num_failed_logins",
+      "logged_in",
+      "num_compromised",
+      "attack_type"
+    ],
+    "target": "attack_type",
+    "format": "txt",
+    "downloaded_at": "2026-01-29T16:35:02.373654",
+    "status": "available"
+  },
+  "unsw_nb15": {
+    "name": "UNSW-NB15 Network Dataset",
+    "description": "Modern network intrusion dataset with 9 attack types",
+    "urls": [
+      "https://raw.githubusercontent.com/jmnwong/UNSW-NB15/master/UNSW-NB15_1.csv"
+    ],
+    "category": "intrusion",
+    "samples": 175000,
+    "features": [
+      "srcip",
+      "sport",
+      "dstip",
+      "dsport",
+      "proto",
+      "state",
+      "dur",
+      "sbytes",
+      "dbytes",
+      "sttl",
+      "dttl",
+      "attack_cat",
+      "label"
+    ],
+    "target": "label",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:02.792570",
+    "status": "available"
+  },
+  "ipsum_malicious_ips": {
+    "name": "IPsum Malicious IPs",
+    "description": "Daily updated list of malicious IP addresses",
+    "urls": [
+      "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt"
+    ],
+    "category": "threat_intel",
+    "samples": 25000,
+    "features": [
+      "ip_address",
+      "threat_level"
+    ],
+    "target": "threat_level",
+    "format": "txt",
+    "downloaded_at": "2026-01-29T16:35:03.526227",
+    "status": "available"
+  },
+  "feodotracker_botnet": {
+    "name": "Feodo Tracker Botnet C2",
+    "description": "Botnet Command & Control server IPs",
+    "urls": [
+      "https://feodotracker.abuse.ch/downloads/ipblocklist.csv"
+    ],
+    "category": "threat_intel",
+    "samples": 5000,
+    "features": [
+      "first_seen",
+      "dst_ip",
+      "dst_port",
+      "malware",
+      "status"
+    ],
+    "target": "malware",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:03.907662",
+    "status": "available"
+  },
+  "urlhaus_malicious": {
+    "name": "URLhaus Malicious URLs",
+    "description": "Database of malware distribution URLs",
+    "urls": [
+      "https://urlhaus.abuse.ch/downloads/csv_recent/"
+    ],
+    "category": "threat_intel",
+    "samples": 10000,
+    "features": [
+      "dateadded",
+      "url",
+      "url_status",
+      "threat",
+      "tags",
+      "urlhaus_link"
+    ],
+    "target": "threat",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:04.832782",
+    "status": "available"
+  },
+  "spambase_uci": {
+    "name": "UCI Spambase",
+    "description": "Email spam classification with word frequencies",
+    "urls": [
+      "https://archive.ics.uci.edu/ml/machine-learning-databases/spambase/spambase.data"
+    ],
+    "category": "spam",
+    "samples": 4601,
+    "features": [
+      "word_freq_make",
+      "word_freq_address",
+      "word_freq_all",
+      "char_freq_semicolon",
+      "char_freq_dollar",
+      "capital_run_avg",
+      "capital_run_longest",
+      "capital_run_total",
+      "is_spam"
+    ],
+    "target": "is_spam",
+    "format": "data",
+    "downloaded_at": "2026-01-29T16:35:05.124845",
+    "status": "available"
+  },
+  "xss_payloads": {
+    "name": "XSS Attack Payloads",
+    "description": "Cross-site scripting attack patterns",
+    "urls": [
+      "https://raw.githubusercontent.com/payloadbox/xss-payload-list/master/Intruder/xss-payload-list.txt"
+    ],
+    "category": "web_attack",
+    "samples": 5000,
+    "features": [
+      "payload",
+      "type"
+    ],
+    "target": "type",
+    "format": "txt",
+    "downloaded_at": "2026-01-29T16:35:05.293648",
+    "status": "available"
+  },
+  "sql_injection_payloads": {
+    "name": "SQL Injection Payloads",
+    "description": "SQL injection attack patterns",
+    "urls": [
+      "https://raw.githubusercontent.com/payloadbox/sql-injection-payload-list/master/Intruder/SQL-Injection-Payloads/Auth-Bypass.txt",
+      "https://raw.githubusercontent.com/payloadbox/sql-injection-payload-list/master/Intruder/SQL-Injection-Payloads/Error-Based.txt"
+    ],
+    "category": "web_attack",
+    "samples": 3000,
+    "features": [
+      "payload",
+      "injection_type"
+    ],
+    "target": "injection_type",
+    "format": "txt",
+    "downloaded_at": "2026-01-29T16:35:05.501629",
+    "status": "available"
+  },
+  "http_csic_requests": {
+    "name": "HTTP CSIC 2010 Dataset",
+    "description": "HTTP requests with web attacks (XSS, SQLi, etc.)",
+    "urls": [
+      "https://raw.githubusercontent.com/Morzeux/HttpRequestsDataset/master/csic_http/csic_2010_cleaned.csv"
+    ],
+    "category": "web_attack",
+    "samples": 36000,
+    "features": [
+      "method",
+      "url",
+      "protocol",
+      "content",
+      "is_attack"
+    ],
+    "target": "is_attack",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:05.724490",
+    "status": "available"
+  },
+  "cryptomining_scripts": {
+    "name": "Cryptomining Script Detection",
+    "description": "JavaScript cryptomining patterns",
+    "urls": [
+      "https://raw.githubusercontent.com/ArslanKhan-cs/JSMiner/main/data/cryptominer.csv"
+    ],
+    "category": "cryptomining",
+    "samples": 5000,
+    "features": [
+      "script_hash",
+      "obfuscated",
+      "api_calls",
+      "is_miner"
+    ],
+    "target": "is_miner",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:05.924379",
+    "status": "available"
+  },
+  "dga_domains": {
+    "name": "DGA Domain Detection",
+    "description": "Domain Generation Algorithm detection dataset",
+    "urls": [
+      "https://raw.githubusercontent.com/baderj/domain_generation_algorithms/master/dga_db/export/dga_domains_sample.csv"
+    ],
+    "category": "dns",
+    "samples": 50000,
+    "features": [
+      "domain",
+      "family",
+      "length",
+      "entropy",
+      "consonant_ratio",
+      "is_dga"
+    ],
+    "target": "is_dga",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:06.692993",
+    "status": "available"
+  },
+  "ssl_certificates": {
+    "name": "SSL Certificate Analysis",
+    "description": "SSL certificate features for malicious detection",
+    "urls": [
+      "https://raw.githubusercontent.com/JustinGuese/ML-Security-SSL-Phishing/master/data/SSL-phishing.csv"
+    ],
+    "category": "ssl",
+    "samples": 8000,
+    "features": [
+      "cert_issuer",
+      "cert_validity",
+      "domain_match",
+      "is_ev",
+      "cipher_strength",
+      "is_phishing"
+    ],
+    "target": "is_phishing",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:06.841582",
+    "status": "available"
+  },
+  "system_logs_hdfs": {
+    "name": "HDFS System Logs",
+    "description": "Hadoop system logs for anomaly detection",
+    "urls": [
+      "https://raw.githubusercontent.com/logpai/loghub/master/HDFS/HDFS.log_structured.csv"
+    ],
+    "category": "logs",
+    "samples": 11000,
+    "features": [
+      "timestamp",
+      "level",
+      "component",
+      "content",
+      "event_template"
+    ],
+    "target": "level",
+    "format": "csv",
+    "downloaded_at": "2026-01-29T16:35:07.926689",
+    "status": "available"
+  }
+}

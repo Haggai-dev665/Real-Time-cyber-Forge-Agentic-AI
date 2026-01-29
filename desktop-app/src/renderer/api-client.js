@@ -109,6 +109,11 @@ class CyberForgeAPI {
     return this.get('/health');
   }
 
+  // Alias for AI Assistant V2
+  async healthCheck() {
+    return this.checkHealth();
+  }
+
   async getServerStatus() {
     return this.get('/ws/info');
   }
@@ -564,6 +569,10 @@ class CyberForgeAPI {
 
   async analyzeWebsiteAI(url, content = null) {
     return this.post('/api/ai/analyze-website', { url, content });
+  }
+
+  async scrapeWebsite(url) {
+    return this.post('/api/ai/scrape-website', { url });
   }
 
   async scanThreatsAI(data) {

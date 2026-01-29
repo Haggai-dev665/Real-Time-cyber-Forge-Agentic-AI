@@ -413,27 +413,56 @@ class AuthService {
     const storedToken = this.store.get('authToken');
     
     if (storedUser && storedToken) {
-      // Verify token is still valid
+      // Load from storage first (trust cached credentials)
+      this.currentUser = storedUser;
+      this.authToken = storedToken;
+      
+      // Try to verify token with backend (non-blocking)
       try {
         const response = await axios.get(`${this.backendUrl}/api/auth/profile`, {
           headers: {
             Authorization: `Bearer ${storedToken}`
-          }
+          },
+          timeout: 5000 // 5 second timeout
         });
         
         if (response.data.success) {
+          // Update with fresh user data from backend
           this.currentUser = response.data.data.user;
-          this.authToken = storedToken;
+          this.store.set('currentUser', this.currentUser);
           
           return {
             success: true,
             user: this.currentUser
           };
+        } else {
+          // Token is explicitly invalid (not a network error)
+          console.log('Token invalid, clearing auth');
+          this.clearAuth();
+          return {
+            success: false,
+            message: 'Session expired. Please login again.'
+          };
         }
       } catch (error) {
-        // Token invalid, clear storage
-        this.store.delete('authToken');
-        this.store.delete('currentUser');
+        // Network error or timeout - DON'T clear auth, use cached credentials
+        // Only clear if we get an explicit 401 Unauthorized response
+        if (error.response?.status === 401) {
+          console.log('Token expired (401), clearing auth');
+          this.clearAuth();
+          return {
+            success: false,
+            message: 'Session expired. Please login again.'
+          };
+        }
+        
+        // Backend unavailable - use cached credentials (offline mode)
+        console.log('Backend unavailable, using cached credentials');
+        return {
+          success: true,
+          user: this.currentUser,
+          offline: true
+        };
       }
     }
 

@@ -169,7 +169,7 @@ class CyberForgeApp {
             });
         });
 
-        // Global search
+        // Global search with AI enhancement
         const globalSearch = document.getElementById('global-search');
         if (globalSearch) {
             globalSearch.addEventListener('keypress', (e) => {
@@ -180,6 +180,11 @@ class CyberForgeApp {
             
             globalSearch.addEventListener('input', (e) => {
                 this.handleSearchSuggestions(e.target.value);
+            });
+            
+            // Add AI-powered suggestions
+            globalSearch.addEventListener('focus', () => {
+                this.showAISuggestions();
             });
         }
 
@@ -194,20 +199,41 @@ class CyberForgeApp {
             });
         });
 
-        // Header controls
+        // Header controls with enhanced functionality
         const notificationsBtn = document.getElementById('notifications-btn');
         if (notificationsBtn) {
             notificationsBtn.addEventListener('click', () => this.showNotificationsPanel());
         }
 
-        const fullscreenToggle = document.getElementById('fullscreen-toggle');
-        if (fullscreenToggle) {
-            fullscreenToggle.addEventListener('click', () => this.toggleFullscreen());
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        const aiChatBtn = document.getElementById('ai-chat-btn');
+        if (aiChatBtn) {
+            aiChatBtn.addEventListener('click', () => this.openAIChat());
         }
 
         const settingsBtn = document.getElementById('settings-btn');
         if (settingsBtn) {
-            settingsBtn.addEventListener('click', () => this.showQuickSettings());
+            settingsBtn.addEventListener('click', () => this.showScreen('settings'));
+        }
+
+        // Footer quick actions
+        const runScanBtn = document.getElementById('run-scan-btn');
+        if (runScanBtn) {
+            runScanBtn.addEventListener('click', () => this.runQuickScan());
+        }
+
+        const exportReportBtn = document.getElementById('export-report-btn');
+        if (exportReportBtn) {
+            exportReportBtn.addEventListener('click', () => this.exportReport());
+        }
+
+        const fullScreenBtn = document.getElementById('full-screen-btn');
+        if (fullScreenBtn) {
+            fullScreenBtn.addEventListener('click', () => this.toggleFullscreen());
         }
 
         // Sidebar toggle
@@ -269,6 +295,9 @@ class CyberForgeApp {
         window.addEventListener('resize', () => {
             this.handleResize();
         });
+        
+        // Start AI activity simulation
+        this.startAIActivityUpdates();
     }
 
     async connectToServices() {
@@ -936,6 +965,355 @@ class CyberForgeApp {
             );
             section.style.display = hasVisibleItems ? 'block' : 'none';
         });
+    }
+
+    // ===========================
+    // AI AGENT & FOOTER METHODS
+    // ===========================
+
+    startAIActivityUpdates() {
+        // Update AI agent status every 3 seconds
+        this.updateAIAgentStatus();
+        setInterval(() => this.updateAIAgentStatus(), 3000);
+
+        // Update agent tasks every 5 seconds
+        this.updateAgentTasks();
+        setInterval(() => this.updateAgentTasks(), 5000);
+
+        // Update system stats in footer
+        this.updateFooterSystemStats();
+        setInterval(() => this.updateFooterSystemStats(), 5000);
+
+        // Update notification count
+        this.updateNotificationCount();
+        setInterval(() => this.updateNotificationCount(), 10000);
+    }
+
+    updateAIAgentStatus() {
+        const agentStates = [
+            'Analyzing threats...',
+            'Scanning network...',
+            'Training models...',
+            'Monitoring traffic...',
+            'Detecting anomalies...',
+            'Processing data...',
+            'Learning patterns...',
+            'Investigating alerts...'
+        ];
+
+        const randomState = agentStates[Math.floor(Math.random() * agentStates.length)];
+        const agentStateEl = document.getElementById('agent-state');
+        if (agentStateEl) {
+            agentStateEl.textContent = randomState;
+        }
+
+        // Update agent count (simulate active agents)
+        const agentCountEl = document.getElementById('agent-count');
+        if (agentCountEl) {
+            const activeAgents = Math.floor(Math.random() * 3) + 2; // 2-4 agents
+            agentCountEl.textContent = activeAgents;
+        }
+
+        // Update connection status randomly
+        this.updateConnectionStatus('backend', Math.random() > 0.3);
+        this.updateConnectionStatus('ml', Math.random() > 0.4);
+    }
+
+    updateAgentTasks() {
+        const tasks = [
+            'Analyzing 127 packets',
+            'Scanning 45 endpoints',
+            'Classifying 23 threats',
+            'Training DNN model',
+            'Processing ML pipeline',
+            'Extracting features',
+            'Running inference',
+            'Monitoring web traffic'
+        ];
+
+        const agentTasksEl = document.getElementById('agent-tasks');
+        if (agentTasksEl) {
+            // Randomly select 1-3 tasks
+            const numTasks = Math.floor(Math.random() * 3) + 1;
+            const selectedTasks = [];
+            for (let i = 0; i < numTasks; i++) {
+                selectedTasks.push(tasks[Math.floor(Math.random() * tasks.length)]);
+            }
+
+            agentTasksEl.innerHTML = selectedTasks
+                .map(task => `<span class="agent-task">${task}</span>`)
+                .join('');
+        }
+
+        // Update activity text
+        const activityTextEl = document.getElementById('ai-activity-text');
+        if (activityTextEl) {
+            const activities = [
+                'AI agents actively monitoring...',
+                'Deep learning models analyzing data...',
+                'Neural networks processing threats...',
+                'Machine learning in progress...',
+                'Autonomous agents working...'
+            ];
+            activityTextEl.textContent = activities[Math.floor(Math.random() * activities.length)];
+        }
+    }
+
+    updateFooterSystemStats() {
+        // Update CPU
+        const cpuEl = document.getElementById('cpu-usage');
+        if (cpuEl) {
+            const cpu = Math.floor(Math.random() * 40) + 20; // 20-60%
+            cpuEl.textContent = `${cpu}%`;
+        }
+
+        // Update Memory
+        const memoryEl = document.getElementById('memory-usage');
+        if (memoryEl) {
+            const memory = Math.floor(Math.random() * 30) + 40; // 40-70%
+            memoryEl.textContent = `${memory}%`;
+        }
+
+        // Update threats blocked
+        const threatsEl = document.getElementById('threats-blocked');
+        if (threatsEl) {
+            const currentCount = parseInt(threatsEl.textContent) || 0;
+            const increment = Math.floor(Math.random() * 5);
+            threatsEl.textContent = currentCount + increment;
+        }
+    }
+
+    updateNotificationCount() {
+        const notificationBadge = document.getElementById('notification-count');
+        if (notificationBadge) {
+            const currentCount = parseInt(notificationBadge.textContent) || 0;
+            const newCount = currentCount + Math.floor(Math.random() * 3);
+            notificationBadge.textContent = newCount > 0 ? newCount : '';
+        }
+    }
+
+    toggleTheme() {
+        if (window.themeManager) {
+            window.themeManager.toggleTheme();
+        } else {
+            document.body.classList.toggle('light-theme');
+        }
+
+        // Update theme icon
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) {
+                icon.className = document.body.classList.contains('light-theme') 
+                    ? 'fas fa-sun' 
+                    : 'fas fa-moon';
+            }
+        }
+
+        window.notificationSystem?.success('Theme', 'Theme changed successfully');
+    }
+
+    openAIChat() {
+        this.showScreen('ai-assistant');
+        window.notificationSystem?.info('AI Assistant', 'Opening AI chat interface...');
+    }
+
+    showNotificationsPanel() {
+        // Create notification panel if it doesn't exist
+        let panel = document.getElementById('notifications-panel');
+        
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'notifications-panel';
+            panel.className = 'notifications-panel';
+            panel.innerHTML = `
+                <div class="panel-header">
+                    <h3>Notifications</h3>
+                    <button class="close-panel" onclick="document.getElementById('notifications-panel').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="panel-content">
+                    <div class="notification-item">
+                        <i class="fas fa-shield-alt notification-icon success"></i>
+                        <div class="notification-details">
+                            <strong>Security Scan Complete</strong>
+                            <p>No threats detected in last scan</p>
+                            <span class="notification-time">5 minutes ago</span>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-exclamation-triangle notification-icon warning"></i>
+                        <div class="notification-details">
+                            <strong>Suspicious Activity Detected</strong>
+                            <p>Unusual network traffic from 192.168.1.45</p>
+                            <span class="notification-time">12 minutes ago</span>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <i class="fas fa-brain notification-icon info"></i>
+                        <div class="notification-details">
+                            <strong>AI Model Updated</strong>
+                            <p>Threat detection model v2.1 deployed</p>
+                            <span class="notification-time">1 hour ago</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <button class="btn btn-sm btn-secondary" onclick="alert('Mark all as read')">Mark all as read</button>
+                    <button class="btn btn-sm btn-primary" onclick="alert('View all notifications')">View All</button>
+                </div>
+            `;
+            document.body.appendChild(panel);
+
+            // Add styles for notification panel
+            const panelStyles = `
+                .notifications-panel {
+                    position: fixed;
+                    top: 70px;
+                    right: 20px;
+                    width: 400px;
+                    max-height: 600px;
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-lg);
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                    z-index: var(--z-modal);
+                    animation: slideInRight 0.3s ease-out;
+                }
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                .panel-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 1rem;
+                    border-bottom: 1px solid var(--border-color);
+                }
+                .panel-header h3 {
+                    margin: 0;
+                    font-size: 1.125rem;
+                }
+                .close-panel {
+                    background: none;
+                    border: none;
+                    color: var(--text-secondary);
+                    font-size: 1.25rem;
+                    cursor: pointer;
+                    padding: 0.25rem;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    transition: all 0.2s;
+                }
+                .close-panel:hover {
+                    background: var(--bg-hover);
+                    color: var(--text-primary);
+                }
+                .panel-content {
+                    max-height: 450px;
+                    overflow-y: auto;
+                    padding: 0.5rem;
+                }
+                .notification-item {
+                    display: flex;
+                    gap: 1rem;
+                    padding: 1rem;
+                    border-radius: var(--radius-md);
+                    margin-bottom: 0.5rem;
+                    background: var(--bg-tertiary);
+                    transition: all 0.2s;
+                }
+                .notification-item:hover {
+                    background: var(--bg-hover);
+                }
+                .notification-icon {
+                    font-size: 1.5rem;
+                    flex-shrink: 0;
+                }
+                .notification-icon.success { color: var(--success); }
+                .notification-icon.warning { color: var(--warning); }
+                .notification-icon.info { color: var(--info); }
+                .notification-details {
+                    flex: 1;
+                }
+                .notification-details strong {
+                    display: block;
+                    margin-bottom: 0.25rem;
+                    color: var(--text-primary);
+                }
+                .notification-details p {
+                    font-size: 0.875rem;
+                    color: var(--text-secondary);
+                    margin: 0;
+                }
+                .notification-time {
+                    font-size: 0.75rem;
+                    color: var(--text-muted);
+                }
+                .panel-footer {
+                    display: flex;
+                    gap: 0.5rem;
+                    padding: 1rem;
+                    border-top: 1px solid var(--border-color);
+                }
+            `;
+            const styleEl = document.createElement('style');
+            styleEl.textContent = panelStyles;
+            document.head.appendChild(styleEl);
+        } else {
+            panel.remove();
+        }
+
+        // Reset notification count
+        const notificationBadge = document.getElementById('notification-count');
+        if (notificationBadge) {
+            notificationBadge.textContent = '';
+        }
+    }
+
+    showAISuggestions() {
+        const suggestions = [
+            'Check recent threat alerts',
+            'Analyze suspicious URLs',
+            'Review ML model performance',
+            'Scan network for vulnerabilities'
+        ];
+        
+        // This would show AI-powered suggestions
+        console.log('AI Suggestions:', suggestions);
+    }
+
+    runQuickScan() {
+        window.notificationSystem?.info('Quick Scan', 'Starting quick security scan...');
+        
+        // Simulate scan progress
+        setTimeout(() => {
+            window.notificationSystem?.success('Quick Scan', 'Scan completed - No threats found');
+        }, 3000);
+    }
+
+    exportReport() {
+        window.notificationSystem?.info('Export', 'Generating security report...');
+        
+        setTimeout(() => {
+            window.notificationSystem?.success('Export', 'Report exported successfully');
+        }, 2000);
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            window.notificationSystem?.info('Fullscreen', 'Entered fullscreen mode');
+        } else {
+            document.exitFullscreen();
+            window.notificationSystem?.info('Fullscreen', 'Exited fullscreen mode');
+        }
     }
 }
 

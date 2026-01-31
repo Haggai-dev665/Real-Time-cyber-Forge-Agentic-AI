@@ -21,6 +21,7 @@ const threatHuntingRoutes = require('./routes/threat-hunting');
 const mlTrainingRoutes = require('./routes/ml-training');
 const featuresRoutes = require('./routes/features');
 const otxRoutes = require('./routes/otx');
+const childPagesRoutes = require('./routes/child-pages');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 
@@ -90,6 +91,9 @@ class CyberForgeServer {
     
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);
+    
+    // Child pages routes (browser monitor, scan modes, real-time intel, AI agent, etc.)
+    this.app.use('/api', childPagesRoutes);
 
     // WebSocket endpoint info
     this.app.get('/ws/info', (req, res) => {

@@ -47,6 +47,12 @@
                     <span>Cyberforge</span>
                 </div>
                 
+                <!-- AI Agent Status in Header -->
+                <div class="header-agent-status" id="header-agent-status" title="AI Agent Status">
+                    <span class="agent-status-indicator-mini"></span>
+                    <span class="agent-status-label">Agent Active</span>
+                </div>
+                
                 <div class="scope-selector" id="scope-selector">
                     <i class="fas fa-filter"></i>
                     <span>Unset Scope</span>
@@ -56,25 +62,58 @@
             
             <div class="caido-header-center">
                 <div class="header-controls">
-                    <button class="header-btn" id="record-btn" title="Record">
+                    <button class="header-btn" id="record-btn" title="Start Recording">
                         <i class="fas fa-circle"></i>
                     </button>
-                    <button class="header-btn active" id="pause-btn" title="Pause">
+                    <button class="header-btn active" id="pause-btn" title="Pause Recording">
                         <i class="fas fa-pause"></i>
                     </button>
+                    <button class="header-btn" id="stop-btn" title="Stop Recording">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+                
+                <div class="header-search" id="header-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search requests, threats, events..." id="global-search">
+                    <kbd>⌘K</kbd>
                 </div>
                 
                 <div class="queue-status" id="queue-status">
                     <i class="fas fa-layer-group"></i>
                     <span>Queuing</span>
+                    <span class="queue-count" id="queue-count">0</span>
                 </div>
             </div>
             
             <div class="caido-header-right">
+                <!-- Real-time Stats -->
+                <div class="header-stats">
+                    <div class="header-stat" title="Requests Captured">
+                        <i class="fas fa-arrow-right-arrow-left"></i>
+                        <span id="stat-requests">0</span>
+                    </div>
+                    <div class="header-stat" title="Threats Detected">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="stat-threats">0</span>
+                    </div>
+                    <div class="header-stat" title="Events Today">
+                        <i class="fas fa-bell"></i>
+                        <span id="stat-events">0</span>
+                    </div>
+                </div>
+                
                 <span class="caido-badge green" id="backend-status" title="Backend Connection">Connecting...</span>
+                
+                <button class="header-btn" id="notifications-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notification-count">0</span>
+                </button>
+                
                 <button class="header-btn" id="theme-toggle" title="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
+                
                 <div class="env-selector" id="env-selector">
                     <i class="fas fa-globe"></i>
                     <span>Environment</span>
@@ -106,24 +145,42 @@
                                 <i class="fas fa-gauge"></i>
                                 <span>Dashboard</span>
                             </a>
+                            <!-- Dashboard Child Components -->
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="dashboard-security">Security Score</a></li>
+                                <li><a class="sidebar-child-link" data-screen="dashboard-activity">Activity Feed</a></li>
+                                <li><a class="sidebar-child-link" data-screen="dashboard-metrics">Live Metrics</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="sitemap">
                                 <i class="fas fa-sitemap"></i>
                                 <span>Sitemap</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="sitemap-tree">Tree View</a></li>
+                                <li><a class="sidebar-child-link" data-screen="sitemap-graph">Graph View</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="scopes">
                                 <i class="fas fa-bullseye"></i>
                                 <span>Scopes</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="scopes-active">Active Scopes</a></li>
+                                <li><a class="sidebar-child-link" data-screen="scopes-excluded">Excluded</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="filters">
                                 <i class="fas fa-filter"></i>
                                 <span>Filters</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="filters-saved">Saved Filters</a></li>
+                                <li><a class="sidebar-child-link" data-screen="filters-recent">Recent</a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -138,24 +195,42 @@
                                 <span>Intercept</span>
                                 <span class="sidebar-nav-badge">5</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="intercept-queue">Queue <span class="child-badge">5</span></a></li>
+                                <li><a class="sidebar-child-link" data-screen="intercept-rules">Rules</a></li>
+                                <li><a class="sidebar-child-link" data-screen="intercept-breakpoints">Breakpoints</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link active" data-screen="http-history">
                                 <i class="fas fa-history"></i>
                                 <span>HTTP History</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="http-all">All Requests</a></li>
+                                <li><a class="sidebar-child-link" data-screen="http-flagged">Flagged</a></li>
+                                <li><a class="sidebar-child-link" data-screen="http-errors">Errors</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="ws-history">
                                 <i class="fas fa-plug"></i>
                                 <span>WS History</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="ws-connections">Connections</a></li>
+                                <li><a class="sidebar-child-link" data-screen="ws-messages">Messages</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="match-replace">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>Match & Replace</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="match-request">Request Rules</a></li>
+                                <li><a class="sidebar-child-link" data-screen="match-response">Response Rules</a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -169,42 +244,75 @@
                                 <i class="fas fa-redo"></i>
                                 <span>Replay</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="replay-single">Single Request</a></li>
+                                <li><a class="sidebar-child-link" data-screen="replay-batch">Batch Replay</a></li>
+                                <li><a class="sidebar-child-link" data-screen="replay-diff">Compare</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="automate">
                                 <i class="fas fa-robot"></i>
                                 <span>Automate</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="automate-intruder">Intruder</a></li>
+                                <li><a class="sidebar-child-link" data-screen="automate-fuzzer">Fuzzer</a></li>
+                                <li><a class="sidebar-child-link" data-screen="automate-payloads">Payloads</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="workflows">
                                 <i class="fas fa-project-diagram"></i>
                                 <span>Workflows</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="workflows-active">Active</a></li>
+                                <li><a class="sidebar-child-link" data-screen="workflows-templates">Templates</a></li>
+                                <li><a class="sidebar-child-link" data-screen="workflows-history">History</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="assistant">
                                 <i class="fas fa-magic"></i>
                                 <span>Assistant</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="assistant-chat">AI Chat</a></li>
+                                <li><a class="sidebar-child-link" data-screen="assistant-suggestions">Suggestions</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="ai-models">
                                 <i class="fas fa-brain"></i>
                                 <span>AI Models</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="models-trained">Trained Models</a></li>
+                                <li><a class="sidebar-child-link" data-screen="models-training">In Training</a></li>
+                                <li><a class="sidebar-child-link" data-screen="models-datasets">Datasets</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="threat-intel">
                                 <i class="fas fa-radiation"></i>
                                 <span>Threat Intel</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="intel-feeds">Threat Feeds</a></li>
+                                <li><a class="sidebar-child-link" data-screen="intel-iocs">IOCs</a></li>
+                                <li><a class="sidebar-child-link" data-screen="intel-cves">CVEs</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="environment">
                                 <i class="fas fa-cog"></i>
                                 <span>Environment</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="env-variables">Variables</a></li>
+                                <li><a class="sidebar-child-link" data-screen="env-secrets">Secrets</a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -218,18 +326,32 @@
                                 <i class="fas fa-search"></i>
                                 <span>Search</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="search-advanced">Advanced Search</a></li>
+                                <li><a class="sidebar-child-link" data-screen="search-saved">Saved Queries</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="findings">
                                 <i class="fas fa-flag"></i>
                                 <span>Findings</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="findings-critical">Critical <span class="child-badge critical">0</span></a></li>
+                                <li><a class="sidebar-child-link" data-screen="findings-high">High <span class="child-badge high">0</span></a></li>
+                                <li><a class="sidebar-child-link" data-screen="findings-medium">Medium</a></li>
+                                <li><a class="sidebar-child-link" data-screen="findings-low">Low</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="exports">
                                 <i class="fas fa-download"></i>
                                 <span>Exports</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="exports-reports">Reports</a></li>
+                                <li><a class="sidebar-child-link" data-screen="exports-data">Data Export</a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -243,48 +365,219 @@
                                 <i class="fas fa-folder"></i>
                                 <span>Files</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="files-project">Project Files</a></li>
+                                <li><a class="sidebar-child-link" data-screen="files-notes">Notes</a></li>
+                                <li><a class="sidebar-child-link" data-screen="files-scripts">Scripts</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="plugins">
                                 <i class="fas fa-puzzle-piece"></i>
                                 <span>Plugins</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="plugins-installed">Installed</a></li>
+                                <li><a class="sidebar-child-link" data-screen="plugins-marketplace">Marketplace</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="workspace">
                                 <i class="fas fa-briefcase"></i>
                                 <span>Workspace</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="workspace-settings">Settings</a></li>
+                                <li><a class="sidebar-child-link" data-screen="workspace-team">Team</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="sync-status">
                                 <i class="fas fa-cloud"></i>
                                 <span>Sync Status</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="sync-pending">Pending</a></li>
+                                <li><a class="sidebar-child-link" data-screen="sync-history">Sync History</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="browser-extension">
                                 <i class="fas fa-globe"></i>
                                 <span>Browser Extension</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="ext-install">Install</a></li>
+                                <li><a class="sidebar-child-link" data-screen="ext-settings">Settings</a></li>
+                            </ul>
                         </li>
                         <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="mobile-companion">
                                 <i class="fas fa-mobile-alt"></i>
                                 <span>Mobile Companion</span>
                             </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="mobile-pair">Pair Device</a></li>
+                                <li><a class="sidebar-child-link" data-screen="mobile-devices">Devices</a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
 
                 <!-- AI Agent Section -->
-                <div class="sidebar-section">
-                    <div class="sidebar-section-title">AI Agent</div>
+                <div class="sidebar-section agent-section">
+                    <div class="sidebar-section-title">
+                        <span>AI Agent</span>
+                        <div class="agent-status-indicator">
+                            <span class="agent-pulse"></span>
+                        </div>
+                    </div>
                     <ul class="sidebar-nav">
                         <li class="sidebar-nav-item">
-                            <a class="sidebar-nav-link" data-screen="ai-agent">
+                            <a class="sidebar-nav-link" data-screen="agent-control">
+                                <i class="fas fa-terminal"></i>
+                                <span>Agent Control Center</span>
+                                <span class="sidebar-nav-badge agent-badge">LIVE</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="agent-tasks">
+                                <i class="fas fa-tasks"></i>
+                                <span>Active Tasks</span>
+                                <span class="sidebar-nav-badge" id="active-tasks-count">0</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="agent-schedule">
+                                <i class="fas fa-clock"></i>
+                                <span>Scheduled Tasks</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="agent-decisions">
+                                <i class="fas fa-gavel"></i>
+                                <span>Decisions & Alerts</span>
+                                <span class="sidebar-nav-badge alert" id="agent-alerts-count">0</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="agent-memory">
+                                <i class="fas fa-database"></i>
+                                <span>Agent Memory</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Browser Monitor Section -->
+                <div class="sidebar-section browser-section">
+                    <div class="sidebar-section-title">
+                        <span>Browser Monitor</span>
+                        <div class="browser-status-dot" id="browser-monitor-status"></div>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="browser-registration">
+                                <i class="fas fa-plug"></i>
+                                <span>Browser Registration</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="browser-history">
+                                <i class="fas fa-history"></i>
+                                <span>History Scan</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="suspicious-domains">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Suspicious Domains</span>
+                                <span class="sidebar-nav-badge alert" id="suspicious-count">0</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="credential-exposure">
+                                <i class="fas fa-key"></i>
+                                <span>Credential Exposure</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="tracking-detection">
+                                <i class="fas fa-eye-slash"></i>
+                                <span>Tracking Detection</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="download-analysis">
+                                <i class="fas fa-file-download"></i>
+                                <span>Download Analysis</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Real-Time Intelligence Section -->
+                <div class="sidebar-section intel-section">
+                    <div class="sidebar-section-title">
+                        <span>Real-Time Intel</span>
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span class="live-text">LIVE</span>
+                        </div>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="event-feed">
+                                <i class="fas fa-stream"></i>
+                                <span>Event Feed</span>
+                                <span class="sidebar-nav-badge pulse" id="events-count">0</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="risk-analysis">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Risk Analysis</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="threat-map">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <span>Threat Map</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Scanning Modes Section -->
+                <div class="sidebar-section scan-section">
+                    <div class="sidebar-section-title">Scan Modes</div>
+                    <ul class="sidebar-nav scan-modes">
+                        <li class="sidebar-nav-item scan-mode" data-mode="quick">
+                            <a class="sidebar-nav-link">
+                                <i class="fas fa-bolt"></i>
+                                <span>Quick Scan</span>
+                                <span class="mode-indicator active" id="quick-mode-status"></span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item scan-mode" data-mode="deep">
+                            <a class="sidebar-nav-link">
                                 <i class="fas fa-brain"></i>
-                                <span>Agent Console</span>
+                                <span>AI Deep Scan</span>
+                                <span class="mode-indicator" id="deep-mode-status"></span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item scan-mode" data-mode="stealth">
+                            <a class="sidebar-nav-link">
+                                <i class="fas fa-user-secret"></i>
+                                <span>Stealth Mode</span>
+                                <span class="mode-indicator" id="stealth-mode-status"></span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item scan-mode" data-mode="forensic">
+                            <a class="sidebar-nav-link">
+                                <i class="fas fa-microscope"></i>
+                                <span>Forensic Mode</span>
+                                <span class="mode-indicator" id="forensic-mode-status"></span>
                             </a>
                         </li>
                     </ul>
@@ -392,10 +685,181 @@
                         <span>Forward</span>
                     </button>
                 </div>
+                
+                <!-- Application Footer -->
+                <footer class="caido-footer" id="app-footer">
+                    <div class="footer-left">
+                        <div class="footer-agent-status">
+                            <span class="footer-status-dot" id="footer-agent-dot"></span>
+                            <span class="footer-status-text" id="footer-agent-text">AI Agent: Monitoring</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-stat">
+                            <i class="fas fa-clock"></i>
+                            <span id="footer-uptime">Uptime: 0:00:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-center">
+                        <div class="footer-system-stats">
+                            <div class="footer-stat" title="CPU Usage">
+                                <i class="fas fa-microchip"></i>
+                                <span id="footer-cpu">CPU: 0%</span>
+                            </div>
+                            <div class="footer-stat" title="Memory Usage">
+                                <i class="fas fa-memory"></i>
+                                <span id="footer-memory">MEM: 0%</span>
+                            </div>
+                            <div class="footer-stat" title="Network Activity">
+                                <i class="fas fa-network-wired"></i>
+                                <span id="footer-network">NET: 0 KB/s</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-right">
+                        <div class="footer-stat" title="Active Sessions">
+                            <i class="fas fa-users"></i>
+                            <span id="footer-sessions">1 Session</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-stat" title="Last Sync">
+                            <i class="fas fa-sync-alt"></i>
+                            <span id="footer-sync">Synced</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-version">
+                            <span>v2.0.0</span>
+                        </div>
+                    </div>
+                </footer>
             </div>
         </div>
+    </div>
+
+    <!-- Agent Control Center Panel (Always Visible) -->
+    <div class="agent-control-panel" id="agent-control-panel">
+        <div class="agent-panel-header">
+            <div class="agent-panel-title">
+                <i class="fas fa-robot"></i>
+                <span>AI Agent</span>
+            </div>
+            <div class="agent-panel-status">
+                <span class="agent-status-dot" id="agent-main-status"></span>
+                <span class="agent-status-text" id="agent-status-text">Monitoring</span>
+            </div>
+            <button class="agent-panel-toggle" id="agent-panel-toggle">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
         
-        <!-- Context Menu (Hidden by default) -->
+        <div class="agent-panel-body" id="agent-panel-body">
+            <!-- Current Goal -->
+            <div class="agent-section">
+                <div class="agent-section-label">CURRENT GOAL</div>
+                <div class="agent-goal" id="agent-current-goal">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Monitoring browser activity for security threats</span>
+                </div>
+            </div>
+
+            <!-- Agent State -->
+            <div class="agent-section">
+                <div class="agent-section-label">AGENT STATE</div>
+                <div class="agent-state-grid">
+                    <div class="agent-state-item" data-state="idle">
+                        <i class="fas fa-pause-circle"></i>
+                        <span>Idle</span>
+                    </div>
+                    <div class="agent-state-item active" data-state="monitoring">
+                        <i class="fas fa-eye"></i>
+                        <span>Monitoring</span>
+                    </div>
+                    <div class="agent-state-item" data-state="analyzing">
+                        <i class="fas fa-cog"></i>
+                        <span>Analyzing</span>
+                    </div>
+                    <div class="agent-state-item" data-state="investigating">
+                        <i class="fas fa-search"></i>
+                        <span>Investigating</span>
+                    </div>
+                    <div class="agent-state-item" data-state="waiting">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>Waiting</span>
+                    </div>
+                    <div class="agent-state-item" data-state="blocked">
+                        <i class="fas fa-ban"></i>
+                        <span>Blocked</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Tasks -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    ACTIVE TASKS
+                    <span class="task-count" id="panel-task-count">0</span>
+                </div>
+                <div class="agent-tasks-list" id="agent-tasks-list">
+                    <div class="agent-task-empty">No active tasks</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="agent-section">
+                <div class="agent-section-label">QUICK ACTIONS</div>
+                <div class="agent-quick-actions">
+                    <button class="agent-action-btn" id="agent-scan-now" title="Run Quick Scan">
+                        <i class="fas fa-bolt"></i>
+                    </button>
+                    <button class="agent-action-btn" id="agent-pause" title="Pause Agent">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button class="agent-action-btn" id="agent-analyze" title="Deep Analysis">
+                        <i class="fas fa-brain"></i>
+                    </button>
+                    <button class="agent-action-btn" id="agent-report" title="Generate Report">
+                        <i class="fas fa-file-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Last Actions -->
+            <div class="agent-section">
+                <div class="agent-section-label">LAST ACTIONS</div>
+                <div class="agent-actions-log" id="agent-actions-log">
+                    <div class="action-log-item">
+                        <span class="action-time">Just now</span>
+                        <span class="action-text">Agent initialized and monitoring started</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-Time Event Feed Sidebar -->
+    <div class="event-feed-panel" id="event-feed-panel">
+        <div class="event-feed-header">
+            <div class="event-feed-title">
+                <span class="live-indicator-dot"></span>
+                <span>Real-Time Events</span>
+            </div>
+            <button class="event-feed-close" id="event-feed-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="event-feed-filters">
+            <button class="event-filter active" data-filter="all">All</button>
+            <button class="event-filter" data-filter="critical">Critical</button>
+            <button class="event-filter" data-filter="warning">Warning</button>
+            <button class="event-filter" data-filter="info">Info</button>
+        </div>
+        <div class="event-feed-list" id="event-feed-list">
+            <!-- Events will be populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Context Menu (Hidden by default) -->
         <div class="context-menu" id="context-menu" style="display: none;">
             <div class="context-menu-item" data-action="copy-url">
                 <i class="fas fa-link"></i>
@@ -463,6 +927,7 @@
     <!-- Scripts -->
     <script src="interaction-fix.js"></script>
     <script src="api-client.js"></script>
+    <script src="child-page-layouts.js"></script>
     <script src="components/hybrid-globe.js"></script>
     <script src="components/ai-assistant-v2.js"></script>
     <script src="caido-app.js"></script>

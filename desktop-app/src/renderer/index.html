@@ -39,23 +39,44 @@
                 </div>
 
                 <div class="header-actions">
+                    <!-- AI Agent Status -->
+                    <div class="ai-agent-status">
+                        <div class="agent-indicator">
+                            <div class="agent-pulse"></div>
+                            <i class="fas fa-brain agent-icon"></i>
+                        </div>
+                        <div class="agent-info">
+                            <span class="agent-label">AI Agent</span>
+                            <span class="agent-state" id="agent-state">Analyzing...</span>
+                        </div>
+                    </div>
+                    
                     <div class="status-indicators">
                         <div class="status-item" id="backend-status" title="Backend Connection">
                             <div class="status-dot offline"></div>
-                            <span>Backend</span>
+                            <span class="status-label">Backend</span>
                         </div>
                         <div class="status-item" id="ml-status" title="ML Services">
                             <div class="status-dot offline"></div>
-                            <span>AI</span>
+                            <span class="status-label">AI Core</span>
+                        </div>
+                        <div class="status-item" id="agent-status" title="Autonomous Agents">
+                            <div class="status-dot active"></div>
+                            <span class="status-label">Agents</span>
+                            <span class="agent-count" id="agent-count">3</span>
                         </div>
                     </div>
                     
                     <div class="header-controls">
                         <button class="control-btn" id="notifications-btn" title="Notifications">
                             <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notification-count">0</span>
                         </button>
                         <button class="control-btn" id="theme-toggle" title="Toggle Theme">
-                            <i class="fas fa-sun"></i>
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <button class="control-btn" id="ai-chat-btn" title="AI Assistant">
+                            <i class="fas fa-comments"></i>
                         </button>
                         <button class="control-btn" id="settings-btn" title="Settings">
                             <i class="fas fa-cog"></i>
@@ -148,6 +169,60 @@
                 </div>
             </main>
         </div>
+
+        <!-- AI Status Footer -->
+        <footer class="ai-footer">
+            <div class="footer-content">
+                <div class="footer-section system-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-microchip stat-icon"></i>
+                        <div class="stat-details">
+                            <span class="stat-label">CPU</span>
+                            <span class="stat-value" id="cpu-usage">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-memory stat-icon"></i>
+                        <div class="stat-details">
+                            <span class="stat-label">Memory</span>
+                            <span class="stat-value" id="memory-usage">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-shield-alt stat-icon"></i>
+                        <div class="stat-details">
+                            <span class="stat-label">Threats Blocked</span>
+                            <span class="stat-value" id="threats-blocked">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-section ai-activity">
+                    <div class="activity-indicator">
+                        <div class="activity-pulse"></div>
+                        <span class="activity-text" id="ai-activity-text">AI agents actively monitoring...</span>
+                    </div>
+                    <div class="agent-tasks" id="agent-tasks">
+                        <!-- Dynamic agent tasks will appear here -->
+                    </div>
+                </div>
+
+                <div class="footer-section quick-actions">
+                    <button class="quick-action-btn" id="run-scan-btn" title="Quick Scan">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Quick Scan</span>
+                    </button>
+                    <button class="quick-action-btn" id="export-report-btn" title="Export Report">
+                        <i class="fas fa-file-export"></i>
+                        <span>Export</span>
+                    </button>
+                    <button class="quick-action-btn" id="full-screen-btn" title="Full Screen">
+                        <i class="fas fa-expand"></i>
+                        <span>Full Screen</span>
+                    </button>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- Utility Scripts -->

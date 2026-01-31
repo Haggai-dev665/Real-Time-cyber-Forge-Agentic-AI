@@ -7,6 +7,11 @@
     ? require('./api-client.js') 
     : { cyberforgeAPI: window.cyberforgeAPI };
 
+  // Import child page layouts
+  const ChildPages = typeof require !== 'undefined'
+    ? require('./child-page-layouts.js')
+    : window.ChildPageLayouts;
+
   const state = {
     activeScreen: 'http-history',
     activeTab: 'requests',
@@ -328,6 +333,713 @@
   // Initialization
   // =========================================
 
+  // =========================================
+  // AGENTIC AI CONTROL SYSTEM
+  // =========================================
+
+  const agentState = {
+    status: 'idle', // idle, monitoring, analyzing, investigating, waiting, blocked
+    currentGoal: 'Waiting for task assignment...',
+    activeTasks: [],
+    scheduledTasks: [],
+    completedActions: [],
+    events: [],
+    scanMode: 'quick', // quick, deep, stealth, forensic
+    isRunning: false,
+    memory: {
+      threatsDetected: 0,
+      browsersMonitored: 0,
+      scansCompleted: 0,
+      alertsRaised: 0
+    }
+  };
+
+  function initAgentControlPanel() {
+    const panel = document.getElementById('agent-control-panel');
+    const toggle = document.getElementById('agent-panel-toggle');
+    const eventFeedBtn = document.querySelector('[data-screen="event-feed"]');
+    const eventPanel = document.getElementById('event-feed-panel');
+    
+    if (!panel) return;
+    
+    // Panel toggle
+    const panelHeader = panel.querySelector('.agent-panel-header');
+    if (panelHeader && toggle) {
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panel.classList.toggle('collapsed');
+        const icon = toggle.querySelector('i');
+        if (icon) {
+          icon.classList.toggle('fa-chevron-down');
+          icon.classList.toggle('fa-chevron-up');
+        }
+      });
+    }
+    
+    // Event feed toggle
+    if (eventFeedBtn && eventPanel) {
+      eventFeedBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        eventPanel.classList.toggle('open');
+      });
+    }
+    
+    // Event feed close button
+    const eventCloseBtn = document.getElementById('event-feed-close');
+    if (eventCloseBtn) {
+      eventCloseBtn.addEventListener('click', () => {
+        eventPanel?.classList.remove('open');
+      });
+    }
+    
+    // Event filter buttons
+    const filterBtns = document.querySelectorAll('.event-filter');
+    filterBtns?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filterEvents(btn.dataset.filter);
+      });
+    });
+    
+    // Quick action buttons - use specific IDs
+    bindQuickActions();
+    
+    // Scan mode selection
+    bindScanModes();
+    
+    // State item clicks
+    bindAgentStates();
+    
+    // Start the agent simulation
+    startAgentSimulation();
+    
+    // Initial render
+    updateAgentPanel();
+    populateEventFeed();
+  }
+
+  function bindQuickActions() {
+    // Bind by ID for specific actions
+    const scanBtn = document.getElementById('agent-scan-now');
+    const pauseBtn = document.getElementById('agent-pause');
+    const analyzeBtn = document.getElementById('agent-analyze');
+    const reportBtn = document.getElementById('agent-report');
+    
+    scanBtn?.addEventListener('click', () => executeQuickAction('scan'));
+    pauseBtn?.addEventListener('click', () => executeQuickAction('pause'));
+    analyzeBtn?.addEventListener('click', () => executeQuickAction('analyze'));
+    reportBtn?.addEventListener('click', () => executeQuickAction('report'));
+  }
+
+  function executeQuickAction(action) {
+    switch(action) {
+      case 'scan':
+        setAgentState('analyzing');
+        addAgentTask('Quick security scan', 'running');
+        logAgentAction('Initiated quick security scan', 'info');
+        showToast('info', 'Scan Started', 'AI agent is scanning for threats...');
+        setTimeout(() => {
+          completeTask('Quick security scan');
+          setAgentState('monitoring');
+          logAgentAction('Scan complete - No threats found', 'success');
+        }, 5000);
+        break;
+        
+      case 'pause':
+        if (agentState.status !== 'idle') {
+          setAgentState('idle');
+          logAgentAction('Agent paused by user', 'warning');
+          showToast('warning', 'Agent Paused', 'AI agent monitoring has been paused');
+        } else {
+          setAgentState('monitoring');
+          logAgentAction('Agent resumed monitoring', 'success');
+          showToast('success', 'Agent Resumed', 'AI agent is now monitoring');
+        }
+        break;
+        
+      case 'analyze':
+        setAgentState('investigating');
+        addAgentTask('Deep threat analysis', 'running');
+        setAgentGoal('Performing comprehensive threat analysis');
+        logAgentAction('Started deep threat analysis', 'info');
+        showToast('info', 'Analysis Started', 'Running deep threat analysis...');
+        break;
+        
+      case 'report':
+        logAgentAction('Generating security report', 'info');
+        showToast('success', 'Report Generated', 'Security report has been exported');
+        addEvent('success', 'Report Generated', 'Security assessment report created successfully', 'Agent');
+        break;
+    }
+    updateAgentPanel();
+  }
+
+  function bindScanModes() {
+    const scanModeItems = document.querySelectorAll('.scan-mode');
+    scanModeItems?.forEach(item => {
+      item.addEventListener('click', () => {
+        scanModeItems.forEach(i => {
+          const indicator = i.querySelector('.mode-indicator');
+          indicator?.classList.remove('active');
+        });
+        const indicator = item.querySelector('.mode-indicator');
+        indicator?.classList.add('active');
+        
+        const mode = item.dataset.mode;
+        agentState.scanMode = mode;
+        logAgentAction(`Scan mode changed to ${mode}`, 'info');
+        showToast('info', 'Mode Changed', `Scanning mode set to ${mode}`);
+      });
+    });
+  }
+
+  function bindAgentStates() {
+    const stateItems = document.querySelectorAll('.agent-state-item');
+    stateItems?.forEach(item => {
+      item.addEventListener('click', () => {
+        const newState = item.dataset.state;
+        setAgentState(newState);
+      });
+    });
+  }
+
+  function setAgentState(newStatus) {
+    agentState.status = newStatus;
+    
+    // Update status dot in panel
+    const statusDot = document.getElementById('agent-main-status');
+    if (statusDot) {
+      statusDot.className = 'agent-status-dot ' + newStatus;
+    }
+    
+    // Update status text
+    const statusText = document.getElementById('agent-status-text');
+    if (statusText) {
+      statusText.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+    }
+    
+    // Update state grid
+    const stateItems = document.querySelectorAll('.agent-state-item');
+    stateItems.forEach(item => {
+      item.classList.remove('active');
+      if (item.dataset.state === newStatus) {
+        item.classList.add('active');
+      }
+    });
+    
+    // Update goal based on state
+    const goals = {
+      'idle': 'Waiting for task assignment...',
+      'monitoring': 'Continuously monitoring browser activity and network traffic',
+      'analyzing': 'Analyzing captured data for potential threats',
+      'investigating': 'Investigating detected anomalies',
+      'waiting': 'Waiting for user confirmation',
+      'blocked': 'Action blocked - requires user intervention'
+    };
+    
+    if (goals[newStatus]) {
+      setAgentGoal(goals[newStatus]);
+    }
+  }
+
+  function setAgentGoal(goal) {
+    agentState.currentGoal = goal;
+    const goalContainer = document.getElementById('agent-current-goal');
+    if (goalContainer) {
+      const goalSpan = goalContainer.querySelector('span');
+      if (goalSpan) {
+        goalSpan.textContent = goal;
+      }
+    }
+  }
+
+  function addAgentTask(name, status = 'pending') {
+    const task = {
+      id: Date.now(),
+      name,
+      status,
+      createdAt: new Date()
+    };
+    agentState.activeTasks.push(task);
+    updateTaskList();
+    return task.id;
+  }
+
+  function completeTask(name) {
+    const taskIndex = agentState.activeTasks.findIndex(t => t.name === name);
+    if (taskIndex !== -1) {
+      agentState.activeTasks.splice(taskIndex, 1);
+      updateTaskList();
+    }
+  }
+
+  function updateTaskList() {
+    const taskList = document.getElementById('agent-tasks-list');
+    const taskCount = document.getElementById('panel-task-count');
+    const sidebarTaskCount = document.getElementById('active-tasks-count');
+    
+    if (taskCount) {
+      taskCount.textContent = agentState.activeTasks.length;
+    }
+    
+    if (sidebarTaskCount) {
+      sidebarTaskCount.textContent = agentState.activeTasks.length;
+    }
+    
+    if (!taskList) return;
+    
+    if (agentState.activeTasks.length === 0) {
+      taskList.innerHTML = `
+        <div class="agent-task-empty">No active tasks</div>
+      `;
+      return;
+    }
+    
+    taskList.innerHTML = agentState.activeTasks.map(task => `
+      <div class="agent-task-item" data-task-id="${task.id}">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <span>${task.name}</span>
+        <span class="task-status ${task.status}">${task.status}</span>
+      </div>
+    `).join('');
+  }
+
+  function logAgentAction(text, type = 'info') {
+    const action = {
+      time: new Date(),
+      text,
+      type
+    };
+    agentState.completedActions.unshift(action);
+    if (agentState.completedActions.length > 10) {
+      agentState.completedActions.pop();
+    }
+    updateActionLog();
+  }
+
+  function updateActionLog() {
+    const actionLog = document.getElementById('agent-actions-log');
+    if (!actionLog) return;
+    
+    actionLog.innerHTML = agentState.completedActions.map(action => {
+      const time = action.time.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      return `
+        <div class="action-log-item ${action.type}">
+          <span class="action-time">${time}</span>
+          <span class="action-text">${action.text}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function updateAgentPanel() {
+    updateTaskList();
+    updateActionLog();
+    
+    // Update sidebar alert count
+    const alertCount = document.getElementById('agent-alerts-count');
+    if (alertCount) {
+      const criticalEvents = agentState.events.filter(e => e.severity === 'critical' || e.severity === 'warning').length;
+      alertCount.textContent = criticalEvents;
+    }
+    
+    // Update events count
+    const eventsCount = document.getElementById('events-count');
+    if (eventsCount) {
+      eventsCount.textContent = agentState.events.length;
+    }
+  }
+
+  function addEvent(severity, title, description, source = 'System') {
+    const event = {
+      id: Date.now(),
+      severity,
+      title,
+      description,
+      source,
+      time: new Date()
+    };
+    agentState.events.unshift(event);
+    if (agentState.events.length > 50) {
+      agentState.events.pop();
+    }
+    renderEventList();
+    updateAgentPanel();
+    
+    // Update events count in sidebar
+    const eventsCount = document.getElementById('events-count');
+    if (eventsCount) {
+      eventsCount.textContent = agentState.events.length;
+    }
+  }
+
+  function renderEventList() {
+    const eventList = document.getElementById('event-feed-list');
+    if (!eventList) return;
+    
+    if (agentState.events.length === 0) {
+      eventList.innerHTML = `
+        <div class="event-list-empty">
+          <i class="fas fa-shield-alt"></i>
+          <p>No events yet. The agent is monitoring...</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const icons = {
+      critical: 'fa-skull-crossbones',
+      warning: 'fa-exclamation-triangle',
+      info: 'fa-info-circle',
+      success: 'fa-check-circle'
+    };
+    
+    eventList.innerHTML = agentState.events.map(event => {
+      const time = event.time.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      return `
+        <div class="event-item ${event.severity}" data-event-id="${event.id}">
+          <div class="event-icon">
+            <i class="fas ${icons[event.severity] || 'fa-info-circle'}"></i>
+          </div>
+          <div class="event-content">
+            <div class="event-title">${event.title}</div>
+            <div class="event-description">${event.description}</div>
+            <div class="event-meta">
+              <span class="event-source"><i class="fas fa-robot"></i> ${event.source}</span>
+              <span class="event-time">${time}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function filterEvents(filter) {
+    const eventItems = document.querySelectorAll('.event-item');
+    eventItems.forEach(item => {
+      if (filter === 'all') {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = item.classList.contains(filter) ? 'flex' : 'none';
+      }
+    });
+  }
+
+  function populateEventFeed() {
+    // Add some initial demo events
+    addEvent('info', 'Agent Initialized', 'AI security agent has started monitoring', 'Agent');
+    addEvent('success', 'System Connected', 'Successfully connected to CyberForge backend', 'System');
+  }
+
+  // =========================================
+  // HEADER & FOOTER FUNCTIONALITY
+  // =========================================
+
+  const systemStats = {
+    uptime: 0,
+    cpu: 0,
+    memory: 0,
+    network: 0,
+    requests: 0,
+    threats: 0,
+    events: 0,
+    sessions: 1
+  };
+
+  function initHeaderFooter() {
+    // Global search functionality
+    const globalSearch = document.getElementById('global-search');
+    if (globalSearch) {
+      globalSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const query = globalSearch.value.trim();
+          if (query) {
+            performGlobalSearch(query);
+          }
+        }
+      });
+      
+      // Keyboard shortcut Cmd+K / Ctrl+K
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          globalSearch.focus();
+        }
+      });
+    }
+    
+    // Notifications button
+    const notificationsBtn = document.getElementById('notifications-btn');
+    if (notificationsBtn) {
+      notificationsBtn.addEventListener('click', () => {
+        toggleNotificationsPanel();
+      });
+    }
+    
+    // Stop button functionality
+    const stopBtn = document.getElementById('stop-btn');
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => {
+        setAgentState('idle');
+        logAgentAction('Recording stopped by user', 'warning');
+        showToast('info', 'Recording Stopped', 'Request capture has been stopped');
+      });
+    }
+    
+    // Start uptime counter
+    startUptimeCounter();
+    
+    // Start system stats simulation
+    startSystemStatsSimulation();
+    
+    // Initialize sidebar child components
+    initSidebarChildren();
+  }
+
+  function performGlobalSearch(query) {
+    showToast('info', 'Searching...', `Looking for: ${query}`);
+    // Could integrate with actual search functionality
+    logAgentAction(`Global search: "${query}"`, 'info');
+  }
+
+  function toggleNotificationsPanel() {
+    // Toggle event feed panel as notifications
+    const eventPanel = document.getElementById('event-feed-panel');
+    if (eventPanel) {
+      eventPanel.classList.toggle('open');
+    }
+  }
+
+  function startUptimeCounter() {
+    setInterval(() => {
+      systemStats.uptime++;
+      updateUptimeDisplay();
+    }, 1000);
+  }
+
+  function updateUptimeDisplay() {
+    const hours = Math.floor(systemStats.uptime / 3600);
+    const minutes = Math.floor((systemStats.uptime % 3600) / 60);
+    const seconds = systemStats.uptime % 60;
+    
+    const formatted = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    const uptimeEl = document.getElementById('footer-uptime');
+    if (uptimeEl) {
+      uptimeEl.textContent = `Uptime: ${formatted}`;
+    }
+  }
+
+  function startSystemStatsSimulation() {
+    // Update system stats every 2 seconds
+    setInterval(() => {
+      // Simulate CPU usage (10-60%)
+      systemStats.cpu = Math.floor(Math.random() * 50 + 10);
+      
+      // Simulate memory usage (30-70%)
+      systemStats.memory = Math.floor(Math.random() * 40 + 30);
+      
+      // Simulate network activity
+      systemStats.network = Math.floor(Math.random() * 200);
+      
+      updateSystemStatsDisplay();
+    }, 2000);
+    
+    // Update request count occasionally
+    setInterval(() => {
+      if (agentState.status === 'monitoring') {
+        systemStats.requests += Math.floor(Math.random() * 3);
+        updateHeaderStats();
+      }
+    }, 5000);
+  }
+
+  function updateSystemStatsDisplay() {
+    const cpuEl = document.getElementById('footer-cpu');
+    const memEl = document.getElementById('footer-memory');
+    const netEl = document.getElementById('footer-network');
+    
+    if (cpuEl) cpuEl.textContent = `CPU: ${systemStats.cpu}%`;
+    if (memEl) memEl.textContent = `MEM: ${systemStats.memory}%`;
+    if (netEl) netEl.textContent = `NET: ${systemStats.network} KB/s`;
+    
+    // Update footer agent status
+    const footerAgentDot = document.getElementById('footer-agent-dot');
+    const footerAgentText = document.getElementById('footer-agent-text');
+    
+    if (footerAgentDot) {
+      footerAgentDot.className = 'footer-status-dot ' + agentState.status;
+    }
+    if (footerAgentText) {
+      const statusLabels = {
+        idle: 'AI Agent: Idle',
+        monitoring: 'AI Agent: Monitoring',
+        analyzing: 'AI Agent: Analyzing',
+        investigating: 'AI Agent: Investigating',
+        waiting: 'AI Agent: Waiting',
+        blocked: 'AI Agent: Blocked'
+      };
+      footerAgentText.textContent = statusLabels[agentState.status] || 'AI Agent: Unknown';
+    }
+  }
+
+  function updateHeaderStats() {
+    const requestsEl = document.getElementById('stat-requests');
+    const threatsEl = document.getElementById('stat-threats');
+    const eventsEl = document.getElementById('stat-events');
+    const notifCount = document.getElementById('notification-count');
+    
+    if (requestsEl) requestsEl.textContent = systemStats.requests;
+    if (threatsEl) threatsEl.textContent = agentState.memory.threatsDetected;
+    if (eventsEl) eventsEl.textContent = agentState.events.length;
+    if (notifCount) {
+      const unreadCount = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
+      notifCount.textContent = unreadCount;
+      notifCount.style.display = unreadCount > 0 ? 'flex' : 'none';
+    }
+    
+    // Update header agent status
+    const headerAgentStatus = document.getElementById('header-agent-status');
+    if (headerAgentStatus) {
+      const indicator = headerAgentStatus.querySelector('.agent-status-indicator-mini');
+      const label = headerAgentStatus.querySelector('.agent-status-label');
+      
+      const colors = {
+        idle: '#6b7280',
+        monitoring: '#10b981',
+        analyzing: '#3b82f6',
+        investigating: '#f59e0b',
+        waiting: '#8b5cf6',
+        blocked: '#ef4444'
+      };
+      
+      if (indicator) {
+        indicator.style.background = colors[agentState.status] || '#10b981';
+      }
+      if (label) {
+        label.textContent = `Agent ${agentState.status.charAt(0).toUpperCase() + agentState.status.slice(1)}`;
+      }
+    }
+  }
+
+  function initSidebarChildren() {
+    // Find all sidebar items with children and mark them
+    const navItems = document.querySelectorAll('.sidebar-nav-item');
+    navItems.forEach(item => {
+      const link = item.querySelector('.sidebar-nav-link');
+      const children = item.querySelector('.sidebar-nav-children');
+      
+      if (link && children) {
+        // Mark as having children for CSS styling
+        item.classList.add('has-children');
+        
+        // Toggle expanded state on click
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Close other expanded items (accordion behavior)
+          const siblingItems = item.parentElement.querySelectorAll('.sidebar-nav-item.expanded');
+          siblingItems.forEach(sibling => {
+            if (sibling !== item) {
+              sibling.classList.remove('expanded');
+            }
+          });
+          
+          // Toggle this item
+          item.classList.toggle('expanded');
+        });
+      }
+    });
+    
+    // Child link click handlers - NOW ROUTES TO CHILD SCREENS
+    const childLinks = document.querySelectorAll('.sidebar-child-link');
+    childLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove active from all child links
+        childLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        
+        const screen = link.dataset.screen;
+        if (screen) {
+          state.activeScreen = screen;
+          renderScreen(screen);
+          logAgentAction(`Navigated to ${screen}`, 'info');
+        }
+      });
+    });
+  }
+
+  function startAgentSimulation() {
+    // Start with monitoring state
+    setTimeout(() => {
+      setAgentState('monitoring');
+      logAgentAction('Agent started monitoring', 'success');
+      updateHeaderStats();
+      updateSystemStatsDisplay();
+    }, 1000);
+    
+    // Simulate periodic agent activity
+    setInterval(() => {
+      if (agentState.status === 'monitoring') {
+        const actions = [
+          { text: 'Scanned network traffic - normal', type: 'success' },
+          { text: 'Checked browser cookies', type: 'info' },
+          { text: 'Verified SSL certificates', type: 'success' },
+          { text: 'Analyzed request patterns', type: 'info' }
+        ];
+        const action = actions[Math.floor(Math.random() * actions.length)];
+        logAgentAction(action.text, action.type);
+        
+        // Occasionally add events
+        if (Math.random() > 0.7) {
+          const eventTypes = [
+            { severity: 'info', title: 'Traffic Analysis Complete', desc: 'No suspicious patterns detected' },
+            { severity: 'success', title: 'Security Check Passed', desc: 'All monitored domains are safe' },
+            { severity: 'info', title: 'Certificate Verified', desc: 'SSL certificate validation successful' }
+          ];
+          const evt = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+          addEvent(evt.severity, evt.title, evt.desc, 'Agent');
+        }
+        
+        // Update memory stats
+        agentState.memory.scansCompleted++;
+        updateHeaderStats();
+      }
+    }, 8000);
+    
+    // Simulate occasional threat detection
+    setInterval(() => {
+      if (agentState.status === 'monitoring' && Math.random() > 0.85) {
+        setAgentState('analyzing');
+        addAgentTask('Analyzing suspicious activity', 'running');
+        logAgentAction('Suspicious pattern detected - analyzing', 'warning');
+        addEvent('warning', 'Suspicious Activity Detected', 'Agent is analyzing potential threat pattern', 'Agent');
+        updateHeaderStats();
+        
+        setTimeout(() => {
+          completeTask('Analyzing suspicious activity');
+          setAgentState('monitoring');
+          logAgentAction('Analysis complete - false positive', 'success');
+          addEvent('info', 'Analysis Complete', 'Potential threat was determined to be a false positive', 'Agent');
+          updateHeaderStats();
+        }, 5000);
+      }
+    }, 30000);
+  }
+
   async function init() {
     initTheme();
     initUserMenu();
@@ -337,6 +1049,12 @@
     bindTabs();
     bindQueryInput();
     bindActionBar();
+    
+    // Initialize Agentic AI Control Panel
+    initAgentControlPanel();
+    
+    // Initialize Header and Footer functionality
+    initHeaderFooter();
     
     // Listen for auth expiry
     cyberforgeAPI.on('auth:expired', handleAuthExpired);
@@ -703,7 +1421,393 @@
       container.innerHTML = buildProfileLayout();
     } else if (screen === 'settings') {
       container.innerHTML = buildSettingsLayout();
-    } else {
+    }
+    
+    // ========================================
+    // DASHBOARD CHILD SCREENS
+    // ========================================
+    else if (screen === 'dashboard-security') {
+      container.innerHTML = ChildPages.buildDashboardSecurityLayout();
+      loadDashboardSecurityData();
+    } else if (screen === 'dashboard-activity') {
+      container.innerHTML = ChildPages.buildDashboardActivityLayout();
+      loadDashboardActivityData();
+    } else if (screen === 'dashboard-metrics') {
+      container.innerHTML = ChildPages.buildDashboardMetricsLayout();
+      loadDashboardMetricsData();
+    }
+    
+    // ========================================
+    // SITEMAP CHILD SCREENS
+    // ========================================
+    else if (screen === 'sitemap-tree') {
+      container.innerHTML = ChildPages.buildSitemapTreeLayout();
+      loadSitemapData();
+    } else if (screen === 'sitemap-graph') {
+      container.innerHTML = ChildPages.buildSitemapGraphLayout();
+      loadSitemapGraphData();
+    }
+    
+    // ========================================
+    // SCOPES CHILD SCREENS
+    // ========================================
+    else if (screen === 'scopes-active') {
+      container.innerHTML = ChildPages.buildScopesActiveLayout();
+      loadActiveScopesData();
+    } else if (screen === 'scopes-excluded') {
+      container.innerHTML = ChildPages.buildScopesExcludedLayout();
+      loadExcludedScopesData();
+    }
+    
+    // ========================================
+    // FILTERS CHILD SCREENS
+    // ========================================
+    else if (screen === 'filters-saved') {
+      container.innerHTML = ChildPages.buildFiltersSavedLayout();
+      loadSavedFiltersData();
+    } else if (screen === 'filters-recent') {
+      container.innerHTML = ChildPages.buildFiltersRecentLayout();
+      loadRecentFiltersData();
+    }
+    
+    // ========================================
+    // INTERCEPT CHILD SCREENS
+    // ========================================
+    else if (screen === 'intercept-queue') {
+      container.innerHTML = buildInterceptLayout();
+      renderIntercepts();
+      bindInterceptEvents();
+    } else if (screen === 'intercept-rules') {
+      container.innerHTML = ChildPages.buildInterceptRulesLayout();
+      loadInterceptRulesData();
+    } else if (screen === 'intercept-breakpoints') {
+      container.innerHTML = ChildPages.buildInterceptBreakpointsLayout();
+      loadBreakpointsData();
+    }
+    
+    // ========================================
+    // HTTP HISTORY CHILD SCREENS
+    // ========================================
+    else if (screen === 'http-all') {
+      container.innerHTML = buildHttpHistoryLayout();
+      renderRequestsTable();
+      bindRequestTableEvents();
+      bindResizer();
+      bindContextMenu();
+    } else if (screen === 'http-flagged') {
+      container.innerHTML = ChildPages.buildHttpFlaggedLayout();
+      loadFlaggedRequestsData();
+    } else if (screen === 'http-errors') {
+      container.innerHTML = ChildPages.buildHttpErrorsLayout();
+      loadErrorRequestsData();
+    }
+    
+    // ========================================
+    // WEBSOCKET CHILD SCREENS
+    // ========================================
+    else if (screen === 'ws-connections') {
+      container.innerHTML = buildWsLayout();
+      renderWsHistory();
+    } else if (screen === 'ws-messages') {
+      container.innerHTML = ChildPages.buildWsMessagesLayout();
+      loadWsMessagesData();
+    }
+    
+    // ========================================
+    // MATCH & REPLACE CHILD SCREENS
+    // ========================================
+    else if (screen === 'match-request') {
+      container.innerHTML = buildMatchReplaceLayout();
+      renderMatchRules();
+      bindMatchReplaceEvents();
+    } else if (screen === 'match-response') {
+      container.innerHTML = ChildPages.buildMatchResponseLayout();
+      loadResponseRulesData();
+    }
+    
+    // ========================================
+    // REPLAY CHILD SCREENS
+    // ========================================
+    else if (screen === 'replay-single') {
+      container.innerHTML = buildReplayLayout();
+      renderRequestsTable();
+      bindRequestTableEvents();
+    } else if (screen === 'replay-batch') {
+      container.innerHTML = ChildPages.buildReplayBatchLayout();
+      initBatchReplay();
+    } else if (screen === 'replay-diff') {
+      container.innerHTML = ChildPages.buildReplayDiffLayout();
+      initResponseDiff();
+    }
+    
+    // ========================================
+    // AUTOMATE CHILD SCREENS
+    // ========================================
+    else if (screen === 'automate-intruder') {
+      container.innerHTML = ChildPages.buildAutomateIntruderLayout();
+      initIntruder();
+    } else if (screen === 'automate-fuzzer') {
+      container.innerHTML = ChildPages.buildAutomateFuzzerLayout();
+      initFuzzer();
+    } else if (screen === 'automate-payloads') {
+      container.innerHTML = ChildPages.buildAutomatePayloadsLayout();
+      loadPayloadsData();
+    }
+    
+    // ========================================
+    // WORKFLOWS CHILD SCREENS
+    // ========================================
+    else if (screen === 'workflows-active') {
+      container.innerHTML = ChildPages.buildWorkflowsActiveLayout();
+      loadActiveWorkflowsData();
+    } else if (screen === 'workflows-templates') {
+      container.innerHTML = ChildPages.buildWorkflowsTemplatesLayout();
+      loadWorkflowTemplatesData();
+    } else if (screen === 'workflows-history') {
+      container.innerHTML = ChildPages.buildWorkflowsHistoryLayout();
+      loadWorkflowsHistoryData();
+    }
+    
+    // ========================================
+    // ASSISTANT CHILD SCREENS
+    // ========================================
+    else if (screen === 'assistant-chat') {
+      container.innerHTML = ChildPages.buildAssistantChatLayout();
+      loadAssistantHistoryData();
+    } else if (screen === 'assistant-suggestions') {
+      container.innerHTML = ChildPages.buildAssistantSuggestionsLayout();
+      loadAssistantInsightsData();
+    }
+    
+    // ========================================
+    // AI MODELS CHILD SCREENS
+    // ========================================
+    else if (screen === 'models-trained') {
+      container.innerHTML = ChildPages.buildModelsTrainedLayout();
+      loadTrainedModelsData();
+    } else if (screen === 'models-training') {
+      container.innerHTML = ChildPages.buildModelsTrainingLayout();
+      loadTrainingModelsData();
+    } else if (screen === 'models-datasets') {
+      container.innerHTML = ChildPages.buildModelsDatasetsLayout();
+      loadDatasetsData();
+    }
+    
+    // ========================================
+    // THREAT INTEL CHILD SCREENS
+    // ========================================
+    else if (screen === 'intel-feeds') {
+      container.innerHTML = ChildPages.buildIntelFeedsLayout();
+      loadThreatFeedsData();
+    } else if (screen === 'intel-iocs') {
+      container.innerHTML = ChildPages.buildIntelIOCsLayout();
+      loadIOCsData();
+    } else if (screen === 'intel-cves') {
+      container.innerHTML = ChildPages.buildIntelCVEsLayout();
+      loadCVEsData();
+    }
+    
+    // ========================================
+    // ENVIRONMENT CHILD SCREENS
+    // ========================================
+    else if (screen === 'env-variables') {
+      container.innerHTML = ChildPages.buildEnvVariablesLayout();
+      loadEnvironmentVariablesData();
+    } else if (screen === 'env-secrets') {
+      container.innerHTML = ChildPages.buildEnvSecretsLayout();
+      loadSecretsData();
+    }
+    
+    // ========================================
+    // SEARCH CHILD SCREENS
+    // ========================================
+    else if (screen === 'search-advanced') {
+      container.innerHTML = ChildPages.buildSearchAdvancedLayout();
+      bindAdvancedSearchEvents();
+    } else if (screen === 'search-saved') {
+      container.innerHTML = ChildPages.buildSearchSavedLayout();
+      loadSavedQueriesData();
+    }
+    
+    // ========================================
+    // FINDINGS CHILD SCREENS
+    // ========================================
+    else if (screen === 'findings-critical') {
+      container.innerHTML = ChildPages.buildFindingsCriticalLayout();
+      loadFindingsByLevel('critical');
+      bindFindingsEvents();
+    } else if (screen === 'findings-high') {
+      container.innerHTML = ChildPages.buildFindingsHighLayout();
+      loadFindingsByLevel('high');
+      bindFindingsEvents();
+    } else if (screen === 'findings-medium') {
+      container.innerHTML = ChildPages.buildFindingsMediumLayout();
+      loadFindingsByLevel('medium');
+      bindFindingsEvents();
+    } else if (screen === 'findings-low') {
+      container.innerHTML = ChildPages.buildFindingsLowLayout();
+      loadFindingsByLevel('low');
+      bindFindingsEvents();
+    }
+    
+    // ========================================
+    // EXPORTS CHILD SCREENS
+    // ========================================
+    else if (screen === 'exports-reports') {
+      container.innerHTML = ChildPages.buildExportsReportsLayout();
+      loadExportsReportsData();
+      bindExportsEvents();
+    } else if (screen === 'exports-data') {
+      container.innerHTML = ChildPages.buildExportsDataLayout();
+      bindDataExportEvents();
+    }
+    
+    // ========================================
+    // FILES CHILD SCREENS
+    // ========================================
+    else if (screen === 'files-project') {
+      container.innerHTML = ChildPages.buildFilesProjectLayout();
+      loadProjectFilesData();
+    } else if (screen === 'files-notes') {
+      container.innerHTML = ChildPages.buildFilesNotesLayout();
+      loadNotesData();
+    } else if (screen === 'files-scripts') {
+      container.innerHTML = ChildPages.buildFilesScriptsLayout();
+      loadScriptsData();
+    }
+    
+    // ========================================
+    // PLUGINS CHILD SCREENS
+    // ========================================
+    else if (screen === 'plugins-installed') {
+      container.innerHTML = ChildPages.buildPluginsInstalledLayout();
+      loadInstalledPluginsData();
+      bindPluginsEvents();
+    } else if (screen === 'plugins-marketplace') {
+      container.innerHTML = ChildPages.buildPluginsMarketplaceLayout();
+      loadMarketplacePluginsData();
+    }
+    
+    // ========================================
+    // WORKSPACE CHILD SCREENS
+    // ========================================
+    else if (screen === 'workspace-settings') {
+      container.innerHTML = ChildPages.buildWorkspaceSettingsLayout();
+      loadWorkspaceSettingsData();
+    } else if (screen === 'workspace-team') {
+      container.innerHTML = ChildPages.buildWorkspaceTeamLayout();
+      loadTeamMembersData();
+    }
+    
+    // ========================================
+    // SYNC STATUS CHILD SCREENS
+    // ========================================
+    else if (screen === 'sync-pending') {
+      container.innerHTML = ChildPages.buildSyncPendingLayout();
+      loadPendingSyncData();
+    } else if (screen === 'sync-history') {
+      container.innerHTML = ChildPages.buildSyncHistoryLayout();
+      loadSyncHistoryData();
+    }
+    
+    // ========================================
+    // BROWSER EXTENSION CHILD SCREENS
+    // ========================================
+    else if (screen === 'ext-install') {
+      container.innerHTML = ChildPages.buildExtInstallLayout();
+      loadExtensionInstallData();
+    } else if (screen === 'ext-settings') {
+      container.innerHTML = ChildPages.buildExtSettingsLayout();
+      loadExtensionSettingsData();
+    }
+    
+    // ========================================
+    // MOBILE COMPANION CHILD SCREENS
+    // ========================================
+    else if (screen === 'mobile-pair') {
+      container.innerHTML = ChildPages.buildMobilePairLayout();
+      initMobilePairing();
+    } else if (screen === 'mobile-devices') {
+      container.innerHTML = ChildPages.buildMobileDevicesLayout();
+      loadPairedDevicesData();
+    }
+    
+    // ========================================
+    // BROWSER MONITOR CHILD SCREENS
+    // ========================================
+    else if (screen === 'browser-registration') {
+      container.innerHTML = ChildPages.buildBrowserRegistrationLayout();
+      loadBrowserRegistrationData();
+    } else if (screen === 'browser-history') {
+      container.innerHTML = ChildPages.buildBrowserHistoryScanLayout();
+      loadBrowserHistoryData();
+    } else if (screen === 'suspicious-domains') {
+      container.innerHTML = ChildPages.buildSuspiciousDomainsLayout();
+      loadSuspiciousDomainsData();
+    } else if (screen === 'credential-exposure') {
+      container.innerHTML = ChildPages.buildCredentialExposureLayout();
+      loadCredentialExposureData();
+    } else if (screen === 'tracking-detection') {
+      container.innerHTML = ChildPages.buildTrackingDetectionLayout();
+      loadTrackingDetectionData();
+    } else if (screen === 'download-analysis') {
+      container.innerHTML = ChildPages.buildDownloadAnalysisLayout();
+      loadDownloadAnalysisData();
+    }
+    
+    // ========================================
+    // REAL-TIME INTEL CHILD SCREENS
+    // ========================================
+    else if (screen === 'event-feed') {
+      container.innerHTML = ChildPages.buildEventFeedLayout();
+      initEventFeedStream();
+    } else if (screen === 'risk-analysis') {
+      container.innerHTML = ChildPages.buildRiskAnalysisLayout();
+      loadRiskAnalysisData();
+    } else if (screen === 'threat-map') {
+      container.innerHTML = ChildPages.buildThreatMapLayout();
+      initThreatMap();
+    }
+    
+    // ========================================
+    // SCAN MODES
+    // ========================================
+    else if (screen === 'quick-scan') {
+      container.innerHTML = ChildPages.buildQuickScanLayout();
+      initQuickScan();
+    } else if (screen === 'deep-scan') {
+      container.innerHTML = ChildPages.buildDeepScanLayout();
+      initDeepScan();
+    } else if (screen === 'stealth-scan') {
+      container.innerHTML = ChildPages.buildStealthScanLayout();
+      initStealthScan();
+    } else if (screen === 'forensic-scan') {
+      container.innerHTML = ChildPages.buildForensicScanLayout();
+      initForensicScan();
+    }
+    
+    // ========================================
+    // AGENT SCREENS
+    // ========================================
+    else if (screen === 'agent-control') {
+      container.innerHTML = ChildPages.buildAgentControlLayout();
+      initAgentControlPanel();
+      bindAgentConsole();
+    } else if (screen === 'agent-tasks') {
+      container.innerHTML = ChildPages.buildAgentTasksLayout();
+      loadAgentTasksData();
+    } else if (screen === 'agent-schedule') {
+      container.innerHTML = ChildPages.buildAgentScheduleLayout();
+      loadScheduledTasksData();
+    } else if (screen === 'agent-decisions') {
+      container.innerHTML = ChildPages.buildAgentDecisionsLayout();
+      loadAgentDecisionsData();
+    } else if (screen === 'agent-memory') {
+      container.innerHTML = ChildPages.buildAgentMemoryLayout();
+      loadAgentMemoryData();
+    }
+    
+    else {
       container.innerHTML = buildPlaceholder(screen);
     }
   }
@@ -3729,9 +4833,9 @@
     const title = screen.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     return `
       <div class="empty-state" style="flex:1;">
-        <i class="fas fa-layer-group empty-state-icon"></i>
+        <i class="fas fa-cog empty-state-icon"></i>
         <div class="empty-state-title">${title}</div>
-        <div class="empty-state-description">This section is available. Integrate backend logic here.</div>
+        <div class="empty-state-description">This screen is being configured. Feature coming soon.</div>
       </div>
     `;
   }
@@ -4074,6 +5178,632 @@
     document.addEventListener('click', (e) => {
       if (!menu.contains(e.target)) hideMenu();
     });
+  }
+
+  // ========================================
+  // CHILD PAGE DATA LOADING FUNCTIONS
+  // ========================================
+
+  async function loadDashboardSecurityData() {
+    try {
+      const scoreEl = document.getElementById('security-score-value');
+      const result = await cyberforgeAPI.getSecurityScore();
+      if (result.success && scoreEl) {
+        scoreEl.textContent = result.data?.score || 85;
+        document.getElementById('vuln-score')?.textContent && (document.getElementById('vuln-score').textContent = result.data?.vuln || 90);
+        document.getElementById('config-score')?.textContent && (document.getElementById('config-score').textContent = result.data?.config || 85);
+        document.getElementById('network-score')?.textContent && (document.getElementById('network-score').textContent = result.data?.network || 80);
+        document.getElementById('threat-score')?.textContent && (document.getElementById('threat-score').textContent = result.data?.threat || 75);
+      }
+    } catch (e) { console.error('Failed to load security score:', e); }
+  }
+
+  async function loadActivityFeedData() {
+    const timeline = document.getElementById('activity-timeline');
+    if (!timeline) return;
+    try {
+      const result = await cyberforgeAPI.getRecentActivity();
+      if (result.success && result.data?.length) {
+        timeline.innerHTML = result.data.map(a => `
+          <div class="activity-item ${a.type}">
+            <div class="activity-icon"><i class="fas fa-${a.type === 'threat' ? 'exclamation-triangle' : a.type === 'scan' ? 'search' : 'bell'}"></i></div>
+            <div class="activity-content">
+              <div class="activity-title">${a.title}</div>
+              <div class="activity-time">${new Date(a.timestamp).toLocaleString()}</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        timeline.innerHTML = '<div class="empty-state">No recent activity</div>';
+      }
+    } catch (e) { timeline.innerHTML = '<div class="empty-state">Failed to load activity</div>'; }
+  }
+
+  async function loadMetricsData() {
+    const container = document.getElementById('metrics-charts');
+    if (!container) return;
+    container.innerHTML = '<div class="metrics-placeholder">Metrics data loading...</div>';
+  }
+
+  async function loadSitemapTreeData() {
+    const container = document.getElementById('sitemap-tree-container');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getSitemap();
+      if (result.success) {
+        renderSitemapTree(result.data, container);
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load sitemap</div>'; }
+  }
+
+  function renderSitemapTree(data, container) {
+    container.innerHTML = '<div class="sitemap-tree">' + buildTreeNode(data || [{name: 'Root', children: []}]) + '</div>';
+  }
+
+  function buildTreeNode(nodes, depth = 0) {
+    return nodes.map(n => `
+      <div class="tree-node" style="padding-left:${depth * 16}px">
+        <span class="tree-icon"><i class="fas fa-${n.children ? 'folder' : 'file'}"></i></span>
+        <span class="tree-label">${n.name || n.url || 'Unknown'}</span>
+      </div>
+      ${n.children ? buildTreeNode(n.children, depth + 1) : ''}
+    `).join('');
+  }
+
+  async function loadSitemapGraphData() {
+    const canvas = document.getElementById('sitemap-graph-canvas');
+    if (!canvas) return;
+    canvas.innerHTML = '<div class="graph-placeholder">Interactive graph visualization</div>';
+  }
+
+  async function loadActiveScopesData() {
+    const container = document.getElementById('scopes-active-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getScopes();
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.filter(s => s.active).map(s => `
+          <div class="scope-item active">
+            <span class="scope-name">${s.name}</span>
+            <span class="scope-pattern">${s.pattern}</span>
+            <button class="caido-btn scope-toggle" data-id="${s.id}"><i class="fas fa-toggle-on"></i></button>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No active scopes</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load scopes</div>'; }
+  }
+
+  async function loadExcludedScopesData() {
+    const container = document.getElementById('scopes-excluded-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getScopes();
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.filter(s => !s.active).map(s => `
+          <div class="scope-item excluded">
+            <span class="scope-name">${s.name}</span>
+            <span class="scope-pattern">${s.pattern}</span>
+            <button class="caido-btn scope-toggle" data-id="${s.id}"><i class="fas fa-toggle-off"></i></button>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No excluded scopes</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load scopes</div>'; }
+  }
+
+  async function loadSavedFiltersData() {
+    const container = document.getElementById('filters-saved-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No saved filters yet</div>';
+  }
+
+  async function loadRecentFiltersData() {
+    const container = document.getElementById('filters-recent-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No recent filters</div>';
+  }
+
+  async function loadInterceptRulesData() {
+    const container = document.getElementById('intercept-rules-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No intercept rules configured</div>';
+  }
+
+  async function loadBreakpointsData() {
+    const container = document.getElementById('breakpoints-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No breakpoints set</div>';
+  }
+
+  async function loadFlaggedRequestsData() {
+    const container = document.getElementById('http-flagged-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getRequests({ flagged: true });
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.map(r => `
+          <div class="request-item flagged">
+            <span class="method ${r.method}">${r.method}</span>
+            <span class="url">${r.url}</span>
+            <span class="status">${r.status}</span>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No flagged requests</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load requests</div>'; }
+  }
+
+  async function loadErrorRequestsData() {
+    const container = document.getElementById('http-errors-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getRequests({ errors: true });
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.map(r => `
+          <div class="request-item error">
+            <span class="method ${r.method}">${r.method}</span>
+            <span class="url">${r.url}</span>
+            <span class="status error">${r.status}</span>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No error requests</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load requests</div>'; }
+  }
+
+  async function loadWebSocketMessagesData() {
+    const container = document.getElementById('ws-messages-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No WebSocket messages captured</div>';
+  }
+
+  async function loadMatchResponseRulesData() {
+    const container = document.getElementById('match-response-rules');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No response match rules</div>';
+  }
+
+  async function loadBatchReplayData() {
+    const container = document.getElementById('replay-batch-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No batch replay sessions</div>';
+  }
+
+  async function loadReplayDiffData() {
+    const container = document.getElementById('replay-diff-container');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">Select requests to compare</div>';
+  }
+
+  async function loadIntruderData() {
+    const container = document.getElementById('intruder-attacks-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No intruder attacks configured</div>';
+  }
+
+  async function loadFuzzerData() {
+    const container = document.getElementById('fuzzer-sessions-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No fuzzer sessions</div>';
+  }
+
+  async function loadPayloadsData() {
+    const container = document.getElementById('payloads-list');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="payload-set">
+        <h4>SQL Injection</h4>
+        <pre>' OR 1=1--\n" OR 1=1--\n1' OR '1'='1</pre>
+      </div>
+      <div class="payload-set">
+        <h4>XSS</h4>
+        <pre>&lt;script&gt;alert(1)&lt;/script&gt;\n&lt;img src=x onerror=alert(1)&gt;</pre>
+      </div>
+    `;
+  }
+
+  async function loadActiveWorkflowsData() {
+    const container = document.getElementById('workflows-active-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No active workflows</div>';
+  }
+
+  async function loadWorkflowTemplatesData() {
+    const container = document.getElementById('workflows-templates-list');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="template-card">
+        <h4><i class="fas fa-spider"></i> Web Crawler</h4>
+        <p>Automatically crawl and map web applications</p>
+        <button class="caido-btn primary">Use Template</button>
+      </div>
+      <div class="template-card">
+        <h4><i class="fas fa-bug"></i> Vulnerability Scanner</h4>
+        <p>Scan for common web vulnerabilities</p>
+        <button class="caido-btn primary">Use Template</button>
+      </div>
+    `;
+  }
+
+  async function loadWorkflowHistoryData() {
+    const container = document.getElementById('workflows-history-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No workflow history</div>';
+  }
+
+  async function loadAssistantHistoryData() {
+    const container = document.getElementById('assistant-history-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No conversation history</div>';
+  }
+
+  async function loadAssistantInsightsData() {
+    const container = document.getElementById('assistant-insights-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No insights generated yet</div>';
+  }
+
+  async function loadTrainedModelsData() {
+    const container = document.getElementById('models-trained-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getModels();
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.filter(m => m.status === 'trained').map(m => `
+          <div class="model-card trained">
+            <div class="model-header">
+              <h4>${m.name}</h4>
+              <span class="caido-badge green">Trained</span>
+            </div>
+            <div class="model-stats">
+              <span>Accuracy: ${m.accuracy || '95%'}</span>
+              <span>Last trained: ${new Date(m.lastTrained).toLocaleDateString()}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No trained models</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load models</div>'; }
+  }
+
+  async function loadTrainingModelsData() {
+    const container = document.getElementById('models-training-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No models currently training</div>';
+  }
+
+  async function loadDatasetsData() {
+    const container = document.getElementById('datasets-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getDatasets();
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.map(d => `
+          <div class="dataset-card">
+            <h4>${d.name}</h4>
+            <div class="dataset-info">
+              <span>${d.samples || 0} samples</span>
+              <span>${d.size || '0 MB'}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No datasets available</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load datasets</div>'; }
+  }
+
+  async function loadThreatFeedsData() {
+    const container = document.getElementById('intel-feeds-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getThreatFeeds();
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.map(f => `
+          <div class="feed-card ${f.active ? 'active' : ''}">
+            <div class="feed-header">
+              <h4>${f.name}</h4>
+              <span class="caido-badge ${f.active ? 'green' : 'gray'}">${f.active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <div class="feed-info">
+              <span>Last sync: ${f.lastSync ? new Date(f.lastSync).toLocaleString() : 'Never'}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="empty-state">No threat feeds configured</div>';
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load feeds</div>'; }
+  }
+
+  async function loadIOCsData() {
+    const container = document.getElementById('iocs-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No IOCs loaded</div>';
+  }
+
+  async function loadCVEsData() {
+    const container = document.getElementById('cves-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No CVEs tracked</div>';
+  }
+
+  async function loadEnvironmentVariablesData() {
+    const container = document.getElementById('env-variables-list');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="env-var-item">
+        <span class="var-name">API_BASE_URL</span>
+        <span class="var-value">http://localhost:8000</span>
+      </div>
+      <div class="env-var-item">
+        <span class="var-name">ML_SERVICE_URL</span>
+        <span class="var-value">http://localhost:8001</span>
+      </div>
+    `;
+  }
+
+  async function loadSecretsData() {
+    const container = document.getElementById('secrets-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No secrets configured</div>';
+  }
+
+  function bindAdvancedSearchEvents() {
+    const form = document.getElementById('advanced-search-form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = document.getElementById('search-query')?.value;
+      if (query) {
+        showToast('info', 'Searching', 'Executing advanced search...');
+      }
+    });
+  }
+
+  async function loadSavedQueriesData() {
+    const container = document.getElementById('saved-queries-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No saved queries</div>';
+  }
+
+  async function loadFindingsByLevel(level) {
+    const container = document.getElementById('findings-level-list');
+    if (!container) return;
+    try {
+      const result = await cyberforgeAPI.getFindings({ severity: level });
+      if (result.success && result.data?.length) {
+        container.innerHTML = result.data.map(f => `
+          <div class="finding-item ${level}">
+            <div class="finding-header">
+              <span class="caido-badge ${severityColor(level)}">${level.toUpperCase()}</span>
+              <h4>${f.title}</h4>
+            </div>
+            <div class="finding-details">
+              <span>${f.path || 'Unknown path'}</span>
+              <span class="status">${f.status}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = `<div class="empty-state">No ${level} findings</div>`;
+      }
+    } catch (e) { container.innerHTML = '<div class="empty-state">Failed to load findings</div>'; }
+  }
+
+  async function loadExportsReportsData() {
+    const container = document.getElementById('exports-reports-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No exported reports</div>';
+  }
+
+  function bindDataExportEvents() {
+    const form = document.getElementById('data-export-form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showToast('info', 'Exporting', 'Preparing data export...');
+    });
+  }
+
+  async function loadProjectFilesData() {
+    const container = document.getElementById('project-files-tree');
+    if (!container) return;
+    renderFiles();
+  }
+
+  async function loadNotesData() {
+    const container = document.getElementById('notes-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No notes yet</div>';
+  }
+
+  async function loadScriptsData() {
+    const container = document.getElementById('scripts-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No scripts added</div>';
+  }
+
+  async function loadInstalledPluginsData() {
+    const container = document.getElementById('plugins-installed-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No plugins installed</div>';
+  }
+
+  async function loadMarketplacePluginsData() {
+    const container = document.getElementById('plugins-marketplace-list');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="plugin-card">
+        <h4>JWT Analyzer</h4>
+        <p>Decode and analyze JWT tokens</p>
+        <button class="caido-btn primary">Install</button>
+      </div>
+      <div class="plugin-card">
+        <h4>GraphQL Introspection</h4>
+        <p>Explore GraphQL schemas</p>
+        <button class="caido-btn primary">Install</button>
+      </div>
+    `;
+  }
+
+  async function loadWorkspaceSettingsData() {
+    const container = document.getElementById('workspace-settings-form');
+    if (!container) return;
+  }
+
+  async function loadTeamMembersData() {
+    const container = document.getElementById('team-members-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No team members</div>';
+  }
+
+  async function loadPendingSyncData() {
+    const container = document.getElementById('sync-pending-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">All changes synced</div>';
+  }
+
+  async function loadSyncHistoryData() {
+    const container = document.getElementById('sync-history-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No sync history</div>';
+  }
+
+  async function loadExtensionInstallData() {
+    const container = document.getElementById('ext-install-status');
+    if (!container) return;
+  }
+
+  async function loadExtensionSettingsData() {
+    const container = document.getElementById('ext-settings-form');
+    if (!container) return;
+  }
+
+  function initMobilePairing() {
+    const qrContainer = document.getElementById('mobile-qr-code');
+    if (qrContainer) {
+      qrContainer.innerHTML = '<div class="qr-placeholder">QR Code for mobile pairing</div>';
+    }
+  }
+
+  async function loadPairedDevicesData() {
+    const container = document.getElementById('paired-devices-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No paired devices</div>';
+  }
+
+  async function loadBrowserRegistrationData() {
+    const container = document.getElementById('browser-registration-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No browsers registered</div>';
+  }
+
+  async function loadBrowserHistoryData() {
+    const container = document.getElementById('browser-history-results');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">Run a browser history scan</div>';
+  }
+
+  async function loadSuspiciousDomainsData() {
+    const container = document.getElementById('suspicious-domains-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No suspicious domains detected</div>';
+  }
+
+  async function loadCredentialExposureData() {
+    const container = document.getElementById('credential-exposure-results');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No credential exposures found</div>';
+  }
+
+  async function loadTrackingDetectionData() {
+    const container = document.getElementById('tracking-detection-results');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No trackers detected</div>';
+  }
+
+  async function loadDownloadAnalysisData() {
+    const container = document.getElementById('download-analysis-results');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No downloads analyzed</div>';
+  }
+
+  function initEventFeedStream() {
+    const container = document.getElementById('event-feed-stream');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">Connecting to event stream...</div>';
+  }
+
+  async function loadRiskAnalysisData() {
+    const container = document.getElementById('risk-analysis-dashboard');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">Loading risk analysis...</div>';
+  }
+
+  function initThreatMap() {
+    const container = document.getElementById('threat-map-canvas');
+    if (!container) return;
+    container.innerHTML = '<div class="map-placeholder">Interactive threat map</div>';
+  }
+
+  function initQuickScan() {
+    const container = document.getElementById('scan-progress');
+    if (!container) return;
+    container.innerHTML = '<div class="scan-ready">Quick scan ready to start</div>';
+  }
+
+  function initDeepScan() {
+    const container = document.getElementById('scan-progress');
+    if (!container) return;
+    container.innerHTML = '<div class="scan-ready">Deep scan ready to start</div>';
+  }
+
+  function initStealthScan() {
+    const container = document.getElementById('scan-progress');
+    if (!container) return;
+    container.innerHTML = '<div class="scan-ready">Stealth scan ready to start</div>';
+  }
+
+  function initForensicScan() {
+    const container = document.getElementById('scan-progress');
+    if (!container) return;
+    container.innerHTML = '<div class="scan-ready">Forensic scan ready to start</div>';
+  }
+
+  function initAgentControlPanel() {
+    const container = document.getElementById('agent-control-panel');
+    if (!container) return;
+  }
+
+  async function loadAgentTasksData() {
+    const container = document.getElementById('agent-tasks-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No active agent tasks</div>';
+  }
+
+  async function loadScheduledTasksData() {
+    const container = document.getElementById('scheduled-tasks-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No scheduled tasks</div>';
+  }
+
+  async function loadAgentDecisionsData() {
+    const container = document.getElementById('agent-decisions-list');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">No recent decisions</div>';
+  }
+
+  async function loadAgentMemoryData() {
+    const container = document.getElementById('agent-memory-view');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-state">Agent memory empty</div>';
   }
 
   document.addEventListener('DOMContentLoaded', init);

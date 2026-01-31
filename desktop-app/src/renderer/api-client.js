@@ -846,6 +846,309 @@ class CyberForgeAPI {
   async pageVisit(pageData) {
     this.sendWebSocketMessage('page_visit', pageData);
   }
+
+  // =========================================
+  // Browser Monitor Endpoints
+  // =========================================
+
+  async getBrowserSessions() {
+    return this.get('/api/browser/sessions');
+  }
+
+  async createBrowserSession(sessionData) {
+    return this.post('/api/browser/sessions', sessionData);
+  }
+
+  async deleteBrowserSession(sessionId) {
+    return this.delete(`/api/browser/sessions/${sessionId}`);
+  }
+
+  async getBrowserCookies(domain = null) {
+    const url = domain ? `/api/browser/cookies?domain=${encodeURIComponent(domain)}` : '/api/browser/cookies';
+    return this.get(url);
+  }
+
+  async addBrowserCookie(cookieData) {
+    return this.post('/api/browser/cookies', cookieData);
+  }
+
+  async deleteBrowserCookie(cookieId) {
+    return this.delete(`/api/browser/cookies/${cookieId}`);
+  }
+
+  async getBrowserStorage(type = null) {
+    const url = type ? `/api/browser/storage?type=${type}` : '/api/browser/storage';
+    return this.get(url);
+  }
+
+  async setBrowserStorage(storageData) {
+    return this.post('/api/browser/storage', storageData);
+  }
+
+  async getNetworkCaptures(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/browser/network?${params}` : '/api/browser/network';
+    return this.get(url);
+  }
+
+  async startNetworkCapture(options = {}) {
+    return this.post('/api/browser/network/start', options);
+  }
+
+  async stopNetworkCapture(captureId) {
+    return this.delete(`/api/browser/network/${captureId}`);
+  }
+
+  async getConsoleLogs(level = null) {
+    const url = level ? `/api/browser/console?level=${level}` : '/api/browser/console';
+    return this.get(url);
+  }
+
+  async addConsoleLog(logData) {
+    return this.post('/api/browser/console', logData);
+  }
+
+  // =========================================
+  // Scan Mode Endpoints
+  // =========================================
+
+  async getPassiveScanStats() {
+    return this.get('/api/scan/passive');
+  }
+
+  async updatePassiveScanConfig(config) {
+    return this.put('/api/scan/passive', config);
+  }
+
+  async getActiveScanStatus() {
+    return this.get('/api/scan/active');
+  }
+
+  async startActiveScan(target, options = {}) {
+    return this.post('/api/scan/active', { target, ...options });
+  }
+
+  async getStealthScanStatus() {
+    return this.get('/api/scan/stealth');
+  }
+
+  async updateStealthScanConfig(config) {
+    return this.put('/api/scan/stealth', config);
+  }
+
+  async startStealthScan(target, options = {}) {
+    return this.post('/api/scan/stealth', { target, ...options });
+  }
+
+  async getAggressiveScanStatus() {
+    return this.get('/api/scan/aggressive');
+  }
+
+  async startAggressiveScan(target, options = {}) {
+    return this.post('/api/scan/aggressive', { target, ...options });
+  }
+
+  // =========================================
+  // Real-Time Intelligence Endpoints
+  // =========================================
+
+  async getThreatMap() {
+    return this.get('/api/threats/map');
+  }
+
+  async getThreatFeeds() {
+    return this.get('/api/threats/feeds');
+  }
+
+  async addThreatFeed(feedData) {
+    return this.post('/api/threats/feeds', feedData);
+  }
+
+  async updateThreatFeed(feedId, feedData) {
+    return this.put(`/api/threats/feeds/${feedId}`, feedData);
+  }
+
+  async deleteThreatFeed(feedId) {
+    return this.delete(`/api/threats/feeds/${feedId}`);
+  }
+
+  async getSecurityAlerts(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/alerts?${params}` : '/api/alerts';
+    return this.get(url);
+  }
+
+  async acknowledgeAlert(alertId) {
+    return this.post(`/api/alerts/${alertId}/acknowledge`);
+  }
+
+  async dismissAlert(alertId) {
+    return this.post(`/api/alerts/${alertId}/dismiss`);
+  }
+
+  // =========================================
+  // AI Agent Endpoints
+  // =========================================
+
+  async getAIAgentStatus() {
+    return this.get('/api/ai/agent/status');
+  }
+
+  async toggleAIAgent(enabled) {
+    return this.post('/api/ai/agent/status', { enabled });
+  }
+
+  async getAIAgentTasks(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/ai/agent/tasks?${params}` : '/api/ai/agent/tasks';
+    return this.get(url);
+  }
+
+  async createAIAgentTask(taskData) {
+    return this.post('/api/ai/agent/tasks', taskData);
+  }
+
+  async getAIAgentThreats(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/ai/agent/threats?${params}` : '/api/ai/agent/threats';
+    return this.get(url);
+  }
+
+  async reportThreatToAI(threatData) {
+    return this.post('/api/ai/agent/threats', threatData);
+  }
+
+  async getAILearningStats() {
+    return this.get('/api/ai/agent/learning');
+  }
+
+  async getAIAgentSettings() {
+    return this.get('/api/ai/agent/settings');
+  }
+
+  async updateAIAgentSettings(settings) {
+    return this.put('/api/ai/agent/settings', settings);
+  }
+
+  // =========================================
+  // AI Models Endpoints
+  // =========================================
+
+  async getAIModels() {
+    return this.get('/api/ai/models');
+  }
+
+  async updateAIModelConfig(modelId, config) {
+    return this.put(`/api/ai/models/${modelId}`, config);
+  }
+
+  async getTrainingJobs(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/ai/models/training?${params}` : '/api/ai/models/training';
+    return this.get(url);
+  }
+
+  async startModelTraining(trainingConfig) {
+    return this.post('/api/ai/models/training', trainingConfig);
+  }
+
+  // =========================================
+  // Replay Queue Endpoints
+  // =========================================
+
+  async getReplayQueue() {
+    return this.get('/api/replay/queue');
+  }
+
+  async addToReplayQueue(requestData) {
+    return this.post('/api/replay/queue', requestData);
+  }
+
+  async removeFromReplayQueue(itemId) {
+    return this.delete(`/api/replay/queue/${itemId}`);
+  }
+
+  async replayRequest(itemId, options = {}) {
+    return this.post(`/api/replay/queue/${itemId}/replay`, options);
+  }
+
+  async getReplayHistory() {
+    return this.get('/api/replay/history');
+  }
+
+  // =========================================
+  // Workspace & Files Endpoints
+  // =========================================
+
+  async getWorkspaceNotes(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/workspace/notes?${params}` : '/api/workspace/notes';
+    return this.get(url);
+  }
+
+  async createWorkspaceNote(noteData) {
+    return this.post('/api/workspace/notes', noteData);
+  }
+
+  async updateWorkspaceNote(noteId, noteData) {
+    return this.put(`/api/workspace/notes/${noteId}`, noteData);
+  }
+
+  async deleteWorkspaceNote(noteId) {
+    return this.delete(`/api/workspace/notes/${noteId}`);
+  }
+
+  async getWorkspaceAttachments() {
+    return this.get('/api/workspace/attachments');
+  }
+
+  async uploadWorkspaceAttachment(attachmentData) {
+    return this.post('/api/workspace/attachments', attachmentData);
+  }
+
+  async deleteWorkspaceAttachment(attachmentId) {
+    return this.delete(`/api/workspace/attachments/${attachmentId}`);
+  }
+
+  // =========================================
+  // Team Collaboration Endpoints
+  // =========================================
+
+  async getTeamMembers() {
+    return this.get('/api/team/members');
+  }
+
+  async inviteTeamMember(memberData) {
+    return this.post('/api/team/members', memberData);
+  }
+
+  async getTeamActivity() {
+    return this.get('/api/team/activity');
+  }
+
+  // =========================================
+  // Search & Bookmarks Endpoints
+  // =========================================
+
+  async getSearchHistory() {
+    return this.get('/api/search/history');
+  }
+
+  async addSearchToHistory(searchData) {
+    return this.post('/api/search/history', searchData);
+  }
+
+  async getBookmarks() {
+    return this.get('/api/search/bookmarks');
+  }
+
+  async addBookmark(bookmarkData) {
+    return this.post('/api/search/bookmarks', bookmarkData);
+  }
+
+  async deleteBookmark(bookmarkId) {
+    return this.delete(`/api/search/bookmarks/${bookmarkId}`);
+  }
 }
 
 // Create singleton instance

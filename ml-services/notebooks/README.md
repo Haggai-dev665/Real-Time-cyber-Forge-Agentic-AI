@@ -1,54 +1,96 @@
-# ML Notebooks Execution Guide
+# CyberForge ML Notebooks
 
-This directory contains machine learning notebooks for the Cyber Forge AI platform. Follow this guide to run the notebooks in the correct order for optimal results.
+Production-ready ML pipeline for CyberForge cybersecurity AI system.
 
-## 📋 Prerequisites
+## Notebook Structure
 
-Before running any notebooks, ensure you have:
+| # | Notebook | Purpose | Key Outputs |
+|---|----------|---------|-------------|
+| 00 | [environment_setup](00_environment_setup.ipynb) | Environment validation, dependencies | System readiness report |
+| 01 | [data_acquisition](01_data_acquisition.ipynb) | Data collection from WebScraper API, HF | Normalized datasets |
+| 02 | [feature_engineering](02_feature_engineering.ipynb) | URL, network, security feature extraction | Feature-engineered data |
+| 03 | [model_training](03_model_training.ipynb) | Train detection models | Trained .pkl models |
+| 04 | [agent_intelligence](04_agent_intelligence.ipynb) | Decision scoring, Gemini integration | Agent module |
+| 05 | [model_validation](05_model_validation.ipynb) | Performance, edge case testing | Validation report |
+| 06 | [backend_integration](06_backend_integration.ipynb) | API packaging, serialization | Backend package |
+| 07 | [deployment_artifacts](07_deployment_artifacts.ipynb) | Docker, HF upload, documentation | Deployment package |
 
-1. **Python Environment**: Python 3.9+ installed
-2. **Dependencies**: Install all required packages:
+## Quick Start
+
+1. **Configure environment:**
    ```bash
-   cd ../
-   pip install -r requirements.txt
+   cd ml-services
+   # Ensure notebook_config.json has your API keys
    ```
-3. **Jupyter**: Install Jupyter Notebook or JupyterLab:
+
+2. **Run notebooks in order:**
    ```bash
-   pip install jupyter jupyterlab
+   jupyter notebook notebooks/00_environment_setup.ipynb
    ```
 
-## 🎯 Execution Order
+3. **Or run all:**
+   ```bash
+   jupyter nbconvert --execute --to notebook notebooks/*.ipynb
+   ```
 
-Run the notebooks in this specific order to ensure proper model training and dependencies:
+## Configuration
 
-### 1. **Basic AI Agent Training** 📚
-**File**: `ai_agent_training.py`
-**Purpose**: Initial AI agent setup and basic training
-**Runtime**: ~10-15 minutes
-**Description**: 
-- Sets up the foundational AI agent
-- Installs core dependencies programmatically
-- Provides basic communication and cybersecurity skills
-- **RUN THIS FIRST** - Required for other notebooks
+All notebooks use `../notebook_config.json` for configuration:
 
-```bash
-cd ml-services/notebooks
-python ai_agent_training.py
+```json
+{
+  "datasets_dir": "../datasets",
+  "hf_repo": "Che237/cyberforge-models",
+  "gemini_api_key": "",
+  "webscraper_api_key": "your_key"
+}
 ```
 
-### 2. **Advanced Cybersecurity ML Training** 🛡️
-**File**: `advanced_cybersecurity_ml_training.ipynb`
-**Purpose**: Comprehensive ML model training for threat detection
-**Runtime**: ~30-45 minutes
-**Description**:
-- Data preparation and feature engineering
-- Multiple ML model training (Random Forest, XGBoost, Neural Networks)
-- Model evaluation and comparison
-- Production model deployment preparation
+## Output Directories
 
-```bash
-jupyter notebook advanced_cybersecurity_ml_training.ipynb
+After running all notebooks:
+
 ```
+ml-services/
+├── datasets/
+│   ├── processed/       # Cleaned datasets
+│   └── features/        # Feature-engineered data
+├── models/              # Trained models
+│   ├── phishing_detection/
+│   ├── malware_detection/
+│   └── model_registry.json
+├── agent/               # Agent intelligence module
+├── validation/          # Validation reports
+├── backend_package/     # Backend integration files
+└── deployment/          # Deployment artifacts
+```
+
+## Integration Points
+
+### Backend (mlService.js)
+- Use `backend_package/inference.py` or `backend_package/ml_client.js`
+- Prediction endpoint: `POST /predict`
+
+### Desktop App (caido-app.js)
+- Agent module: `agent/cyberforge_agent.py`
+- Real-time analysis via backend API
+
+### Hugging Face
+- Models: `huggingface.co/Che237/cyberforge-models`
+- Datasets: `huggingface.co/datasets/Che237/cyberforge-datasets`
+- Space: `huggingface.co/spaces/Che237/cyberforge`
+
+## Requirements
+
+- Python 3.11+
+- scikit-learn >= 1.3.0
+- pandas >= 2.0.0
+- huggingface_hub >= 0.19.0
+- google-generativeai >= 0.3.0
+
+## License
+
+MIT
 
 ### 3. **Network Security Analysis** 🌐
 **File**: `network_security_analysis.ipynb`

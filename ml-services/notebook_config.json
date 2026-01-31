@@ -1,0 +1,15 @@
+{
+  "datasets_dir": "../datasets",
+  "hf_token": "",
+  "hf_repo": "Che237/cyberforge-models",
+  "hf_datasets_repo": "Che237/cyberforge-datasets",
+  "hf_space": "Che237/cyberforge",
+  "gemini_api_key": "AIzaSyA3HdWTLk_zJQ5P9G8Z8a8BEYSTPvLglhs",
+  "webscraper_api_key": "sk-fd14eaa7bceb478db7afc7256e514d2b",
+  "webscraper_api_url": "http://webscrapper.live/api/scrape",
+  "backend_url": "http://localhost:8000",
+  "ml_service_url": "http://localhost:8001",
+  "confidence_threshold": 0.7,
+  "max_inference_time_ms": 100,
+  "version": "1.0.0"
+}

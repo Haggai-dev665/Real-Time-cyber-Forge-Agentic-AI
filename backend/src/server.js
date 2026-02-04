@@ -115,51 +115,27 @@ class CyberForgeServer {
       });
     });
 
-    // Serve a simple landing page in production
+    // Serve the built cyberforge-landing page in production
     if (process.env.NODE_ENV === 'production') {
-      // API routes should be handled before the catch-all
-      this.app.get('/', (req, res) => {
-        res.send(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>CyberForge API</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 40px; background: #0a0a0a; color: #fff; }
-              .container { max-width: 600px; margin: 0 auto; text-align: center; }
-              .logo { color: #a4bd99; font-size: 2em; margin-bottom: 20px; }
-              .status { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0; }
-              .endpoint { background: #2a2a2a; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
-              a { color: #a4bd99; text-decoration: none; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1 class="logo">🛡️ CyberForge API</h1>
-              <p>AI-Powered Cybersecurity Platform - Backend Services</p>
-              
-              <div class="status">
-                <h3>✅ API Status: Online</h3>
-                <p>Backend services are running and ready to accept connections.</p>
-              </div>
-              
-              <h3>Available Endpoints:</h3>
-              <div class="endpoint"><strong>GET</strong> /health - Health check</div>
-              <div class="endpoint"><strong>POST</strong> /api/auth/login - Authentication</div>
-              <div class="endpoint"><strong>POST</strong> /api/threats/scan - Threat scanning</div>
-              <div class="endpoint"><strong>GET</strong> /api/cyberforge-ml/health - ML service health</div>
-              <div class="endpoint"><strong>WebSocket</strong> /ws - Real-time communication</div>
-              
-              <p style="margin-top: 30px;">
-                <a href="/health">Check API Health</a> | 
-                <a href="/api">API Documentation</a>
-              </p>
-            </div>
-          </body>
-          </html>
-        `);
+      // Serve static files from the built landing page
+      const landingPath = path.join(__dirname, '../../cyberforge-landing/dist');
+      this.app.use(express.static(landingPath));
+      
+      // API status endpoint
+      this.app.get('/api/status', (req, res) => {
+        res.json({
+          status: 'CyberForge API Online',
+          message: 'AI-Powered Cybersecurity Platform - Backend Services',
+          endpoints: [
+            'GET /health - Health check',
+            'POST /api/auth/login - Authentication', 
+            'POST /api/threats/scan - Threat scanning',
+            'GET /api/cyberforge-ml/health - ML service health'
+          ]
+        });
       });
       
+      // Catch-all handler: serve index.html for any non-API routes
       this.app.get('*', (req, res) => {
         // Check if this is an API request
         if (req.path.startsWith('/api/') || req.path.startsWith('/ws')) {
@@ -168,8 +144,8 @@ class CyberForgeServer {
             message: 'The requested API endpoint was not found'
           });
         }
-        // Redirect to home page for any other routes
-        res.redirect('/');
+        // Serve the React app for any other routes
+        res.sendFile(path.join(landingPath, 'index.html'));
       });
     } else {
       // 404 handler for development

@@ -197,6 +197,18 @@ body {
     margin-left: 24px; /* offset from window controls */
 }
 
+.caido-logo-image {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    transition: transform 0.2s ease;
+}
+
+.caido-logo-image:hover {
+    transform: scale(1.05);
+}
+
 .caido-logo-icon {
     width: 24px;
     height: 24px;

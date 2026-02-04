@@ -8,9 +8,7 @@ import {
   Activity,
   Bell,
   Settings,
-  Terminal,
   Database,
-  Lock,
   Zap,
   Search
 } from 'lucide-react'

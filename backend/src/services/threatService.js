@@ -4,6 +4,7 @@
  */
 
 const axios = require('axios');
+const { cyberforgeML } = require('./cyberforgeMLService');
 
 class ThreatService {
   constructor() {
@@ -89,33 +90,67 @@ class ThreatService {
   }
 
   /**
-   * ML-based threat detection
+   * ML-based threat detection using CyberForge ML models
    */
   async detectMLThreats(data) {
     try {
-      const response = await axios.post(`${this.mlServiceUrl}/analyze-url`, {
-        url: data.url,
-        context: 'threat_detection',
-        additional_data: data
-      }, {
-        timeout: 5000
-      });
-
-      if (response.data && response.data.threat_types && response.data.threat_types.length > 0) {
-        return response.data.threat_types.map(threat => ({
-          type: threat,
-          severity: response.data.risk_score > 0.8 ? 'high' : 
-                   response.data.risk_score > 0.5 ? 'medium' : 'low',
-          description: `ML detected threat: ${threat}`,
-          url: data.url,
-          confidence: response.data.confidence || 0.5
-        }));
+      // Use CyberForge ML service for local predictions
+      const analysis = await cyberforgeML.analyzeUrl(data.url, data.additional_features || {});
+      
+      const threats = [];
+      
+      // Check each model's prediction
+      if (analysis.model_predictions) {
+        for (const [modelName, prediction] of Object.entries(analysis.model_predictions)) {
+          if (prediction.is_threat && prediction.threat_score >= 0.4) {
+            threats.push({
+              type: modelName.replace('_detection', ''),
+              severity: prediction.threat_score >= 0.8 ? 'high' : 
+                       prediction.threat_score >= 0.6 ? 'medium' : 'low',
+              description: `CyberForge ML detected: ${prediction.risk_level} risk (${modelName})`,
+              url: data.url,
+              confidence: prediction.threat_score,
+              model: modelName,
+              recommended_action: prediction.threat_score >= 0.6 ? 'block' : 'warn'
+            });
+          }
+        }
+      }
+      
+      // Also include aggregate assessment if high risk
+      if (analysis.aggregate && analysis.aggregate.overall_risk_level !== 'LOW') {
+        console.log(`CyberForge ML Analysis: ${analysis.aggregate.overall_risk_level} risk for ${data.url}`);
       }
 
-      return [];
+      return threats;
 
     } catch (error) {
-      console.warn('ML threat detection failed:', error.message);
+      console.warn('CyberForge ML threat detection failed, falling back to legacy:', error.message);
+      
+      // Fallback to legacy ML service if available
+      try {
+        const response = await axios.post(`${this.mlServiceUrl}/analyze-url`, {
+          url: data.url,
+          context: 'threat_detection',
+          additional_data: data
+        }, {
+          timeout: 5000
+        });
+
+        if (response.data && response.data.threat_types && response.data.threat_types.length > 0) {
+          return response.data.threat_types.map(threat => ({
+            type: threat,
+            severity: response.data.risk_score > 0.8 ? 'high' : 
+                     response.data.risk_score > 0.5 ? 'medium' : 'low',
+            description: `Legacy ML detected threat: ${threat}`,
+            url: data.url,
+            confidence: response.data.confidence || 0.5
+          }));
+        }
+      } catch (legacyError) {
+        console.warn('Legacy ML also unavailable:', legacyError.message);
+      }
+
       return [];
     }
   }
@@ -190,7 +225,12 @@ class ThreatService {
 const threatService = new ThreatService();
 
 module.exports = {
+  threatService,
+  cyberforgeML,
   detectThreats: (data) => threatService.detectThreats(data),
   getThreatStats: (userId) => threatService.getThreatStats(userId),
-  checkThreatDatabase: (url) => threatService.checkThreatDatabase(url)
+  checkThreatDatabase: (url) => threatService.checkThreatDatabase(url),
+  // CyberForge ML convenience methods
+  analyzeUrl: (url, features) => cyberforgeML.analyzeUrl(url, features),
+  mlPredict: (model, features) => cyberforgeML.predict(model, features)
 };

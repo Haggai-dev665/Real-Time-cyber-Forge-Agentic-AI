@@ -850,45 +850,67 @@ class ThreatCenterScreen {
     }
 
     showManualScanDialog() {
-        window.modal?.show({
-            title: 'Manual Security Scan',
-            content: `
-                <div class="scan-options">
-                    <div class="form-group">
-                        <label class="form-label">Scan Type</label>
-                        <select class="form-input" id="scan-type">
-                            <option value="full">Full System Scan</option>
-                            <option value="quick">Quick Scan</option>
-                            <option value="custom">Custom Scan</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Priority</label>
-                        <select class="form-input" id="scan-priority">
-                            <option value="normal">Normal</option>
-                            <option value="high">High</option>
-                            <option value="low">Low</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" id="real-time-scan" checked> Enable real-time protection during scan
-                        </label>
-                    </div>
-                </div>
-            `,
-            actions: [
-                { label: 'Cancel', class: 'btn-secondary' },
-                { 
-                    label: 'Start Scan', 
-                    class: 'btn-primary',
-                    handler: () => {
-                        this.startManualScan();
-                        return true;
+        const url = prompt('Enter URL to scan with CyberForge ML:', 'https://example.com');
+        if (url) {
+            this.scanUrlWithCyberForge(url);
+        }
+    }
+    
+    async scanUrlWithCyberForge(url) {
+        window.notificationSystem?.loading('CyberForge Scan', `Scanning ${url}...`);
+        
+        try {
+            if (window.cyberforgeAPI) {
+                const result = await window.cyberforgeAPI.cyberforgeAnalyzeUrl(url);
+                
+                if (result.success && result.data) {
+                    const analysis = result.data;
+                    const riskLevel = analysis.aggregate?.overall_risk_level || 'unknown';
+                    const maxScore = analysis.aggregate?.max_threat_score || 0;
+                    
+                    // Create threat from analysis
+                    if (riskLevel !== 'low' && riskLevel !== 'minimal') {
+                        const newThreat = {
+                            id: `THR-CF-${Date.now()}`,
+                            severity: riskLevel === 'critical' ? 'critical' : 
+                                     riskLevel === 'high' ? 'high' : 'medium',
+                            type: 'phishing',
+                            source: url,
+                            description: `CyberForge ML detected ${riskLevel.toUpperCase()} risk URL with threat score ${(maxScore * 100).toFixed(1)}%`,
+                            status: 'active',
+                            timestamp: new Date(),
+                            details: {
+                                risk_score: Math.round(maxScore * 100),
+                                affected_systems: 1,
+                                detection_method: 'CyberForge ML Analysis',
+                                remediation: ['Block URL access', 'Review similar URLs', 'Alert users'],
+                                model_predictions: analysis.model_predictions
+                            }
+                        };
+                        
+                        this.threats.unshift(newThreat);
+                        this.threatsTable?.setData(this.threats);
+                        this.updateThreatStats();
+                        
+                        window.notificationSystem?.warning('⚠️ Threat Detected', 
+                            `${riskLevel.toUpperCase()} risk detected for ${url}`);
+                    } else {
+                        window.notificationSystem?.success('✅ URL Safe', 
+                            `No threats detected for ${url} (${riskLevel})`);
                     }
+                    
+                    return;
                 }
-            ]
-        });
+            }
+            
+            // Fallback to legacy scan
+            window.notificationSystem?.success('Scan Complete', 'Manual security scan completed');
+            this.refreshThreats();
+            
+        } catch (error) {
+            console.error('CyberForge scan error:', error);
+            window.notificationSystem?.error('Scan Failed', error.message);
+        }
     }
 
     startManualScan() {

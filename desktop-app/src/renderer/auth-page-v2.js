@@ -230,35 +230,55 @@ async function handleLogin(event) {
     try {
         console.log('🔐 Attempting login:', { email, url: `${API_BASE_URL}/auth/login` });
         
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-        });
+        // Check if running in Electron with IPC available
+        const useIPC = typeof window !== 'undefined' && window.electronAPI?.auth?.login;
         
-        console.log('📡 Login response status:', response.status, response.statusText);
+        let data;
+        if (useIPC) {
+            // Use Electron IPC for persistent login (stores in electron-store)
+            console.log('📡 Using Electron IPC for login...');
+            data = await window.electronAPI.auth.login({ email, password });
+        } else {
+            // Fallback to direct API call (web mode)
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            console.log('📡 Login response status:', response.status, response.statusText);
+            data = await response.json();
+            
+            // Wrap in expected format for consistency
+            if (response.ok && data.success) {
+                data = { success: true, user: data.data.user, token: data.data.token };
+            }
+        }
         
-        const data = await response.json();
         console.log('📦 Login response data:', data);
         
-        if (response.ok && data.success) {
-            // Store tokens - default to localStorage for persistence
-            const rememberMe = document.getElementById('remember-me')?.checked ?? true; // Default to true
+        if (data.success) {
+            // Also store in localStorage for api-client.js to use
             const storage = rememberMe ? localStorage : sessionStorage;
-            storage.setItem('authToken', data.data.token);
-            if (data.data.refreshToken) {
-                storage.setItem('refreshToken', data.data.refreshToken);
+            storage.setItem('authToken', data.token);
+            if (data.refreshToken) {
+                storage.setItem('refreshToken', data.refreshToken);
             }
-            storage.setItem('user', JSON.stringify(data.data.user));
+            storage.setItem('user', JSON.stringify(data.user));
             
-            showToast('success', 'Welcome Back!', `Signed in as ${data.data.user.email}`);
+            showToast('success', 'Welcome Back!', `Signed in as ${data.user.email}`);
             
-            // Redirect to main app after short delay
-            setTimeout(() => {
-                window.location.href = 'caido-index.html';
-            }, 1000);
+            // Notify main process to load dashboard if using IPC
+            if (useIPC) {
+                await window.electronAPI.auth.onAuthSuccess();
+            } else {
+                // Redirect to main app after short delay
+                setTimeout(() => {
+                    window.location.href = 'caido-index.html';
+                }, 1000);
+            }
         } else {
             showToast('error', 'Login Failed', data.message || 'Invalid credentials. Please try again.');
         }
@@ -347,40 +367,67 @@ async function handleRegister(event) {
     try {
         console.log('📝 Attempting registration:', { email, firstName, lastName, role, url: `${API_BASE_URL}/auth/register` });
         
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
+        // Check if running in Electron with IPC available
+        const useIPC = typeof window !== 'undefined' && window.electronAPI?.auth?.register;
+        
+        let data;
+        if (useIPC) {
+            // Use Electron IPC for persistent login (stores in electron-store)
+            console.log('📡 Using Electron IPC for registration...');
+            data = await window.electronAPI.auth.register({
                 firstName,
                 lastName,
                 email,
                 password,
                 role
-            })
-        });
+            });
+        } else {
+            // Fallback to direct API call (web mode)
+            const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    role
+                })
+            });
+            
+            console.log('📡 Register response status:', response.status, response.statusText);
+            data = await response.json();
+            
+            // Wrap in expected format for consistency
+            if (response.ok && data.success) {
+                data = { success: true, user: data.data.user, token: data.data.token };
+            }
+        }
         
-        console.log('📡 Register response status:', response.status, response.statusText);
-        
-        const data = await response.json();
         console.log('📦 Register response data:', data);
         
-        if (response.ok && data.success) {
+        if (data.success) {
             showToast('success', 'Account Created!', 'You are now signed in.');
             
-            // Store tokens and log in automatically
+            // Store tokens in localStorage for api-client.js
             const storage = localStorage;
-            storage.setItem('authToken', data.data.token);
-            if (data.data.refreshToken) {
-                storage.setItem('refreshToken', data.data.refreshToken);
+            storage.setItem('authToken', data.token);
+            if (data.refreshToken) {
+                storage.setItem('refreshToken', data.refreshToken);
             }
-            storage.setItem('user', JSON.stringify(data.data.user));
+            storage.setItem('user', JSON.stringify(data.user));
             
-            // Redirect to main app after short delay
-            setTimeout(() => {
-                window.location.href = 'caido-index.html';
-            }, 1000);
+            // Notify main process to load dashboard if using IPC
+            if (useIPC) {
+                await window.electronAPI.auth.onAuthSuccess();
+            } else {
+                // Redirect to main app after short delay
+                setTimeout(() => {
+                    window.location.href = 'caido-index.html';
+                }, 1000);
+            }
         } else {
             const validationMsg = Array.isArray(data?.errors) && data.errors.length > 0
                 ? (data.errors[0].msg || data.errors[0].message)

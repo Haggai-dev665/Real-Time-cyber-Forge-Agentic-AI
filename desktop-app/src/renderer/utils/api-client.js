@@ -3,9 +3,17 @@
  * Handles all HTTP requests to the backend and ML services
  */
 
+// Import configuration
+const { API_CONFIG } = typeof require !== 'undefined' ? require('../../config/api-endpoints') : window;
+
 class APIClient {
     constructor() {
-        this.backendUrl = 'http://localhost:8000';
+        // Use configuration from api-endpoints.js
+        this.backendUrl = API_CONFIG?.backend?.base || 'http://localhost:8000';
+        this.apiUrl = API_CONFIG?.backend?.api || 'http://localhost:8000/api';
+        this.wsUrl = API_CONFIG?.backend?.websocket || 'ws://localhost:8000/ws';
+        this.mlUrl = API_CONFIG?.ml?.base || 'https://che237-cyberforge-models.hf.space';
+        
         this.authToken = localStorage.getItem('authToken');
         this.refreshToken = localStorage.getItem('refreshToken');
         

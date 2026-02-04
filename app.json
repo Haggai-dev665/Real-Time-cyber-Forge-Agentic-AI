@@ -1,0 +1,74 @@
+{
+  "name": "cyberforge-platform",
+  "description": "CyberForge - AI-Powered Cybersecurity Platform",
+  "website": "https://cyberforge-ddd97655464f.herokuapp.com/",
+  "repository": "https://github.com/your-username/Real-Time-cyber-Forge-Agentic-AI",
+  "logo": "https://cyberforge-ddd97655464f.herokuapp.com/logo.png",
+  "success_url": "/",
+  "keywords": [
+    "cybersecurity",
+    "ai",
+    "threat-detection",
+    "security",
+    "electron",
+    "desktop-app"
+  ],
+  "image": "heroku/nodejs",
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment (development, staging, production)",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "Secret key for JWT tokens (generate with: openssl rand -base64 64)",
+      "generator": "secret"
+    },
+    "DATABASE_URL": {
+      "description": "MongoDB connection string (use MongoDB Atlas)",
+      "required": false
+    },
+    "REDIS_URL": {
+      "description": "Redis connection string for caching",
+      "required": false
+    },
+    "ALLOWED_ORIGINS": {
+      "description": "Comma-separated list of allowed CORS origins",
+      "value": "https://cyberforge-ddd97655464f.herokuapp.com"
+    },
+    "HUGGINGFACE_ML_URL": {
+      "description": "HuggingFace ML service URL",
+      "value": "https://che237-cyberforge-models.hf.space"
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key for AI features",
+      "required": false
+    },
+    "OTX_API_KEY": {
+      "description": "AlienVault OTX API key for threat intelligence",
+      "required": false
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-redis:mini",
+      "options": {
+        "version": "7"
+      }
+    }
+  ],
+  "scripts": {
+    "postdeploy": "echo 'CyberForge deployed successfully!'"
+  }
+}

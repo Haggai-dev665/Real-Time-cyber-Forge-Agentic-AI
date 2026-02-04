@@ -53,36 +53,18 @@
                     <span class="agent-status-label">Agent Active</span>
                 </div>
                 
-                <div class="scope-selector" id="scope-selector">
-                    <i class="fas fa-filter"></i>
-                    <span>Unset Scope</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
+                <!-- Quick Scan Button -->
+                <button class="header-btn primary" id="quick-scan-btn" title="Quick Threat Scan">
+                    <i class="fas fa-bolt"></i>
+                    <span>Scan</span>
+                </button>
             </div>
             
             <div class="caido-header-center">
-                <div class="header-controls">
-                    <button class="header-btn" id="record-btn" title="Start Recording">
-                        <i class="fas fa-circle"></i>
-                    </button>
-                    <button class="header-btn active" id="pause-btn" title="Pause Recording">
-                        <i class="fas fa-pause"></i>
-                    </button>
-                    <button class="header-btn" id="stop-btn" title="Stop Recording">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                </div>
-                
                 <div class="header-search" id="header-search">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search requests, threats, events..." id="global-search">
+                    <input type="text" placeholder="Search threats, URLs, events..." id="global-search">
                     <kbd>⌘K</kbd>
-                </div>
-                
-                <div class="queue-status" id="queue-status">
-                    <i class="fas fa-layer-group"></i>
-                    <span>Queuing</span>
-                    <span class="queue-count" id="queue-count">0</span>
                 </div>
             </div>
             
@@ -114,17 +96,9 @@
                     <i class="fas fa-moon"></i>
                 </button>
                 
-                <div class="env-selector" id="env-selector">
-                    <i class="fas fa-globe"></i>
-                    <span>Environment</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                
-                <div class="project-selector" id="project-selector">
-                    <i class="fas fa-crosshairs"></i>
-                    <span>Hackers-Arise ...</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
+                <button class="header-btn" id="settings-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
                 
                 <div class="user-avatar" id="user-avatar" title="User Menu">
                     <i class="fas fa-user"></i>
@@ -667,25 +641,6 @@
                     </div>
                 </div>
                 
-                <!-- Bottom Action Bar -->
-                <div class="action-buttons" id="action-bar">
-                    <div class="collection-dropdown">
-                        <span>Default Collection</span>
-                        <span class="text-muted">*R</span>
-                    </div>
-                    
-                    <div style="flex: 1;"></div>
-                    
-                    <button class="action-btn" id="drop-btn">
-                        <i class="fas fa-trash"></i>
-                        <span>Drop</span>
-                    </button>
-                    <button class="action-btn primary" id="forward-btn">
-                        <i class="fas fa-arrow-right"></i>
-                        <span>Forward</span>
-                    </button>
-                </div>
-                
                 <!-- Application Footer -->
                 <footer class="caido-footer" id="app-footer">
                     <div class="footer-left">
@@ -737,12 +692,18 @@
         </div>
     </div>
 
-    <!-- Agent Control Center Panel (Always Visible) -->
+    <!-- AI Agent Control Center Panel (Redesigned) -->
     <div class="agent-control-panel" id="agent-control-panel">
         <div class="agent-panel-header">
             <div class="agent-panel-title">
-                <i class="fas fa-robot"></i>
-                <span>AI Agent</span>
+                <div class="agent-avatar">
+                    <i class="fas fa-robot"></i>
+                    <span class="agent-pulse"></span>
+                </div>
+                <div class="agent-title-info">
+                    <span class="agent-name">CyberForge Agent</span>
+                    <span class="agent-version">v2.0</span>
+                </div>
             </div>
             <div class="agent-panel-status">
                 <span class="agent-status-dot" id="agent-main-status"></span>
@@ -754,18 +715,47 @@
         </div>
         
         <div class="agent-panel-body" id="agent-panel-body">
+            <!-- Live Stats Bar -->
+            <div class="agent-live-stats">
+                <div class="agent-live-stat">
+                    <i class="fas fa-globe"></i>
+                    <span id="agent-browsers-count">0</span>
+                    <label>Browsers</label>
+                </div>
+                <div class="agent-live-stat">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span id="agent-requests-count">0</span>
+                    <label>Requests</label>
+                </div>
+                <div class="agent-live-stat threat">
+                    <i class="fas fa-shield-alt"></i>
+                    <span id="agent-threats-count">0</span>
+                    <label>Threats</label>
+                </div>
+                <div class="agent-live-stat">
+                    <i class="fas fa-clock"></i>
+                    <span id="agent-uptime">0:00</span>
+                    <label>Uptime</label>
+                </div>
+            </div>
+
             <!-- Current Goal -->
             <div class="agent-section">
-                <div class="agent-section-label">CURRENT GOAL</div>
-                <div class="agent-goal" id="agent-current-goal">
+                <div class="agent-section-label">
                     <i class="fas fa-bullseye"></i>
+                    CURRENT GOAL
+                </div>
+                <div class="agent-goal" id="agent-current-goal">
                     <span>Monitoring browser activity for security threats</span>
                 </div>
             </div>
 
-            <!-- Agent State -->
+            <!-- Agent State Grid -->
             <div class="agent-section">
-                <div class="agent-section-label">AGENT STATE</div>
+                <div class="agent-section-label">
+                    <i class="fas fa-microchip"></i>
+                    AGENT STATE
+                </div>
                 <div class="agent-state-grid">
                     <div class="agent-state-item" data-state="idle">
                         <i class="fas fa-pause-circle"></i>
@@ -776,7 +766,7 @@
                         <span>Monitoring</span>
                     </div>
                     <div class="agent-state-item" data-state="analyzing">
-                        <i class="fas fa-cog"></i>
+                        <i class="fas fa-cog fa-spin"></i>
                         <span>Analyzing</span>
                     </div>
                     <div class="agent-state-item" data-state="investigating">
@@ -794,9 +784,26 @@
                 </div>
             </div>
 
+            <!-- Live Request Feed -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-stream"></i>
+                    LIVE REQUESTS
+                    <span class="live-indicator"></span>
+                </div>
+                <div class="agent-request-feed" id="agent-request-feed">
+                    <div class="agent-request-empty">
+                        <i class="fas fa-wifi"></i>
+                        <span>Waiting for browser activity...</span>
+                        <small>Start Chrome with --remote-debugging-port=9222</small>
+                    </div>
+                </div>
+            </div>
+
             <!-- Active Tasks -->
             <div class="agent-section">
                 <div class="agent-section-label">
+                    <i class="fas fa-tasks"></i>
                     ACTIVE TASKS
                     <span class="task-count" id="panel-task-count">0</span>
                 </div>
@@ -807,26 +814,40 @@
 
             <!-- Quick Actions -->
             <div class="agent-section">
-                <div class="agent-section-label">QUICK ACTIONS</div>
+                <div class="agent-section-label">
+                    <i class="fas fa-bolt"></i>
+                    QUICK ACTIONS
+                </div>
                 <div class="agent-quick-actions">
                     <button class="agent-action-btn" id="agent-scan-now" title="Run Quick Scan">
-                        <i class="fas fa-bolt"></i>
+                        <i class="fas fa-radar"></i>
+                        <span>Scan</span>
                     </button>
-                    <button class="agent-action-btn" id="agent-pause" title="Pause Agent">
+                    <button class="agent-action-btn" id="agent-pause" title="Pause/Resume Agent">
                         <i class="fas fa-pause"></i>
+                        <span>Pause</span>
                     </button>
                     <button class="agent-action-btn" id="agent-analyze" title="Deep Analysis">
                         <i class="fas fa-brain"></i>
+                        <span>Analyze</span>
                     </button>
                     <button class="agent-action-btn" id="agent-report" title="Generate Report">
                         <i class="fas fa-file-alt"></i>
+                        <span>Report</span>
+                    </button>
+                    <button class="agent-action-btn" id="agent-connect-browsers" title="Connect Browsers">
+                        <i class="fas fa-plug"></i>
+                        <span>Connect</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Last Actions -->
+            <!-- Last Actions Log -->
             <div class="agent-section">
-                <div class="agent-section-label">LAST ACTIONS</div>
+                <div class="agent-section-label">
+                    <i class="fas fa-history"></i>
+                    ACTIVITY LOG
+                </div>
                 <div class="agent-actions-log" id="agent-actions-log">
                     <div class="action-log-item">
                         <span class="action-time">Just now</span>
@@ -925,6 +946,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="../config/api-endpoints.js"></script>
+    <script src="../config/constants.js"></script>
     <script src="interaction-fix.js"></script>
     <script src="api-client.js"></script>
     <script src="child-page-layouts.js"></script>

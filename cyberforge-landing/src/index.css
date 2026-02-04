@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-cyber-950 text-cyber-100;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  ::selection {
+    @apply bg-status-safe/30 text-white;
+  }
+}
+
+@layer components {
+  .container-section {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .section-padding {
+    @apply py-20 md:py-32;
+  }
+  
+  .heading-primary {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+  
+  .heading-secondary {
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight;
+  }
+  
+  .heading-tertiary {
+    @apply text-xl md:text-2xl font-semibold;
+  }
+  
+  .text-body {
+    @apply text-cyber-300 text-base md:text-lg leading-relaxed;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 
+           bg-status-safe text-white font-semibold rounded-lg
+           transition-all duration-200
+           hover:bg-status-safe/90 hover:shadow-lg hover:shadow-status-safe/20
+           focus:outline-none focus:ring-2 focus:ring-status-safe/50 focus:ring-offset-2 focus:ring-offset-cyber-950;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-cyber-800 text-cyber-100 font-semibold rounded-lg
+           border border-cyber-700
+           transition-all duration-200
+           hover:bg-cyber-700 hover:border-cyber-600
+           focus:outline-none focus:ring-2 focus:ring-cyber-500/50;
+  }
+  
+  .card {
+    @apply bg-cyber-900/50 border border-cyber-800 rounded-xl p-6
+           backdrop-blur-sm transition-all duration-300;
+  }
+  
+  .card-hover {
+    @apply hover:border-cyber-700 hover:bg-cyber-900/70;
+  }
+  
+  /* Terminal-style text */
+  .terminal-text {
+    @apply font-mono text-sm text-status-safe;
+  }
+  
+  /* Status indicator dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  
+  .status-dot-active {
+    @apply bg-status-safe animate-pulse;
+  }
+  
+  .status-dot-warning {
+    @apply bg-status-warning;
+  }
+  
+  .status-dot-danger {
+    @apply bg-status-danger animate-pulse;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Grid pattern background */
+  .bg-grid {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  
+  /* Scan line effect */
+  .scan-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.5), transparent);
+    animation: scanLine 2s linear infinite;
+  }
+}

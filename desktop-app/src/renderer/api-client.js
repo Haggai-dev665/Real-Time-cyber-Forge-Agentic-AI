@@ -19,6 +19,45 @@ class CyberForgeAPI {
     this.maxReconnectAttempts = 5;
     this.eventHandlers = new Map();
     this.isRefreshing = false;
+    
+    // Try to get token from Electron IPC if not found in localStorage
+    this.initFromElectron();
+  }
+
+  async initFromElectron() {
+    // If we already have a token, no need to fetch from Electron
+    if (this.token) {
+      console.log('🔐 Token already in memory');
+      return;
+    }
+    
+    // Try to get token from Electron's secure storage
+    if (typeof window !== 'undefined' && window.electronAPI?.auth?.getToken) {
+      try {
+        console.log('🔐 Fetching token from Electron secure storage...');
+        const result = await window.electronAPI.auth.getToken();
+        if (result?.token) {
+          console.log('🔐 Token loaded from Electron secure storage');
+          this.token = result.token;
+          // Also save to localStorage so WebSocket can use it
+          localStorage.setItem('authToken', result.token);
+        } else {
+          console.log('🔐 No token found in Electron storage');
+        }
+        
+        // Also get user data
+        const userResult = await window.electronAPI.auth.getUser();
+        if (userResult?.success && userResult?.user) {
+          this.user = userResult.user;
+          localStorage.setItem('user', JSON.stringify(userResult.user));
+          console.log('🔐 User loaded from Electron:', userResult.user.email);
+        }
+      } catch (error) {
+        console.log('Could not get token from Electron:', error.message);
+      }
+    } else {
+      console.log('🔐 Electron API not available, using localStorage');
+    }
   }
 
   loadUser() {
@@ -190,6 +229,18 @@ class CyberForgeAPI {
     this.isRefreshing = true;
     
     try {
+      // First, try to get token from Electron secure storage
+      if (!this.token && typeof window !== 'undefined' && window.electronAPI?.auth?.getToken) {
+        const result = await window.electronAPI.auth.getToken();
+        if (result?.token) {
+          console.log('🔐 Token recovered from Electron secure storage');
+          this.token = result.token;
+          localStorage.setItem('authToken', result.token);
+          this.isRefreshing = false;
+          return true;
+        }
+      }
+      
       // If we have a refresh token, try to use it
       if (this.refreshToken) {
         const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
@@ -208,8 +259,7 @@ class CyberForgeAPI {
         }
       }
       
-      // Token refresh failed - user needs to re-authenticate
-      this.logout();
+      // Token refresh failed - don't logout automatically, let the UI decide
       this.isRefreshing = false;
       return false;
     } catch (error) {
@@ -1148,6 +1198,78 @@ class CyberForgeAPI {
 
   async deleteBookmark(bookmarkId) {
     return this.delete(`/api/search/bookmarks/${bookmarkId}`);
+  }
+
+  // =========================================
+  // CyberForge ML Prediction Endpoints
+  // =========================================
+
+  /**
+   * Get CyberForge ML service health and available models
+   */
+  async getCyberForgeMLHealth() {
+    return this.get('/api/cyberforge-ml/health');
+  }
+
+  /**
+   * Get all available CyberForge ML models
+   */
+  async getCyberForgeModels() {
+    return this.get('/api/cyberforge-ml/models');
+  }
+
+  /**
+   * Get specific model info
+   */
+  async getCyberForgeModel(modelName) {
+    return this.get(`/api/cyberforge-ml/models/${modelName}`);
+  }
+
+  /**
+   * Make a prediction using CyberForge ML
+   * @param {string} model - Model name (phishing_detection, malware_detection, etc.)
+   * @param {object} features - Feature object for prediction
+   */
+  async cyberforgePredict(model, features) {
+    return this.post('/api/cyberforge-ml/predict', { model, features });
+  }
+
+  /**
+   * Batch prediction for multiple samples
+   */
+  async cyberforgeBatchPredict(model, samples) {
+    return this.post('/api/cyberforge-ml/predict/batch', { model, samples });
+  }
+
+  /**
+   * Analyze URL for threats using all CyberForge ML models
+   */
+  async cyberforgeAnalyzeUrl(url, features = {}) {
+    return this.post('/api/cyberforge-ml/analyze/url', { url, features });
+  }
+
+  /**
+   * Analyze scraped website data
+   */
+  async cyberforgeAnalyzeWebsite(scrapedData) {
+    return this.post('/api/cyberforge-ml/analyze/website', { scraped_data: scrapedData });
+  }
+
+  /**
+   * Quick threat scan using all models
+   */
+  async cyberforgeScan(urlOrFeatures) {
+    if (typeof urlOrFeatures === 'string') {
+      return this.post('/api/cyberforge-ml/scan', { url: urlOrFeatures });
+    }
+    return this.post('/api/cyberforge-ml/scan', { features: urlOrFeatures });
+  }
+
+  /**
+   * Check ML health with alias for compatibility
+   */
+  async mlHealthCheck() {
+    return this.getCyberForgeMLHealth();
   }
 }
 

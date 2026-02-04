@@ -70,6 +70,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onNetworkRequestData: (callback) => ipcRenderer.on('network-request-data', callback),
   onSecurityWarning: (callback) => ipcRenderer.on('security-warning', callback),
   
+  // System-wide browser monitor
+  systemMonitor: {
+    start: () => ipcRenderer.invoke('system-monitor:start'),
+    stop: () => ipcRenderer.invoke('system-monitor:stop'),
+    getStats: () => ipcRenderer.invoke('system-monitor:stats'),
+    getRequests: (limit) => ipcRenderer.invoke('system-monitor:requests', limit),
+    getResponses: (limit) => ipcRenderer.invoke('system-monitor:responses', limit),
+    launchBrowser: (browserKey) => ipcRenderer.invoke('system-monitor:launch-browser', browserKey),
+    getAvailableBrowsers: () => ipcRenderer.invoke('system-monitor:available-browsers'),
+    
+    // Event listeners for real-time data
+    onRequest: (callback) => ipcRenderer.on('browser-request', (event, data) => callback(data)),
+    onResponse: (callback) => ipcRenderer.on('browser-response', (event, data) => callback(data)),
+    onNavigation: (callback) => ipcRenderer.on('browser-navigation', (event, data) => callback(data)),
+    onThreat: (callback) => ipcRenderer.on('threat-detected', (event, data) => callback(data)),
+    onBrowserConnected: (callback) => ipcRenderer.on('browser-connected', (event, data) => callback(data)),
+    onStatusChange: (callback) => ipcRenderer.on('system-monitor-status', (event, data) => callback(data)),
+    onStatsUpdate: (callback) => ipcRenderer.on('system-monitor-stats', (event, data) => callback(data))
+  },
+  
   // Remove listeners
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
   

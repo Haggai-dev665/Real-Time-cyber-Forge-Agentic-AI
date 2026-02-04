@@ -197,10 +197,41 @@ class MLModelsScreen {
     }
 
     async loadModels() {
-        // Try to load from backend
+        // Try to load from CyberForge ML backend first
+        if (window.cyberforgeAPI) {
+            try {
+                const response = await window.cyberforgeAPI.getCyberForgeModels();
+                if (response.success && response.data && response.data.models) {
+                    this.models = Object.entries(response.data.models).map(([id, model]) => ({
+                        id: id,
+                        name: id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        type: model.type || 'Classification',
+                        accuracy: model.accuracy || 0.9,
+                        status: 'active',
+                        lastTrained: new Date(),
+                        description: model.description || `CyberForge ML model for ${id}`,
+                        size: 'N/A',
+                        framework: 'scikit-learn',
+                        version: '1.0.0',
+                        f1_score: model.f1_score || 0,
+                        inference_time_ms: model.inference_time_ms || 0,
+                        classes: model.classes || ['benign', 'malicious'],
+                        huggingface: true
+                    }));
+                    console.log('✅ Loaded CyberForge ML models:', this.models.length);
+                    this.renderModels();
+                    await this.loadTrainingJobs();
+                    return;
+                }
+            } catch (error) {
+                console.warn('CyberForge ML not available, trying legacy:', error.message);
+            }
+        }
+        
+        // Try legacy backend
         if (window.apiClient) {
             try {
-                const response = await window.apiClient.getModels();
+                const response = await window.apiClient.getAIModels();
                 if (response.success && response.data && response.data.models) {
                     this.models = response.data.models.map(model => ({
                         id: model.id,
@@ -225,43 +256,59 @@ class MLModelsScreen {
             }
         }
         
-        // Fallback: Simulate loading models from backend
+        // Fallback: Use CyberForge default models
         this.models = [
             {
-                id: 'malware-detector-v1',
-                name: 'Malware Detector v1.0',
+                id: 'phishing_detection',
+                name: 'Phishing Detection',
                 type: 'Binary Classification',
-                accuracy: 0.94,
+                accuracy: 0.989,
                 status: 'active',
                 lastTrained: new Date('2024-01-15'),
-                description: 'Deep learning model for malware detection using static analysis',
-                size: '45.2 MB',
-                framework: 'TensorFlow',
-                version: '1.0.0'
+                description: 'CyberForge ML model for phishing URL detection',
+                size: 'N/A',
+                framework: 'scikit-learn',
+                version: '1.0.0',
+                huggingface: true
             },
             {
-                id: 'phishing-classifier',
-                name: 'Phishing URL Classifier',
+                id: 'malware_detection',
+                name: 'Malware Detection',
                 type: 'Binary Classification',
-                accuracy: 0.91,
+                accuracy: 0.998,
                 status: 'active',
                 lastTrained: new Date('2024-01-10'),
-                description: 'URL-based phishing detection using NLP features',
-                size: '23.8 MB',
-                framework: 'PyTorch',
-                version: '2.1.0'
+                description: 'CyberForge ML model for malware detection',
+                size: 'N/A',
+                framework: 'scikit-learn',
+                version: '1.0.0',
+                huggingface: true
             },
             {
-                id: 'anomaly-detector',
-                name: 'Network Anomaly Detector',
+                id: 'anomaly_detection',
+                name: 'Anomaly Detection',
                 type: 'Anomaly Detection',
-                accuracy: 0.88,
-                status: 'training',
+                accuracy: 0.999,
+                status: 'active',
                 lastTrained: new Date('2024-01-20'),
-                description: 'Unsupervised learning model for network anomaly detection',
-                size: '67.4 MB',
-                framework: 'Scikit-learn',
-                version: '1.5.0'
+                description: 'CyberForge ML model for network anomaly detection',
+                size: 'N/A',
+                framework: 'scikit-learn',
+                version: '1.0.0',
+                huggingface: true
+            },
+            {
+                id: 'web_attack_detection',
+                name: 'Web Attack Detection',
+                type: 'Binary Classification',
+                accuracy: 1.0,
+                status: 'active',
+                lastTrained: new Date('2024-01-20'),
+                description: 'CyberForge ML model for web attack detection (XSS, SQLi, etc.)',
+                size: 'N/A',
+                framework: 'scikit-learn',
+                version: '1.0.0',
+                huggingface: true
             }
         ];
 
@@ -713,8 +760,38 @@ class MLModelsScreen {
         }
     }
 
-    testModel(modelId) {
-        alert('Model testing interface coming soon!');
+    async testModel(modelId) {
+        const model = this.models.find(m => m.id === modelId);
+        if (!model) return;
+        
+        // Show test dialog
+        const testUrl = prompt('Enter a URL to test with ' + model.name + ':', 'https://example.com');
+        if (!testUrl) return;
+        
+        try {
+            if (window.cyberforgeAPI) {
+                const result = await window.cyberforgeAPI.cyberforgePredict(modelId, { url: testUrl });
+                if (result.success) {
+                    const prediction = result.data;
+                    const message = `
+🔍 Model: ${model.name}
+📊 Prediction: ${prediction.prediction}
+🎯 Confidence: ${prediction.confidence}%
+⚠️ Threat Score: ${prediction.threat_score}
+🏷️ Risk Level: ${prediction.risk_level}
+                    `;
+                    alert(message);
+                    window.notificationSystem?.info('Prediction Complete', `${model.name}: ${prediction.risk_level} risk`);
+                } else {
+                    alert('Prediction failed: ' + (result.error || 'Unknown error'));
+                }
+            } else {
+                alert('CyberForge ML API not available');
+            }
+        } catch (error) {
+            console.error('Model test failed:', error);
+            alert('Test failed: ' + error.message);
+        }
     }
 
     retrainModel(modelId) {
@@ -739,14 +816,26 @@ class MLModelsScreen {
         }
     }
 
-    deployModel(modelId) {
-        alert('Model deployment interface coming soon!');
+    async deployModel(modelId) {
+        const model = this.models.find(m => m.id === modelId);
+        if (!model) return;
+        
+        if (model.huggingface) {
+            window.open('https://huggingface.co/Che237/cyberforge-models', '_blank');
+            window.notificationSystem?.info('HuggingFace', 'Models are already deployed on HuggingFace Hub');
+        } else {
+            alert('Model deployment interface coming soon!');
+        }
     }
 
     downloadModel(modelId) {
         const model = this.models.find(m => m.id === modelId);
         if (model) {
-            alert(`Downloading ${model.name}...`);
+            if (model.huggingface) {
+                window.open('https://huggingface.co/Che237/cyberforge-models/tree/main', '_blank');
+            } else {
+                alert(`Downloading ${model.name}...`);
+            }
         }
     }
 

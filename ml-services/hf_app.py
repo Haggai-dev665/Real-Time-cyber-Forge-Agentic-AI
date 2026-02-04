@@ -33,13 +33,21 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # ============================================================================
 
-MODELS_DIR = Path("./trained_models")
+# Get the directory where app.py is located
+APP_DIR = Path(__file__).parent.absolute()
+
+MODELS_DIR = APP_DIR / "trained_models"
 MODELS_DIR.mkdir(exist_ok=True)
 
-DATASETS_DIR = Path("./datasets")
+DATASETS_DIR = APP_DIR / "datasets"
 DATASETS_DIR.mkdir(exist_ok=True)
 
-NOTEBOOKS_DIR = Path("./notebooks")
+NOTEBOOKS_DIR = APP_DIR / "notebooks"
+
+# Log paths for debugging
+logger.info(f"APP_DIR: {APP_DIR}")
+logger.info(f"NOTEBOOKS_DIR: {NOTEBOOKS_DIR}")
+logger.info(f"NOTEBOOKS_DIR exists: {NOTEBOOKS_DIR.exists()}")
 
 # Model types available for training
 MODEL_TYPES = {
@@ -108,20 +116,22 @@ def execute_notebook(notebook_name: str, progress=gr.Progress()) -> Tuple[str, s
     output_path = NOTEBOOKS_DIR / f"output_{notebook_name}"
     
     if not notebook_path.exists():
-        return f"Error: Notebook not found: {notebook_name}", ""
+        # Debug: list what's actually in the directory
+        available = list(NOTEBOOKS_DIR.glob("*.ipynb")) if NOTEBOOKS_DIR.exists() else []
+        return f"Error: Notebook not found: {notebook_path}\nAvailable: {available}\nDir exists: {NOTEBOOKS_DIR.exists()}", ""
     
     progress(0.1, desc="Starting notebook execution...")
     
     try:
-        # Execute notebook using nbconvert
+        # Execute notebook using nbconvert with absolute paths
         cmd = [
             sys.executable, "-m", "nbconvert",
             "--to", "notebook",
             "--execute",
-            "--output", str(output_path.name),
+            "--output", str(output_path.absolute()),
             "--ExecutePreprocessor.timeout=600",
             "--ExecutePreprocessor.kernel_name=python3",
-            str(notebook_path)
+            str(notebook_path.absolute())
         ]
         
         progress(0.3, desc="Executing cells...")
@@ -172,32 +182,46 @@ def run_notebook_cell(notebook_name: str, cell_number: int) -> str:
     notebook_path = NOTEBOOKS_DIR / notebook_name
     
     if not notebook_path.exists():
-        return f"Error: Notebook not found"
+        return f"Error: Notebook not found at {notebook_path}"
     
     try:
+        # Change to notebooks directory so relative paths work
+        original_cwd = os.getcwd()
+        os.chdir(NOTEBOOKS_DIR)
+        
         with open(notebook_path, 'r') as f:
             nb = json.load(f)
         
         cells = [c for c in nb.get('cells', []) if c.get('cell_type') == 'code']
         
         if cell_number < 1 or cell_number > len(cells):
+            os.chdir(original_cwd)
             return f"Error: Cell {cell_number} not found. Available: 1-{len(cells)}"
         
         cell = cells[cell_number - 1]
         source = ''.join(cell.get('source', []))
         
-        # Execute the code
+        # Execute the code with proper namespace
         import io
         from contextlib import redirect_stdout, redirect_stderr
+        
+        # Create a namespace with common imports
+        namespace = {
+            '__name__': '__main__',
+            '__file__': str(notebook_path),
+        }
         
         stdout_capture = io.StringIO()
         stderr_capture = io.StringIO()
         
         with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
             try:
-                exec(source, globals())
+                exec(source, namespace)
             except Exception as e:
+                os.chdir(original_cwd)
                 return f"Error: {str(e)}"
+        
+        os.chdir(original_cwd)
         
         output = stdout_capture.getvalue()
         errors = stderr_capture.getvalue()
@@ -213,6 +237,10 @@ def run_notebook_cell(notebook_name: str, cell_number: int) -> str:
         return result
         
     except Exception as e:
+        try:
+            os.chdir(original_cwd)
+        except:
+            pass
         return f"Error: {str(e)}"
 
 # ============================================================================
@@ -528,4 +556,8 @@ The notebooks in this Space implement the complete CyberForge ML pipeline:
 
 if __name__ == "__main__":
     demo = create_interface()
-    demo.launch()
+    # Docker deployment configuration
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860
+    )

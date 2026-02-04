@@ -268,29 +268,58 @@ class RealTimeMonitorScreen {
     }
 
     setupRealtimeHandlers() {
-        if (window.websocketManager) {
+        // Use CyberForge API for WebSocket if available
+        if (window.cyberforgeAPI?.connectWebSocket) {
+            window.cyberforgeAPI.on('threat:alert', (data) => this.addEventFromRealtime(data));
+            window.cyberforgeAPI.on('analysis:result', (data) => this.addEventFromRealtime(data));
+            window.cyberforgeAPI.on('otx:threat', (data) => this.addEventFromRealtime({
+                ...data,
+                type: 'otx-intel',
+                severity: 'high',
+                source: 'OTX Threat Feed'
+            }));
+            window.cyberforgeAPI.connectWebSocket();
+            console.log('✅ Real-time monitor connected via CyberForge API');
+        } else if (window.websocketManager) {
             window.websocketManager.on('threat_alert', (data) => this.addEventFromRealtime({ ...data, type: data?.threatType || 'threat' }));
             window.websocketManager.on('analysis_result', (data) => this.addEventFromRealtime({ ...data, type: 'analysis' }));
             window.websocketManager.connect();
         } else if (window.apiClient?.connectWebSocket) {
             window.apiClient.on('threat:alert', (data) => this.addEventFromRealtime(data));
             window.apiClient.on('analysis:result', (data) => this.addEventFromRealtime(data));
+            window.apiClient.on('otx:threat', (data) => this.addEventFromRealtime({
+                ...data,
+                type: 'otx-intel',
+                severity: 'high',
+                source: 'OTX'
+            }));
             window.apiClient.connectWebSocket();
         }
     }
 
     async loadData() {
-        const hasClient = typeof window !== 'undefined' && window.apiClient;
-        if (!hasClient) {
+        const api = window.cyberforgeAPI || window.apiClient;
+        if (!api) {
             this.updateStats({});
             return;
         }
 
         try {
-            const [statsRes, threatsRes, mlRes] = await Promise.allSettled([
-                window.apiClient.getThreatStats(),
-                window.apiClient.getThreats({ limit: 20 }),
-                window.apiClient.mlHealthCheck()
+            // Load CyberForge ML health first
+            if (window.cyberforgeAPI) {
+                const mlHealth = await window.cyberforgeAPI.getCyberForgeMLHealth();
+                if (mlHealth.success) {
+                    this.updateMLStatus({ 
+                        status: 'healthy',
+                        models: mlHealth.data?.model_count || 4,
+                        source: 'CyberForge ML'
+                    });
+                }
+            }
+            
+            const [statsRes, threatsRes] = await Promise.allSettled([
+                api.getThreatStats(),
+                api.getThreats({ limit: 20 })
             ]);
 
             const stats = statsRes.value?.success ? statsRes.value.data : {};
@@ -310,10 +339,6 @@ class RealTimeMonitorScreen {
 
             this.renderEvents();
             this.updateChartsFromStats(stats);
-
-            if (mlRes.value?.success) {
-                this.updateMLStatus(mlRes.value.data || {});
-            }
         } catch (error) {
             console.error('Failed to load real-time data:', error);
         }

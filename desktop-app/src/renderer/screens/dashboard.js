@@ -475,15 +475,32 @@ class DashboardScreen {
     }
 
     async loadMLStatus() {
-        if (!window.apiClient) return;
-        
-        try {
-            const mlHealth = await window.apiClient.mlHealthCheck();
-            if (mlHealth.success && mlHealth.data) {
-                this.updateHealthIndicators({ ml: mlHealth.data.status === 'healthy' || mlHealth.data.ready });
+        // Try CyberForge ML first
+        if (window.cyberforgeAPI) {
+            try {
+                const mlHealth = await window.cyberforgeAPI.getCyberForgeMLHealth();
+                if (mlHealth.success && mlHealth.data) {
+                    const status = mlHealth.data.status === 'healthy';
+                    const modelCount = mlHealth.data.model_count || 4;
+                    console.log(`✅ CyberForge ML: ${modelCount} models available`);
+                    this.updateHealthIndicators({ ml: status, cyberforge: true });
+                    return;
+                }
+            } catch (error) {
+                console.warn('CyberForge ML check failed:', error.message);
             }
-        } catch (error) {
-            console.error('Failed to load ML status:', error);
+        }
+        
+        // Fallback to legacy
+        if (window.apiClient) {
+            try {
+                const mlHealth = await window.apiClient.getMLHealth();
+                if (mlHealth.success && mlHealth.data) {
+                    this.updateHealthIndicators({ ml: mlHealth.data.status === 'healthy' || mlHealth.data.ready });
+                }
+            } catch (error) {
+                console.error('Failed to load ML status:', error);
+            }
         }
     }
 
@@ -870,16 +887,64 @@ class DashboardScreen {
     }
 
     // Event handlers
-    showQuickScan() {
-        window.modal?.prompt('Quick URL Scan', 'Enter URL to scan:', '', {
-            placeholder: 'https://example.com',
-            confirmLabel: 'Scan Now',
-            confirmClass: 'btn-primary'
-        }).then(url => {
-            if (url) {
+    async showQuickScan() {
+        // Prompt for URL
+        const url = prompt('Enter URL to scan:', 'https://example.com');
+        if (!url) return;
+        
+        // Show scanning notification
+        window.notificationSystem?.info('Scanning...', `Analyzing ${url} with CyberForge ML`);
+        
+        try {
+            // Use CyberForge ML for URL analysis
+            if (window.cyberforgeAPI) {
+                const result = await window.cyberforgeAPI.cyberforgeAnalyzeUrl(url);
+                
+                if (result.success && result.data) {
+                    const analysis = result.data;
+                    const riskLevel = analysis.aggregate?.overall_risk_level || 'unknown';
+                    const maxScore = analysis.aggregate?.max_threat_score || 0;
+                    const action = analysis.aggregate?.recommended_action || 'allow';
+                    
+                    // Show result notification
+                    if (riskLevel === 'high' || riskLevel === 'critical') {
+                        window.notificationSystem?.error('⚠️ High Risk Detected', 
+                            `${url}\nRisk: ${riskLevel.toUpperCase()}\nThreat Score: ${(maxScore * 100).toFixed(1)}%\nAction: ${action.toUpperCase()}`);
+                    } else if (riskLevel === 'medium') {
+                        window.notificationSystem?.warning('⚡ Medium Risk', 
+                            `${url}\nRisk: ${riskLevel.toUpperCase()}\nThreat Score: ${(maxScore * 100).toFixed(1)}%`);
+                    } else {
+                        window.notificationSystem?.success('✅ Safe URL', 
+                            `${url}\nRisk: ${riskLevel.toUpperCase()}\nThreat Score: ${(maxScore * 100).toFixed(1)}%`);
+                    }
+                    
+                    // Log model predictions
+                    console.log('CyberForge ML Analysis:', analysis);
+                    
+                    // Update dashboard metrics
+                    this.metrics.urlsAnalyzed++;
+                    if (riskLevel === 'high' || riskLevel === 'critical') {
+                        this.metrics.threatsBlocked++;
+                    }
+                    this.updateMetrics();
+                    
+                } else {
+                    throw new Error(result.error || 'Analysis failed');
+                }
+            } else if (window.apiClient) {
+                // Fallback to legacy API
+                const result = await window.apiClient.analyzeUrl(url);
+                if (result.success) {
+                    window.notificationSystem?.success('Scan Complete', `Analysis of ${url} completed`);
+                    window.app?.showScreen('deep-analysis', { url });
+                }
+            } else {
                 window.app?.showScreen('deep-analysis', { url });
             }
-        });
+        } catch (error) {
+            console.error('Quick scan error:', error);
+            window.notificationSystem?.error('Scan Failed', error.message);
+        }
     }
 
     showMetricDetails(cardId) {

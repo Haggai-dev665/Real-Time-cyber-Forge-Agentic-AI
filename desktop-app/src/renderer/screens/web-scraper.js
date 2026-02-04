@@ -211,6 +211,40 @@ class WebScraperScreen {
         if (!domain) return;
 
         try {
+            // Use CyberForge API if available
+            const api = window.cyberforgeAPI || window.apiClient;
+            if (api?.scrapeDomain) {
+                window.notificationSystem?.loading('Scraping', `Starting scrape of ${domain}...`);
+                
+                const response = await api.scrapeDomain(domain, {
+                    depth: 3,
+                    followSubdomains: true,
+                    extractEmails: true,
+                    extractPhoneNumbers: true,
+                    checkSecurity: true
+                });
+
+                if (response.success) {
+                    this.addScrapingTask(response.data?.task || { id: Date.now(), domain, status: 'running' });
+                    window.notificationSystem?.success('Scraping Started', `Domain scraping started for ${domain}`);
+                    
+                    // If we have scraped data, analyze with CyberForge ML
+                    if (response.data?.scraped_data && window.cyberforgeAPI) {
+                        const analysis = await window.cyberforgeAPI.cyberforgeAnalyzeWebsite(response.data.scraped_data);
+                        if (analysis.success) {
+                            console.log('CyberForge ML Analysis:', analysis.data);
+                            const riskLevel = analysis.data?.aggregate?.overall_risk_level || 'unknown';
+                            if (riskLevel !== 'low' && riskLevel !== 'minimal') {
+                                window.notificationSystem?.warning('⚠️ Security Issues', 
+                                    `${domain} has ${riskLevel.toUpperCase()} risk indicators`);
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+            
+            // Fallback to direct fetch
             const response = await fetch('/api/scraping/domain', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -233,7 +267,7 @@ class WebScraperScreen {
             }
         } catch (error) {
             console.error('Error starting domain scraping:', error);
-            this.showNotification('Failed to start domain scraping', 'error');
+            window.notificationSystem?.error('Scrape Failed', error.message);
         }
     }
 

@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const { setupWebSocketServer } = require('./services/websocket');
 const { connectDatabase } = require('./services/database');
@@ -19,6 +20,7 @@ const webScrapingRoutes = require('./routes/web-scraping');
 const domainIntelligenceRoutes = require('./routes/domain-intelligence');
 const threatHuntingRoutes = require('./routes/threat-hunting');
 const mlTrainingRoutes = require('./routes/ml-training');
+const mlRoutes = require('./routes/mlRoutes');
 const featuresRoutes = require('./routes/features');
 const otxRoutes = require('./routes/otx');
 const childPagesRoutes = require('./routes/child-pages');
@@ -53,7 +55,9 @@ class CyberForgeServer {
 
     // CORS
     this.app.use(cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+      origin: process.env.NODE_ENV === 'production' 
+        ? ['https://cyberforge-ddd97655464f.herokuapp.com']
+        : process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
       credentials: true
     }));
 
@@ -64,6 +68,12 @@ class CyberForgeServer {
     // Body parsing
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
+
+    // Serve static files from the Next.js build (in production)
+    if (process.env.NODE_ENV === 'production') {
+      this.app.use(express.static(path.join(__dirname, '../../landing-page/.next')));
+      this.app.use(express.static(path.join(__dirname, '../../landing-page/public')));
+    }
   }
 
   setupRoutes() {
@@ -87,6 +97,7 @@ class CyberForgeServer {
     this.app.use('/api/domain-intel', domainIntelligenceRoutes);
     this.app.use('/api/threat-hunting', threatHuntingRoutes);
     this.app.use('/api/ml', mlTrainingRoutes);
+    this.app.use('/api/cyberforge-ml', mlRoutes);  // CyberForge ML prediction API
     this.app.use('/api/otx', otxRoutes);           // OTX threat intelligence
     
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
@@ -105,13 +116,29 @@ class CyberForgeServer {
       });
     });
 
-    // 404 handler
-    this.app.use('*', (req, res) => {
-      res.status(404).json({
-        error: 'Not Found',
-        message: 'The requested resource was not found'
+    // Serve Next.js pages in production
+    if (process.env.NODE_ENV === 'production') {
+      // API routes should be handled before the catch-all
+      this.app.get('*', (req, res) => {
+        // Check if this is an API request
+        if (req.path.startsWith('/api/') || req.path.startsWith('/ws')) {
+          return res.status(404).json({
+            error: 'Not Found',
+            message: 'The requested API endpoint was not found'
+          });
+        }
+        // Serve the Next.js app for all other routes
+        res.sendFile(path.join(__dirname, '../../landing-page/.next/server/pages/index.html'));
       });
-    });
+    } else {
+      // 404 handler for development
+      this.app.use('*', (req, res) => {
+        res.status(404).json({
+          error: 'Not Found',
+          message: 'The requested resource was not found'
+        });
+      });
+    }
 
     // Error handling middleware
     this.app.use(errorHandler);

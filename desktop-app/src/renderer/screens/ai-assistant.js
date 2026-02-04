@@ -319,13 +319,49 @@ class AIAssistantScreen {
     }
 
     async sendToAI(message) {
+        // Check if message is asking about URL analysis - use CyberForge ML
+        const urlMatch = message.match(/https?:\/\/[^\s]+/);
+        if (urlMatch && window.cyberforgeAPI) {
+            try {
+                const url = urlMatch[0];
+                const analysis = await window.cyberforgeAPI.cyberforgeAnalyzeUrl(url);
+                if (analysis.success && analysis.data) {
+                    const data = analysis.data;
+                    const riskLevel = data.aggregate?.overall_risk_level || 'unknown';
+                    const maxScore = data.aggregate?.max_threat_score || 0;
+                    const action = data.aggregate?.recommended_action || 'review';
+                    
+                    let response = `**CyberForge ML Analysis for ${url}**\n\n`;
+                    response += `🔒 **Overall Risk Level:** ${riskLevel.toUpperCase()}\n`;
+                    response += `📊 **Max Threat Score:** ${(maxScore * 100).toFixed(1)}%\n`;
+                    response += `⚡ **Recommended Action:** ${action.toUpperCase()}\n\n`;
+                    response += `**Model Predictions:**\n`;
+                    
+                    if (data.model_predictions) {
+                        for (const [model, pred] of Object.entries(data.model_predictions)) {
+                            const icon = pred.is_threat ? '🔴' : '🟢';
+                            response += `${icon} **${model.replace(/_/g, ' ')}:** ${pred.risk_level} (${(pred.threat_score * 100).toFixed(1)}%)\n`;
+                        }
+                    }
+                    
+                    return {
+                        message: response,
+                        metadata: { source: 'cyberforge-ml', url: url, confidence: 0.95 }
+                    };
+                }
+            } catch (error) {
+                console.warn('CyberForge ML analysis failed, continuing with AI chat:', error.message);
+            }
+        }
+        
         // Backend AI endpoint (preferred)
-        if (window.apiClient) {
+        if (window.cyberforgeAPI || window.apiClient) {
+            const api = window.cyberforgeAPI || window.apiClient;
             try {
                 const history = (this.chatHistory || [])
                     .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
                     .slice(-10);
-                const response = await window.apiClient.chatWithAI(message, history);
+                const response = await api.chatWithAI(message, history);
                 if (response?.success) {
                     const data = response.data || {};
                     const reply = data.response || data.message || data.answer || 'I received your message.';
@@ -334,7 +370,7 @@ class AIAssistantScreen {
                         metadata: {
                             confidence: data.confidence,
                             sources: data.sources,
-                            source: data.source || 'backend'
+                            source: data.source || 'gemini'
                         }
                     };
                 }
@@ -538,31 +574,6 @@ class AIAssistantScreen {
         chatInput.focus();
     }
 
-    async checkAIStatus() {
-        const statusIndicator = document.getElementById('ai-status-indicator');
-        const statusText = document.getElementById('ai-status-text');
-        
-        try {
-            // Check ML service health
-            if (window.apiClient) {
-                const health = await window.apiClient.mlHealthCheck();
-                if (health.success) {
-                    statusIndicator.className = 'status-indicator online';
-                    statusText.textContent = 'AI services online';
-                    return;
-                }
-            }
-            
-            // Fallback status
-            statusIndicator.className = 'status-indicator offline';
-            statusText.textContent = 'AI services offline - limited functionality';
-            
-        } catch (error) {
-            statusIndicator.className = 'status-indicator offline';
-            statusText.textContent = 'AI services offline - limited functionality';
-        }
-    }
-
     async loadChatHistory() {
         // TODO: Load previous chat sessions from storage
     }
@@ -662,11 +673,38 @@ class AIAssistantScreen {
         window.notificationSystem?.info('Voice Input', 'Voice input feature coming soon!');
     }
 
-    handleQuickAction(action) {
+    async handleQuickAction(action) {
         const actions = {
-            'analyze-url': () => window.app?.showScreen('deep-analysis'),
+            'analyze-url': async () => {
+                const url = prompt('Enter URL to analyze:', 'https://example.com');
+                if (url) {
+                    document.getElementById('chat-input').value = `Analyze this URL for security threats: ${url}`;
+                    await this.sendMessage();
+                }
+            },
             'scan-file': () => window.app?.showScreen('malware-detection'),
-            'threat-report': () => window.app?.showScreen('threat-center'),
+            'threat-report': async () => {
+                // Get CyberForge ML health and models
+                if (window.cyberforgeAPI) {
+                    try {
+                        const health = await window.cyberforgeAPI.getCyberForgeMLHealth();
+                        if (health.success) {
+                            const data = health.data;
+                            const report = `**CyberForge ML Threat Detection Status**\n\n` +
+                                `✅ Status: ${data.status}\n` +
+                                `🤖 Models: ${data.models_available?.join(', ') || 'N/A'}\n` +
+                                `📊 Total Models: ${data.model_count || 0}\n` +
+                                `🔗 HuggingFace: [cyberforge-models](${data.huggingface_repo})\n\n` +
+                                `All models are operational and ready for threat detection.`;
+                            this.addMessage('ai', report, { source: 'cyberforge-ml' });
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('CyberForge ML status check failed:', e);
+                    }
+                }
+                window.app?.showScreen('threat-center');
+            },
             'security-tips': () => {
                 const tips = [
                     "Use strong, unique passwords for all accounts",
@@ -683,10 +721,45 @@ class AIAssistantScreen {
         };
         
         if (actions[action]) {
-            actions[action]();
+            await actions[action]();
         }
     }
 
+    async checkAIStatus() {
+        const statusIndicator = document.getElementById('ai-status-indicator');
+        const statusText = document.getElementById('ai-status-text');
+        
+        try {
+            // Check CyberForge ML first
+            if (window.cyberforgeAPI) {
+                const health = await window.cyberforgeAPI.getCyberForgeMLHealth();
+                if (health.success) {
+                    statusIndicator.className = 'status-indicator online';
+                    statusText.textContent = `CyberForge ML online (${health.data?.model_count || 4} models)`;
+                    return;
+                }
+            }
+            
+            // Check backend AI health
+            if (window.apiClient) {
+                const health = await window.apiClient.checkHealth();
+                if (health.success) {
+                    statusIndicator.className = 'status-indicator online';
+                    statusText.textContent = 'AI services online';
+                    return;
+                }
+            }
+            
+            // Fallback status
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'AI services offline - limited functionality';
+            
+        } catch (error) {
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'AI services offline - limited functionality';
+        }
+    }
+    
     destroy() {
         // Cleanup if needed
     }

@@ -1,0 +1,17 @@
+{
+    "datasets_dir": "../datasets",
+    "models_dir": "../models",
+    "artifacts_dir": "../artifacts",
+    "hf_repo": "Che237/cyberforge-models",
+    "hf_datasets_repo": "Che237/cyberforge-datasets",
+    "hf_space": "Che237/cyberforge",
+    "gemini_api_key": "AIzaSyA3HdWTLk_zJQ5P9G8Z8a8BEYSTPvLglhs",
+    "gemini_model": "gemini-2.5-flash",
+    "gemini_temperature": 0.3,
+    "gemini_max_tokens": 2048,
+    "webscraper_api_key": "sk-fd14eaa7bceb478db7afc7256e514d2b",
+    "webscraper_api_url": "http://webscrapper.live/api/scrape",
+    "random_state": 42,
+    "test_size": 0.2,
+    "cv_folds": 5
+}

@@ -1,0 +1,36 @@
+# CyberForge ML Services - Hugging Face Space
+# Gradio 5.12+ with bug fixes for Python 3.13
+
+# Core ML
+scikit-learn>=1.5.0
+pandas>=2.2.0
+numpy>=2.0.0
+joblib>=1.4.0
+
+# Gradio - use latest stable with all bug fixes
+gradio>=5.20.0
+
+# HF Hub
+huggingface_hub>=0.25.0
+
+# Feature Engineering
+tldextract>=5.1.0
+
+# Gemini AI
+google-generativeai>=0.8.0
+
+# Notebook execution
+nbformat>=5.10.0
+nbconvert>=7.16.0
+nest_asyncio>=1.6.0
+
+# HTTP client for notebooks
+httpx>=0.27.0
+
+# Data handling
+datasets>=2.20.0
+pyarrow>=17.0.0
+
+# Utilities
+requests>=2.31.0
+python-dotenv>=1.0.0

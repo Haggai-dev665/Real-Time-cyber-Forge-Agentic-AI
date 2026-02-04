@@ -21,12 +21,13 @@
     "build:mobile": "cd mobile-app && npm run build:android && npm run build:ios",
     "build:landing": "cd landing-page && npm run build",
     "build:backend": "cd backend && npm run build",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:ml\" \"npm run start:landing\"",
+    "start": "cd backend && npm start",
     "start:desktop": "cd desktop-app && npm start",
     "start:mobile": "cd mobile-app && npm start",
     "start:landing": "cd landing-page && npm start",
     "start:backend": "cd backend && npm start",
     "start:ml": "cd ml-services && python main.py",
+    "heroku-postbuild": "cd backend && npm install && cd ../landing-page && npm install && npm run build",
     "test": "npm run test:backend && npm run test:ml",
     "test:backend": "cd backend && npm test",
     "test:ml": "cd ml-services && pytest",
@@ -66,6 +67,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI.git"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   },
   "homepage": "https://github.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI#readme",
   "bugs": {

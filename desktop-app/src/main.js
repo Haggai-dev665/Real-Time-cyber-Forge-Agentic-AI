@@ -3,6 +3,7 @@ const path = require('path');
 const axios = require('axios');
 const { setupBrowserMonitoring } = require('./browser-monitor/monitor');
 const { setupEnhancedBrowserMonitoring } = require('./browser-monitor/enhanced-monitor');
+const { setupSystemBrowserMonitoring } = require('./browser-monitor/system-monitor');
 const BrowserSelector = require('./browser-monitor/browser-selector');
 const AuthService = require('./auth/AuthService');
 const WebSocket = require('ws');
@@ -15,6 +16,7 @@ class CyberForgeApp {
     this.aiInterface = null;
     this.browserMonitor = null;
     this.enhancedBrowserMonitor = null;
+    this.systemMonitor = null;
     this.browserSelector = new BrowserSelector();
     this.authService = new AuthService();
     this.dashboardAccessGranted = false;
@@ -101,6 +103,16 @@ class CyberForgeApp {
     
     // Set up enhanced browser monitoring for external browsers
     this.enhancedBrowserMonitor = setupEnhancedBrowserMonitoring(this.mainWindow);
+    
+    // Set up system-wide browser monitoring (captures from all browsers)
+    this.systemMonitor = setupSystemBrowserMonitoring(this.mainWindow);
+    
+    // Auto-start system monitoring
+    this.systemMonitor.startMonitoring().then(result => {
+      console.log(`🌐 System monitor started: ${result.browsersConnected} browsers connected`);
+    }).catch(err => {
+      console.log('⚠️ System monitor: No browsers with debug ports detected');
+    });
     
     // Connect to backend
     this.connectToBackend();
@@ -332,6 +344,61 @@ class CyberForgeApp {
         return this.enhancedBrowserMonitor.getMonitoringData();
       }
       return this.browserMonitor?.getAnalysisData() || [];
+    });
+
+    // System Monitor IPC Handlers
+    ipcMain.handle('system-monitor:start', async () => {
+      if (this.systemMonitor) {
+        return await this.systemMonitor.startMonitoring();
+      }
+      return { success: false, error: 'System monitor not initialized' };
+    });
+
+    ipcMain.handle('system-monitor:stop', () => {
+      if (this.systemMonitor) {
+        this.systemMonitor.stopMonitoring();
+        return { success: true };
+      }
+      return { success: false, error: 'System monitor not initialized' };
+    });
+
+    ipcMain.handle('system-monitor:stats', () => {
+      if (this.systemMonitor) {
+        return this.systemMonitor.getStats();
+      }
+      return null;
+    });
+
+    ipcMain.handle('system-monitor:requests', (event, limit = 50) => {
+      if (this.systemMonitor) {
+        return this.systemMonitor.getRecentRequests(limit);
+      }
+      return [];
+    });
+
+    ipcMain.handle('system-monitor:responses', (event, limit = 50) => {
+      if (this.systemMonitor) {
+        return this.systemMonitor.getRecentResponses(limit);
+      }
+      return [];
+    });
+
+    ipcMain.handle('system-monitor:launch-browser', async (event, browserKey = 'chrome') => {
+      if (this.systemMonitor) {
+        try {
+          return await this.systemMonitor.launchBrowserWithDebugging(browserKey);
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      }
+      return { success: false, error: 'System monitor not initialized' };
+    });
+
+    ipcMain.handle('system-monitor:available-browsers', () => {
+      if (this.systemMonitor) {
+        return this.systemMonitor.getAvailableBrowsers();
+      }
+      return [];
     });
 
     // Window Controls

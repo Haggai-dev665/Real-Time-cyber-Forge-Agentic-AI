@@ -69,10 +69,9 @@ class CyberForgeServer {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
-    // Serve static files from the Next.js build (in production)
+    // Serve static files in production (simple static files, not Next.js)
     if (process.env.NODE_ENV === 'production') {
-      this.app.use(express.static(path.join(__dirname, '../../landing-page/.next')));
-      this.app.use(express.static(path.join(__dirname, '../../landing-page/public')));
+      this.app.use(express.static(path.join(__dirname, '../public')));
     }
   }
 
@@ -116,9 +115,51 @@ class CyberForgeServer {
       });
     });
 
-    // Serve Next.js pages in production
+    // Serve a simple landing page in production
     if (process.env.NODE_ENV === 'production') {
       // API routes should be handled before the catch-all
+      this.app.get('/', (req, res) => {
+        res.send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>CyberForge API</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; background: #0a0a0a; color: #fff; }
+              .container { max-width: 600px; margin: 0 auto; text-align: center; }
+              .logo { color: #a4bd99; font-size: 2em; margin-bottom: 20px; }
+              .status { background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 20px 0; }
+              .endpoint { background: #2a2a2a; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+              a { color: #a4bd99; text-decoration: none; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1 class="logo">🛡️ CyberForge API</h1>
+              <p>AI-Powered Cybersecurity Platform - Backend Services</p>
+              
+              <div class="status">
+                <h3>✅ API Status: Online</h3>
+                <p>Backend services are running and ready to accept connections.</p>
+              </div>
+              
+              <h3>Available Endpoints:</h3>
+              <div class="endpoint"><strong>GET</strong> /health - Health check</div>
+              <div class="endpoint"><strong>POST</strong> /api/auth/login - Authentication</div>
+              <div class="endpoint"><strong>POST</strong> /api/threats/scan - Threat scanning</div>
+              <div class="endpoint"><strong>GET</strong> /api/cyberforge-ml/health - ML service health</div>
+              <div class="endpoint"><strong>WebSocket</strong> /ws - Real-time communication</div>
+              
+              <p style="margin-top: 30px;">
+                <a href="/health">Check API Health</a> | 
+                <a href="/api">API Documentation</a>
+              </p>
+            </div>
+          </body>
+          </html>
+        `);
+      });
+      
       this.app.get('*', (req, res) => {
         // Check if this is an API request
         if (req.path.startsWith('/api/') || req.path.startsWith('/ws')) {
@@ -127,8 +168,8 @@ class CyberForgeServer {
             message: 'The requested API endpoint was not found'
           });
         }
-        // Serve the Next.js app for all other routes
-        res.sendFile(path.join(__dirname, '../../landing-page/.next/server/pages/index.html'));
+        // Redirect to home page for any other routes
+        res.redirect('/');
       });
     } else {
       // 404 handler for development

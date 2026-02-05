@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { 
-  Shield, 
   Download, 
   Github, 
   Twitter, 
@@ -11,6 +11,7 @@ import {
   Apple,
   Smartphone
 } from 'lucide-react'
+import logo from '../assets/logo.png'
 
 type OS = 'windows' | 'macos' | 'linux' | 'android' | 'ios' | 'unknown'
 
@@ -40,27 +41,27 @@ const osLabels: Record<OS, { name: string; icon: React.ReactNode }> = {
 
 const footerLinks = {
   product: [
-    { label: 'Features', href: '#capabilities' },
-    { label: 'Download', href: '#download' },
-    { label: 'Documentation', href: '#' },
-    { label: 'Changelog', href: '#' },
+    { label: 'Features', href: '/#capabilities' },
+    { label: 'Download', href: '/#download' },
+    { label: 'Documentation', href: '/docs' },
+    { label: 'Changelog', href: '/changelog' },
   ],
   resources: [
-    { label: 'API Reference', href: '#' },
-    { label: 'Security Blog', href: '#' },
-    { label: 'Threat Research', href: '#' },
-    { label: 'ML Models', href: '#' },
+    { label: 'API Reference', href: '/api' },
+    { label: 'Security Blog', href: '/blog' },
+    { label: 'Threat Research', href: '/research' },
+    { label: 'ML Models', href: '/research' },
   ],
   company: [
-    { label: 'About', href: '#' },
-    { label: 'Open Source', href: '#' },
-    { label: 'Privacy Policy', href: '#' },
-    { label: 'Terms of Service', href: '#' },
+    { label: 'About', href: '/about' },
+    { label: 'Open Source', href: '/open-source' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
   ],
 }
 
 const socialLinks = [
-  { icon: <Github className="w-5 h-5" />, href: 'https://github.com', label: 'GitHub' },
+  { icon: <Github className="w-5 h-5" />, href: 'https://github.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI', label: 'GitHub' },
   { icon: <Twitter className="w-5 h-5" />, href: 'https://twitter.com', label: 'Twitter' },
   { icon: <Mail className="w-5 h-5" />, href: 'mailto:contact@cyberforge.dev', label: 'Email' },
 ]
@@ -113,9 +114,8 @@ export function Footer() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-12 border-t border-cyber-800">
             {/* Brand Column */}
             <div className="col-span-2 md:col-span-1">
-              <a href="#" className="flex items-center gap-2 mb-4">
-                <Shield className="w-7 h-7 text-status-safe" />
-                <span className="text-xl font-bold text-white">CyberForge</span>
+              <a href="/" className="flex items-center gap-2 mb-4">
+                <img src={logo} alt="CyberForge" className="w-10 h-10" />
               </a>
               <p className="text-sm text-cyber-500 mb-4">
                 Agentic AI-powered security for the modern digital environment.
@@ -143,12 +143,21 @@ export function Footer() {
               <ul className="space-y-2">
                 {footerLinks.product.map((link) => (
                   <li key={link.label}>
-                    <a 
-                      href={link.href}
-                      className="text-sm text-cyber-400 hover:text-white transition-colors"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith('/') ? (
+                      <Link 
+                        to={link.href}
+                        className="text-sm text-cyber-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a 
+                        href={link.href}
+                        className="text-sm text-cyber-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -161,12 +170,21 @@ export function Footer() {
               <ul className="space-y-2">
                 {footerLinks.resources.map((link) => (
                   <li key={link.label}>
-                    <a 
-                      href={link.href}
-                      className="text-sm text-cyber-400 hover:text-white transition-colors"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith('/') ? (
+                      <Link 
+                        to={link.href}
+                        className="text-sm text-cyber-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a 
+                        href={link.href}
+                        className="text-sm text-cyber-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -179,12 +197,21 @@ export function Footer() {
               <ul className="space-y-2">
                 {footerLinks.company.map((link) => (
                   <li key={link.label}>
-                    <a 
-                      href={link.href}
-                      className="text-sm text-cyber-400 hover:text-white transition-colors"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith('/') ? (
+                      <Link 
+                        to={link.href}
+                        className="text-sm text-cyber-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a 
+                        href={link.href}
+                        className="text-sm text-cyber-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

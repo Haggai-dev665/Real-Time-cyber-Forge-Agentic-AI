@@ -7,8 +7,8 @@
 // CONFIGURATION
 // =====================================================
 
-const API_BASE_URL = 'http://localhost:8000/api';
-const WS_URL = 'ws://localhost:8000';
+const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+const WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com';
 
 // =====================================================
 // STATE MANAGEMENT
@@ -101,7 +101,7 @@ async function checkServerConnection() {
     updateConnectionStatus('connecting');
     
     try {
-        const fetchWithTimeout = async (url, timeoutMs = 5000) => {
+        const fetchWithTimeout = async (url, timeoutMs = 10000) => {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), timeoutMs);
             try {
@@ -111,24 +111,18 @@ async function checkServerConnection() {
             }
         };
 
-        const baseUrl = API_BASE_URL.replace('/api', '');
-        const candidates = [baseUrl, baseUrl.replace('localhost', '127.0.0.1')];
-
-        let connected = false;
-        for (const url of candidates) {
-            try {
-                const response = await fetchWithTimeout(`${url}/health`);
-                if (response.ok) {
-                    connected = true;
-                    break;
-                }
-            } catch (err) {
-                // try next candidate
-            }
+        // Always use the production Heroku backend
+        const baseUrl = 'https://cyberforge-ddd97655464f.herokuapp.com';
+        
+        try {
+            const response = await fetchWithTimeout(`${baseUrl}/health`);
+            authState.isConnected = response.ok;
+            updateConnectionStatus(response.ok ? 'connected' : 'disconnected');
+        } catch (err) {
+            console.error('Health check failed:', err);
+            authState.isConnected = false;
+            updateConnectionStatus('disconnected');
         }
-
-        authState.isConnected = connected;
-        updateConnectionStatus(connected ? 'connected' : 'disconnected');
     } catch (error) {
         console.error('Server connection error:', error);
         authState.isConnected = false;

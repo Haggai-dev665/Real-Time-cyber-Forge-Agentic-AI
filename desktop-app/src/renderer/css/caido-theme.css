@@ -18,6 +18,12 @@
     --caido-bg-light: #8fa98a;
     --caido-bg-lighter: #70856f;
     --caido-bg-hover: #5c6f5a;
+
+    /* Alias variables used across components */
+    --caido-bg-primary: #f6f6e7;
+    --caido-bg-secondary: #d8dfb6;
+    --caido-bg-tertiary: #c2d4af;
+    --caido-accent: #70856f;
     
     /* Text Colors (dark over light surfaces) */
     --caido-text-primary: #1f2a1f;
@@ -343,6 +349,12 @@ body {
     --caido-bg-light: #222235;
     --caido-bg-lighter: #2a2a42;
     --caido-bg-hover: #323250;
+
+    /* Alias variables used by agent panel, modals, and other components */
+    --caido-bg-primary: #0a0a0f;
+    --caido-bg-secondary: #0f0f15;
+    --caido-bg-tertiary: #141420;
+    --caido-accent: #2dd4bf;
 
     --caido-text-primary: #f0f0f5;
     --caido-text-secondary: #a8a8b8;
@@ -1566,19 +1578,282 @@ code {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
 }
 
-.modal-overlay.active {
+.modal-overlay.active,
+.modal-overlay[style*="display: flex"] {
     opacity: 1;
     visibility: visible;
+}
+
+.modal-container {
+    background: var(--caido-bg-secondary);
+    border: 1px solid var(--caido-border);
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    max-width: 480px;
+    width: 90%;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-container .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, rgba(164, 189, 153, 0.15), rgba(107, 143, 94, 0.1));
+    border-bottom: 1px solid var(--caido-border);
+}
+
+.modal-container .modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--caido-text-primary);
+    margin: 0;
+}
+
+.modal-container .modal-header h3 i {
+    color: var(--caido-accent);
+}
+
+.modal-container .modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: var(--caido-text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-container .modal-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.modal-container .modal-body {
+    padding: 24px;
+}
+
+.modal-description {
+    color: var(--caido-text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.browser-launch-tips {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.tip-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    background: var(--caido-bg-tertiary);
+    border: 1px solid var(--caido-border);
+    border-radius: 10px;
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+.tip-icon.chrome {
+    background: linear-gradient(135deg, #4285f4, #34a853);
+    color: white;
+}
+
+.tip-icon.firefox {
+    background: linear-gradient(135deg, #ff7139, #e66000);
+    color: white;
+}
+
+.tip-content {
+    flex: 1;
+}
+
+.tip-content strong {
+    display: block;
+    color: var(--caido-text-primary);
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.tip-content code {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--caido-accent);
+    background: var(--caido-bg-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--caido-border);
+}
+
+.modal-container .form-group {
+    margin-bottom: 18px;
+}
+
+.modal-container .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--caido-text-primary);
+    margin-bottom: 8px;
+}
+
+.modal-container .form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--caido-bg-tertiary);
+    border: 1px solid var(--caido-border);
+    border-radius: 8px;
+    color: var(--caido-text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.modal-container .form-group input:focus {
+    outline: none;
+    border-color: var(--caido-accent);
+    box-shadow: 0 0 0 3px rgba(164, 189, 153, 0.2);
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--caido-bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--caido-border);
+}
+
+.connection-status .status-text {
+    font-size: 13px;
+    color: var(--caido-text-secondary);
+}
+
+.connection-status.success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.connection-status.success .status-text {
+    color: #10b981;
+}
+
+.connection-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.connection-status.error .status-text {
+    color: #ef4444;
+}
+
+.connection-status.testing {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.connection-status.testing .status-text {
+    color: #3b82f6;
+}
+
+.modal-container .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--caido-bg-tertiary);
+    border-top: 1px solid var(--caido-border);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.btn-secondary {
+    background: var(--caido-bg-secondary);
+    border-color: var(--caido-border);
+    color: var(--caido-text-secondary);
+}
+
+.btn-secondary:hover {
+    background: var(--caido-bg-hover);
+    color: var(--caido-text-primary);
+}
+
+.btn-primary {
+    background: var(--caido-accent);
+    color: var(--caido-bg-primary);
+}
+
+.btn-primary:hover {
+    background: #b5d4a9;
+    box-shadow: 0 4px 12px rgba(164, 189, 153, 0.4);
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .modal {
@@ -2442,12 +2717,60 @@ code {
    AGENT CONTROL PANEL - Floating (Redesigned)
    ============================================ */
 
+/* Minimized Button - Right edge, vertically centered */
+.agent-minimized-btn {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 48px;
+    padding: 0 16px 0 14px;
+    background: #2dd4bf;
+    border: none;
+    border-radius: 12px 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    color: #0a0a0f;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: -4px 0 20px rgba(45, 212, 191, 0.4);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.agent-minimized-btn:hover {
+    padding-right: 22px;
+    box-shadow: -6px 0 28px rgba(45, 212, 191, 0.6);
+    background: #5eead4;
+}
+
+.agent-mini-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #0a0a0f;
+}
+
+.agent-mini-pulse {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 10px;
+    height: 10px;
+    background: #10b981;
+    border-radius: 50%;
+    border: 2px solid #0f0f15;
+    animation: agent-pulse 2s ease-in-out infinite;
+}
+
 .agent-control-panel {
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 380px;
-    background: var(--caido-bg-secondary);
+    background: var(--caido-bg-darker, #0f0f15);
     border: 1px solid var(--caido-border);
     border-radius: 16px;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
@@ -2455,6 +2778,12 @@ code {
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
+}
+
+.agent-control-panel.hidden {
+    opacity: 0;
+    transform: translateY(100px) scale(0.9);
+    pointer-events: none;
 }
 
 .agent-control-panel.collapsed {
@@ -2475,6 +2804,38 @@ code {
     border-bottom: 1px solid var(--caido-border);
     cursor: pointer;
     user-select: none;
+}
+
+.agent-panel-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.agent-panel-hide,
+.agent-panel-toggle {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--caido-border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--caido-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.agent-panel-hide:hover,
+.agent-panel-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--caido-text-primary);
+}
+
+.agent-panel-hide:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
 }
 
 .agent-panel-title {
@@ -3596,7 +3957,7 @@ code {
 /* Agent Quick Actions */
 .agent-quick-actions {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 8px;
 }
 
@@ -3642,6 +4003,18 @@ code {
     background: rgba(16, 185, 129, 0.2);
     color: #10b981;
     border-color: rgba(16, 185, 129, 0.3);
+}
+
+.agent-action-btn.primary {
+    background: linear-gradient(135deg, var(--caido-accent), #6b8f5e);
+    color: var(--caido-bg-primary);
+    border-color: var(--caido-accent);
+    font-weight: 600;
+}
+
+.agent-action-btn.primary:hover {
+    background: linear-gradient(135deg, #b5d4a9, #8fb08f);
+    box-shadow: 0 6px 16px rgba(164, 189, 153, 0.5);
 }
 
 /* Agent Actions Log */

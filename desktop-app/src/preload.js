@@ -1,8 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Share core configuration with renderer without exposing the full process
-const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-const wsUrl = `${backendUrl.replace('http', 'ws')}/ws`;
+// Always use production Heroku backend
+const backendUrl = 'https://cyberforge-ddd97655464f.herokuapp.com';
+const wsUrl = 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -87,7 +87,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onThreat: (callback) => ipcRenderer.on('threat-detected', (event, data) => callback(data)),
     onBrowserConnected: (callback) => ipcRenderer.on('browser-connected', (event, data) => callback(data)),
     onStatusChange: (callback) => ipcRenderer.on('system-monitor-status', (event, data) => callback(data)),
-    onStatsUpdate: (callback) => ipcRenderer.on('system-monitor-stats', (event, data) => callback(data))
+    onStatsUpdate: (callback) => ipcRenderer.on('system-monitor-stats', (event, data) => callback(data)),
+    onConsole: (callback) => ipcRenderer.on('browser-console', (event, data) => callback(data))
+  },
+  
+  // Setup wizard
+  setup: {
+    runWizard: () => ipcRenderer.invoke('run-setup-wizard'),
+    getStatus: () => ipcRenderer.invoke('get-setup-status')
+  },
+  
+  // Browser integration (for launching browsers with monitoring)
+  browserIntegration: {
+    launch: (browserId) => ipcRenderer.invoke('browser-integration:launch', browserId),
+    getStatus: () => ipcRenderer.invoke('browser-integration:status'),
+    getShortcuts: () => ipcRenderer.invoke('browser-integration:get-shortcuts')
   },
   
   // Remove listeners

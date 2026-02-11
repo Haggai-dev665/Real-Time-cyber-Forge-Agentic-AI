@@ -5,7 +5,9 @@ const { setupBrowserMonitoring } = require('./browser-monitor/monitor');
 const { setupEnhancedBrowserMonitoring } = require('./browser-monitor/enhanced-monitor');
 const { setupSystemBrowserMonitoring } = require('./browser-monitor/system-monitor');
 const BrowserSelector = require('./browser-monitor/browser-selector');
+const BrowserIntegrationManager = require('./browser-monitor/BrowserIntegrationManager');
 const AuthService = require('./auth/AuthService');
+const SetupManager = require('./setup/SetupManager');
 const WebSocket = require('ws');
 
 class CyberForgeApp {
@@ -18,11 +20,13 @@ class CyberForgeApp {
     this.enhancedBrowserMonitor = null;
     this.systemMonitor = null;
     this.browserSelector = new BrowserSelector();
+    this.browserIntegration = new BrowserIntegrationManager();
     this.authService = new AuthService();
+    this.setupManager = new SetupManager();
     this.dashboardAccessGranted = false;
     this.isAuthenticated = false;
     this.dashboardLoaded = false;
-    this.backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    this.backendUrl = process.env.BACKEND_URL || 'https://cyberforge-ddd97655464f.herokuapp.com';
   }
 
   async createMainWindow() {
@@ -149,7 +153,7 @@ class CyberForgeApp {
   }
 
   connectToBackend() {
-    const backendUrl = process.env.BACKEND_URL || 'ws://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'wss://cyberforge-ddd97655464f.herokuapp.com';
     
     try {
       this.wsConnection = new WebSocket(`${backendUrl}/ws`, {
@@ -401,6 +405,53 @@ class CyberForgeApp {
       return [];
     });
 
+    // Setup wizard handlers
+    ipcMain.handle('run-setup-wizard', async () => {
+      console.log('🔧 Running setup wizard from settings...');
+      const setupCompleted = await this.setupManager.createSetupWindow();
+      this.setupManager.cleanup();
+      return { success: true, completed: setupCompleted };
+    });
+
+    ipcMain.handle('get-setup-status', () => {
+      return {
+        completed: !this.setupManager.isSetupRequired(),
+        browsers: this.setupManager.detectedBrowsers || [],
+        platform: process.platform
+      };
+    });
+
+    // Browser integration handlers
+    ipcMain.handle('browser-integration:launch', async (event, browserId) => {
+      try {
+        const result = await this.browserIntegration.launchBrowserWithDebug(browserId);
+        // After launching, try to connect with system monitor
+        setTimeout(async () => {
+          if (this.systemMonitor) {
+            await this.systemMonitor.pollForNewBrowsers();
+          }
+        }, 3000);
+        return result;
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    });
+
+    ipcMain.handle('browser-integration:status', () => {
+      return this.browserIntegration.loadIntegrationState();
+    });
+
+    ipcMain.handle('browser-integration:get-shortcuts', () => {
+      const appDataPath = this.browserIntegration.getAppDataPath();
+      const shortcutsDir = path.join(appDataPath, 'shortcuts');
+      try {
+        if (require('fs').existsSync(shortcutsDir)) {
+          return require('fs').readdirSync(shortcutsDir);
+        }
+      } catch (e) {}
+      return [];
+    });
+
     // Window Controls
     ipcMain.handle('toggle-fullscreen', () => {
       try {
@@ -496,6 +547,21 @@ class CyberForgeApp {
     
     // Set up IPC handlers IMMEDIATELY after app is ready
     this.setupIPCHandlers();
+    
+    // Check if first-run setup is required
+    if (this.setupManager.isSetupRequired()) {
+      console.log('🔧 First-run setup required, launching setup wizard...');
+      const setupCompleted = await this.setupManager.createSetupWindow();
+      
+      if (!setupCompleted) {
+        console.log('⚠️ Setup was skipped or cancelled');
+      } else {
+        console.log('✅ Setup completed successfully');
+      }
+      
+      // Cleanup setup IPC handlers
+      this.setupManager.cleanup();
+    }
     
     // Initialize authentication service
     await this.authService.initialize();

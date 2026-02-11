@@ -8,10 +8,10 @@ const { API_CONFIG } = typeof require !== 'undefined' ? require('../../config/ap
 
 class APIClient {
     constructor() {
-        // Use configuration from api-endpoints.js
-        this.backendUrl = API_CONFIG?.backend?.base || 'http://localhost:8000';
-        this.apiUrl = API_CONFIG?.backend?.api || 'http://localhost:8000/api';
-        this.wsUrl = API_CONFIG?.backend?.websocket || 'ws://localhost:8000/ws';
+        // Use configuration from api-endpoints.js - Default to Heroku production URL
+        this.backendUrl = API_CONFIG?.backend?.base || 'https://cyberforge-ddd97655464f.herokuapp.com';
+        this.apiUrl = API_CONFIG?.backend?.api || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+        this.wsUrl = API_CONFIG?.backend?.websocket || 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
         this.mlUrl = API_CONFIG?.ml?.base || 'https://che237-cyberforge-models.hf.space';
         
         this.authToken = localStorage.getItem('authToken');
@@ -35,8 +35,8 @@ class APIClient {
              * Handles all communication between the desktop app and backend services
              */
 
-            const FALLBACK_API_BASE_URL = 'http://localhost:8000';
-            const FALLBACK_WS_URL = 'ws://localhost:8000/ws';
+            const FALLBACK_API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
+            const FALLBACK_WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
 
             class CyberForgeAPI {
                 constructor() {

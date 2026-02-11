@@ -6,7 +6,7 @@
 class WebSocketManager {
     constructor() {
         const config = (typeof window !== 'undefined' && window.electronAPI?.config) || {};
-        this.url = (window.apiClient?.wsUrl) || config.wsUrl || 'ws://localhost:8000/ws';
+        this.url = (window.apiClient?.wsUrl) || config.wsUrl || 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
         this.authToken = window.apiClient?.token || localStorage.getItem('cyberforge_token');
         this.websocket = null;
         this.isConnected = false;

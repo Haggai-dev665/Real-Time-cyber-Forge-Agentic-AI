@@ -361,14 +361,26 @@
   function initAgentControlPanel() {
     const panel = document.getElementById('agent-control-panel');
     const toggle = document.getElementById('agent-panel-toggle');
+    const hideBtn = document.getElementById('agent-panel-hide');
+    const minimizedBtn = document.getElementById('agent-minimized-btn');
     const eventFeedBtn = document.querySelector('[data-screen="event-feed"]');
     const eventPanel = document.getElementById('event-feed-panel');
     
     if (!panel) return;
     
-    // Panel toggle
-    const panelHeader = panel.querySelector('.agent-panel-header');
-    if (panelHeader && toggle) {
+    // Prevent multiple initializations
+    if (panel.dataset.initialized === 'true') return;
+    panel.dataset.initialized = 'true';
+    
+    // Load panel visibility state from localStorage
+    const isPanelHidden = localStorage.getItem('agent-panel-hidden') === 'true';
+    if (isPanelHidden) {
+      panel.classList.add('hidden');
+      if (minimizedBtn) minimizedBtn.style.display = 'flex';
+    }
+    
+    // Panel collapse/expand toggle
+    if (toggle) {
       toggle.addEventListener('click', (e) => {
         e.stopPropagation();
         panel.classList.toggle('collapsed');
@@ -377,6 +389,33 @@
           icon.classList.toggle('fa-chevron-down');
           icon.classList.toggle('fa-chevron-up');
         }
+      });
+    }
+    
+    // Hide panel button
+    if (hideBtn) {
+      hideBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        panel.classList.add('hidden');
+        if (minimizedBtn) minimizedBtn.style.display = 'flex';
+        localStorage.setItem('agent-panel-hidden', 'true');
+        showToast('info', 'Agent Panel Hidden', 'Click the robot icon to show it again');
+      });
+    }
+    
+    // Show panel from minimized button - use a named function to avoid duplicates
+    if (minimizedBtn) {
+      // Remove any existing listeners first
+      const newMinimizedBtn = minimizedBtn.cloneNode(true);
+      minimizedBtn.parentNode.replaceChild(newMinimizedBtn, minimizedBtn);
+      
+      newMinimizedBtn.addEventListener('click', function showAgentPanel() {
+        const agentPanel = document.getElementById('agent-control-panel');
+        if (agentPanel) {
+          agentPanel.classList.remove('hidden');
+        }
+        this.style.display = 'none';
+        localStorage.setItem('agent-panel-hidden', 'false');
       });
     }
     
@@ -418,12 +457,132 @@
     // Initialize System Browser Monitor
     initSystemMonitor();
     
+    // Initialize Add Browser Modal
+    initAddBrowserModal();
+    
     // Start the agent simulation
     startAgentSimulation();
     
     // Initial render
     updateAgentPanel();
     populateEventFeed();
+  }
+
+  // =========================================
+  // ADD BROWSER MODAL
+  // =========================================
+  
+  function initAddBrowserModal() {
+    const addBrowserBtn = document.getElementById('agent-add-browser');
+    const modal = document.getElementById('add-browser-modal');
+    const closeBtn = document.getElementById('add-browser-close');
+    const cancelBtn = document.getElementById('add-browser-cancel');
+    const testBtn = document.getElementById('add-browser-test');
+    const connectBtn = document.getElementById('add-browser-connect');
+    const statusEl = document.getElementById('browser-connection-status');
+    
+    if (!addBrowserBtn || !modal) return;
+    
+    // Open modal
+    addBrowserBtn.addEventListener('click', () => {
+      modal.style.display = 'flex';
+      // Reset state
+      statusEl.className = 'connection-status';
+      statusEl.querySelector('.status-text').textContent = 'Not connected';
+      connectBtn.disabled = true;
+    });
+    
+    // Close modal
+    const closeModal = () => {
+      modal.style.display = 'none';
+    };
+    
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    
+    // Test connection
+    testBtn?.addEventListener('click', async () => {
+      const host = document.getElementById('browser-host').value || 'localhost';
+      const port = document.getElementById('browser-port').value || '9222';
+      const name = document.getElementById('browser-name').value || 'Browser';
+      
+      statusEl.className = 'connection-status testing';
+      statusEl.querySelector('.status-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection...';
+      testBtn.disabled = true;
+      
+      try {
+        // Try to connect via the system monitor
+        const response = await fetch(`http://${host}:${port}/json/version`);
+        if (response.ok) {
+          const data = await response.json();
+          statusEl.className = 'connection-status success';
+          statusEl.querySelector('.status-text').innerHTML = `<i class="fas fa-check-circle"></i> Connected! ${data.Browser || 'Browser'} detected`;
+          connectBtn.disabled = false;
+          
+          // Store connection info
+          modal.dataset.browserInfo = JSON.stringify({
+            name: name || data.Browser?.split('/')[0] || 'Chrome',
+            host,
+            port,
+            webSocketDebuggerUrl: data.webSocketDebuggerUrl
+          });
+        } else {
+          throw new Error('Browser not responding');
+        }
+      } catch (error) {
+        statusEl.className = 'connection-status error';
+        statusEl.querySelector('.status-text').innerHTML = `<i class="fas fa-times-circle"></i> Connection failed. Is the browser running with debugging enabled?`;
+        connectBtn.disabled = true;
+      } finally {
+        testBtn.disabled = false;
+      }
+    });
+    
+    // Connect to browser
+    connectBtn?.addEventListener('click', async () => {
+      try {
+        const browserInfo = JSON.parse(modal.dataset.browserInfo || '{}');
+        
+        connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+        connectBtn.disabled = true;
+        
+        // Trigger the system monitor to connect
+        if (window.electronAPI?.systemMonitor) {
+          // Start the monitor if not already running
+          await window.electronAPI.systemMonitor.start();
+          
+          // Log the connection
+          logAgentAction(`Manually connected to ${browserInfo.name} at ${browserInfo.host}:${browserInfo.port}`, 'success');
+          showToast('success', 'Browser Connected', `Now monitoring ${browserInfo.name}`);
+          
+          // Update UI
+          const connectBrowsersBtn = document.getElementById('agent-connect-browsers');
+          if (connectBrowsersBtn) {
+            connectBrowsersBtn.classList.add('connected');
+            connectBrowsersBtn.innerHTML = '<i class="fas fa-check"></i><span>Connected</span>';
+          }
+          
+          setAgentState('monitoring');
+          systemMonitorState.isConnected = true;
+          
+          if (!systemMonitorState.connectedBrowsers.includes(browserInfo.name)) {
+            systemMonitorState.connectedBrowsers.push(browserInfo.name);
+          }
+          
+          updateLiveStats();
+          closeModal();
+        } else {
+          throw new Error('System monitor not available');
+        }
+      } catch (error) {
+        showToast('error', 'Connection Failed', error.message);
+        connectBtn.innerHTML = '<i class="fas fa-check"></i> Connect';
+        connectBtn.disabled = false;
+      }
+    });
   }
 
   // =========================================
@@ -475,6 +634,10 @@
 
     window.electronAPI.systemMonitor.onStatsUpdate((stats) => {
       updateMonitorStats(stats);
+    });
+
+    window.electronAPI.systemMonitor.onConsole((consoleData) => {
+      handleBrowserConsole(consoleData);
     });
 
     console.log('System monitor initialized');
@@ -746,6 +909,108 @@
     updateHeaderStats();
   }
 
+  // Store for console logs
+  const browserConsoleLogs = [];
+  const MAX_CONSOLE_LOGS = 200;
+
+  function handleBrowserConsole(consoleData) {
+    // Add to console logs store
+    const logEntry = {
+      id: Date.now(),
+      level: consoleData.type || 'log',
+      message: consoleData.message,
+      browser: consoleData.browser,
+      tabTitle: consoleData.tabTitle,
+      source: consoleData.url || consoleData.source || 'browser',
+      lineNumber: consoleData.lineNumber,
+      timestamp: new Date(consoleData.timestamp || Date.now()),
+      stackTrace: consoleData.stackTrace
+    };
+
+    browserConsoleLogs.unshift(logEntry);
+    if (browserConsoleLogs.length > MAX_CONSOLE_LOGS) {
+      browserConsoleLogs.pop();
+    }
+
+    // Update the console output if on console page
+    updateConsoleOutput(logEntry);
+
+    // Log errors and warnings to agent activity
+    if (consoleData.type === 'error') {
+      logAgentAction(`Console Error: ${consoleData.message?.substring(0, 50)}...`, 'error');
+      addEvent('error', 'Browser Console Error', 
+        `${consoleData.browser}: ${consoleData.message?.substring(0, 100)}`, 
+        consoleData.tabTitle || 'Browser'
+      );
+    } else if (consoleData.type === 'warning') {
+      logAgentAction(`Console Warning: ${consoleData.message?.substring(0, 50)}...`, 'warning');
+    }
+
+    // Update stats
+    updateLiveStats();
+  }
+
+  function updateConsoleOutput(logEntry) {
+    // Check if console output container exists (user is on console page)
+    const consoleOutput = document.getElementById('console-output');
+    if (!consoleOutput) return;
+
+    // Remove loading placeholder if present
+    const loading = consoleOutput.querySelector('.loading-placeholder');
+    if (loading) loading.remove();
+
+    // Remove empty message if present
+    const empty = consoleOutput.querySelector('.console-empty');
+    if (empty) empty.remove();
+
+    // Create log entry element
+    const entryEl = document.createElement('div');
+    entryEl.className = `console-entry ${logEntry.level}`;
+    entryEl.innerHTML = `
+      <span class="log-icon"><i class="fas fa-${getLogIcon(logEntry.level)}"></i></span>
+      <span class="log-browser" title="${logEntry.browser}">${logEntry.browser || 'Browser'}</span>
+      <span class="log-message">${escapeHtml(logEntry.message || '')}</span>
+      <span class="log-source">${logEntry.source}${logEntry.lineNumber ? ':' + logEntry.lineNumber : ''}</span>
+      <span class="log-time">${formatTime(logEntry.timestamp)}</span>
+    `;
+
+    // Add to top of console
+    consoleOutput.insertBefore(entryEl, consoleOutput.firstChild);
+
+    // Limit entries in DOM
+    while (consoleOutput.children.length > MAX_CONSOLE_LOGS) {
+      consoleOutput.removeChild(consoleOutput.lastChild);
+    }
+  }
+
+  function getLogIcon(level) {
+    const icons = {
+      log: 'chevron-right',
+      info: 'info-circle',
+      warning: 'exclamation-triangle',
+      warn: 'exclamation-triangle',
+      error: 'times-circle',
+      exception: 'bug'
+    };
+    return icons[level] || 'chevron-right';
+  }
+
+  function formatTime(date) {
+    if (!date) return '';
+    if (!(date instanceof Date)) date = new Date(date);
+    return date.toLocaleTimeString();
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Expose console logs for the console page
+  window.getBrowserConsoleLogs = () => browserConsoleLogs;
+
   function updateLiveStats() {
     // Update browser count
     const browserStat = document.getElementById('agent-browsers-count');
@@ -800,7 +1065,7 @@
         <div class="agent-request-empty">
           <i class="fas fa-wifi"></i>
           <span>Waiting for browser activity...</span>
-          <small>Start Chrome with --remote-debugging-port=9222</small>
+          <small>Click "Connect" or go to Browser Registration to launch browsers</small>
         </div>
       `;
       return;
@@ -809,7 +1074,7 @@
     // Show last 8 requests
     const recentRequests = systemMonitorState.recentRequests.slice(0, 8);
     
-    feedList.innerHTML = recentRequests.map(req => {
+    feedContainer.innerHTML = recentRequests.map(req => {
       const methodClass = req.method.toLowerCase();
       const statusClass = req.status ? 
         (req.status < 300 ? 'success' : req.status < 400 ? 'redirect' : 'error') : '';
@@ -846,6 +1111,43 @@
         </div>
       `;
     }).join('');
+    
+    // Also update the HTTP History table if visible
+    updateHttpHistoryFromMonitor();
+  }
+  
+  function updateHttpHistoryFromMonitor() {
+    const tbody = document.getElementById('requests-tbody');
+    if (!tbody || state.activeScreen !== 'http-history') return;
+    
+    // Clear existing and add from system monitor
+    if (systemMonitorState.recentRequests.length > 0) {
+      tbody.innerHTML = systemMonitorState.recentRequests.map((req, index) => {
+        let hostname = '', pathname = '', query = '';
+        try {
+          const urlObj = new URL(req.url);
+          hostname = urlObj.hostname;
+          pathname = urlObj.pathname;
+          query = urlObj.search;
+        } catch (e) {
+          hostname = req.url;
+        }
+        
+        const statusClass = req.status ? 
+          (req.status < 300 ? '' : req.status < 400 ? 'redirect' : 'error') : '';
+        
+        return `
+          <tr class="caido-table-row" data-request-id="${req.id}">
+            <td class="cell-id">${index + 1}</td>
+            <td class="cell-host">${hostname}</td>
+            <td class="cell-method method-${req.method.toLowerCase()}">${req.method}</td>
+            <td class="cell-path">${pathname}</td>
+            <td class="cell-query">${query || '-'}</td>
+            <td class="cell-status ${statusClass}">${req.status || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
   }
 
   function formatNumber(num) {
@@ -1559,6 +1861,9 @@
     // Initialize Header and Footer functionality
     initHeaderFooter();
     
+    // Initialize Browser Monitor Status in Sidebar
+    initBrowserMonitorStatus();
+    
     // Listen for auth expiry
     cyberforgeAPI.on('auth:expired', handleAuthExpired);
     
@@ -1573,6 +1878,84 @@
     // Request notification permission
     if (Notification.permission === 'default') {
       Notification.requestPermission();
+    }
+    
+    // Auto-start browser monitoring
+    autoStartBrowserMonitoring();
+  }
+  
+  // =========================================
+  // BROWSER MONITOR STATUS (SIDEBAR)
+  // =========================================
+  
+  function initBrowserMonitorStatus() {
+    const statusDot = document.getElementById('browser-monitor-status');
+    if (!statusDot) return;
+    
+    // Style the status dot
+    statusDot.style.cssText = `
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      margin-left: auto;
+    `;
+    
+    // Setup event listeners for browser connections
+    if (window.electronAPI?.systemMonitor) {
+      window.electronAPI.systemMonitor.onBrowserConnected((data) => {
+        statusDot.style.background = 'var(--accent-green)';
+        statusDot.style.boxShadow = '0 0 8px var(--accent-green)';
+        statusDot.title = `${data.browser} connected`;
+      });
+      
+      window.electronAPI.systemMonitor.onStatusChange((data) => {
+        if (data.status === 'running') {
+          statusDot.style.background = 'var(--accent-green)';
+          statusDot.style.boxShadow = '0 0 8px var(--accent-green)';
+        } else {
+          statusDot.style.background = 'var(--text-secondary)';
+          statusDot.style.boxShadow = 'none';
+        }
+      });
+    }
+    
+    // Check initial status
+    updateBrowserMonitorStatusDot();
+  }
+  
+  async function updateBrowserMonitorStatusDot() {
+    const statusDot = document.getElementById('browser-monitor-status');
+    if (!statusDot) return;
+    
+    try {
+      const stats = await window.electronAPI?.systemMonitor?.getStats();
+      if (stats && stats.browsersConnected > 0) {
+        statusDot.style.background = 'var(--accent-green)';
+        statusDot.style.boxShadow = '0 0 8px var(--accent-green)';
+        statusDot.title = `${stats.browsersConnected} browser(s) connected`;
+      } else {
+        statusDot.style.background = 'var(--text-secondary)';
+        statusDot.style.boxShadow = 'none';
+        statusDot.title = 'No browsers connected';
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+  
+  async function autoStartBrowserMonitoring() {
+    try {
+      // Auto-start browser monitoring after a short delay
+      setTimeout(async () => {
+        const result = await window.electronAPI?.systemMonitor?.start();
+        if (result?.success && result?.browsersConnected > 0) {
+          showToast('info', 'Browser Monitoring', `Connected to ${result.browsersConnected} browser(s)`);
+        }
+        updateBrowserMonitorStatusDot();
+      }, 2000);
+    } catch (e) {
+      console.log('Auto-start browser monitoring skipped:', e.message);
     }
   }
 
@@ -6126,11 +6509,11 @@
     container.innerHTML = `
       <div class="env-var-item">
         <span class="var-name">API_BASE_URL</span>
-        <span class="var-value">http://localhost:8000</span>
+        <span class="var-value">https://cyberforge-ddd97655464f.herokuapp.com</span>
       </div>
       <div class="env-var-item">
         <span class="var-name">ML_SERVICE_URL</span>
-        <span class="var-value">http://localhost:8001</span>
+        <span class="var-value">https://che237-cyberforge-models.hf.space</span>
       </div>
     `;
   }
@@ -6286,9 +6669,262 @@
   }
 
   async function loadBrowserRegistrationData() {
-    const container = document.getElementById('browser-registration-list');
+    const container = document.getElementById('available-browsers-list');
+    const connectedContainer = document.getElementById('connected-browsers-list');
+    const statusBanner = document.getElementById('monitor-status-banner');
+    const statusDesc = document.getElementById('monitor-status-desc');
+    
     if (!container) return;
-    container.innerHTML = '<div class="empty-state">No browsers registered</div>';
+    
+    // Browser icon mapping
+    const browserIcons = {
+      chrome: 'fab fa-chrome',
+      brave: 'fab fa-firefox', // Brave uses Firefox icon in FA or custom
+      edge: 'fab fa-edge',
+      arc: 'fas fa-globe',
+      opera: 'fab fa-opera',
+      chromium: 'fab fa-chrome'
+    };
+    
+    try {
+      // Get available browsers
+      const browsers = await window.electronAPI?.systemMonitor?.getAvailableBrowsers() || [];
+      
+      if (browsers.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>No compatible browsers detected</span>
+          </div>
+        `;
+      } else {
+        container.innerHTML = browsers.map(browser => `
+          <div class="browser-card" data-browser-id="${browser.id}" data-browser-name="${browser.name}">
+            <div class="browser-icon ${browser.id}">
+              <i class="${browserIcons[browser.id] || 'fas fa-globe'}"></i>
+            </div>
+            <div class="browser-info">
+              <div class="browser-name">${browser.name}</div>
+              <div class="browser-port">Debug Port: ${browser.debugPort}</div>
+            </div>
+            <span class="browser-status available">Available</span>
+            <button class="launch-btn" data-browser="${browser.id}">
+              <i class="fas fa-rocket"></i> Launch
+            </button>
+          </div>
+        `).join('');
+        
+        // Bind click handlers for launch
+        container.querySelectorAll('.browser-card').forEach(card => {
+          card.addEventListener('click', async (e) => {
+            if (e.target.closest('.launch-btn')) {
+              const browserId = card.dataset.browserId;
+              await launchBrowserWithMonitoring(browserId, card);
+            }
+          });
+        });
+      }
+      
+      // Get monitor stats
+      await updateMonitorStatus();
+      
+      // Setup refresh button
+      document.getElementById('refresh-browsers')?.addEventListener('click', loadBrowserRegistrationData);
+      
+      // Setup start monitoring button
+      document.getElementById('start-monitoring')?.addEventListener('click', async () => {
+        const btn = document.getElementById('start-monitoring');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+        btn.disabled = true;
+        
+        try {
+          await window.electronAPI?.systemMonitor?.start();
+          showToast('success', 'Monitoring Started', 'Browser monitoring is now active');
+          await updateMonitorStatus();
+        } catch (error) {
+          showToast('error', 'Error', error.message);
+        } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      });
+      
+      // Setup event listeners for real-time updates
+      setupBrowserEventListeners();
+      
+    } catch (error) {
+      console.error('Error loading browser data:', error);
+      container.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>Error loading browsers: ${error.message}</span>
+        </div>
+      `;
+    }
+  }
+  
+  async function launchBrowserWithMonitoring(browserId, cardElement) {
+    const statusSpan = cardElement.querySelector('.browser-status');
+    const launchBtn = cardElement.querySelector('.launch-btn');
+    
+    // Update UI to show launching state
+    cardElement.classList.add('launching');
+    statusSpan.textContent = 'Launching...';
+    statusSpan.className = 'browser-status launching';
+    launchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    launchBtn.disabled = true;
+    
+    try {
+      // Use either browserIntegration or systemMonitor
+      let result;
+      if (window.electronAPI?.browserIntegration?.launch) {
+        result = await window.electronAPI.browserIntegration.launch(browserId);
+      } else if (window.electronAPI?.systemMonitor?.launchBrowser) {
+        result = await window.electronAPI.systemMonitor.launchBrowser(browserId);
+      }
+      
+      if (result?.success) {
+        showToast('success', 'Browser Launched', `${cardElement.dataset.browserName} is now being monitored`);
+        
+        // Update card to show connected state
+        cardElement.classList.remove('launching');
+        cardElement.classList.add('connected');
+        statusSpan.textContent = 'Connected';
+        statusSpan.className = 'browser-status connected';
+        launchBtn.innerHTML = '<i class="fas fa-check"></i> Active';
+        launchBtn.disabled = true;
+        
+        // Move to connected section
+        setTimeout(() => {
+          const connectedContainer = document.getElementById('connected-browsers-list');
+          if (connectedContainer) {
+            const emptyState = connectedContainer.querySelector('.empty-state');
+            if (emptyState) {
+              connectedContainer.innerHTML = '';
+            }
+            connectedContainer.appendChild(cardElement.cloneNode(true));
+          }
+        }, 1000);
+        
+        // Update stats
+        await updateMonitorStatus();
+      } else {
+        throw new Error(result?.error || 'Failed to launch browser');
+      }
+    } catch (error) {
+      cardElement.classList.remove('launching');
+      statusSpan.textContent = 'Error';
+      statusSpan.className = 'browser-status available';
+      launchBtn.innerHTML = '<i class="fas fa-rocket"></i> Retry';
+      launchBtn.disabled = false;
+      showToast('error', 'Launch Failed', error.message);
+    }
+  }
+  
+  async function updateMonitorStatus() {
+    const statusBanner = document.getElementById('monitor-status-banner');
+    const statusDesc = document.getElementById('monitor-status-desc');
+    const statBrowsers = document.getElementById('stat-browsers');
+    const statRequests = document.getElementById('stat-requests');
+    const statThreats = document.getElementById('stat-threats');
+    
+    if (!statusBanner) return;
+    
+    try {
+      const stats = await window.electronAPI?.systemMonitor?.getStats();
+      
+      if (stats) {
+        statusBanner.classList.add('active');
+        statusBanner.querySelector('.monitor-status-icon i').className = 'fas fa-check-circle';
+        statusDesc.textContent = `Monitoring active for ${Math.floor(stats.uptime / 60)} min`;
+        
+        if (statBrowsers) statBrowsers.textContent = stats.browsersConnected || 0;
+        if (statRequests) statRequests.textContent = stats.totalRequests || 0;
+        if (statThreats) statThreats.textContent = stats.threatsDetected || 0;
+      } else {
+        statusBanner.classList.remove('active');
+        statusBanner.querySelector('.monitor-status-icon i').className = 'fas fa-pause-circle';
+        statusDesc.textContent = 'Monitoring not started. Click "Start Monitoring" to begin.';
+      }
+    } catch (error) {
+      statusDesc.textContent = 'Unable to get monitor status';
+    }
+  }
+  
+  function setupBrowserEventListeners() {
+    // Listen for browser connections
+    if (window.electronAPI?.systemMonitor?.onBrowserConnected) {
+      window.electronAPI.systemMonitor.onBrowserConnected((data) => {
+        showToast('success', 'Browser Connected', `${data.browser} with ${data.tabs} tabs`);
+        updateMonitorStatus();
+        updateConnectedBrowsersList(data);
+      });
+    }
+    
+    // Listen for stats updates
+    if (window.electronAPI?.systemMonitor?.onStatsUpdate) {
+      window.electronAPI.systemMonitor.onStatsUpdate((stats) => {
+        const statBrowsers = document.getElementById('stat-browsers');
+        const statRequests = document.getElementById('stat-requests');
+        const statThreats = document.getElementById('stat-threats');
+        
+        if (statBrowsers) statBrowsers.textContent = stats.browsersConnected || 0;
+        if (statRequests) statRequests.textContent = stats.totalRequests || 0;
+        if (statThreats) statThreats.textContent = stats.threatsDetected || 0;
+      });
+    }
+    
+    // Listen for threats
+    if (window.electronAPI?.systemMonitor?.onThreat) {
+      window.electronAPI.systemMonitor.onThreat((data) => {
+        const threatCount = document.getElementById('stat-threats');
+        if (threatCount) {
+          threatCount.textContent = parseInt(threatCount.textContent || 0) + 1;
+        }
+      });
+    }
+  }
+  
+  function updateConnectedBrowsersList(browserData) {
+    const container = document.getElementById('connected-browsers-list');
+    if (!container) return;
+    
+    // Remove empty state if present
+    const emptyState = container.querySelector('.empty-state');
+    if (emptyState) {
+      container.innerHTML = '';
+    }
+    
+    // Check if already added
+    if (container.querySelector(`[data-browser-port="${browserData.debugPort}"]`)) {
+      return;
+    }
+    
+    const browserIcons = {
+      'Google Chrome': 'fab fa-chrome',
+      'Brave': 'fas fa-shield-alt',
+      'Microsoft Edge': 'fab fa-edge',
+      'Arc': 'fas fa-globe',
+      'Opera': 'fab fa-opera',
+      'Chromium': 'fab fa-chrome'
+    };
+    
+    const card = document.createElement('div');
+    card.className = 'browser-card connected';
+    card.dataset.browserPort = browserData.debugPort;
+    card.innerHTML = `
+      <div class="browser-icon">
+        <i class="${browserIcons[browserData.browser] || 'fas fa-globe'}"></i>
+      </div>
+      <div class="browser-info">
+        <div class="browser-name">${browserData.browser}</div>
+        <div class="browser-port">${browserData.tabs} tabs monitored</div>
+      </div>
+      <span class="browser-status connected">Connected</span>
+    `;
+    
+    container.appendChild(card);
   }
 
   async function loadBrowserHistoryData() {
@@ -6363,10 +6999,8 @@
     container.innerHTML = '<div class="scan-ready">Forensic scan ready to start</div>';
   }
 
-  function initAgentControlPanel() {
-    const container = document.getElementById('agent-control-panel');
-    if (!container) return;
-  }
+  // NOTE: Real initAgentControlPanel is defined earlier in the file (line ~361)
+  // Do not add another one here as it will override the working version
 
   async function loadAgentTasksData() {
     const container = document.getElementById('agent-tasks-list');
@@ -6393,4 +7027,17 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
+  
+  // Global fallback handler for agent minimized button (uses event delegation)
+  document.addEventListener('click', (e) => {
+    const minimizedBtn = e.target.closest('#agent-minimized-btn');
+    if (minimizedBtn) {
+      const agentPanel = document.getElementById('agent-control-panel');
+      if (agentPanel) {
+        agentPanel.classList.remove('hidden');
+      }
+      minimizedBtn.style.display = 'none';
+      localStorage.setItem('agent-panel-hidden', 'false');
+    }
+  });
 })();

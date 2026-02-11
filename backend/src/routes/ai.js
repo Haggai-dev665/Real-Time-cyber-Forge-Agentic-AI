@@ -95,6 +95,113 @@ function buildSecurityFindings(scrapedData) {
   return findings;
 }
 
+/**
+ * Extract technologies from network requests
+ */
+function extractTechnologies(networkRequests) {
+  const techs = [];
+  const detected = new Set();
+  
+  networkRequests.forEach(req => {
+    const url = (req.url || '').toLowerCase();
+    const headers = req.headers || {};
+    
+    // Detect from URLs
+    if (url.includes('react') && !detected.has('React')) {
+      techs.push({ name: 'React', category: 'JavaScript Framework' });
+      detected.add('React');
+    }
+    if (url.includes('vue') && !detected.has('Vue.js')) {
+      techs.push({ name: 'Vue.js', category: 'JavaScript Framework' });
+      detected.add('Vue.js');
+    }
+    if (url.includes('angular') && !detected.has('Angular')) {
+      techs.push({ name: 'Angular', category: 'JavaScript Framework' });
+      detected.add('Angular');
+    }
+    if (url.includes('jquery') && !detected.has('jQuery')) {
+      techs.push({ name: 'jQuery', category: 'JavaScript Library' });
+      detected.add('jQuery');
+    }
+    if (url.includes('bootstrap') && !detected.has('Bootstrap')) {
+      techs.push({ name: 'Bootstrap', category: 'CSS Framework' });
+      detected.add('Bootstrap');
+    }
+    if (url.includes('tailwind') && !detected.has('Tailwind CSS')) {
+      techs.push({ name: 'Tailwind CSS', category: 'CSS Framework' });
+      detected.add('Tailwind CSS');
+    }
+    if (url.includes('googleapis.com/css') && !detected.has('Google Fonts')) {
+      techs.push({ name: 'Google Fonts', category: 'Font Service' });
+      detected.add('Google Fonts');
+    }
+    if (url.includes('googletagmanager') && !detected.has('Google Tag Manager')) {
+      techs.push({ name: 'Google Tag Manager', category: 'Analytics' });
+      detected.add('Google Tag Manager');
+    }
+    if (url.includes('cloudinary') && !detected.has('Cloudinary')) {
+      techs.push({ name: 'Cloudinary', category: 'CDN/Media' });
+      detected.add('Cloudinary');
+    }
+    if (url.includes('cloudflare') && !detected.has('Cloudflare')) {
+      techs.push({ name: 'Cloudflare', category: 'CDN/Security' });
+      detected.add('Cloudflare');
+    }
+    
+    // Detect from headers
+    if (headers['x-powered-by']?.includes('Express') && !detected.has('Express.js')) {
+      techs.push({ name: 'Express.js', category: 'Web Server' });
+      detected.add('Express.js');
+    }
+    if (headers.server?.includes('Heroku') && !detected.has('Heroku')) {
+      techs.push({ name: 'Heroku', category: 'Hosting' });
+      detected.add('Heroku');
+    }
+    if (headers.server?.includes('nginx') && !detected.has('Nginx')) {
+      techs.push({ name: 'Nginx', category: 'Web Server' });
+      detected.add('Nginx');
+    }
+  });
+  
+  return techs;
+}
+
+/**
+ * Extract assets by type from network requests
+ */
+function extractAssetsByType(networkRequests, type) {
+  const typeMap = {
+    'image': ['image', 'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg'],
+    'script': ['script', 'javascript', 'application/javascript'],
+    'stylesheet': ['stylesheet', 'text/css', 'css']
+  };
+  
+  const patterns = typeMap[type] || [];
+  const assets = [];
+  
+  networkRequests.forEach(req => {
+    const contentType = (req.contentType || '').toLowerCase();
+    const url = req.url || '';
+    
+    const matches = patterns.some(p => contentType.includes(p)) ||
+      (type === 'image' && /\.(png|jpg|jpeg|gif|webp|svg)/i.test(url)) ||
+      (type === 'script' && /\.js(\?|$)/i.test(url)) ||
+      (type === 'stylesheet' && /\.css(\?|$)/i.test(url));
+    
+    if (matches) {
+      assets.push({
+        url: url,
+        src: url,
+        href: url,
+        size: req.sizeBytes ? `${(req.sizeBytes / 1024).toFixed(2)}KB` : null,
+        type: contentType
+      });
+    }
+  });
+  
+  return assets;
+}
+
 // Rate limiting for AI analysis routes
 const aiAnalysisLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -853,12 +960,15 @@ router.post('/chat',
             const aiContext = webScraperAPIService.generateAIContext(analysisData);
             
             console.log(`✅ Website scraped successfully. Risk Score: ${analysisData.risk_score}/100`);
+            console.log(`   📊 Network requests: ${scrapeResult.data?.network_requests?.length || 0}`);
+            console.log(`   📋 Console logs: ${scrapeResult.data?.console_logs?.length || 0}`);
             
-            // Add scraped data to context for AI
+            // Add scraped data to context for AI (include raw data for frontend)
             websiteContext = {
               type: 'website_security_scan',
               url: targetUrl,
               scraped_data: analysisData,
+              raw_scraped_data: scrapeResult.data,  // Keep raw data for frontend
               formatted_context: aiContext
             };
           } else {
@@ -901,6 +1011,9 @@ router.post('/chat',
         let websiteScanResponse = null;
         if (websiteContext && websiteContext.scraped_data) {
           const sd = websiteContext.scraped_data;
+          // Get the raw scraped data from the scrape result (before formatting)
+          const rawData = websiteContext.raw_scraped_data || {};
+          
           websiteScanResponse = {
             url: websiteContext.url,
             title: sd.title || websiteContext.url,
@@ -926,22 +1039,49 @@ router.post('/chat',
               expires: sd.ssl_expires || null
             },
             
-            // Technologies (mock for now, can be enhanced)
-            technologies: sd.technologies || [],
+            // Technologies (extracted from network requests)
+            technologies: sd.technologies || extractTechnologies(rawData.network_requests || []),
             
-            // Performance
+            // Performance - use raw data for more details
             performance: {
-              loadTime: sd.performance?.total_load_time_ms ? `${sd.performance.total_load_time_ms}ms` : 'N/A',
-              pageSize: sd.performance?.total_size_kb ? `${sd.performance.total_size_kb}KB` : 'N/A',
-              requestCount: sd.network_summary?.total_requests || 0,
-              score: sd.performance_score || null
+              loadTime: rawData.performance_metrics?.total_load_time_ms ? `${rawData.performance_metrics.total_load_time_ms}ms` : (sd.performance?.total_load_time_ms ? `${sd.performance.total_load_time_ms}ms` : 'N/A'),
+              pageSize: rawData.performance_metrics?.total_size_kb ? `${rawData.performance_metrics.total_size_kb.toFixed(2)}KB` : (sd.performance?.total_size_kb ? `${sd.performance.total_size_kb}KB` : 'N/A'),
+              requestCount: rawData.network_requests?.length || sd.network_summary?.total_requests || 0,
+              score: sd.performance_score || null,
+              domReady: rawData.performance_metrics?.dom_ready_time_ms ? `${rawData.performance_metrics.dom_ready_time_ms}ms` : null,
+              firstPaint: rawData.performance_metrics?.first_paint_ms ? `${rawData.performance_metrics.first_paint_ms}ms` : null,
+              lcp: rawData.performance_metrics?.largest_contentful_paint_ms ? `${rawData.performance_metrics.largest_contentful_paint_ms}ms` : null,
+              cls: rawData.performance_metrics?.cumulative_layout_shift || null
             },
             
-            // Assets
-            images: sd.images || [],
-            scripts: sd.scripts || [],
-            stylesheets: sd.stylesheets || [],
-            requests: sd.network_requests || []
+            // Full network requests from raw data
+            requests: (rawData.network_requests || []).map(req => ({
+              url: req.url,
+              method: req.method || 'GET',
+              status: req.status,
+              size: req.sizeBytes ? `${(req.sizeBytes / 1024).toFixed(2)}KB` : '-',
+              time: req.responseTimeMs ? `${req.responseTimeMs.toFixed(0)}ms` : '-',
+              type: req.contentType || 'other',
+              headers: req.headers || {}
+            })),
+            
+            // External domains and suspicious requests
+            external_domains: sd.external_domains || [],
+            suspicious_requests: sd.suspicious_requests || [],
+            
+            // Console logs from raw data
+            console_logs: (rawData.console_logs || []).map(log => ({
+              level: log.level,
+              message: typeof log.message === 'string' ? log.message : JSON.stringify(log.message)
+            })),
+            
+            // Security report from raw data
+            security_report: rawData.security_report || {},
+            
+            // Assets - extract from network requests
+            images: extractAssetsByType(rawData.network_requests || [], 'image'),
+            scripts: extractAssetsByType(rawData.network_requests || [], 'script'),
+            stylesheets: extractAssetsByType(rawData.network_requests || [], 'stylesheet')
           };
         }
         

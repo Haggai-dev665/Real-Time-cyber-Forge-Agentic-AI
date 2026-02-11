@@ -16,7 +16,7 @@ class AuthService {
       encryptionKey: 'cyber-forge-secure-storage-key-2024',
       name: 'cyber-forge-auth'
     });
-    this.backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    this.backendUrl = process.env.BACKEND_URL || 'https://cyberforge-ddd97655464f.herokuapp.com';
     this.currentUser = null;
     this.authToken = null;
     this.authWindow = null;
@@ -154,7 +154,7 @@ class AuthService {
 
   getGoogleAuthUrl() {
     const clientId = process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
-    const redirectUri = 'http://localhost:8000/api/auth/google/callback';
+    const redirectUri = 'https://cyberforge-ddd97655464f.herokuapp.com/api/auth/google/callback';
     const scope = encodeURIComponent('email profile openid');
     
     return `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -191,7 +191,7 @@ class AuthService {
           try {
             const response = await axios.post(`${this.backendUrl}/api/auth/google/token`, {
               code,
-              redirect_uri: 'http://localhost:8000/api/auth/google/callback'
+              redirect_uri: 'https://cyberforge-ddd97655464f.herokuapp.com/api/auth/google/callback'
             });
 
             if (response.data.success) {

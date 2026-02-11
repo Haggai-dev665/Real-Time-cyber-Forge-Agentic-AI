@@ -23,6 +23,36 @@ class AIAssistantV2 {
     this.render();
     this.bindEvents();
     this.checkAPIStatus();
+    
+    // Re-check API status every 30 seconds
+    this.statusCheckInterval = setInterval(() => {
+      this.checkAPIStatus();
+    }, 30000);
+    
+    // Listen for theme changes and update accordingly
+    this.observeThemeChanges();
+  }
+  
+  observeThemeChanges() {
+    // Watch for theme attribute changes on html element
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          // Force CSS variable recalculation by toggling a class
+          const container = document.querySelector('.ai-assistant-container');
+          if (container) {
+            container.classList.remove('theme-transition');
+            void container.offsetWidth; // Force reflow
+            container.classList.add('theme-transition');
+          }
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
   }
 
   // =========================================
@@ -889,6 +919,8 @@ class AIAssistantV2 {
     const headers = analysis.headers || {};
     const ssl = analysis.ssl || {};
     const findings = analysis.findings || [];
+    const externalDomains = analysis.external_domains || [];
+    const suspiciousRequests = analysis.suspicious_requests || [];
     
     return `
       <div class="ai-tab-section">
@@ -915,6 +947,23 @@ class AIAssistantV2 {
         </div>
       </div>
       
+      ${suspiciousRequests.length > 0 ? `
+      <div class="ai-tab-section">
+        <h4 class="ai-section-title" style="color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Suspicious Requests (${suspiciousRequests.length})</h4>
+        <div class="ai-findings-list" style="background: rgba(239, 68, 68, 0.1); border-radius: 8px; padding: 10px;">
+          ${suspiciousRequests.slice(0, 10).map(req => `
+            <div class="ai-finding-item" style="margin-bottom: 8px;">
+              <div class="ai-finding-severity high"></div>
+              <div class="ai-finding-content">
+                <div class="ai-finding-title" style="font-size: 11px; color: #fca5a5;">${this.escapeHtml((req.url || '').slice(0, 80))}</div>
+                <div class="ai-finding-desc" style="font-size: 10px; color: #94a3b8;">Pattern: ${this.escapeHtml(req.reason || 'Suspicious pattern detected')}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+      
       <div class="ai-tab-section">
         <h4 class="ai-section-title"><i class="fas fa-bug"></i> Vulnerabilities (${findings.length})</h4>
         ${findings.length > 0 ? `
@@ -931,6 +980,18 @@ class AIAssistantV2 {
           </div>
         ` : '<p class="ai-empty-state">No vulnerabilities detected</p>'}
       </div>
+      
+      ${externalDomains.length > 0 ? `
+      <div class="ai-tab-section">
+        <h4 class="ai-section-title"><i class="fas fa-globe"></i> External Domains (${externalDomains.length})</h4>
+        <div class="ai-domains-list" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 150px; overflow-y: auto;">
+          ${externalDomains.slice(0, 30).map(domain => `
+            <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${this.escapeHtml(domain)}</span>
+          `).join('')}
+          ${externalDomains.length > 30 ? `<span style="color: #64748b; font-size: 11px;">+${externalDomains.length - 30} more</span>` : ''}
+        </div>
+      </div>
+      ` : ''}
     `;
   }
 
@@ -983,6 +1044,9 @@ class AIAssistantV2 {
     const loadTime = perf.loadTime || 'N/A';
     const pageSize = perf.pageSize || 'N/A';
     const requests = perf.requestCount || analysis.requests?.length || 0;
+    const consoleLogs = analysis.console_logs || [];
+    const errors = consoleLogs.filter(l => l.level === 'error');
+    const warnings = consoleLogs.filter(l => l.level === 'warning');
 
     return `
       <div class="ai-tab-section">
@@ -1001,23 +1065,47 @@ class AIAssistantV2 {
             <div class="ai-stat-label">Requests</div>
           </div>
           <div class="ai-stat-card">
-            <div class="ai-stat-value">${perf.score || 'N/A'}</div>
-            <div class="ai-stat-label">Perf Score</div>
+            <div class="ai-stat-value">${perf.domReady || perf.score || 'N/A'}</div>
+            <div class="ai-stat-label">DOM Ready</div>
           </div>
         </div>
+        ${perf.lcp || perf.cls ? `
+        <div class="ai-stats-grid" style="margin-top: 10px;">
+          ${perf.lcp ? `<div class="ai-stat-card"><div class="ai-stat-value">${perf.lcp}</div><div class="ai-stat-label">LCP</div></div>` : ''}
+          ${perf.firstPaint ? `<div class="ai-stat-card"><div class="ai-stat-value">${perf.firstPaint}</div><div class="ai-stat-label">First Paint</div></div>` : ''}
+          ${perf.cls !== null && perf.cls !== undefined ? `<div class="ai-stat-card"><div class="ai-stat-value">${perf.cls.toFixed(3)}</div><div class="ai-stat-label">CLS</div></div>` : ''}
+        </div>
+        ` : ''}
       </div>
+      
+      ${consoleLogs.length > 0 ? `
+        <div class="ai-tab-section">
+          <h4 class="ai-section-title"><i class="fas fa-terminal"></i> Console Output (${errors.length} errors, ${warnings.length} warnings)</h4>
+          <div class="ai-console-logs" style="max-height: 200px; overflow-y: auto; background: #1a1a2e; border-radius: 8px; padding: 10px;">
+            ${consoleLogs.slice(0, 15).map(log => `
+              <div class="ai-console-item" style="font-family: monospace; font-size: 11px; padding: 4px 8px; margin: 2px 0; border-radius: 4px; background: ${log.level === 'error' ? 'rgba(239, 68, 68, 0.2)' : log.level === 'warning' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.1)'};">
+                <span style="color: ${log.level === 'error' ? '#ef4444' : log.level === 'warning' ? '#f59e0b' : '#60a5fa'}; font-weight: 600;">[${log.level.toUpperCase()}]</span>
+                <span style="color: #94a3b8; margin-left: 8px;">${this.escapeHtml((log.message || '').slice(0, 100))}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
       
       ${analysis.requests?.length > 0 ? `
         <div class="ai-tab-section">
-          <h4 class="ai-section-title"><i class="fas fa-network-wired"></i> Network Requests</h4>
-          <div class="ai-requests-list">
-            ${analysis.requests.slice(0, 10).map(req => `
-              <div class="ai-request-item">
-                <span class="ai-request-method ${(req.method || 'GET').toLowerCase()}">${req.method || 'GET'}</span>
-                <span class="ai-request-url">${this.escapeHtml((req.url || '').slice(0, 60))}</span>
-                <span class="ai-request-size">${req.size || '-'}</span>
+          <h4 class="ai-section-title"><i class="fas fa-network-wired"></i> Network Requests (${analysis.requests.length} total)</h4>
+          <div class="ai-requests-list" style="max-height: 300px; overflow-y: auto;">
+            ${analysis.requests.slice(0, 25).map(req => `
+              <div class="ai-request-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span class="ai-request-method ${(req.method || 'GET').toLowerCase()}" style="min-width: 45px; text-align: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: ${req.method === 'POST' ? '#3b82f6' : '#22c55e'}; color: white;">${req.method || 'GET'}</span>
+                <span class="ai-request-status" style="min-width: 35px; font-size: 11px; color: ${req.status >= 400 ? '#ef4444' : req.status >= 300 ? '#f59e0b' : '#22c55e'};">${req.status || '-'}</span>
+                <span class="ai-request-url" style="flex: 1; font-size: 11px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${this.escapeHtml(req.url || '')}">${this.escapeHtml((req.url || '').slice(0, 70))}</span>
+                <span class="ai-request-time" style="min-width: 50px; text-align: right; font-size: 10px; color: #64748b;">${req.time || '-'}</span>
+                <span class="ai-request-size" style="min-width: 50px; text-align: right; font-size: 10px; color: #64748b;">${req.size || '-'}</span>
               </div>
             `).join('')}
+            ${analysis.requests.length > 25 ? `<div style="padding: 10px; text-align: center; color: #64748b; font-size: 12px;">+ ${analysis.requests.length - 25} more requests</div>` : ''}
           </div>
         </div>
       ` : ''}
@@ -1127,7 +1215,12 @@ class AIAssistantV2 {
       this.hideThinkingState();
 
       if (result.success) {
-        const response = result.data?.response || result.data || 'No response received';
+        let response = result.data?.response || result.data || 'No response received';
+        
+        // Detect backend AI-offline messages and provide clearer feedback
+        if (typeof response === 'string' && (response.includes('AI brain') || response.includes('AI capabilities are offline'))) {
+          response = `⚠️ **AI Model Temporarily Unavailable**\n\nThe CyberForge backend is connected and running, but the AI language model behind it is currently offline or restarting.\n\n**What you can still do:**\n- Browse captured requests and responses\n- Use the Agent Center for browser monitoring\n- Run manual security scans\n\nThe AI will reconnect automatically. Try again in a few minutes.`;
+        }
         
         // Build rich content if website was scanned
         let meta = {
@@ -1162,8 +1255,21 @@ class AIAssistantV2 {
             stylesheets: ws.stylesheets || [],
             headers: ws.headers || {},
             ssl: ws.ssl || {},
-            performance: ws.performance || {}
+            performance: ws.performance || {},
+            // New fields from enhanced webscraper integration
+            external_domains: ws.external_domains || [],
+            suspicious_requests: ws.suspicious_requests || [],
+            console_logs: ws.console_logs || [],
+            security_report: ws.security_report || {}
           };
+          
+          console.log('📊 Website Analysis Data:', {
+            requests: analysisData.requests.length,
+            images: analysisData.images.length,
+            scripts: analysisData.scripts.length,
+            technologies: analysisData.technologies.length,
+            console_logs: analysisData.console_logs.length
+          });
           
           // Store analysis for tab switching
           this.state.lastAnalysis = analysisData;
@@ -1182,8 +1288,19 @@ class AIAssistantV2 {
       }
     } catch (error) {
       this.hideThinkingState();
-      this.addMessage('assistant', `❌ Connection error: ${error.message}`);
-      this.updateStatus(false);
+      console.error('AI Service Error:', error);
+      
+      // Check if it's a connection error vs API error
+      const isConnectionError = error.message.includes('Failed to fetch') || 
+                                 error.message.includes('NetworkError') ||
+                                 error.message.includes('ECONNREFUSED');
+      
+      if (isConnectionError) {
+        this.addMessage('assistant', `❌ **AI Service Unavailable**\n\nThe AI backend service appears to be offline or unreachable. Please try again in a moment.\n\n**Troubleshooting:**\n- Check your internet connection\n- The backend server may be restarting\n- Try refreshing the application`);
+      } else {
+        this.addMessage('assistant', `❌ **Error:** ${error.message}\n\nIf this persists, try starting a new chat.`);
+      }
+      this.updateStatus(false, 'Service Error');
     } finally {
       this.state.isLoading = false;
       document.getElementById('ai-send-btn').disabled = false;
@@ -1275,14 +1392,24 @@ class AIAssistantV2 {
 
   async checkAPIStatus() {
     try {
-      const result = await this.api.healthCheck();
-      this.updateStatus(result.success);
-    } catch {
-      this.updateStatus(false);
+      // Try health check first
+      let result = await this.api.healthCheck();
+      
+      // If health check fails, try a simpler ping
+      if (!result.success) {
+        result = await this.api.get('/health');
+      }
+      
+      this.updateStatus(result.success, result.success ? 'Online' : 'Backend Offline');
+      return result.success;
+    } catch (error) {
+      console.log('API health check failed:', error.message);
+      this.updateStatus(false, 'Service Unavailable');
+      return false;
     }
   }
 
-  updateStatus(online = true) {
+  updateStatus(online = true, statusText = null) {
     const badge = document.getElementById('ai-status-badge');
     const text = document.getElementById('ai-status-text');
     
@@ -1291,12 +1418,15 @@ class AIAssistantV2 {
         badge.style.background = 'rgba(34, 197, 94, 0.1)';
         badge.style.borderColor = 'rgba(34, 197, 94, 0.2)';
         badge.style.color = 'var(--ai-accent-green)';
-        text.textContent = 'Online';
+        badge.querySelector('.ai-status-dot').style.background = 'var(--ai-accent-green)';
+        text.textContent = statusText || 'Online';
       } else {
         badge.style.background = 'rgba(239, 68, 68, 0.1)';
         badge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
         badge.style.color = 'var(--ai-accent-red)';
-        text.textContent = 'Offline';
+        const dot = badge.querySelector('.ai-status-dot');
+        if (dot) dot.style.background = 'var(--ai-accent-red)';
+        text.textContent = statusText || 'Offline';
       }
     }
   }

@@ -5,7 +5,7 @@
 
 (() => {
     // Configuration
-    const API_BASE_URL = 'http://localhost:8000';
+    const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
     const FIREBASE_CONFIG = {
         apiKey: "YOUR_FIREBASE_API_KEY",
         authDomain: "cyber-forge-ai.firebaseapp.com",

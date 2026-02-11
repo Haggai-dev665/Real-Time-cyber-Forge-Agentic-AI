@@ -1,12 +1,12 @@
-// Environment-specific API configuration
-const isDev = process.env.NODE_ENV === 'development';
+// CyberForge API Configuration - Always connects to production
+const HEROKU_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
 
 const API_CONFIG = {
-  // Backend API endpoints
+  // Backend API endpoints - Always use Heroku production
   backend: {
-    base: isDev ? 'http://localhost:8000' : 'https://cyberforge-ddd97655464f.herokuapp.com',
-    api: isDev ? 'http://localhost:8000/api' : 'https://cyberforge-ddd97655464f.herokuapp.com/api',
-    websocket: isDev ? 'ws://localhost:8000/ws' : 'wss://cyberforge-ddd97655464f.herokuapp.com/ws'
+    base: HEROKU_URL,
+    api: `${HEROKU_URL}/api`,
+    websocket: 'wss://cyberforge-ddd97655464f.herokuapp.com/ws'
   },
   
   // ML Services (already on HuggingFace)

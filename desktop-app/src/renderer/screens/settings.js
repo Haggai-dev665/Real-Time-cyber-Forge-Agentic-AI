@@ -14,7 +14,7 @@ class SettingsScreen {
             scanFrequency: 'daily',
             threatAlerts: true,
             dataRetention: '30',
-            apiEndpoint: 'http://localhost:8000'
+            apiEndpoint: 'https://cyberforge-ddd97655464f.herokuapp.com'
         };
         this.originalSettings = {};
     }
@@ -291,7 +291,7 @@ class SettingsScreen {
 
                             <div class="setting-group">
                                 <label class="setting-label">Backend API Endpoint</label>
-                                <input type="url" class="form-input" id="api-endpoint" placeholder="http://localhost:8000">
+                                <input type="url" class="form-input" id="api-endpoint" placeholder="https://cyberforge-ddd97655464f.herokuapp.com">
                                 <p class="setting-description">URL of the backend API server</p>
                             </div>
 
@@ -537,7 +537,7 @@ class SettingsScreen {
             scanFrequency: 'daily',
             threatAlerts: true,
             dataRetention: '30',
-            apiEndpoint: 'http://localhost:8000'
+            apiEndpoint: 'https://cyberforge-ddd97655464f.herokuapp.com'
         };
 
         // Update form

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:* ws://localhost:* https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https: blob:; connect-src 'self' https://cyberforge-ddd97655464f.herokuapp.com wss://cyberforge-ddd97655464f.herokuapp.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://che237-cyberforge-models.hf.space https://otx.alienvault.com">
     <title>Cyberforge - Security Testing Tool</title>
     
     <!-- Stylesheets -->
@@ -689,6 +689,13 @@
         </div>
     </div>
 
+    <!-- Agent Panel Minimized Button (Side tab - Shows when panel is hidden) -->
+    <button class="agent-minimized-btn" id="agent-minimized-btn" title="Show Agent Panel" style="display: none;">
+        <i class="fas fa-robot"></i>
+        <span class="agent-mini-label">Agent</span>
+        <span class="agent-mini-pulse"></span>
+    </button>
+
     <!-- AI Agent Control Center Panel (Redesigned) -->
     <div class="agent-control-panel" id="agent-control-panel">
         <div class="agent-panel-header">
@@ -706,9 +713,14 @@
                 <span class="agent-status-dot" id="agent-main-status"></span>
                 <span class="agent-status-text" id="agent-status-text">Monitoring</span>
             </div>
-            <button class="agent-panel-toggle" id="agent-panel-toggle">
-                <i class="fas fa-chevron-up"></i>
-            </button>
+            <div class="agent-panel-controls">
+                <button class="agent-panel-hide" id="agent-panel-hide" title="Hide Panel">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="agent-panel-toggle" id="agent-panel-toggle" title="Collapse/Expand">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
         </div>
         
         <div class="agent-panel-body" id="agent-panel-body">
@@ -836,6 +848,10 @@
                         <i class="fas fa-plug"></i>
                         <span>Connect</span>
                     </button>
+                    <button class="agent-action-btn primary" id="agent-add-browser" title="Add Browser Manually">
+                        <i class="fas fa-plus"></i>
+                        <span>Add</span>
+                    </button>
                 </div>
             </div>
 
@@ -938,6 +954,64 @@
                     <i class="fas fa-puzzle-piece"></i>
                     <span>Plugins</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Browser Modal -->
+    <div class="modal-overlay" id="add-browser-modal" style="display: none;">
+        <div class="modal-container add-browser-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-globe"></i> Add Browser Connection</h3>
+                <button class="modal-close" id="add-browser-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Connect to a browser with remote debugging enabled. Start your browser with the appropriate flag:</p>
+                
+                <div class="browser-launch-tips">
+                    <div class="tip-card">
+                        <div class="tip-icon chrome"><i class="fab fa-chrome"></i></div>
+                        <div class="tip-content">
+                            <strong>Chrome / Edge</strong>
+                            <code>--remote-debugging-port=9222</code>
+                        </div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon firefox"><i class="fab fa-firefox"></i></div>
+                        <div class="tip-content">
+                            <strong>Firefox</strong>
+                            <code>-start-debugger-server 9222</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="browser-name">Browser Name</label>
+                    <input type="text" id="browser-name" placeholder="e.g., Chrome, Firefox, Edge" value="Chrome">
+                </div>
+                
+                <div class="form-group">
+                    <label for="browser-host">Debug Host</label>
+                    <input type="text" id="browser-host" placeholder="localhost" value="localhost">
+                </div>
+                
+                <div class="form-group">
+                    <label for="browser-port">Debug Port</label>
+                    <input type="number" id="browser-port" placeholder="9222" value="9222">
+                </div>
+
+                <div class="connection-status" id="browser-connection-status">
+                    <span class="status-text">Not connected</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="add-browser-cancel">Cancel</button>
+                <button class="btn btn-primary" id="add-browser-test">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+                <button class="btn btn-success" id="add-browser-connect" disabled>
+                    <i class="fas fa-check"></i> Connect
+                </button>
             </div>
         </div>
     </div>

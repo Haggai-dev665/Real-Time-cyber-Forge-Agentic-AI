@@ -637,18 +637,79 @@ input:checked + .slider:before {
     border-radius: 4px;
 }
 
+.console-entry .log-browser {
+    font-size: 0.75rem;
+    color: var(--accent-color);
+    background: rgba(var(--accent-rgb, 59, 130, 246), 0.15);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.console-entry .log-icon {
+    color: var(--text-secondary);
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.console-entry .log-message {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.85rem;
+    word-break: break-word;
+}
+
+.console-entry .log-source {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.console-entry .log-time {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
 .console-entry.error {
     background: rgba(239, 68, 68, 0.1);
     color: #fecaca;
 }
 
-.console-entry.warn {
+.console-entry.error .log-icon {
+    color: #ef4444;
+}
+
+.console-entry.warn,
+.console-entry.warning {
     background: rgba(245, 158, 11, 0.1);
     color: #fef3c7;
 }
 
+.console-entry.warn .log-icon,
+.console-entry.warning .log-icon {
+    color: #f59e0b;
+}
+
 .console-entry.info {
     color: #93c5fd;
+}
+
+.console-entry.info .log-icon {
+    color: #3b82f6;
+}
+
+.console-entry.exception {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
+}
+
+.console-entry.exception .log-icon {
+    color: #dc2626;
 }
 
 .console-input {

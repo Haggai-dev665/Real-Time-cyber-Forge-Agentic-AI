@@ -27,7 +27,7 @@ const firebaseConfig = {
 const googleOAuthConfig = {
     clientId: process.env.GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "YOUR_CLIENT_SECRET",
-    redirectUri: "http://localhost:8000/api/auth/google/callback",
+    redirectUri: "https://cyberforge-ddd97655464f.herokuapp.com/api/auth/google/callback",
     scopes: [
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile'

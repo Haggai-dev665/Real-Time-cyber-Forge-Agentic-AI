@@ -3,8 +3,8 @@
  * Handles all communication between the desktop app and backend services
  */
 
-const API_BASE_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000/ws';
+const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
+const WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
 
 class CyberForgeAPI {
   constructor() {

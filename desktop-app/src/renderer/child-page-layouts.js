@@ -1558,44 +1558,359 @@ window.ChildPageLayouts = (() => {
 
   function buildBrowserRegistrationLayout() {
     return `
-      <div class="child-page-container" id="browser-registration-page">
+      <div class="child-page-container browser-registration-container" id="browser-registration-page">
         <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-globe"></i> Browser Registration</div>
+          <div class="caido-panel-title"><i class="fas fa-globe"></i> Browser Monitoring</div>
           <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-browser"><i class="fas fa-plus"></i> Add Browser</button>
+            <button class="caido-btn" id="refresh-browsers"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="caido-btn primary" id="start-monitoring"><i class="fas fa-play"></i> Start Monitoring</button>
           </div>
         </div>
+        
+        <!-- Monitor Status Banner -->
+        <div class="monitor-status-banner" id="monitor-status-banner">
+          <div class="monitor-status-icon">
+            <i class="fas fa-circle-notch fa-spin"></i>
+          </div>
+          <div class="monitor-status-text">
+            <div class="monitor-status-title">Browser Monitoring Status</div>
+            <div class="monitor-status-desc" id="monitor-status-desc">Checking...</div>
+          </div>
+          <div class="monitor-stats" id="monitor-stats">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-browsers">0</span>
+              <span class="stat-label">Browsers</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-requests">0</span>
+              <span class="stat-label">Requests</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-threats">0</span>
+              <span class="stat-label">Threats</span>
+            </div>
+          </div>
+        </div>
+        
         <div class="caido-panel-content">
-          <div class="registered-browsers" id="registered-browsers-list">
-            <div class="browser-card">
-              <div class="browser-icon"><i class="fab fa-chrome"></i></div>
-              <div class="browser-info">
-                <div class="browser-name">Chrome</div>
-                <div class="browser-version">Version 120.0.6099.109</div>
-                <div class="browser-profile">Default Profile</div>
-              </div>
-              <div class="browser-status"><span class="caido-badge green">Monitored</span></div>
-              <div class="browser-actions">
-                <button class="caido-btn small"><i class="fas fa-cog"></i></button>
-                <button class="caido-btn small danger"><i class="fas fa-times"></i></button>
+          <!-- Available Browsers Section -->
+          <div class="browser-section">
+            <h3 class="section-title"><i class="fas fa-desktop"></i> Available Browsers</h3>
+            <p class="section-desc">Click a browser to launch it with monitoring enabled. Browsers must be launched through CyberForge for full traffic capture.</p>
+            <div class="available-browsers" id="available-browsers-list">
+              <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Detecting browsers...</span>
               </div>
             </div>
-            <div class="browser-card">
-              <div class="browser-icon"><i class="fab fa-firefox"></i></div>
-              <div class="browser-info">
-                <div class="browser-name">Firefox</div>
-                <div class="browser-version">Version 121.0</div>
-                <div class="browser-profile">Security Profile</div>
+          </div>
+          
+          <!-- Connected Browsers Section -->
+          <div class="browser-section">
+            <h3 class="section-title"><i class="fas fa-link"></i> Connected Browsers</h3>
+            <p class="section-desc">These browsers are currently being monitored. All HTTP/HTTPS requests are captured.</p>
+            <div class="connected-browsers" id="connected-browsers-list">
+              <div class="empty-state">
+                <i class="fas fa-unlink"></i>
+                <span>No browsers connected</span>
               </div>
-              <div class="browser-status"><span class="caido-badge green">Monitored</span></div>
-              <div class="browser-actions">
-                <button class="caido-btn small"><i class="fas fa-cog"></i></button>
-                <button class="caido-btn small danger"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          
+          <!-- How It Works Section -->
+          <div class="browser-section how-it-works">
+            <h3 class="section-title"><i class="fas fa-question-circle"></i> How Browser Monitoring Works</h3>
+            <div class="steps-grid">
+              <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h4>Launch Browser</h4>
+                  <p>Click on any detected browser above to launch it with remote debugging enabled.</p>
+                </div>
+              </div>
+              <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h4>Auto-Connect</h4>
+                  <p>CyberForge automatically connects via Chrome DevTools Protocol for traffic capture.</p>
+                </div>
+              </div>
+              <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h4>Real-Time Monitoring</h4>
+                  <p>All HTTP/HTTPS requests are captured and analyzed for threats in real-time.</p>
+                </div>
+              </div>
+              <div class="step-card">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                  <h4>View in HTTP History</h4>
+                  <p>Check HTTP History to see all captured requests with full details.</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      <style>
+        .browser-registration-container {
+          padding: 0;
+        }
+        
+        .monitor-status-banner {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          padding: 20px;
+          background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+          border-bottom: 1px solid var(--border-color);
+          margin-bottom: 20px;
+        }
+        
+        .monitor-status-banner.active {
+          background: linear-gradient(135deg, rgba(0, 255, 0, 0.1) 0%, var(--bg-tertiary) 100%);
+        }
+        
+        .monitor-status-icon {
+          font-size: 32px;
+          color: var(--accent-blue);
+          width: 50px;
+          text-align: center;
+        }
+        
+        .monitor-status-banner.active .monitor-status-icon {
+          color: var(--accent-green);
+        }
+        
+        .monitor-status-text {
+          flex: 1;
+        }
+        
+        .monitor-status-title {
+          font-weight: 600;
+          font-size: 16px;
+          margin-bottom: 4px;
+        }
+        
+        .monitor-status-desc {
+          color: var(--text-secondary);
+          font-size: 13px;
+        }
+        
+        .monitor-stats {
+          display: flex;
+          gap: 30px;
+        }
+        
+        .stat-item {
+          text-align: center;
+        }
+        
+        .stat-value {
+          display: block;
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--accent-blue);
+        }
+        
+        .stat-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          color: var(--text-secondary);
+        }
+        
+        .browser-section {
+          padding: 0 20px 20px;
+        }
+        
+        .section-title {
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 8px;
+          color: var(--text-primary);
+        }
+        
+        .section-title i {
+          margin-right: 8px;
+          color: var(--accent-blue);
+        }
+        
+        .section-desc {
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-bottom: 16px;
+        }
+        
+        .available-browsers, .connected-browsers {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 12px;
+        }
+        
+        .browser-card {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 16px;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .browser-card:hover {
+          background: var(--bg-tertiary);
+          border-color: var(--accent-blue);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .browser-card.connected {
+          border-color: var(--accent-green);
+          background: linear-gradient(135deg, rgba(0, 255, 0, 0.05) 0%, var(--bg-secondary) 100%);
+        }
+        
+        .browser-card.launching {
+          opacity: 0.7;
+          pointer-events: none;
+        }
+        
+        .browser-card .browser-icon {
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          border-radius: 10px;
+          background: var(--bg-tertiary);
+        }
+        
+        .browser-card .browser-icon.chrome { color: #4285f4; }
+        .browser-card .browser-icon.brave { color: #fb542b; }
+        .browser-card .browser-icon.edge { color: #0078d7; }
+        .browser-card .browser-icon.arc { color: #fc8e00; }
+        .browser-card .browser-icon.opera { color: #ff1b2d; }
+        .browser-card .browser-icon.chromium { color: #4587f4; }
+        
+        .browser-card .browser-info {
+          flex: 1;
+        }
+        
+        .browser-card .browser-name {
+          font-weight: 600;
+          font-size: 15px;
+          margin-bottom: 4px;
+        }
+        
+        .browser-card .browser-port {
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+        
+        .browser-card .browser-status {
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        
+        .browser-card .browser-status.available {
+          background: rgba(0, 150, 255, 0.15);
+          color: var(--accent-blue);
+        }
+        
+        .browser-card .browser-status.connected {
+          background: rgba(0, 255, 0, 0.15);
+          color: var(--accent-green);
+        }
+        
+        .browser-card .browser-status.launching {
+          background: rgba(255, 200, 0, 0.15);
+          color: var(--accent-yellow);
+        }
+        
+        .browser-card .launch-btn {
+          padding: 8px 16px;
+          background: var(--accent-blue);
+          border: none;
+          border-radius: 6px;
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .browser-card .launch-btn:hover {
+          background: var(--accent-purple);
+          transform: scale(1.05);
+        }
+        
+        .how-it-works {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid var(--border-color);
+        }
+        
+        .steps-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+        }
+        
+        .step-card {
+          display: flex;
+          gap: 12px;
+          padding: 16px;
+          background: var(--bg-secondary);
+          border-radius: 8px;
+          border: 1px solid var(--border-color);
+        }
+        
+        .step-number {
+          width: 28px;
+          height: 28px;
+          background: var(--accent-blue);
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 14px;
+          flex-shrink: 0;
+        }
+        
+        .step-content h4 {
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 6px;
+        }
+        
+        .step-content p {
+          font-size: 12px;
+          color: var(--text-secondary);
+          line-height: 1.5;
+        }
+        
+        .loading-state, .empty-state {
+          grid-column: 1 / -1;
+          padding: 40px;
+          text-align: center;
+          color: var(--text-secondary);
+        }
+        
+        .loading-state i, .empty-state i {
+          font-size: 24px;
+          margin-bottom: 10px;
+          display: block;
+        }
+      </style>
     `;
   }
 

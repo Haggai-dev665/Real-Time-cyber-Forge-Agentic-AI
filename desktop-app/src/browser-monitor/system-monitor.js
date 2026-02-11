@@ -274,6 +274,12 @@ class SystemBrowserMonitor {
           
           // Enable Security domain
           ws.send(JSON.stringify({ id: messageId++, method: 'Security.enable' }));
+          
+          // Enable Runtime domain for console messages
+          ws.send(JSON.stringify({ id: messageId++, method: 'Runtime.enable' }));
+          
+          // Enable Log domain for additional logging
+          ws.send(JSON.stringify({ id: messageId++, method: 'Log.enable' }));
 
           this.browserConnections.set(connectionKey, {
             ws,
@@ -332,6 +338,113 @@ class SystemBrowserMonitor {
       case 'Security.securityStateChanged':
         this.handleSecurityChange(browser, target, message.params);
         break;
+      
+      case 'Runtime.consoleAPICalled':
+        this.handleConsoleMessage(browser, target, message.params);
+        break;
+      
+      case 'Runtime.exceptionThrown':
+        this.handleException(browser, target, message.params);
+        break;
+      
+      case 'Log.entryAdded':
+        this.handleLogEntry(browser, target, message.params);
+        break;
+    }
+  }
+
+  /**
+   * Handle browser console messages
+   */
+  handleConsoleMessage(browser, target, params) {
+    const { type, args, timestamp, stackTrace } = params;
+    
+    // Extract console message content
+    const messageText = args?.map(arg => {
+      if (arg.type === 'string') return arg.value;
+      if (arg.type === 'object' && arg.preview) {
+        return JSON.stringify(arg.preview.properties?.reduce((obj, p) => {
+          obj[p.name] = p.value;
+          return obj;
+        }, {}) || arg.description);
+      }
+      return arg.description || arg.value || '[object]';
+    }).join(' ') || '';
+
+    const consoleData = {
+      browser: browser.name,
+      tabTitle: target.title,
+      type,
+      message: messageText,
+      timestamp: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
+      stackTrace: stackTrace?.callFrames?.map(f => ({
+        functionName: f.functionName,
+        url: f.url,
+        lineNumber: f.lineNumber,
+        columnNumber: f.columnNumber
+      }))
+    };
+
+    // Only send errors and warnings to renderer to avoid spam
+    if (type === 'error' || type === 'warning') {
+      this.sendToRenderer('browser-console', consoleData);
+      
+      // Check for potential security issues in console
+      const securityKeywords = ['cors', 'blocked', 'denied', 'forbidden', 'unsafe', 'mixed content', 'csp', 'xss'];
+      const isSecurityRelated = securityKeywords.some(kw => messageText.toLowerCase().includes(kw));
+      
+      if (isSecurityRelated) {
+        this.stats.threatsDetected++;
+        this.sendToRenderer('threat-detected', {
+          type: 'console_security_warning',
+          message: messageText,
+          browser: browser.name,
+          severity: type === 'error' ? 'high' : 'medium',
+          timestamp: consoleData.timestamp
+        });
+      }
+    }
+  }
+
+  /**
+   * Handle JavaScript exceptions
+   */
+  handleException(browser, target, params) {
+    const { exceptionDetails } = params;
+    
+    const exceptionData = {
+      browser: browser.name,
+      tabTitle: target.title,
+      type: 'exception',
+      message: exceptionDetails?.text || exceptionDetails?.exception?.description || 'Unknown exception',
+      url: exceptionDetails?.url,
+      lineNumber: exceptionDetails?.lineNumber,
+      columnNumber: exceptionDetails?.columnNumber,
+      timestamp: new Date().toISOString()
+    };
+
+    this.sendToRenderer('browser-console', exceptionData);
+  }
+
+  /**
+   * Handle log entries from the Log domain
+   */
+  handleLogEntry(browser, target, params) {
+    const { entry } = params;
+    
+    if (entry.level === 'error' || entry.level === 'warning') {
+      const logData = {
+        browser: browser.name,
+        tabTitle: target.title,
+        type: entry.level,
+        message: entry.text,
+        source: entry.source,
+        url: entry.url,
+        lineNumber: entry.lineNumber,
+        timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString() : new Date().toISOString()
+      };
+
+      this.sendToRenderer('browser-console', logData);
     }
   }
 

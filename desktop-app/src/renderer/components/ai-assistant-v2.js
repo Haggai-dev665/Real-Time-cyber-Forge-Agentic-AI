@@ -949,15 +949,12 @@ class AIAssistantV2 {
       
       ${suspiciousRequests.length > 0 ? `
       <div class="ai-tab-section">
-        <h4 class="ai-section-title" style="color: #ef4444;"><i class="fas fa-exclamation-triangle"></i> Suspicious Requests (${suspiciousRequests.length})</h4>
-        <div class="ai-findings-list" style="background: rgba(239, 68, 68, 0.1); border-radius: 8px; padding: 10px;">
+        <h4 class="ai-section-title" style="color: var(--ai-accent-red);"><i class="fas fa-exclamation-triangle"></i> Suspicious Requests (${suspiciousRequests.length})</h4>
+        <div class="ai-suspicious-box">
           ${suspiciousRequests.slice(0, 10).map(req => `
-            <div class="ai-finding-item" style="margin-bottom: 8px;">
-              <div class="ai-finding-severity high"></div>
-              <div class="ai-finding-content">
-                <div class="ai-finding-title" style="font-size: 11px; color: #fca5a5;">${this.escapeHtml((req.url || '').slice(0, 80))}</div>
-                <div class="ai-finding-desc" style="font-size: 10px; color: #94a3b8;">Pattern: ${this.escapeHtml(req.reason || 'Suspicious pattern detected')}</div>
-              </div>
+            <div class="ai-suspicious-item">
+              <div class="ai-suspicious-url">${this.escapeHtml((req.url || '').slice(0, 120))}</div>
+              <div class="ai-suspicious-reason"><i class="fas fa-info-circle"></i> ${this.escapeHtml(req.reason || 'Suspicious pattern detected')}</div>
             </div>
           `).join('')}
         </div>
@@ -984,11 +981,11 @@ class AIAssistantV2 {
       ${externalDomains.length > 0 ? `
       <div class="ai-tab-section">
         <h4 class="ai-section-title"><i class="fas fa-globe"></i> External Domains (${externalDomains.length})</h4>
-        <div class="ai-domains-list" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 150px; overflow-y: auto;">
+        <div class="ai-domains-wrapper">
           ${externalDomains.slice(0, 30).map(domain => `
-            <span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${this.escapeHtml(domain)}</span>
+            <span class="ai-domain-tag"><i class="fas fa-link"></i> ${this.escapeHtml(domain)}</span>
           `).join('')}
-          ${externalDomains.length > 30 ? `<span style="color: #64748b; font-size: 11px;">+${externalDomains.length - 30} more</span>` : ''}
+          ${externalDomains.length > 30 ? `<span class="ai-domain-tag" style="background: var(--ai-bg-secondary); color: var(--ai-text-muted);">+${externalDomains.length - 30} more</span>` : ''}
         </div>
       </div>
       ` : ''}
@@ -1081,11 +1078,11 @@ class AIAssistantV2 {
       ${consoleLogs.length > 0 ? `
         <div class="ai-tab-section">
           <h4 class="ai-section-title"><i class="fas fa-terminal"></i> Console Output (${errors.length} errors, ${warnings.length} warnings)</h4>
-          <div class="ai-console-logs" style="max-height: 200px; overflow-y: auto; background: #1a1a2e; border-radius: 8px; padding: 10px;">
+          <div class="ai-console-logs">
             ${consoleLogs.slice(0, 15).map(log => `
-              <div class="ai-console-item" style="font-family: monospace; font-size: 11px; padding: 4px 8px; margin: 2px 0; border-radius: 4px; background: ${log.level === 'error' ? 'rgba(239, 68, 68, 0.2)' : log.level === 'warning' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.1)'};">
-                <span style="color: ${log.level === 'error' ? '#ef4444' : log.level === 'warning' ? '#f59e0b' : '#60a5fa'}; font-weight: 600;">[${log.level.toUpperCase()}]</span>
-                <span style="color: #94a3b8; margin-left: 8px;">${this.escapeHtml((log.message || '').slice(0, 100))}</span>
+              <div class="ai-console-item ${log.level}">
+                <span class="ai-console-level">[${log.level}]</span>
+                <span class="ai-console-msg">${this.escapeHtml((log.message || '').slice(0, 100))}</span>
               </div>
             `).join('')}
           </div>
@@ -1095,17 +1092,19 @@ class AIAssistantV2 {
       ${analysis.requests?.length > 0 ? `
         <div class="ai-tab-section">
           <h4 class="ai-section-title"><i class="fas fa-network-wired"></i> Network Requests (${analysis.requests.length} total)</h4>
-          <div class="ai-requests-list" style="max-height: 300px; overflow-y: auto;">
-            ${analysis.requests.slice(0, 25).map(req => `
-              <div class="ai-request-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <span class="ai-request-method ${(req.method || 'GET').toLowerCase()}" style="min-width: 45px; text-align: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: ${req.method === 'POST' ? '#3b82f6' : '#22c55e'}; color: white;">${req.method || 'GET'}</span>
-                <span class="ai-request-status" style="min-width: 35px; font-size: 11px; color: ${req.status >= 400 ? '#ef4444' : req.status >= 300 ? '#f59e0b' : '#22c55e'};">${req.status || '-'}</span>
-                <span class="ai-request-url" style="flex: 1; font-size: 11px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${this.escapeHtml(req.url || '')}">${this.escapeHtml((req.url || '').slice(0, 70))}</span>
-                <span class="ai-request-time" style="min-width: 50px; text-align: right; font-size: 10px; color: #64748b;">${req.time || '-'}</span>
-                <span class="ai-request-size" style="min-width: 50px; text-align: right; font-size: 10px; color: #64748b;">${req.size || '-'}</span>
+          <div class="ai-requests-table">
+            ${analysis.requests.slice(0, 25).map(req => {
+                const statusClass = req.status >= 500 ? 's-5xx' : req.status >= 400 ? 's-4xx' : req.status >= 300 ? 's-3xx' : 's-2xx';
+                return `
+              <div class="ai-req-row">
+                <span class="ai-req-method ${(req.method || 'GET').toLowerCase()}">${req.method || 'GET'}</span>
+                <span class="ai-req-status ${statusClass}">${req.status || '-'}</span>
+                <span class="ai-req-url" title="${this.escapeHtml(req.url || '')}">${this.escapeHtml((req.url || '').slice(0, 70))}</span>
+                <span class="ai-req-meta">${req.time || '-'}</span>
+                <span class="ai-req-meta">${req.size || '-'}</span>
               </div>
-            `).join('')}
-            ${analysis.requests.length > 25 ? `<div style="padding: 10px; text-align: center; color: #64748b; font-size: 12px;">+ ${analysis.requests.length - 25} more requests</div>` : ''}
+            `}).join('')}
+            ${analysis.requests.length > 25 ? `<div style="padding: 10px; text-align: center; color: var(--ai-text-muted); font-size: 12px;">+ ${analysis.requests.length - 25} more requests</div>` : ''}
           </div>
         </div>
       ` : ''}

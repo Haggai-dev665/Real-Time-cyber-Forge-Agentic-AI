@@ -63,12 +63,24 @@
     --ai-transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --ai-transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Border Radius */
-    --ai-radius-sm: 8px;
-    --ai-radius-md: 12px;
-    --ai-radius-lg: 16px;
-    --ai-radius-xl: 20px;
-    --ai-radius-2xl: 24px;
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--ai-border-color);
+        border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--ai-text-muted);
+    }
 }
 
 /* Light Theme - Matches app light palette */
@@ -408,7 +420,7 @@
 .ai-messages-inner {
     max-width: 900px;
     margin: 0 auto;
-    padding: 24px 20px 100px;
+    padding: 24px 20px 200px;
 }
 
 /* Welcome Screen */
@@ -1676,7 +1688,7 @@
     }
     
     .ai-messages-inner {
-        padding: 16px 16px 120px;
+        padding: 16px 16px 180px;
     }
     
     .ai-message-content {
@@ -2113,4 +2125,220 @@ body.light-theme .ai-tab-section h4 {
 [data-theme="light"] .ai-section-title i,
 body.light-theme .ai-section-title i {
     color: var(--ai-accent-primary);
+}
+
+/* =====================================================
+   ENHANCED DATA ELEMENT STYLES
+   ===================================================== */
+
+/* Console Logs */
+.ai-console-logs {
+    max-height: 250px;
+    overflow-y: auto;
+    background: var(--ai-bg-primary); 
+    border: 1px solid var(--ai-border-color);
+    border-radius: var(--ai-radius-md);
+    padding: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.ai-console-item {
+    padding: 6px 10px;
+    border-radius: var(--ai-radius-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.4;
+    transition: background var(--ai-transition-fast);
+}
+
+.ai-console-item:hover {
+    background: var(--ai-bg-hover);
+}
+
+.ai-console-item.error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 2px solid var(--ai-accent-red);
+}
+
+.ai-console-item.warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 2px solid var(--ai-accent-yellow);
+}
+
+.ai-console-item.info {
+    background: rgba(59, 130, 246, 0.05);
+    border-left: 2px solid var(--ai-accent-blue);
+}
+
+.ai-console-level {
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.2);
+    min-width: 55px;
+    text-align: center;
+}
+
+.ai-console-item.error .ai-console-level { color: var(--ai-accent-red); }
+.ai-console-item.warning .ai-console-level { color: var(--ai-accent-yellow); }
+.ai-console-item.info .ai-console-level { color: var(--ai-accent-blue); }
+
+.ai-console-msg {
+    color: var(--ai-text-secondary);
+    word-break: break-all;
+}
+
+/* Domain Tags */
+.ai-domains-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.ai-domain-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--ai-bg-tertiary);
+    border: 1px solid var(--ai-border-color);
+    border-radius: 100px;
+    font-size: 11px;
+    color: var(--ai-text-link);
+    transition: all var(--ai-transition-fast);
+}
+
+.ai-domain-tag:hover {
+    background: rgba(77, 159, 255, 0.1);
+    border-color: var(--ai-text-link);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Network Request Table Like View */
+.ai-requests-table {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--ai-border-color);
+    border-radius: var(--ai-radius-md);
+    overflow: hidden;
+    background: var(--ai-bg-secondary);
+}
+
+.ai-req-row {
+    display: grid;
+    grid-template-columns: 60px 40px 1fr 60px 60px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ai-border-color);
+    font-size: 12px;
+}
+
+.ai-req-row:last-child {
+    border-bottom: none;
+}
+
+.ai-req-row:hover {
+    background: var(--ai-bg-hover);
+}
+
+.ai-req-method {
+    font-weight: 700;
+    font-size: 10px;
+    text-align: center;
+    padding: 2px 0;
+    border-radius: 4px;
+    color: #fff;
+}
+.ai-req-method.get { background: var(--ai-accent-green); }
+.ai-req-method.post { background: var(--ai-accent-blue); }
+.ai-req-method.put { background: var(--ai-accent-yellow); }
+.ai-req-method.delete { background: var(--ai-accent-red); }
+
+.ai-req-status {
+    font-family: monospace;
+    text-align: center;
+    font-weight: 600;
+}
+.ai-req-status.s-2xx { color: var(--ai-accent-green); }
+.ai-req-status.s-3xx { color: var(--ai-accent-yellow); }
+.ai-req-status.s-4xx { color: var(--ai-accent-orange); }
+.ai-req-status.s-5xx { color: var(--ai-accent-red); }
+
+.ai-req-url {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ai-text-secondary);
+}
+
+.ai-req-meta {
+    font-size: 11px;
+    color: var(--ai-text-muted);
+    text-align: right;
+}
+
+/* Suspicious Requests Highlighting */
+.ai-suspicious-box {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--ai-radius-md);
+    padding: 12px;
+}
+
+.ai-suspicious-item {
+    padding: 10px;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ai-suspicious-item:last-child {
+    border-bottom: none;
+}
+
+.ai-suspicious-url {
+    font-family: monospace;
+    color: var(--ai-accent-red);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.ai-suspicious-reason {
+    font-size: 11px;
+    color: var(--ai-text-muted);
+}
+
+/* Responsive Table Adjustments */
+@media (max-width: 600px) {
+    .ai-req-row {
+        grid-template-columns: 50px 1fr;
+        grid-template-rows: auto auto;
+        gap: 4px;
+    }
+    .ai-req-status, .ai-req-meta {
+        display: none; /* Hide detailed metrics on very small screens */
+    }
+    .ai-req-url {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .ai-req-method {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        align-self: start;
+    }
 }

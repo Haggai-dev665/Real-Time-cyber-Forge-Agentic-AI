@@ -2350,6 +2350,14 @@ code {
         display: none;
     }
     
+    .header-stats {
+        display: none;
+    }
+    
+    .header-agent-status {
+        display: none;
+    }
+    
     .theme-toggle {
         display: none;
     }

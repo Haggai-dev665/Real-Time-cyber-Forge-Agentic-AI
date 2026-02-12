@@ -4,7 +4,7 @@
  * This file provides functional layouts for pages that previously showed placeholder content
  */
 
-// Make functions available globally for cf-app.js
+// Make functions available globally for cyberforge-app.js
 window.ChildPageLayouts = (() => {
   
   // =========================================

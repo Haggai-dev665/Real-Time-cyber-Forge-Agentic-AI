@@ -1,4 +1,4 @@
-// Caido-style Desktop App Controller
+// CyberForge Desktop App Controller
 // Handles navigation, table rendering, context menu, and interactions
 
 (() => {

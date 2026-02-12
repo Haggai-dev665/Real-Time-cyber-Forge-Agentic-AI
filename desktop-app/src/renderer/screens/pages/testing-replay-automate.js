@@ -24,13 +24,13 @@ class ReplayQueuePage extends BasePage {
                         <span class="queue-badge" id="queue-count">0</span>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-to-queue">
+                        <button class="cf-btn primary" id="add-to-queue">
                             <i class="fas fa-plus"></i> Add Request
                         </button>
-                        <button class="caido-btn success" id="replay-all">
+                        <button class="cf-btn success" id="replay-all">
                             <i class="fas fa-play"></i> Replay All
                         </button>
-                        <button class="caido-btn small" id="clear-queue">
+                        <button class="cf-btn small" id="clear-queue">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
@@ -87,7 +87,7 @@ class ReplayQueuePage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-redo"></i>
                     <p>No requests in queue</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('add-to-queue').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('add-to-queue').click()">
                         Add Request
                     </button>
                 </div>
@@ -104,13 +104,13 @@ class ReplayQueuePage extends BasePage {
                     <div class="queue-path">${req.path}</div>
                 </div>
                 <div class="queue-actions">
-                    <button class="caido-btn tiny success" data-action="replay">
+                    <button class="cf-btn tiny success" data-action="replay">
                         <i class="fas fa-play"></i>
                     </button>
-                    <button class="caido-btn tiny" data-action="edit">
+                    <button class="cf-btn tiny" data-action="edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="caido-btn tiny danger" data-action="remove">
+                    <button class="cf-btn tiny danger" data-action="remove">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -163,7 +163,7 @@ class ReplayQueuePage extends BasePage {
                 <h4>Edit Request</h4>
                 <div class="form-group">
                     <label>Method</label>
-                    <select id="edit-method" class="caido-select">
+                    <select id="edit-method" class="cf-select">
                         ${['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'].map(m => 
                             `<option value="${m}" ${request.method === m ? 'selected' : ''}>${m}</option>`
                         ).join('')}
@@ -171,22 +171,22 @@ class ReplayQueuePage extends BasePage {
                 </div>
                 <div class="form-group">
                     <label>URL</label>
-                    <input type="text" id="edit-url" class="caido-input" 
+                    <input type="text" id="edit-url" class="cf-input" 
                            value="${request.scheme}://${request.host}${request.path}${request.query ? '?' + request.query : ''}" />
                 </div>
                 <div class="form-group">
                     <label>Headers</label>
-                    <textarea id="edit-headers" class="caido-input" rows="5">${JSON.stringify(request.headers || [], null, 2)}</textarea>
+                    <textarea id="edit-headers" class="cf-input" rows="5">${JSON.stringify(request.headers || [], null, 2)}</textarea>
                 </div>
                 <div class="form-group">
                     <label>Body</label>
-                    <textarea id="edit-body" class="caido-input" rows="5">${request.body || ''}</textarea>
+                    <textarea id="edit-body" class="cf-input" rows="5">${request.body || ''}</textarea>
                 </div>
                 <div class="editor-actions">
-                    <button class="caido-btn" onclick="document.getElementById('queue-editor').innerHTML = '<div class=\\'empty-state\\'><p>Select a request to edit</p></div>'">
+                    <button class="cf-btn" onclick="document.getElementById('queue-editor').innerHTML = '<div class=\\'empty-state\\'><p>Select a request to edit</p></div>'">
                         Cancel
                     </button>
-                    <button class="caido-btn primary" id="save-and-replay">
+                    <button class="cf-btn primary" id="save-and-replay">
                         <i class="fas fa-play"></i> Save & Replay
                     </button>
                 </div>
@@ -213,7 +213,7 @@ class ReplayQueuePage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Method</label>
-                <select name="method" class="caido-select">
+                <select name="method" class="cf-select">
                     <option value="GET">GET</option>
                     <option value="POST">POST</option>
                     <option value="PUT">PUT</option>
@@ -222,11 +222,11 @@ class ReplayQueuePage extends BasePage {
             </div>
             <div class="form-group">
                 <label>URL</label>
-                <input type="text" name="url" class="caido-input" placeholder="https://example.com/api" required />
+                <input type="text" name="url" class="cf-input" placeholder="https://example.com/api" required />
             </div>
             <div class="form-group">
                 <label>Body (optional)</label>
-                <textarea name="body" class="caido-input" rows="3"></textarea>
+                <textarea name="body" class="cf-input" rows="3"></textarea>
             </div>
         `;
 
@@ -290,16 +290,16 @@ class ReplayHistoryPage extends BasePage {
                         <h2>Replay History</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn small" id="export-history">
+                        <button class="cf-btn small" id="export-history">
                             <i class="fas fa-download"></i> Export
                         </button>
-                        <button class="caido-btn small" id="clear-history">
+                        <button class="cf-btn small" id="clear-history">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
                 </div>
 
-                <table class="caido-table" id="history-table">
+                <table class="cf-table" id="history-table">
                     <thead>
                         <tr>
                             <th>Time</th>
@@ -349,7 +349,7 @@ class ReplayHistoryPage extends BasePage {
                 <td><span class="status-badge status-${Math.floor((item.status || 0) / 100)}xx">${item.status || '-'}</span></td>
                 <td>${item.responseTime || '-'}ms</td>
                 <td>
-                    <button class="caido-btn tiny" onclick="window.pageController.navigateTo('replay-comparison', {replayId: '${item.id}'})">
+                    <button class="cf-btn tiny" onclick="window.pageController.navigateTo('replay-comparison', {replayId: '${item.id}'})">
                         <i class="fas fa-columns"></i>
                     </button>
                 </td>
@@ -423,7 +423,7 @@ class AutomateSequencesPage extends BasePage {
                         <h2>Request Sequences</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-sequence">
+                        <button class="cf-btn primary" id="create-sequence">
                             <i class="fas fa-plus"></i> New Sequence
                         </button>
                     </div>
@@ -462,7 +462,7 @@ class AutomateSequencesPage extends BasePage {
                     <i class="fas fa-list-ol"></i>
                     <p>No sequences defined</p>
                     <p class="subtext">Sequences allow you to chain multiple requests together</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('create-sequence').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('create-sequence').click()">
                         Create First Sequence
                     </button>
                 </div>
@@ -478,10 +478,10 @@ class AutomateSequencesPage extends BasePage {
                 </div>
                 <div class="sequence-description">${seq.description || 'No description'}</div>
                 <div class="sequence-actions">
-                    <button class="caido-btn small success" data-action="run">
+                    <button class="cf-btn small success" data-action="run">
                         <i class="fas fa-play"></i> Run
                     </button>
-                    <button class="caido-btn small" data-action="edit">
+                    <button class="cf-btn small" data-action="edit">
                         <i class="fas fa-edit"></i> Edit
                     </button>
                 </div>
@@ -493,11 +493,11 @@ class AutomateSequencesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Sequence Name</label>
-                <input type="text" name="name" class="caido-input" placeholder="My Sequence" required />
+                <input type="text" name="name" class="cf-input" placeholder="My Sequence" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" class="caido-input" rows="2"></textarea>
+                <textarea name="description" class="cf-input" rows="2"></textarea>
             </div>
         `;
 
@@ -536,10 +536,10 @@ class AutomateMacrosPage extends BasePage {
                         <h2>Macros</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-macro">
+                        <button class="cf-btn primary" id="create-macro">
                             <i class="fas fa-plus"></i> New Macro
                         </button>
-                        <button class="caido-btn" id="record-macro">
+                        <button class="cf-btn" id="record-macro">
                             <i class="fas fa-circle"></i> Record
                         </button>
                     </div>
@@ -592,7 +592,7 @@ class AutomateMacrosPage extends BasePage {
                 <div class="macro-stats">
                     <span>Runs: ${macro.runCount || 0}</span>
                 </div>
-                <button class="caido-btn small success" onclick="alert('Running macro...')">
+                <button class="cf-btn small success" onclick="alert('Running macro...')">
                     <i class="fas fa-play"></i>
                 </button>
             </div>
@@ -618,7 +618,7 @@ class AutomateScriptsPage extends BasePage {
                         <h2>Automation Scripts</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-script">
+                        <button class="cf-btn primary" id="new-script">
                             <i class="fas fa-plus"></i> New Script
                         </button>
                     </div>
@@ -632,10 +632,10 @@ class AutomateScriptsPage extends BasePage {
                     </div>
                     <div class="scripts-editor">
                         <div class="editor-toolbar">
-                            <button class="caido-btn small" id="run-script">
+                            <button class="cf-btn small" id="run-script">
                                 <i class="fas fa-play"></i> Run
                             </button>
-                            <button class="caido-btn small" id="save-script">
+                            <button class="cf-btn small" id="save-script">
                                 <i class="fas fa-save"></i> Save
                             </button>
                         </div>

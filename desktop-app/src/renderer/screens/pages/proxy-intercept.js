@@ -23,7 +23,7 @@ class InterceptRulesPage extends BasePage {
                         <h2>Intercept Rules</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-intercept-rule">
+                        <button class="cf-btn primary" id="add-intercept-rule">
                             <i class="fas fa-plus"></i> Add Rule
                         </button>
                     </div>
@@ -105,7 +105,7 @@ class InterceptRulesPage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-filter"></i>
                     <p>No intercept rules defined</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('add-intercept-rule').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('add-intercept-rule').click()">
                         Add First Rule
                     </button>
                 </div>
@@ -135,8 +135,8 @@ class InterceptRulesPage extends BasePage {
                     </div>
                 </div>
                 <div class="rule-actions">
-                    <button class="caido-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
-                    <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
+                    <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
@@ -181,11 +181,11 @@ class InterceptRulesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Rule Name</label>
-                <input type="text" name="name" class="caido-input" placeholder="My Rule" required />
+                <input type="text" name="name" class="cf-input" placeholder="My Rule" required />
             </div>
             <div class="form-group">
                 <label>Match Type</label>
-                <select name="matchType" class="caido-select">
+                <select name="matchType" class="cf-select">
                     <option value="host">Host</option>
                     <option value="path">Path</option>
                     <option value="method">Method</option>
@@ -194,7 +194,7 @@ class InterceptRulesPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Pattern</label>
-                <input type="text" name="pattern" class="caido-input" placeholder="*.example.com" required />
+                <input type="text" name="pattern" class="cf-input" placeholder="*.example.com" required />
             </div>
         `;
 
@@ -230,11 +230,11 @@ class InterceptRulesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Rule Name</label>
-                <input type="text" name="name" class="caido-input" value="${rule.name}" required />
+                <input type="text" name="name" class="cf-input" value="${rule.name}" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <input type="text" name="description" class="caido-input" value="${rule.description || ''}" />
+                <input type="text" name="description" class="cf-input" value="${rule.description || ''}" />
             </div>
         `;
 
@@ -280,10 +280,10 @@ class InterceptQueuePage extends BasePage {
                         <span class="queue-count" id="queue-count">0</span>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn success" id="forward-all">
+                        <button class="cf-btn success" id="forward-all">
                             <i class="fas fa-forward"></i> Forward All
                         </button>
-                        <button class="caido-btn danger" id="drop-all">
+                        <button class="cf-btn danger" id="drop-all">
                             <i class="fas fa-trash"></i> Drop All
                         </button>
                     </div>
@@ -303,13 +303,13 @@ class InterceptQueuePage extends BasePage {
                             </div>
                         </div>
                         <div class="intercept-actions" id="intercept-actions" style="display: none;">
-                            <button class="caido-btn success" id="forward-selected">
+                            <button class="cf-btn success" id="forward-selected">
                                 <i class="fas fa-paper-plane"></i> Forward
                             </button>
-                            <button class="caido-btn primary" id="edit-forward">
+                            <button class="cf-btn primary" id="edit-forward">
                                 <i class="fas fa-edit"></i> Edit & Forward
                             </button>
-                            <button class="caido-btn danger" id="drop-selected">
+                            <button class="cf-btn danger" id="drop-selected">
                                 <i class="fas fa-times"></i> Drop
                             </button>
                         </div>
@@ -441,15 +441,15 @@ class InterceptQueuePage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>URL</label>
-                <input type="text" name="url" class="caido-input" value="${intercept.scheme}://${intercept.host}${intercept.path}" />
+                <input type="text" name="url" class="cf-input" value="${intercept.scheme}://${intercept.host}${intercept.path}" />
             </div>
             <div class="form-group">
                 <label>Headers (JSON)</label>
-                <textarea name="headers" class="caido-input" rows="5">${JSON.stringify(intercept.headers || [], null, 2)}</textarea>
+                <textarea name="headers" class="cf-input" rows="5">${JSON.stringify(intercept.headers || [], null, 2)}</textarea>
             </div>
             <div class="form-group">
                 <label>Body</label>
-                <textarea name="body" class="caido-input" rows="5">${intercept.body || ''}</textarea>
+                <textarea name="body" class="cf-input" rows="5">${intercept.body || ''}</textarea>
             </div>
         `;
 
@@ -520,20 +520,20 @@ class InterceptHistoryPage extends BasePage {
                         <h2>Intercept History</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" id="history-search" class="caido-input" placeholder="Search history..." />
-                        <select id="history-action-filter" class="caido-select">
+                        <input type="text" id="history-search" class="cf-input" placeholder="Search history..." />
+                        <select id="history-action-filter" class="cf-select">
                             <option value="all">All Actions</option>
                             <option value="forwarded">Forwarded</option>
                             <option value="dropped">Dropped</option>
                             <option value="modified">Modified</option>
                         </select>
-                        <button class="caido-btn small" id="clear-history">
+                        <button class="cf-btn small" id="clear-history">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
                 </div>
 
-                <table class="caido-table" id="history-table">
+                <table class="cf-table" id="history-table">
                     <thead>
                         <tr>
                             <th>Time</th>
@@ -647,8 +647,8 @@ class HttpRequestsPage extends BasePage {
                         <h2>HTTP Requests</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" id="request-search" class="caido-input" placeholder="Search requests..." />
-                        <select id="method-filter" class="caido-select">
+                        <input type="text" id="request-search" class="cf-input" placeholder="Search requests..." />
+                        <select id="method-filter" class="cf-select">
                             <option value="">All Methods</option>
                             <option value="GET">GET</option>
                             <option value="POST">POST</option>
@@ -656,10 +656,10 @@ class HttpRequestsPage extends BasePage {
                             <option value="DELETE">DELETE</option>
                             <option value="PATCH">PATCH</option>
                         </select>
-                        <button class="caido-btn small" id="refresh-requests">
+                        <button class="cf-btn small" id="refresh-requests">
                             <i class="fas fa-sync-alt"></i>
                         </button>
-                        <button class="caido-btn small" id="export-requests">
+                        <button class="cf-btn small" id="export-requests">
                             <i class="fas fa-download"></i>
                         </button>
                     </div>
@@ -667,7 +667,7 @@ class HttpRequestsPage extends BasePage {
 
                 <div class="requests-split-view">
                     <div class="requests-table-panel">
-                        <table class="caido-table" id="requests-table">
+                        <table class="cf-table" id="requests-table">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -792,10 +792,10 @@ class HttpRequestsPage extends BasePage {
                 </div>
             </div>
             <div class="detail-actions">
-                <button class="caido-btn small" onclick="window.pageController.navigateTo('replay-queue', {requestId: '${request.id}'})">
+                <button class="cf-btn small" onclick="window.pageController.navigateTo('replay-queue', {requestId: '${request.id}'})">
                     <i class="fas fa-redo"></i> Replay
                 </button>
-                <button class="caido-btn small" onclick="navigator.clipboard.writeText(\`${request.method} ${request.path}\`)">
+                <button class="cf-btn small" onclick="navigator.clipboard.writeText(\`${request.method} ${request.path}\`)">
                     <i class="fas fa-copy"></i> Copy
                 </button>
             </div>
@@ -816,11 +816,11 @@ class HttpRequestsPage extends BasePage {
         if (!container || !pagination) return;
 
         container.innerHTML = `
-            <button class="caido-btn small" ${pagination.page <= 1 ? 'disabled' : ''} onclick="this.page--; this.loadData();">
+            <button class="cf-btn small" ${pagination.page <= 1 ? 'disabled' : ''} onclick="this.page--; this.loadData();">
                 <i class="fas fa-chevron-left"></i>
             </button>
             <span>Page ${pagination.page} of ${pagination.totalPages}</span>
-            <button class="caido-btn small" ${pagination.page >= pagination.totalPages ? 'disabled' : ''}>
+            <button class="cf-btn small" ${pagination.page >= pagination.totalPages ? 'disabled' : ''}>
                 <i class="fas fa-chevron-right"></i>
             </button>
         `;
@@ -869,14 +869,14 @@ class HttpResponsesPage extends BasePage {
                         <h2>HTTP Responses</h2>
                     </div>
                     <div class="page-actions">
-                        <select id="status-filter" class="caido-select">
+                        <select id="status-filter" class="cf-select">
                             <option value="">All Status</option>
                             <option value="2xx">2xx Success</option>
                             <option value="3xx">3xx Redirect</option>
                             <option value="4xx">4xx Client Error</option>
                             <option value="5xx">5xx Server Error</option>
                         </select>
-                        <button class="caido-btn small" id="refresh-responses">
+                        <button class="cf-btn small" id="refresh-responses">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>

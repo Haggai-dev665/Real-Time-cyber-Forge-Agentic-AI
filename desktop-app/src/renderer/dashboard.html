@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' ipc: http://ipc.localhost asset: https://asset.localhost; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https: blob: asset: https://asset.localhost; connect-src 'self' ipc: http://ipc.localhost https://cyberforge-ddd97655464f.herokuapp.com wss://cyberforge-ddd97655464f.herokuapp.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://che237-cyberforge-models.hf.space https://otx.alienvault.com">
-    <title>Cyberforge - Security Testing Tool</title>
+    <title>CyberForge - AI Security Platform</title>
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/caido-theme.css">
+    <link rel="stylesheet" href="css/cyberforge-theme.css">
     <link rel="stylesheet" href="css/ai-assistant.css">
     <link rel="stylesheet" href="css/ai-assistant-v2.css">
     
@@ -18,7 +18,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
     <!-- Leaflet JS for Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -28,20 +28,20 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body data-theme="dark">
-    <div class="caido-app" id="app">
+    <div class="cf-app" id="app">
         <!-- Mobile Overlay for Sidebar -->
         <div class="mobile-overlay" id="mobile-overlay"></div>
         
         <!-- Top Header Bar -->
-        <header class="caido-header">
-            <div class="caido-header-left">
+        <header class="cf-header">
+            <div class="cf-header-left">
                 <!-- Mobile Menu Toggle -->
                 <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Toggle Menu">
                     <i class="fas fa-bars"></i>
                 </button>
                 
-                <div class="caido-logo">
-                    <img src="../assets/logo.png" alt="CyberForge" class="caido-logo-image">
+                <div class="cf-logo">
+                    <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image">
                 </div>
                 
                 <!-- AI Agent Status in Header -->
@@ -57,7 +57,7 @@
                 </button>
             </div>
             
-            <div class="caido-header-center">
+            <div class="cf-header-center">
                 <div class="header-search" id="header-search">
                     <i class="fas fa-search"></i>
                     <input type="text" placeholder="Search threats, URLs, events..." id="global-search">
@@ -65,7 +65,7 @@
                 </div>
             </div>
             
-            <div class="caido-header-right">
+            <div class="cf-header-right">
                 <!-- Real-time Stats -->
                 <div class="header-stats">
                     <div class="header-stat" title="Requests Captured">
@@ -82,7 +82,7 @@
                     </div>
                 </div>
                 
-                <span class="caido-badge green" id="backend-status" title="Backend Connection">Connecting...</span>
+                <span class="cf-badge green" id="backend-status" title="Backend Connection">Connecting...</span>
                 
                 <button class="header-btn" id="notifications-btn" title="Notifications">
                     <i class="fas fa-bell"></i>
@@ -104,9 +104,9 @@
         </header>
 
         <!-- Main Content Area -->
-        <div class="caido-main">
+        <div class="cf-main">
             <!-- Left Sidebar -->
-            <aside class="caido-sidebar" id="sidebar">
+            <aside class="cf-sidebar" id="sidebar">
                 <!-- Overview Section -->
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Overview</div>
@@ -564,18 +564,18 @@
             </aside>
 
             <!-- Main Content Panel -->
-            <div class="caido-content">
+            <div class="cf-content">
                 <!-- Tab Bar -->
-                <div class="caido-tabs">
-                    <button class="caido-tab active" data-tab="requests">
+                <div class="cf-tabs">
+                    <button class="cf-tab active" data-tab="requests">
                         <i class="fas fa-arrow-right"></i>
                         <span>Requests</span>
                     </button>
-                    <button class="caido-tab" data-tab="responses">
+                    <button class="cf-tab" data-tab="responses">
                         <i class="fas fa-arrow-left"></i>
                         <span>Responses</span>
                     </button>
-                    <button class="caido-tab" data-tab="websockets">
+                    <button class="cf-tab" data-tab="websockets">
                         <i class="fas fa-plug"></i>
                         <span>Websockets</span>
                     </button>
@@ -587,13 +587,13 @@
                 </div>
                 
                 <!-- Screen Container -->
-                <div id="screen-container" class="caido-split-view">
+                <div id="screen-container" class="cf-split-view">
                     <!-- HTTP History Screen (Default) -->
-                    <div class="caido-split-horizontal" id="http-history-screen">
+                    <div class="cf-split-horizontal" id="http-history-screen">
                         <!-- Requests Table Panel -->
-                        <div class="caido-panel" style="flex: 1;">
-                            <div class="caido-table-container">
-                                <table class="caido-table" id="requests-table">
+                        <div class="cf-panel" style="flex: 1;">
+                            <div class="cf-table-container">
+                                <table class="cf-table" id="requests-table">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
@@ -612,13 +612,13 @@
                         </div>
                         
                         <!-- Resizer -->
-                        <div class="caido-resizer" id="main-resizer"></div>
+                        <div class="cf-resizer" id="main-resizer"></div>
                         
                         <!-- Request Detail Panel -->
-                        <div class="caido-panel" id="detail-panel" style="width: 50%;">
-                            <div class="caido-panel-header">
-                                <div class="caido-panel-title">Request Details</div>
-                                <div class="caido-panel-actions">
+                        <div class="cf-panel" id="detail-panel" style="width: 50%;">
+                            <div class="cf-panel-header">
+                                <div class="cf-panel-title">Request Details</div>
+                                <div class="cf-panel-actions">
                                     <button class="panel-action-btn" title="Copy">
                                         <i class="fas fa-copy"></i>
                                     </button>
@@ -627,7 +627,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="caido-panel-content" id="request-detail-content">
+                            <div class="cf-panel-content" id="request-detail-content">
                                 <div class="empty-state">
                                     <i class="fas fa-mouse-pointer empty-state-icon"></i>
                                     <div class="empty-state-title">Select a request</div>
@@ -639,7 +639,7 @@
                 </div>
                 
                 <!-- Application Footer -->
-                <footer class="caido-footer" id="app-footer">
+                <footer class="cf-footer" id="app-footer">
                     <div class="footer-left">
                         <div class="footer-agent-status">
                             <span class="footer-status-dot" id="footer-agent-dot"></span>
@@ -1027,6 +1027,6 @@
     <script src="child-page-layouts.js"></script>
     <script src="components/hybrid-globe.js"></script>
     <script src="components/ai-assistant-v2.js"></script>
-    <script src="caido-app.js"></script>
+    <script src="cyberforge-app.js"></script>
 </body>
 </html>

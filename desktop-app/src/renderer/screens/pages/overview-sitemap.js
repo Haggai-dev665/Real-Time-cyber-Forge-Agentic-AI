@@ -24,11 +24,11 @@ class SitemapStructurePage extends BasePage {
                         <h2>Sitemap Structure</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" id="domain-input" class="caido-input" placeholder="Enter domain to map..." />
-                        <button class="caido-btn primary" id="build-sitemap">
+                        <input type="text" id="domain-input" class="cf-input" placeholder="Enter domain to map..." />
+                        <button class="cf-btn primary" id="build-sitemap">
                             <i class="fas fa-sitemap"></i> Build Sitemap
                         </button>
-                        <button class="caido-btn small" id="export-sitemap">
+                        <button class="cf-btn small" id="export-sitemap">
                             <i class="fas fa-download"></i> Export
                         </button>
                     </div>
@@ -123,7 +123,7 @@ class SitemapStructurePage extends BasePage {
                     <div class="empty-state">
                         <i class="fas fa-sitemap"></i>
                         <p>No sitemap exists for ${domain}</p>
-                        <button class="caido-btn primary" onclick="document.getElementById('build-sitemap').click()">
+                        <button class="cf-btn primary" onclick="document.getElementById('build-sitemap').click()">
                             Build Sitemap
                         </button>
                     </div>
@@ -270,10 +270,10 @@ class SitemapStructurePage extends BasePage {
                 </div>
             </div>
             <div class="detail-actions">
-                <button class="caido-btn small" onclick="window.pageController.navigateTo('http-requests', {filter: '${node.path}'})">
+                <button class="cf-btn small" onclick="window.pageController.navigateTo('http-requests', {filter: '${node.path}'})">
                     <i class="fas fa-list"></i> View Requests
                 </button>
-                <button class="caido-btn small" onclick="window.pageController.navigateTo('replay-queue', {path: '${node.path}'})">
+                <button class="cf-btn small" onclick="window.pageController.navigateTo('replay-queue', {path: '${node.path}'})">
                     <i class="fas fa-redo"></i> Replay
                 </button>
             </div>
@@ -313,15 +313,15 @@ class SitemapEndpointsPage extends BasePage {
                         <h2>API Endpoints</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" id="endpoint-search" class="caido-input" placeholder="Search endpoints..." />
-                        <select id="endpoint-filter" class="caido-select">
+                        <input type="text" id="endpoint-search" class="cf-input" placeholder="Search endpoints..." />
+                        <select id="endpoint-filter" class="cf-select">
                             <option value="all">All Methods</option>
                             <option value="GET">GET</option>
                             <option value="POST">POST</option>
                             <option value="PUT">PUT</option>
                             <option value="DELETE">DELETE</option>
                         </select>
-                        <button class="caido-btn small" id="refresh-endpoints">
+                        <button class="cf-btn small" id="refresh-endpoints">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
@@ -343,7 +343,7 @@ class SitemapEndpointsPage extends BasePage {
                 </div>
 
                 <div class="endpoints-table-container">
-                    <table class="caido-table sortable" id="endpoints-table">
+                    <table class="cf-table sortable" id="endpoints-table">
                         <thead>
                             <tr>
                                 <th data-sort="method">Method</th>
@@ -433,10 +433,10 @@ class SitemapEndpointsPage extends BasePage {
                 <td>${ep.count}</td>
                 <td><span class="status-badge status-${Math.floor((ep.lastStatus || 0) / 100)}xx">${ep.lastStatus || '-'}</span></td>
                 <td>
-                    <button class="caido-btn tiny" onclick="window.pageController.navigateTo('http-requests', {filter: '${ep.path}'})">
+                    <button class="cf-btn tiny" onclick="window.pageController.navigateTo('http-requests', {filter: '${ep.path}'})">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="caido-btn tiny" onclick="window.pageController.navigateTo('replay-queue', {endpoint: '${ep.method}:${ep.path}'})">
+                    <button class="cf-btn tiny" onclick="window.pageController.navigateTo('replay-queue', {endpoint: '${ep.method}:${ep.path}'})">
                         <i class="fas fa-redo"></i>
                     </button>
                 </td>
@@ -477,8 +477,8 @@ class SitemapAssetsPage extends BasePage {
                         <h2>Discovered Assets</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" id="asset-search" class="caido-input" placeholder="Search assets..." />
-                        <select id="asset-type-filter" class="caido-select">
+                        <input type="text" id="asset-search" class="cf-input" placeholder="Search assets..." />
+                        <select id="asset-type-filter" class="cf-select">
                             <option value="all">All Types</option>
                             <option value="script">Scripts</option>
                             <option value="style">Stylesheets</option>
@@ -486,7 +486,7 @@ class SitemapAssetsPage extends BasePage {
                             <option value="font">Fonts</option>
                             <option value="document">Documents</option>
                         </select>
-                        <button class="caido-btn small" id="refresh-assets">
+                        <button class="cf-btn small" id="refresh-assets">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
@@ -628,7 +628,7 @@ class SitemapAssetsPage extends BasePage {
                     </div>
                 </div>
                 <div class="asset-actions">
-                    <button class="caido-btn tiny" onclick="window.open('${asset.url}', '_blank')">
+                    <button class="cf-btn tiny" onclick="window.open('${asset.url}', '_blank')">
                         <i class="fas fa-external-link-alt"></i>
                     </button>
                 </div>

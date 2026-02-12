@@ -23,7 +23,7 @@ class BrowserSessionsPage extends BasePage {
                         <h2>Browser Sessions</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-session">
+                        <button class="cf-btn primary" id="new-session">
                             <i class="fas fa-plus"></i> New Session
                         </button>
                     </div>
@@ -72,7 +72,7 @@ class BrowserSessionsPage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-window-maximize"></i>
                     <p>No browser sessions</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('new-session').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('new-session').click()">
                         Start Session
                     </button>
                 </div>
@@ -94,13 +94,13 @@ class BrowserSessionsPage extends BasePage {
                 </div>
                 <div class="session-status ${session.status}">${session.status}</div>
                 <div class="session-actions">
-                    <button class="caido-btn small primary" data-action="connect">
+                    <button class="cf-btn small primary" data-action="connect">
                         <i class="fas fa-plug"></i>
                     </button>
-                    <button class="caido-btn small" data-action="inspect">
+                    <button class="cf-btn small" data-action="inspect">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="close">
+                    <button class="cf-btn small danger" data-action="close">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -120,11 +120,11 @@ class BrowserSessionsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Session Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Browser</label>
-                <select name="browser" class="caido-select">
+                <select name="browser" class="cf-select">
                     <option value="chrome">Chrome</option>
                     <option value="firefox">Firefox</option>
                     <option value="chrome-mobile">Chrome Mobile</option>
@@ -132,7 +132,7 @@ class BrowserSessionsPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Start URL (optional)</label>
-                <input type="url" name="url" class="caido-input" placeholder="https://" />
+                <input type="url" name="url" class="cf-input" placeholder="https://" />
             </div>
         `;
 
@@ -172,15 +172,15 @@ class BrowserCookiesPage extends BasePage {
                         <h2>Cookies</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" class="caido-input search-input" id="cookie-search" placeholder="Filter cookies..." />
-                        <button class="caido-btn" id="clear-cookies">
+                        <input type="text" class="cf-input search-input" id="cookie-search" placeholder="Filter cookies..." />
+                        <button class="cf-btn" id="clear-cookies">
                             <i class="fas fa-trash"></i> Clear All
                         </button>
                     </div>
                 </div>
 
                 <div class="cookies-table-container">
-                    <table class="caido-table" id="cookies-table">
+                    <table class="cf-table" id="cookies-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -254,8 +254,8 @@ class BrowserCookiesPage extends BasePage {
                     ${cookie.sameSite ? `<span class="flag">${cookie.sameSite}</span>` : ''}
                 </td>
                 <td>
-                    <button class="caido-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
-                    <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
+                    <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
         `).join('');
@@ -387,14 +387,14 @@ class BrowserStoragePage extends BasePage {
 
         container.innerHTML = `
             <div class="storage-actions">
-                <button class="caido-btn small primary" id="add-storage-item">
+                <button class="cf-btn small primary" id="add-storage-item">
                     <i class="fas fa-plus"></i> Add Item
                 </button>
-                <button class="caido-btn small" id="clear-storage">
+                <button class="cf-btn small" id="clear-storage">
                     <i class="fas fa-trash"></i> Clear All
                 </button>
             </div>
-            <table class="caido-table">
+            <table class="cf-table">
                 <thead>
                     <tr>
                         <th>Key</th>
@@ -410,9 +410,9 @@ class BrowserStoragePage extends BasePage {
                             <td><code class="storage-value">${item.value.substring(0, 50)}${item.value.length > 50 ? '...' : ''}</code></td>
                             <td>${item.size} bytes</td>
                             <td>
-                                <button class="caido-btn tiny"><i class="fas fa-eye"></i></button>
-                                <button class="caido-btn tiny"><i class="fas fa-edit"></i></button>
-                                <button class="caido-btn tiny danger"><i class="fas fa-trash"></i></button>
+                                <button class="cf-btn tiny"><i class="fas fa-eye"></i></button>
+                                <button class="cf-btn tiny"><i class="fas fa-edit"></i></button>
+                                <button class="cf-btn tiny danger"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     `).join('')}
@@ -443,11 +443,11 @@ class BrowserNetworkPage extends BasePage {
                         <h2>Network Traffic</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn ${this.isCapturing ? 'danger' : 'success'}" id="toggle-capture">
+                        <button class="cf-btn ${this.isCapturing ? 'danger' : 'success'}" id="toggle-capture">
                             <i class="fas fa-${this.isCapturing ? 'stop' : 'play'}"></i>
                             ${this.isCapturing ? 'Stop' : 'Start'}
                         </button>
-                        <button class="caido-btn" id="clear-network">
+                        <button class="cf-btn" id="clear-network">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
@@ -556,7 +556,7 @@ class BrowserNetworkPage extends BasePage {
         this.isCapturing = !this.isCapturing;
         const btn = document.getElementById('toggle-capture');
         if (btn) {
-            btn.className = `caido-btn ${this.isCapturing ? 'danger' : 'success'}`;
+            btn.className = `cf-btn ${this.isCapturing ? 'danger' : 'success'}`;
             btn.innerHTML = `<i class="fas fa-${this.isCapturing ? 'stop' : 'play'}"></i> ${this.isCapturing ? 'Stop' : 'Start'}`;
         }
         if (this.isCapturing) {
@@ -602,10 +602,10 @@ class BrowserDOMPage extends BasePage {
                         <h2>DOM Inspector</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="refresh-dom">
+                        <button class="cf-btn" id="refresh-dom">
                             <i class="fas fa-sync"></i> Refresh
                         </button>
-                        <button class="caido-btn primary" id="select-element">
+                        <button class="cf-btn primary" id="select-element">
                             <i class="fas fa-mouse-pointer"></i> Select Element
                         </button>
                     </div>
@@ -691,11 +691,11 @@ class BrowserDOMPage extends BasePage {
             </div>
             <div class="detail-item">
                 <label>Computed Styles</label>
-                <button class="caido-btn small">View Styles</button>
+                <button class="cf-btn small">View Styles</button>
             </div>
             <div class="detail-item">
                 <label>Event Listeners</label>
-                <button class="caido-btn small">View Events</button>
+                <button class="cf-btn small">View Events</button>
             </div>
         `;
     }
@@ -728,7 +728,7 @@ class BrowserConsolePage extends BasePage {
                         <button class="filter-btn" data-level="info">Info</button>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="clear-console">
+                        <button class="cf-btn" id="clear-console">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
@@ -741,7 +741,7 @@ class BrowserConsolePage extends BasePage {
                 <div class="console-input">
                     <span class="prompt">&gt;</span>
                     <input type="text" id="console-command" placeholder="Enter JavaScript expression..." />
-                    <button class="caido-btn small primary" id="run-command">
+                    <button class="cf-btn small primary" id="run-command">
                         <i class="fas fa-play"></i>
                     </button>
                 </div>

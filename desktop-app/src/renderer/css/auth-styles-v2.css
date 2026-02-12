@@ -3,49 +3,49 @@
    Modern Glassmorphism with AI Visual Design
    ===================================================== */
 
-/* CSS Variables - Enhanced Theme */
+/* CSS Variables - Lavender White Theme */
 :root {
     /* Background Colors */
-    --auth-bg-primary: #0a0a0f;
-    --auth-bg-secondary: #0d0d14;
-    --auth-bg-card: rgba(255, 255, 255, 0.03);
-    --auth-bg-input: rgba(255, 255, 255, 0.05);
-    --auth-bg-hover: rgba(255, 255, 255, 0.08);
+    --auth-bg-primary: #1a1025;
+    --auth-bg-secondary: #221533;
+    --auth-bg-card: rgba(179, 136, 255, 0.05);
+    --auth-bg-input: rgba(179, 136, 255, 0.08);
+    --auth-bg-hover: rgba(179, 136, 255, 0.12);
     
     /* Glassmorphism */
-    --glass-bg: rgba(255, 255, 255, 0.02);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(179, 136, 255, 0.04);
+    --glass-border: rgba(179, 136, 255, 0.12);
     --glass-blur: blur(20px);
     
     /* Text Colors */
-    --auth-text-primary: #ffffff;
-    --auth-text-secondary: #a0a0b0;
-    --auth-text-muted: #6b6b7b;
-    --auth-text-placeholder: #4a4a5a;
+    --auth-text-primary: #f0e6ff;
+    --auth-text-secondary: #d4b8ff;
+    --auth-text-muted: #9e8cb8;
+    --auth-text-placeholder: #7a6b8a;
     
-    /* Accent Colors - Cyan/Blue Gradient */
-    --accent-cyan: #00d4ff;
-    --accent-blue: #0066ff;
-    --accent-purple: #7c3aed;
-    --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #0066ff 50%, #7c3aed 100%);
-    --accent-glow: 0 0 30px rgba(0, 212, 255, 0.3);
+    /* Accent Colors - Lavender Gradient */
+    --accent-cyan: #b388ff;
+    --accent-blue: #7c4dff;
+    --accent-purple: #9c27b0;
+    --accent-gradient: linear-gradient(135deg, #b388ff 0%, #7c4dff 50%, #9c27b0 100%);
+    --accent-glow: 0 0 30px rgba(179, 136, 255, 0.3);
     
     /* Borders */
-    --auth-border-color: rgba(255, 255, 255, 0.08);
-    --auth-border-hover: rgba(255, 255, 255, 0.15);
-    --auth-border-focus: rgba(0, 212, 255, 0.5);
+    --auth-border-color: rgba(179, 136, 255, 0.12);
+    --auth-border-hover: rgba(179, 136, 255, 0.2);
+    --auth-border-focus: rgba(179, 136, 255, 0.5);
     
     /* Status Colors */
-    --auth-success: #10b981;
-    --auth-error: #ef4444;
-    --auth-warning: #f59e0b;
+    --auth-success: #69f0ae;
+    --auth-error: #ff5252;
+    --auth-warning: #ffd740;
     
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
-    --shadow-glow-cyan: 0 0 40px rgba(0, 212, 255, 0.15);
-    --shadow-glow-purple: 0 0 40px rgba(124, 58, 237, 0.15);
+    --shadow-glow-cyan: 0 0 40px rgba(179, 136, 255, 0.15);
+    --shadow-glow-purple: 0 0 40px rgba(156, 39, 176, 0.15);
     
     /* Transitions */
     --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -104,8 +104,8 @@ body {
     align-items: center;
     padding: 40px;
     background: 
-        radial-gradient(ellipse 80% 50% at 30% 50%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 40% at 70% 30%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 50% at 30% 50%, rgba(179, 136, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 70% 30%, rgba(156, 39, 176, 0.08) 0%, transparent 50%),
         linear-gradient(180deg, var(--auth-bg-primary) 0%, var(--auth-bg-secondary) 100%);
     overflow: hidden;
 }
@@ -123,8 +123,8 @@ body {
     position: absolute;
     inset: 0;
     background-image: 
-        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(179, 136, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(179, 136, 255, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
     mask-image: radial-gradient(ellipse 80% 60% at center, black 0%, transparent 70%);
     animation: gridPulse 4s ease-in-out infinite;
@@ -146,7 +146,7 @@ body {
 .orb-1 {
     width: 300px;
     height: 300px;
-    background: rgba(0, 212, 255, 0.15);
+    background: rgba(179, 136, 255, 0.15);
     top: 10%;
     left: 10%;
     animation-delay: 0s;
@@ -155,7 +155,7 @@ body {
 .orb-2 {
     width: 400px;
     height: 400px;
-    background: rgba(124, 58, 237, 0.1);
+    background: rgba(156, 39, 176, 0.1);
     bottom: 10%;
     right: 0;
     animation-delay: -5s;
@@ -202,7 +202,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 0 40px rgba(0, 212, 255, 0.2));
+    filter: drop-shadow(0 0 40px rgba(179, 136, 255, 0.2));
     animation: illustrationFloat 6s ease-in-out infinite;
 }
 
@@ -216,7 +216,7 @@ body {
     position: absolute;
     inset: -20px;
     border-radius: 50%;
-    background: radial-gradient(circle at center, transparent 40%, rgba(0, 212, 255, 0.1) 50%, transparent 70%);
+    background: radial-gradient(circle at center, transparent 40%, rgba(179, 136, 255, 0.1) 50%, transparent 70%);
     animation: glowPulse 4s ease-in-out infinite;
 }
 
@@ -285,7 +285,7 @@ body {
 
 .feature-card:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(0, 212, 255, 0.3);
+    border-color: rgba(179, 136, 255, 0.3);
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow-cyan);
 }
@@ -335,7 +335,7 @@ body {
     position: absolute;
     inset: 0;
     background: 
-        radial-gradient(ellipse 50% 30% at 50% 0%, rgba(0, 212, 255, 0.03) 0%, transparent 50%);
+        radial-gradient(ellipse 50% 30% at 50% 0%, rgba(179, 136, 255, 0.03) 0%, transparent 50%);
     pointer-events: none;
 }
 
@@ -466,7 +466,7 @@ body {
 .form-input:focus {
     border-color: var(--auth-border-focus);
     background: var(--auth-bg-hover);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.1);
 }
 
 /* Password Input with Toggle */
@@ -520,7 +520,7 @@ body {
 
 .form-select:focus {
     border-color: var(--auth-border-focus);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.1);
 }
 
 /* Password Strength Indicator */

@@ -23,7 +23,7 @@ class ScopesGlobalPage extends BasePage {
                         <h2>Global Scopes</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-global-scope">
+                        <button class="cf-btn primary" id="add-global-scope">
                             <i class="fas fa-plus"></i> Add Scope
                         </button>
                     </div>
@@ -123,8 +123,8 @@ class ScopesGlobalPage extends BasePage {
                     <span class="scope-count">${scope.requestCount || 0} matches</span>
                 </div>
                 <div class="scope-actions">
-                    <button class="caido-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
-                    <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
+                    <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
@@ -160,18 +160,18 @@ class ScopesGlobalPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Pattern</label>
-                <input type="text" name="pattern" class="caido-input" placeholder="*.example.com" required />
+                <input type="text" name="pattern" class="cf-input" placeholder="*.example.com" required />
             </div>
             <div class="form-group">
                 <label>Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="include">Include</option>
                     <option value="exclude">Exclude</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Description (optional)</label>
-                <input type="text" name="description" class="caido-input" placeholder="Description..." />
+                <input type="text" name="description" class="cf-input" placeholder="Description..." />
             </div>
         `;
 
@@ -186,18 +186,18 @@ class ScopesGlobalPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Pattern</label>
-                <input type="text" name="pattern" class="caido-input" value="${scope.pattern}" required />
+                <input type="text" name="pattern" class="cf-input" value="${scope.pattern}" required />
             </div>
             <div class="form-group">
                 <label>Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="include" ${scope.type === 'include' ? 'selected' : ''}>Include</option>
                     <option value="exclude" ${scope.type === 'exclude' ? 'selected' : ''}>Exclude</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <input type="text" name="description" class="caido-input" value="${scope.description || ''}" />
+                <input type="text" name="description" class="cf-input" value="${scope.description || ''}" />
             </div>
         `;
 
@@ -278,10 +278,10 @@ class ScopesProjectPage extends BasePage {
                         <h2>Project Scopes</h2>
                     </div>
                     <div class="page-actions">
-                        <select id="project-select" class="caido-select">
+                        <select id="project-select" class="cf-select">
                             <option value="">Select Project...</option>
                         </select>
-                        <button class="caido-btn primary" id="add-project-scope">
+                        <button class="cf-btn primary" id="add-project-scope">
                             <i class="fas fa-plus"></i> Add Scope
                         </button>
                     </div>
@@ -293,7 +293,7 @@ class ScopesProjectPage extends BasePage {
                         <div class="project-list" id="project-list">
                             <div class="loading-placeholder">Loading projects...</div>
                         </div>
-                        <button class="caido-btn small full-width" id="create-project">
+                        <button class="cf-btn small full-width" id="create-project">
                             <i class="fas fa-folder-plus"></i> New Project
                         </button>
                     </div>
@@ -403,8 +403,8 @@ class ScopesProjectPage extends BasePage {
                             <span class="scope-type ${s.type}">${s.type}</span>
                         </div>
                         <div class="scope-actions">
-                            <button class="caido-btn tiny"><i class="fas fa-edit"></i></button>
-                            <button class="caido-btn tiny danger"><i class="fas fa-trash"></i></button>
+                            <button class="cf-btn tiny"><i class="fas fa-edit"></i></button>
+                            <button class="cf-btn tiny danger"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `).join('');
@@ -413,7 +413,7 @@ class ScopesProjectPage extends BasePage {
                     <div class="empty-state">
                         <i class="fas fa-filter"></i>
                         <p>No scopes in this project</p>
-                        <button class="caido-btn primary" onclick="document.getElementById('add-project-scope').click()">
+                        <button class="cf-btn primary" onclick="document.getElementById('add-project-scope').click()">
                             Add Scope
                         </button>
                     </div>
@@ -439,11 +439,11 @@ class ScopesProjectPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Pattern</label>
-                <input type="text" name="pattern" class="caido-input" placeholder="*.example.com" required />
+                <input type="text" name="pattern" class="cf-input" placeholder="*.example.com" required />
             </div>
             <div class="form-group">
                 <label>Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="include">Include</option>
                     <option value="exclude">Exclude</option>
                 </select>
@@ -470,11 +470,11 @@ class ScopesProjectPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Project Name</label>
-                <input type="text" name="name" class="caido-input" placeholder="My Project" required />
+                <input type="text" name="name" class="cf-input" placeholder="My Project" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" class="caido-input" placeholder="Project description..."></textarea>
+                <textarea name="description" class="cf-input" placeholder="Project description..."></textarea>
             </div>
         `;
 
@@ -501,13 +501,13 @@ class ScopesCustomPage extends BasePage {
                         <h2>Custom Scope Rules</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="import-scopes">
+                        <button class="cf-btn" id="import-scopes">
                             <i class="fas fa-file-import"></i> Import
                         </button>
-                        <button class="caido-btn" id="export-scopes">
+                        <button class="cf-btn" id="export-scopes">
                             <i class="fas fa-file-export"></i> Export
                         </button>
-                        <button class="caido-btn primary" id="add-custom-scope">
+                        <button class="cf-btn primary" id="add-custom-scope">
                             <i class="fas fa-plus"></i> Add Rule
                         </button>
                     </div>
@@ -518,14 +518,14 @@ class ScopesCustomPage extends BasePage {
                         <h3>Rule Builder</h3>
                         <div class="rule-builder" id="rule-builder">
                             <div class="rule-row">
-                                <select class="caido-select rule-field">
+                                <select class="cf-select rule-field">
                                     <option value="host">Host</option>
                                     <option value="path">Path</option>
                                     <option value="port">Port</option>
                                     <option value="scheme">Scheme</option>
                                     <option value="method">Method</option>
                                 </select>
-                                <select class="caido-select rule-operator">
+                                <select class="cf-select rule-operator">
                                     <option value="matches">Matches</option>
                                     <option value="contains">Contains</option>
                                     <option value="equals">Equals</option>
@@ -533,17 +533,17 @@ class ScopesCustomPage extends BasePage {
                                     <option value="endsWith">Ends With</option>
                                     <option value="regex">Regex</option>
                                 </select>
-                                <input type="text" class="caido-input rule-value" placeholder="Value..." />
-                                <button class="caido-btn tiny" id="add-rule-condition">
+                                <input type="text" class="cf-input rule-value" placeholder="Value..." />
+                                <button class="cf-btn tiny" id="add-rule-condition">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="rule-actions">
-                            <button class="caido-btn" id="test-rule">
+                            <button class="cf-btn" id="test-rule">
                                 <i class="fas fa-flask"></i> Test Rule
                             </button>
-                            <button class="caido-btn primary" id="save-rule">
+                            <button class="cf-btn primary" id="save-rule">
                                 <i class="fas fa-save"></i> Save Rule
                             </button>
                         </div>
@@ -560,8 +560,8 @@ class ScopesCustomPage extends BasePage {
                 <div class="rule-tester" id="rule-tester" style="display: none;">
                     <h4>Rule Tester</h4>
                     <div class="tester-input">
-                        <input type="text" id="test-url" class="caido-input" placeholder="Enter URL to test..." />
-                        <button class="caido-btn" id="run-test">Test</button>
+                        <input type="text" id="test-url" class="cf-input" placeholder="Enter URL to test..." />
+                        <button class="cf-btn" id="run-test">Test</button>
                     </div>
                     <div class="tester-result" id="tester-result"></div>
                 </div>
@@ -622,8 +622,8 @@ class ScopesCustomPage extends BasePage {
                     </div>
                 </div>
                 <div class="rule-actions">
-                    <button class="caido-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
-                    <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
+                    <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
@@ -636,18 +636,18 @@ class ScopesCustomPage extends BasePage {
         const row = document.createElement('div');
         row.className = 'rule-row';
         row.innerHTML = `
-            <select class="caido-select rule-logic">
+            <select class="cf-select rule-logic">
                 <option value="AND">AND</option>
                 <option value="OR">OR</option>
             </select>
-            <select class="caido-select rule-field">
+            <select class="cf-select rule-field">
                 <option value="host">Host</option>
                 <option value="path">Path</option>
                 <option value="port">Port</option>
                 <option value="scheme">Scheme</option>
                 <option value="method">Method</option>
             </select>
-            <select class="caido-select rule-operator">
+            <select class="cf-select rule-operator">
                 <option value="matches">Matches</option>
                 <option value="contains">Contains</option>
                 <option value="equals">Equals</option>
@@ -655,8 +655,8 @@ class ScopesCustomPage extends BasePage {
                 <option value="endsWith">Ends With</option>
                 <option value="regex">Regex</option>
             </select>
-            <input type="text" class="caido-input rule-value" placeholder="Value..." />
-            <button class="caido-btn tiny danger remove-condition">
+            <input type="text" class="cf-input rule-value" placeholder="Value..." />
+            <button class="cf-btn tiny danger remove-condition">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -742,11 +742,11 @@ class ScopesCustomPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Rule Name</label>
-                <input type="text" name="name" class="caido-input" placeholder="My Custom Rule" required />
+                <input type="text" name="name" class="cf-input" placeholder="My Custom Rule" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <input type="text" name="description" class="caido-input" placeholder="Rule description..." />
+                <input type="text" name="description" class="cf-input" placeholder="Rule description..." />
             </div>
         `;
 
@@ -773,14 +773,14 @@ class ScopesCustomPage extends BasePage {
         if (builder) {
             builder.innerHTML = `
                 <div class="rule-row">
-                    <select class="caido-select rule-field">
+                    <select class="cf-select rule-field">
                         <option value="host">Host</option>
                         <option value="path">Path</option>
                         <option value="port">Port</option>
                         <option value="scheme">Scheme</option>
                         <option value="method">Method</option>
                     </select>
-                    <select class="caido-select rule-operator">
+                    <select class="cf-select rule-operator">
                         <option value="matches">Matches</option>
                         <option value="contains">Contains</option>
                         <option value="equals">Equals</option>
@@ -788,8 +788,8 @@ class ScopesCustomPage extends BasePage {
                         <option value="endsWith">Ends With</option>
                         <option value="regex">Regex</option>
                     </select>
-                    <input type="text" class="caido-input rule-value" placeholder="Value..." />
-                    <button class="caido-btn tiny" id="add-rule-condition">
+                    <input type="text" class="cf-input rule-value" placeholder="Value..." />
+                    <button class="cf-btn tiny" id="add-rule-condition">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>

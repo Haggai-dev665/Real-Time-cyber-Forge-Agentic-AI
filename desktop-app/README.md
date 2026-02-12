@@ -21,9 +21,9 @@ desktop-app/
 │   ├── config/               # Shared constants & API endpoints
 │   ├── assets/               # App icons, logos
 │   └── renderer/             # Frontend UI (HTML / CSS / JS)
-│       ├── caido-index.html  # Main dashboard
+│       ├── dashboard.html  # Main dashboard
 │       ├── auth-page.html    # Auth / login page
-│       ├── caido-app.js      # Main controller (7k lines)
+│       ├── cyberforge-app.js      # Main controller (7k lines)
 │       ├── auth-page.js      # Auth controller
 │       ├── api-client.js     # REST client
 │       ├── components/       # Reusable UI components

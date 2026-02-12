@@ -4,7 +4,7 @@
  * This file provides functional layouts for pages that previously showed placeholder content
  */
 
-// Make functions available globally for caido-app.js
+// Make functions available globally for cyberforge-app.js
 window.ChildPageLayouts = (() => {
   
   // =========================================
@@ -14,18 +14,18 @@ window.ChildPageLayouts = (() => {
   function buildDashboardSecurityLayout() {
     return `
       <div class="child-page-container" id="dashboard-security-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-shield-alt"></i> Security Score</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="refresh-security-score"><i class="fas fa-sync"></i> Refresh</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-shield-alt"></i> Security Score</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="refresh-security-score"><i class="fas fa-sync"></i> Refresh</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="security-score-container" id="security-score-display">
             <div class="score-circle">
               <svg viewBox="0 0 100 100" class="score-svg">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--caido-bg-light)" stroke-width="8"/>
-                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--caido-primary)" stroke-width="8" 
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--cf-bg-light)" stroke-width="8"/>
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--cf-primary)" stroke-width="8" 
                   stroke-dasharray="283" stroke-dashoffset="70" stroke-linecap="round" class="score-progress"/>
               </svg>
               <div class="score-value" id="security-score-value">--</div>
@@ -68,19 +68,19 @@ window.ChildPageLayouts = (() => {
   function buildDashboardActivityLayout() {
     return `
       <div class="child-page-container" id="dashboard-activity-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-stream"></i> Activity Feed</div>
-          <div class="caido-panel-actions">
-            <select id="activity-filter" class="caido-select">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-stream"></i> Activity Feed</div>
+          <div class="cf-panel-actions">
+            <select id="activity-filter" class="cf-select">
               <option value="all">All Activity</option>
               <option value="threats">Threats Only</option>
               <option value="scans">Scans</option>
               <option value="alerts">Alerts</option>
             </select>
-            <button class="caido-btn" id="clear-activity"><i class="fas fa-trash"></i> Clear</button>
+            <button class="cf-btn" id="clear-activity"><i class="fas fa-trash"></i> Clear</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="activity-timeline" id="activity-timeline">
             <div class="loading-spinner"></div>
           </div>
@@ -92,10 +92,10 @@ window.ChildPageLayouts = (() => {
   function buildDashboardMetricsLayout() {
     return `
       <div class="child-page-container" id="dashboard-metrics-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-chart-line"></i> Live Metrics</div>
-          <div class="caido-panel-actions">
-            <select id="metrics-timerange" class="caido-select">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-chart-line"></i> Live Metrics</div>
+          <div class="cf-panel-actions">
+            <select id="metrics-timerange" class="cf-select">
               <option value="1h">Last Hour</option>
               <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
@@ -103,7 +103,7 @@ window.ChildPageLayouts = (() => {
             </select>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="metrics-grid" id="live-metrics-grid">
             <div class="metric-card">
               <div class="metric-icon"><i class="fas fa-network-wired"></i></div>
@@ -152,15 +152,15 @@ window.ChildPageLayouts = (() => {
   function buildSitemapTreeLayout() {
     return `
       <div class="child-page-container" id="sitemap-tree-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-sitemap"></i> Sitemap Tree View</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="expand-all-sitemap"><i class="fas fa-expand"></i> Expand All</button>
-            <button class="caido-btn" id="collapse-all-sitemap"><i class="fas fa-compress"></i> Collapse All</button>
-            <button class="caido-btn primary" id="refresh-sitemap"><i class="fas fa-sync"></i> Refresh</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-sitemap"></i> Sitemap Tree View</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="expand-all-sitemap"><i class="fas fa-expand"></i> Expand All</button>
+            <button class="cf-btn" id="collapse-all-sitemap"><i class="fas fa-compress"></i> Collapse All</button>
+            <button class="cf-btn primary" id="refresh-sitemap"><i class="fas fa-sync"></i> Refresh</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="sitemap-tree" id="sitemap-tree-container">
             <div class="loading-spinner"></div>
           </div>
@@ -172,15 +172,15 @@ window.ChildPageLayouts = (() => {
   function buildSitemapGraphLayout() {
     return `
       <div class="child-page-container" id="sitemap-graph-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-project-diagram"></i> Sitemap Graph View</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="zoom-in-graph"><i class="fas fa-search-plus"></i></button>
-            <button class="caido-btn" id="zoom-out-graph"><i class="fas fa-search-minus"></i></button>
-            <button class="caido-btn" id="reset-graph"><i class="fas fa-undo"></i> Reset</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-project-diagram"></i> Sitemap Graph View</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="zoom-in-graph"><i class="fas fa-search-plus"></i></button>
+            <button class="cf-btn" id="zoom-out-graph"><i class="fas fa-search-minus"></i></button>
+            <button class="cf-btn" id="reset-graph"><i class="fas fa-undo"></i> Reset</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="graph-container" id="sitemap-graph-container">
             <svg id="sitemap-graph-svg" width="100%" height="100%"></svg>
           </div>
@@ -196,15 +196,15 @@ window.ChildPageLayouts = (() => {
   function buildScopesActiveLayout() {
     return `
       <div class="child-page-container" id="scopes-active-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-bullseye"></i> Active Scopes</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-scope"><i class="fas fa-plus"></i> Add Scope</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-bullseye"></i> Active Scopes</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-scope"><i class="fas fa-plus"></i> Add Scope</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="active-scopes-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="active-scopes-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -226,15 +226,15 @@ window.ChildPageLayouts = (() => {
   function buildScopesExcludedLayout() {
     return `
       <div class="child-page-container" id="scopes-excluded-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-ban"></i> Excluded Scopes</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-exclusion"><i class="fas fa-plus"></i> Add Exclusion</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-ban"></i> Excluded Scopes</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-exclusion"><i class="fas fa-plus"></i> Add Exclusion</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="excluded-scopes-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="excluded-scopes-table">
               <thead>
                 <tr>
                   <th>Pattern</th>
@@ -258,13 +258,13 @@ window.ChildPageLayouts = (() => {
   function buildFiltersSavedLayout() {
     return `
       <div class="child-page-container" id="filters-saved-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-bookmark"></i> Saved Filters</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="create-filter"><i class="fas fa-plus"></i> Create Filter</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-bookmark"></i> Saved Filters</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="create-filter"><i class="fas fa-plus"></i> Create Filter</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="filters-list" id="saved-filters-list">
             <div class="loading-spinner"></div>
           </div>
@@ -276,13 +276,13 @@ window.ChildPageLayouts = (() => {
   function buildFiltersRecentLayout() {
     return `
       <div class="child-page-container" id="filters-recent-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-history"></i> Recent Filters</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="clear-recent-filters"><i class="fas fa-trash"></i> Clear All</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-history"></i> Recent Filters</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="clear-recent-filters"><i class="fas fa-trash"></i> Clear All</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="filters-list" id="recent-filters-list">
             <div class="loading-spinner"></div>
           </div>
@@ -298,15 +298,15 @@ window.ChildPageLayouts = (() => {
   function buildInterceptRulesLayout() {
     return `
       <div class="child-page-container" id="intercept-rules-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-list-alt"></i> Intercept Rules</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-intercept-rule"><i class="fas fa-plus"></i> Add Rule</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-list-alt"></i> Intercept Rules</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-intercept-rule"><i class="fas fa-plus"></i> Add Rule</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="intercept-rules-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="intercept-rules-table">
               <thead>
                 <tr>
                   <th>Enabled</th>
@@ -328,15 +328,15 @@ window.ChildPageLayouts = (() => {
   function buildInterceptBreakpointsLayout() {
     return `
       <div class="child-page-container" id="intercept-breakpoints-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-pause-circle"></i> Breakpoints</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-breakpoint"><i class="fas fa-plus"></i> Add Breakpoint</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-pause-circle"></i> Breakpoints</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-breakpoint"><i class="fas fa-plus"></i> Add Breakpoint</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="breakpoints-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="breakpoints-table">
               <thead>
                 <tr>
                   <th>Enabled</th>
@@ -362,15 +362,15 @@ window.ChildPageLayouts = (() => {
   function buildHttpFlaggedLayout() {
     return `
       <div class="child-page-container" id="http-flagged-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-flag"></i> Flagged Requests</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="unflag-all"><i class="fas fa-flag"></i> Unflag All</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-flag"></i> Flagged Requests</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="unflag-all"><i class="fas fa-flag"></i> Unflag All</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="flagged-requests-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="flagged-requests-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -393,19 +393,19 @@ window.ChildPageLayouts = (() => {
   function buildHttpErrorsLayout() {
     return `
       <div class="child-page-container" id="http-errors-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-exclamation-circle"></i> Error Responses</div>
-          <div class="caido-panel-actions">
-            <select id="error-filter" class="caido-select">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-exclamation-circle"></i> Error Responses</div>
+          <div class="cf-panel-actions">
+            <select id="error-filter" class="cf-select">
               <option value="all">All Errors</option>
               <option value="4xx">4xx Client Errors</option>
               <option value="5xx">5xx Server Errors</option>
             </select>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="error-requests-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="error-requests-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -432,16 +432,16 @@ window.ChildPageLayouts = (() => {
   function buildWsMessagesLayout() {
     return `
       <div class="child-page-container" id="ws-messages-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-comments"></i> WebSocket Messages</div>
-          <div class="caido-panel-actions">
-            <select id="ws-connection-filter" class="caido-select">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-comments"></i> WebSocket Messages</div>
+          <div class="cf-panel-actions">
+            <select id="ws-connection-filter" class="cf-select">
               <option value="all">All Connections</option>
             </select>
-            <button class="caido-btn" id="clear-ws-messages"><i class="fas fa-trash"></i> Clear</button>
+            <button class="cf-btn" id="clear-ws-messages"><i class="fas fa-trash"></i> Clear</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="ws-messages-container" id="ws-messages-container">
             <div class="loading-spinner"></div>
           </div>
@@ -457,15 +457,15 @@ window.ChildPageLayouts = (() => {
   function buildMatchResponseLayout() {
     return `
       <div class="child-page-container" id="match-response-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-exchange-alt"></i> Response Rules</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-response-rule"><i class="fas fa-plus"></i> Add Rule</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-exchange-alt"></i> Response Rules</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-response-rule"><i class="fas fa-plus"></i> Add Rule</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="response-rules-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="response-rules-table">
               <thead>
                 <tr>
                   <th>Enabled</th>
@@ -491,21 +491,21 @@ window.ChildPageLayouts = (() => {
   function buildReplayBatchLayout() {
     return `
       <div class="child-page-container" id="replay-batch-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-layer-group"></i> Batch Replay</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-batch-replay"><i class="fas fa-play"></i> Start Batch</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-layer-group"></i> Batch Replay</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-batch-replay"><i class="fas fa-play"></i> Start Batch</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="batch-config" id="batch-replay-config">
             <div class="form-group">
               <label>Concurrency</label>
-              <input type="number" id="batch-concurrency" value="5" min="1" max="50" class="caido-input">
+              <input type="number" id="batch-concurrency" value="5" min="1" max="50" class="cf-input">
             </div>
             <div class="form-group">
               <label>Delay (ms)</label>
-              <input type="number" id="batch-delay" value="100" min="0" class="caido-input">
+              <input type="number" id="batch-delay" value="100" min="0" class="cf-input">
             </div>
             <div class="form-group">
               <label>Requests to Replay</label>
@@ -520,8 +520,8 @@ window.ChildPageLayouts = (() => {
               <div class="progress-bar"><div class="progress-fill" id="batch-progress-fill"></div></div>
               <span id="batch-progress-text">0/0</span>
             </div>
-            <div class="caido-table-container">
-              <table class="caido-table" id="batch-results-table">
+            <div class="cf-table-container">
+              <table class="cf-table" id="batch-results-table">
                 <thead>
                   <tr>
                     <th>Request ID</th>
@@ -542,24 +542,24 @@ window.ChildPageLayouts = (() => {
   function buildReplayDiffLayout() {
     return `
       <div class="child-page-container" id="replay-diff-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-columns"></i> Compare Responses</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="compare-responses"><i class="fas fa-balance-scale"></i> Compare</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-columns"></i> Compare Responses</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="compare-responses"><i class="fas fa-balance-scale"></i> Compare</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="diff-selector">
             <div class="diff-select-panel">
               <h4>Original Response</h4>
-              <select id="diff-original" class="caido-select">
+              <select id="diff-original" class="cf-select">
                 <option value="">Select a request...</option>
               </select>
               <div class="response-preview" id="diff-original-preview"></div>
             </div>
             <div class="diff-select-panel">
               <h4>Compare With</h4>
-              <select id="diff-compare" class="caido-select">
+              <select id="diff-compare" class="cf-select">
                 <option value="">Select a request...</option>
               </select>
               <div class="response-preview" id="diff-compare-preview"></div>
@@ -581,21 +581,21 @@ window.ChildPageLayouts = (() => {
   function buildAutomateIntruderLayout() {
     return `
       <div class="child-page-container" id="automate-intruder-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-crosshairs"></i> Intruder</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-intruder"><i class="fas fa-play"></i> Start Attack</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-crosshairs"></i> Intruder</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-intruder"><i class="fas fa-play"></i> Start Attack</button>
           </div>
         </div>
-        <div class="caido-split-horizontal">
-          <div class="caido-panel" style="flex: 1;">
+        <div class="cf-split-horizontal">
+          <div class="cf-panel" style="flex: 1;">
             <div class="form-group">
               <label>Target URL</label>
-              <input type="text" id="intruder-target" class="caido-input" placeholder="https://target.com/api/endpoint">
+              <input type="text" id="intruder-target" class="cf-input" placeholder="https://target.com/api/endpoint">
             </div>
             <div class="form-group">
               <label>Attack Type</label>
-              <select id="intruder-attack-type" class="caido-select">
+              <select id="intruder-attack-type" class="cf-select">
                 <option value="sniper">Sniper</option>
                 <option value="battering-ram">Battering Ram</option>
                 <option value="pitchfork">Pitchfork</option>
@@ -604,17 +604,17 @@ window.ChildPageLayouts = (() => {
             </div>
             <div class="form-group">
               <label>Request Template</label>
-              <textarea id="intruder-template" class="caido-textarea" rows="10" placeholder="GET /api/user/§id§ HTTP/1.1"></textarea>
+              <textarea id="intruder-template" class="cf-textarea" rows="10" placeholder="GET /api/user/§id§ HTTP/1.1"></textarea>
             </div>
             <div class="form-group">
               <label>Payloads</label>
-              <textarea id="intruder-payloads" class="caido-textarea" rows="5" placeholder="Enter payloads, one per line..."></textarea>
+              <textarea id="intruder-payloads" class="cf-textarea" rows="5" placeholder="Enter payloads, one per line..."></textarea>
             </div>
           </div>
-          <div class="caido-panel" style="flex: 1;">
+          <div class="cf-panel" style="flex: 1;">
             <h4>Results</h4>
-            <div class="caido-table-container">
-              <table class="caido-table" id="intruder-results-table">
+            <div class="cf-table-container">
+              <table class="cf-table" id="intruder-results-table">
                 <thead>
                   <tr>
                     <th>Payload</th>
@@ -636,21 +636,21 @@ window.ChildPageLayouts = (() => {
   function buildAutomateFuzzerLayout() {
     return `
       <div class="child-page-container" id="automate-fuzzer-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-random"></i> Fuzzer</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-fuzzer"><i class="fas fa-play"></i> Start Fuzzing</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-random"></i> Fuzzer</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-fuzzer"><i class="fas fa-play"></i> Start Fuzzing</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="fuzzer-config">
             <div class="form-group">
               <label>Fuzzing Target</label>
-              <input type="text" id="fuzzer-target" class="caido-input" placeholder="https://target.com">
+              <input type="text" id="fuzzer-target" class="cf-input" placeholder="https://target.com">
             </div>
             <div class="form-group">
               <label>Fuzzing Mode</label>
-              <select id="fuzzer-mode" class="caido-select">
+              <select id="fuzzer-mode" class="cf-select">
                 <option value="parameter">Parameter Fuzzing</option>
                 <option value="header">Header Fuzzing</option>
                 <option value="path">Path Fuzzing</option>
@@ -659,7 +659,7 @@ window.ChildPageLayouts = (() => {
             </div>
             <div class="form-group">
               <label>Wordlist</label>
-              <select id="fuzzer-wordlist" class="caido-select">
+              <select id="fuzzer-wordlist" class="cf-select">
                 <option value="common">Common Payloads</option>
                 <option value="sqli">SQL Injection</option>
                 <option value="xss">XSS Payloads</option>
@@ -670,8 +670,8 @@ window.ChildPageLayouts = (() => {
           </div>
           <div class="fuzzer-results" id="fuzzer-results">
             <h4>Fuzzing Results</h4>
-            <div class="caido-table-container">
-              <table class="caido-table" id="fuzzer-results-table">
+            <div class="cf-table-container">
+              <table class="cf-table" id="fuzzer-results-table">
                 <thead>
                   <tr>
                     <th>Payload</th>
@@ -692,14 +692,14 @@ window.ChildPageLayouts = (() => {
   function buildAutomatePayloadsLayout() {
     return `
       <div class="child-page-container" id="automate-payloads-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-database"></i> Payload Manager</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="import-payloads"><i class="fas fa-upload"></i> Import</button>
-            <button class="caido-btn primary" id="create-payload-list"><i class="fas fa-plus"></i> New List</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-database"></i> Payload Manager</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="import-payloads"><i class="fas fa-upload"></i> Import</button>
+            <button class="cf-btn primary" id="create-payload-list"><i class="fas fa-plus"></i> New List</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="payload-lists" id="payload-lists">
             <div class="payload-list-item">
               <div class="payload-list-info">
@@ -708,9 +708,9 @@ window.ChildPageLayouts = (() => {
                 <span class="payload-list-count">10,000 payloads</span>
               </div>
               <div class="payload-list-actions">
-                <button class="caido-btn small"><i class="fas fa-eye"></i></button>
-                <button class="caido-btn small"><i class="fas fa-edit"></i></button>
-                <button class="caido-btn small danger"><i class="fas fa-trash"></i></button>
+                <button class="cf-btn small"><i class="fas fa-eye"></i></button>
+                <button class="cf-btn small"><i class="fas fa-edit"></i></button>
+                <button class="cf-btn small danger"><i class="fas fa-trash"></i></button>
               </div>
             </div>
             <div class="payload-list-item">
@@ -720,9 +720,9 @@ window.ChildPageLayouts = (() => {
                 <span class="payload-list-count">500 payloads</span>
               </div>
               <div class="payload-list-actions">
-                <button class="caido-btn small"><i class="fas fa-eye"></i></button>
-                <button class="caido-btn small"><i class="fas fa-edit"></i></button>
-                <button class="caido-btn small danger"><i class="fas fa-trash"></i></button>
+                <button class="cf-btn small"><i class="fas fa-eye"></i></button>
+                <button class="cf-btn small"><i class="fas fa-edit"></i></button>
+                <button class="cf-btn small danger"><i class="fas fa-trash"></i></button>
               </div>
             </div>
             <div class="payload-list-item">
@@ -732,9 +732,9 @@ window.ChildPageLayouts = (() => {
                 <span class="payload-list-count">300 payloads</span>
               </div>
               <div class="payload-list-actions">
-                <button class="caido-btn small"><i class="fas fa-eye"></i></button>
-                <button class="caido-btn small"><i class="fas fa-edit"></i></button>
-                <button class="caido-btn small danger"><i class="fas fa-trash"></i></button>
+                <button class="cf-btn small"><i class="fas fa-eye"></i></button>
+                <button class="cf-btn small"><i class="fas fa-edit"></i></button>
+                <button class="cf-btn small danger"><i class="fas fa-trash"></i></button>
               </div>
             </div>
           </div>
@@ -750,15 +750,15 @@ window.ChildPageLayouts = (() => {
   function buildWorkflowsActiveLayout() {
     return `
       <div class="child-page-container" id="workflows-active-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-play-circle"></i> Active Workflows</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="create-workflow"><i class="fas fa-plus"></i> New Workflow</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-play-circle"></i> Active Workflows</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="create-workflow"><i class="fas fa-plus"></i> New Workflow</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="active-workflows-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="active-workflows-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -779,31 +779,31 @@ window.ChildPageLayouts = (() => {
   function buildWorkflowsTemplatesLayout() {
     return `
       <div class="child-page-container" id="workflows-templates-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-copy"></i> Workflow Templates</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="import-template"><i class="fas fa-upload"></i> Import</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-copy"></i> Workflow Templates</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="import-template"><i class="fas fa-upload"></i> Import</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="templates-grid" id="workflow-templates-grid">
             <div class="template-card">
               <div class="template-icon"><i class="fas fa-search"></i></div>
               <div class="template-name">Vulnerability Scan</div>
               <div class="template-desc">Full vulnerability assessment workflow</div>
-              <button class="caido-btn primary small">Use Template</button>
+              <button class="cf-btn primary small">Use Template</button>
             </div>
             <div class="template-card">
               <div class="template-icon"><i class="fas fa-user-secret"></i></div>
               <div class="template-name">Penetration Test</div>
               <div class="template-desc">Complete pentest workflow</div>
-              <button class="caido-btn primary small">Use Template</button>
+              <button class="cf-btn primary small">Use Template</button>
             </div>
             <div class="template-card">
               <div class="template-icon"><i class="fas fa-shield-alt"></i></div>
               <div class="template-name">Security Audit</div>
               <div class="template-desc">Comprehensive security review</div>
-              <button class="caido-btn primary small">Use Template</button>
+              <button class="cf-btn primary small">Use Template</button>
             </div>
           </div>
         </div>
@@ -814,15 +814,15 @@ window.ChildPageLayouts = (() => {
   function buildWorkflowsHistoryLayout() {
     return `
       <div class="child-page-container" id="workflows-history-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-history"></i> Workflow History</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="clear-workflow-history"><i class="fas fa-trash"></i> Clear History</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-history"></i> Workflow History</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="clear-workflow-history"><i class="fas fa-trash"></i> Clear History</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="workflows-history-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="workflows-history-table">
               <thead>
                 <tr>
                   <th>Workflow</th>
@@ -848,14 +848,14 @@ window.ChildPageLayouts = (() => {
   function buildAssistantChatLayout() {
     return `
       <div class="child-page-container" id="assistant-chat-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-robot"></i> AI Assistant Chat</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="clear-chat"><i class="fas fa-trash"></i> Clear Chat</button>
-            <button class="caido-btn" id="export-chat"><i class="fas fa-download"></i> Export</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-robot"></i> AI Assistant Chat</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="clear-chat"><i class="fas fa-trash"></i> Clear Chat</button>
+            <button class="cf-btn" id="export-chat"><i class="fas fa-download"></i> Export</button>
           </div>
         </div>
-        <div class="caido-panel-content chat-container">
+        <div class="cf-panel-content chat-container">
           <div class="chat-messages" id="assistant-chat-messages">
             <div class="chat-message ai">
               <div class="message-avatar"><i class="fas fa-robot"></i></div>
@@ -872,8 +872,8 @@ window.ChildPageLayouts = (() => {
             </div>
           </div>
           <div class="chat-input-container">
-            <textarea id="assistant-chat-input" class="caido-textarea" placeholder="Ask me anything about security..." rows="2"></textarea>
-            <button class="caido-btn primary" id="send-assistant-message"><i class="fas fa-paper-plane"></i></button>
+            <textarea id="assistant-chat-input" class="cf-textarea" placeholder="Ask me anything about security..." rows="2"></textarea>
+            <button class="cf-btn primary" id="send-assistant-message"><i class="fas fa-paper-plane"></i></button>
           </div>
         </div>
       </div>
@@ -883,31 +883,31 @@ window.ChildPageLayouts = (() => {
   function buildAssistantSuggestionsLayout() {
     return `
       <div class="child-page-container" id="assistant-suggestions-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-lightbulb"></i> AI Suggestions</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="refresh-suggestions"><i class="fas fa-sync"></i> Refresh</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-lightbulb"></i> AI Suggestions</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="refresh-suggestions"><i class="fas fa-sync"></i> Refresh</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="suggestions-list" id="ai-suggestions-list">
             <div class="suggestion-card high">
               <div class="suggestion-priority"><i class="fas fa-exclamation-circle"></i> High Priority</div>
               <div class="suggestion-title">Update SSL/TLS Configuration</div>
               <div class="suggestion-desc">Detected weak cipher suites in use. Consider upgrading to TLS 1.3.</div>
-              <button class="caido-btn small">Apply Fix</button>
+              <button class="cf-btn small">Apply Fix</button>
             </div>
             <div class="suggestion-card medium">
               <div class="suggestion-priority"><i class="fas fa-info-circle"></i> Medium Priority</div>
               <div class="suggestion-title">Enable Rate Limiting</div>
               <div class="suggestion-desc">API endpoints lack rate limiting, making them vulnerable to brute force.</div>
-              <button class="caido-btn small">View Details</button>
+              <button class="cf-btn small">View Details</button>
             </div>
             <div class="suggestion-card low">
               <div class="suggestion-priority"><i class="fas fa-check-circle"></i> Low Priority</div>
               <div class="suggestion-title">Add Security Headers</div>
               <div class="suggestion-desc">Missing CSP and X-Frame-Options headers detected.</div>
-              <button class="caido-btn small">View Details</button>
+              <button class="cf-btn small">View Details</button>
             </div>
           </div>
         </div>
@@ -922,15 +922,15 @@ window.ChildPageLayouts = (() => {
   function buildModelsTrainedLayout() {
     return `
       <div class="child-page-container" id="models-trained-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-brain"></i> Trained Models</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="deploy-model"><i class="fas fa-rocket"></i> Deploy Model</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-brain"></i> Trained Models</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="deploy-model"><i class="fas fa-rocket"></i> Deploy Model</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="trained-models-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="trained-models-table">
               <thead>
                 <tr>
                   <th>Model Name</th>
@@ -952,18 +952,18 @@ window.ChildPageLayouts = (() => {
   function buildModelsTrainingLayout() {
     return `
       <div class="child-page-container" id="models-training-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-cogs"></i> Models In Training</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-training"><i class="fas fa-play"></i> Start New Training</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-cogs"></i> Models In Training</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-training"><i class="fas fa-play"></i> Start New Training</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="training-jobs" id="training-jobs-list">
             <div class="training-job">
               <div class="training-job-header">
                 <span class="training-job-name">Malware Detection v2</span>
-                <span class="caido-badge blue">Training</span>
+                <span class="cf-badge blue">Training</span>
               </div>
               <div class="training-progress">
                 <div class="progress-bar"><div class="progress-fill" style="width: 45%"></div></div>
@@ -984,16 +984,16 @@ window.ChildPageLayouts = (() => {
   function buildModelsDatasetsLayout() {
     return `
       <div class="child-page-container" id="models-datasets-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-database"></i> Training Datasets</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="import-dataset"><i class="fas fa-upload"></i> Import</button>
-            <button class="caido-btn primary" id="create-dataset"><i class="fas fa-plus"></i> Create Dataset</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-database"></i> Training Datasets</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="import-dataset"><i class="fas fa-upload"></i> Import</button>
+            <button class="cf-btn primary" id="create-dataset"><i class="fas fa-plus"></i> Create Dataset</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="datasets-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="datasets-table">
               <thead>
                 <tr>
                   <th>Dataset Name</th>
@@ -1019,16 +1019,16 @@ window.ChildPageLayouts = (() => {
   function buildIntelFeedsLayout() {
     return `
       <div class="child-page-container" id="intel-feeds-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-rss"></i> Threat Feeds</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="sync-feeds"><i class="fas fa-sync"></i> Sync All</button>
-            <button class="caido-btn primary" id="add-feed"><i class="fas fa-plus"></i> Add Feed</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-rss"></i> Threat Feeds</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="sync-feeds"><i class="fas fa-sync"></i> Sync All</button>
+            <button class="cf-btn primary" id="add-feed"><i class="fas fa-plus"></i> Add Feed</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="intel-feeds-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="intel-feeds-table">
               <thead>
                 <tr>
                   <th>Feed Name</th>
@@ -1051,23 +1051,23 @@ window.ChildPageLayouts = (() => {
   function buildIntelIocsLayout() {
     return `
       <div class="child-page-container" id="intel-iocs-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-fingerprint"></i> Indicators of Compromise</div>
-          <div class="caido-panel-actions">
-            <input type="text" id="ioc-search" class="caido-input" placeholder="Search IOCs...">
-            <button class="caido-btn primary" id="add-ioc"><i class="fas fa-plus"></i> Add IOC</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-fingerprint"></i> Indicators of Compromise</div>
+          <div class="cf-panel-actions">
+            <input type="text" id="ioc-search" class="cf-input" placeholder="Search IOCs...">
+            <button class="cf-btn primary" id="add-ioc"><i class="fas fa-plus"></i> Add IOC</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="ioc-filters">
-            <button class="caido-btn filter-btn active" data-filter="all">All</button>
-            <button class="caido-btn filter-btn" data-filter="ip">IP Addresses</button>
-            <button class="caido-btn filter-btn" data-filter="domain">Domains</button>
-            <button class="caido-btn filter-btn" data-filter="hash">File Hashes</button>
-            <button class="caido-btn filter-btn" data-filter="url">URLs</button>
+            <button class="cf-btn filter-btn active" data-filter="all">All</button>
+            <button class="cf-btn filter-btn" data-filter="ip">IP Addresses</button>
+            <button class="cf-btn filter-btn" data-filter="domain">Domains</button>
+            <button class="cf-btn filter-btn" data-filter="hash">File Hashes</button>
+            <button class="cf-btn filter-btn" data-filter="url">URLs</button>
           </div>
-          <div class="caido-table-container">
-            <table class="caido-table" id="iocs-table">
+          <div class="cf-table-container">
+            <table class="cf-table" id="iocs-table">
               <thead>
                 <tr>
                   <th>Type</th>
@@ -1090,14 +1090,14 @@ window.ChildPageLayouts = (() => {
   function buildIntelCvesLayout() {
     return `
       <div class="child-page-container" id="intel-cves-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-bug"></i> CVE Database</div>
-          <div class="caido-panel-actions">
-            <input type="text" id="cve-search" class="caido-input" placeholder="Search CVEs...">
-            <button class="caido-btn" id="sync-cves"><i class="fas fa-sync"></i> Sync</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-bug"></i> CVE Database</div>
+          <div class="cf-panel-actions">
+            <input type="text" id="cve-search" class="cf-input" placeholder="Search CVEs...">
+            <button class="cf-btn" id="sync-cves"><i class="fas fa-sync"></i> Sync</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="cve-stats" id="cve-stats">
             <div class="stat-card">
               <div class="stat-value" id="cve-critical-count">0</div>
@@ -1116,8 +1116,8 @@ window.ChildPageLayouts = (() => {
               <div class="stat-label">Low</div>
             </div>
           </div>
-          <div class="caido-table-container">
-            <table class="caido-table" id="cves-table">
+          <div class="cf-table-container">
+            <table class="cf-table" id="cves-table">
               <thead>
                 <tr>
                   <th>CVE ID</th>
@@ -1143,15 +1143,15 @@ window.ChildPageLayouts = (() => {
   function buildEnvVariablesLayout() {
     return `
       <div class="child-page-container" id="env-variables-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-code"></i> Environment Variables</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-env-var"><i class="fas fa-plus"></i> Add Variable</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-code"></i> Environment Variables</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-env-var"><i class="fas fa-plus"></i> Add Variable</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="env-vars-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="env-vars-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -1171,15 +1171,15 @@ window.ChildPageLayouts = (() => {
   function buildEnvSecretsLayout() {
     return `
       <div class="child-page-container" id="env-secrets-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-key"></i> Secrets Manager</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-secret"><i class="fas fa-plus"></i> Add Secret</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-key"></i> Secrets Manager</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-secret"><i class="fas fa-plus"></i> Add Secret</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="secrets-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="secrets-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -1204,13 +1204,13 @@ window.ChildPageLayouts = (() => {
   function buildSearchSavedLayout() {
     return `
       <div class="child-page-container" id="search-saved-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-bookmark"></i> Saved Queries</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="save-current-query"><i class="fas fa-save"></i> Save Current</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-bookmark"></i> Saved Queries</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="save-current-query"><i class="fas fa-save"></i> Save Current</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="saved-queries-list" id="saved-queries-list">
             <div class="saved-query-item">
               <div class="query-info">
@@ -1219,8 +1219,8 @@ window.ChildPageLayouts = (() => {
                 <span class="query-text text-secondary">status:200 AND body:*error*</span>
               </div>
               <div class="query-actions">
-                <button class="caido-btn small"><i class="fas fa-play"></i> Run</button>
-                <button class="caido-btn small danger"><i class="fas fa-trash"></i></button>
+                <button class="cf-btn small"><i class="fas fa-play"></i> Run</button>
+                <button class="cf-btn small danger"><i class="fas fa-trash"></i></button>
               </div>
             </div>
           </div>
@@ -1242,17 +1242,17 @@ window.ChildPageLayouts = (() => {
     
     return `
       <div class="child-page-container" id="findings-${severity}-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">
             <i class="fas fa-${icon}"></i> ${severity.charAt(0).toUpperCase() + severity.slice(1)} Severity Findings
           </div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="export-${severity}-findings"><i class="fas fa-download"></i> Export</button>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="export-${severity}-findings"><i class="fas fa-download"></i> Export</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="${severity}-findings-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="${severity}-findings-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -1279,10 +1279,10 @@ window.ChildPageLayouts = (() => {
   function buildExportsDataLayout() {
     return `
       <div class="child-page-container" id="exports-data-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-file-export"></i> Data Export</div>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-file-export"></i> Data Export</div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="export-options">
             <h4>Select Data to Export</h4>
             <div class="export-checkboxes">
@@ -1293,14 +1293,14 @@ window.ChildPageLayouts = (() => {
             </div>
             <div class="form-group">
               <label>Export Format</label>
-              <select id="export-format" class="caido-select">
+              <select id="export-format" class="cf-select">
                 <option value="json">JSON</option>
                 <option value="csv">CSV</option>
                 <option value="xml">XML</option>
                 <option value="har">HAR (HTTP Archive)</option>
               </select>
             </div>
-            <button class="caido-btn primary" id="start-export"><i class="fas fa-download"></i> Export Data</button>
+            <button class="cf-btn primary" id="start-export"><i class="fas fa-download"></i> Export Data</button>
           </div>
         </div>
       </div>
@@ -1314,14 +1314,14 @@ window.ChildPageLayouts = (() => {
   function buildFilesNotesLayout() {
     return `
       <div class="child-page-container" id="files-notes-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-sticky-note"></i> Notes</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="create-note"><i class="fas fa-plus"></i> New Note</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-sticky-note"></i> Notes</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="create-note"><i class="fas fa-plus"></i> New Note</button>
           </div>
         </div>
-        <div class="caido-split-horizontal">
-          <div class="caido-panel notes-list-panel" style="width: 250px;">
+        <div class="cf-split-horizontal">
+          <div class="cf-panel notes-list-panel" style="width: 250px;">
             <div class="notes-list" id="notes-list">
               <div class="note-item active">
                 <i class="fas fa-sticky-note"></i>
@@ -1333,8 +1333,8 @@ window.ChildPageLayouts = (() => {
               </div>
             </div>
           </div>
-          <div class="caido-panel note-editor-panel" style="flex: 1;">
-            <textarea id="note-content" class="caido-textarea note-editor" placeholder="Start writing..."></textarea>
+          <div class="cf-panel note-editor-panel" style="flex: 1;">
+            <textarea id="note-content" class="cf-textarea note-editor" placeholder="Start writing..."></textarea>
           </div>
         </div>
       </div>
@@ -1344,16 +1344,16 @@ window.ChildPageLayouts = (() => {
   function buildFilesScriptsLayout() {
     return `
       <div class="child-page-container" id="files-scripts-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-code"></i> Scripts</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="import-script"><i class="fas fa-upload"></i> Import</button>
-            <button class="caido-btn primary" id="create-script"><i class="fas fa-plus"></i> New Script</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-code"></i> Scripts</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="import-script"><i class="fas fa-upload"></i> Import</button>
+            <button class="cf-btn primary" id="create-script"><i class="fas fa-plus"></i> New Script</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="scripts-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="scripts-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -1378,18 +1378,18 @@ window.ChildPageLayouts = (() => {
   function buildPluginsMarketplaceLayout() {
     return `
       <div class="child-page-container" id="plugins-marketplace-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-store"></i> Plugin Marketplace</div>
-          <div class="caido-panel-actions">
-            <input type="text" id="plugin-search" class="caido-input" placeholder="Search plugins...">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-store"></i> Plugin Marketplace</div>
+          <div class="cf-panel-actions">
+            <input type="text" id="plugin-search" class="cf-input" placeholder="Search plugins...">
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="plugin-categories">
-            <button class="caido-btn filter-btn active" data-filter="all">All</button>
-            <button class="caido-btn filter-btn" data-filter="security">Security</button>
-            <button class="caido-btn filter-btn" data-filter="analysis">Analysis</button>
-            <button class="caido-btn filter-btn" data-filter="integration">Integration</button>
+            <button class="cf-btn filter-btn active" data-filter="all">All</button>
+            <button class="cf-btn filter-btn" data-filter="security">Security</button>
+            <button class="cf-btn filter-btn" data-filter="analysis">Analysis</button>
+            <button class="cf-btn filter-btn" data-filter="integration">Integration</button>
           </div>
           <div class="plugins-grid" id="marketplace-plugins-grid">
             <div class="plugin-card">
@@ -1399,7 +1399,7 @@ window.ChildPageLayouts = (() => {
                 <div class="plugin-author">by CyberForge</div>
                 <div class="plugin-rating"><i class="fas fa-star"></i> 4.8 (245 reviews)</div>
               </div>
-              <button class="caido-btn primary small">Install</button>
+              <button class="cf-btn primary small">Install</button>
             </div>
             <div class="plugin-card">
               <div class="plugin-icon"><i class="fas fa-code"></i></div>
@@ -1408,7 +1408,7 @@ window.ChildPageLayouts = (() => {
                 <div class="plugin-author">by SecurityLabs</div>
                 <div class="plugin-rating"><i class="fas fa-star"></i> 4.6 (189 reviews)</div>
               </div>
-              <button class="caido-btn primary small">Install</button>
+              <button class="cf-btn primary small">Install</button>
             </div>
           </div>
         </div>
@@ -1423,15 +1423,15 @@ window.ChildPageLayouts = (() => {
   function buildWorkspaceTeamLayout() {
     return `
       <div class="child-page-container" id="workspace-team-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-users"></i> Team Members</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="invite-member"><i class="fas fa-user-plus"></i> Invite Member</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-users"></i> Team Members</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="invite-member"><i class="fas fa-user-plus"></i> Invite Member</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="team-members-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="team-members-table">
               <thead>
                 <tr>
                   <th>Member</th>
@@ -1456,15 +1456,15 @@ window.ChildPageLayouts = (() => {
   function buildSyncHistoryLayout() {
     return `
       <div class="child-page-container" id="sync-history-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-history"></i> Sync History</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="clear-sync-history"><i class="fas fa-trash"></i> Clear</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-history"></i> Sync History</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="clear-sync-history"><i class="fas fa-trash"></i> Clear</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="sync-history-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="sync-history-table">
               <thead>
                 <tr>
                   <th>Time</th>
@@ -1489,13 +1489,13 @@ window.ChildPageLayouts = (() => {
   function buildExtSettingsLayout() {
     return `
       <div class="child-page-container" id="ext-settings-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-cog"></i> Extension Settings</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="save-ext-settings"><i class="fas fa-save"></i> Save</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-cog"></i> Extension Settings</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="save-ext-settings"><i class="fas fa-save"></i> Save</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="settings-form">
             <div class="form-group">
               <label>Auto-capture Requests</label>
@@ -1503,7 +1503,7 @@ window.ChildPageLayouts = (() => {
             </div>
             <div class="form-group">
               <label>Capture Scope</label>
-              <select id="ext-capture-scope" class="caido-select">
+              <select id="ext-capture-scope" class="cf-select">
                 <option value="all">All Requests</option>
                 <option value="scope">In-scope Only</option>
                 <option value="manual">Manual Only</option>
@@ -1511,7 +1511,7 @@ window.ChildPageLayouts = (() => {
             </div>
             <div class="form-group">
               <label>Exclude Patterns</label>
-              <textarea id="ext-exclude-patterns" class="caido-textarea" rows="4" placeholder="Enter patterns to exclude..."></textarea>
+              <textarea id="ext-exclude-patterns" class="cf-textarea" rows="4" placeholder="Enter patterns to exclude..."></textarea>
             </div>
           </div>
         </div>
@@ -1526,24 +1526,24 @@ window.ChildPageLayouts = (() => {
   function buildMobileDevicesLayout() {
     return `
       <div class="child-page-container" id="mobile-devices-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-mobile-alt"></i> Connected Devices</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="scan-devices"><i class="fas fa-sync"></i> Scan</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-mobile-alt"></i> Connected Devices</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="scan-devices"><i class="fas fa-sync"></i> Scan</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="devices-list" id="connected-devices-list">
             <div class="device-card">
               <div class="device-icon"><i class="fas fa-mobile-alt"></i></div>
               <div class="device-info">
                 <div class="device-name">iPhone 14 Pro</div>
                 <div class="device-id text-secondary">ID: CF-A1B2C3</div>
-                <div class="device-status"><span class="caido-badge green">Connected</span></div>
+                <div class="device-status"><span class="cf-badge green">Connected</span></div>
               </div>
               <div class="device-actions">
-                <button class="caido-btn small"><i class="fas fa-cog"></i></button>
-                <button class="caido-btn small danger"><i class="fas fa-unlink"></i></button>
+                <button class="cf-btn small"><i class="fas fa-cog"></i></button>
+                <button class="cf-btn small danger"><i class="fas fa-unlink"></i></button>
               </div>
             </div>
           </div>
@@ -1559,11 +1559,11 @@ window.ChildPageLayouts = (() => {
   function buildBrowserRegistrationLayout() {
     return `
       <div class="child-page-container browser-registration-container" id="browser-registration-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-globe"></i> Browser Monitoring</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="refresh-browsers"><i class="fas fa-sync"></i> Refresh</button>
-            <button class="caido-btn primary" id="start-monitoring"><i class="fas fa-play"></i> Start Monitoring</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-globe"></i> Browser Monitoring</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="refresh-browsers"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="cf-btn primary" id="start-monitoring"><i class="fas fa-play"></i> Start Monitoring</button>
           </div>
         </div>
         
@@ -1592,7 +1592,7 @@ window.ChildPageLayouts = (() => {
           </div>
         </div>
         
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <!-- Available Browsers Section -->
           <div class="browser-section">
             <h3 class="section-title"><i class="fas fa-desktop"></i> Available Browsers</h3>
@@ -1917,17 +1917,17 @@ window.ChildPageLayouts = (() => {
   function buildBrowserHistoryScanLayout() {
     return `
       <div class="child-page-container" id="browser-history-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-history"></i> Browser History Scan</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-history-scan"><i class="fas fa-search"></i> Start Scan</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-history"></i> Browser History Scan</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-history-scan"><i class="fas fa-search"></i> Start Scan</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="scan-config">
             <div class="form-group">
               <label>Scan Range</label>
-              <select id="history-scan-range" class="caido-select">
+              <select id="history-scan-range" class="cf-select">
                 <option value="24h">Last 24 Hours</option>
                 <option value="7d">Last 7 Days</option>
                 <option value="30d">Last 30 Days</option>
@@ -1958,16 +1958,16 @@ window.ChildPageLayouts = (() => {
   function buildSuspiciousDomainsLayout() {
     return `
       <div class="child-page-container" id="suspicious-domains-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-exclamation-triangle"></i> Suspicious Domains</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="refresh-suspicious"><i class="fas fa-sync"></i> Refresh</button>
-            <button class="caido-btn primary" id="block-all-suspicious"><i class="fas fa-ban"></i> Block All</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-exclamation-triangle"></i> Suspicious Domains</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="refresh-suspicious"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="cf-btn primary" id="block-all-suspicious"><i class="fas fa-ban"></i> Block All</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="suspicious-domains-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="suspicious-domains-table">
               <thead>
                 <tr>
                   <th>Domain</th>
@@ -1989,13 +1989,13 @@ window.ChildPageLayouts = (() => {
   function buildCredentialExposureLayout() {
     return `
       <div class="child-page-container" id="credential-exposure-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-key"></i> Credential Exposure Check</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="check-credentials"><i class="fas fa-search"></i> Check Now</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-key"></i> Credential Exposure Check</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="check-credentials"><i class="fas fa-search"></i> Check Now</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="exposure-summary" id="credential-exposure-summary">
             <div class="summary-card">
               <div class="summary-icon red"><i class="fas fa-exclamation-circle"></i></div>
@@ -2013,8 +2013,8 @@ window.ChildPageLayouts = (() => {
               <div class="summary-label">Secure</div>
             </div>
           </div>
-          <div class="caido-table-container">
-            <table class="caido-table" id="credential-exposure-table">
+          <div class="cf-table-container">
+            <table class="cf-table" id="credential-exposure-table">
               <thead>
                 <tr>
                   <th>Account</th>
@@ -2035,14 +2035,14 @@ window.ChildPageLayouts = (() => {
   function buildTrackingDetectionLayout() {
     return `
       <div class="child-page-container" id="tracking-detection-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-eye-slash"></i> Tracking Detection</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="refresh-trackers"><i class="fas fa-sync"></i> Refresh</button>
-            <button class="caido-btn primary" id="block-all-trackers"><i class="fas fa-ban"></i> Block All</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-eye-slash"></i> Tracking Detection</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="refresh-trackers"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="cf-btn primary" id="block-all-trackers"><i class="fas fa-ban"></i> Block All</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="tracker-stats" id="tracker-stats">
             <div class="stat-card">
               <div class="stat-value" id="trackers-blocked">0</div>
@@ -2053,8 +2053,8 @@ window.ChildPageLayouts = (() => {
               <div class="stat-label">Trackers Detected</div>
             </div>
           </div>
-          <div class="caido-table-container">
-            <table class="caido-table" id="trackers-table">
+          <div class="cf-table-container">
+            <table class="cf-table" id="trackers-table">
               <thead>
                 <tr>
                   <th>Tracker</th>
@@ -2076,15 +2076,15 @@ window.ChildPageLayouts = (() => {
   function buildDownloadAnalysisLayout() {
     return `
       <div class="child-page-container" id="download-analysis-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-download"></i> Download Analysis</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="scan-downloads"><i class="fas fa-search"></i> Scan Downloads</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-download"></i> Download Analysis</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="scan-downloads"><i class="fas fa-search"></i> Scan Downloads</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="downloads-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="downloads-table">
               <thead>
                 <tr>
                   <th>File Name</th>
@@ -2111,20 +2111,20 @@ window.ChildPageLayouts = (() => {
   function buildEventFeedLayout() {
     return `
       <div class="child-page-container" id="event-feed-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-stream"></i> Real-Time Event Feed</div>
-          <div class="caido-panel-actions">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-stream"></i> Real-Time Event Feed</div>
+          <div class="cf-panel-actions">
             <div class="event-filters">
-              <button class="caido-btn filter-btn active" data-filter="all">All</button>
-              <button class="caido-btn filter-btn" data-filter="threat">Threats</button>
-              <button class="caido-btn filter-btn" data-filter="alert">Alerts</button>
-              <button class="caido-btn filter-btn" data-filter="info">Info</button>
+              <button class="cf-btn filter-btn active" data-filter="all">All</button>
+              <button class="cf-btn filter-btn" data-filter="threat">Threats</button>
+              <button class="cf-btn filter-btn" data-filter="alert">Alerts</button>
+              <button class="cf-btn filter-btn" data-filter="info">Info</button>
             </div>
-            <button class="caido-btn" id="pause-feed"><i class="fas fa-pause"></i></button>
-            <button class="caido-btn" id="clear-feed"><i class="fas fa-trash"></i></button>
+            <button class="cf-btn" id="pause-feed"><i class="fas fa-pause"></i></button>
+            <button class="cf-btn" id="clear-feed"><i class="fas fa-trash"></i></button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="event-feed-list" id="realtime-event-feed">
             <div class="event-item threat">
               <div class="event-time">14:32:05</div>
@@ -2159,19 +2159,19 @@ window.ChildPageLayouts = (() => {
   function buildRiskAnalysisLayout() {
     return `
       <div class="child-page-container" id="risk-analysis-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-chart-pie"></i> Risk Analysis</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="run-risk-analysis"><i class="fas fa-play"></i> Run Analysis</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-chart-pie"></i> Risk Analysis</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="run-risk-analysis"><i class="fas fa-play"></i> Run Analysis</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="risk-overview" id="risk-overview">
             <div class="risk-score-card">
               <div class="risk-score-circle">
                 <svg viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--caido-bg-light)" stroke-width="8"/>
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--caido-warning)" stroke-width="8"
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--cf-bg-light)" stroke-width="8"/>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="var(--cf-warning)" stroke-width="8"
                     stroke-dasharray="283" stroke-dashoffset="85" stroke-linecap="round"/>
                 </svg>
                 <div class="risk-value">72</div>
@@ -2183,22 +2183,22 @@ window.ChildPageLayouts = (() => {
             <h4>Risk Categories</h4>
             <div class="risk-category">
               <span class="category-name">Network Security</span>
-              <div class="category-bar"><div class="bar-fill" style="width: 65%; background: var(--caido-warning);"></div></div>
+              <div class="category-bar"><div class="bar-fill" style="width: 65%; background: var(--cf-warning);"></div></div>
               <span class="category-score">65</span>
             </div>
             <div class="risk-category">
               <span class="category-name">Application Security</span>
-              <div class="category-bar"><div class="bar-fill" style="width: 78%; background: var(--caido-warning);"></div></div>
+              <div class="category-bar"><div class="bar-fill" style="width: 78%; background: var(--cf-warning);"></div></div>
               <span class="category-score">78</span>
             </div>
             <div class="risk-category">
               <span class="category-name">Data Security</span>
-              <div class="category-bar"><div class="bar-fill" style="width: 45%; background: var(--caido-success);"></div></div>
+              <div class="category-bar"><div class="bar-fill" style="width: 45%; background: var(--cf-success);"></div></div>
               <span class="category-score">45</span>
             </div>
             <div class="risk-category">
               <span class="category-name">Compliance</span>
-              <div class="category-bar"><div class="bar-fill" style="width: 82%; background: var(--caido-error);"></div></div>
+              <div class="category-bar"><div class="bar-fill" style="width: 82%; background: var(--cf-error);"></div></div>
               <span class="category-score">82</span>
             </div>
           </div>
@@ -2210,22 +2210,22 @@ window.ChildPageLayouts = (() => {
   function buildThreatMapLayout() {
     return `
       <div class="child-page-container" id="threat-map-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-globe-americas"></i> Global Threat Map</div>
-          <div class="caido-panel-actions">
-            <select id="threat-map-filter" class="caido-select">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-globe-americas"></i> Global Threat Map</div>
+          <div class="cf-panel-actions">
+            <select id="threat-map-filter" class="cf-select">
               <option value="all">All Threats</option>
               <option value="malware">Malware</option>
               <option value="ddos">DDoS</option>
               <option value="phishing">Phishing</option>
             </select>
-            <button class="caido-btn" id="refresh-threat-map"><i class="fas fa-sync"></i></button>
+            <button class="cf-btn" id="refresh-threat-map"><i class="fas fa-sync"></i></button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="threat-map-container" id="threat-map-container">
             <div class="map-placeholder">
-              <i class="fas fa-globe-americas" style="font-size: 64px; color: var(--caido-primary);"></i>
+              <i class="fas fa-globe-americas" style="font-size: 64px; color: var(--cf-primary);"></i>
               <p>Global Threat Map Visualization</p>
               <p class="text-secondary">Real-time threat activity from around the world</p>
             </div>
@@ -2256,13 +2256,13 @@ window.ChildPageLayouts = (() => {
     
     return `
       <div class="child-page-container" id="${mode}-scan-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-${config.icon}"></i> ${config.title}</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-${mode}-scan"><i class="fas fa-play"></i> Start Scan</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-${config.icon}"></i> ${config.title}</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-${mode}-scan"><i class="fas fa-play"></i> Start Scan</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="scan-info">
             <p>${config.desc}</p>
             <p class="text-secondary">Estimated duration: ${config.duration}</p>
@@ -2271,7 +2271,7 @@ window.ChildPageLayouts = (() => {
             <h4>Scan Configuration</h4>
             <div class="form-group">
               <label>Target</label>
-              <input type="text" id="${mode}-scan-target" class="caido-input" placeholder="Enter target URL or IP...">
+              <input type="text" id="${mode}-scan-target" class="cf-input" placeholder="Enter target URL or IP...">
             </div>
             <div class="form-group">
               <label>Scan Options</label>
@@ -2304,16 +2304,16 @@ window.ChildPageLayouts = (() => {
   function buildAgentTasksLayout() {
     return `
       <div class="child-page-container" id="agent-tasks-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-tasks"></i> Active Agent Tasks</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="pause-all-tasks"><i class="fas fa-pause"></i> Pause All</button>
-            <button class="caido-btn primary" id="create-task"><i class="fas fa-plus"></i> New Task</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-tasks"></i> Active Agent Tasks</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="pause-all-tasks"><i class="fas fa-pause"></i> Pause All</button>
+            <button class="cf-btn primary" id="create-task"><i class="fas fa-plus"></i> New Task</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="agent-tasks-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="agent-tasks-table">
               <thead>
                 <tr>
                   <th>Task ID</th>
@@ -2336,15 +2336,15 @@ window.ChildPageLayouts = (() => {
   function buildAgentScheduleLayout() {
     return `
       <div class="child-page-container" id="agent-schedule-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-calendar-alt"></i> Scheduled Tasks</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="schedule-task"><i class="fas fa-plus"></i> Schedule Task</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-calendar-alt"></i> Scheduled Tasks</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="schedule-task"><i class="fas fa-plus"></i> Schedule Task</button>
           </div>
         </div>
-        <div class="caido-panel-content">
-          <div class="caido-table-container">
-            <table class="caido-table" id="scheduled-tasks-table">
+        <div class="cf-panel-content">
+          <div class="cf-table-container">
+            <table class="cf-table" id="scheduled-tasks-table">
               <thead>
                 <tr>
                   <th>Task</th>
@@ -2366,18 +2366,18 @@ window.ChildPageLayouts = (() => {
   function buildAgentDecisionsLayout() {
     return `
       <div class="child-page-container" id="agent-decisions-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-brain"></i> Agent Decisions & Alerts</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="clear-decisions"><i class="fas fa-trash"></i> Clear</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-brain"></i> Agent Decisions & Alerts</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="clear-decisions"><i class="fas fa-trash"></i> Clear</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="decisions-timeline" id="decisions-timeline">
             <div class="decision-item">
               <div class="decision-time">2 minutes ago</div>
               <div class="decision-content">
-                <div class="decision-type"><span class="caido-badge blue">Auto-Block</span></div>
+                <div class="decision-type"><span class="cf-badge blue">Auto-Block</span></div>
                 <div class="decision-title">Blocked Suspicious IP</div>
                 <div class="decision-desc">IP 192.168.1.100 blocked due to repeated failed login attempts</div>
               </div>
@@ -2385,7 +2385,7 @@ window.ChildPageLayouts = (() => {
             <div class="decision-item">
               <div class="decision-time">15 minutes ago</div>
               <div class="decision-content">
-                <div class="decision-type"><span class="caido-badge orange">Alert</span></div>
+                <div class="decision-type"><span class="cf-badge orange">Alert</span></div>
                 <div class="decision-title">Unusual Traffic Pattern</div>
                 <div class="decision-desc">Detected anomalous outbound traffic to unknown endpoint</div>
               </div>
@@ -2399,14 +2399,14 @@ window.ChildPageLayouts = (() => {
   function buildAgentMemoryLayout() {
     return `
       <div class="child-page-container" id="agent-memory-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-memory"></i> Agent Memory</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="export-memory"><i class="fas fa-download"></i> Export</button>
-            <button class="caido-btn danger" id="clear-memory"><i class="fas fa-trash"></i> Clear Memory</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-memory"></i> Agent Memory</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="export-memory"><i class="fas fa-download"></i> Export</button>
+            <button class="cf-btn danger" id="clear-memory"><i class="fas fa-trash"></i> Clear Memory</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="memory-stats" id="memory-stats">
             <div class="stat-card">
               <div class="stat-value" id="memory-threats">0</div>
@@ -2435,19 +2435,19 @@ window.ChildPageLayouts = (() => {
   function buildSearchAdvancedLayout() {
     return `
       <div class="child-page-container" id="search-advanced-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-search-plus"></i> Advanced Search</div>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-search-plus"></i> Advanced Search</div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <form id="advanced-search-form" class="search-form">
             <div class="form-group">
               <label>Search Query</label>
-              <input type="text" id="search-query" class="caido-input" placeholder="Enter search terms...">
+              <input type="text" id="search-query" class="cf-input" placeholder="Enter search terms...">
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label>Method</label>
-                <select id="search-method" class="caido-select">
+                <select id="search-method" class="cf-select">
                   <option value="">Any</option>
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
@@ -2457,7 +2457,7 @@ window.ChildPageLayouts = (() => {
               </div>
               <div class="form-group">
                 <label>Status</label>
-                <select id="search-status" class="caido-select">
+                <select id="search-status" class="cf-select">
                   <option value="">Any</option>
                   <option value="2xx">2xx Success</option>
                   <option value="3xx">3xx Redirect</option>
@@ -2466,7 +2466,7 @@ window.ChildPageLayouts = (() => {
                 </select>
               </div>
             </div>
-            <button type="submit" class="caido-btn primary">Search</button>
+            <button type="submit" class="cf-btn primary">Search</button>
           </form>
           <div class="search-results" id="advanced-search-results"></div>
         </div>
@@ -2493,13 +2493,13 @@ window.ChildPageLayouts = (() => {
   function buildExportsReportsLayout() {
     return `
       <div class="child-page-container" id="exports-reports-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-file-export"></i> Exported Reports</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="generate-report"><i class="fas fa-plus"></i> Generate Report</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-file-export"></i> Exported Reports</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="generate-report"><i class="fas fa-plus"></i> Generate Report</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="reports-list" id="exports-reports-list"></div>
         </div>
       </div>
@@ -2509,13 +2509,13 @@ window.ChildPageLayouts = (() => {
   function buildFilesProjectLayout() {
     return `
       <div class="child-page-container" id="files-project-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-folder-open"></i> Project Files</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="upload-file"><i class="fas fa-upload"></i> Upload</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-folder-open"></i> Project Files</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="upload-file"><i class="fas fa-upload"></i> Upload</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="files-tree" id="project-files-tree"></div>
         </div>
       </div>
@@ -2525,10 +2525,10 @@ window.ChildPageLayouts = (() => {
   function buildPluginsInstalledLayout() {
     return `
       <div class="child-page-container" id="plugins-installed-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-puzzle-piece"></i> Installed Plugins</div>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-puzzle-piece"></i> Installed Plugins</div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="plugins-list" id="plugins-installed-list"></div>
         </div>
       </div>
@@ -2538,20 +2538,20 @@ window.ChildPageLayouts = (() => {
   function buildWorkspaceSettingsLayout() {
     return `
       <div class="child-page-container" id="workspace-settings-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-cog"></i> Workspace Settings</div>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-cog"></i> Workspace Settings</div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <form id="workspace-settings-form">
             <div class="form-group">
               <label>Workspace Name</label>
-              <input type="text" class="caido-input" id="workspace-name" placeholder="My Workspace">
+              <input type="text" class="cf-input" id="workspace-name" placeholder="My Workspace">
             </div>
             <div class="form-group">
               <label>Description</label>
-              <textarea class="caido-textarea" id="workspace-desc" rows="3"></textarea>
+              <textarea class="cf-textarea" id="workspace-desc" rows="3"></textarea>
             </div>
-            <button type="submit" class="caido-btn primary">Save Settings</button>
+            <button type="submit" class="cf-btn primary">Save Settings</button>
           </form>
         </div>
       </div>
@@ -2561,13 +2561,13 @@ window.ChildPageLayouts = (() => {
   function buildSyncPendingLayout() {
     return `
       <div class="child-page-container" id="sync-pending-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-clock"></i> Pending Sync</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="sync-now"><i class="fas fa-sync"></i> Sync Now</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-clock"></i> Pending Sync</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="sync-now"><i class="fas fa-sync"></i> Sync Now</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="pending-list" id="sync-pending-list"></div>
         </div>
       </div>
@@ -2577,20 +2577,20 @@ window.ChildPageLayouts = (() => {
   function buildExtInstallLayout() {
     return `
       <div class="child-page-container" id="ext-install-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-download"></i> Install Browser Extension</div>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-download"></i> Install Browser Extension</div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="ext-install-options">
             <div class="ext-option">
               <img src="assets/chrome-icon.svg" alt="Chrome" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%234285f4%22/></svg>'">
               <h4>Chrome</h4>
-              <button class="caido-btn primary">Install</button>
+              <button class="cf-btn primary">Install</button>
             </div>
             <div class="ext-option">
               <img src="assets/firefox-icon.svg" alt="Firefox" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff9400%22/></svg>'">
               <h4>Firefox</h4>
-              <button class="caido-btn primary">Install</button>
+              <button class="cf-btn primary">Install</button>
             </div>
           </div>
           <div class="install-status" id="ext-install-status"></div>
@@ -2602,10 +2602,10 @@ window.ChildPageLayouts = (() => {
   function buildMobilePairLayout() {
     return `
       <div class="child-page-container" id="mobile-pair-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-mobile-alt"></i> Pair Mobile Device</div>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-mobile-alt"></i> Pair Mobile Device</div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="pair-instructions">
             <p>Scan the QR code with the CyberForge mobile app to pair your device.</p>
             <div class="qr-container" id="mobile-qr-code"></div>
@@ -2635,14 +2635,14 @@ window.ChildPageLayouts = (() => {
   function buildAgentControlLayout() {
     return `
       <div class="child-page-container" id="agent-control-page">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title"><i class="fas fa-robot"></i> AI Agent Control</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="start-agent"><i class="fas fa-play"></i> Start Agent</button>
-            <button class="caido-btn" id="stop-agent"><i class="fas fa-stop"></i> Stop</button>
+        <div class="cf-panel-header">
+          <div class="cf-panel-title"><i class="fas fa-robot"></i> AI Agent Control</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="start-agent"><i class="fas fa-play"></i> Start Agent</button>
+            <button class="cf-btn" id="stop-agent"><i class="fas fa-stop"></i> Stop</button>
           </div>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="agent-status">
             <div class="status-indicator" id="agent-status-indicator">
               <span class="status-dot offline"></span>
@@ -2652,8 +2652,8 @@ window.ChildPageLayouts = (() => {
           <div class="agent-console" id="agent-control-panel">
             <div class="console-output" id="agent-console-output"></div>
             <div class="console-input">
-              <input type="text" id="agent-command" class="caido-input" placeholder="Enter command...">
-              <button class="caido-btn primary" id="send-agent-command"><i class="fas fa-paper-plane"></i></button>
+              <input type="text" id="agent-command" class="cf-input" placeholder="Enter command...">
+              <button class="cf-btn primary" id="send-agent-command"><i class="fas fa-paper-plane"></i></button>
             </div>
           </div>
         </div>

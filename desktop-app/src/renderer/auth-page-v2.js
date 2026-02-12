@@ -270,7 +270,7 @@ async function handleLogin(event) {
             } else {
                 // Redirect to main app after short delay
                 setTimeout(() => {
-                    window.location.href = 'caido-index.html';
+                    window.location.href = 'dashboard.html';
                 }, 1000);
             }
         } else {
@@ -419,7 +419,7 @@ async function handleRegister(event) {
             } else {
                 // Redirect to main app after short delay
                 setTimeout(() => {
-                    window.location.href = 'caido-index.html';
+                    window.location.href = 'dashboard.html';
                 }, 1000);
             }
         } else {

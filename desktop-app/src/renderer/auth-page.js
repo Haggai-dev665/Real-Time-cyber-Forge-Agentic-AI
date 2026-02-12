@@ -499,7 +499,7 @@
             window.electronAPI.auth.onAuthSuccess();
         } else {
             // For web fallback, reload to main app
-            window.location.href = 'caido-index.html';
+            window.location.href = 'dashboard.html';
         }
     }
 

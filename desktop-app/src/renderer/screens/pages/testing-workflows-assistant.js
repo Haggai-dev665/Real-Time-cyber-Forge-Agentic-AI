@@ -23,7 +23,7 @@ class WorkflowsActivePage extends BasePage {
                         <h2>Active Workflows</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-workflow">
+                        <button class="cf-btn primary" id="create-workflow">
                             <i class="fas fa-plus"></i> New Workflow
                         </button>
                     </div>
@@ -89,7 +89,7 @@ class WorkflowsActivePage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-project-diagram"></i>
                     <p>No active workflows</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('create-workflow').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('create-workflow').click()">
                         Create Workflow
                     </button>
                 </div>
@@ -115,18 +115,18 @@ class WorkflowsActivePage extends BasePage {
                 </div>
                 <div class="workflow-actions">
                     ${workflow.status === 'running' ? `
-                        <button class="caido-btn small warning" data-action="pause">
+                        <button class="cf-btn small warning" data-action="pause">
                             <i class="fas fa-pause"></i> Pause
                         </button>
                     ` : `
-                        <button class="caido-btn small success" data-action="resume">
+                        <button class="cf-btn small success" data-action="resume">
                             <i class="fas fa-play"></i> Resume
                         </button>
                     `}
-                    <button class="caido-btn small danger" data-action="stop">
+                    <button class="cf-btn small danger" data-action="stop">
                         <i class="fas fa-stop"></i> Stop
                     </button>
-                    <button class="caido-btn small" data-action="view">
+                    <button class="cf-btn small" data-action="view">
                         <i class="fas fa-eye"></i> View
                     </button>
                 </div>
@@ -169,11 +169,11 @@ class WorkflowsActivePage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Workflow Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Template</label>
-                <select name="template" class="caido-select">
+                <select name="template" class="cf-select">
                     <option value="blank">Blank Workflow</option>
                     <option value="auth-test">Authentication Testing</option>
                     <option value="sqli-test">SQL Injection Testing</option>
@@ -226,7 +226,7 @@ class WorkflowsTemplatesPage extends BasePage {
                         <h2>Workflow Templates</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="import-template">
+                        <button class="cf-btn" id="import-template">
                             <i class="fas fa-upload"></i> Import
                         </button>
                     </div>
@@ -255,10 +255,10 @@ class WorkflowsTemplatesPage extends BasePage {
                 <h4>${template.name}</h4>
                 <p>${template.description}</p>
                 <div class="template-actions">
-                    <button class="caido-btn small primary" data-action="use">
+                    <button class="cf-btn small primary" data-action="use">
                         <i class="fas fa-play"></i> Use Template
                     </button>
-                    <button class="caido-btn small" data-action="preview">
+                    <button class="cf-btn small" data-action="preview">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
@@ -280,11 +280,11 @@ class WorkflowsTemplatesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Workflow Name</label>
-                <input type="text" name="name" class="caido-input" value="${template.name}" />
+                <input type="text" name="name" class="cf-input" value="${template.name}" />
             </div>
             <div class="form-group">
                 <label>Target Scope</label>
-                <input type="text" name="scope" class="caido-input" placeholder="*.example.com" />
+                <input type="text" name="scope" class="cf-input" placeholder="*.example.com" />
             </div>
         `;
 
@@ -322,7 +322,7 @@ class WorkflowsSchedulePage extends BasePage {
                         <h2>Scheduled Workflows</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="schedule-workflow">
+                        <button class="cf-btn primary" id="schedule-workflow">
                             <i class="fas fa-plus"></i> Schedule
                         </button>
                     </div>
@@ -392,13 +392,13 @@ class WorkflowsSchedulePage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Select Workflow</label>
-                <select name="workflowId" class="caido-select" id="schedule-workflow-select">
+                <select name="workflowId" class="cf-select" id="schedule-workflow-select">
                     <option value="">Loading...</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Schedule Type</label>
-                <select name="scheduleType" class="caido-select">
+                <select name="scheduleType" class="cf-select">
                     <option value="interval">Interval</option>
                     <option value="cron">Cron Expression</option>
                     <option value="daily">Daily</option>
@@ -407,7 +407,7 @@ class WorkflowsSchedulePage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Value</label>
-                <input type="text" name="value" class="caido-input" placeholder="e.g., 30m or 0 0 * * *" />
+                <input type="text" name="value" class="cf-input" placeholder="e.g., 30m or 0 0 * * *" />
             </div>
         `;
 
@@ -463,7 +463,7 @@ class AssistantChatPage extends BasePage {
                             <span>Security Assistant</span>
                             <span class="status online">Online</span>
                         </div>
-                        <button class="caido-btn small" id="new-chat">
+                        <button class="cf-btn small" id="new-chat">
                             <i class="fas fa-plus"></i> New Chat
                         </button>
                     </div>
@@ -489,7 +489,7 @@ class AssistantChatPage extends BasePage {
 
                     <div class="chat-input-container">
                         <textarea id="chat-input" placeholder="Ask me anything about security testing..." rows="1"></textarea>
-                        <button class="caido-btn primary" id="send-message">
+                        <button class="cf-btn primary" id="send-message">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
@@ -647,7 +647,7 @@ class AssistantSuggestionsPage extends BasePage {
                         <h2>AI Suggestions</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="generate-suggestions">
+                        <button class="cf-btn primary" id="generate-suggestions">
                             <i class="fas fa-sync"></i> Generate New
                         </button>
                     </div>
@@ -696,10 +696,10 @@ class AssistantSuggestionsPage extends BasePage {
                     ${suggestion.endpoint ? `<code>${suggestion.endpoint}</code>` : ''}
                 </div>
                 <div class="suggestion-actions">
-                    <button class="caido-btn small primary" data-action="apply">
+                    <button class="cf-btn small primary" data-action="apply">
                         <i class="fas fa-check"></i> Apply
                     </button>
-                    <button class="caido-btn small" data-action="dismiss">
+                    <button class="cf-btn small" data-action="dismiss">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -721,7 +721,7 @@ class AssistantSuggestionsPage extends BasePage {
                     <p>Several endpoints accept user input without apparent sanitization. Consider testing with SQL injection payloads.</p>
                 </div>
                 <div class="suggestion-actions">
-                    <button class="caido-btn small primary">
+                    <button class="cf-btn small primary">
                         <i class="fas fa-play"></i> Run Test
                     </button>
                 </div>
@@ -735,7 +735,7 @@ class AssistantSuggestionsPage extends BasePage {
                     <p>Some cookies are missing HttpOnly and Secure flags. Review session management.</p>
                 </div>
                 <div class="suggestion-actions">
-                    <button class="caido-btn small primary">
+                    <button class="cf-btn small primary">
                         <i class="fas fa-eye"></i> View Details
                     </button>
                 </div>

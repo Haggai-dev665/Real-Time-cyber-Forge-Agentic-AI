@@ -1,4 +1,4 @@
-// Caido-style Desktop App Controller
+// CyberForge Desktop App Controller
 // Handles navigation, table rendering, context menu, and interactions
 
 (() => {
@@ -97,8 +97,8 @@
         </div>
         <div class="modal-body">${content}</div>
         <div class="modal-footer">
-          <button class="caido-btn modal-cancel">Cancel</button>
-          <button class="caido-btn primary modal-submit">${submitText}</button>
+          <button class="cf-btn modal-cancel">Cancel</button>
+          <button class="cf-btn primary modal-submit">${submitText}</button>
         </div>
       </div>
     `;
@@ -300,7 +300,7 @@
   function updateConnectionStatus(connected) {
     const statusEl = document.getElementById('backend-status');
     if (statusEl) {
-      statusEl.className = `caido-badge ${connected ? 'green' : 'red'}`;
+      statusEl.className = `cf-badge ${connected ? 'green' : 'red'}`;
       statusEl.textContent = connected ? 'Connected' : 'Offline';
     }
   }
@@ -1137,7 +1137,7 @@
           (req.status < 300 ? '' : req.status < 400 ? 'redirect' : 'error') : '';
         
         return `
-          <tr class="caido-table-row" data-request-id="${req.id}">
+          <tr class="cf-table-row" data-request-id="${req.id}">
             <td class="cell-id">${index + 1}</td>
             <td class="cell-host">${hostname}</td>
             <td class="cell-method method-${req.method.toLowerCase()}">${req.method}</td>
@@ -2231,7 +2231,7 @@
   }
 
   function bindTabs() {
-    const tabs = document.querySelectorAll('.caido-tab');
+    const tabs = document.querySelectorAll('.cf-tab');
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
@@ -2783,10 +2783,10 @@
 
   function buildHttpHistoryLayout() {
     return `
-      <div class="caido-split-horizontal" id="http-history-screen">
-        <div class="caido-panel" style="flex: 1;">
-          <div class="caido-table-container">
-            <table class="caido-table" id="requests-table">
+      <div class="cf-split-horizontal" id="http-history-screen">
+        <div class="cf-panel" style="flex: 1;">
+          <div class="cf-table-container">
+            <table class="cf-table" id="requests-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -2801,16 +2801,16 @@
             </table>
           </div>
         </div>
-        <div class="caido-resizer" id="main-resizer"></div>
-        <div class="caido-panel" id="detail-panel" style="width: 50%;">
-          <div class="caido-panel-header">
-            <div class="caido-panel-title">Request Details</div>
-            <div class="caido-panel-actions">
+        <div class="cf-resizer" id="main-resizer"></div>
+        <div class="cf-panel" id="detail-panel" style="width: 50%;">
+          <div class="cf-panel-header">
+            <div class="cf-panel-title">Request Details</div>
+            <div class="cf-panel-actions">
               <button class="panel-action-btn" title="Copy"><i class="fas fa-copy"></i></button>
               <button class="panel-action-btn" title="Download"><i class="fas fa-download"></i></button>
             </div>
           </div>
-          <div class="caido-panel-content" id="request-detail-content">
+          <div class="cf-panel-content" id="request-detail-content">
             <div class="empty-state">
               <i class="fas fa-mouse-pointer empty-state-icon"></i>
               <div class="empty-state-title">Select a request</div>
@@ -2824,16 +2824,16 @@
 
   function buildInterceptLayout() {
     return `
-      <div class="caido-panel" style="flex:1;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Intercept Queue</div>
-          <div class="caido-panel-actions">
+      <div class="cf-panel" style="flex:1;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Intercept Queue</div>
+          <div class="cf-panel-actions">
             <button class="panel-action-btn" title="Drop All"><i class="fas fa-trash"></i></button>
             <button class="panel-action-btn" title="Forward All"><i class="fas fa-arrow-right"></i></button>
           </div>
         </div>
-        <div class="caido-table-container">
-          <table class="caido-table" id="intercept-table">
+        <div class="cf-table-container">
+          <table class="cf-table" id="intercept-table">
             <thead><tr><th>ID</th><th>Host</th><th>Method</th><th>Path</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="intercept-tbody"></tbody>
           </table>
@@ -2844,12 +2844,12 @@
 
   function buildWsLayout() {
     return `
-      <div class="caido-panel" style="flex:1;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">WebSocket History</div>
+      <div class="cf-panel" style="flex:1;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">WebSocket History</div>
         </div>
-        <div class="caido-table-container">
-          <table class="caido-table" id="ws-table">
+        <div class="cf-table-container">
+          <table class="cf-table" id="ws-table">
             <thead><tr><th>ID</th><th>Host</th><th>Path</th><th>Messages</th><th>Status</th></tr></thead>
             <tbody id="ws-tbody"></tbody>
           </table>
@@ -2860,15 +2860,15 @@
 
   function buildMatchReplaceLayout() {
     return `
-      <div class="caido-panel" style="flex:1;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Match & Replace Rules</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-rule"><i class="fas fa-plus"></i> Add Rule</button>
+      <div class="cf-panel" style="flex:1;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Match & Replace Rules</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-rule"><i class="fas fa-plus"></i> Add Rule</button>
           </div>
         </div>
-        <div class="caido-table-container">
-          <table class="caido-table" id="rules-table">
+        <div class="cf-table-container">
+          <table class="cf-table" id="rules-table">
             <thead><tr><th>ID</th><th>Type</th><th>Match</th><th>Replace</th><th>Enabled</th><th>Actions</th></tr></thead>
             <tbody id="rules-tbody"></tbody>
           </table>
@@ -2883,7 +2883,7 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
-            <select class="caido-input" name="type" style="width:100%;">
+            <select class="cf-input" name="type" style="width:100%;">
               <option value="request-header">Request Header</option>
               <option value="request-body">Request Body</option>
               <option value="response-header">Response Header</option>
@@ -2893,11 +2893,11 @@
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Match Pattern (regex)</label>
-            <input class="caido-input" name="match" placeholder="Authorization: Bearer .*" style="width:100%;">
+            <input class="cf-input" name="match" placeholder="Authorization: Bearer .*" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Replace With</label>
-            <input class="caido-input" name="replace" placeholder="Authorization: Bearer NEW_TOKEN" style="width:100%;">
+            <input class="cf-input" name="replace" placeholder="Authorization: Bearer NEW_TOKEN" style="width:100%;">
           </div>
           <div>
             <label><input type="checkbox" name="enabled" checked> Enable rule</label>
@@ -2923,27 +2923,27 @@
 
   function buildReplayLayout() {
     return `
-      <div class="caido-split-horizontal" style="flex:1;">
-        <div class="caido-panel" style="flex: 1;">
-          <div class="caido-panel-header">
-            <div class="caido-panel-title">Requests</div>
+      <div class="cf-split-horizontal" style="flex:1;">
+        <div class="cf-panel" style="flex: 1;">
+          <div class="cf-panel-header">
+            <div class="cf-panel-title">Requests</div>
           </div>
-          <div class="caido-table-container">
-            <table class="caido-table" id="requests-table">
+          <div class="cf-table-container">
+            <table class="cf-table" id="requests-table">
               <thead><tr><th>ID</th><th>Host</th><th>Method</th><th>Path</th><th>Query</th><th>Status</th></tr></thead>
               <tbody id="requests-tbody"></tbody>
             </table>
           </div>
         </div>
-        <div class="caido-resizer" id="main-resizer"></div>
-        <div class="caido-panel" id="detail-panel" style="width: 50%;">
-          <div class="caido-panel-header">
-            <div class="caido-panel-title">Replay Editor</div>
-            <div class="caido-panel-actions">
+        <div class="cf-resizer" id="main-resizer"></div>
+        <div class="cf-panel" id="detail-panel" style="width: 50%;">
+          <div class="cf-panel-header">
+            <div class="cf-panel-title">Replay Editor</div>
+            <div class="cf-panel-actions">
               <button class="panel-action-btn" title="Send"><i class="fas fa-play"></i></button>
             </div>
           </div>
-          <div class="caido-panel-content" id="request-detail-content">
+          <div class="cf-panel-content" id="request-detail-content">
             <div class="empty-state">
               <i class="fas fa-mouse-pointer empty-state-icon"></i>
               <div class="empty-state-title">Select a request</div>
@@ -2957,14 +2957,14 @@
 
   function buildAutomateLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Automate</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="new-automation"><i class="fas fa-plus"></i> New Job</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Automate</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="new-automation"><i class="fas fa-plus"></i> New Job</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div class="automation-grid" id="automations-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
             ${state.automations.length === 0 ? `
               <div class="empty-state" style="grid-column: 1/-1;">
@@ -2973,20 +2973,20 @@
                 <div class="empty-state-description">Create your first automation to run scheduled tasks</div>
               </div>
             ` : state.automations.map(auto => `
-              <div class="automation-card" data-id="${auto.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+              <div class="automation-card" data-id="${auto.id}" style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-                  <i class="fas fa-${auto.type === 'scheduled' ? 'clock' : 'robot'}" style="color:var(--caido-accent-${auto.status === 'active' ? 'blue' : 'orange'});"></i>
+                  <i class="fas fa-${auto.type === 'scheduled' ? 'clock' : 'robot'}" style="color:var(--cf-accent-${auto.status === 'active' ? 'blue' : 'orange'});"></i>
                   <div>
                     <div style="font-weight:600;">${auto.name}</div>
-                    <div style="font-size:11px; color:var(--caido-text-muted);">${auto.schedule || auto.trigger || 'Manual'}</div>
+                    <div style="font-size:11px; color:var(--cf-text-muted);">${auto.schedule || auto.trigger || 'Manual'}</div>
                   </div>
-                  <span class="caido-badge ${auto.status === 'active' ? 'green' : 'orange'}" style="margin-left:auto;">${auto.status}</span>
+                  <span class="cf-badge ${auto.status === 'active' ? 'green' : 'orange'}" style="margin-left:auto;">${auto.status}</span>
                 </div>
-                <div style="font-size:12px; color:var(--caido-text-secondary); margin-bottom:12px;">${auto.description || 'No description'}</div>
+                <div style="font-size:12px; color:var(--cf-text-secondary); margin-bottom:12px;">${auto.description || 'No description'}</div>
                 <div style="display:flex; gap:8px;">
-                  <button class="caido-btn automation-run" data-id="${auto.id}"><i class="fas fa-play"></i> Run</button>
-                  <button class="caido-btn automation-pause" data-id="${auto.id}"><i class="fas fa-${auto.status === 'active' ? 'pause' : 'play'}"></i></button>
-                  <button class="caido-btn automation-delete" data-id="${auto.id}"><i class="fas fa-trash"></i></button>
+                  <button class="cf-btn automation-run" data-id="${auto.id}"><i class="fas fa-play"></i> Run</button>
+                  <button class="cf-btn automation-pause" data-id="${auto.id}"><i class="fas fa-${auto.status === 'active' ? 'pause' : 'play'}"></i></button>
+                  <button class="cf-btn automation-delete" data-id="${auto.id}"><i class="fas fa-trash"></i></button>
                 </div>
               </div>
             `).join('')}
@@ -3003,11 +3003,11 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
-            <input class="caido-input" name="name" placeholder="My Automation" style="width:100%;">
+            <input class="cf-input" name="name" placeholder="My Automation" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
-            <select class="caido-input" name="type" style="width:100%;">
+            <select class="cf-input" name="type" style="width:100%;">
               <option value="scheduled">Scheduled</option>
               <option value="triggered">Triggered</option>
               <option value="manual">Manual</option>
@@ -3015,15 +3015,15 @@
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Schedule/Trigger</label>
-            <input class="caido-input" name="schedule" placeholder="Every 6 hours / On new endpoint" style="width:100%;">
+            <input class="cf-input" name="schedule" placeholder="Every 6 hours / On new endpoint" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
-            <textarea class="caido-input" name="description" rows="3" placeholder="What does this automation do?" style="width:100%;"></textarea>
+            <textarea class="cf-input" name="description" rows="3" placeholder="What does this automation do?" style="width:100%;"></textarea>
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Target URL (optional)</label>
-            <input class="caido-input" name="target" placeholder="https://example.com" style="width:100%;">
+            <input class="cf-input" name="target" placeholder="https://example.com" style="width:100%;">
           </div>
         </div>
       `, async (formData) => {
@@ -3095,31 +3095,31 @@
         <div class="empty-state-description">Create your first workflow to automate security testing</div>
       </div>
     ` : state.workflows.map(wf => `
-      <div class="workflow-card" data-id="${wf.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+      <div class="workflow-card" data-id="${wf.id}" style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
         <div style="display:flex; align-items:center; gap:12px;">
-          <i class="fas fa-project-diagram" style="color:var(--caido-accent-${wf.status === 'active' ? 'cyan' : 'gray'}); font-size:20px;"></i>
+          <i class="fas fa-project-diagram" style="color:var(--cf-accent-${wf.status === 'active' ? 'cyan' : 'gray'}); font-size:20px;"></i>
           <div style="flex:1;">
             <div style="font-weight:600;">${wf.name}</div>
-            <div style="font-size:11px; color:var(--caido-text-muted);">${wf.steps?.length || 0} steps • ${wf.lastRun ? 'Last run: ' + new Date(wf.lastRun).toLocaleString() : 'Never run'}</div>
+            <div style="font-size:11px; color:var(--cf-text-muted);">${wf.steps?.length || 0} steps • ${wf.lastRun ? 'Last run: ' + new Date(wf.lastRun).toLocaleString() : 'Never run'}</div>
           </div>
-          <span class="caido-badge ${wf.status === 'active' ? 'green' : 'orange'}">${wf.status}</span>
-          <button class="caido-btn workflow-run" data-id="${wf.id}"><i class="fas fa-play"></i> Run</button>
-          <button class="caido-btn workflow-edit" data-id="${wf.id}"><i class="fas fa-edit"></i></button>
-          <button class="caido-btn workflow-delete" data-id="${wf.id}"><i class="fas fa-trash"></i></button>
+          <span class="cf-badge ${wf.status === 'active' ? 'green' : 'orange'}">${wf.status}</span>
+          <button class="cf-btn workflow-run" data-id="${wf.id}"><i class="fas fa-play"></i> Run</button>
+          <button class="cf-btn workflow-edit" data-id="${wf.id}"><i class="fas fa-edit"></i></button>
+          <button class="cf-btn workflow-delete" data-id="${wf.id}"><i class="fas fa-trash"></i></button>
         </div>
-        <div style="font-size:12px; color:var(--caido-text-secondary); margin-top:8px;">${wf.description || 'No description'}</div>
+        <div style="font-size:12px; color:var(--cf-text-secondary); margin-top:8px;">${wf.description || 'No description'}</div>
       </div>
     `).join('');
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Workflows</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="new-workflow"><i class="fas fa-plus"></i> New Workflow</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Workflows</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="new-workflow"><i class="fas fa-plus"></i> New Workflow</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div id="workflows-container" style="display:flex; flex-direction:column; gap:12px;">
             ${workflowsHtml}
           </div>
@@ -3135,15 +3135,15 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
-            <input class="caido-input" name="name" placeholder="My Security Workflow" style="width:100%;">
+            <input class="cf-input" name="name" placeholder="My Security Workflow" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
-            <textarea class="caido-input" name="description" rows="3" placeholder="What does this workflow do?" style="width:100%;"></textarea>
+            <textarea class="cf-input" name="description" rows="3" placeholder="What does this workflow do?" style="width:100%;"></textarea>
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Steps (one per line)</label>
-            <textarea class="caido-input" name="steps" rows="5" placeholder="Step 1: Check authentication\nStep 2: Test SQL injection\nStep 3: Verify CSRF protection" style="width:100%;"></textarea>
+            <textarea class="cf-input" name="steps" rows="5" placeholder="Step 1: Check authentication\nStep 2: Test SQL injection\nStep 3: Verify CSRF protection" style="width:100%;"></textarea>
           </div>
         </div>
       `, async (formData) => {
@@ -3208,7 +3208,7 @@
         .ai-chat-list-item:hover { 
           transform: translateX(3px); 
           box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          background: var(--caido-bg-medium) !important;
+          background: var(--cf-bg-medium) !important;
         }
         .ai-chat-list-item:active { transform: scale(0.98); }
         .ai-message-animated { animation: aiMessageSlide 0.2s ease-out; }
@@ -3219,12 +3219,12 @@
         .ai-input-glow { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
         .ai-input-glow:focus { 
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); 
-          border-color: var(--caido-accent-purple) !important;
+          border-color: var(--cf-accent-purple) !important;
         }
         .ai-quick-action { transition: all 0.1s ease; }
         .ai-quick-action:hover { 
           transform: translateY(-1px); 
-          background: var(--caido-accent-purple) !important;
+          background: var(--cf-accent-purple) !important;
           color: white !important;
         }
         .ai-quick-action:active { transform: scale(0.95); }
@@ -3241,7 +3241,7 @@
           display: inline-block; 
           width: 6px; height: 6px; 
           border-radius: 50%; 
-          background: var(--caido-accent-purple);
+          background: var(--cf-accent-purple);
           margin: 0 2px;
         }
         .ai-typing-dot:nth-child(1) { animation: aiTypingDot 1s infinite 0s; }
@@ -3266,94 +3266,94 @@
           .ai-quick-actions-bar { display:none !important; }
         }
       </style>
-      <div class="caido-panel ai-chat-wrapper" style="flex:1; display:flex; height:100%;">
+      <div class="cf-panel ai-chat-wrapper" style="flex:1; display:flex; height:100%;">
         <!-- Main Chat Panel -->
         <div style="flex:1; display:flex; flex-direction:column; height:100%; min-width:0;">
           <!-- Header with Status -->
-          <div class="caido-panel-header" style="border-bottom:1px solid var(--caido-border); flex-shrink:0;">
-            <div class="caido-panel-title" style="display:flex; align-items:center; gap:12px;">
-              <i class="fas fa-robot" style="color:var(--caido-accent-purple);"></i>
+          <div class="cf-panel-header" style="border-bottom:1px solid var(--cf-border); flex-shrink:0;">
+            <div class="cf-panel-title" style="display:flex; align-items:center; gap:12px;">
+              <i class="fas fa-robot" style="color:var(--cf-accent-purple);"></i>
               CyberForge AI Assistant
             </div>
-            <div class="caido-panel-actions" style="display:flex; gap:8px; align-items:center;">
-              <span id="ai-status" class="caido-badge green" style="display:flex; align-items:center; gap:4px;">
+            <div class="cf-panel-actions" style="display:flex; gap:8px; align-items:center;">
+              <span id="ai-status" class="cf-badge green" style="display:flex; align-items:center; gap:4px;">
                 <span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:#22c55e;"></span>
                 Online
               </span>
-              <button class="caido-btn ai-btn-bounce" id="toggle-sidebar-mobile" title="Toggle history" style="display:none;">
+              <button class="cf-btn ai-btn-bounce" id="toggle-sidebar-mobile" title="Toggle history" style="display:none;">
                 <i class="fas fa-history"></i>
               </button>
-              <button class="caido-btn ai-btn-bounce" id="clear-chat" title="Clear conversation"><i class="fas fa-trash-alt"></i></button>
-              <button class="caido-btn ai-btn-bounce" id="export-chat" title="Export conversation"><i class="fas fa-download"></i></button>
+              <button class="cf-btn ai-btn-bounce" id="clear-chat" title="Clear conversation"><i class="fas fa-trash-alt"></i></button>
+              <button class="cf-btn ai-btn-bounce" id="export-chat" title="Export conversation"><i class="fas fa-download"></i></button>
             </div>
           </div>
 
           <!-- Chat Meta -->
-          <div style="padding:8px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-medium); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+          <div style="padding:8px 16px; border-bottom:1px solid var(--cf-border); background:var(--cf-bg-medium); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
             <div style="display:flex; flex-direction:column; min-width:0; flex:1;">
               <span id="ai-chat-title" style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">New Chat</span>
-              <span id="ai-chat-subtitle" style="font-size:11px; color:var(--caido-text-muted);">No messages yet</span>
+              <span id="ai-chat-subtitle" style="font-size:11px; color:var(--cf-text-muted);">No messages yet</span>
             </div>
-            <button class="caido-btn ai-btn-bounce" id="ai-new-chat-inline" title="Start new chat"><i class="fas fa-plus"></i></button>
+            <button class="cf-btn ai-btn-bounce" id="ai-new-chat-inline" title="Start new chat"><i class="fas fa-plus"></i></button>
           </div>
 
           <!-- AI Phase Indicator -->
-          <div id="ai-phase-indicator" class="ai-phase-indicator" style="display:none; padding:8px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-dark); font-size:11px; color:var(--caido-text-muted); flex-shrink:0;">
+          <div id="ai-phase-indicator" class="ai-phase-indicator" style="display:none; padding:8px 16px; border-bottom:1px solid var(--cf-border); background:var(--cf-bg-dark); font-size:11px; color:var(--cf-text-muted); flex-shrink:0;">
             <span id="ai-phase-text"></span>
           </div>
 
           <!-- Quick Actions Bar -->
-          <div class="ai-quick-actions-bar" style="padding:10px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-medium); flex-shrink:0;">
+          <div class="ai-quick-actions-bar" style="padding:10px 16px; border-bottom:1px solid var(--cf-border); background:var(--cf-bg-medium); flex-shrink:0;">
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="caido-btn ai-quick-action" data-action="scan-url" style="font-size:11px; padding:6px 10px;">
+              <button class="cf-btn ai-quick-action" data-action="scan-url" style="font-size:11px; padding:6px 10px;">
                 <i class="fas fa-globe"></i> Scan URL
               </button>
-              <button class="caido-btn ai-quick-action" data-action="analyze-request" style="font-size:11px; padding:6px 10px;">
+              <button class="cf-btn ai-quick-action" data-action="analyze-request" style="font-size:11px; padding:6px 10px;">
                 <i class="fas fa-code"></i> Analyze Request
               </button>
-              <button class="caido-btn ai-quick-action" data-action="find-vulns" style="font-size:11px; padding:6px 10px;">
+              <button class="cf-btn ai-quick-action" data-action="find-vulns" style="font-size:11px; padding:6px 10px;">
                 <i class="fas fa-bug"></i> Find Vulnerabilities
               </button>
-              <button class="caido-btn ai-quick-action" data-action="generate-payload" style="font-size:11px; padding:6px 10px;">
+              <button class="cf-btn ai-quick-action" data-action="generate-payload" style="font-size:11px; padding:6px 10px;">
                 <i class="fas fa-bolt"></i> Generate Payload
               </button>
-              <button class="caido-btn ai-quick-action" data-action="threat-hunt" style="font-size:11px; padding:6px 10px;">
+              <button class="cf-btn ai-quick-action" data-action="threat-hunt" style="font-size:11px; padding:6px 10px;">
                 <i class="fas fa-search"></i> Threat Hunt
               </button>
-              <button class="caido-btn ai-quick-action" data-action="explain-vuln" style="font-size:11px; padding:6px 10px;">
+              <button class="cf-btn ai-quick-action" data-action="explain-vuln" style="font-size:11px; padding:6px 10px;">
                 <i class="fas fa-graduation-cap"></i> Explain Vuln
               </button>
             </div>
           </div>
 
           <!-- Context Panel -->
-          <div id="ai-context-panel" style="padding:8px 16px; border-bottom:1px solid var(--caido-border); background:var(--caido-bg-dark); display:none; flex-shrink:0;">
+          <div id="ai-context-panel" style="padding:8px 16px; border-bottom:1px solid var(--cf-border); background:var(--cf-bg-dark); display:none; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <i class="fas fa-paperclip" style="color:var(--caido-accent-blue);"></i>
+              <i class="fas fa-paperclip" style="color:var(--cf-accent-blue);"></i>
               <span id="ai-context-text" style="font-size:12px; flex:1;"></span>
               <button class="panel-action-btn" id="clear-context" title="Clear context"><i class="fas fa-times"></i></button>
             </div>
           </div>
 
           <!-- Chat Messages -->
-          <div class="caido-panel-content" id="assistant-messages" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth;"></div>
+          <div class="cf-panel-content" id="assistant-messages" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth;"></div>
 
           <!-- Input Area -->
-          <div style="padding:12px 16px; border-top:1px solid var(--caido-border); background:var(--caido-bg-medium); flex-shrink:0;">
+          <div style="padding:12px 16px; border-top:1px solid var(--cf-border); background:var(--cf-bg-medium); flex-shrink:0;">
             <div style="display:flex; gap:8px; align-items:flex-end;">
               <div style="flex:1; position:relative;">
-                <textarea id="assistant-input" class="caido-input ai-input-glow" rows="2" placeholder="Ask me anything about security... (Shift+Enter for new line)" 
+                <textarea id="assistant-input" class="cf-input ai-input-glow" rows="2" placeholder="Ask me anything about security... (Shift+Enter for new line)" 
                   style="width:100%; resize:none; padding-right:40px; transition: height 0.1s ease;"></textarea>
                 <button class="panel-action-btn" id="attach-context" title="Attach request/finding" 
                   style="position:absolute; right:8px; bottom:8px;">
                   <i class="fas fa-paperclip"></i>
                 </button>
               </div>
-              <button id="assistant-send" class="caido-btn primary ai-btn-bounce" style="height:52px; padding:0 20px;">
+              <button id="assistant-send" class="cf-btn primary ai-btn-bounce" style="height:52px; padding:0 20px;">
                 <i class="fas fa-paper-plane"></i>
               </button>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--caido-text-muted);">
+            <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--cf-text-muted);">
               <span>Powered by CyberForge AI + ML Models</span>
               <span id="ai-typing-indicator" style="display:none;">
                 <span class="ai-typing-dot"></span>
@@ -3365,17 +3365,17 @@
         </div>
 
         <!-- Chat History Sidebar -->
-        <div id="ai-chat-sidebar" class="ai-chat-sidebar" style="width:260px; border-left:1px solid var(--caido-border); background:var(--caido-bg-dark); display:flex; flex-direction:column;">
-          <div style="padding:14px; border-bottom:1px solid var(--caido-border); flex-shrink:0;">
+        <div id="ai-chat-sidebar" class="ai-chat-sidebar" style="width:260px; border-left:1px solid var(--cf-border); background:var(--cf-bg-dark); display:flex; flex-direction:column;">
+          <div style="padding:14px; border-bottom:1px solid var(--cf-border); flex-shrink:0;">
             <div style="font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-              <i class="fas fa-comments" style="color:var(--caido-accent-blue);"></i>
+              <i class="fas fa-comments" style="color:var(--cf-accent-blue);"></i>
               Chats
             </div>
-            <button id="ai-new-chat" class="caido-btn primary ai-btn-bounce" style="width:100%; display:flex; gap:8px; align-items:center; justify-content:center;">
+            <button id="ai-new-chat" class="cf-btn primary ai-btn-bounce" style="width:100%; display:flex; gap:8px; align-items:center; justify-content:center;">
               <i class="fas fa-plus"></i> New Chat
             </button>
             <div style="margin-top:10px;">
-              <input id="ai-chat-search" class="caido-input ai-input-glow" placeholder="Search chats..." style="width:100%;">
+              <input id="ai-chat-search" class="cf-input ai-input-glow" placeholder="Search chats..." style="width:100%;">
             </div>
           </div>
           <div id="ai-chat-list" style="flex:1; overflow-y:auto; padding:8px; display:flex; flex-direction:column; gap:5px;"></div>
@@ -3484,14 +3484,14 @@
           padding:10px 12px;
           border-radius:10px;
           cursor:pointer;
-          border:1px solid var(--caido-border);
-          background:${isActive ? 'var(--caido-bg-medium)' : 'transparent'};
+          border:1px solid var(--cf-border);
+          background:${isActive ? 'var(--cf-bg-medium)' : 'transparent'};
         `;
         item.innerHTML = `
           <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${escapeHtml(chat.title || 'New Chat')}
           </div>
-          <div style="font-size:11px; color:var(--caido-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          <div style="font-size:11px; color:var(--cf-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${escapeHtml(preview)}
           </div>
         `;
@@ -3508,11 +3508,11 @@
     const renderWelcome = () => {
       messages.innerHTML = `
         <div class="ai-welcome-message" style="text-align:center; padding:32px 20px;">
-          <div style="width:72px; height:72px; margin:0 auto 14px; background:linear-gradient(135deg, var(--caido-accent-purple), var(--caido-accent-blue)); border-radius:18px; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 24px rgba(99,102,241,0.3);">
+          <div style="width:72px; height:72px; margin:0 auto 14px; background:linear-gradient(135deg, var(--cf-accent-purple), var(--cf-accent-blue)); border-radius:18px; display:flex; align-items:center; justify-content:center; box-shadow: 0 8px 24px rgba(99,102,241,0.3);">
             <i class="fas fa-brain" style="font-size:32px; color:white;"></i>
           </div>
           <h3 style="margin-bottom:6px; font-size:18px;">CyberForge AI Assistant</h3>
-          <p style="color:var(--caido-text-muted); margin-bottom:20px; max-width:520px; margin-left:auto; margin-right:auto; font-size:13px; line-height:1.5;">
+          <p style="color:var(--cf-text-muted); margin-bottom:20px; max-width:520px; margin-left:auto; margin-right:auto; font-size:13px; line-height:1.5;">
             I'm your AI-powered security analyst with <strong>live website scanning</strong> capabilities. 
             Enter any URL and I'll scrape it in real-time to analyze security headers, network requests, 
             vulnerabilities, and more.
@@ -3521,16 +3521,16 @@
             <div class="ai-suggestion ai-welcome-card" data-prompt="Scan https://example.com for security vulnerabilities and analyze its security headers, network requests, and potential threats" style="background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1)); padding:12px 18px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid rgba(99,102,241,0.4);">
               🌐 Live Website Security Scan
             </div>
-            <div class="ai-suggestion ai-welcome-card" data-prompt="Explain SQL injection attacks and how to prevent them" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Explain SQL injection attacks and how to prevent them" style="background:var(--cf-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--cf-border);">
               📚 Learn about SQL injection
             </div>
-            <div class="ai-suggestion ai-welcome-card" data-prompt="Generate XSS test payloads for input field testing" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Generate XSS test payloads for input field testing" style="background:var(--cf-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--cf-border);">
               💉 Generate XSS payloads
             </div>
-            <div class="ai-suggestion ai-welcome-card" data-prompt="What are the OWASP Top 10 vulnerabilities?" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+            <div class="ai-suggestion ai-welcome-card" data-prompt="What are the OWASP Top 10 vulnerabilities?" style="background:var(--cf-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--cf-border);">
               📋 OWASP Top 10
             </div>
-            <div class="ai-suggestion ai-welcome-card" data-prompt="Analyze https://github.com for security headers and HTTPS configuration" style="background:var(--caido-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--caido-border);">
+            <div class="ai-suggestion ai-welcome-card" data-prompt="Analyze https://github.com for security headers and HTTPS configuration" style="background:var(--cf-bg-medium); padding:10px 16px; border-radius:12px; cursor:pointer; font-size:12px; border:1px solid var(--cf-border);">
               🔒 Security Headers Check
             </div>
           </div>
@@ -3585,8 +3585,8 @@
       `;
 
       const avatarStyle = role === 'user'
-        ? 'background: var(--caido-accent-blue);'
-        : 'background: linear-gradient(135deg, var(--caido-accent-purple), var(--caido-accent-orange));';
+        ? 'background: var(--cf-accent-blue);'
+        : 'background: linear-gradient(135deg, var(--cf-accent-purple), var(--cf-accent-orange));';
 
       const icon = role === 'user' ? 'fa-user' : 'fa-robot';
       const displayTime = new Date(timestamp || Date.now()).toLocaleTimeString();
@@ -3596,9 +3596,9 @@
 
       const metaHtml = meta ? `
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-          ${typeof meta.confidence === 'number' ? `<span class="caido-badge" style="font-size:10px;">Confidence ${(meta.confidence * 100).toFixed(0)}%</span>` : ''}
-          ${Array.isArray(meta.insights) && meta.insights.length ? `<span class="caido-badge" style="font-size:10px;">${meta.insights[0]}</span>` : ''}
-          ${Array.isArray(meta.recommendations) && meta.recommendations.length ? `<span class="caido-badge" style="font-size:10px;">${meta.recommendations[0]}</span>` : ''}
+          ${typeof meta.confidence === 'number' ? `<span class="cf-badge" style="font-size:10px;">Confidence ${(meta.confidence * 100).toFixed(0)}%</span>` : ''}
+          ${Array.isArray(meta.insights) && meta.insights.length ? `<span class="cf-badge" style="font-size:10px;">${meta.insights[0]}</span>` : ''}
+          ${Array.isArray(meta.recommendations) && meta.recommendations.length ? `<span class="cf-badge" style="font-size:10px;">${meta.recommendations[0]}</span>` : ''}
         </div>
       ` : '';
 
@@ -3609,9 +3609,9 @@
         <div style="flex:1; max-width:72%;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; ${role === 'user' ? 'justify-content:flex-end;' : ''}">
             <span style="font-weight:600; font-size:12px;">${role === 'user' ? 'You' : 'CyberForge AI'}</span>
-            <span style="font-size:10px; color:var(--caido-text-muted);">${displayTime}</span>
+            <span style="font-size:10px; color:var(--cf-text-muted);">${displayTime}</span>
           </div>
-          <div class="ai-message-content" style="background:var(--caido-bg-${role === 'user' ? 'dark' : 'medium'}); padding:14px 16px; border-radius:14px; border:1px solid var(--caido-border); ${role === 'user' ? 'border-bottom-right-radius:6px;' : 'border-bottom-left-radius:6px;'}">
+          <div class="ai-message-content" style="background:var(--cf-bg-${role === 'user' ? 'dark' : 'medium'}); padding:14px 16px; border-radius:14px; border:1px solid var(--cf-border); ${role === 'user' ? 'border-bottom-right-radius:6px;' : 'border-bottom-left-radius:6px;'}">
             ${displayContent}
           </div>
           ${metaHtml}
@@ -3711,24 +3711,24 @@
         };
         const metaHtml = meta ? `
           <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-            ${typeof meta.confidence === 'number' ? `<span class=\"caido-badge\" style=\"font-size:10px;\">Confidence ${(meta.confidence * 100).toFixed(0)}%</span>` : ''}
-            ${Array.isArray(meta.insights) && meta.insights.length ? `<span class=\"caido-badge\" style=\"font-size:10px;\">${meta.insights[0]}</span>` : ''}
-            ${Array.isArray(meta.recommendations) && meta.recommendations.length ? `<span class=\"caido-badge\" style=\"font-size:10px;\">${meta.recommendations[0]}</span>` : ''}
+            ${typeof meta.confidence === 'number' ? `<span class=\"cf-badge\" style=\"font-size:10px;\">Confidence ${(meta.confidence * 100).toFixed(0)}%</span>` : ''}
+            ${Array.isArray(meta.insights) && meta.insights.length ? `<span class=\"cf-badge\" style=\"font-size:10px;\">${meta.insights[0]}</span>` : ''}
+            ${Array.isArray(meta.recommendations) && meta.recommendations.length ? `<span class=\"cf-badge\" style=\"font-size:10px;\">${meta.recommendations[0]}</span>` : ''}
           </div>
         ` : '';
         const msgDiv = document.createElement('div');
         msgDiv.className = 'ai-message ai-message-assistant ai-message-animated';
         msgDiv.style.cssText = `display:flex; gap:12px;`;
         msgDiv.innerHTML = `
-          <div style="width:36px; height:36px; border-radius:10px; background: linear-gradient(135deg, var(--caido-accent-purple), var(--caido-accent-orange)); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+          <div style="width:36px; height:36px; border-radius:10px; background: linear-gradient(135deg, var(--cf-accent-purple), var(--cf-accent-orange)); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
             <i class="fas fa-robot" style="color:white; font-size:14px;"></i>
           </div>
           <div style="flex:1; max-width:72%;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
               <span style="font-weight:600; font-size:12px;">CyberForge AI</span>
-              <span style="font-size:10px; color:var(--caido-text-muted);">${new Date(tempMsg.timestamp).toLocaleTimeString()}</span>
+              <span style="font-size:10px; color:var(--cf-text-muted);">${new Date(tempMsg.timestamp).toLocaleTimeString()}</span>
             </div>
-            <div class="ai-message-content" style="background:var(--caido-bg-medium); padding:14px 16px; border-radius:14px; border:1px solid var(--caido-border); border-bottom-left-radius:6px;"></div>
+            <div class="ai-message-content" style="background:var(--cf-bg-medium); padding:14px 16px; border-radius:14px; border:1px solid var(--cf-border); border-bottom-left-radius:6px;"></div>
             ${metaHtml}
           </div>
         `;
@@ -3755,26 +3755,26 @@
     function formatAIResponse(text) {
       // Convert code blocks
       text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-        return `<div style="background:var(--caido-bg-dark); padding:12px; border-radius:8px; margin:8px 0; overflow-x:auto;">
-          ${lang ? `<div style="font-size:10px; color:var(--caido-text-muted); margin-bottom:8px;">${lang}</div>` : ''}
+        return `<div style="background:var(--cf-bg-dark); padding:12px; border-radius:8px; margin:8px 0; overflow-x:auto;">
+          ${lang ? `<div style="font-size:10px; color:var(--cf-text-muted); margin-bottom:8px;">${lang}</div>` : ''}
           <pre style="margin:0; font-family:monospace; font-size:13px;"><code>${escapeHtml(code.trim())}</code></pre>
         </div>`;
       });
 
       // Convert inline code
-      text = text.replace(/`([^`]+)`/g, '<code style="background:var(--caido-bg-dark); padding:2px 6px; border-radius:4px; font-size:12px;">$1</code>');
+      text = text.replace(/`([^`]+)`/g, '<code style="background:var(--cf-bg-dark); padding:2px 6px; border-radius:4px; font-size:12px;">$1</code>');
 
       // Convert bold
       text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
       // Convert bullet points
-      text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex; gap:8px; margin:4px 0;"><span style="color:var(--caido-accent-blue);">•</span><span>$1</span></div>');
+      text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<div style="display:flex; gap:8px; margin:4px 0;"><span style="color:var(--cf-accent-blue);">•</span><span>$1</span></div>');
 
       // Convert numbered lists
-      text = text.replace(/^\d+\.\s+(.+)$/gm, '<div style="display:flex; gap:8px; margin:4px 0;"><span style="color:var(--caido-accent-orange); font-weight:600;">$&</span></div>');
+      text = text.replace(/^\d+\.\s+(.+)$/gm, '<div style="display:flex; gap:8px; margin:4px 0;"><span style="color:var(--cf-accent-orange); font-weight:600;">$&</span></div>');
 
       // Convert headers
-      text = text.replace(/^###\s+(.+)$/gm, '<h4 style="color:var(--caido-accent-purple); margin:12px 0 8px;">$1</h4>');
+      text = text.replace(/^###\s+(.+)$/gm, '<h4 style="color:var(--cf-accent-purple); margin:12px 0 8px;">$1</h4>');
       text = text.replace(/^##\s+(.+)$/gm, '<h3 style="margin:12px 0 8px;">$1</h3>');
 
       // Convert line breaks
@@ -3904,7 +3904,7 @@
         }
       }
       
-      statusBadge.className = `caido-badge ${online ? 'green' : 'red'}`;
+      statusBadge.className = `cf-badge ${online ? 'green' : 'red'}`;
       statusBadge.innerHTML = `<span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:${online ? '#22c55e' : '#ef4444'};"></span> ${online ? 'Online' : 'Offline'}`;
     };
 
@@ -3915,21 +3915,21 @@
           <div style="display:flex; flex-direction:column; gap:16px;">
             <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1)); padding:12px; border-radius:8px; border:1px solid rgba(99,102,241,0.3);">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <i class="fas fa-globe" style="color: var(--caido-accent-purple);"></i>
-                <span style="font-weight:600; color: var(--caido-accent-purple);">Real-Time Website Scraping</span>
+                <i class="fas fa-globe" style="color: var(--cf-accent-purple);"></i>
+                <span style="font-weight:600; color: var(--cf-accent-purple);">Real-Time Website Scraping</span>
               </div>
-              <p style="font-size:12px; color:var(--caido-text-muted); margin:0;">
+              <p style="font-size:12px; color:var(--cf-text-muted); margin:0;">
                 This will scrape the live website and analyze security headers, network requests, 
                 third-party scripts, console errors, and more.
               </p>
             </div>
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Target URL</label>
-              <input class="caido-input" name="url" placeholder="https://example.com" style="width:100%;">
+              <input class="cf-input" name="url" placeholder="https://example.com" style="width:100%;">
             </div>
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Scan Type</label>
-              <select class="caido-input" name="scanType" style="width:100%;">
+              <select class="cf-input" name="scanType" style="width:100%;">
                 <option value="comprehensive">Comprehensive Security Audit</option>
                 <option value="quick">Quick Security Check</option>
                 <option value="headers">Security Headers Only</option>
@@ -3983,7 +3983,7 @@
           <div style="display:flex; flex-direction:column; gap:16px;">
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Vulnerability Type</label>
-              <select class="caido-input" name="vulnType" style="width:100%;">
+              <select class="cf-input" name="vulnType" style="width:100%;">
                 <option value="xss">Cross-Site Scripting (XSS)</option>
                 <option value="sqli">SQL Injection</option>
                 <option value="xxe">XML External Entity (XXE)</option>
@@ -3995,7 +3995,7 @@
             </div>
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Context (optional)</label>
-              <input class="caido-input" name="context" placeholder="e.g., PHP backend, JSON API, etc." style="width:100%;">
+              <input class="cf-input" name="context" placeholder="e.g., PHP backend, JSON API, etc." style="width:100%;">
             </div>
           </div>
         `, (formData) => {
@@ -4014,7 +4014,7 @@
           <div style="display:flex; flex-direction:column; gap:16px;">
             <div>
               <label style="display:block; font-weight:600; margin-bottom:8px;">Vulnerability</label>
-              <select class="caido-input" name="vuln" style="width:100%;">
+              <select class="cf-input" name="vuln" style="width:100%;">
                 <option value="XSS">Cross-Site Scripting (XSS)</option>
                 <option value="SQL Injection">SQL Injection</option>
                 <option value="CSRF">Cross-Site Request Forgery (CSRF)</option>
@@ -4137,7 +4137,7 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Context Type</label>
-            <select class="caido-input" name="type" id="context-type-select" style="width:100%;">
+            <select class="cf-input" name="type" id="context-type-select" style="width:100%;">
               <option value="request">HTTP Request</option>
               <option value="finding">Finding</option>
               <option value="custom">Custom Text</option>
@@ -4145,19 +4145,19 @@
           </div>
           <div id="context-request-select" style="display:block;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Select Request</label>
-            <select class="caido-input" name="requestId" style="width:100%;">
+            <select class="cf-input" name="requestId" style="width:100%;">
               ${state.requests.slice(0, 20).map(r => `<option value="${r.id}">${r.method} ${r.host}${r.path}</option>`).join('')}
             </select>
           </div>
           <div id="context-finding-select" style="display:none;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Select Finding</label>
-            <select class="caido-input" name="findingId" style="width:100%;">
+            <select class="cf-input" name="findingId" style="width:100%;">
               ${state.findings.map(f => `<option value="${f.id}">${f.severity}: ${f.title}</option>`).join('')}
             </select>
           </div>
           <div id="context-custom-input" style="display:none;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Custom Context</label>
-            <textarea class="caido-input" name="customContext" rows="4" placeholder="Paste any relevant context..." style="width:100%;"></textarea>
+            <textarea class="cf-input" name="customContext" rows="4" placeholder="Paste any relevant context..." style="width:100%;"></textarea>
           </div>
         </div>
       `, (formData) => {
@@ -4210,13 +4210,13 @@
 
   function buildSearchLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header"><div class="caido-panel-title">Search</div></div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header"><div class="cf-panel-title">Search</div></div>
         <div style="padding:12px; display:flex; gap:8px;">
-          <input class="caido-input" placeholder="Search HTTP history, WS messages, findings..." style="flex:1;">
-          <button class="caido-btn primary">Search</button>
+          <input class="cf-input" placeholder="Search HTTP history, WS messages, findings..." style="flex:1;">
+          <button class="cf-btn primary">Search</button>
         </div>
-        <div class="caido-panel-content">
+        <div class="cf-panel-content">
           <div class="empty-state">
             <i class="fas fa-search empty-state-icon"></i>
             <div class="empty-state-title">No results yet</div>
@@ -4229,16 +4229,16 @@
 
   function buildFindingsLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Findings</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="export-findings"><i class="fas fa-download"></i> Export</button>
-            <button class="caido-btn primary" id="new-finding"><i class="fas fa-plus"></i> Add Finding</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Findings</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="export-findings"><i class="fas fa-download"></i> Export</button>
+            <button class="cf-btn primary" id="new-finding"><i class="fas fa-plus"></i> Add Finding</button>
           </div>
         </div>
-        <div class="caido-table-container">
-          <table class="caido-table" id="findings-table">
+        <div class="cf-table-container">
+          <table class="cf-table" id="findings-table">
             <thead><tr><th>ID</th><th>Severity</th><th>Title</th><th>Path</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="findings-tbody"></tbody>
           </table>
@@ -4253,11 +4253,11 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Title</label>
-            <input class="caido-input" name="title" placeholder="SQL Injection in login endpoint" style="width:100%;">
+            <input class="cf-input" name="title" placeholder="SQL Injection in login endpoint" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Severity</label>
-            <select class="caido-input" name="severity" style="width:100%;">
+            <select class="cf-input" name="severity" style="width:100%;">
               <option value="Critical">Critical</option>
               <option value="High">High</option>
               <option value="Medium" selected>Medium</option>
@@ -4267,11 +4267,11 @@
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Path/URL</label>
-            <input class="caido-input" name="path" placeholder="/api/login" style="width:100%;">
+            <input class="cf-input" name="path" placeholder="/api/login" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
-            <textarea class="caido-input" name="description" rows="4" placeholder="Detailed description of the finding..." style="width:100%;"></textarea>
+            <textarea class="cf-input" name="description" rows="4" placeholder="Detailed description of the finding..." style="width:100%;"></textarea>
           </div>
         </div>
       `, async (formData) => {
@@ -4316,30 +4316,30 @@
     ` : state.exports.map(exp => {
       const { icon, color } = formatIcon(exp.format);
       return `
-        <div class="export-card" data-id="${exp.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+        <div class="export-card" data-id="${exp.id}" style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <i class="fas ${icon}" style="color:var(--caido-accent-${color}); font-size:24px;"></i>
+            <i class="fas ${icon}" style="color:var(--cf-accent-${color}); font-size:24px;"></i>
             <div style="flex:1;">
               <div style="font-weight:600;">${exp.name}</div>
-              <div style="font-size:11px; color:var(--caido-text-muted);">Generated: ${new Date(exp.createdAt).toLocaleString()} • ${exp.format?.toUpperCase() || 'Unknown'} • ${exp.size || 'N/A'}</div>
+              <div style="font-size:11px; color:var(--cf-text-muted);">Generated: ${new Date(exp.createdAt).toLocaleString()} • ${exp.format?.toUpperCase() || 'Unknown'} • ${exp.size || 'N/A'}</div>
             </div>
-            <span class="caido-badge ${exp.status === 'ready' ? 'green' : 'orange'}">${exp.status}</span>
-            <button class="caido-btn export-download" data-id="${exp.id}" ${exp.status !== 'ready' ? 'disabled' : ''}><i class="fas fa-download"></i></button>
-            <button class="caido-btn export-delete" data-id="${exp.id}"><i class="fas fa-trash"></i></button>
+            <span class="cf-badge ${exp.status === 'ready' ? 'green' : 'orange'}">${exp.status}</span>
+            <button class="cf-btn export-download" data-id="${exp.id}" ${exp.status !== 'ready' ? 'disabled' : ''}><i class="fas fa-download"></i></button>
+            <button class="cf-btn export-delete" data-id="${exp.id}"><i class="fas fa-trash"></i></button>
           </div>
         </div>
       `;
     }).join('');
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Exports</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="new-export"><i class="fas fa-plus"></i> New Export</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Exports</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="new-export"><i class="fas fa-plus"></i> New Export</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div id="exports-container" style="display:flex; flex-direction:column; gap:12px;">
             ${exportsHtml}
           </div>
@@ -4354,11 +4354,11 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
-            <input class="caido-input" name="name" placeholder="Security Report" style="width:100%;">
+            <input class="cf-input" name="name" placeholder="Security Report" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Format</label>
-            <select class="caido-input" name="format" style="width:100%;">
+            <select class="cf-input" name="format" style="width:100%;">
               <option value="pdf">PDF Report</option>
               <option value="har">HAR (HTTP Archive)</option>
               <option value="json">JSON</option>
@@ -4420,9 +4420,9 @@
 
   function buildFilesLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header"><div class="caido-panel-title">Files</div></div>
-        <div class="caido-panel-content" id="files-tree" style="padding:12px;">
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header"><div class="cf-panel-title">Files</div></div>
+        <div class="cf-panel-content" id="files-tree" style="padding:12px;">
         </div>
       </div>
     `;
@@ -4436,38 +4436,38 @@
         <div class="empty-state-description">Browse the store to find useful extensions</div>
       </div>
     ` : state.plugins.map(plugin => `
-      <div class="plugin-card" data-id="${plugin.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+      <div class="plugin-card" data-id="${plugin.id}" style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-          <div style="width:40px;height:40px;background:var(--caido-accent-${plugin.color || 'purple'});border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:40px;height:40px;background:var(--cf-accent-${plugin.color || 'purple'});border-radius:8px;display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-${plugin.icon || 'puzzle-piece'}" style="color:white;"></i>
           </div>
           <div style="flex:1;">
             <div style="font-weight:600;">${plugin.name}</div>
-            <div style="font-size:11px; color:var(--caido-text-muted);">v${plugin.version || '1.0.0'} • ${plugin.enabled ? 'Active' : 'Disabled'}</div>
+            <div style="font-size:11px; color:var(--cf-text-muted);">v${plugin.version || '1.0.0'} • ${plugin.enabled ? 'Active' : 'Disabled'}</div>
           </div>
           <label class="switch">
             <input type="checkbox" class="plugin-toggle" data-id="${plugin.id}" ${plugin.enabled ? 'checked' : ''}>
             <span class="slider"></span>
           </label>
         </div>
-        <div style="font-size:12px; color:var(--caido-text-secondary); margin-bottom:12px;">${plugin.description || 'No description'}</div>
+        <div style="font-size:12px; color:var(--cf-text-secondary); margin-bottom:12px;">${plugin.description || 'No description'}</div>
         <div style="display:flex; gap:8px;">
-          <button class="caido-btn plugin-settings" data-id="${plugin.id}"><i class="fas fa-cog"></i> Settings</button>
-          <button class="caido-btn plugin-uninstall" data-id="${plugin.id}"><i class="fas fa-trash"></i> Uninstall</button>
+          <button class="cf-btn plugin-settings" data-id="${plugin.id}"><i class="fas fa-cog"></i> Settings</button>
+          <button class="cf-btn plugin-uninstall" data-id="${plugin.id}"><i class="fas fa-trash"></i> Uninstall</button>
         </div>
       </div>
     `).join('');
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Plugins</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="browse-store"><i class="fas fa-store"></i> Browse Store</button>
-            <button class="caido-btn primary" id="install-plugin"><i class="fas fa-upload"></i> Install</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Plugins</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="browse-store"><i class="fas fa-store"></i> Browse Store</button>
+            <button class="cf-btn primary" id="install-plugin"><i class="fas fa-upload"></i> Install</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div id="plugins-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
             ${pluginsHtml}
           </div>
@@ -4484,13 +4484,13 @@
         showModal('Plugin Store', `
           <div style="display:flex; flex-direction:column; gap:12px; max-height:400px; overflow:auto;">
             ${storePlugins.length === 0 ? '<p>No plugins available in store</p>' : storePlugins.map(p => `
-              <div style="background:var(--caido-bg-dark); border-radius:8px; padding:12px; display:flex; align-items:center; gap:12px;">
-                <i class="fas fa-${p.icon || 'puzzle-piece'}" style="font-size:24px; color:var(--caido-accent-${p.color || 'blue'});"></i>
+              <div style="background:var(--cf-bg-dark); border-radius:8px; padding:12px; display:flex; align-items:center; gap:12px;">
+                <i class="fas fa-${p.icon || 'puzzle-piece'}" style="font-size:24px; color:var(--cf-accent-${p.color || 'blue'});"></i>
                 <div style="flex:1;">
                   <div style="font-weight:600;">${p.name}</div>
-                  <div style="font-size:11px; color:var(--caido-text-muted);">${p.description || ''}</div>
+                  <div style="font-size:11px; color:var(--cf-text-muted);">${p.description || ''}</div>
                 </div>
-                <button class="caido-btn store-install" data-id="${p.id}"><i class="fas fa-download"></i> Install</button>
+                <button class="cf-btn store-install" data-id="${p.id}"><i class="fas fa-download"></i> Install</button>
               </div>
             `).join('')}
           </div>
@@ -4518,7 +4518,7 @@
       showModal('Install Plugin', `
         <div style="display:flex; flex-direction:column; gap:16px;">
           <p>Enter the plugin ID or URL to install:</p>
-          <input class="caido-input" name="pluginId" placeholder="plugin-id or https://..." style="width:100%;">
+          <input class="cf-input" name="pluginId" placeholder="plugin-id or https://..." style="width:100%;">
         </div>
       `, async (formData) => {
         const pluginId = formData.get('pluginId');
@@ -4562,24 +4562,24 @@
 
   function buildWorkspaceLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Workspace Settings</div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Workspace Settings</div>
         </div>
-        <div class="caido-panel-content" style="padding:24px; max-width:600px;">
+        <div class="cf-panel-content" style="padding:24px; max-width:600px;">
           <div style="margin-bottom:24px;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Workspace Name</label>
-            <input class="caido-input" value="Hackers-Arise" style="width:100%;">
+            <input class="cf-input" value="Hackers-Arise" style="width:100%;">
           </div>
           <div style="margin-bottom:24px;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Default Target</label>
-            <input class="caido-input" placeholder="https://example.com" style="width:100%;">
+            <input class="cf-input" placeholder="https://example.com" style="width:100%;">
           </div>
           <div style="margin-bottom:24px;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Proxy Port</label>
-            <input class="caido-input" value="8080" type="number" style="width:150px;">
+            <input class="cf-input" value="8080" type="number" style="width:150px;">
           </div>
-          <button class="caido-btn primary"><i class="fas fa-save"></i> Save Changes</button>
+          <button class="cf-btn primary"><i class="fas fa-save"></i> Save Changes</button>
         </div>
       </div>
     `;
@@ -4587,29 +4587,29 @@
 
   function buildAIAgentLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">AI Agent</div>
-          <div class="caido-panel-actions">
-            <span class="caido-badge green" id="agent-status">Online</span>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">AI Agent</div>
+          <div class="cf-panel-actions">
+            <span class="cf-badge green" id="agent-status">Online</span>
           </div>
         </div>
-        <div style="display:flex; gap:16px; padding:16px; border-bottom:1px solid var(--caido-border); flex-wrap:wrap;">
-          <div class="caido-badge orange">Context: Security</div>
-          <div class="caido-badge blue">Memory: Enabled</div>
-          <div class="caido-badge purple">Tasks: 0 pending</div>
+        <div style="display:flex; gap:16px; padding:16px; border-bottom:1px solid var(--cf-border); flex-wrap:wrap;">
+          <div class="cf-badge orange">Context: Security</div>
+          <div class="cf-badge blue">Memory: Enabled</div>
+          <div class="cf-badge purple">Tasks: 0 pending</div>
         </div>
-        <div class="caido-panel-content" id="agent-messages" style="padding:16px; overflow:auto; flex:1;">
+        <div class="cf-panel-content" id="agent-messages" style="padding:16px; overflow:auto; flex:1;">
           <div class="empty-state">
             <i class="fas fa-brain empty-state-icon"></i>
             <div class="empty-state-title">Agent ready</div>
             <div class="empty-state-description">Send a command or ask for a security analysis.</div>
           </div>
         </div>
-        <div style="padding:12px; border-top:1px solid var(--caido-border); display:flex; gap:8px; align-items:center;">
-          <input id="agent-input" class="caido-input" placeholder="Ask the agent or issue a task (e.g., analyze URL https://example.com)" style="flex:1;">
-          <button id="agent-run" class="caido-btn">Run</button>
-          <button id="agent-send" class="caido-btn primary">Send</button>
+        <div style="padding:12px; border-top:1px solid var(--cf-border); display:flex; gap:8px; align-items:center;">
+          <input id="agent-input" class="cf-input" placeholder="Ask the agent or issue a task (e.g., analyze URL https://example.com)" style="flex:1;">
+          <button id="agent-run" class="cf-btn">Run</button>
+          <button id="agent-send" class="cf-btn primary">Send</button>
         </div>
       </div>
     `;
@@ -4623,7 +4623,7 @@
     const addMessage = (role, text) => {
       const wrapper = document.createElement('div');
       wrapper.style.marginBottom = '10px';
-      wrapper.innerHTML = `<div class="caido-badge ${role === 'user' ? 'blue' : 'orange'}">${role}</div><div style="margin-top:4px;">${text}</div>`;
+      wrapper.innerHTML = `<div class="cf-badge ${role === 'user' ? 'blue' : 'orange'}">${role}</div><div style="margin-top:4px;">${text}</div>`;
       messages.appendChild(wrapper);
       messages.scrollTop = messages.scrollHeight;
     };
@@ -4636,7 +4636,7 @@
       // Show typing indicator
       const typingDiv = document.createElement('div');
       typingDiv.id = 'agent-typing';
-      typingDiv.innerHTML = '<div class="caido-badge orange">agent</div><div style="margin-top:4px;"><i class="fas fa-spinner fa-spin"></i> Thinking...</div>';
+      typingDiv.innerHTML = '<div class="cf-badge orange">agent</div><div style="margin-top:4px;"><i class="fas fa-spinner fa-spin"></i> Thinking...</div>';
       messages.appendChild(typingDiv);
       messages.scrollTop = messages.scrollHeight;
       
@@ -4683,33 +4683,33 @@
     const user = cyberforgeAPI.getCurrentUser();
     const userName = user ? user.firstName || user.email?.split('@')[0] : 'User';
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-        <div class="caido-panel-content" style="padding:24px; display:flex; flex-direction:column; height:100%; overflow:hidden;">
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="cf-panel-content" style="padding:24px; display:flex; flex-direction:column; height:100%; overflow:hidden;">
           <!-- Header -->
           <div style="margin-bottom:20px; flex-shrink:0;">
             <h2 style="margin-bottom:4px;">Welcome back, ${userName}!</h2>
-            <p style="color:var(--caido-text-muted);">Global Network Traffic Monitor • Real-time OpenStreetMap data</p>
+            <p style="color:var(--cf-text-muted);">Global Network Traffic Monitor • Real-time OpenStreetMap data</p>
           </div>
           
           <!-- Main Grid Layout -->
           <div style="display:grid; grid-template-columns:1fr 380px; gap:20px; flex:1; min-height:0; overflow:hidden;">
             
             <!-- Left: Globe Container -->
-            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:16px; overflow:hidden; position:relative; min-height:400px;">
+            <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:16px; overflow:hidden; position:relative; min-height:400px;">
               <div id="globe-container" style="width:100%; height:100%; min-height:400px;"></div>
               
               <!-- Globe Controls Overlay -->
               <div style="position:absolute; bottom:16px; left:16px; display:flex; gap:8px; z-index:10;">
-                <button class="caido-btn" id="globe-reset" title="Reset View" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                <button class="cf-btn" id="globe-reset" title="Reset View" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
                   <i class="fas fa-compress-arrows-alt"></i>
                 </button>
-                <button class="caido-btn" id="globe-toggle-rotation" title="Toggle Rotation" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                <button class="cf-btn" id="globe-toggle-rotation" title="Toggle Rotation" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
                   <i class="fas fa-sync"></i>
                 </button>
-                <button class="caido-btn" id="globe-add-traffic" title="Add Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                <button class="cf-btn" id="globe-add-traffic" title="Add Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
                   <i class="fas fa-plus"></i>
                 </button>
-                <button class="caido-btn" id="globe-clear-traffic" title="Clear Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
+                <button class="cf-btn" id="globe-clear-traffic" title="Clear Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
@@ -4717,7 +4717,7 @@
               <!-- Zoom Level Indicator -->
               <div style="position:absolute; bottom:16px; right:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:8px 12px; border-radius:8px; font-size:11px; z-index:10; border:1px solid rgba(255,255,255,0.1);">
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <i class="fas fa-search" style="color:var(--caido-accent-blue);"></i>
+                  <i class="fas fa-search" style="color:var(--cf-accent-blue);"></i>
                   <span>Zoom: <span id="globe-zoom-level">2</span></span>
                 </div>
               </div>
@@ -4725,21 +4725,21 @@
               <!-- Legend Overlay -->
               <div style="position:absolute; top:16px; right:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:12px 16px; border-radius:10px; font-size:11px; z-index:10; border:1px solid rgba(255,255,255,0.1);">
                 <div style="font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-                  <i class="fas fa-globe" style="color:var(--caido-accent-purple);"></i> Network Traffic
+                  <i class="fas fa-globe" style="color:var(--cf-accent-purple);"></i> Network Traffic
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
                   <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;"></span> Source</div>
                   <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444;"></span> Destination</div>
                   <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 6px #8b5cf6;"></span> Active Arc</div>
                 </div>
-                <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:10px; color:var(--caido-text-muted);">
+                <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:10px; color:var(--cf-text-muted);">
                   <i class="fas fa-map"></i> OpenStreetMap Data
                 </div>
               </div>
               
               <!-- Map Source Badge -->
               <div style="position:absolute; top:16px; left:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:6px 10px; border-radius:6px; font-size:10px; z-index:10; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:6px;">
-                <i class="fas fa-layer-group" style="color:var(--caido-accent-green);"></i>
+                <i class="fas fa-layer-group" style="color:var(--cf-accent-green);"></i>
                 <span>Hybrid 3D • Leaflet + Three.js</span>
               </div>
             </div>
@@ -4749,45 +4749,45 @@
               
               <!-- Stats Cards -->
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:16px;">
                   <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                    <i class="fas fa-shield-alt" style="color:var(--caido-accent-green); font-size:16px;"></i>
-                    <span style="color:var(--caido-text-muted); font-size:11px;">Security Score</span>
+                    <i class="fas fa-shield-alt" style="color:var(--cf-accent-green); font-size:16px;"></i>
+                    <span style="color:var(--cf-text-muted); font-size:11px;">Security Score</span>
                   </div>
                   <div style="font-size:24px; font-weight:700;" id="dashboard-score">--</div>
                 </div>
-                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:16px;">
                   <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                    <i class="fas fa-bug" style="color:var(--caido-accent-red); font-size:16px;"></i>
-                    <span style="color:var(--caido-text-muted); font-size:11px;">Active Threats</span>
+                    <i class="fas fa-bug" style="color:var(--cf-accent-red); font-size:16px;"></i>
+                    <span style="color:var(--cf-text-muted); font-size:11px;">Active Threats</span>
                   </div>
                   <div style="font-size:24px; font-weight:700;" id="dashboard-threats">--</div>
                 </div>
-                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:16px;">
                   <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                    <i class="fas fa-exchange-alt" style="color:var(--caido-accent-blue); font-size:16px;"></i>
-                    <span style="color:var(--caido-text-muted); font-size:11px;">Requests</span>
+                    <i class="fas fa-exchange-alt" style="color:var(--cf-accent-blue); font-size:16px;"></i>
+                    <span style="color:var(--cf-text-muted); font-size:11px;">Requests</span>
                   </div>
                   <div style="font-size:24px; font-weight:700;" id="dashboard-requests">--</div>
                 </div>
-                <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+                <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:16px;">
                   <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                    <i class="fas fa-flag" style="color:var(--caido-accent-orange); font-size:16px;"></i>
-                    <span style="color:var(--caido-text-muted); font-size:11px;">Findings</span>
+                    <i class="fas fa-flag" style="color:var(--cf-accent-orange); font-size:16px;"></i>
+                    <span style="color:var(--cf-text-muted); font-size:11px;">Findings</span>
                   </div>
                   <div style="font-size:24px; font-weight:700;" id="dashboard-findings">--</div>
                 </div>
               </div>
               
               <!-- Active Connections -->
-              <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px; flex:1; min-height:180px; display:flex; flex-direction:column;">
+              <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:16px; flex:1; min-height:180px; display:flex; flex-direction:column;">
                 <h4 style="margin-bottom:12px; display:flex; align-items:center; gap:8px; font-size:14px;">
-                  <i class="fas fa-network-wired" style="color:var(--caido-accent-purple);"></i>
+                  <i class="fas fa-network-wired" style="color:var(--cf-accent-purple);"></i>
                   Active Connections
                 </h4>
                 <div id="dashboard-connections" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1;">
                   <!-- Real connections will be populated here -->
-                  <div class="empty-connections" style="text-align:center; padding:20px; color:var(--caido-text-muted);">
+                  <div class="empty-connections" style="text-align:center; padding:20px; color:var(--cf-text-muted);">
                     <i class="fas fa-plug" style="font-size:24px; opacity:0.5; margin-bottom:8px; display:block;"></i>
                     <span style="font-size:12px;">No active connections</span>
                   </div>
@@ -4795,19 +4795,19 @@
               </div>
               
               <!-- Quick Actions -->
-              <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:16px;">
+              <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:16px;">
                 <h4 style="margin-bottom:12px; display:flex; align-items:center; gap:8px; font-size:14px;">
-                  <i class="fas fa-bolt" style="color:var(--caido-accent-orange);"></i>
+                  <i class="fas fa-bolt" style="color:var(--cf-accent-orange);"></i>
                   Quick Actions
                 </h4>
                 <div style="display:flex; flex-direction:column; gap:8px;">
-                  <button class="caido-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=http-history]').click()">
+                  <button class="cf-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=http-history]').click()">
                     <i class="fas fa-history"></i> View HTTP History
                   </button>
-                  <button class="caido-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=assistant]').click()">
+                  <button class="cf-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=assistant]').click()">
                     <i class="fas fa-robot"></i> AI Assistant
                   </button>
-                  <button class="caido-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=threat-intel]').click()">
+                  <button class="cf-btn" style="justify-content:flex-start; width:100%;" onclick="document.querySelector('[data-screen=threat-intel]').click()">
                     <i class="fas fa-radiation"></i> Threat Intelligence
                   </button>
                 </div>
@@ -4993,7 +4993,7 @@
     if (typeof THREE === 'undefined') {
       console.warn('Three.js not loaded, globe will not render');
       container.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--caido-text-muted);">
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--cf-text-muted);">
           <div style="text-align:center;">
             <i class="fas fa-globe" style="font-size:48px; opacity:0.5; margin-bottom:16px;"></i>
             <div>3D Globe requires Three.js</div>
@@ -5016,7 +5016,7 @@
     if (!GlobeClass) {
       console.warn('Globe component not loaded');
       container.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--caido-text-muted);">
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--cf-text-muted);">
           <div style="text-align:center;">
             <i class="fas fa-globe" style="font-size:48px; opacity:0.5; margin-bottom:16px;"></i>
             <div>Globe component not available</div>
@@ -5055,9 +5055,9 @@
     } catch (error) {
       console.error('Failed to initialize globe:', error);
       container.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--caido-text-muted);">
+        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--cf-text-muted);">
           <div style="text-align:center;">
-            <i class="fas fa-exclamation-triangle" style="font-size:48px; opacity:0.5; margin-bottom:16px; color:var(--caido-accent-orange);"></i>
+            <i class="fas fa-exclamation-triangle" style="font-size:48px; opacity:0.5; margin-bottom:16px; color:var(--cf-accent-orange);"></i>
             <div>Failed to initialize globe</div>
             <div style="font-size:12px; margin-top:8px;">${error.message}</div>
           </div>
@@ -5097,7 +5097,7 @@
           const isFile = !hasChildren;
           return `
             <div style="margin-left:${depth * 20}px; padding:4px 0;">
-              <i class="fas fa-${isFile ? 'file-code' : 'folder'}" style="color:var(--caido-accent-${isFile ? 'blue' : 'orange'}); margin-right:8px;"></i>
+              <i class="fas fa-${isFile ? 'file-code' : 'folder'}" style="color:var(--cf-accent-${isFile ? 'blue' : 'orange'}); margin-right:8px;"></i>
               <span>${key}</span>
               ${hasChildren ? renderTree(node[key], depth + 1) : ''}
             </div>
@@ -5106,13 +5106,13 @@
       };
 
       return Object.keys(hosts).map(host => `
-        <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; margin-bottom:12px;">
+        <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px; margin-bottom:12px;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-            <i class="fas fa-globe" style="color:var(--caido-accent-green);"></i>
+            <i class="fas fa-globe" style="color:var(--cf-accent-green);"></i>
             <span style="font-weight:600;">${host}</span>
-            <span class="caido-badge blue" style="margin-left:auto;">${state.requests.filter(r => r.host === host).length} requests</span>
+            <span class="cf-badge blue" style="margin-left:auto;">${state.requests.filter(r => r.host === host).length} requests</span>
           </div>
-          <div style="border-left:2px solid var(--caido-border); padding-left:12px;">
+          <div style="border-left:2px solid var(--cf-border); padding-left:12px;">
             ${renderTree(hosts[host])}
           </div>
         </div>
@@ -5120,14 +5120,14 @@
     };
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Sitemap</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="refresh-sitemap"><i class="fas fa-sync"></i> Refresh</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Sitemap</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="refresh-sitemap"><i class="fas fa-sync"></i> Refresh</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px; overflow:auto;" id="sitemap-container">
+        <div class="cf-panel-content" style="padding:16px; overflow:auto;" id="sitemap-container">
           ${buildSitemapTree()}
         </div>
       </div>
@@ -5151,26 +5151,26 @@
         <div class="empty-state-description">Add scopes to define which targets to include or exclude</div>
       </div>
     ` : state.scopes.map(scope => `
-      <div class="scope-card" data-id="${scope.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-accent-${scope.type === 'include' ? 'green' : 'red'}); border-radius:8px; padding:16px; display:flex; align-items:center; gap:12px;">
-        <i class="fas fa-${scope.type === 'include' ? 'check' : 'times'}-circle" style="color:var(--caido-accent-${scope.type === 'include' ? 'green' : 'red'}); font-size:20px;"></i>
+      <div class="scope-card" data-id="${scope.id}" style="background:var(--cf-bg-medium); border:1px solid var(--cf-accent-${scope.type === 'include' ? 'green' : 'red'}); border-radius:8px; padding:16px; display:flex; align-items:center; gap:12px;">
+        <i class="fas fa-${scope.type === 'include' ? 'check' : 'times'}-circle" style="color:var(--cf-accent-${scope.type === 'include' ? 'green' : 'red'}); font-size:20px;"></i>
         <div style="flex:1;">
           <div style="font-weight:600;">${scope.pattern}</div>
-          <div style="font-size:11px; color:var(--caido-text-muted);">${scope.type === 'include' ? 'In Scope' : 'Out of Scope'} • ${scope.matchCount || 0} matches</div>
+          <div style="font-size:11px; color:var(--cf-text-muted);">${scope.type === 'include' ? 'In Scope' : 'Out of Scope'} • ${scope.matchCount || 0} matches</div>
         </div>
-        <button class="caido-btn scope-edit" data-id="${scope.id}"><i class="fas fa-edit"></i></button>
-        <button class="caido-btn scope-delete" data-id="${scope.id}"><i class="fas fa-trash"></i></button>
+        <button class="cf-btn scope-edit" data-id="${scope.id}"><i class="fas fa-edit"></i></button>
+        <button class="cf-btn scope-delete" data-id="${scope.id}"><i class="fas fa-trash"></i></button>
       </div>
     `).join('');
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Scopes</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-scope"><i class="fas fa-plus"></i> Add Scope</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Scopes</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-scope"><i class="fas fa-plus"></i> Add Scope</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div id="scopes-container" style="display:flex; flex-direction:column; gap:12px;">
             ${scopesHtml}
           </div>
@@ -5185,18 +5185,18 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Pattern</label>
-            <input class="caido-input" name="pattern" placeholder="*.example.com" style="width:100%;">
+            <input class="cf-input" name="pattern" placeholder="*.example.com" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
-            <select class="caido-input" name="type" style="width:100%;">
+            <select class="cf-input" name="type" style="width:100%;">
               <option value="include">Include (In Scope)</option>
               <option value="exclude">Exclude (Out of Scope)</option>
             </select>
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Description</label>
-            <input class="caido-input" name="description" placeholder="Optional description" style="width:100%;">
+            <input class="cf-input" name="description" placeholder="Optional description" style="width:100%;">
           </div>
         </div>
       `, async (formData) => {
@@ -5260,7 +5260,7 @@
 
   function bindAIModelsEvents() {
     // Test AI model buttons
-    document.querySelectorAll('.caido-btn.primary').forEach(btn => {
+    document.querySelectorAll('.cf-btn.primary').forEach(btn => {
       if (btn.textContent.includes('Test')) {
         btn.addEventListener('click', async () => {
           showToast('info', 'Testing', 'Running AI model test...');
@@ -5301,7 +5301,7 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Indicator Type</label>
-            <select class="caido-input" name="type" style="width:100%;">
+            <select class="cf-input" name="type" style="width:100%;">
               <option value="ip">IP Address</option>
               <option value="domain">Domain</option>
               <option value="url">URL</option>
@@ -5310,7 +5310,7 @@
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Value</label>
-            <input class="caido-input" name="value" placeholder="Enter IP, domain, URL, or hash" style="width:100%;">
+            <input class="cf-input" name="value" placeholder="Enter IP, domain, URL, or hash" style="width:100%;">
           </div>
         </div>
       `, async (formData) => {
@@ -5322,7 +5322,7 @@
           if (result.success) {
             const data = result.data.data || result.data;
             showModal('IOC Lookup Result', `
-              <div style="background:var(--caido-bg-dark); padding:16px; border-radius:8px;">
+              <div style="background:var(--cf-bg-dark); padding:16px; border-radius:8px;">
                 <pre style="margin:0; white-space:pre-wrap;">${JSON.stringify(data, null, 2)}</pre>
               </div>
             `, null);
@@ -5344,7 +5344,7 @@
         <div class="empty-state-description">Create filters to hide or show specific traffic</div>
       </div>
     ` : state.filters.map(filter => `
-      <div class="filter-card" data-id="${filter.id}" style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+      <div class="filter-card" data-id="${filter.id}" style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
         <div style="display:flex; align-items:center; gap:12px;">
           <label class="switch">
             <input type="checkbox" class="filter-toggle" data-id="${filter.id}" ${filter.enabled ? 'checked' : ''}>
@@ -5352,23 +5352,23 @@
           </label>
           <div style="flex:1;">
             <div style="font-weight:600;">${filter.name}</div>
-            <div style="font-size:11px; color:var(--caido-text-muted);">${filter.pattern || filter.description || 'No pattern'}</div>
+            <div style="font-size:11px; color:var(--cf-text-muted);">${filter.pattern || filter.description || 'No pattern'}</div>
           </div>
-          <button class="caido-btn filter-edit" data-id="${filter.id}"><i class="fas fa-edit"></i></button>
-          <button class="caido-btn filter-delete" data-id="${filter.id}"><i class="fas fa-trash"></i></button>
+          <button class="cf-btn filter-edit" data-id="${filter.id}"><i class="fas fa-edit"></i></button>
+          <button class="cf-btn filter-delete" data-id="${filter.id}"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `).join('');
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Filters</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="new-filter"><i class="fas fa-plus"></i> New Filter</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Filters</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="new-filter"><i class="fas fa-plus"></i> New Filter</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div id="filters-container" style="display:flex; flex-direction:column; gap:12px;">
             ${filtersHtml}
           </div>
@@ -5383,15 +5383,15 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
-            <input class="caido-input" name="name" placeholder="Hide Image Requests" style="width:100%;">
+            <input class="cf-input" name="name" placeholder="Hide Image Requests" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Pattern (regex)</label>
-            <input class="caido-input" name="pattern" placeholder="\\.(png|jpg|gif|svg)$" style="width:100%;">
+            <input class="cf-input" name="pattern" placeholder="\\.(png|jpg|gif|svg)$" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Type</label>
-            <select class="caido-input" name="type" style="width:100%;">
+            <select class="cf-input" name="type" style="width:100%;">
               <option value="hide">Hide matching</option>
               <option value="show">Show only matching</option>
             </select>
@@ -5446,43 +5446,43 @@
 
   function buildAIModelsLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">AI Models</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn"><i class="fas fa-sync"></i> Refresh Status</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">AI Models</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn"><i class="fas fa-sync"></i> Refresh Status</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
-            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:20px;">
+            <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:20px;">
               <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
                 <div style="width:48px;height:48px;background:linear-gradient(135deg, #4285f4, #34a853);border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:white; font-size:20px;"></i></div>
                 <div>
                   <div style="font-weight:600;">Gemini Pro</div>
-                  <div style="font-size:11px; color:var(--caido-text-muted);">Google AI</div>
+                  <div style="font-size:11px; color:var(--cf-text-muted);">Google AI</div>
                 </div>
-                <span class="caido-badge green" style="margin-left:auto;">Active</span>
+                <span class="cf-badge green" style="margin-left:auto;">Active</span>
               </div>
-              <div style="font-size:13px; color:var(--caido-text-secondary); margin-bottom:12px;">Primary AI model for security analysis and threat detection.</div>
+              <div style="font-size:13px; color:var(--cf-text-secondary); margin-bottom:12px;">Primary AI model for security analysis and threat detection.</div>
               <div style="display:flex; gap:8px;">
-                <button class="caido-btn" style="flex:1;"><i class="fas fa-cog"></i> Configure</button>
-                <button class="caido-btn primary" style="flex:1;"><i class="fas fa-play"></i> Test</button>
+                <button class="cf-btn" style="flex:1;"><i class="fas fa-cog"></i> Configure</button>
+                <button class="cf-btn primary" style="flex:1;"><i class="fas fa-play"></i> Test</button>
               </div>
             </div>
-            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:12px; padding:20px;">
+            <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:12px; padding:20px;">
               <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
                 <div style="width:48px;height:48px;background:linear-gradient(135deg, #764ba2, #667eea);border-radius:12px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-network-wired" style="color:white; font-size:20px;"></i></div>
                 <div>
                   <div style="font-weight:600;">Threat Detector</div>
-                  <div style="font-size:11px; color:var(--caido-text-muted);">Custom ML</div>
+                  <div style="font-size:11px; color:var(--cf-text-muted);">Custom ML</div>
                 </div>
-                <span class="caido-badge green" style="margin-left:auto;">Active</span>
+                <span class="cf-badge green" style="margin-left:auto;">Active</span>
               </div>
-              <div style="font-size:13px; color:var(--caido-text-secondary); margin-bottom:12px;">Custom trained model for malware and intrusion detection.</div>
+              <div style="font-size:13px; color:var(--cf-text-secondary); margin-bottom:12px;">Custom trained model for malware and intrusion detection.</div>
               <div style="display:flex; gap:8px;">
-                <button class="caido-btn" style="flex:1;"><i class="fas fa-cog"></i> Configure</button>
-                <button class="caido-btn primary" style="flex:1;"><i class="fas fa-play"></i> Test</button>
+                <button class="cf-btn" style="flex:1;"><i class="fas fa-cog"></i> Configure</button>
+                <button class="cf-btn primary" style="flex:1;"><i class="fas fa-play"></i> Test</button>
               </div>
             </div>
           </div>
@@ -5493,32 +5493,32 @@
 
   function buildThreatIntelLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Threat Intelligence</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn" id="update-feeds"><i class="fas fa-download"></i> Update Feeds</button>
-            <button class="caido-btn primary" id="lookup-ioc"><i class="fas fa-search"></i> Lookup IOC</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Threat Intelligence</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn" id="update-feeds"><i class="fas fa-download"></i> Update Feeds</button>
+            <button class="cf-btn primary" id="lookup-ioc"><i class="fas fa-search"></i> Lookup IOC</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
+        <div class="cf-panel-content" style="padding:16px;">
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:24px;">
-            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; text-align:center;">
-              <div style="font-size:32px; font-weight:700; color:var(--caido-accent-red);" id="threat-ips">${state.threatStats?.maliciousIps || 0}</div>
-              <div style="font-size:12px; color:var(--caido-text-muted);">Known Malicious IPs</div>
+            <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px; text-align:center;">
+              <div style="font-size:32px; font-weight:700; color:var(--cf-accent-red);" id="threat-ips">${state.threatStats?.maliciousIps || 0}</div>
+              <div style="font-size:12px; color:var(--cf-text-muted);">Known Malicious IPs</div>
             </div>
-            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; text-align:center;">
-              <div style="font-size:32px; font-weight:700; color:var(--caido-accent-orange);" id="threat-domains">${state.threatStats?.suspiciousDomains || 0}</div>
-              <div style="font-size:12px; color:var(--caido-text-muted);">Suspicious Domains</div>
+            <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px; text-align:center;">
+              <div style="font-size:32px; font-weight:700; color:var(--cf-accent-orange);" id="threat-domains">${state.threatStats?.suspiciousDomains || 0}</div>
+              <div style="font-size:12px; color:var(--cf-text-muted);">Suspicious Domains</div>
             </div>
-            <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px; text-align:center;">
-              <div style="font-size:32px; font-weight:700; color:var(--caido-accent-purple);" id="threat-iocs">${state.threatStats?.totalIocs || 0}</div>
-              <div style="font-size:12px; color:var(--caido-text-muted);">IOCs in Database</div>
+            <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px; text-align:center;">
+              <div style="font-size:32px; font-weight:700; color:var(--cf-accent-purple);" id="threat-iocs">${state.threatStats?.totalIocs || 0}</div>
+              <div style="font-size:12px; color:var(--cf-text-muted);">IOCs in Database</div>
             </div>
           </div>
           <h3 style="margin-bottom:12px;">Recent Threat Feeds</h3>
-          <div class="caido-table-container">
-            <table class="caido-table">
+          <div class="cf-table-container">
+            <table class="cf-table">
               <thead><tr><th>Feed</th><th>Last Updated</th><th>Entries</th><th>Status</th></tr></thead>
               <tbody id="threat-feeds-tbody">
                 ${state.threatStats?.feeds?.length ? state.threatStats.feeds.map(f => `
@@ -5526,12 +5526,12 @@
                     <td>${f.name}</td>
                     <td>${f.lastUpdated || 'Never'}</td>
                     <td>${f.entries || 0}</td>
-                    <td><span class="caido-badge ${f.status === 'active' ? 'green' : 'orange'}">${f.status || 'Unknown'}</span></td>
+                    <td><span class="cf-badge ${f.status === 'active' ? 'green' : 'orange'}">${f.status || 'Unknown'}</span></td>
                   </tr>
                 `).join('') : `
-                  <tr><td>AbuseIPDB</td><td>Ready to update</td><td>-</td><td><span class="caido-badge blue">Available</span></td></tr>
-                  <tr><td>URLhaus</td><td>Ready to update</td><td>-</td><td><span class="caido-badge blue">Available</span></td></tr>
-                  <tr><td>PhishTank</td><td>Ready to update</td><td>-</td><td><span class="caido-badge blue">Available</span></td></tr>
+                  <tr><td>AbuseIPDB</td><td>Ready to update</td><td>-</td><td><span class="cf-badge blue">Available</span></td></tr>
+                  <tr><td>URLhaus</td><td>Ready to update</td><td>-</td><td><span class="cf-badge blue">Available</span></td></tr>
+                  <tr><td>PhishTank</td><td>Ready to update</td><td>-</td><td><span class="cf-badge blue">Available</span></td></tr>
                 `}
               </tbody>
             </table>
@@ -5543,12 +5543,12 @@
 
   function buildEnvironmentLayout() {
     const envHtml = state.environment.length === 0 ? `
-      <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No environment variables defined</td></tr>
+      <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--cf-text-muted);">No environment variables defined</td></tr>
     ` : state.environment.map(env => `
       <tr data-id="${env.id}">
         <td><code>${env.name}</code></td>
         <td><code>${env.secret ? '••••••••••••' : env.value}</code></td>
-        <td><span class="caido-badge ${env.scope === 'global' ? 'blue' : env.scope === 'session' ? 'orange' : 'purple'}">${env.scope || 'Global'}</span></td>
+        <td><span class="cf-badge ${env.scope === 'global' ? 'blue' : env.scope === 'session' ? 'orange' : 'purple'}">${env.scope || 'Global'}</span></td>
         <td>
           <button class="panel-action-btn env-edit" data-id="${env.id}"><i class="fas fa-edit"></i></button>
           <button class="panel-action-btn env-delete" data-id="${env.id}"><i class="fas fa-trash"></i></button>
@@ -5557,16 +5557,16 @@
     `).join('');
 
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Environment Variables</div>
-          <div class="caido-panel-actions">
-            <button class="caido-btn primary" id="add-variable"><i class="fas fa-plus"></i> Add Variable</button>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Environment Variables</div>
+          <div class="cf-panel-actions">
+            <button class="cf-btn primary" id="add-variable"><i class="fas fa-plus"></i> Add Variable</button>
           </div>
         </div>
-        <div class="caido-panel-content" style="padding:16px;">
-          <div class="caido-table-container">
-            <table class="caido-table">
+        <div class="cf-panel-content" style="padding:16px;">
+          <div class="cf-table-container">
+            <table class="cf-table">
               <thead><tr><th>Name</th><th>Value</th><th>Scope</th><th>Actions</th></tr></thead>
               <tbody id="env-tbody">
                 ${envHtml}
@@ -5584,15 +5584,15 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Name</label>
-            <input class="caido-input" name="name" placeholder="API_KEY" style="width:100%;">
+            <input class="cf-input" name="name" placeholder="API_KEY" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Value</label>
-            <input class="caido-input" name="value" placeholder="your-secret-value" style="width:100%;">
+            <input class="cf-input" name="value" placeholder="your-secret-value" style="width:100%;">
           </div>
           <div>
             <label style="display:block; font-weight:600; margin-bottom:8px;">Scope</label>
-            <select class="caido-input" name="scope" style="width:100%;">
+            <select class="cf-input" name="scope" style="width:100%;">
               <option value="global">Global</option>
               <option value="session">Session</option>
               <option value="workspace">Workspace</option>
@@ -5642,24 +5642,24 @@
 
   function buildSyncStatusLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Sync Status</div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Sync Status</div>
         </div>
-        <div class="caido-panel-content" style="padding:24px;">
+        <div class="cf-panel-content" style="padding:24px;">
           <div style="text-align:center; margin-bottom:24px;">
-            <i class="fas fa-cloud-upload-alt" style="font-size:48px; color:var(--caido-accent-green); margin-bottom:16px;"></i>
+            <i class="fas fa-cloud-upload-alt" style="font-size:48px; color:var(--cf-accent-green); margin-bottom:16px;"></i>
             <h3>All Synced</h3>
-            <p style="color:var(--caido-text-muted);">Your workspace is up to date with the cloud.</p>
+            <p style="color:var(--cf-text-muted);">Your workspace is up to date with the cloud.</p>
           </div>
-          <div style="background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+          <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
               <span>Last sync:</span>
-              <span style="color:var(--caido-text-muted);">2 minutes ago</span>
+              <span style="color:var(--cf-text-muted);">2 minutes ago</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
               <span>Pending changes:</span>
-              <span style="color:var(--caido-accent-green);">0</span>
+              <span style="color:var(--cf-accent-green);">0</span>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span>Sync mode:</span>
@@ -5673,19 +5673,19 @@
 
   function buildBrowserExtensionLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Browser Extension</div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Browser Extension</div>
         </div>
-        <div class="caido-panel-content" style="padding:24px;">
+        <div class="cf-panel-content" style="padding:24px;">
           <div style="text-align:center; max-width:400px; margin:0 auto;">
-            <i class="fas fa-puzzle-piece" style="font-size:48px; color:var(--caido-accent-blue); margin-bottom:16px;"></i>
+            <i class="fas fa-puzzle-piece" style="font-size:48px; color:var(--cf-accent-blue); margin-bottom:16px;"></i>
             <h3>Install Browser Extension</h3>
-            <p style="color:var(--caido-text-muted); margin-bottom:24px;">Capture browser traffic directly and send it to Cyberforge for analysis.</p>
+            <p style="color:var(--cf-text-muted); margin-bottom:24px;">Capture browser traffic directly and send it to Cyberforge for analysis.</p>
             <div style="display:flex; gap:12px; justify-content:center;">
-              <button class="caido-btn"><i class="fab fa-chrome"></i> Chrome</button>
-              <button class="caido-btn"><i class="fab fa-firefox"></i> Firefox</button>
-              <button class="caido-btn"><i class="fab fa-edge"></i> Edge</button>
+              <button class="cf-btn"><i class="fab fa-chrome"></i> Chrome</button>
+              <button class="cf-btn"><i class="fab fa-firefox"></i> Firefox</button>
+              <button class="cf-btn"><i class="fab fa-edge"></i> Edge</button>
             </div>
           </div>
         </div>
@@ -5695,19 +5695,19 @@
 
   function buildMobileCompanionLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Mobile Companion</div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Mobile Companion</div>
         </div>
-        <div class="caido-panel-content" style="padding:24px;">
+        <div class="cf-panel-content" style="padding:24px;">
           <div style="text-align:center; max-width:400px; margin:0 auto;">
-            <i class="fas fa-mobile-alt" style="font-size:48px; color:var(--caido-accent-purple); margin-bottom:16px;"></i>
+            <i class="fas fa-mobile-alt" style="font-size:48px; color:var(--cf-accent-purple); margin-bottom:16px;"></i>
             <h3>Connect Mobile Device</h3>
-            <p style="color:var(--caido-text-muted); margin-bottom:24px;">Scan the QR code with the Cyberforge mobile app to connect your device.</p>
+            <p style="color:var(--cf-text-muted); margin-bottom:24px;">Scan the QR code with the Cyberforge mobile app to connect your device.</p>
             <div style="background:white; width:150px; height:150px; margin:0 auto 24px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
               <i class="fas fa-qrcode" style="font-size:80px; color:#333;"></i>
             </div>
-            <p style="font-size:12px; color:var(--caido-text-muted);">Or enter code: <strong>CYBER-1234-FORGE</strong></p>
+            <p style="font-size:12px; color:var(--cf-text-muted);">Or enter code: <strong>CYBER-1234-FORGE</strong></p>
           </div>
         </div>
       </div>
@@ -5717,34 +5717,34 @@
   function buildProfileLayout() {
     const user = cyberforgeAPI.getCurrentUser();
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Profile</div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Profile</div>
         </div>
-        <div class="caido-panel-content" style="padding:24px; max-width:600px;">
+        <div class="cf-panel-content" style="padding:24px; max-width:600px;">
           <div style="display:flex; align-items:center; gap:20px; margin-bottom:32px;">
-            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--caido-accent-orange), var(--caido-accent-orange-dim));display:flex;align-items:center;justify-content:center;">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg, var(--cf-accent-orange), var(--cf-accent-orange-dim));display:flex;align-items:center;justify-content:center;">
               <i class="fas fa-user" style="font-size:32px; color:white;"></i>
             </div>
             <div>
               <h2>${user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'User'}</h2>
-              <p style="color:var(--caido-text-muted);">${user?.email || ''}</p>
-              <span class="caido-badge blue">${user?.role || 'User'}</span>
+              <p style="color:var(--cf-text-muted);">${user?.email || ''}</p>
+              <span class="cf-badge blue">${user?.role || 'User'}</span>
             </div>
           </div>
           <div style="margin-bottom:24px;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">First Name</label>
-            <input class="caido-input" value="${user?.firstName || ''}" style="width:100%;">
+            <input class="cf-input" value="${user?.firstName || ''}" style="width:100%;">
           </div>
           <div style="margin-bottom:24px;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Last Name</label>
-            <input class="caido-input" value="${user?.lastName || ''}" style="width:100%;">
+            <input class="cf-input" value="${user?.lastName || ''}" style="width:100%;">
           </div>
           <div style="margin-bottom:24px;">
             <label style="display:block; font-weight:600; margin-bottom:8px;">Email</label>
-            <input class="caido-input" value="${user?.email || ''}" disabled style="width:100%; opacity:0.7;">
+            <input class="cf-input" value="${user?.email || ''}" disabled style="width:100%; opacity:0.7;">
           </div>
-          <button class="caido-btn primary"><i class="fas fa-save"></i> Save Changes</button>
+          <button class="cf-btn primary"><i class="fas fa-save"></i> Save Changes</button>
         </div>
       </div>
     `;
@@ -5752,47 +5752,47 @@
 
   function buildSettingsLayout() {
     return `
-      <div class="caido-panel" style="flex:1; display:flex; flex-direction:column;">
-        <div class="caido-panel-header">
-          <div class="caido-panel-title">Settings</div>
+      <div class="cf-panel" style="flex:1; display:flex; flex-direction:column;">
+        <div class="cf-panel-header">
+          <div class="cf-panel-title">Settings</div>
         </div>
-        <div class="caido-panel-content" style="padding:24px; max-width:600px;">
+        <div class="cf-panel-content" style="padding:24px; max-width:600px;">
           <h3 style="margin-bottom:16px;">Appearance</h3>
-          <div style="margin-bottom:24px; background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+          <div style="margin-bottom:24px; background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
               <div>
                 <div style="font-weight:600;">Dark Mode</div>
-                <div style="font-size:12px; color:var(--caido-text-muted);">Use dark theme</div>
+                <div style="font-size:12px; color:var(--cf-text-muted);">Use dark theme</div>
               </div>
               <label class="switch"><input type="checkbox" id="setting-dark-mode"><span class="slider"></span></label>
             </div>
           </div>
           
           <h3 style="margin-bottom:16px;">Notifications</h3>
-          <div style="margin-bottom:24px; background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
+          <div style="margin-bottom:24px; background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
               <div>
                 <div style="font-weight:600;">Threat Alerts</div>
-                <div style="font-size:12px; color:var(--caido-text-muted);">Show notifications for new threats</div>
+                <div style="font-size:12px; color:var(--cf-text-muted);">Show notifications for new threats</div>
               </div>
               <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div>
                 <div style="font-weight:600;">Sound Effects</div>
-                <div style="font-size:12px; color:var(--caido-text-muted);">Play sounds for alerts</div>
+                <div style="font-size:12px; color:var(--cf-text-muted);">Play sounds for alerts</div>
               </div>
               <label class="switch"><input type="checkbox"><span class="slider"></span></label>
             </div>
           </div>
           
           <h3 style="margin-bottom:16px;">Security</h3>
-          <div style="margin-bottom:24px; background:var(--caido-bg-medium); border:1px solid var(--caido-border); border-radius:8px; padding:16px;">
-            <button class="caido-btn" style="width:100%; margin-bottom:8px;"><i class="fas fa-key"></i> Change Password</button>
-            <button class="caido-btn" style="width:100%;"><i class="fas fa-shield-alt"></i> Two-Factor Authentication</button>
+          <div style="margin-bottom:24px; background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:8px; padding:16px;">
+            <button class="cf-btn" style="width:100%; margin-bottom:8px;"><i class="fas fa-key"></i> Change Password</button>
+            <button class="cf-btn" style="width:100%;"><i class="fas fa-shield-alt"></i> Two-Factor Authentication</button>
           </div>
           
-          <button class="caido-btn primary"><i class="fas fa-save"></i> Save Settings</button>
+          <button class="cf-btn primary"><i class="fas fa-save"></i> Save Settings</button>
         </div>
       </div>
     `;
@@ -5892,7 +5892,7 @@
     tbody.innerHTML = '';
     
     if (state.intercepts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No intercepted requests. Enable intercept mode to capture requests.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--cf-text-muted);">No intercepted requests. Enable intercept mode to capture requests.</td></tr>';
       return;
     }
     
@@ -5903,10 +5903,10 @@
         <td>${item.host}</td>
         <td><span class="method-badge ${(item.method || 'GET').toLowerCase()}">${item.method || 'GET'}</span></td>
         <td>${item.path}</td>
-        <td><span class="caido-badge ${item.status === 'pending' ? 'orange' : 'blue'}">${item.status || 'pending'}</span></td>
+        <td><span class="cf-badge ${item.status === 'pending' ? 'orange' : 'blue'}">${item.status || 'pending'}</span></td>
         <td>
-          <button class="caido-btn intercept-forward" data-id="${item.id}" title="Forward"><i class="fas fa-arrow-right"></i></button>
-          <button class="caido-btn intercept-drop" data-id="${item.id}" title="Drop"><i class="fas fa-trash"></i></button>
+          <button class="cf-btn intercept-forward" data-id="${item.id}" title="Forward"><i class="fas fa-arrow-right"></i></button>
+          <button class="cf-btn intercept-drop" data-id="${item.id}" title="Drop"><i class="fas fa-trash"></i></button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -5936,7 +5936,7 @@
     tbody.innerHTML = '';
     
     if (state.matchRules.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No rules defined. Add a rule to modify requests/responses.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--cf-text-muted);">No rules defined. Add a rule to modify requests/responses.</td></tr>';
       return;
     }
     
@@ -5954,7 +5954,7 @@
           </label>
         </td>
         <td>
-          <button class="caido-btn rule-delete" data-id="${rule.id}"><i class="fas fa-trash"></i></button>
+          <button class="cf-btn rule-delete" data-id="${rule.id}"><i class="fas fa-trash"></i></button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -5994,7 +5994,7 @@
     tbody.innerHTML = '';
     
     if (state.findings.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--caido-text-muted);">No findings yet. Scan for vulnerabilities or add findings manually.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--cf-text-muted);">No findings yet. Scan for vulnerabilities or add findings manually.</td></tr>';
       return;
     }
     
@@ -6002,14 +6002,14 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${f.id}</td>
-        <td><span class="caido-badge ${severityColor(f.severity)}">${f.severity}</span></td>
+        <td><span class="cf-badge ${severityColor(f.severity)}">${f.severity}</span></td>
         <td>${f.title}</td>
         <td>${f.path || '-'}</td>
-        <td><span class="caido-badge ${f.status === 'Open' ? 'orange' : f.status === 'Resolved' ? 'green' : 'gray'}">${f.status}</span></td>
+        <td><span class="cf-badge ${f.status === 'Open' ? 'orange' : f.status === 'Resolved' ? 'green' : 'gray'}">${f.status}</span></td>
         <td>
-          <button class="caido-btn finding-view" data-id="${f.id}" title="View"><i class="fas fa-eye"></i></button>
-          <button class="caido-btn finding-resolve" data-id="${f.id}" title="${f.status === 'Open' ? 'Resolve' : 'Reopen'}"><i class="fas fa-${f.status === 'Open' ? 'check' : 'undo'}"></i></button>
-          <button class="caido-btn finding-delete" data-id="${f.id}" title="Delete"><i class="fas fa-trash"></i></button>
+          <button class="cf-btn finding-view" data-id="${f.id}" title="View"><i class="fas fa-eye"></i></button>
+          <button class="cf-btn finding-resolve" data-id="${f.id}" title="${f.status === 'Open' ? 'Resolve' : 'Reopen'}"><i class="fas fa-${f.status === 'Open' ? 'check' : 'undo'}"></i></button>
+          <button class="cf-btn finding-delete" data-id="${f.id}" title="Delete"><i class="fas fa-trash"></i></button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -6052,12 +6052,12 @@
           showModal(`Finding: ${finding.title}`, `
             <div style="display:flex; flex-direction:column; gap:16px;">
               <div style="display:flex; gap:12px;">
-                <span class="caido-badge ${severityColor(finding.severity)}">${finding.severity}</span>
-                <span class="caido-badge ${finding.status === 'Open' ? 'orange' : 'green'}">${finding.status}</span>
+                <span class="cf-badge ${severityColor(finding.severity)}">${finding.severity}</span>
+                <span class="cf-badge ${finding.status === 'Open' ? 'orange' : 'green'}">${finding.status}</span>
               </div>
               <div><strong>Path:</strong> ${finding.path || '-'}</div>
               <div><strong>Description:</strong><br>${finding.description || 'No description'}</div>
-              ${finding.request ? `<div><strong>Request:</strong><pre style="background:var(--caido-bg-dark); padding:8px; border-radius:4px; overflow:auto;">${finding.request}</pre></div>` : ''}
+              ${finding.request ? `<div><strong>Request:</strong><pre style="background:var(--cf-bg-dark); padding:8px; border-radius:4px; overflow:auto;">${finding.request}</pre></div>` : ''}
             </div>
           `, null);
         }
@@ -6235,7 +6235,7 @@
           <div class="scope-item active">
             <span class="scope-name">${s.name}</span>
             <span class="scope-pattern">${s.pattern}</span>
-            <button class="caido-btn scope-toggle" data-id="${s.id}"><i class="fas fa-toggle-on"></i></button>
+            <button class="cf-btn scope-toggle" data-id="${s.id}"><i class="fas fa-toggle-on"></i></button>
           </div>
         `).join('');
       } else {
@@ -6254,7 +6254,7 @@
           <div class="scope-item excluded">
             <span class="scope-name">${s.name}</span>
             <span class="scope-pattern">${s.pattern}</span>
-            <button class="caido-btn scope-toggle" data-id="${s.id}"><i class="fas fa-toggle-off"></i></button>
+            <button class="cf-btn scope-toggle" data-id="${s.id}"><i class="fas fa-toggle-off"></i></button>
           </div>
         `).join('');
       } else {
@@ -6389,12 +6389,12 @@
       <div class="template-card">
         <h4><i class="fas fa-spider"></i> Web Crawler</h4>
         <p>Automatically crawl and map web applications</p>
-        <button class="caido-btn primary">Use Template</button>
+        <button class="cf-btn primary">Use Template</button>
       </div>
       <div class="template-card">
         <h4><i class="fas fa-bug"></i> Vulnerability Scanner</h4>
         <p>Scan for common web vulnerabilities</p>
-        <button class="caido-btn primary">Use Template</button>
+        <button class="cf-btn primary">Use Template</button>
       </div>
     `;
   }
@@ -6427,7 +6427,7 @@
           <div class="model-card trained">
             <div class="model-header">
               <h4>${m.name}</h4>
-              <span class="caido-badge green">Trained</span>
+              <span class="cf-badge green">Trained</span>
             </div>
             <div class="model-stats">
               <span>Accuracy: ${m.accuracy || '95%'}</span>
@@ -6478,7 +6478,7 @@
           <div class="feed-card ${f.active ? 'active' : ''}">
             <div class="feed-header">
               <h4>${f.name}</h4>
-              <span class="caido-badge ${f.active ? 'green' : 'gray'}">${f.active ? 'Active' : 'Inactive'}</span>
+              <span class="cf-badge ${f.active ? 'green' : 'gray'}">${f.active ? 'Active' : 'Inactive'}</span>
             </div>
             <div class="feed-info">
               <span>Last sync: ${f.lastSync ? new Date(f.lastSync).toLocaleString() : 'Never'}</span>
@@ -6551,7 +6551,7 @@
         container.innerHTML = result.data.map(f => `
           <div class="finding-item ${level}">
             <div class="finding-header">
-              <span class="caido-badge ${severityColor(level)}">${level.toUpperCase()}</span>
+              <span class="cf-badge ${severityColor(level)}">${level.toUpperCase()}</span>
               <h4>${f.title}</h4>
             </div>
             <div class="finding-details">
@@ -6612,12 +6612,12 @@
       <div class="plugin-card">
         <h4>JWT Analyzer</h4>
         <p>Decode and analyze JWT tokens</p>
-        <button class="caido-btn primary">Install</button>
+        <button class="cf-btn primary">Install</button>
       </div>
       <div class="plugin-card">
         <h4>GraphQL Introspection</h4>
         <p>Explore GraphQL schemas</p>
-        <button class="caido-btn primary">Install</button>
+        <button class="cf-btn primary">Install</button>
       </div>
     `;
   }

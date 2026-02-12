@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
 use sysinfo::System;
-use tauri::{AppHandle, Manager, State, WebviewWindow};
+use tauri::{Emitter, State, WebviewWindow};
 use tokio::sync::Mutex;
 
 type SharedState = Arc<Mutex<AppState>>;
@@ -355,7 +355,7 @@ pub async fn get_threats(state: State<'_, SharedState>) -> Result<Value, String>
 #[tauri::command]
 pub async fn send_to_backend(
     state: State<'_, SharedState>,
-    data: Value,
+    _data: Value,
 ) -> Result<bool, String> {
     // This would send over the WebSocket. For now, acknowledge.
     let s = state.lock().await;

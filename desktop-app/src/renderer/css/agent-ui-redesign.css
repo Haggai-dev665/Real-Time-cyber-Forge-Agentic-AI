@@ -61,7 +61,7 @@
 
 /* Badge styles for live indicators */
 .live-badge {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
+    background: #4CAF50;
     color: white;
     font-size: 0.65rem;
     padding: 2px 6px;
@@ -81,7 +81,7 @@
 }
 
 .agent-badge {
-    background: linear-gradient(135deg, #2196F3, #1976D2);
+    background: #2196F3;
     animation: pulse-agent-badge 3s infinite;
 }
 

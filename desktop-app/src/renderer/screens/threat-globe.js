@@ -300,8 +300,11 @@ class ThreatGlobeScreen {
 
     async loadThreatData() {
         try {
+            // Get backend URL from config or use default
+            const backendUrl = window.API_ENDPOINTS?.BACKEND_URL || 'http://localhost:8000';
+            
             // Try to fetch from backend OTX API
-            const response = await fetch('http://localhost:8000/api/otx/threats/recent?limit=20');
+            const response = await fetch(`${backendUrl}/api/otx/threats/recent?limit=20`);
             
             if (response.ok) {
                 const data = await response.json();

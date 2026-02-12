@@ -71,9 +71,7 @@
 .globe-visualization-wrapper {
     flex: 1;
     position: relative;
-    background: linear-gradient(135deg, 
-        rgba(37, 52, 63, 0.05) 0%, 
-        rgba(25, 34, 41, 0.1) 100%);
+    background: rgba(37, 52, 63, 0.02);
 }
 
 .threat-globe-container {
@@ -570,9 +568,7 @@
 
 /* Dark Mode Specific */
 [data-theme="dark"] .globe-visualization-wrapper {
-    background: linear-gradient(135deg, 
-        rgba(26, 35, 41, 0.3) 0%, 
-        rgba(17, 24, 28, 0.5) 100%);
+    background: rgba(26, 35, 41, 0.2);
 }
 
 [data-theme="dark"] .threat-counter,

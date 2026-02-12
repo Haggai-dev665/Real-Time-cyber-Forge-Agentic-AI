@@ -396,6 +396,27 @@ class AppwriteService {
     }
   }
 
+  /**
+   * Get task by ID
+   */
+  async getTask(taskId) {
+    this.ensureInitialized();
+    
+    try {
+      const result = await this.services.databases.getDocument(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.agentTasks,
+        taskId
+      );
+      
+      return result;
+    } catch (error) {
+      logger.error(`❌ Failed to get task ${taskId}:`, error);
+      throw error;
+    }
+  }
+
+  // ==================== ALERT MANAGEMENT ====================
   // ==================== ALERT MANAGEMENT ====================
 
   /**

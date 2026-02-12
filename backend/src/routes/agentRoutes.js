@@ -175,12 +175,8 @@ router.get('/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
 
-    // Get task from Appwrite
-    const task = await appwriteService.services.databases.getDocument(
-      appwriteService.services.databases.databaseId || 'cyberforge',
-      'agent_tasks',
-      taskId
-    );
+    // Get task from Appwrite using service method
+    const task = await appwriteService.getTask(taskId);
 
     res.json({
       success: true,

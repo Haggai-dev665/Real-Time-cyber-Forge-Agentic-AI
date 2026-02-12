@@ -77,6 +77,12 @@ class MLServiceClient {
 
     } catch (error) {
       logger.error('ML threat classification failed:', error.message);
+      logger.debug('ML service error details:', {
+        error: error.message,
+        stack: error.stack,
+        url: evidenceData.url,
+        serviceUrl: this.baseUrl
+      });
       
       // Fallback to basic classification based on web scraper data
       return this.fallbackClassification(evidenceData);

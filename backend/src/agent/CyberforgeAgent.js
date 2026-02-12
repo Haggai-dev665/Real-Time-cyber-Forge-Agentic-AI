@@ -26,7 +26,10 @@ class CyberforgeAgent {
       taskPollInterval: config.taskPollInterval || 10000,   // 10 seconds
       maxRetries: config.maxRetries || 3,
       version: config.version || '1.0.0',
-      capabilities: config.capabilities || ['web_scanning', 'threat_analysis']
+      capabilities: config.capabilities || ['web_scanning', 'threat_analysis'],
+      // Alert threshold: Create alerts for medium risk and above (30+ out of 100)
+      // Low risk (0-29): No alert, Medium (30-49): Alert, High (50-69): Alert, Critical (70+): Alert
+      alertRiskThreshold: config.alertRiskThreshold || 30
     };
     
     // Agent metadata
@@ -411,7 +414,8 @@ class CyberforgeAgent {
     );
 
     // Step 4: Create alert if risk is significant
-    if (mlOutput.riskScore >= 30) {
+    // Use configured threshold (default: 30 = medium risk)
+    if (mlOutput.riskScore >= this.config.alertRiskThreshold) {
       const alert = await appwriteService.createAlert({
         userId: this.userId,
         deviceId: this.deviceId,

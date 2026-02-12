@@ -555,7 +555,8 @@
 }
 
 .cf-btn-danger:hover:not(:disabled) {
-    background-color: #D32F2F;
+    background-color: var(--cf-status-error);
+    filter: brightness(0.85);
 }
 
 /* Button Sizes */

@@ -240,7 +240,7 @@ cyberforge-app.js           # Main app, screen routing (enhanced)
 
 ## Files Changed Summary
 
-### Created Files (6)
+### Created Files (5)
 1. `desktop-app/src/renderer/agent-ui-controller.js` (18KB) - UI controller
 2. `desktop-app/src/renderer/css/agent-ui-redesign.css` (14KB) - UI styles
 3. `desktop-app/src/renderer/screens/threat-globe.js` (21KB) - Threat Globe screen

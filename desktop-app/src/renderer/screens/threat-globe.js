@@ -11,6 +11,9 @@ class ThreatGlobeScreen {
         this.isPaused = false;
         this.threatData = [];
         this.updateInterval = null;
+        
+        // Configuration constants
+        this.UPDATE_INTERVAL_MS = 30000; // 30 seconds
     }
 
     async show(container, options = {}) {
@@ -303,6 +306,13 @@ class ThreatGlobeScreen {
             // Get backend URL from config or use default
             const backendUrl = window.API_ENDPOINTS?.BACKEND_URL || 'http://localhost:8000';
             
+            // Validate URL scheme for security
+            if (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
+                console.error('Invalid backend URL scheme');
+                this.loadMockThreats();
+                return;
+            }
+            
             // Try to fetch from backend OTX API
             const response = await fetch(`${backendUrl}/api/otx/threats/recent?limit=20`);
             
@@ -497,7 +507,7 @@ class ThreatGlobeScreen {
             if (this.isActive && !this.isPaused) {
                 this.loadThreatData();
             }
-        }, 30000); // Update every 30 seconds
+        }, this.UPDATE_INTERVAL_MS);
     }
 
     stopRealTimeUpdates() {

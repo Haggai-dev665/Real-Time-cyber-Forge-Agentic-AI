@@ -520,17 +520,17 @@
 }
 
 /* Smooth Theme Transition */
-* {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 0.3s;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Exclude animations and transforms from theme transition */
-*,
-*::before,
-*::after {
-    transition-property: background-color, border-color, color, box-shadow;
+.cf-header,
+.cf-sidebar,
+.cf-main,
+.cf-surface-0,
+.cf-surface-1,
+.agent-control-panel,
+.sidebar-nav-link,
+.header-btn {
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* =========================================

@@ -48,8 +48,52 @@
                 <!-- AI Illustration -->
                 <div class="ai-illustration">
                     <div class="illustration-glow"></div>
-                    <!-- Security/Work Illustration from unDraw -->
-                    <img src="https://illustrations.popsy.co/amber/work-chat.svg" alt="Security Team" id="auth-illustration" style="width: 100%; height: 100%; object-fit: contain;" />
+                    <!-- Security/Work Illustration - Simple SVG -->
+                    <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain;">
+                        <!-- Person working on laptop with security shield -->
+                        <defs>
+                            <linearGradient id="personGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#656D3F;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7a8349;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- Background circle -->
+                        <circle cx="250" cy="250" r="180" fill="rgba(101, 109, 63, 0.1)" />
+                        
+                        <!-- Person sitting -->
+                        <ellipse cx="250" cy="350" rx="60" ry="20" fill="#BFC9D1" opacity="0.3" />
+                        
+                        <!-- Laptop -->
+                        <rect x="180" y="300" width="140" height="80" rx="5" fill="#25343F" />
+                        <rect x="185" y="305" width="130" height="60" rx="3" fill="#E8E2D8" />
+                        <line x1="180" y1="380" x2="140" y2="400" stroke="#25343F" stroke-width="8" stroke-linecap="round" />
+                        <line x1="320" y1="380" x2="360" y2="400" stroke="#25343F" stroke-width="8" stroke-linecap="round" />
+                        <rect x="130" y="398" width="240" height="4" rx="2" fill="#25343F" />
+                        
+                        <!-- Person body -->
+                        <ellipse cx="250" cy="280" rx="35" ry="50" fill="url(#personGrad2)" />
+                        
+                        <!-- Person head -->
+                        <circle cx="250" cy="220" r="30" fill="#E8E2D8" />
+                        
+                        <!-- Hair -->
+                        <path d="M 220 220 Q 220 190 250 190 Q 280 190 280 220" fill="#25343F" />
+                        
+                        <!-- Arms -->
+                        <ellipse cx="220" cy="290" rx="15" ry="40" fill="#E8E2D8" transform="rotate(-30 220 290)" />
+                        <ellipse cx="280" cy="290" rx="15" ry="40" fill="#E8E2D8" transform="rotate(30 280 290)" />
+                        
+                        <!-- Security shield -->
+                        <path d="M 380 150 L 380 200 Q 380 240 350 250 Q 380 240 380 200 L 380 150 Z" fill="none" stroke="#656D3F" stroke-width="3" />
+                        <path d="M 350 120 L 420 120 L 420 210 Q 420 250 385 270 Q 350 250 350 210 Z" fill="rgba(101, 109, 63, 0.2)" stroke="#656D3F" stroke-width="4" />
+                        <text x="385" y="185" font-size="40" fill="#656D3F" text-anchor="middle">🛡</text>
+                        
+                        <!-- Code/data lines on laptop screen -->
+                        <line x1="195" y1="320" x2="260" y2="320" stroke="#656D3F" stroke-width="2" opacity="0.6" />
+                        <line x1="195" y1="335" x2="240" y2="335" stroke="#656D3F" stroke-width="2" opacity="0.6" />
+                        <line x1="195" y1="350" x2="280" y2="350" stroke="#656D3F" stroke-width="2" opacity="0.6" />
+                    </svg>
                 </div>
                 
                 <!-- Title -->

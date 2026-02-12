@@ -5,23 +5,23 @@
 
 /* CSS Variables - Professional Neutral Theme */
 :root {
-    /* Background Colors - Professional Palette */
-    --auth-bg-primary: #25343F;      /* Dark blue-gray */
-    --auth-bg-secondary: #213C51;    /* Darker blue */
-    --auth-bg-card: rgba(191, 201, 209, 0.05);
-    --auth-bg-input: rgba(191, 201, 209, 0.08);
-    --auth-bg-hover: rgba(191, 201, 209, 0.12);
+    /* Background Colors - Professional Palette with Light Cream Background */
+    --auth-bg-primary: #F1F3E0;      /* Light cream background */
+    --auth-bg-secondary: #E8E2D8;    /* Beige secondary */
+    --auth-bg-card: rgba(37, 52, 63, 0.05);
+    --auth-bg-input: rgba(37, 52, 63, 0.03);
+    --auth-bg-hover: rgba(37, 52, 63, 0.08);
     
-    /* Glassmorphism - No purple, using neutral grays */
-    --glass-bg: rgba(191, 201, 209, 0.04);
-    --glass-border: rgba(191, 201, 209, 0.12);
+    /* Glassmorphism - Adjusted for light background */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(37, 52, 63, 0.15);
     --glass-blur: blur(20px);
     
-    /* Text Colors - Neutral tones */
-    --auth-text-primary: #E8E2D8;    /* Beige/cream */
-    --auth-text-secondary: #BFC9D1;  /* Light blue-gray */
-    --auth-text-muted: #8a959e;
-    --auth-text-placeholder: #6a757e;
+    /* Text Colors - Dark text for light background */
+    --auth-text-primary: #25343F;    /* Dark blue-gray */
+    --auth-text-secondary: #213C51;  /* Darker blue */
+    --auth-text-muted: #6a757e;
+    --auth-text-placeholder: #8a959e;
     
     /* Accent Colors - Olive green (NO gradients) */
     --accent-primary: #656D3F;       /* Olive green */
@@ -30,19 +30,19 @@
     --accent-glow: 0 0 30px rgba(101, 109, 63, 0.3);
     
     /* Borders */
-    --auth-border-color: rgba(191, 201, 209, 0.12);
-    --auth-border-hover: rgba(191, 201, 209, 0.2);
+    --auth-border-color: rgba(37, 52, 63, 0.15);
+    --auth-border-hover: rgba(37, 52, 63, 0.25);
     --auth-border-focus: rgba(101, 109, 63, 0.5);
     
     /* Status Colors */
-    --auth-success: #69f0ae;
-    --auth-error: #ff5252;
-    --auth-warning: #ffd740;
+    --auth-success: #4caf50;
+    --auth-error: #f44336;
+    --auth-warning: #ff9800;
     
-    /* Shadows - Neutral, no colored glows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+    /* Shadows - Adjusted for light background */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.2);
     --shadow-glow: 0 0 40px rgba(101, 109, 63, 0.15);
     
     /* Transitions */

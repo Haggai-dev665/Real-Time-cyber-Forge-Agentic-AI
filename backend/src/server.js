@@ -1,4 +1,9 @@
 require('dotenv').config();
+
+// Initialize Datadog tracer FIRST (before any other imports)
+const { initializeDatadog } = require('./config/datadog.config');
+initializeDatadog();
+
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -12,6 +17,8 @@ const path = require('path');
 const { setupWebSocketServer } = require('./services/websocket');
 const { connectDatabase } = require('./services/database');
 const { connectRedis } = require('./services/redis');
+const { appwriteService } = require('./services/appwriteService');
+const { datadogMetrics } = require('./services/datadogMetrics');
 const authRoutes = require('./routes/auth');
 const analysisRoutes = require('./routes/analysis');
 const threatRoutes = require('./routes/threats');
@@ -24,8 +31,10 @@ const mlRoutes = require('./routes/mlRoutes');
 const featuresRoutes = require('./routes/features');
 const otxRoutes = require('./routes/otx');
 const childPagesRoutes = require('./routes/child-pages');
+const agentRoutes = require('./routes/agentRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
+const logger = require('./utils/logger');
 
 class CyberForgeServer {
   constructor() {
@@ -98,6 +107,7 @@ class CyberForgeServer {
     this.app.use('/api/ml', mlTrainingRoutes);
     this.app.use('/api/cyberforge-ml', mlRoutes);  // CyberForge ML prediction API
     this.app.use('/api/otx', otxRoutes);           // OTX threat intelligence
+    this.app.use('/api/agent', agentRoutes);       // TODO 1: Agent control and management
     
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);
@@ -172,6 +182,14 @@ class CyberForgeServer {
 
   async start() {
     try {
+      // Initialize Appwrite service (TODO 1: Control Plane)
+      logger.info('🔐 Initializing Appwrite control plane...');
+      await appwriteService.initialize();
+
+      // Initialize Datadog metrics (TODO 1: Observability)
+      logger.info('📊 Initializing Datadog metrics...');
+      datadogMetrics.initialize();
+
       // Connect to external services
       await connectDatabase();
       await connectRedis();
@@ -181,7 +199,9 @@ class CyberForgeServer {
         console.log(`🚀 Cyber Forge Backend Server running on port ${this.port}`);
         console.log(`📡 WebSocket server available at ws://localhost:${this.port}/ws`);
         console.log(`🏥 Health check available at http://localhost:${this.port}/health`);
+        console.log(`🤖 Agent API available at http://localhost:${this.port}/api/agent`);
         console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`✅ TODO 1: Control plane and agent system initialized`);
       });
 
       // Graceful shutdown
@@ -197,6 +217,13 @@ class CyberForgeServer {
   async shutdown() {
     console.log('🔄 Graceful shutdown initiated...');
     
+    // Stop all agents
+    const { agentManager } = require('./agent/AgentManager');
+    await agentManager.stopAllAgents();
+
+    // Close Datadog metrics client
+    datadogMetrics.close();
+
     // Close WebSocket connections
     this.wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {

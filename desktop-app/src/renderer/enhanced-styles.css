@@ -4,7 +4,9 @@
    =========================== */
 
 /* ===========================
-   CSS Variables (fallback if main.css not loaded)
+   CSS Variables
+   These are fallback defaults for standalone use (e.g. demo pages).
+   When loaded alongside main.css, these are overridden by main.css values.
    =========================== */
 :root {
     --bg-primary: #000000;
@@ -495,6 +497,11 @@
 
 .fade-in-up {
     animation: fadeInUp 0.6s ease-out both;
+}
+
+@keyframes fadeInUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .slide-in-top {

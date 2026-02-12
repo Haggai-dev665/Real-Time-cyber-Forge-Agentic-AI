@@ -89,20 +89,20 @@
    CAIDO TABLE STYLES
    ======================================== */
 
-.caido-table {
+.cf-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
 }
 
-.caido-table th,
-.caido-table td {
+.cf-table th,
+.cf-table td {
     padding: 0.75rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
 }
 
-.caido-table th {
+.cf-table th {
     background: var(--bg-secondary);
     font-weight: 600;
     color: var(--text-secondary);
@@ -111,12 +111,12 @@
     letter-spacing: 0.05em;
 }
 
-.caido-table tbody tr:hover {
+.cf-table tbody tr:hover {
     background: var(--bg-secondary);
 }
 
-.caido-table td.loading,
-.caido-table td.empty {
+.cf-table td.loading,
+.cf-table td.empty {
     text-align: center;
     color: var(--text-secondary);
     padding: 2rem;
@@ -138,9 +138,9 @@
     font-size: 0.875rem;
 }
 
-.caido-input,
-.caido-select,
-.caido-textarea {
+.cf-input,
+.cf-select,
+.cf-textarea {
     width: 100%;
     padding: 0.625rem 0.75rem;
     background: var(--bg-secondary);
@@ -150,15 +150,15 @@
     font-size: 0.875rem;
 }
 
-.caido-input:focus,
-.caido-select:focus,
-.caido-textarea:focus {
+.cf-input:focus,
+.cf-select:focus,
+.cf-textarea:focus {
     outline: none;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
-.caido-textarea {
+.cf-textarea {
     min-height: 100px;
     resize: vertical;
 }
@@ -171,7 +171,7 @@
    BUTTONS
    ======================================== */
 
-.caido-btn {
+.cf-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -185,46 +185,46 @@
     transition: all 0.2s;
 }
 
-.caido-btn:hover {
+.cf-btn:hover {
     background: var(--bg-tertiary);
     border-color: var(--text-secondary);
 }
 
-.caido-btn.primary {
+.cf-btn.primary {
     background: var(--accent-color);
     border-color: var(--accent-color);
     color: white;
 }
 
-.caido-btn.primary:hover {
+.cf-btn.primary:hover {
     background: var(--accent-hover);
     border-color: var(--accent-hover);
 }
 
-.caido-btn.success {
+.cf-btn.success {
     background: var(--success);
     border-color: var(--success);
     color: white;
 }
 
-.caido-btn.danger {
+.cf-btn.danger {
     background: var(--danger);
     border-color: var(--danger);
     color: white;
 }
 
-.caido-btn.warning {
+.cf-btn.warning {
     background: var(--warning);
     border-color: var(--warning);
     color: black;
 }
 
-.caido-btn.small {
+.cf-btn.small {
     padding: 0.375rem 0.75rem;
     font-size: 0.8rem;
 }
 
-.caido-btn.tiny {
+.cf-btn.tiny {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
 }

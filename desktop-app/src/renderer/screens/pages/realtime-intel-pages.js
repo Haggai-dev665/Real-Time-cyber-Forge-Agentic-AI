@@ -24,13 +24,13 @@ class ThreatMapPage extends BasePage {
                         <h2>Global Threat Map</h2>
                     </div>
                     <div class="page-actions">
-                        <select class="caido-select" id="map-time-range">
+                        <select class="cf-select" id="map-time-range">
                             <option value="1h">Last Hour</option>
                             <option value="24h" selected>Last 24 Hours</option>
                             <option value="7d">Last 7 Days</option>
                             <option value="30d">Last 30 Days</option>
                         </select>
-                        <button class="caido-btn" id="refresh-map">
+                        <button class="cf-btn" id="refresh-map">
                             <i class="fas fa-sync"></i> Refresh
                         </button>
                     </div>
@@ -187,7 +187,7 @@ class LiveFeedsPage extends BasePage {
                         <h2>Live Threat Feeds</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-feed">
+                        <button class="cf-btn primary" id="add-feed">
                             <i class="fas fa-plus"></i> Add Feed
                         </button>
                     </div>
@@ -273,7 +273,7 @@ class LiveFeedsPage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-rss"></i>
                     <p>No threat feeds configured</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('add-feed').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('add-feed').click()">
                         Add Feed
                     </button>
                 </div>
@@ -312,9 +312,9 @@ class LiveFeedsPage extends BasePage {
                 <div class="feed-footer">
                     <span class="last-update">Updated ${this.formatRelativeTime(feed.lastUpdate)}</span>
                     <div class="feed-actions">
-                        <button class="caido-btn tiny" data-action="refresh"><i class="fas fa-sync"></i></button>
-                        <button class="caido-btn tiny" data-action="edit"><i class="fas fa-cog"></i></button>
-                        <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                        <button class="cf-btn tiny" data-action="refresh"><i class="fas fa-sync"></i></button>
+                        <button class="cf-btn tiny" data-action="edit"><i class="fas fa-cog"></i></button>
+                        <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             </div>
@@ -341,15 +341,15 @@ class LiveFeedsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Feed Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Feed URL</label>
-                <input type="url" name="url" class="caido-input" required />
+                <input type="url" name="url" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Feed Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="IOC">IOC (Indicators of Compromise)</option>
                     <option value="Malware URLs">Malware URLs</option>
                     <option value="Botnet C2">Botnet C2</option>
@@ -359,7 +359,7 @@ class LiveFeedsPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Update Interval</label>
-                <select name="interval" class="caido-select">
+                <select name="interval" class="cf-select">
                     <option value="5m">Every 5 minutes</option>
                     <option value="15m">Every 15 minutes</option>
                     <option value="1h" selected>Every hour</option>
@@ -425,10 +425,10 @@ class AlertsPage extends BasePage {
                             <button class="filter-btn" data-filter="medium">Medium</button>
                             <button class="filter-btn" data-filter="low">Low</button>
                         </div>
-                        <button class="caido-btn" id="mark-all-read">
+                        <button class="cf-btn" id="mark-all-read">
                             <i class="fas fa-check-double"></i> Mark All Read
                         </button>
-                        <button class="caido-btn primary" id="alert-settings">
+                        <button class="cf-btn primary" id="alert-settings">
                             <i class="fas fa-cog"></i> Settings
                         </button>
                     </div>
@@ -595,13 +595,13 @@ class AlertsPage extends BasePage {
                     </div>
                 </div>
                 <div class="alert-actions">
-                    <button class="caido-btn small" data-action="investigate" title="Investigate">
+                    <button class="cf-btn small" data-action="investigate" title="Investigate">
                         <i class="fas fa-search"></i>
                     </button>
-                    <button class="caido-btn small" data-action="acknowledge" title="Acknowledge">
+                    <button class="cf-btn small" data-action="acknowledge" title="Acknowledge">
                         <i class="fas fa-check"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="dismiss" title="Dismiss">
+                    <button class="cf-btn small danger" data-action="dismiss" title="Dismiss">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -710,7 +710,7 @@ class AlertsPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Auto-refresh Interval</label>
-                <select name="refresh" class="caido-select">
+                <select name="refresh" class="cf-select">
                     <option value="5">5 seconds</option>
                     <option value="10">10 seconds</option>
                     <option value="30">30 seconds</option>

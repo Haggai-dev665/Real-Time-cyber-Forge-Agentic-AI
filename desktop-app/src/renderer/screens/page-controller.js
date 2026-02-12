@@ -271,7 +271,7 @@ class PageController {
                     </div>
                     <h3>Error Loading Page</h3>
                     <p>${message}</p>
-                    <button class="caido-btn primary" onclick="window.pageController.goBack()">
+                    <button class="cf-btn primary" onclick="window.pageController.goBack()">
                         <i class="fas fa-arrow-left"></i> Go Back
                     </button>
                 </div>
@@ -465,7 +465,7 @@ class BasePage {
                 <div class="error-state">
                     <i class="fas fa-exclamation-circle"></i>
                     <p>${message}</p>
-                    <button class="caido-btn small" onclick="this.closest('.page-content').dispatchEvent(new Event('retry'))">
+                    <button class="cf-btn small" onclick="this.closest('.page-content').dispatchEvent(new Event('retry'))">
                         Retry
                     </button>
                 </div>

@@ -31,7 +31,7 @@ class PassiveScanPage extends BasePage {
                                 <span class="slider"></span>
                             </label>
                         </label>
-                        <button class="caido-btn" id="passive-settings">
+                        <button class="cf-btn" id="passive-settings">
                             <i class="fas fa-cog"></i> Settings
                         </button>
                     </div>
@@ -194,7 +194,7 @@ class PassiveScanPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Scan Scope</label>
-                <select name="scope" class="caido-select">
+                <select name="scope" class="cf-select">
                     <option value="all">All Requests</option>
                     <option value="inscope">In-Scope Only</option>
                     <option value="custom">Custom Filter</option>
@@ -202,7 +202,7 @@ class PassiveScanPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Confidence Threshold</label>
-                <select name="confidence" class="caido-select">
+                <select name="confidence" class="cf-select">
                     <option value="certain">Certain</option>
                     <option value="firm" selected>Firm</option>
                     <option value="tentative">Tentative</option>
@@ -244,10 +244,10 @@ class ActiveScanPage extends BasePage {
                         <h2>Active Scan</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-active-scan">
+                        <button class="cf-btn primary" id="new-active-scan">
                             <i class="fas fa-plus"></i> New Scan
                         </button>
-                        <button class="caido-btn" id="scan-queue">
+                        <button class="cf-btn" id="scan-queue">
                             <i class="fas fa-list"></i> Queue
                         </button>
                     </div>
@@ -300,7 +300,7 @@ class ActiveScanPage extends BasePage {
 
                 <div class="scan-history">
                     <h4><i class="fas fa-history"></i> Scan History</h4>
-                    <table class="caido-table" id="scan-history-table">
+                    <table class="cf-table" id="scan-history-table">
                         <thead>
                             <tr>
                                 <th>Target</th>
@@ -389,8 +389,8 @@ class ActiveScanPage extends BasePage {
                             <span>${scan.findings} findings</span>
                         </div>
                         <div class="scan-actions">
-                            <button class="caido-btn small" data-action="pause"><i class="fas fa-pause"></i></button>
-                            <button class="caido-btn small danger" data-action="stop"><i class="fas fa-stop"></i></button>
+                            <button class="cf-btn small" data-action="pause"><i class="fas fa-pause"></i></button>
+                            <button class="cf-btn small danger" data-action="stop"><i class="fas fa-stop"></i></button>
                         </div>
                     </div>
                 `).join('');
@@ -408,9 +408,9 @@ class ActiveScanPage extends BasePage {
                     <td>${scan.findings}</td>
                     <td>${scan.duration}</td>
                     <td>
-                        <button class="caido-btn tiny"><i class="fas fa-eye"></i></button>
-                        <button class="caido-btn tiny"><i class="fas fa-redo"></i></button>
-                        <button class="caido-btn tiny danger"><i class="fas fa-trash"></i></button>
+                        <button class="cf-btn tiny"><i class="fas fa-eye"></i></button>
+                        <button class="cf-btn tiny"><i class="fas fa-redo"></i></button>
+                        <button class="cf-btn tiny danger"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -421,11 +421,11 @@ class ActiveScanPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Target URL</label>
-                <input type="url" name="target" class="caido-input" placeholder="https://example.com" required />
+                <input type="url" name="target" class="cf-input" placeholder="https://example.com" required />
             </div>
             <div class="form-group">
                 <label>Scan Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="full">Full Scan</option>
                     <option value="quick">Quick Scan</option>
                     <option value="targeted">Targeted Scan</option>
@@ -433,11 +433,11 @@ class ActiveScanPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Crawl Depth</label>
-                <input type="number" name="depth" class="caido-input" value="3" min="1" max="10" />
+                <input type="number" name="depth" class="cf-input" value="3" min="1" max="10" />
             </div>
             <div class="form-group">
                 <label>Concurrent Requests</label>
-                <input type="number" name="concurrent" class="caido-input" value="10" min="1" max="50" />
+                <input type="number" name="concurrent" class="cf-input" value="10" min="1" max="50" />
             </div>
         `;
 
@@ -480,7 +480,7 @@ class StealthScanPage extends BasePage {
                         <h2>Stealth Scan</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="start-stealth">
+                        <button class="cf-btn primary" id="start-stealth">
                             <i class="fas fa-play"></i> Start Stealth Scan
                         </button>
                     </div>
@@ -514,7 +514,7 @@ class StealthScanPage extends BasePage {
                             </div>
                             <div class="form-group">
                                 <label>Max Requests/Hour</label>
-                                <input type="number" class="caido-input" value="100" />
+                                <input type="number" class="cf-input" value="100" />
                             </div>
                         </div>
                     </div>
@@ -564,7 +564,7 @@ class StealthScanPage extends BasePage {
                                 <span>Target</span>
                             </div>
                         </div>
-                        <button class="caido-btn small" id="edit-proxy-chain">
+                        <button class="cf-btn small" id="edit-proxy-chain">
                             <i class="fas fa-edit"></i> Edit Chain
                         </button>
                     </div>
@@ -590,11 +590,11 @@ class StealthScanPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Target URL</label>
-                <input type="url" name="target" class="caido-input" placeholder="https://example.com" required />
+                <input type="url" name="target" class="cf-input" placeholder="https://example.com" required />
             </div>
             <div class="form-group">
                 <label>Scan Duration Limit</label>
-                <select name="duration" class="caido-select">
+                <select name="duration" class="cf-select">
                     <option value="1h">1 Hour</option>
                     <option value="4h">4 Hours</option>
                     <option value="12h">12 Hours</option>
@@ -642,7 +642,7 @@ class AggressiveScanPage extends BasePage {
                         <h2>Aggressive Scan</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn danger" id="start-aggressive">
+                        <button class="cf-btn danger" id="start-aggressive">
                             <i class="fas fa-play"></i> Start Aggressive Scan
                         </button>
                     </div>
@@ -663,11 +663,11 @@ class AggressiveScanPage extends BasePage {
                         <div class="config-grid">
                             <div class="form-group">
                                 <label>Concurrent Threads</label>
-                                <input type="number" class="caido-input" value="50" min="1" max="200" />
+                                <input type="number" class="cf-input" value="50" min="1" max="200" />
                             </div>
                             <div class="form-group">
                                 <label>Request Rate</label>
-                                <select class="caido-select">
+                                <select class="cf-select">
                                     <option value="fast">Fast (100/sec)</option>
                                     <option value="aggressive" selected>Aggressive (500/sec)</option>
                                     <option value="extreme">Extreme (1000/sec)</option>
@@ -675,7 +675,7 @@ class AggressiveScanPage extends BasePage {
                             </div>
                             <div class="form-group">
                                 <label>Connection Timeout</label>
-                                <input type="number" class="caido-input" value="30" /> seconds
+                                <input type="number" class="cf-input" value="30" /> seconds
                             </div>
                         </div>
                     </div>
@@ -754,25 +754,25 @@ class AggressiveScanPage extends BasePage {
                             <div class="payload-item">
                                 <span>SQL Injection</span>
                                 <span class="payload-count">2,847 payloads</span>
-                                <button class="caido-btn tiny"><i class="fas fa-eye"></i></button>
+                                <button class="cf-btn tiny"><i class="fas fa-eye"></i></button>
                             </div>
                             <div class="payload-item">
                                 <span>XSS</span>
                                 <span class="payload-count">1,523 payloads</span>
-                                <button class="caido-btn tiny"><i class="fas fa-eye"></i></button>
+                                <button class="cf-btn tiny"><i class="fas fa-eye"></i></button>
                             </div>
                             <div class="payload-item">
                                 <span>Command Injection</span>
                                 <span class="payload-count">456 payloads</span>
-                                <button class="caido-btn tiny"><i class="fas fa-eye"></i></button>
+                                <button class="cf-btn tiny"><i class="fas fa-eye"></i></button>
                             </div>
                             <div class="payload-item">
                                 <span>Path Traversal</span>
                                 <span class="payload-count">234 payloads</span>
-                                <button class="caido-btn tiny"><i class="fas fa-eye"></i></button>
+                                <button class="cf-btn tiny"><i class="fas fa-eye"></i></button>
                             </div>
                         </div>
-                        <button class="caido-btn small" id="manage-payloads">
+                        <button class="cf-btn small" id="manage-payloads">
                             <i class="fas fa-cog"></i> Manage Payloads
                         </button>
                     </div>
@@ -799,7 +799,7 @@ class AggressiveScanPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Target URL</label>
-                <input type="url" name="target" class="caido-input" placeholder="https://example.com" required />
+                <input type="url" name="target" class="cf-input" placeholder="https://example.com" required />
             </div>
             <div class="form-group">
                 <label class="checkbox-label">

@@ -23,10 +23,10 @@ class AIAgentStatusPage extends BasePage {
                         <h2>AI Agent Status</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn danger" id="stop-agent">
+                        <button class="cf-btn danger" id="stop-agent">
                             <i class="fas fa-stop"></i> Stop Agent
                         </button>
-                        <button class="caido-btn success" id="start-agent">
+                        <button class="cf-btn success" id="start-agent">
                             <i class="fas fa-play"></i> Start Agent
                         </button>
                     </div>
@@ -194,7 +194,7 @@ class AIAgentTasksPage extends BasePage {
                         <h2>Agent Tasks</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-task">
+                        <button class="cf-btn primary" id="create-task">
                             <i class="fas fa-plus"></i> New Task
                         </button>
                     </div>
@@ -290,19 +290,19 @@ class AIAgentTasksPage extends BasePage {
                 </div>
                 <div class="task-actions">
                     ${task.status === 'running' ? `
-                        <button class="caido-btn small warning" data-action="pause">
+                        <button class="cf-btn small warning" data-action="pause">
                             <i class="fas fa-pause"></i>
                         </button>
                     ` : task.status === 'pending' ? `
-                        <button class="caido-btn small success" data-action="start">
+                        <button class="cf-btn small success" data-action="start">
                             <i class="fas fa-play"></i>
                         </button>
                     ` : task.status === 'failed' ? `
-                        <button class="caido-btn small" data-action="retry">
+                        <button class="cf-btn small" data-action="retry">
                             <i class="fas fa-redo"></i>
                         </button>
                     ` : ''}
-                    <button class="caido-btn small danger" data-action="cancel">
+                    <button class="cf-btn small danger" data-action="cancel">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -333,11 +333,11 @@ class AIAgentTasksPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Task Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Task Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="scan">Security Scan</option>
                     <option value="analysis">Request Analysis</option>
                     <option value="training">Model Training</option>
@@ -346,7 +346,7 @@ class AIAgentTasksPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Target (optional)</label>
-                <input type="text" name="target" class="caido-input" placeholder="e.g., *.example.com" />
+                <input type="text" name="target" class="cf-input" placeholder="e.g., *.example.com" />
             </div>
         `;
 
@@ -387,10 +387,10 @@ class AIThreatQueuePage extends BasePage {
                         <span class="threat-badge" id="threat-count">0</span>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn success" id="process-all">
+                        <button class="cf-btn success" id="process-all">
                             <i class="fas fa-check-double"></i> Process All
                         </button>
-                        <button class="caido-btn" id="export-threats">
+                        <button class="cf-btn" id="export-threats">
                             <i class="fas fa-download"></i> Export
                         </button>
                     </div>
@@ -462,13 +462,13 @@ class AIThreatQueuePage extends BasePage {
                     </div>
                 </div>
                 <div class="threat-actions">
-                    <button class="caido-btn small primary" data-action="investigate">
+                    <button class="cf-btn small primary" data-action="investigate">
                         <i class="fas fa-search"></i> Investigate
                     </button>
-                    <button class="caido-btn small success" data-action="confirm">
+                    <button class="cf-btn small success" data-action="confirm">
                         <i class="fas fa-check"></i>
                     </button>
-                    <button class="caido-btn small warning" data-action="dismiss">
+                    <button class="cf-btn small warning" data-action="dismiss">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -574,7 +574,7 @@ class AILearningPage extends BasePage {
                         <h2>Continuous Learning</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="train-now">
+                        <button class="cf-btn primary" id="train-now">
                             <i class="fas fa-sync"></i> Train Now
                         </button>
                     </div>
@@ -729,7 +729,7 @@ class AISettingsPage extends BasePage {
                         <h2>AI Agent Settings</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="save-ai-settings">
+                        <button class="cf-btn primary" id="save-ai-settings">
                             <i class="fas fa-save"></i> Save Settings
                         </button>
                     </div>
@@ -777,7 +777,7 @@ class AISettingsPage extends BasePage {
                             </div>
                             <div class="setting-item">
                                 <label>Alert Level</label>
-                                <select id="alert-level" class="caido-select">
+                                <select id="alert-level" class="cf-select">
                                     <option value="all">All Severities</option>
                                     <option value="medium">Medium and Above</option>
                                     <option value="high" selected>High and Critical Only</option>
@@ -791,7 +791,7 @@ class AISettingsPage extends BasePage {
                         <div class="settings-grid">
                             <div class="setting-item">
                                 <label>Primary AI Provider</label>
-                                <select id="ai-provider" class="caido-select">
+                                <select id="ai-provider" class="cf-select">
                                     <option value="gemini" selected>Google Gemini</option>
                                     <option value="openai">OpenAI</option>
                                     <option value="local">Local Models</option>
@@ -799,11 +799,11 @@ class AISettingsPage extends BasePage {
                             </div>
                             <div class="setting-item">
                                 <label>API Key</label>
-                                <input type="password" id="api-key" class="caido-input" placeholder="Enter API key" />
+                                <input type="password" id="api-key" class="cf-input" placeholder="Enter API key" />
                             </div>
                             <div class="setting-item">
                                 <label>Max Tokens</label>
-                                <input type="number" id="max-tokens" class="caido-input" value="4096" />
+                                <input type="number" id="max-tokens" class="cf-input" value="4096" />
                             </div>
                         </div>
                     </div>

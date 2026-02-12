@@ -3,7 +3,7 @@
  * 
  * Drop-in replacement for Electron's preload.js + contextBridge.
  * Exposes the exact same `window.electronAPI` interface so that
- * ALL existing renderer JS (caido-app.js, auth-page.js, ai-assistant-v2.js, etc.)
+ * ALL existing renderer JS (cyberforge-app.js, auth-page.js, ai-assistant-v2.js, etc.)
  * works without modification.
  * 
  * Under the hood, calls are routed to Tauri's invoke() and event system.

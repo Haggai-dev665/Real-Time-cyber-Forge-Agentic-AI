@@ -22,10 +22,10 @@ class DashboardSummaryPage extends BasePage {
                         <h2>Dashboard Summary</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn small" id="refresh-summary">
+                        <button class="cf-btn small" id="refresh-summary">
                             <i class="fas fa-sync-alt"></i> Refresh
                         </button>
-                        <button class="caido-btn small primary" id="export-summary">
+                        <button class="cf-btn small primary" id="export-summary">
                             <i class="fas fa-download"></i> Export
                         </button>
                     </div>
@@ -197,7 +197,7 @@ class DashboardSummaryPage extends BasePage {
                     <div class="threat-path">${threat.path || 'N/A'}</div>
                 </div>
                 <div class="threat-actions">
-                    <button class="caido-btn tiny" data-finding-id="${threat.id}">View</button>
+                    <button class="cf-btn tiny" data-finding-id="${threat.id}">View</button>
                 </div>
             </div>
         `).join('');
@@ -249,13 +249,13 @@ class DashboardMetricsPage extends BasePage {
                         <h2>System Metrics</h2>
                     </div>
                     <div class="page-actions">
-                        <select id="metrics-timeframe" class="caido-select">
+                        <select id="metrics-timeframe" class="cf-select">
                             <option value="1h">Last Hour</option>
                             <option value="24h" selected>Last 24 Hours</option>
                             <option value="7d">Last 7 Days</option>
                             <option value="30d">Last 30 Days</option>
                         </select>
-                        <button class="caido-btn small" id="refresh-metrics">
+                        <button class="cf-btn small" id="refresh-metrics">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
@@ -318,7 +318,7 @@ class DashboardMetricsPage extends BasePage {
 
                 <div class="metrics-table-section">
                     <h4>Top Endpoints by Request Count</h4>
-                    <table class="caido-table" id="top-endpoints-table">
+                    <table class="cf-table" id="top-endpoints-table">
                         <thead>
                             <tr>
                                 <th>Endpoint</th>
@@ -460,7 +460,7 @@ class DashboardActivityPage extends BasePage {
                             <button class="filter-btn" data-filter="threats">Threats</button>
                             <button class="filter-btn" data-filter="system">System</button>
                         </div>
-                        <button class="caido-btn small" id="clear-activity">
+                        <button class="cf-btn small" id="clear-activity">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
@@ -471,7 +471,7 @@ class DashboardActivityPage extends BasePage {
                 </div>
 
                 <div class="activity-pagination">
-                    <button class="caido-btn small" id="load-more-activity">
+                    <button class="cf-btn small" id="load-more-activity">
                         <i class="fas fa-arrow-down"></i> Load More
                     </button>
                 </div>
@@ -570,7 +570,7 @@ class DashboardActivityPage extends BasePage {
                     <div class="activity-body">${activity.description}</div>
                     <div class="activity-footer">
                         <span class="activity-time"><i class="fas fa-clock"></i> ${this.formatDate(activity.timestamp)}</span>
-                        <button class="caido-btn tiny">View Details</button>
+                        <button class="cf-btn tiny">View Details</button>
                     </div>
                 </div>
             </div>

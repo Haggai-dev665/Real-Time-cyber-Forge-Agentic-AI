@@ -26,29 +26,29 @@ class SearchQueriesPage extends BasePage {
 
                 <div class="search-container">
                     <div class="search-bar">
-                        <input type="text" id="search-query" class="caido-input large" 
+                        <input type="text" id="search-query" class="cf-input large" 
                                placeholder="Search requests, responses, headers..." />
-                        <button class="caido-btn primary" id="execute-search">
+                        <button class="cf-btn primary" id="execute-search">
                             <i class="fas fa-search"></i> Search
                         </button>
                     </div>
 
                     <div class="search-filters">
-                        <select id="search-method" class="caido-select small">
+                        <select id="search-method" class="cf-select small">
                             <option value="">All Methods</option>
                             <option value="GET">GET</option>
                             <option value="POST">POST</option>
                             <option value="PUT">PUT</option>
                             <option value="DELETE">DELETE</option>
                         </select>
-                        <select id="search-status" class="caido-select small">
+                        <select id="search-status" class="cf-select small">
                             <option value="">All Status</option>
                             <option value="2xx">2xx Success</option>
                             <option value="3xx">3xx Redirect</option>
                             <option value="4xx">4xx Client Error</option>
                             <option value="5xx">5xx Server Error</option>
                         </select>
-                        <input type="text" id="search-host" class="caido-input small" placeholder="Host filter..." />
+                        <input type="text" id="search-host" class="cf-input small" placeholder="Host filter..." />
                     </div>
                 </div>
 
@@ -164,7 +164,7 @@ class SearchFiltersPage extends BasePage {
                         <h2>Saved Filters</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-filter">
+                        <button class="cf-btn primary" id="create-filter">
                             <i class="fas fa-plus"></i> New Filter
                         </button>
                     </div>
@@ -229,13 +229,13 @@ class SearchFiltersPage extends BasePage {
                     <span>Used ${filter.usageCount} times</span>
                 </div>
                 <div class="filter-actions">
-                    <button class="caido-btn small primary" data-action="apply">
+                    <button class="cf-btn small primary" data-action="apply">
                         <i class="fas fa-play"></i> Apply
                     </button>
-                    <button class="caido-btn small" data-action="edit">
+                    <button class="cf-btn small" data-action="edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="delete">
+                    <button class="cf-btn small danger" data-action="delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -272,15 +272,15 @@ class SearchFiltersPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Filter Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Filter Expression</label>
-                <input type="text" name="expression" class="caido-input" placeholder="path:/api/* AND method:POST" required />
+                <input type="text" name="expression" class="cf-input" placeholder="path:/api/* AND method:POST" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" class="caido-input" rows="2"></textarea>
+                <textarea name="description" class="cf-input" rows="2"></textarea>
             </div>
         `;
 
@@ -313,7 +313,7 @@ class SearchHistoryPage extends BasePage {
                         <h2>Search History</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn small" id="clear-history">
+                        <button class="cf-btn small" id="clear-history">
                             <i class="fas fa-trash"></i> Clear History
                         </button>
                     </div>
@@ -365,7 +365,7 @@ class SearchHistoryPage extends BasePage {
                 <div class="history-query">${item.query}</div>
                 <div class="history-time">${this.formatDate(item.timestamp)}</div>
                 <div class="history-results">${item.resultCount} results</div>
-                <button class="caido-btn tiny" data-action="rerun">
+                <button class="cf-btn tiny" data-action="rerun">
                     <i class="fas fa-redo"></i>
                 </button>
             </div>
@@ -459,10 +459,10 @@ class SearchBookmarksPage extends BasePage {
                     </div>
                 </div>
                 <div class="bookmark-actions">
-                    <button class="caido-btn small" data-action="view">
+                    <button class="cf-btn small" data-action="view">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="caido-btn small warning" data-action="unbookmark">
+                    <button class="cf-btn small warning" data-action="unbookmark">
                         <i class="fas fa-bookmark"></i>
                     </button>
                 </div>
@@ -492,10 +492,10 @@ class FindingsAllPage extends BasePage {
                         <span class="findings-count" id="findings-count">0</span>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-finding">
+                        <button class="cf-btn primary" id="new-finding">
                             <i class="fas fa-plus"></i> New Finding
                         </button>
-                        <button class="caido-btn" id="export-findings">
+                        <button class="cf-btn" id="export-findings">
                             <i class="fas fa-download"></i> Export
                         </button>
                     </div>
@@ -587,10 +587,10 @@ class FindingsAllPage extends BasePage {
                     </div>
                 </div>
                 <div class="finding-actions">
-                    <button class="caido-btn small" data-action="view">
+                    <button class="cf-btn small" data-action="view">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="caido-btn small" data-action="edit">
+                    <button class="cf-btn small" data-action="edit">
                         <i class="fas fa-edit"></i>
                     </button>
                 </div>
@@ -611,11 +611,11 @@ class FindingsAllPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Title</label>
-                <input type="text" name="title" class="caido-input" required />
+                <input type="text" name="title" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Severity</label>
-                <select name="severity" class="caido-select">
+                <select name="severity" class="cf-select">
                     <option value="critical">Critical</option>
                     <option value="high">High</option>
                     <option value="medium" selected>Medium</option>
@@ -625,15 +625,15 @@ class FindingsAllPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" class="caido-input" rows="3"></textarea>
+                <textarea name="description" class="cf-input" rows="3"></textarea>
             </div>
             <div class="form-group">
                 <label>Host</label>
-                <input type="text" name="host" class="caido-input" />
+                <input type="text" name="host" class="cf-input" />
             </div>
             <div class="form-group">
                 <label>Path</label>
-                <input type="text" name="path" class="caido-input" />
+                <input type="text" name="path" class="cf-input" />
             </div>
         `;
 
@@ -820,7 +820,7 @@ class FindingsReportsPage extends BasePage {
                         <h2>Findings Reports</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="generate-report">
+                        <button class="cf-btn primary" id="generate-report">
                             <i class="fas fa-plus"></i> Generate Report
                         </button>
                     </div>
@@ -884,7 +884,7 @@ class ExportsGeneratePage extends BasePage {
                 <div class="export-form">
                     <div class="form-group">
                         <label>Export Type</label>
-                        <select id="export-type" class="caido-select">
+                        <select id="export-type" class="cf-select">
                             <option value="requests">HTTP Requests</option>
                             <option value="findings">Security Findings</option>
                             <option value="sitemap">Sitemap</option>
@@ -894,7 +894,7 @@ class ExportsGeneratePage extends BasePage {
 
                     <div class="form-group">
                         <label>Format</label>
-                        <select id="export-format" class="caido-select">
+                        <select id="export-format" class="cf-select">
                             <option value="json">JSON</option>
                             <option value="csv">CSV</option>
                             <option value="html">HTML Report</option>
@@ -922,7 +922,7 @@ class ExportsGeneratePage extends BasePage {
                     </div>
 
                     <div class="form-actions">
-                        <button class="caido-btn primary" id="generate-export">
+                        <button class="cf-btn primary" id="generate-export">
                             <i class="fas fa-download"></i> Generate Export
                         </button>
                     </div>
@@ -1035,10 +1035,10 @@ class ExportsHistoryPage extends BasePage {
                     </div>
                 </div>
                 <div class="export-actions">
-                    <button class="caido-btn small primary" data-action="download">
+                    <button class="cf-btn small primary" data-action="download">
                         <i class="fas fa-download"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="delete">
+                    <button class="cf-btn small danger" data-action="delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1075,7 +1075,7 @@ class ExportsTemplatesPage extends BasePage {
                         <h2>Export Templates</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-template">
+                        <button class="cf-btn primary" id="create-template">
                             <i class="fas fa-plus"></i> New Template
                         </button>
                     </div>

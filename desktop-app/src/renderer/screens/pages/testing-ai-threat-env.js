@@ -23,10 +23,10 @@ class AIModelsListPage extends BasePage {
                         <h2>AI Models</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="import-model">
+                        <button class="cf-btn primary" id="import-model">
                             <i class="fas fa-upload"></i> Import Model
                         </button>
-                        <button class="caido-btn" id="refresh-models">
+                        <button class="cf-btn" id="refresh-models">
                             <i class="fas fa-sync"></i>
                         </button>
                     </div>
@@ -82,10 +82,10 @@ class AIModelsListPage extends BasePage {
                 </div>
                 <div class="model-status ${model.status}">${model.status}</div>
                 <div class="model-actions">
-                    <button class="caido-btn small" data-action="details">
+                    <button class="cf-btn small" data-action="details">
                         <i class="fas fa-info-circle"></i>
                     </button>
-                    <button class="caido-btn small ${model.status === 'active' ? 'warning' : 'success'}" data-action="toggle">
+                    <button class="cf-btn small ${model.status === 'active' ? 'warning' : 'success'}" data-action="toggle">
                         <i class="fas fa-${model.status === 'active' ? 'pause' : 'play'}"></i>
                     </button>
                 </div>
@@ -124,11 +124,11 @@ class AIModelsListPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Model Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Model Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="classification">Classification</option>
                     <option value="anomaly">Anomaly Detection</option>
                     <option value="nlp">NLP</option>
@@ -136,7 +136,7 @@ class AIModelsListPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Model File (.keras, .pkl, .onnx)</label>
-                <input type="file" name="file" class="caido-input" accept=".keras,.pkl,.onnx,.h5" />
+                <input type="file" name="file" class="cf-input" accept=".keras,.pkl,.onnx,.h5" />
             </div>
         `;
 
@@ -161,10 +161,10 @@ class AIModelsConfigPage extends BasePage {
                         <h2>Model Configuration</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="back-to-models">
+                        <button class="cf-btn" id="back-to-models">
                             <i class="fas fa-arrow-left"></i> Back
                         </button>
-                        <button class="caido-btn primary" id="save-config">
+                        <button class="cf-btn primary" id="save-config">
                             <i class="fas fa-save"></i> Save
                         </button>
                     </div>
@@ -212,11 +212,11 @@ class AIModelsConfigPage extends BasePage {
                 <div class="config-grid">
                     <div class="config-item">
                         <label>Model ID</label>
-                        <input type="text" class="caido-input" value="${this.model.id}" disabled />
+                        <input type="text" class="cf-input" value="${this.model.id}" disabled />
                     </div>
                     <div class="config-item">
                         <label>Model Name</label>
-                        <input type="text" class="caido-input" id="model-name" value="${this.model.name}" />
+                        <input type="text" class="cf-input" id="model-name" value="${this.model.name}" />
                     </div>
                 </div>
             </div>
@@ -232,7 +232,7 @@ class AIModelsConfigPage extends BasePage {
                     </div>
                     <div class="config-item">
                         <label>Batch Size</label>
-                        <select id="batch-size" class="caido-select">
+                        <select id="batch-size" class="cf-select">
                             ${[16, 32, 64, 128].map(s => 
                                 `<option value="${s}" ${this.model.config.batchSize === s ? 'selected' : ''}>${s}</option>`
                             ).join('')}
@@ -240,7 +240,7 @@ class AIModelsConfigPage extends BasePage {
                     </div>
                     <div class="config-item">
                         <label>Max Tokens</label>
-                        <input type="number" class="caido-input" id="max-tokens" 
+                        <input type="number" class="cf-input" id="max-tokens" 
                                value="${this.model.config.maxTokens}" />
                     </div>
                 </div>
@@ -294,7 +294,7 @@ class AIModelsTrainingPage extends BasePage {
                         <h2>Model Training</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-training">
+                        <button class="cf-btn primary" id="new-training">
                             <i class="fas fa-plus"></i> New Training Job
                         </button>
                     </div>
@@ -363,11 +363,11 @@ class AIModelsTrainingPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Job Name</label>
-                <input type="text" name="name" class="caido-input" placeholder="Security Model Training" required />
+                <input type="text" name="name" class="cf-input" placeholder="Security Model Training" required />
             </div>
             <div class="form-group">
                 <label>Model Architecture</label>
-                <select name="architecture" class="caido-select">
+                <select name="architecture" class="cf-select">
                     <option value="transformer">Transformer</option>
                     <option value="cnn">CNN</option>
                     <option value="lstm">LSTM</option>
@@ -376,7 +376,7 @@ class AIModelsTrainingPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Dataset</label>
-                <select name="dataset" class="caido-select">
+                <select name="dataset" class="cf-select">
                     <option value="combined">Combined Security Dataset</option>
                     <option value="phishing">Phishing Detection</option>
                     <option value="malware">Malware Detection</option>
@@ -385,7 +385,7 @@ class AIModelsTrainingPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Epochs</label>
-                <input type="number" name="epochs" class="caido-input" value="50" />
+                <input type="number" name="epochs" class="cf-input" value="50" />
             </div>
         `;
 
@@ -423,10 +423,10 @@ class ThreatIntelFeedsPage extends BasePage {
                         <h2>Threat Feeds</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-feed">
+                        <button class="cf-btn primary" id="add-feed">
                             <i class="fas fa-plus"></i> Add Feed
                         </button>
-                        <button class="caido-btn" id="sync-all-feeds">
+                        <button class="cf-btn" id="sync-all-feeds">
                             <i class="fas fa-sync"></i> Sync All
                         </button>
                     </div>
@@ -487,13 +487,13 @@ class ThreatIntelFeedsPage extends BasePage {
                 </div>
                 <div class="feed-status ${feed.status}">${feed.status}</div>
                 <div class="feed-actions">
-                    <button class="caido-btn small success" data-action="sync">
+                    <button class="cf-btn small success" data-action="sync">
                         <i class="fas fa-sync"></i>
                     </button>
-                    <button class="caido-btn small" data-action="configure">
+                    <button class="cf-btn small" data-action="configure">
                         <i class="fas fa-cog"></i>
                     </button>
-                    <button class="caido-btn small ${feed.status === 'active' ? 'warning' : 'success'}" data-action="toggle">
+                    <button class="cf-btn small ${feed.status === 'active' ? 'warning' : 'success'}" data-action="toggle">
                         <i class="fas fa-${feed.status === 'active' ? 'pause' : 'play'}"></i>
                     </button>
                 </div>
@@ -534,19 +534,19 @@ class ThreatIntelFeedsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Feed Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Feed URL</label>
-                <input type="url" name="url" class="caido-input" required />
+                <input type="url" name="url" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>API Key (if required)</label>
-                <input type="password" name="apiKey" class="caido-input" />
+                <input type="password" name="apiKey" class="cf-input" />
             </div>
             <div class="form-group">
                 <label>Sync Interval</label>
-                <select name="interval" class="caido-select">
+                <select name="interval" class="cf-select">
                     <option value="1h">Every Hour</option>
                     <option value="6h">Every 6 Hours</option>
                     <option value="24h">Daily</option>
@@ -593,12 +593,12 @@ class ThreatIntelIndicatorsPage extends BasePage {
                         <button class="filter-btn" data-filter="url">URLs</button>
                     </div>
                     <div class="page-actions">
-                        <input type="text" class="caido-input search-input" id="indicator-search" placeholder="Search indicators..." />
+                        <input type="text" class="cf-input search-input" id="indicator-search" placeholder="Search indicators..." />
                     </div>
                 </div>
 
                 <div class="indicators-table-container">
-                    <table class="caido-table" id="indicators-table">
+                    <table class="cf-table" id="indicators-table">
                         <thead>
                             <tr>
                                 <th>Type</th>
@@ -679,10 +679,10 @@ class ThreatIntelIndicatorsPage extends BasePage {
                 <td>${indicator.source}</td>
                 <td>${this.formatDate(indicator.firstSeen)}</td>
                 <td>
-                    <button class="caido-btn tiny" title="Add to blocklist">
+                    <button class="cf-btn tiny" title="Add to blocklist">
                         <i class="fas fa-ban"></i>
                     </button>
-                    <button class="caido-btn tiny" title="View details">
+                    <button class="cf-btn tiny" title="View details">
                         <i class="fas fa-info-circle"></i>
                     </button>
                 </td>
@@ -715,8 +715,8 @@ class ThreatIntelIndicatorsPage extends BasePage {
                 <td>${indicator.source}</td>
                 <td>${this.formatDate(indicator.firstSeen)}</td>
                 <td>
-                    <button class="caido-btn tiny"><i class="fas fa-ban"></i></button>
-                    <button class="caido-btn tiny"><i class="fas fa-info-circle"></i></button>
+                    <button class="cf-btn tiny"><i class="fas fa-ban"></i></button>
+                    <button class="cf-btn tiny"><i class="fas fa-info-circle"></i></button>
                 </td>
             </tr>
         `).join('');
@@ -738,7 +738,7 @@ class ThreatIntelReportsPage extends BasePage {
                         <h2>Threat Reports</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="generate-report">
+                        <button class="cf-btn primary" id="generate-report">
                             <i class="fas fa-plus"></i> Generate Report
                         </button>
                     </div>
@@ -781,14 +781,14 @@ class ThreatIntelReportsPage extends BasePage {
                 <div class="report-status ${report.status}">${report.status}</div>
                 <div class="report-actions">
                     ${report.status === 'ready' ? `
-                        <button class="caido-btn small primary">
+                        <button class="cf-btn small primary">
                             <i class="fas fa-eye"></i> View
                         </button>
-                        <button class="caido-btn small">
+                        <button class="cf-btn small">
                             <i class="fas fa-download"></i> Download
                         </button>
                     ` : `
-                        <button class="caido-btn small" disabled>
+                        <button class="cf-btn small" disabled>
                             <i class="fas fa-spinner fa-spin"></i> Generating...
                         </button>
                     `}
@@ -801,7 +801,7 @@ class ThreatIntelReportsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Report Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="summary">Weekly Summary</option>
                     <option value="analysis">Campaign Analysis</option>
                     <option value="trends">Trend Report</option>
@@ -810,7 +810,7 @@ class ThreatIntelReportsPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Date Range</label>
-                <select name="range" class="caido-select">
+                <select name="range" class="cf-select">
                     <option value="7d">Last 7 Days</option>
                     <option value="30d">Last 30 Days</option>
                     <option value="90d">Last 90 Days</option>
@@ -843,17 +843,17 @@ class EnvironmentVariablesPage extends BasePage {
                         <h2>Environment Variables</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-variable">
+                        <button class="cf-btn primary" id="add-variable">
                             <i class="fas fa-plus"></i> Add Variable
                         </button>
-                        <button class="caido-btn" id="import-env">
+                        <button class="cf-btn" id="import-env">
                             <i class="fas fa-upload"></i> Import
                         </button>
                     </div>
                 </div>
 
                 <div class="variables-table-container">
-                    <table class="caido-table" id="variables-table">
+                    <table class="cf-table" id="variables-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -914,12 +914,12 @@ class EnvironmentVariablesPage extends BasePage {
                 <td><code>${v.name}</code></td>
                 <td>
                     <span class="var-value ${v.isSecret ? 'secret' : ''}">${v.value}</span>
-                    ${v.isSecret ? '<button class="caido-btn tiny" data-action="reveal"><i class="fas fa-eye"></i></button>' : ''}
+                    ${v.isSecret ? '<button class="cf-btn tiny" data-action="reveal"><i class="fas fa-eye"></i></button>' : ''}
                 </td>
                 <td><span class="scope-badge ${v.scope}">${v.scope}</span></td>
                 <td>
-                    <button class="caido-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
-                    <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
+                    <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
         `).join('');
@@ -945,15 +945,15 @@ class EnvironmentVariablesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Variable Name</label>
-                <input type="text" name="name" class="caido-input" placeholder="MY_VARIABLE" required />
+                <input type="text" name="name" class="cf-input" placeholder="MY_VARIABLE" required />
             </div>
             <div class="form-group">
                 <label>Value</label>
-                <input type="text" name="value" class="caido-input" required />
+                <input type="text" name="value" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Scope</label>
-                <select name="scope" class="caido-select">
+                <select name="scope" class="cf-select">
                     <option value="global">Global</option>
                     <option value="project">Project</option>
                 </select>
@@ -986,11 +986,11 @@ class EnvironmentVariablesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Variable Name</label>
-                <input type="text" name="name" class="caido-input" value="${variable.name}" />
+                <input type="text" name="name" class="cf-input" value="${variable.name}" />
             </div>
             <div class="form-group">
                 <label>Value</label>
-                <input type="text" name="value" class="caido-input" value="${variable.isSecret ? '' : variable.value}" 
+                <input type="text" name="value" class="cf-input" value="${variable.isSecret ? '' : variable.value}" 
                        placeholder="${variable.isSecret ? 'Enter new value' : ''}" />
             </div>
         `;
@@ -1042,7 +1042,7 @@ class EnvironmentSecretsPage extends BasePage {
                         <h2>Secrets Vault</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-secret">
+                        <button class="cf-btn primary" id="add-secret">
                             <i class="fas fa-plus"></i> Add Secret
                         </button>
                     </div>
@@ -1087,13 +1087,13 @@ class EnvironmentSecretsPage extends BasePage {
                     </div>
                 </div>
                 <div class="secret-actions">
-                    <button class="caido-btn small" data-action="copy" title="Copy to clipboard">
+                    <button class="cf-btn small" data-action="copy" title="Copy to clipboard">
                         <i class="fas fa-copy"></i>
                     </button>
-                    <button class="caido-btn small" data-action="rotate" title="Rotate secret">
+                    <button class="cf-btn small" data-action="rotate" title="Rotate secret">
                         <i class="fas fa-sync"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="delete" title="Delete">
+                    <button class="cf-btn small danger" data-action="delete" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1116,15 +1116,15 @@ class EnvironmentSecretsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Secret Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Secret Value</label>
-                <textarea name="value" class="caido-input" rows="3" required></textarea>
+                <textarea name="value" class="cf-input" rows="3" required></textarea>
             </div>
             <div class="form-group">
                 <label>Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="api_key">API Key</option>
                     <option value="secret">Secret</option>
                     <option value="password">Password</option>
@@ -1156,7 +1156,7 @@ class EnvironmentPresetsPage extends BasePage {
                         <h2>Environment Presets</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-preset">
+                        <button class="cf-btn primary" id="create-preset">
                             <i class="fas fa-plus"></i> Create Preset
                         </button>
                     </div>
@@ -1197,11 +1197,11 @@ class EnvironmentPresetsPage extends BasePage {
                     <span>${preset.variables} variables</span>
                 </div>
                 <div class="preset-actions">
-                    <button class="caido-btn small ${preset.isActive ? '' : 'success'}" data-action="activate">
+                    <button class="cf-btn small ${preset.isActive ? '' : 'success'}" data-action="activate">
                         <i class="fas fa-${preset.isActive ? 'check' : 'play'}"></i>
                         ${preset.isActive ? 'Active' : 'Activate'}
                     </button>
-                    <button class="caido-btn small" data-action="edit">
+                    <button class="cf-btn small" data-action="edit">
                         <i class="fas fa-edit"></i>
                     </button>
                 </div>
@@ -1231,11 +1231,11 @@ class EnvironmentPresetsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Preset Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" class="caido-input" rows="2"></textarea>
+                <textarea name="description" class="cf-input" rows="2"></textarea>
             </div>
         `;
 

@@ -23,10 +23,10 @@ class FilesProjectPage extends BasePage {
                         <h2>Project Files</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="upload-file">
+                        <button class="cf-btn" id="upload-file">
                             <i class="fas fa-upload"></i> Upload
                         </button>
-                        <button class="caido-btn" id="new-folder">
+                        <button class="cf-btn" id="new-folder">
                             <i class="fas fa-folder-plus"></i> New Folder
                         </button>
                     </div>
@@ -132,7 +132,7 @@ class FilesProjectPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Folder Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
         `;
 
@@ -159,7 +159,7 @@ class FilesNotesPage extends BasePage {
                         <h2>Notes</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-note">
+                        <button class="cf-btn primary" id="new-note">
                             <i class="fas fa-plus"></i> New Note
                         </button>
                     </div>
@@ -239,7 +239,7 @@ class FilesNotesPage extends BasePage {
         editor.innerHTML = `
             <div class="editor-header">
                 <input type="text" class="note-title-input" value="${this.currentNote.title}" />
-                <button class="caido-btn small" id="save-note">
+                <button class="cf-btn small" id="save-note">
                     <i class="fas fa-save"></i> Save
                 </button>
             </div>
@@ -297,7 +297,7 @@ class FilesAttachmentsPage extends BasePage {
                         <h2>Attachments</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="upload-attachment">
+                        <button class="cf-btn primary" id="upload-attachment">
                             <i class="fas fa-upload"></i> Upload
                         </button>
                     </div>
@@ -361,8 +361,8 @@ class FilesAttachmentsPage extends BasePage {
                     <div class="attachment-size">${this.formatBytes(att.size)}</div>
                 </div>
                 <div class="attachment-actions">
-                    <button class="caido-btn tiny"><i class="fas fa-download"></i></button>
-                    <button class="caido-btn tiny danger"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny"><i class="fas fa-download"></i></button>
+                    <button class="cf-btn tiny danger"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
@@ -403,7 +403,7 @@ class PluginsInstalledPage extends BasePage {
                         <h2>Installed Plugins</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="install-plugin">
+                        <button class="cf-btn primary" id="install-plugin">
                             <i class="fas fa-plus"></i> Install Plugin
                         </button>
                     </div>
@@ -454,7 +454,7 @@ class PluginsInstalledPage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-plug"></i>
                     <p>No plugins installed</p>
-                    <button class="caido-btn primary" onclick="window.pageController?.navigateTo('plugins-store')">
+                    <button class="cf-btn primary" onclick="window.pageController?.navigateTo('plugins-store')">
                         Browse Plugins
                     </button>
                 </div>
@@ -482,10 +482,10 @@ class PluginsInstalledPage extends BasePage {
                     </label>
                 </div>
                 <div class="plugin-actions">
-                    <button class="caido-btn small" data-action="settings">
+                    <button class="cf-btn small" data-action="settings">
                         <i class="fas fa-cog"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="uninstall">
+                    <button class="cf-btn small danger" data-action="uninstall">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -546,7 +546,7 @@ class PluginsStorePage extends BasePage {
                         <h2>Plugin Store</h2>
                     </div>
                     <div class="page-actions">
-                        <input type="text" class="caido-input search-input" id="plugin-search" placeholder="Search plugins..." />
+                        <input type="text" class="cf-input search-input" id="plugin-search" placeholder="Search plugins..." />
                     </div>
                 </div>
 
@@ -604,7 +604,7 @@ class PluginsStorePage extends BasePage {
                     <span><i class="fas fa-download"></i> ${(plugin.downloads / 1000).toFixed(1)}k</span>
                     <span><i class="fas fa-star"></i> ${plugin.rating}</span>
                 </div>
-                <button class="caido-btn primary small" data-action="install">
+                <button class="cf-btn primary small" data-action="install">
                     <i class="fas fa-plus"></i> Install
                 </button>
             </div>
@@ -647,10 +647,10 @@ class PluginsEditorPage extends BasePage {
                         <h2>Plugin Editor</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn" id="new-plugin">
+                        <button class="cf-btn" id="new-plugin">
                             <i class="fas fa-plus"></i> New Plugin
                         </button>
-                        <button class="caido-btn primary" id="save-plugin">
+                        <button class="cf-btn primary" id="save-plugin">
                             <i class="fas fa-save"></i> Save
                         </button>
                     </div>
@@ -699,7 +699,7 @@ class WorkspaceSettingsPage extends BasePage {
                         <h2>Workspace Settings</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="save-settings">
+                        <button class="cf-btn primary" id="save-settings">
                             <i class="fas fa-save"></i> Save Settings
                         </button>
                     </div>
@@ -711,11 +711,11 @@ class WorkspaceSettingsPage extends BasePage {
                         <div class="settings-grid">
                             <div class="setting-item">
                                 <label>Workspace Name</label>
-                                <input type="text" class="caido-input" id="workspace-name" value="My Project" />
+                                <input type="text" class="cf-input" id="workspace-name" value="My Project" />
                             </div>
                             <div class="setting-item">
                                 <label>Description</label>
-                                <textarea class="caido-input" id="workspace-description" rows="2"></textarea>
+                                <textarea class="cf-input" id="workspace-description" rows="2"></textarea>
                             </div>
                         </div>
                     </div>
@@ -725,11 +725,11 @@ class WorkspaceSettingsPage extends BasePage {
                         <div class="settings-grid">
                             <div class="setting-item">
                                 <label>Proxy Port</label>
-                                <input type="number" class="caido-input" id="proxy-port" value="8080" />
+                                <input type="number" class="cf-input" id="proxy-port" value="8080" />
                             </div>
                             <div class="setting-item">
                                 <label>SSL Certificate</label>
-                                <select class="caido-select" id="ssl-cert">
+                                <select class="cf-select" id="ssl-cert">
                                     <option value="default">Default CA</option>
                                     <option value="custom">Custom Certificate</option>
                                 </select>
@@ -742,7 +742,7 @@ class WorkspaceSettingsPage extends BasePage {
                         <div class="settings-grid">
                             <div class="setting-item">
                                 <label>Keep Requests</label>
-                                <select class="caido-select" id="data-retention">
+                                <select class="cf-select" id="data-retention">
                                     <option value="forever">Forever</option>
                                     <option value="30d">30 Days</option>
                                     <option value="7d">7 Days</option>
@@ -751,7 +751,7 @@ class WorkspaceSettingsPage extends BasePage {
                             </div>
                             <div class="setting-item">
                                 <label>Max Request Size</label>
-                                <input type="number" class="caido-input" id="max-size" value="10" /> MB
+                                <input type="number" class="cf-input" id="max-size" value="10" /> MB
                             </div>
                         </div>
                     </div>
@@ -782,7 +782,7 @@ class WorkspaceProjectsPage extends BasePage {
                         <h2>Projects</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="new-project">
+                        <button class="cf-btn primary" id="new-project">
                             <i class="fas fa-plus"></i> New Project
                         </button>
                     </div>
@@ -825,7 +825,7 @@ class WorkspaceProjectsPage extends BasePage {
                 </div>
                 <div class="project-footer">
                     <span>Last active: ${this.formatDate(project.lastActive)}</span>
-                    <button class="caido-btn small primary" data-action="open">Open</button>
+                    <button class="cf-btn small primary" data-action="open">Open</button>
                 </div>
             </div>
         `).join('');
@@ -835,11 +835,11 @@ class WorkspaceProjectsPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Project Name</label>
-                <input type="text" name="name" class="caido-input" required />
+                <input type="text" name="name" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Description</label>
-                <textarea name="description" class="caido-input" rows="2"></textarea>
+                <textarea name="description" class="cf-input" rows="2"></textarea>
             </div>
         `;
 
@@ -869,7 +869,7 @@ class TeamMembersPage extends BasePage {
                         <h2>Team Members</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="invite-member">
+                        <button class="cf-btn primary" id="invite-member">
                             <i class="fas fa-user-plus"></i> Invite Member
                         </button>
                     </div>
@@ -927,10 +927,10 @@ class TeamMembersPage extends BasePage {
                     <span class="role-badge ${member.role}">${member.role}</span>
                 </div>
                 <div class="member-actions">
-                    <button class="caido-btn small" data-action="edit">
+                    <button class="cf-btn small" data-action="edit">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="caido-btn small danger" data-action="remove">
+                    <button class="cf-btn small danger" data-action="remove">
                         <i class="fas fa-user-minus"></i>
                     </button>
                 </div>
@@ -942,11 +942,11 @@ class TeamMembersPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="email" name="email" class="caido-input" required />
+                <input type="email" name="email" class="cf-input" required />
             </div>
             <div class="form-group">
                 <label>Role</label>
-                <select name="role" class="caido-select">
+                <select name="role" class="cf-select">
                     <option value="member">Member</option>
                     <option value="admin">Admin</option>
                 </select>

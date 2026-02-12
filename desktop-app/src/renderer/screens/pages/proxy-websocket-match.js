@@ -23,7 +23,7 @@ class WsConnectionsPage extends BasePage {
                         <h2>WebSocket Connections</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn small" id="refresh-ws">
+                        <button class="cf-btn small" id="refresh-ws">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
@@ -44,7 +44,7 @@ class WsConnectionsPage extends BasePage {
                     </div>
                 </div>
 
-                <table class="caido-table" id="ws-table">
+                <table class="cf-table" id="ws-table">
                     <thead>
                         <tr>
                             <th>Status</th>
@@ -113,7 +113,7 @@ class WsConnectionsPage extends BasePage {
                 <td>${conn.messageCount}</td>
                 <td>${this.formatDuration(conn.duration)}</td>
                 <td>
-                    <button class="caido-btn tiny" onclick="window.pageController.navigateTo('ws-messages', {connectionId: '${conn.id}'})">
+                    <button class="cf-btn tiny" onclick="window.pageController.navigateTo('ws-messages', {connectionId: '${conn.id}'})">
                         <i class="fas fa-comments"></i>
                     </button>
                 </td>
@@ -152,12 +152,12 @@ class WsMessagesPage extends BasePage {
                         <h2>WebSocket Messages</h2>
                     </div>
                     <div class="page-actions">
-                        <select id="message-direction" class="caido-select">
+                        <select id="message-direction" class="cf-select">
                             <option value="all">All</option>
                             <option value="sent">Sent</option>
                             <option value="received">Received</option>
                         </select>
-                        <button class="caido-btn small" id="clear-messages">
+                        <button class="cf-btn small" id="clear-messages">
                             <i class="fas fa-trash"></i> Clear
                         </button>
                     </div>
@@ -178,8 +178,8 @@ class WsMessagesPage extends BasePage {
                 </div>
 
                 <div class="message-composer">
-                    <input type="text" id="message-input" class="caido-input" placeholder="Type message..." />
-                    <button class="caido-btn primary" id="send-message">
+                    <input type="text" id="message-input" class="cf-input" placeholder="Type message..." />
+                    <button class="cf-btn primary" id="send-message">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
@@ -309,7 +309,7 @@ class MatchRulesPage extends BasePage {
                         <h2>Match & Replace Rules</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="add-match-rule">
+                        <button class="cf-btn primary" id="add-match-rule">
                             <i class="fas fa-plus"></i> Add Rule
                         </button>
                     </div>
@@ -347,7 +347,7 @@ class MatchRulesPage extends BasePage {
                 <div class="empty-state">
                     <i class="fas fa-exchange-alt"></i>
                     <p>No match & replace rules defined</p>
-                    <button class="caido-btn primary" onclick="document.getElementById('add-match-rule').click()">
+                    <button class="cf-btn primary" onclick="document.getElementById('add-match-rule').click()">
                         Create First Rule
                     </button>
                 </div>
@@ -382,8 +382,8 @@ class MatchRulesPage extends BasePage {
                     <div class="rule-target">Target: ${rule.target}</div>
                 </div>
                 <div class="rule-actions">
-                    <button class="caido-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
-                    <button class="caido-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
+                    <button class="cf-btn tiny" data-action="edit"><i class="fas fa-edit"></i></button>
+                    <button class="cf-btn tiny danger" data-action="delete"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `).join('');
@@ -413,7 +413,7 @@ class MatchRulesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="replace">Replace</option>
                     <option value="remove">Remove</option>
                     <option value="match">Match Only</option>
@@ -421,15 +421,15 @@ class MatchRulesPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Match Pattern</label>
-                <input type="text" name="match" class="caido-input" placeholder="Pattern to match..." required />
+                <input type="text" name="match" class="cf-input" placeholder="Pattern to match..." required />
             </div>
             <div class="form-group">
                 <label>Replace With</label>
-                <input type="text" name="replace" class="caido-input" placeholder="Replacement text..." />
+                <input type="text" name="replace" class="cf-input" placeholder="Replacement text..." />
             </div>
             <div class="form-group">
                 <label>Target</label>
-                <select name="target" class="caido-select">
+                <select name="target" class="cf-select">
                     <option value="all">All (Request & Response)</option>
                     <option value="request">Request Only</option>
                     <option value="response">Response Only</option>
@@ -468,7 +468,7 @@ class MatchRulesPage extends BasePage {
         const content = `
             <div class="form-group">
                 <label>Type</label>
-                <select name="type" class="caido-select">
+                <select name="type" class="cf-select">
                     <option value="replace" ${rule.type === 'replace' ? 'selected' : ''}>Replace</option>
                     <option value="remove" ${rule.type === 'remove' ? 'selected' : ''}>Remove</option>
                     <option value="match" ${rule.type === 'match' ? 'selected' : ''}>Match Only</option>
@@ -476,15 +476,15 @@ class MatchRulesPage extends BasePage {
             </div>
             <div class="form-group">
                 <label>Match Pattern</label>
-                <input type="text" name="match" class="caido-input" value="${rule.match}" required />
+                <input type="text" name="match" class="cf-input" value="${rule.match}" required />
             </div>
             <div class="form-group">
                 <label>Replace With</label>
-                <input type="text" name="replace" class="caido-input" value="${rule.replace || ''}" />
+                <input type="text" name="replace" class="cf-input" value="${rule.replace || ''}" />
             </div>
             <div class="form-group">
                 <label>Target</label>
-                <select name="target" class="caido-select">
+                <select name="target" class="cf-select">
                     <option value="all" ${rule.target === 'all' ? 'selected' : ''}>All</option>
                     <option value="request" ${rule.target === 'request' ? 'selected' : ''}>Request</option>
                     <option value="response" ${rule.target === 'response' ? 'selected' : ''}>Response</option>
@@ -539,7 +539,7 @@ class MatchTemplatesPage extends BasePage {
                         <h2>Rule Templates</h2>
                     </div>
                     <div class="page-actions">
-                        <button class="caido-btn primary" id="create-template">
+                        <button class="cf-btn primary" id="create-template">
                             <i class="fas fa-plus"></i> Create Template
                         </button>
                     </div>
@@ -584,7 +584,7 @@ class MatchTemplatesPage extends BasePage {
                     <div class="template-target">Target: ${template.target}</div>
                 </div>
                 <div class="template-actions">
-                    <button class="caido-btn small primary" data-action="use">
+                    <button class="cf-btn small primary" data-action="use">
                         <i class="fas fa-plus"></i> Use Template
                     </button>
                 </div>
@@ -639,17 +639,17 @@ class MatchTestingPage extends BasePage {
                     <div class="testing-input">
                         <div class="form-group">
                             <label>Match Pattern</label>
-                            <input type="text" id="test-match" class="caido-input" placeholder="Enter regex or string..." />
+                            <input type="text" id="test-match" class="cf-input" placeholder="Enter regex or string..." />
                         </div>
                         <div class="form-group">
                             <label>Replace With</label>
-                            <input type="text" id="test-replace" class="caido-input" placeholder="Replacement text..." />
+                            <input type="text" id="test-replace" class="cf-input" placeholder="Replacement text..." />
                         </div>
                         <div class="form-group">
                             <label>Test Input</label>
-                            <textarea id="test-input" class="caido-input" rows="5" placeholder="Enter text to test against..."></textarea>
+                            <textarea id="test-input" class="cf-input" rows="5" placeholder="Enter text to test against..."></textarea>
                         </div>
-                        <button class="caido-btn primary" id="run-test">
+                        <button class="cf-btn primary" id="run-test">
                             <i class="fas fa-play"></i> Test Rule
                         </button>
                     </div>

@@ -4,7 +4,7 @@
    ===================================================== */
 
 /* CSS Variables - AI Theme (Dark Mode)
-   MUST match the app sidebar dark theme: --caido-bg-darker: #0f0f15, etc.
+   MUST match the app sidebar dark theme: --cf-bg-darker: #0f0f15, etc.
 */
 :root,
 [data-theme="dark"] {

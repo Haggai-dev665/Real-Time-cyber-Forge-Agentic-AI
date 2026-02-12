@@ -66,13 +66,13 @@
     --shadow-color: rgba(0, 0, 0, 0.5);
     --shadow-color-light: rgba(0, 0, 0, 0.3);
     --shadow-color-strong: rgba(0, 0, 0, 0.8);
-    --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
-    --shadow-glow-strong: 0 0 30px rgba(0, 212, 255, 0.5);
+    --shadow-glow: 0 0 20px rgba(179, 136, 255, 0.3);
+    --shadow-glow-strong: 0 0 30px rgba(179, 136, 255, 0.5);
     
     /* Cyber Theme Specific */
-    --cyber-grid: rgba(0, 212, 255, 0.1);
-    --cyber-scan: rgba(0, 212, 255, 0.8);
-    --cyber-pulse: rgba(0, 212, 255, 0.6);
+    --cyber-grid: rgba(179, 136, 255, 0.1);
+    --cyber-scan: rgba(179, 136, 255, 0.8);
+    --cyber-pulse: rgba(179, 136, 255, 0.6);
     --cyber-matrix: rgba(0, 255, 65, 0.7);
     
     /* Glass Effect */

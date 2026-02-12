@@ -28,6 +28,7 @@ impl<T: Serialize> CmdResult<T> {
     pub fn ok(data: T) -> Self {
         Self { success: true, data: Some(data), error: None }
     }
+    #[allow(dead_code)]
     pub fn err(msg: impl Into<String>) -> Self {
         Self { success: false, data: None, error: Some(msg.into()) }
     }

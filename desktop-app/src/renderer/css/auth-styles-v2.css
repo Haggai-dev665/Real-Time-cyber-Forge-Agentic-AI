@@ -3,49 +3,47 @@
    Modern Glassmorphism with AI Visual Design
    ===================================================== */
 
-/* CSS Variables - Lavender White Theme */
+/* CSS Variables - Professional Neutral Theme */
 :root {
-    /* Background Colors */
-    --auth-bg-primary: #1a1025;
-    --auth-bg-secondary: #221533;
-    --auth-bg-card: rgba(179, 136, 255, 0.05);
-    --auth-bg-input: rgba(179, 136, 255, 0.08);
-    --auth-bg-hover: rgba(179, 136, 255, 0.12);
+    /* Background Colors - Professional Palette with Light Cream Background */
+    --auth-bg-primary: #F1F3E0;      /* Light cream background */
+    --auth-bg-secondary: #E8E2D8;    /* Beige secondary */
+    --auth-bg-card: rgba(37, 52, 63, 0.05);
+    --auth-bg-input: rgba(37, 52, 63, 0.03);
+    --auth-bg-hover: rgba(37, 52, 63, 0.08);
     
-    /* Glassmorphism */
-    --glass-bg: rgba(179, 136, 255, 0.04);
-    --glass-border: rgba(179, 136, 255, 0.12);
+    /* Glassmorphism - Adjusted for light background */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(37, 52, 63, 0.15);
     --glass-blur: blur(20px);
     
-    /* Text Colors */
-    --auth-text-primary: #f0e6ff;
-    --auth-text-secondary: #d4b8ff;
-    --auth-text-muted: #9e8cb8;
-    --auth-text-placeholder: #7a6b8a;
+    /* Text Colors - Dark text for light background */
+    --auth-text-primary: #25343F;    /* Dark blue-gray */
+    --auth-text-secondary: #213C51;  /* Darker blue */
+    --auth-text-muted: #6a757e;
+    --auth-text-placeholder: #8a959e;
     
-    /* Accent Colors - Lavender Gradient */
-    --accent-cyan: #b388ff;
-    --accent-blue: #7c4dff;
-    --accent-purple: #9c27b0;
-    --accent-gradient: linear-gradient(135deg, #b388ff 0%, #7c4dff 50%, #9c27b0 100%);
-    --accent-glow: 0 0 30px rgba(179, 136, 255, 0.3);
+    /* Accent Colors - Olive green (NO gradients) */
+    --accent-primary: #656D3F;       /* Olive green */
+    --accent-secondary: #7a8349;     /* Lighter olive */
+    --accent-tertiary: #BFC9D1;      /* Light blue-gray */
+    --accent-glow: 0 0 30px rgba(101, 109, 63, 0.3);
     
     /* Borders */
-    --auth-border-color: rgba(179, 136, 255, 0.12);
-    --auth-border-hover: rgba(179, 136, 255, 0.2);
-    --auth-border-focus: rgba(179, 136, 255, 0.5);
+    --auth-border-color: rgba(37, 52, 63, 0.15);
+    --auth-border-hover: rgba(37, 52, 63, 0.25);
+    --auth-border-focus: rgba(101, 109, 63, 0.5);
     
     /* Status Colors */
-    --auth-success: #69f0ae;
-    --auth-error: #ff5252;
-    --auth-warning: #ffd740;
+    --auth-success: #4caf50;
+    --auth-error: #f44336;
+    --auth-warning: #ff9800;
     
-    /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
-    --shadow-glow-cyan: 0 0 40px rgba(179, 136, 255, 0.15);
-    --shadow-glow-purple: 0 0 40px rgba(156, 39, 176, 0.15);
+    /* Shadows - Adjusted for light background */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.2);
+    --shadow-glow: 0 0 40px rgba(101, 109, 63, 0.15);
     
     /* Transitions */
     --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -104,9 +102,7 @@ body {
     align-items: center;
     padding: 40px;
     background: 
-        radial-gradient(ellipse 80% 50% at 30% 50%, rgba(179, 136, 255, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 40% at 70% 30%, rgba(156, 39, 176, 0.08) 0%, transparent 50%),
-        linear-gradient(180deg, var(--auth-bg-primary) 0%, var(--auth-bg-secondary) 100%);
+        var(--auth-bg-primary);
     overflow: hidden;
 }
 
@@ -123,8 +119,8 @@ body {
     position: absolute;
     inset: 0;
     background-image: 
-        linear-gradient(rgba(179, 136, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(179, 136, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(191, 201, 209, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(191, 201, 209, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
     mask-image: radial-gradient(ellipse 80% 60% at center, black 0%, transparent 70%);
     animation: gridPulse 4s ease-in-out infinite;
@@ -146,7 +142,7 @@ body {
 .orb-1 {
     width: 300px;
     height: 300px;
-    background: rgba(179, 136, 255, 0.15);
+    background: rgba(101, 109, 63, 0.15);
     top: 10%;
     left: 10%;
     animation-delay: 0s;
@@ -155,7 +151,7 @@ body {
 .orb-2 {
     width: 400px;
     height: 400px;
-    background: rgba(156, 39, 176, 0.1);
+    background: rgba(101, 109, 63, 0.1);
     bottom: 10%;
     right: 0;
     animation-delay: -5s;
@@ -164,7 +160,7 @@ body {
 .orb-3 {
     width: 200px;
     height: 200px;
-    background: rgba(0, 102, 255, 0.12);
+    background: rgba(191, 201, 209, 0.12);
     top: 50%;
     left: 50%;
     animation-delay: -10s;
@@ -202,7 +198,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 0 40px rgba(179, 136, 255, 0.2));
+    filter: drop-shadow(0 0 40px rgba(101, 109, 63, 0.2));
     animation: illustrationFloat 6s ease-in-out infinite;
 }
 
@@ -216,7 +212,7 @@ body {
     position: absolute;
     inset: -20px;
     border-radius: 50%;
-    background: radial-gradient(circle at center, transparent 40%, rgba(179, 136, 255, 0.1) 50%, transparent 70%);
+    background: rgba(101, 109, 63, 0.05);
     animation: glowPulse 4s ease-in-out infinite;
 }
 
@@ -233,10 +229,7 @@ body {
 .visual-title h1 {
     font-size: 2rem;
     font-weight: 700;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent-primary);
     margin-bottom: 8px;
 }
 
@@ -285,9 +278,9 @@ body {
 
 .feature-card:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(179, 136, 255, 0.3);
+    border-color: rgba(101, 109, 63, 0.3);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glow-cyan);
+    box-shadow: var(--shadow-glow);
 }
 
 .feature-card-icon {
@@ -296,7 +289,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent-gradient);
+    background: var(--accent-primary);
     border-radius: var(--radius-md);
     font-size: 18px;
     color: white;
@@ -334,8 +327,7 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background: 
-        radial-gradient(ellipse 50% 30% at 50% 0%, rgba(179, 136, 255, 0.03) 0%, transparent 50%);
+    background: transparent;
     pointer-events: none;
 }
 
@@ -466,7 +458,7 @@ body {
 .form-input:focus {
     border-color: var(--auth-border-focus);
     background: var(--auth-bg-hover);
-    box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(101, 109, 63, 0.1);
 }
 
 /* Password Input with Toggle */
@@ -520,7 +512,7 @@ body {
 
 .form-select:focus {
     border-color: var(--auth-border-focus);
-    box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(101, 109, 63, 0.1);
 }
 
 /* Password Strength Indicator */
@@ -587,7 +579,7 @@ body {
 }
 
 .checkbox-input:checked + .checkbox-custom {
-    background: var(--accent-gradient);
+    background: var(--accent-primary);
     border-color: transparent;
 }
 
@@ -607,7 +599,7 @@ body {
 /* Forgot Password Link */
 .forgot-link {
     font-size: 0.875rem;
-    color: var(--accent-cyan);
+    color: var(--accent-primary);
     text-decoration: none;
     transition: var(--transition-fast);
 }
@@ -621,7 +613,7 @@ body {
 .btn-primary {
     width: 100%;
     padding: 16px 24px;
-    background: var(--accent-gradient);
+    background: var(--accent-primary);
     border: none;
     border-radius: var(--radius-md);
     font-size: 1rem;
@@ -641,14 +633,14 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+    background: rgba(255,255,255,0.1);
     opacity: 0;
     transition: var(--transition-fast);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glow-cyan);
+    box-shadow: var(--shadow-glow);
 }
 
 .btn-primary:hover::before {

@@ -82,16 +82,193 @@
     }
 
     function initializeParticles() {
-        const particlesContainer = document.getElementById('particles');
-        if (!particlesContainer) return;
+        // Check if particles.js is loaded
+        if (typeof particlesJS !== 'undefined') {
+            const particlesContainer = document.getElementById('particles-js');
+            if (!particlesContainer) {
+                // Create particles container if it doesn't exist
+                const container = document.createElement('div');
+                container.id = 'particles-js';
+                const authVisual = document.querySelector('.auth-visual');
+                if (authVisual) {
+                    authVisual.insertBefore(container, authVisual.firstChild);
+                }
+            }
+            
+            // Initialize particles.js with cybersecurity theme
+            particlesJS('particles-js', {
+                particles: {
+                    number: {
+                        value: 80,
+                        density: {
+                            enable: true,
+                            value_area: 800
+                        }
+                    },
+                    color: {
+                        value: ['#656D3F', '#BFC9D1', '#EAEFEF']
+                    },
+                    shape: {
+                        type: 'circle',
+                        stroke: {
+                            width: 0,
+                            color: '#000000'
+                        }
+                    },
+                    opacity: {
+                        value: 0.5,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 1,
+                            opacity_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 2,
+                            size_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: '#656D3F',
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 2,
+                        direction: 'none',
+                        random: false,
+                        straight: false,
+                        out_mode: 'out',
+                        bounce: false,
+                        attract: {
+                            enable: false,
+                            rotateX: 600,
+                            rotateY: 1200
+                        }
+                    }
+                },
+                interactivity: {
+                    detect_on: 'canvas',
+                    events: {
+                        onhover: {
+                            enable: true,
+                            mode: 'repulse'
+                        },
+                        onclick: {
+                            enable: true,
+                            mode: 'push'
+                        },
+                        resize: true
+                    },
+                    modes: {
+                        repulse: {
+                            distance: 100,
+                            duration: 0.4
+                        },
+                        push: {
+                            particles_nb: 4
+                        }
+                    }
+                },
+                retina_detect: true
+            });
+        } else {
+            // Fallback to simple particle animation
+            const particlesContainer = document.getElementById('particles');
+            if (!particlesContainer) return;
 
-        for (let i = 0; i < 30; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.animationDelay = `${Math.random() * 10}s`;
-            particle.style.animationDuration = `${8 + Math.random() * 6}s`;
-            particlesContainer.appendChild(particle);
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 10}s`;
+                particle.style.animationDuration = `${8 + Math.random() * 6}s`;
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Initialize GSAP animations
+        initializeGSAPAnimations();
+    }
+    
+    function initializeGSAPAnimations() {
+        // Check if GSAP is loaded
+        if (typeof gsap === 'undefined') return;
+        
+        // Animate auth visual elements
+        gsap.from('.brand-title', {
+            duration: 1,
+            y: 50,
+            opacity: 0,
+            ease: 'power3.out',
+            delay: 0.2
+        });
+        
+        gsap.from('.brand-subtitle', {
+            duration: 1,
+            y: 50,
+            opacity: 0,
+            ease: 'power3.out',
+            delay: 0.4
+        });
+        
+        gsap.from('.feature-item', {
+            duration: 0.8,
+            x: -30,
+            opacity: 0,
+            stagger: 0.2,
+            ease: 'power2.out',
+            delay: 0.6
+        });
+        
+        // Animate form elements
+        gsap.from('.auth-form-section', {
+            duration: 1,
+            x: 50,
+            opacity: 0,
+            ease: 'power3.out',
+            delay: 0.3
+        });
+        
+        // Add hover animations to buttons using GSAP
+        const buttons = document.querySelectorAll('.auth-btn, .auth-social-btn');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                gsap.to(button, {
+                    scale: 1.05,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                });
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                gsap.to(button, {
+                    scale: 1,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                });
+            });
+        });
+        
+        // Animate AI illustration with rotation
+        const aiIllustration = document.querySelector('.ai-illustration');
+        if (aiIllustration) {
+            gsap.to(aiIllustration, {
+                rotation: 360,
+                duration: 20,
+                ease: 'none',
+                repeat: -1
+            });
         }
     }
 

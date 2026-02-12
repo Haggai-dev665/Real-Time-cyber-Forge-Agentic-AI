@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicegui/tauri-v2/main/core/tauri-config-schema/schema.json",
+  "productName": "CyberForge AI",
+  "version": "2.0.0",
+  "identifier": "com.cyberforge.desktop",
+  "build": {
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Cyber Forge AI - Advanced Security Platform",
+        "width": 1600,
+        "height": 1000,
+        "minWidth": 1200,
+        "minHeight": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "url": "renderer/auth-page.html"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https: blob: asset: http://asset.localhost; connect-src 'self' https://cyberforge-ddd97655464f.herokuapp.com wss://cyberforge-ddd97655464f.herokuapp.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://che237-cyberforge-models.hf.space https://otx.alienvault.com ipc: http://ipc.localhost; frame-src 'self' https://accounts.google.com;"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "Copyright © 2026 CyberForge",
+    "category": "DeveloperTool",
+    "shortDescription": "AI-Powered Cybersecurity Platform",
+    "longDescription": "Real-Time Cyber Forge Agentic AI Desktop Application - Advanced security testing and monitoring with AI-driven threat detection, browser monitoring, and vulnerability scanning.",
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "frameworks": [],
+      "entitlements": null,
+      "signingIdentity": null
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    },
+    "http": {
+      "scope": [
+        "https://cyberforge-ddd97655464f.herokuapp.com/*",
+        "wss://cyberforge-ddd97655464f.herokuapp.com/*",
+        "https://che237-cyberforge-models.hf.space/*",
+        "https://otx.alienvault.com/*",
+        "https://*.tile.openstreetmap.org/*",
+        "https://*.basemaps.cartocdn.com/*"
+      ]
+    }
+  }
+}

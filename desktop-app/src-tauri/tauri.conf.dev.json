@@ -1,0 +1,6 @@
+{
+  "build": {
+    "frontendDist": "../src",
+    "devUrl": "http://localhost:1420"
+  }
+}

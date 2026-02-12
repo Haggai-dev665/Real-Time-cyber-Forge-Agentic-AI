@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const { appwriteService } = require('../services/appwriteService');
 const { datadogMetrics } = require('../services/datadogMetrics');
 const { webScraperAPIService } = require('../services/WebScraperAPIService');
+const { mlServiceClient } = require('../services/mlServiceClient');
 const logger = require('../utils/logger');
 
 class CyberforgeAgent {
@@ -385,7 +386,7 @@ class CyberforgeAgent {
 
     logger.info(`✅ Evidence metadata stored: ${evidenceMetadata.$id}`);
 
-    // Step 2: ML threat classification (would call ML service)
+    // Step 2: ML threat classification (call ML service)
     const mlStartTime = Date.now();
     const mlOutput = await this.performMLClassification(analysisData);
     const mlDuration = Date.now() - mlStartTime;
@@ -397,9 +398,9 @@ class CyberforgeAgent {
       { agentId: this.agentId }
     );
 
-    // Step 3: Gemini reasoning (would call Gemini service)
+    // Step 3: Gemini reasoning (call ML service for explanation)
     const geminiStartTime = Date.now();
-    const geminiExplanation = await this.getGeminiExplanation(analysisData, mlOutput);
+    const geminiExplanation = await this.getGeminiExplanation(mlOutput);
     const geminiDuration = Date.now() - geminiStartTime;
 
     datadogMetrics.recordGeminiUsage(
@@ -449,33 +450,56 @@ class CyberforgeAgent {
 
   /**
    * Perform ML threat classification
-   * In production, this would call the ML service
+   * Calls the Python ML service for threat analysis
    */
   async performMLClassification(analysisData) {
-    // Placeholder - would call actual ML service
-    return {
-      riskScore: analysisData.risk_score || 0,
-      confidence: 0.85,
-      category: analysisData.risk_level === 'critical' ? 'malware' : 
-                analysisData.risk_level === 'high' ? 'phishing' : 'benign'
-    };
+    try {
+      // Call the ML service
+      const mlResult = await mlServiceClient.classifyThreat(analysisData);
+      
+      logger.info(`✅ ML classification: ${mlResult.category} (score: ${mlResult.riskScore}, confidence: ${mlResult.confidence})`);
+      
+      return mlResult;
+    } catch (error) {
+      logger.error('ML classification failed, using fallback:', error.message);
+      
+      // Fallback to basic classification
+      return {
+        riskScore: analysisData.risk_score || 0,
+        confidence: 0.5,
+        category: analysisData.risk_level === 'critical' ? 'malware' : 
+                  analysisData.risk_level === 'high' ? 'phishing' : 'benign',
+        indicators: ['Fallback classification']
+      };
+    }
   }
 
   /**
    * Get Gemini explanation
-   * In production, this would call the Gemini service
+   * Calls the ML service for AI-generated explanation
    */
-  async getGeminiExplanation(analysisData, mlOutput) {
-    // Placeholder - would call actual Gemini service
-    return {
-      summary: `Detected ${mlOutput.category} with ${Math.round(mlOutput.confidence * 100)}% confidence`,
-      recommendations: [
-        'Block access to suspicious domains',
-        'Enable additional security headers',
-        'Monitor for similar patterns'
-      ],
-      threatSummary: `Risk level: ${analysisData.risk_level.toUpperCase()}`
-    };
+  async getGeminiExplanation(mlOutput) {
+    try {
+      // Call the ML service for explanation
+      const explanation = await mlServiceClient.getExplanation(mlOutput);
+      
+      logger.info(`✅ Gemini explanation generated`);
+      
+      return explanation;
+    } catch (error) {
+      logger.error('Gemini explanation failed, using fallback:', error.message);
+      
+      // Fallback explanation
+      return {
+        summary: `Detected ${mlOutput.category} threat with ${Math.round(mlOutput.confidence * 100)}% confidence`,
+        recommendations: [
+          'Block access to suspicious domains',
+          'Enable additional security headers',
+          'Monitor for similar patterns'
+        ],
+        technicalDetails: 'Detailed analysis unavailable - using fallback explanation'
+      };
+    }
   }
 
   /**

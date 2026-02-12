@@ -1,5 +1,6 @@
 /**
  * Page Styles - CSS styles for all page components
+ * Using Professional Theme Variables
  */
 
 /* ========================================
@@ -7,42 +8,42 @@
    ======================================== */
 
 .page-content {
-    padding: 1.5rem;
+    padding: var(--cf-space-2xl);
     height: 100%;
     overflow-y: auto;
-    background: var(--bg-primary);
+    background: var(--cf-bg-primary);
 }
 
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--cf-space-2xl);
+    padding-bottom: var(--cf-space-lg);
+    border-bottom: 1px solid var(--cf-border-light);
 }
 
 .page-title {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--cf-space-md);
 }
 
 .page-title i {
-    font-size: 1.5rem;
-    color: var(--accent-color);
+    font-size: var(--cf-text-2xl);
+    color: var(--cf-interactive-default);
 }
 
 .page-title h2 {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: var(--cf-text-xl);
+    font-weight: var(--cf-weight-semibold);
+    color: var(--cf-text-primary);
 }
 
 .page-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--cf-space-md);
     align-items: center;
 }
 
@@ -55,18 +56,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem;
-    color: var(--text-secondary);
+    padding: var(--cf-space-3xl);
+    color: var(--cf-text-secondary);
 }
 
 .empty-state i {
     font-size: 3rem;
-    margin-bottom: 1rem;
+    margin-bottom: var(--cf-space-lg);
     opacity: 0.5;
+    color: var(--cf-text-muted);
 }
 
 .empty-state.small {
-    padding: 1.5rem;
+    padding: var(--cf-space-2xl);
 }
 
 .empty-state.small i {
@@ -81,8 +83,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    color: var(--text-secondary);
+    padding: var(--cf-space-2xl);
+    color: var(--cf-text-secondary);
 }
 
 /* ========================================
@@ -92,12 +94,12 @@
 .cf-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: var(--cf-text-sm);
 }
 
 .cf-table th,
 .cf-table td {
-    padding: 0.75rem;
+    padding: var(--cf-space-md);
     text-align: left;
     border-bottom: 1px solid var(--border-color);
 }

@@ -2377,6 +2377,14 @@
     } else if (screen === 'threat-intel') {
       container.innerHTML = buildThreatIntelLayout();
       bindThreatIntelEvents();
+    } else if (screen === 'threat-globe') {
+      // Initialize Threat Globe Screen
+      if (window.ThreatGlobeScreen) {
+        const globeScreen = new ThreatGlobeScreen();
+        globeScreen.show(container);
+      } else {
+        container.innerHTML = '<div class="screen-error"><p>Threat Globe screen not available</p></div>';
+      }
     } else if (screen === 'environment') {
       container.innerHTML = buildEnvironmentLayout();
       bindEnvironmentEvents();

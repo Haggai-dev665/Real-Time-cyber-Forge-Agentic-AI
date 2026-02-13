@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Cyber Forge AI - Advanced Security Platform",
+        "title": "CyberForge",
         "width": 1600,
         "height": 1000,
         "minWidth": 1200,
@@ -20,7 +20,7 @@
         "fullscreen": false,
         "decorations": true,
         "titleBarStyle": "Overlay",
-        "url": "renderer/auth-page.html"
+        "url": "renderer/setup-wizard.html"
       }
     ],
     "security": {

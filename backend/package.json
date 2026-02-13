@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "test": "jest",
     "lint": "eslint src/",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "appwrite:schema": "node scripts/setup-appwrite-schema.js"
   },
   "keywords": [
     "cybersecurity",

@@ -314,12 +314,14 @@ body {
 .auth-panel {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     padding: 40px;
     background: var(--auth-bg-secondary);
     position: relative;
+    min-height: 100vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Subtle Background Pattern */
@@ -336,7 +338,28 @@ body {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 420px;
+    max-width: 560px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding-right: 6px;
+    padding-bottom: 20px;
+}
+
+.form-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.form-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.form-wrapper::-webkit-scrollbar-thumb {
+    background: var(--auth-border-color);
+    border-radius: 3px;
+}
+
+.form-wrapper::-webkit-scrollbar-thumb:hover {
+    background: var(--auth-border-hover);
 }
 
 /* Connection Status Badge */
@@ -387,6 +410,20 @@ body {
     padding: 40px;
     backdrop-filter: var(--glass-blur);
     box-shadow: var(--shadow-lg);
+    margin-bottom: 16px;
+}
+
+#login-form,
+#reset-form {
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#register-form {
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Form Header */
@@ -976,7 +1013,11 @@ body {
     .auth-panel {
         order: 2;
         padding: 30px 24px;
-        min-height: 100%;
+        min-height: auto;
+    }
+
+    .form-wrapper {
+        max-height: calc(100vh - 32px);
     }
     
     .ai-illustration {
@@ -1042,6 +1083,15 @@ body {
     
     .form-wrapper {
         max-width: 100%;
+        max-height: calc(100vh - 20px);
+        padding-right: 2px;
+        padding-bottom: 16px;
+    }
+
+    #register-form,
+    #login-form,
+    #reset-form {
+        max-width: 100%;
     }
     
     .auth-form-card {
@@ -1100,6 +1150,11 @@ body {
     
     .auth-panel {
         padding: 20px 16px;
+    }
+
+    .form-wrapper {
+        max-height: calc(100vh - 16px);
+        padding-bottom: 12px;
     }
     
     .auth-form-card {
@@ -1197,6 +1252,10 @@ body {
     .auth-panel {
         order: 1;
         overflow-y: auto;
+    }
+
+    .form-wrapper {
+        max-height: calc(100vh - 16px);
     }
     
     .ai-illustration {

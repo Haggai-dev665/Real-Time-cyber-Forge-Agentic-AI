@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberForge — Setup Wizard</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Animation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+
+    <link rel="stylesheet" href="css/setup-wizard.css">
+</head>
+<body>
+    <!-- ============================================= -->
+    <!-- SETUP WIZARD CONTAINER                        -->
+    <!-- ============================================= -->
+    <div class="wizard-container" id="wizard-container">
+
+        <!-- Progress Bar -->
+        <div class="wizard-progress">
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-steps">
+                <div class="step-dot active" data-step="0"><span>1</span></div>
+                <div class="step-dot" data-step="1"><span>2</span></div>
+                <div class="step-dot" data-step="2"><span>3</span></div>
+                <div class="step-dot" data-step="3"><span>4</span></div>
+                <div class="step-dot" data-step="4"><span>5</span></div>
+            </div>
+        </div>
+
+        <!-- =========== STEP 0 : WELCOME =========== -->
+        <section class="wizard-step active" id="step-welcome">
+            <div class="step-illustration">
+                <div class="shield-anim" id="shield-anim">
+                    <svg viewBox="0 0 200 220" class="shield-svg">
+                        <defs>
+                            <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4A7C59"/>
+                                <stop offset="100%" style="stop-color:#2D5A3F"/>
+                            </linearGradient>
+                        </defs>
+                        <path class="shield-path" d="M100 10 L180 50 L180 120 C180 170 140 200 100 215 C60 200 20 170 20 120 L20 50 Z" fill="url(#shieldGrad)" stroke="#3D6B4A" stroke-width="2"/>
+                        <path class="shield-check" d="M65 110 L90 135 L140 80" fill="none" stroke="#E8E2D8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="pulse-ring"></div>
+                    <div class="pulse-ring delay-1"></div>
+                    <div class="pulse-ring delay-2"></div>
+                </div>
+            </div>
+            <h1 class="step-title">Welcome to CyberForge</h1>
+            <p class="step-subtitle">AI-Powered Cybersecurity Platform</p>
+            <p class="step-description">
+                This wizard will configure your system for real-time threat detection, 
+                browser monitoring, and AI-driven security analysis.
+            </p>
+            <div class="step-meta">
+                <div class="meta-chip"><i class="fas fa-clock"></i> ~2 minutes</div>
+                <div class="meta-chip"><i class="fas fa-shield-halved"></i> Secure Setup</div>
+                <div class="meta-chip"><i class="fas fa-microchip"></i> OS-Aware</div>
+            </div>
+            <button class="wizard-btn primary" onclick="wizardNext()">
+                Begin Setup <i class="fas fa-arrow-right"></i>
+            </button>
+        </section>
+
+        <!-- =========== STEP 1 : SYSTEM SCAN =========== -->
+        <section class="wizard-step" id="step-system">
+            <div class="step-illustration">
+                <div class="scan-anim" id="scan-anim">
+                    <div class="scan-circle">
+                        <div class="scan-line"></div>
+                        <div class="scan-dot dot-1"></div>
+                        <div class="scan-dot dot-2"></div>
+                        <div class="scan-dot dot-3"></div>
+                    </div>
+                </div>
+            </div>
+            <h1 class="step-title">System Analysis</h1>
+            <p class="step-subtitle">Scanning your environment</p>
+
+            <div class="scan-results" id="scan-results">
+                <div class="scan-item" id="scan-os">
+                    <div class="scan-icon"><i class="fas fa-desktop"></i></div>
+                    <div class="scan-info">
+                        <div class="scan-label">Operating System</div>
+                        <div class="scan-value" id="scan-os-value">Detecting...</div>
+                    </div>
+                    <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+                </div>
+                <div class="scan-item" id="scan-cpu">
+                    <div class="scan-icon"><i class="fas fa-microchip"></i></div>
+                    <div class="scan-info">
+                        <div class="scan-label">Processor</div>
+                        <div class="scan-value" id="scan-cpu-value">Detecting...</div>
+                    </div>
+                    <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+                </div>
+                <div class="scan-item" id="scan-memory">
+                    <div class="scan-icon"><i class="fas fa-memory"></i></div>
+                    <div class="scan-info">
+                        <div class="scan-label">Memory</div>
+                        <div class="scan-value" id="scan-memory-value">Detecting...</div>
+                    </div>
+                    <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+                </div>
+                <div class="scan-item" id="scan-arch">
+                    <div class="scan-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="scan-info">
+                        <div class="scan-label">Architecture</div>
+                        <div class="scan-value" id="scan-arch-value">Detecting...</div>
+                    </div>
+                    <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+                </div>
+                <div class="scan-item" id="scan-hostname">
+                    <div class="scan-icon"><i class="fas fa-server"></i></div>
+                    <div class="scan-info">
+                        <div class="scan-label">Hostname</div>
+                        <div class="scan-value" id="scan-hostname-value">Detecting...</div>
+                    </div>
+                    <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+                </div>
+                <div class="scan-item" id="scan-uptime">
+                    <div class="scan-icon"><i class="fas fa-clock"></i></div>
+                    <div class="scan-info">
+                        <div class="scan-label">System Uptime</div>
+                        <div class="scan-value" id="scan-uptime-value">Detecting...</div>
+                    </div>
+                    <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+                </div>
+            </div>
+
+            <div class="step-actions">
+                <button class="wizard-btn secondary" onclick="wizardBack()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="wizard-btn primary disabled" id="btn-after-scan" onclick="wizardNext()" disabled>
+                    Continue <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- =========== STEP 2 : BROWSER REGISTRY =========== -->
+        <section class="wizard-step" id="step-browsers">
+            <div class="step-illustration">
+                <div class="browser-anim" id="browser-anim">
+                    <div class="browser-orbit">
+                        <div class="orbit-ring"></div>
+                        <div class="browser-planet chrome"><i class="fab fa-chrome"></i></div>
+                        <div class="browser-planet firefox"><i class="fab fa-firefox-browser"></i></div>
+                        <div class="browser-planet safari"><i class="fab fa-safari"></i></div>
+                        <div class="browser-planet edge"><i class="fab fa-edge"></i></div>
+                    </div>
+                </div>
+            </div>
+            <h1 class="step-title">Browser Registry</h1>
+            <p class="step-subtitle">Detected browsers on your system</p>
+
+            <div class="browser-registry" id="browser-registry">
+                <div class="registry-scanning" id="browser-scanning">
+                    <div class="scan-spinner-lg"></div>
+                    <p>Scanning system for installed browsers...</p>
+                </div>
+                <div class="registry-list" id="browser-list" style="display:none;"></div>
+            </div>
+
+            <div class="browser-summary" id="browser-summary" style="display:none;">
+                <div class="summary-stat">
+                    <span class="stat-num" id="browsers-found">0</span>
+                    <span class="stat-label">Detected</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-num" id="browsers-running">0</span>
+                    <span class="stat-label">Running</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="stat-num" id="browsers-selected">0</span>
+                    <span class="stat-label">To Monitor</span>
+                </div>
+            </div>
+
+            <div class="step-actions">
+                <button class="wizard-btn secondary" onclick="wizardBack()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="wizard-btn primary disabled" id="btn-after-browsers" onclick="wizardNext()" disabled>
+                    Continue <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- =========== STEP 3 : BACKEND CONNECTION =========== -->
+        <section class="wizard-step" id="step-backend">
+            <div class="step-illustration">
+                <div class="connect-anim" id="connect-anim">
+                    <div class="node node-local">
+                        <i class="fas fa-laptop"></i>
+                        <span>Your Device</span>
+                    </div>
+                    <div class="connect-line">
+                        <div class="data-packet p1"></div>
+                        <div class="data-packet p2"></div>
+                        <div class="data-packet p3"></div>
+                    </div>
+                    <div class="node node-server">
+                        <i class="fas fa-cloud"></i>
+                        <span>CyberForge Cloud</span>
+                    </div>
+                </div>
+            </div>
+            <h1 class="step-title">Backend Connection</h1>
+            <p class="step-subtitle">Connecting to CyberForge services</p>
+
+            <div class="connection-tests" id="connection-tests">
+                <div class="conn-item" id="conn-api">
+                    <div class="conn-icon"><i class="fas fa-server"></i></div>
+                    <div class="conn-info">
+                        <div class="conn-label">API Server</div>
+                        <div class="conn-url" id="conn-api-url">https://cyberforge-ddd97655464f.herokuapp.com</div>
+                    </div>
+                    <div class="conn-status testing"><div class="mini-spinner"></div></div>
+                </div>
+                <div class="conn-item" id="conn-ws">
+                    <div class="conn-icon"><i class="fas fa-plug"></i></div>
+                    <div class="conn-info">
+                        <div class="conn-label">WebSocket</div>
+                        <div class="conn-url">Real-time event stream</div>
+                    </div>
+                    <div class="conn-status waiting">—</div>
+                </div>
+                <div class="conn-item" id="conn-ml">
+                    <div class="conn-icon"><i class="fas fa-brain"></i></div>
+                    <div class="conn-info">
+                        <div class="conn-label">ML Services</div>
+                        <div class="conn-url">HuggingFace AI Models</div>
+                    </div>
+                    <div class="conn-status waiting">—</div>
+                </div>
+                <div class="conn-item" id="conn-db">
+                    <div class="conn-icon"><i class="fas fa-database"></i></div>
+                    <div class="conn-info">
+                        <div class="conn-label">Data Store</div>
+                        <div class="conn-url">Appwrite Cloud</div>
+                    </div>
+                    <div class="conn-status waiting">—</div>
+                </div>
+            </div>
+
+            <div class="connection-result" id="connection-result" style="display:none;">
+                <div class="result-badge success" id="conn-result-badge">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="conn-result-text">All services connected</span>
+                </div>
+            </div>
+
+            <div class="step-actions">
+                <button class="wizard-btn secondary" onclick="wizardBack()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="wizard-btn primary disabled" id="btn-after-connect" onclick="wizardNext()" disabled>
+                    Continue <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- =========== STEP 4 : COMPLETE =========== -->
+        <section class="wizard-step" id="step-complete">
+            <div class="step-illustration">
+                <div class="complete-anim" id="complete-anim">
+                    <div class="success-circle">
+                        <svg viewBox="0 0 120 120">
+                            <circle class="success-ring" cx="60" cy="60" r="54" fill="none" stroke="#4A7C59" stroke-width="4"/>
+                            <path class="success-check" d="M35 60 L52 77 L85 44" fill="none" stroke="#4A7C59" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="confetti-container" id="confetti-container"></div>
+                </div>
+            </div>
+            <h1 class="step-title">Setup Complete</h1>
+            <p class="step-subtitle">CyberForge is ready to protect your system</p>
+
+            <div class="setup-summary" id="setup-summary">
+                <div class="summary-card">
+                    <i class="fas fa-desktop"></i>
+                    <div class="card-info">
+                        <div class="card-label">System</div>
+                        <div class="card-value" id="summary-os">—</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-globe"></i>
+                    <div class="card-info">
+                        <div class="card-label">Browsers</div>
+                        <div class="card-value" id="summary-browsers">—</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-cloud"></i>
+                    <div class="card-info">
+                        <div class="card-label">Backend</div>
+                        <div class="card-value" id="summary-backend">—</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-shield-halved"></i>
+                    <div class="card-info">
+                        <div class="card-label">Security</div>
+                        <div class="card-value" id="summary-security">Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="wizard-btn primary launch-btn" onclick="launchApp()">
+                <i class="fas fa-rocket"></i> Launch CyberForge
+            </button>
+        </section>
+    </div>
+
+    <!-- Tauri Bridge -->
+    <script src="../tauri-bridge.js"></script>
+    <!-- Wizard Logic -->
+    <script src="setup-wizard.js"></script>
+</body>
+</html>

@@ -304,7 +304,7 @@ class ThreatGlobeScreen {
     async loadThreatData() {
         try {
             // Get backend URL from config or use default
-            const backendUrl = window.API_ENDPOINTS?.BACKEND_URL || 'http://localhost:8000';
+            const backendUrl = window.API_ENDPOINTS?.BACKEND_URL || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
             
             // Validate URL scheme for security
             if (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {

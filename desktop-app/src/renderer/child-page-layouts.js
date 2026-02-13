@@ -1558,358 +1558,216 @@ window.ChildPageLayouts = (() => {
 
   function buildBrowserRegistrationLayout() {
     return `
-      <div class="child-page-container browser-registration-container" id="browser-registration-page">
+      <div class="child-page-container browser-intel-container" id="browser-registration-page">
         <div class="cf-panel-header">
-          <div class="cf-panel-title"><i class="fas fa-globe"></i> Browser Monitoring</div>
+          <div class="cf-panel-title"><i class="fas fa-shield-alt"></i> Browser Intelligence</div>
           <div class="cf-panel-actions">
-            <button class="cf-btn" id="refresh-browsers"><i class="fas fa-sync"></i> Refresh</button>
+            <button class="cf-btn" id="refresh-browsers"><i class="fas fa-rotate"></i> Rescan</button>
             <button class="cf-btn primary" id="start-monitoring"><i class="fas fa-play"></i> Start Monitoring</button>
           </div>
         </div>
-        
-        <!-- Monitor Status Banner -->
-        <div class="monitor-status-banner" id="monitor-status-banner">
-          <div class="monitor-status-icon">
-            <i class="fas fa-circle-notch fa-spin"></i>
+
+        <!-- System overview strip -->
+        <div class="bi-system-strip" id="bi-system-strip">
+          <div class="bi-sys-item">
+            <i class="fas fa-desktop"></i>
+            <span id="bi-os-label">Detecting OS...</span>
           </div>
-          <div class="monitor-status-text">
-            <div class="monitor-status-title">Browser Monitoring Status</div>
-            <div class="monitor-status-desc" id="monitor-status-desc">Checking...</div>
+          <div class="bi-sys-item">
+            <i class="fas fa-clock"></i>
+            <span id="bi-scan-time">—</span>
           </div>
-          <div class="monitor-stats" id="monitor-stats">
-            <div class="stat-item">
-              <span class="stat-value" id="stat-browsers">0</span>
-              <span class="stat-label">Browsers</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value" id="stat-requests">0</span>
-              <span class="stat-label">Requests</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value" id="stat-threats">0</span>
-              <span class="stat-label">Threats</span>
-            </div>
+          <div class="bi-sys-item">
+            <i class="fas fa-star"></i>
+            Default: <strong id="bi-default-browser">—</strong>
+          </div>
+          <div class="bi-sys-item bi-privacy">
+            <i class="fas fa-lock"></i>
+            <span>No personal browsing data accessed</span>
           </div>
         </div>
-        
-        <div class="cf-panel-content">
-          <!-- Available Browsers Section -->
-          <div class="browser-section">
-            <h3 class="section-title"><i class="fas fa-desktop"></i> Available Browsers</h3>
-            <p class="section-desc">Click a browser to launch it with monitoring enabled. Browsers must be launched through CyberForge for full traffic capture.</p>
-            <div class="available-browsers" id="available-browsers-list">
-              <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Detecting browsers...</span>
-              </div>
-            </div>
+
+        <!-- Summary cards -->
+        <div class="bi-summary-row" id="bi-summary-row">
+          <div class="bi-summary-card">
+            <div class="bi-summary-value" id="bi-installed-count">—</div>
+            <div class="bi-summary-label">Installed</div>
           </div>
-          
-          <!-- Connected Browsers Section -->
-          <div class="browser-section">
-            <h3 class="section-title"><i class="fas fa-link"></i> Connected Browsers</h3>
-            <p class="section-desc">These browsers are currently being monitored. All HTTP/HTTPS requests are captured.</p>
-            <div class="connected-browsers" id="connected-browsers-list">
-              <div class="empty-state">
-                <i class="fas fa-unlink"></i>
-                <span>No browsers connected</span>
-              </div>
-            </div>
+          <div class="bi-summary-card">
+            <div class="bi-summary-value bi-running" id="bi-running-count">—</div>
+            <div class="bi-summary-label">Running</div>
           </div>
-          
-          <!-- How It Works Section -->
-          <div class="browser-section how-it-works">
-            <h3 class="section-title"><i class="fas fa-question-circle"></i> How Browser Monitoring Works</h3>
-            <div class="steps-grid">
-              <div class="step-card">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                  <h4>Launch Browser</h4>
-                  <p>Click on any detected browser above to launch it with remote debugging enabled.</p>
-                </div>
-              </div>
-              <div class="step-card">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                  <h4>Auto-Connect</h4>
-                  <p>CyberForge automatically connects via Chrome DevTools Protocol for traffic capture.</p>
-                </div>
-              </div>
-              <div class="step-card">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                  <h4>Real-Time Monitoring</h4>
-                  <p>All HTTP/HTTPS requests are captured and analyzed for threats in real-time.</p>
-                </div>
-              </div>
-              <div class="step-card">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                  <h4>View in HTTP History</h4>
-                  <p>Check HTTP History to see all captured requests with full details.</p>
-                </div>
-              </div>
-            </div>
+          <div class="bi-summary-card">
+            <div class="bi-summary-value" id="bi-total-count">—</div>
+            <div class="bi-summary-label">Scanned</div>
+          </div>
+        </div>
+
+        <!-- Browser cards grid -->
+        <div class="bi-section">
+          <h3 class="bi-section-title"><i class="fas fa-globe"></i> Detected Browsers</h3>
+          <div class="bi-browser-grid" id="available-browsers-list">
+            <div class="bi-loading"><i class="fas fa-spinner fa-spin"></i> Scanning system for browsers...</div>
+          </div>
+        </div>
+
+        <!-- Connected browsers -->
+        <div class="bi-section">
+          <h3 class="bi-section-title"><i class="fas fa-link"></i> Monitored Sessions</h3>
+          <p class="bi-section-desc">Browsers launched through CyberForge will appear here for real-time traffic capture.</p>
+          <div class="bi-connected" id="connected-browsers-list">
+            <div class="bi-empty"><i class="fas fa-unlink"></i> No active monitoring sessions</div>
+          </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="bi-section bi-how-works">
+          <h3 class="bi-section-title"><i class="fas fa-info-circle"></i> How Detection Works</h3>
+          <div class="bi-steps">
+            <div class="bi-step"><div class="bi-step-num">1</div><div><strong>OS Detection</strong><p>Rust identifies your operating system and uses OS-specific detection paths.</p></div></div>
+            <div class="bi-step"><div class="bi-step-num">2</div><div><strong>Binary Scan</strong><p>Checks known install locations for each browser binary without accessing profiles.</p></div></div>
+            <div class="bi-step"><div class="bi-step-num">3</div><div><strong>Version Extract</strong><p>Safely invokes each browser with --version to read build metadata.</p></div></div>
+            <div class="bi-step"><div class="bi-step-num">4</div><div><strong>Process Check</strong><p>Inspects running processes to show real-time browser activity status.</p></div></div>
           </div>
         </div>
       </div>
-      
+
       <style>
-        .browser-registration-container {
-          padding: 0;
+        .browser-intel-container { padding: 0; }
+
+        /* System strip */
+        .bi-system-strip {
+          display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+          padding: 12px 20px;
+          background: var(--cf-bg-medium, #f0f4f8);
+          border-bottom: 1px solid var(--cf-border, #e2eaf4);
+          font-size: 13px; color: var(--cf-text-secondary, #6b7280);
         }
-        
-        .monitor-status-banner {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          padding: 20px;
-          background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: 20px;
+        .bi-sys-item { display: flex; align-items: center; gap: 6px; }
+        .bi-sys-item i { font-size: 14px; color: var(--cf-accent, #4364f7); }
+        .bi-privacy { margin-left: auto; font-size: 11px; opacity: 0.85; }
+        .bi-privacy i { color: #10b981; }
+
+        /* Summary cards */
+        .bi-summary-row {
+          display: flex; gap: 12px; padding: 16px 20px;
         }
-        
-        .monitor-status-banner.active {
-          background: linear-gradient(135deg, rgba(0, 255, 0, 0.1) 0%, var(--bg-tertiary) 100%);
+        .bi-summary-card {
+          flex: 1; text-align: center; padding: 14px;
+          background: var(--cf-bg-card, #fff);
+          border: 1px solid var(--cf-border, #e2eaf4);
+          border-radius: 8px;
         }
-        
-        .monitor-status-icon {
-          font-size: 32px;
-          color: var(--accent-blue);
-          width: 50px;
-          text-align: center;
+        .bi-summary-value {
+          font-size: 28px; font-weight: 700; color: var(--cf-text-primary, #1f2937);
         }
-        
-        .monitor-status-banner.active .monitor-status-icon {
-          color: var(--accent-green);
-        }
-        
-        .monitor-status-text {
-          flex: 1;
-        }
-        
-        .monitor-status-title {
-          font-weight: 600;
-          font-size: 16px;
-          margin-bottom: 4px;
-        }
-        
-        .monitor-status-desc {
-          color: var(--text-secondary);
-          font-size: 13px;
-        }
-        
-        .monitor-stats {
-          display: flex;
-          gap: 30px;
-        }
-        
-        .stat-item {
-          text-align: center;
-        }
-        
-        .stat-value {
-          display: block;
-          font-size: 24px;
-          font-weight: 700;
-          color: var(--accent-blue);
-        }
-        
-        .stat-label {
-          font-size: 11px;
-          text-transform: uppercase;
-          color: var(--text-secondary);
-        }
-        
-        .browser-section {
-          padding: 0 20px 20px;
-        }
-        
-        .section-title {
-          font-size: 14px;
-          font-weight: 600;
-          margin-bottom: 8px;
-          color: var(--text-primary);
-        }
-        
-        .section-title i {
-          margin-right: 8px;
-          color: var(--accent-blue);
-        }
-        
-        .section-desc {
-          font-size: 13px;
-          color: var(--text-secondary);
-          margin-bottom: 16px;
-        }
-        
-        .available-browsers, .connected-browsers {
+        .bi-summary-value.bi-running { color: #10b981; }
+        .bi-summary-label { font-size: 11px; text-transform: uppercase; color: var(--cf-text-secondary, #6b7280); margin-top: 4px; }
+
+        /* Section */
+        .bi-section { padding: 0 20px 20px; }
+        .bi-section-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+        .bi-section-title i { margin-right: 6px; color: var(--cf-accent, #4364f7); }
+        .bi-section-desc { font-size: 12px; color: var(--cf-text-secondary, #6b7280); margin-bottom: 12px; }
+
+        /* Browser card grid */
+        .bi-browser-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
           gap: 12px;
         }
-        
-        .browser-card {
-          display: flex;
-          align-items: center;
-          gap: 15px;
+
+        .bi-browser-card {
+          display: flex; align-items: flex-start; gap: 14px;
           padding: 16px;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        
-        .browser-card:hover {
-          background: var(--bg-tertiary);
-          border-color: var(--accent-blue);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        
-        .browser-card.connected {
-          border-color: var(--accent-green);
-          background: linear-gradient(135deg, rgba(0, 255, 0, 0.05) 0%, var(--bg-secondary) 100%);
-        }
-        
-        .browser-card.launching {
-          opacity: 0.7;
-          pointer-events: none;
-        }
-        
-        .browser-card .browser-icon {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 28px;
+          background: var(--cf-bg-card, #fff);
+          border: 1px solid var(--cf-border, #e2eaf4);
           border-radius: 10px;
-          background: var(--bg-tertiary);
+          transition: border-color 0.2s, box-shadow 0.2s;
+          position: relative;
         }
-        
-        .browser-card .browser-icon.chrome { color: #4285f4; }
-        .browser-card .browser-icon.brave { color: #fb542b; }
-        .browser-card .browser-icon.edge { color: #0078d7; }
-        .browser-card .browser-icon.arc { color: #fc8e00; }
-        .browser-card .browser-icon.opera { color: #ff1b2d; }
-        .browser-card .browser-icon.chromium { color: #4587f4; }
-        
-        .browser-card .browser-info {
-          flex: 1;
+        .bi-browser-card:hover {
+          border-color: var(--cf-accent, #4364f7);
+          box-shadow: 0 2px 10px rgba(67,100,247,0.1);
         }
-        
-        .browser-card .browser-name {
-          font-weight: 600;
-          font-size: 15px;
-          margin-bottom: 4px;
+        .bi-browser-card.bi-not-installed {
+          opacity: 0.5; background: var(--cf-bg-medium, #f0f4f8);
         }
-        
-        .browser-card .browser-port {
-          font-size: 12px;
-          color: var(--text-secondary);
-        }
-        
-        .browser-card .browser-status {
-          padding: 6px 12px;
-          border-radius: 4px;
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
-        
-        .browser-card .browser-status.available {
-          background: rgba(0, 150, 255, 0.15);
-          color: var(--accent-blue);
-        }
-        
-        .browser-card .browser-status.connected {
-          background: rgba(0, 255, 0, 0.15);
-          color: var(--accent-green);
-        }
-        
-        .browser-card .browser-status.launching {
-          background: rgba(255, 200, 0, 0.15);
-          color: var(--accent-yellow);
-        }
-        
-        .browser-card .launch-btn {
-          padding: 8px 16px;
-          background: var(--accent-blue);
-          border: none;
-          border-radius: 6px;
-          color: white;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        
-        .browser-card .launch-btn:hover {
-          background: var(--accent-purple);
-          transform: scale(1.05);
-        }
-        
-        .how-it-works {
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 1px solid var(--border-color);
-        }
-        
-        .steps-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 16px;
-        }
-        
-        .step-card {
-          display: flex;
-          gap: 12px;
-          padding: 16px;
-          background: var(--bg-secondary);
-          border-radius: 8px;
-          border: 1px solid var(--border-color);
-        }
-        
-        .step-number {
-          width: 28px;
-          height: 28px;
-          background: var(--accent-blue);
-          color: white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          font-size: 14px;
+
+        .bi-browser-icon {
+          width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+          font-size: 26px; border-radius: 10px;
+          background: var(--cf-bg-medium, #f0f4f8);
           flex-shrink: 0;
         }
-        
-        .step-content h4 {
-          font-size: 14px;
-          font-weight: 600;
-          margin-bottom: 6px;
+        .bi-browser-icon.chrome { color: #4285f4; }
+        .bi-browser-icon.firefox { color: #ff7139; }
+        .bi-browser-icon.edge { color: #0078d7; }
+        .bi-browser-icon.brave { color: #fb542b; }
+        .bi-browser-icon.opera { color: #ff1b2d; }
+        .bi-browser-icon.chromium { color: #4587f4; }
+        .bi-browser-icon.arc { color: #fc8e00; }
+
+        .bi-browser-body { flex: 1; min-width: 0; }
+
+        .bi-browser-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .bi-browser-name { font-weight: 600; font-size: 15px; }
+
+        .bi-badge {
+          font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600;
+          text-transform: uppercase; letter-spacing: 0.5px;
         }
-        
-        .step-content p {
-          font-size: 12px;
-          color: var(--text-secondary);
-          line-height: 1.5;
+        .bi-badge-default { background: rgba(67,100,247,0.12); color: #4364f7; }
+        .bi-badge-running { background: rgba(16,185,129,0.12); color: #10b981; }
+        .bi-badge-notfound { background: rgba(156,163,175,0.2); color: #9ca3af; }
+
+        .bi-browser-version { font-size: 13px; color: var(--cf-text-secondary, #6b7280); margin-bottom: 6px; }
+        .bi-browser-path {
+          font-size: 11px; color: var(--cf-text-muted, #9ca3af);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          max-width: 100%;
         }
-        
-        .loading-state, .empty-state {
-          grid-column: 1 / -1;
-          padding: 40px;
-          text-align: center;
-          color: var(--text-secondary);
+
+        .bi-browser-footer { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+
+        .bi-status-dot {
+          width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
         }
-        
-        .loading-state i, .empty-state i {
-          font-size: 24px;
-          margin-bottom: 10px;
-          display: block;
+        .bi-status-dot.running { background: #10b981; box-shadow: 0 0 6px #10b981; animation: bi-pulse 1.5s infinite; }
+        .bi-status-dot.stopped { background: #9ca3af; }
+
+        @keyframes bi-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
+
+        .bi-status-text { font-size: 11px; color: var(--cf-text-secondary, #6b7280); flex: 1; }
+
+        .bi-launch-btn {
+          padding: 6px 14px; border: none; border-radius: 6px; font-size: 12px;
+          font-weight: 600; cursor: pointer; transition: all 0.2s;
+          background: var(--cf-accent, #4364f7); color: #fff;
+        }
+        .bi-launch-btn:hover { filter: brightness(1.1); }
+        .bi-launch-btn:disabled { opacity: 0.5; cursor: default; }
+
+        /* Empty / loading */
+        .bi-loading, .bi-empty {
+          grid-column: 1 / -1; padding: 40px; text-align: center;
+          color: var(--cf-text-secondary, #6b7280); font-size: 13px;
+        }
+        .bi-loading i, .bi-empty i { font-size: 22px; margin-bottom: 8px; display: block; }
+
+        /* Connected list */
+        .bi-connected { min-height: 60px; }
+
+        /* Steps */
+        .bi-how-works { border-top: 1px solid var(--cf-border, #e2eaf4); padding-top: 16px; margin-top: 8px; }
+        .bi-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .bi-step { display: flex; gap: 10px; padding: 14px; background: var(--cf-bg-card, #fff); border: 1px solid var(--cf-border, #e2eaf4); border-radius: 8px; }
+        .bi-step-num { width: 26px; height: 26px; background: var(--cf-accent, #4364f7); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+        .bi-step strong { font-size: 13px; display: block; margin-bottom: 4px; }
+        .bi-step p { font-size: 11px; color: var(--cf-text-secondary, #6b7280); line-height: 1.5; margin: 0; }
       </style>
     `;
   }
@@ -2636,26 +2494,89 @@ window.ChildPageLayouts = (() => {
     return `
       <div class="child-page-container" id="agent-control-page">
         <div class="cf-panel-header">
-          <div class="cf-panel-title"><i class="fas fa-robot"></i> AI Agent Control</div>
+          <div class="cf-panel-title"><i class="fas fa-robot"></i> AI Agent Control Center</div>
           <div class="cf-panel-actions">
+            <button class="cf-btn" id="open-browser-registration"><i class="fas fa-globe"></i> Browser Registration</button>
             <button class="cf-btn primary" id="start-agent"><i class="fas fa-play"></i> Start Agent</button>
-            <button class="cf-btn" id="stop-agent"><i class="fas fa-stop"></i> Stop</button>
+            <button class="cf-btn danger" id="stop-agent"><i class="fas fa-stop"></i> Stop</button>
           </div>
         </div>
-        <div class="cf-panel-content">
-          <div class="agent-status">
-            <div class="status-indicator" id="agent-status-indicator">
-              <span class="status-dot offline"></span>
-              <span class="status-text">Agent Offline</span>
+        <div class="cf-panel-content agent-center-grid">
+
+          <!-- Row 1: Status + System Stats -->
+          <div class="agent-center-row">
+            <div class="agent-card agent-status-card">
+              <div class="agent-card-header"><i class="fas fa-circle-info"></i> Agent Status</div>
+              <div class="agent-card-body">
+                <div class="status-indicator" id="agent-status-indicator">
+                  <span class="status-dot offline"></span>
+                  <span class="status-text">Connecting to backend...</span>
+                </div>
+                <div class="agent-meta-grid" id="agent-meta-grid">
+                  <div class="agent-meta-item"><span class="meta-label">Uptime</span><span class="meta-value" id="ac-uptime">--</span></div>
+                  <div class="agent-meta-item"><span class="meta-label">Backend</span><span class="meta-value" id="ac-backend">checking...</span></div>
+                  <div class="agent-meta-item"><span class="meta-label">ML Service</span><span class="meta-value" id="ac-ml">checking...</span></div>
+                  <div class="agent-meta-item"><span class="meta-label">Agents</span><span class="meta-value" id="ac-agent-count">0</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="agent-card agent-stats-card">
+              <div class="agent-card-header"><i class="fas fa-microchip"></i> System Resources</div>
+              <div class="agent-card-body">
+                <div class="agent-stat-row">
+                  <span class="stat-label">CPU</span>
+                  <div class="stat-bar"><div class="stat-bar-fill" id="ac-cpu-bar" style="width:0%"></div></div>
+                  <span class="stat-pct" id="ac-cpu-pct">0%</span>
+                </div>
+                <div class="agent-stat-row">
+                  <span class="stat-label">Memory</span>
+                  <div class="stat-bar"><div class="stat-bar-fill" id="ac-mem-bar" style="width:0%"></div></div>
+                  <span class="stat-pct" id="ac-mem-pct">0%</span>
+                </div>
+                <div class="agent-stat-row">
+                  <span class="stat-label">Disk</span>
+                  <div class="stat-bar"><div class="stat-bar-fill" id="ac-disk-bar" style="width:0%"></div></div>
+                  <span class="stat-pct" id="ac-disk-pct">0%</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="agent-console" id="agent-control-panel">
-            <div class="console-output" id="agent-console-output"></div>
-            <div class="console-input">
-              <input type="text" id="agent-command" class="cf-input" placeholder="Enter command...">
-              <button class="cf-btn primary" id="send-agent-command"><i class="fas fa-paper-plane"></i></button>
+
+          <!-- Row 2: Detected Browsers -->
+          <div class="agent-card agent-browsers-card">
+            <div class="agent-card-header">
+              <span><i class="fas fa-globe"></i> Detected Browsers</span>
+              <button class="cf-btn small" id="refresh-agent-browsers"><i class="fas fa-rotate"></i> Refresh</button>
+            </div>
+            <div class="agent-card-body">
+              <div class="agent-open-browsers-list" id="agent-open-browsers-list">
+                <div class="detecting-state"><i class="fas fa-spinner fa-spin"></i> Scanning system for browsers...</div>
+              </div>
             </div>
           </div>
+
+          <!-- Row 3: Agent Console + Event Log -->
+          <div class="agent-center-row">
+            <div class="agent-card agent-console-card">
+              <div class="agent-card-header"><i class="fas fa-terminal"></i> Agent Console</div>
+              <div class="agent-card-body">
+                <div class="console-output" id="agent-console-output"></div>
+                <div class="console-input">
+                  <input type="text" id="agent-command" class="cf-input" placeholder="Type 'status' or 'scan &lt;url&gt;'...">
+                  <button class="cf-btn primary" id="send-agent-command"><i class="fas fa-paper-plane"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="agent-card agent-log-card">
+              <div class="agent-card-header"><i class="fas fa-list-ul"></i> Recent Activity</div>
+              <div class="agent-card-body">
+                <div class="agent-activity-log" id="agent-activity-log">
+                  <div class="detecting-state"><i class="fas fa-spinner fa-spin"></i> Loading activity...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     `;

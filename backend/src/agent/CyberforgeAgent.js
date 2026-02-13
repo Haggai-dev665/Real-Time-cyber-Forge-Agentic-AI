@@ -151,6 +151,8 @@ class CyberforgeAgent {
         hostname: this.metadata.hostname,
         platform: this.metadata.platform,
         type: 'agent',
+        agentVersion: this.config.version,
+        agentType: 'security_scanner',
         metadata: {
           arch: this.metadata.arch,
           nodeVersion: this.metadata.nodeVersion

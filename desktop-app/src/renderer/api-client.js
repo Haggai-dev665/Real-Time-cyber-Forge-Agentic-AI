@@ -3,8 +3,9 @@
  * Handles all communication between the desktop app and backend services
  */
 
-const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
-const WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
+const _PROD = 'https://cyberforge-ddd97655464f.herokuapp.com';
+const API_BASE_URL = (typeof localStorage !== 'undefined' && localStorage.getItem('cyberforge_backend_url')) || _PROD;
+const WS_URL = `${API_BASE_URL.startsWith('https') ? 'wss' : 'ws'}://${API_BASE_URL.replace(/^https?:\/\//, '')}/ws`;
 
 class CyberForgeAPI {
   constructor() {
@@ -1078,6 +1079,36 @@ class CyberForgeAPI {
 
   async updateAIAgentSettings(settings) {
     return this.put('/api/ai/agent/settings', settings);
+  }
+
+  async listAgents() {
+    return this.get('/api/agent/list');
+  }
+
+  async getAgentStatus(agentName = 'default') {
+    return this.get(`/api/agent/status/${encodeURIComponent(agentName)}`);
+  }
+
+  async startAgent({ userId, agentName = 'default', config = {} }) {
+    return this.post('/api/agent/start', { userId, agentName, config });
+  }
+
+  async stopAgent(agentName = 'default') {
+    return this.post('/api/agent/stop', { agentName });
+  }
+
+  async createAgentTask(taskData) {
+    return this.post('/api/agent/task/create', taskData);
+  }
+
+  async getAgentTask(taskId) {
+    return this.get(`/api/agent/task/${encodeURIComponent(taskId)}`);
+  }
+
+  async getAgentAlerts(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    const url = params ? `/api/agent/alerts?${params}` : '/api/agent/alerts';
+    return this.get(url);
   }
 
   // =========================================

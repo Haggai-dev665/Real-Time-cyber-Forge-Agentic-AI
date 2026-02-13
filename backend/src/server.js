@@ -63,10 +63,44 @@ class CyberForgeServer {
     this.app.use('/api/', limiter);
 
     // CORS
+    const defaultOrigins = [
+      'http://localhost:3000',
+      'http://localhost:8000',
+      'http://127.0.0.1:8000',
+      'tauri://localhost',
+      'http://tauri.localhost',
+      'https://tauri.localhost'
+    ];
+
+    const configuredOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+      : [];
+
+    const productionOrigins = ['https://cyberforge-ddd97655464f.herokuapp.com'];
+
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+      ? [...productionOrigins, ...configuredOrigins, ...defaultOrigins]
+      : [...defaultOrigins, ...configuredOrigins];
+
     this.app.use(cors({
-      origin: process.env.NODE_ENV === 'production' 
-        ? ['https://cyberforge-ddd97655464f.herokuapp.com']
-        : process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+      origin: (origin, callback) => {
+        // Allow requests without origin (curl, mobile apps, server-to-server)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        const isLoopbackOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+        if (isLoopbackOrigin) {
+          return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true
     }));
 

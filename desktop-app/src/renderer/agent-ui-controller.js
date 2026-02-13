@@ -1,10 +1,14 @@
 /**
  * CyberForge Agent UI Controller
- * Handles hierarchical sidebar, floating agent panel, and UI interactions
+ * Handles floating agent panel with REAL system data from Tauri & backend.
+ * No mock data, no simulations, no fake entries.
  */
 
 (function() {
     'use strict';
+
+    let _fpStatsInterval = null;
+    let _fpBrowsersInterval = null;
 
     // =========================================
     // HIERARCHICAL SIDEBAR CONTROLLER
@@ -12,25 +16,16 @@
     
     function initHierarchicalSidebar() {
         const parentSections = document.querySelectorAll('.sidebar-parent-section');
-        
         parentSections.forEach(section => {
             const title = section.querySelector('.sidebar-parent-title');
-            
             if (title) {
                 title.addEventListener('click', () => {
-                    // Toggle collapsed state
                     section.classList.toggle('collapsed');
-                    
-                    // Save state to localStorage
                     const sectionId = section.dataset.section;
-                    const isCollapsed = section.classList.contains('collapsed');
-                    localStorage.setItem(`sidebar-${sectionId}-collapsed`, isCollapsed);
+                    localStorage.setItem(`sidebar-${sectionId}-collapsed`, section.classList.contains('collapsed'));
                 });
-                
-                // Restore saved state
                 const sectionId = section.dataset.section;
-                const savedState = localStorage.getItem(`sidebar-${sectionId}-collapsed`);
-                if (savedState === 'true') {
+                if (localStorage.getItem(`sidebar-${sectionId}-collapsed`) === 'true') {
                     section.classList.add('collapsed');
                 }
             }
@@ -38,41 +33,32 @@
     }
 
     // =========================================
-    // FLOATING AGENT PANEL CONTROLLER
+    // FLOATING AGENT PANEL — REAL DATA
     // =========================================
     
     function initFloatingAgentPanel() {
         const panel = document.getElementById('agent-control-panel');
+        if (!panel) return;
+        
         const minimizeBtn = document.getElementById('agent-panel-minimize');
         const hideBtn = document.getElementById('agent-panel-hide');
         const toggleBtn = document.getElementById('agent-panel-toggle');
-        const reasoningToggle = document.getElementById('reasoning-toggle');
-        const reasoningContent = document.getElementById('agent-reasoning-content');
-        const pauseBtn = document.getElementById('agent-pause-btn');
-        const resumeBtn = document.getElementById('agent-resume-btn');
         const resyncBtn = document.getElementById('agent-resync-btn');
+        const refreshBrowsersBtn = document.getElementById('fp-refresh-browsers');
+        const openCenterBtn = document.getElementById('fp-open-agent-center');
         
-        if (!panel) return;
-        
-        // Make panel draggable
         makePanelDraggable(panel);
         
-        // Minimize functionality
         if (minimizeBtn) {
             minimizeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 panel.classList.toggle('minimized');
                 const icon = minimizeBtn.querySelector('i');
-                if (panel.classList.contains('minimized')) {
-                    icon.className = 'fas fa-window-maximize';
-                } else {
-                    icon.className = 'fas fa-window-minimize';
-                }
+                icon.className = panel.classList.contains('minimized') ? 'fas fa-window-maximize' : 'fas fa-window-minimize';
                 localStorage.setItem('agent-panel-minimized', panel.classList.contains('minimized'));
             });
         }
         
-        // Hide functionality
         if (hideBtn) {
             hideBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -81,18 +67,6 @@
             });
         }
         
-        // Show panel via sidebar link
-        const sidebarAgentCenter = document.getElementById('sidebar-agent-center');
-        if (sidebarAgentCenter) {
-            sidebarAgentCenter.addEventListener('click', (e) => {
-                e.preventDefault();
-                panel.classList.remove('hidden');
-                panel.classList.remove('minimized');
-                localStorage.setItem('agent-panel-hidden', 'false');
-            });
-        }
-        
-        // Collapse/Expand functionality
         if (toggleBtn) {
             toggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -100,126 +74,300 @@
                 if (body) {
                     const isCollapsed = body.style.display === 'none';
                     body.style.display = isCollapsed ? 'block' : 'none';
-                    const icon = toggleBtn.querySelector('i');
-                    icon.className = isCollapsed ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+                    toggleBtn.querySelector('i').className = isCollapsed ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
                 }
             });
         }
         
-        // Reasoning summary toggle
-        if (reasoningToggle && reasoningContent) {
-            reasoningToggle.addEventListener('click', () => {
-                reasoningContent.classList.toggle('collapsed');
-                const chevron = reasoningToggle.querySelector('.reasoning-chevron');
-                if (chevron) {
-                    chevron.style.transform = reasoningContent.classList.contains('collapsed') 
-                        ? 'rotate(0deg)' 
-                        : 'rotate(90deg)';
-                }
-            });
-        }
-        
-        // Agent control buttons
-        if (pauseBtn && resumeBtn) {
-            pauseBtn.addEventListener('click', () => {
-                pauseBtn.style.display = 'none';
-                resumeBtn.style.display = 'flex';
-                updateAgentState('paused');
-            });
-            
-            resumeBtn.addEventListener('click', () => {
-                resumeBtn.style.display = 'none';
-                pauseBtn.style.display = 'flex';
-                updateAgentState('monitoring');
-            });
-        }
-        
+        // Resync — REAL backend calls
         if (resyncBtn) {
-            resyncBtn.addEventListener('click', () => {
-                // Add spinner
+            resyncBtn.addEventListener('click', async () => {
                 const icon = resyncBtn.querySelector('i');
-                const originalClass = icon.className;
+                const origClass = icon.className;
                 icon.className = 'fas fa-spinner fa-spin';
-                
-                // Simulate resync
-                setTimeout(() => {
-                    icon.className = originalClass;
-                    showNotification('Resync Complete', 'Agent data synchronized successfully', 'success');
-                }, 2000);
+                resyncBtn.disabled = true;
+                try {
+                    await loadFloatingPanelData();
+                    fpLog('Full resync completed');
+                } catch (e) {
+                    fpLog('Resync failed: ' + e.message);
+                } finally {
+                    icon.className = origClass;
+                    resyncBtn.disabled = false;
+                }
+            });
+        }
+        
+        if (refreshBrowsersBtn) {
+            refreshBrowsersBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await loadFloatingPanelBrowsers();
+            });
+        }
+        
+        // Open Agent Center screen
+        if (openCenterBtn) {
+            openCenterBtn.addEventListener('click', () => {
+                const agentLink = document.querySelector('[data-screen="agent-control"]');
+                if (agentLink) agentLink.click();
             });
         }
         
         // Restore saved panel state
-        const isPanelHidden = localStorage.getItem('agent-panel-hidden') === 'true';
-        const isPanelMinimized = localStorage.getItem('agent-panel-minimized') === 'true';
-        
-        if (isPanelHidden) {
-            panel.classList.add('hidden');
-        }
-        if (isPanelMinimized) {
+        if (localStorage.getItem('agent-panel-hidden') === 'true') panel.classList.add('hidden');
+        if (localStorage.getItem('agent-panel-minimized') === 'true') {
             panel.classList.add('minimized');
-            if (minimizeBtn) {
-                minimizeBtn.querySelector('i').className = 'fas fa-window-maximize';
+            if (minimizeBtn) minimizeBtn.querySelector('i').className = 'fas fa-window-maximize';
+        }
+        
+        // Load REAL data immediately
+        console.log('[FloatingPanel] Loading real system data...');
+        loadFloatingPanelData();
+        
+        // Auto-refresh: system stats every 5s, browsers every 30s
+        _fpStatsInterval = setInterval(loadFloatingPanelSystemStats, 5000);
+        _fpBrowsersInterval = setInterval(loadFloatingPanelBrowsers, 30000);
+    }
+
+    // =========================================
+    // REAL DATA LOADERS
+    // =========================================
+    
+    async function loadFloatingPanelData() {
+        await Promise.all([
+            loadFloatingPanelSystemStats(),
+            loadFloatingPanelBrowsers(),
+            loadFloatingPanelBackendStatus()
+        ]);
+    }
+    
+    // System stats from Tauri Rust (sysinfo crate) — CPU, Memory, Uptime
+    async function loadFloatingPanelSystemStats() {
+        try {
+            const result = await window.electronAPI?.getSystemStats?.();
+            if (!result?.success || !result?.data) return;
+            
+            const cpu = Math.round(result.data.cpu || 0);
+            const mem = Math.round(result.data.memory || 0);
+            const uptime = result.data.uptime || 0;
+            
+            const cpuEl = document.getElementById('fp-cpu-pct');
+            const memEl = document.getElementById('fp-mem-pct');
+            const uptimeEl = document.getElementById('fp-uptime');
+            
+            if (cpuEl) cpuEl.textContent = cpu + '%';
+            if (memEl) memEl.textContent = mem + '%';
+            if (uptimeEl) {
+                const d = Math.floor(uptime / 86400);
+                const h = Math.floor((uptime % 86400) / 3600);
+                const m = Math.floor((uptime % 3600) / 60);
+                uptimeEl.textContent = d > 0 ? d + 'd ' + h + 'h' : h + 'h ' + m + 'm';
             }
+        } catch (e) {
+            console.warn('[FloatingPanel] System stats error:', e);
         }
     }
     
-    // Make panel draggable
-    function makePanelDraggable(panel) {
-        const header = panel.querySelector('.agent-panel-header');
-        if (!header) return;
+    // Browser detection from Tauri Rust — REAL installed/running browsers
+    async function loadFloatingPanelBrowsers() {
+        const list = document.getElementById('fp-browsers-list');
+        const countEl = document.getElementById('fp-browser-count');
+        if (!list) return;
         
-        let isDragging = false;
-        let currentX, currentY, initialX, initialY;
+        if (!window.electronAPI?.detectSystemBrowsers) {
+            list.innerHTML = '<div class="fp-error"><i class="fas fa-exclamation-triangle"></i> Browser detection unavailable</div>';
+            if (countEl) countEl.textContent = '?';
+            return;
+        }
         
-        header.addEventListener('mousedown', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-        
-        function dragStart(e) {
-            // Don't drag if clicking on buttons
-            if (e.target.closest('button')) return;
+        try {
+            const detection = await window.electronAPI.detectSystemBrowsers();
             
+            if (!detection?.browsers) {
+                list.innerHTML = '<div class="fp-error"><i class="fas fa-exclamation-circle"></i> No data returned</div>';
+                if (countEl) countEl.textContent = '0';
+                return;
+            }
+            
+            const installed = detection.browsers.filter(function(b) { return b.isInstalled; });
+            const running = installed.filter(function(b) { return b.isRunning; });
+            
+            if (countEl) countEl.textContent = String(installed.length);
+            
+            if (installed.length === 0) {
+                list.innerHTML = '<div class="fp-error"><i class="fas fa-exclamation-circle"></i> No browsers detected</div>';
+                return;
+            }
+            
+            // Sort: running browsers first
+            var sorted = installed.slice().sort(function(a, b) {
+                if (a.isRunning && !b.isRunning) return -1;
+                if (!a.isRunning && b.isRunning) return 1;
+                return 0;
+            });
+            
+            var html = '';
+            for (var i = 0; i < sorted.length; i++) {
+                var b = sorted[i];
+                var icon = b.iconClass || getFpBrowserIcon(b.key);
+                var isRunning = !!b.isRunning;
+                var isDefault = !!b.isDefault;
+                var version = b.version ? 'v' + b.version : '';
+                var stateClass = isRunning ? 'running' : 'idle';
+                var stateLabel = isRunning ? 'Running' : (isDefault ? 'Default' : 'Idle');
+                
+                html += '<div class="fp-browser-row ' + (isRunning ? 'is-running' : '') + '">'
+                    + '<i class="' + icon + '"></i>'
+                    + '<span class="fp-browser-name">' + b.name + '</span>'
+                    + '<span class="fp-browser-ver">' + version + '</span>'
+                    + '<span class="fp-browser-badge ' + stateClass + '">' + stateLabel + '</span>'
+                    + '</div>';
+            }
+            html += '<div class="fp-browsers-summary">' + installed.length + ' installed &bull; ' + running.length + ' running</div>';
+            list.innerHTML = html;
+            
+            console.log('[FloatingPanel] Browsers: ' + installed.length + ' installed, ' + running.length + ' running');
+        } catch (e) {
+            list.innerHTML = '<div class="fp-error"><i class="fas fa-exclamation-triangle"></i> ' + e.message + '</div>';
+            console.error('[FloatingPanel] Browser detection error:', e);
+        }
+    }
+    
+    // Backend + ML service status — REAL HTTP calls
+    async function loadFloatingPanelBackendStatus() {
+        var backendEl = document.getElementById('fp-backend-status');
+        var mlEl = document.getElementById('fp-ml-status');
+        var agentCountEl = document.getElementById('fp-agent-count');
+        var statusDot = document.getElementById('agent-main-status');
+        var statusText = document.getElementById('agent-status-text');
+        
+        var backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+        
+        try {
+            // Health check
+            var backendOk = false;
+            try {
+                var healthRes = await fetch(backendUrl + '/health', { signal: AbortSignal.timeout(5000) });
+                backendOk = healthRes.ok;
+            } catch (e) { /* offline */ }
+            
+            if (backendEl) {
+                backendEl.textContent = backendOk ? 'Connected' : 'Offline';
+                backendEl.style.color = backendOk ? '#27AE60' : '#C0392B';
+            }
+            
+            // ML service health
+            var mlOk = false;
+            try {
+                var mlRes = await fetch(backendUrl + '/api/cyberforge-ml/health', { signal: AbortSignal.timeout(5000) });
+                if (mlRes.ok) {
+                    var mlData = await mlRes.json();
+                    mlOk = !!(mlData && (mlData.success || mlData.status === 'healthy'));
+                }
+            } catch (e) { /* offline */ }
+            
+            if (mlEl) {
+                mlEl.textContent = mlOk ? 'Healthy' : 'Degraded';
+                mlEl.style.color = mlOk ? '#27AE60' : '#E67E22';
+            }
+            
+            // Agent count
+            var agentCount = 0;
+            if (backendOk) {
+                try {
+                    var token = localStorage.getItem('auth_token') || '';
+                    var agentRes = await fetch(backendUrl + '/api/agent/list', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? 'Bearer ' + token : '',
+                            'User-Agent': 'cyber-forge-desktop/1.0'
+                        },
+                        signal: AbortSignal.timeout(5000)
+                    });
+                    if (agentRes.ok) {
+                        var agentData = await agentRes.json();
+                        agentCount = (agentData && agentData.data && agentData.data.count) || (agentData && agentData.count) || 0;
+                    }
+                } catch (e) { /* agent list failed */ }
+            }
+            
+            if (agentCountEl) agentCountEl.textContent = String(agentCount);
+            
+            // Update status indicator
+            if (statusDot) statusDot.style.background = backendOk ? '#27AE60' : '#C0392B';
+            if (statusText) statusText.textContent = backendOk ? 'Connected' : 'Offline';
+            
+            fpLog(backendOk ? 'Backend synced' : 'Backend unreachable');
+            
+        } catch (e) {
+            if (backendEl) { backendEl.textContent = 'Error'; backendEl.style.color = '#C0392B'; }
+            if (statusText) statusText.textContent = 'Error';
+            console.error('[FloatingPanel] Backend status error:', e);
+        }
+    }
+    
+    // =========================================
+    // FLOATING PANEL ACTIVITY LOG
+    // =========================================
+    
+    function fpLog(message) {
+        var log = document.getElementById('agent-actions-log');
+        if (!log) return;
+        var time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        var entry = document.createElement('div');
+        entry.className = 'action-log-item';
+        entry.innerHTML = '<span class="action-time">' + time + '</span><span class="action-text">' + message + '</span>';
+        log.insertBefore(entry, log.firstChild);
+        while (log.children.length > 15) log.removeChild(log.lastChild);
+    }
+    
+    // =========================================
+    // HELPERS
+    // =========================================
+    
+    function getFpBrowserIcon(key) {
+        var map = {
+            chrome: 'fab fa-chrome', firefox: 'fab fa-firefox-browser',
+            edge: 'fab fa-edge', safari: 'fab fa-safari',
+            opera: 'fab fa-opera', brave: 'fab fa-brave',
+            chromium: 'fab fa-chrome', arc: 'fas fa-globe'
+        };
+        return map[key] || 'fas fa-globe';
+    }
+    
+    function makePanelDraggable(panel) {
+        var header = panel.querySelector('.agent-panel-header');
+        if (!header) return;
+        var isDragging = false;
+        var initialX, initialY;
+        
+        header.addEventListener('mousedown', function(e) {
+            if (e.target.closest('button')) return;
             isDragging = true;
             initialX = e.clientX - panel.offsetLeft;
             initialY = e.clientY - panel.offsetTop;
             panel.style.cursor = 'grabbing';
-        }
-        
-        function drag(e) {
+        });
+        document.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
-            
             e.preventDefault();
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-            
-            // Keep panel within viewport
-            const maxX = window.innerWidth - panel.offsetWidth;
-            const maxY = window.innerHeight - panel.offsetHeight;
-            
-            currentX = Math.max(0, Math.min(currentX, maxX));
-            currentY = Math.max(0, Math.min(currentY, maxY));
-            
+            var x = Math.max(0, Math.min(e.clientX - initialX, window.innerWidth - panel.offsetWidth));
+            var y = Math.max(0, Math.min(e.clientY - initialY, window.innerHeight - panel.offsetHeight));
             panel.style.right = 'auto';
             panel.style.bottom = 'auto';
-            panel.style.left = currentX + 'px';
-            panel.style.top = currentY + 'px';
-        }
-        
-        function dragEnd() {
+            panel.style.left = x + 'px';
+            panel.style.top = y + 'px';
+        });
+        document.addEventListener('mouseup', function() {
             if (isDragging) {
                 isDragging = false;
                 panel.style.cursor = '';
-                
-                // Save position
                 localStorage.setItem('agent-panel-x', panel.style.left);
                 localStorage.setItem('agent-panel-y', panel.style.top);
             }
-        }
-        
-        // Restore saved position
-        const savedX = localStorage.getItem('agent-panel-x');
-        const savedY = localStorage.getItem('agent-panel-y');
+        });
+        var savedX = localStorage.getItem('agent-panel-x');
+        var savedY = localStorage.getItem('agent-panel-y');
         if (savedX && savedY) {
             panel.style.right = 'auto';
             panel.style.bottom = 'auto';
@@ -229,231 +377,39 @@
     }
 
     // =========================================
-    // AGENT STATE MANAGEMENT
-    // =========================================
-    
-    function updateAgentState(state) {
-        const statusText = document.getElementById('agent-status-text');
-        const statusDot = document.getElementById('agent-main-status');
-        const pulse = document.getElementById('agent-pulse-indicator');
-        const stateItems = document.querySelectorAll('.agent-state-item');
-        
-        // Remove all active states
-        stateItems.forEach(item => item.classList.remove('active'));
-        
-        // Set active state
-        const activeItem = document.querySelector(`.agent-state-item[data-state="${state}"]`);
-        if (activeItem) {
-            activeItem.classList.add('active');
-        }
-        
-        // Update status text and indicators
-        const stateConfig = {
-            idle: { text: 'Idle', color: '#9E9E9E', pulseClass: 'idle' },
-            monitoring: { text: 'Monitoring', color: '#4CAF50', pulseClass: '' },
-            analyzing: { text: 'Analyzing', color: '#2196F3', pulseClass: '' },
-            investigating: { text: 'Investigating', color: '#FF9800', pulseClass: '' },
-            waiting: { text: 'Waiting', color: '#FFC107', pulseClass: '' },
-            alert: { text: 'Alert', color: '#FF5722', pulseClass: 'alert' },
-            error: { text: 'Error', color: '#F44336', pulseClass: 'error' }
-        };
-        
-        const config = stateConfig[state] || stateConfig.monitoring;
-        
-        if (statusText) {
-            statusText.textContent = config.text;
-        }
-        
-        if (statusDot) {
-            statusDot.style.background = config.color;
-        }
-        
-        if (pulse) {
-            pulse.className = 'agent-pulse ' + config.pulseClass;
-            pulse.style.background = config.color;
-        }
-    }
-
-    // =========================================
     // HEADER ENHANCEMENTS
     // =========================================
     
     function initHeaderEnhancements() {
-        const themeToggle = document.getElementById('theme-toggle');
-        const alertWidget = document.getElementById('header-alert-widget');
-        const privacyMode = document.getElementById('header-privacy-mode');
+        var themeToggle = document.getElementById('theme-toggle');
+        var privacyMode = document.getElementById('header-privacy-mode');
         
-        // Enhanced theme toggle with smooth transition
         if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.body.dataset.theme || 'dark';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                // Add transition class
-                document.body.classList.add('theme-transitioning');
-                
-                // Change theme
+            themeToggle.addEventListener('click', function() {
+                var currentTheme = document.body.dataset.theme || 'dark';
+                var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
                 document.body.dataset.theme = newTheme;
                 localStorage.setItem('theme', newTheme);
-                
-                // Update icon
-                const icon = themeToggle.querySelector('i');
-                if (newTheme === 'light') {
-                    icon.className = 'fas fa-sun';
-                } else {
-                    icon.className = 'fas fa-moon';
-                }
-                
-                // Remove transition class after animation
-                setTimeout(() => {
-                    document.body.classList.remove('theme-transitioning');
-                }, 300);
+                var icon = themeToggle.querySelector('i');
+                if (icon) icon.className = newTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
             });
-            
-            // Initialize theme icon
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            const icon = themeToggle.querySelector('i');
-            if (savedTheme === 'light') {
-                icon.className = 'fas fa-sun';
-            }
+            var savedTheme = localStorage.getItem('theme') || 'dark';
+            var icon = themeToggle.querySelector('i');
+            if (savedTheme === 'light' && icon) icon.className = 'fas fa-sun';
         }
         
-        // Alert count click handler
-        if (alertWidget) {
-            alertWidget.addEventListener('click', () => {
-                // Navigate to alerts screen
-                const alertLink = document.querySelector('[data-screen="alerts"]');
-                if (alertLink) {
-                    alertLink.click();
-                }
-            });
-        }
-        
-        // Privacy mode toggle
         if (privacyMode) {
-            let isPrivate = localStorage.getItem('privacy-mode') === 'true';
-            if (isPrivate) {
-                privacyMode.classList.add('active');
-            }
-            
-            privacyMode.addEventListener('click', () => {
+            var isPrivate = localStorage.getItem('privacy-mode') === 'true';
+            if (isPrivate) privacyMode.classList.add('active');
+            privacyMode.addEventListener('click', function() {
                 isPrivate = !isPrivate;
                 privacyMode.classList.toggle('active');
-                localStorage.setItem('privacy-mode', isPrivate);
-                showNotification(
-                    'Privacy Mode',
-                    isPrivate ? 'Privacy mode enabled' : 'Privacy mode disabled',
-                    'info'
-                );
+                localStorage.setItem('privacy-mode', String(isPrivate));
             });
         }
         
-        // Update device identity
-        const deviceName = document.getElementById('device-name');
-        if (deviceName) {
-            const savedDevice = localStorage.getItem('device-name') || 'Device-001';
-            deviceName.textContent = savedDevice;
-        }
-    }
-
-    // =========================================
-    // NOTIFICATION SYSTEM
-    // =========================================
-    
-    function showNotification(title, message, type = 'info') {
-        // Use existing toast system if available
-        if (typeof showToast === 'function') {
-            showToast(type, title, message);
-            return;
-        }
-        
-        // Fallback notification
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <div class="notification-title">${title}</div>
-            <div class="notification-message">${message}</div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 100);
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
-    }
-
-    // =========================================
-    // AGENT DATA UPDATES
-    // =========================================
-    
-    function updateAgentStats(stats) {
-        if (stats.browsers !== undefined) {
-            const el = document.getElementById('agent-browsers-count');
-            if (el) el.textContent = stats.browsers;
-        }
-        
-        if (stats.requests !== undefined) {
-            const el = document.getElementById('agent-requests-count');
-            if (el) el.textContent = stats.requests;
-        }
-        
-        if (stats.threats !== undefined) {
-            const el = document.getElementById('agent-threats-count');
-            if (el) el.textContent = stats.threats;
-            
-            // Update header alert count
-            const headerAlert = document.getElementById('header-alert-number');
-            if (headerAlert) headerAlert.textContent = stats.threats;
-        }
-        
-        if (stats.uptime !== undefined) {
-            const el = document.getElementById('agent-uptime');
-            if (el) el.textContent = stats.uptime;
-        }
-    }
-    
-    function addReasoningEntry(time, text) {
-        const container = document.getElementById('agent-reasoning-content');
-        if (!container) return;
-        
-        const entry = document.createElement('div');
-        entry.className = 'reasoning-entry';
-        entry.innerHTML = `
-            <span class="reasoning-time">${time}</span>
-            <span class="reasoning-text">${text}</span>
-        `;
-        
-        container.insertBefore(entry, container.firstChild);
-        
-        // Keep only last 10 entries
-        while (container.children.length > 10) {
-            container.removeChild(container.lastChild);
-        }
-    }
-    
-    function addDecisionEntry(type, text, time) {
-        const container = document.getElementById('agent-decisions-list');
-        if (!container) return;
-        
-        const entry = document.createElement('div');
-        entry.className = `decision-item decision-${type}`;
-        entry.innerHTML = `
-            <i class="fas fa-${type === 'blocked' ? 'ban' : 'check'}"></i>
-            <span>${text}</span>
-            <span class="decision-time">${time}</span>
-        `;
-        
-        container.insertBefore(entry, container.firstChild);
-        
-        // Keep only last 5 entries
-        while (container.children.length > 5) {
-            container.removeChild(container.lastChild);
-        }
+        var deviceName = document.getElementById('device-name');
+        if (deviceName) deviceName.textContent = localStorage.getItem('device-name') || 'Device-001';
     }
 
     // =========================================
@@ -461,33 +417,26 @@
     // =========================================
     
     function init() {
-        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
             return;
         }
         
-        console.log('Initializing CyberForge Agent UI...');
-        
+        console.log('[AgentUI] Initializing with real system data...');
         initHierarchicalSidebar();
         initFloatingAgentPanel();
         initHeaderEnhancements();
         
-        // Set initial agent state
-        updateAgentState('monitoring');
-        
-        // Expose functions globally for integration
         window.CyberForgeAgentUI = {
-            updateAgentState,
-            updateAgentStats,
-            addReasoningEntry,
-            addDecisionEntry,
-            showNotification
+            refreshBrowsers: loadFloatingPanelBrowsers,
+            refreshStats: loadFloatingPanelSystemStats,
+            refreshBackend: loadFloatingPanelBackendStatus,
+            resyncAll: loadFloatingPanelData,
+            fpLog: fpLog
         };
         
-        console.log('CyberForge Agent UI initialized');
+        console.log('[AgentUI] Initialization complete');
     }
     
-    // Start initialization
     init();
 })();

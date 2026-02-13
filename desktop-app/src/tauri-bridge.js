@@ -13,8 +13,9 @@ const { invoke } = window.__TAURI__.core;
 const { listen, emit } = window.__TAURI__.event;
 const { getCurrentWebviewWindow } = window.__TAURI__.webviewWindow;
 
-const backendUrl = 'https://cyberforge-ddd97655464f.herokuapp.com';
-const wsUrl = 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
+const PROD_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
+const backendUrl = (typeof localStorage !== 'undefined' && localStorage.getItem('cyberforge_backend_url')) || PROD_URL;
+const wsUrl = `${backendUrl.startsWith('https') ? 'wss' : 'ws'}://${backendUrl.replace(/^https?:\/\//, '')}/ws`;
 
 // Event listener cleanup registry
 const _listeners = {};
@@ -66,6 +67,7 @@ window.electronAPI = {
 
     // Browser selection and monitoring
     getBrowserList: () => invoke('get_available_browsers'),
+    detectSystemBrowsers: () => invoke('detect_system_browsers'),
     selectBrowsers: (browserNames) => invoke('select_browsers', { browserNames }).catch(() => ({ success: true, browsers: browserNames })),
     checkDashboardAccess: () => Promise.resolve(true),
     getMonitoringData: () => Promise.resolve([]),
@@ -113,6 +115,7 @@ window.electronAPI = {
         getResponses: (limit) => Promise.resolve([]),
         launchBrowser: (browserKey) => Promise.resolve({ success: false, error: 'Use native browser launch' }),
         getAvailableBrowsers: () => invoke('get_available_browsers'),
+        detectSystemBrowsers: () => invoke('detect_system_browsers'),
 
         // Event listeners for real-time data
         onRequest: (callback) => onEvent('browser-request', (_, data) => callback(data)),

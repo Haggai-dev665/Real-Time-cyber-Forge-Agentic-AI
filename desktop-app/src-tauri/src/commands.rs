@@ -11,6 +11,98 @@ use tokio::sync::Mutex;
 
 type SharedState = Arc<Mutex<AppState>>;
 
+fn build_user_info(user_val: &Value) -> UserInfo {
+    let first_name = user_val
+        .get("firstName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let last_name = user_val
+        .get("lastName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let full_name = format!("{} {}", first_name, last_name).trim().to_string();
+    let fallback_name = user_val
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    UserInfo {
+        id: user_val
+            .get("id")
+            .or_else(|| user_val.get("_id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .into(),
+        email: user_val
+            .get("email")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .into(),
+        name: if !full_name.is_empty() {
+            full_name
+        } else {
+            fallback_name
+        },
+        avatar: user_val.get("avatar").and_then(|v| v.as_str()).map(String::from),
+        role: user_val.get("role").and_then(|v| v.as_str()).map(String::from),
+    }
+}
+
+async fn restore_session_from_storage(shared: &SharedState) -> Result<Option<UserInfo>, String> {
+    let (existing_auth, existing_user, backend_url, mem_token) = {
+        let s = shared.lock().await;
+        (
+            s.is_authenticated,
+            s.current_user.clone(),
+            s.backend_url.clone(),
+            s.auth_token.clone(),
+        )
+    };
+
+    if existing_auth {
+        return Ok(existing_user);
+    }
+
+    let token = mem_token.or_else(crate::auth::get_stored_token);
+    let Some(tok) = token else {
+        return Ok(None);
+    };
+
+    let profile_url = format!("{}/api/auth/profile", backend_url);
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&profile_url)
+        .header("Authorization", format!("Bearer {}", tok))
+        .header("User-Agent", "cyber-forge-desktop/2.0")
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            let body: Value = resp.json().await.map_err(|e| e.to_string())?;
+            if body.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
+                if let Some(user_val) = body.pointer("/data/user") {
+                    let user = build_user_info(user_val);
+                    let mut s = shared.lock().await;
+                    s.set_authenticated(user.clone(), tok.clone());
+                    let _ = crate::auth::store_token(&tok);
+                    return Ok(Some(user));
+                }
+            }
+
+            let _ = crate::auth::delete_token();
+            Ok(None)
+        }
+        Err(_) => Ok(None),
+    }
+}
+
 // ──────────────────────────────────────────────
 // Response Wrappers
 // ──────────────────────────────────────────────
@@ -72,15 +164,10 @@ pub async fn auth_login(
             body.pointer("/data/user"),
             body.pointer("/data/token").and_then(|t| t.as_str()),
         ) {
-            let user = UserInfo {
-                id: user_val.get("id").and_then(|v| v.as_str()).unwrap_or("").into(),
-                email: user_val.get("email").and_then(|v| v.as_str()).unwrap_or("").into(),
-                name: user_val.get("name").and_then(|v| v.as_str()).unwrap_or("").into(),
-                avatar: user_val.get("avatar").and_then(|v| v.as_str()).map(String::from),
-                role: user_val.get("role").and_then(|v| v.as_str()).map(String::from),
-            };
+            let user = build_user_info(user_val);
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
+            let _ = crate::auth::store_token(token);
         }
     }
 
@@ -123,15 +210,10 @@ pub async fn auth_register(
             body.pointer("/data/user"),
             body.pointer("/data/token").and_then(|t| t.as_str()),
         ) {
-            let user = UserInfo {
-                id: user_val.get("id").and_then(|v| v.as_str()).unwrap_or("").into(),
-                email: user_val.get("email").and_then(|v| v.as_str()).unwrap_or("").into(),
-                name: user_val.get("name").and_then(|v| v.as_str()).unwrap_or("").into(),
-                avatar: user_val.get("avatar").and_then(|v| v.as_str()).map(String::from),
-                role: user_val.get("role").and_then(|v| v.as_str()).map(String::from),
-            };
+            let user = build_user_info(user_val);
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
+            let _ = crate::auth::store_token(token);
         }
     }
 
@@ -152,14 +234,14 @@ pub async fn auth_logout(state: State<'_, SharedState>) -> Result<CmdResult<()>,
         req = req.header(&k, &v);
     }
     let _ = req.send().await; // Best-effort server-side logout
+    let _ = crate::auth::delete_token();
 
     Ok(CmdResult::ok(()))
 }
 
 #[tauri::command]
 pub async fn auth_get_user(state: State<'_, SharedState>) -> Result<Value, String> {
-    let s = state.lock().await;
-    if let Some(ref user) = s.current_user {
+    if let Some(user) = restore_session_from_storage(state.inner()).await? {
         Ok(serde_json::json!({ "success": true, "user": user }))
     } else {
         Ok(serde_json::json!({ "success": false, "user": null }))
@@ -168,10 +250,10 @@ pub async fn auth_get_user(state: State<'_, SharedState>) -> Result<Value, Strin
 
 #[tauri::command]
 pub async fn auth_is_authenticated(state: State<'_, SharedState>) -> Result<Value, String> {
-    let s = state.lock().await;
+    let restored_user = restore_session_from_storage(state.inner()).await?;
     Ok(serde_json::json!({
-        "authenticated": s.is_authenticated,
-        "user": s.current_user
+        "authenticated": restored_user.is_some(),
+        "user": restored_user
     }))
 }
 
@@ -230,14 +312,24 @@ pub async fn auth_google_url() -> Result<String, String> {
 
 #[tauri::command]
 pub async fn auth_get_token(state: State<'_, SharedState>) -> Result<Value, String> {
-    let s = state.lock().await;
-    Ok(serde_json::json!({ "token": s.auth_token }))
+    let mem_token = {
+        let s = state.lock().await;
+        s.auth_token.clone()
+    };
+
+    if let Some(token) = mem_token.or_else(crate::auth::get_stored_token) {
+        let mut s = state.lock().await;
+        s.auth_token = Some(token.clone());
+        return Ok(serde_json::json!({ "token": token }));
+    }
+
+    Ok(serde_json::json!({ "token": Value::Null }))
 }
 
 #[tauri::command]
 pub async fn auth_check_session(state: State<'_, SharedState>) -> Result<Value, String> {
     let s = state.lock().await;
-    let token = s.auth_token.clone();
+    let token = s.auth_token.clone().or_else(crate::auth::get_stored_token);
     let url = format!("{}/api/auth/session", s.backend_url);
     drop(s);
 
@@ -413,19 +505,62 @@ pub async fn navigate_to(window: WebviewWindow, page: String) -> Result<CmdResul
 }
 
 // ──────────────────────────────────────────────
-// BROWSER MONITOR (stub — native implementation)
+// BROWSER DETECTION & MONITORING
 // ──────────────────────────────────────────────
 
+/// Full OS-aware browser detection — returns rich metadata for the frontend.
+/// Privacy-conscious: no browsing history, cookies, or profile data accessed.
+#[tauri::command]
+pub async fn detect_system_browsers() -> Result<Value, String> {
+    // Run detection on a blocking thread to avoid occupying the async runtime
+    let result = tokio::task::spawn_blocking(|| {
+        crate::system::detect_all_browsers()
+    })
+    .await
+    .map_err(|e| format!("Detection task failed: {}", e))?;
+
+    serde_json::to_value(&result).map_err(|e| e.to_string())
+}
+
+/// Legacy-compatible browser list (returns simplified array for existing callers).
 #[tauri::command]
 pub async fn get_available_browsers() -> Result<Value, String> {
-    let browsers = crate::system::detect_browsers();
-    Ok(serde_json::json!(browsers))
+    let result = tokio::task::spawn_blocking(|| {
+        crate::system::detect_all_browsers()
+    })
+    .await
+    .map_err(|e| format!("Detection task failed: {}", e))?;
+
+    // Map to legacy format for backward compatibility
+    let legacy: Vec<Value> = result.browsers.iter().filter(|b| b.is_installed).map(|b| {
+        serde_json::json!({
+            "name": b.name,
+            "id": b.key,
+            "key": b.key,
+            "debugPort": b.debug_port,
+            "available": b.is_installed,
+            "version": b.version,
+            "isRunning": b.is_running
+        })
+    }).collect();
+
+    Ok(serde_json::json!(legacy))
 }
 
 #[tauri::command]
 pub async fn system_monitor_stats() -> Result<Value, String> {
+    let result = tokio::task::spawn_blocking(|| {
+        crate::system::detect_all_browsers()
+    })
+    .await
+    .map_err(|e| format!("Detection task failed: {}", e))?;
+
+    let running_count = result.browsers.iter().filter(|b| b.is_running).count();
+    let installed_count = result.browsers.iter().filter(|b| b.is_installed).count();
+
     Ok(serde_json::json!({
-        "browsersConnected": 0,
+        "browsersInstalled": installed_count,
+        "browsersRunning": running_count,
         "requestsCaptured": 0,
         "threatsDetected": 0,
         "monitoring": false

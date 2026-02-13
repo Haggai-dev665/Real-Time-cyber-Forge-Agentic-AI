@@ -48,21 +48,21 @@ class APIManagementScreen {
                         <div class="api-cards" id="backend-apis">
                             ${this.renderAPICard('backend-health', {
                                 name: 'Backend Health Check',
-                                url: 'https://cyberforge-ddd97655464f.herokuapp.com/health',
+                                url: (localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com') + '/health',
                                 method: 'GET',
                                 status: 'unknown',
                                 description: 'Main backend service health monitoring'
                             })}
                             ${this.renderAPICard('backend-websocket', {
                                 name: 'WebSocket Connection',
-                                url: 'wss://cyberforge-ddd97655464f.herokuapp.com/ws',
+                                url: ((localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com').replace(/^https?/, m => m === 'https' ? 'wss' : 'ws')) + '/ws',
                                 method: 'WS',
                                 status: 'unknown',
                                 description: 'Real-time communication channel'
                             })}
                             ${this.renderAPICard('backend-analytics', {
                                 name: 'Analytics API',
-                                url: 'https://cyberforge-ddd97655464f.herokuapp.com/api/analytics',
+                                url: (localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com') + '/api/analytics',
                                 method: 'POST',
                                 status: 'unknown',
                                 description: 'Send browsing data for analysis'

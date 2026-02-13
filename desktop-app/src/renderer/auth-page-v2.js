@@ -7,8 +7,9 @@
 // CONFIGURATION
 // =====================================================
 
-const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com/api';
-const WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com';
+const _HEROKU = 'https://cyberforge-ddd97655464f.herokuapp.com';
+const API_BASE_URL = (localStorage.getItem('cyberforge_backend_url') || _HEROKU) + '/api';
+const WS_URL = (localStorage.getItem('cyberforge_backend_url') || _HEROKU).replace(/^https?/, m => m === 'https' ? 'wss' : 'ws');
 
 // =====================================================
 // STATE MANAGEMENT
@@ -111,8 +112,8 @@ async function checkServerConnection() {
             }
         };
 
-        // Always use the production Heroku backend
-        const baseUrl = 'https://cyberforge-ddd97655464f.herokuapp.com';
+        // Use local backend in desktop development
+        const baseUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
         
         try {
             const response = await fetchWithTimeout(`${baseUrl}/health`);

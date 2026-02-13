@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberForge - AI Security Platform</title>
+    <title>CyberForge</title>
     
+    <!-- Core Dashboard Theme (required for sidebar-nav-* classes) -->
+    <link rel="stylesheet" href="css/cyberforge-theme.css">
+
     <!-- Stylesheets - Professional Theme -->
     <link rel="stylesheet" href="css/professional-theme.css">
     <link rel="stylesheet" href="css/professional-main.css">
     <link rel="stylesheet" href="css/professional-components.css">
     <link rel="stylesheet" href="css/agent-ui-redesign.css">
     <link rel="stylesheet" href="css/threat-globe.css">
+    <link rel="stylesheet" href="css/palette-override.css">
+
+    <style>
+        /* Minimal inline: force light theme, defer to palette-override.css for details */
+        html { color-scheme: light; }
+        body { margin: 0; padding: 0; }
+    </style>
     
     <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -28,7 +38,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
-<body data-theme="dark">
+<body data-theme="light">
     <div class="cf-app" id="app">
         <!-- Mobile Overlay for Sidebar -->
         <div class="mobile-overlay" id="mobile-overlay"></div>
@@ -315,20 +325,13 @@
                         </li>
                     </ul>
                 </div>
-            </aside>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
 
                 <!-- Real-Time Intelligence Section -->
-                <div class="sidebar-section intel-section">
-                    <div class="sidebar-section-title">
+                <div class="sidebar-section sidebar-parent-section" data-section="realtime-intel">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-satellite-dish"></i>
                         <span>Real-Time Intel</span>
-                        <div class="live-indicator">
-                            <span class="live-dot"></span>
-                            <span class="live-text">LIVE</span>
-                        </div>
+                        <i class="fas fa-chevron-down section-chevron"></i>
                     </div>
                     <ul class="sidebar-nav">
                         <li class="sidebar-nav-item">
@@ -354,32 +357,36 @@
                 </div>
 
                 <!-- Scanning Modes Section -->
-                <div class="sidebar-section scan-section">
-                    <div class="sidebar-section-title">Scan Modes</div>
+                <div class="sidebar-section sidebar-parent-section" data-section="scan-modes">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>Scan Modes</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
                     <ul class="sidebar-nav scan-modes">
                         <li class="sidebar-nav-item scan-mode" data-mode="quick">
-                            <a class="sidebar-nav-link">
+                            <a class="sidebar-nav-link" data-screen="scan-quick">
                                 <i class="fas fa-bolt"></i>
                                 <span>Quick Scan</span>
                                 <span class="mode-indicator active" id="quick-mode-status"></span>
                             </a>
                         </li>
                         <li class="sidebar-nav-item scan-mode" data-mode="deep">
-                            <a class="sidebar-nav-link">
+                            <a class="sidebar-nav-link" data-screen="scan-deep">
                                 <i class="fas fa-brain"></i>
                                 <span>AI Deep Scan</span>
                                 <span class="mode-indicator" id="deep-mode-status"></span>
                             </a>
                         </li>
                         <li class="sidebar-nav-item scan-mode" data-mode="stealth">
-                            <a class="sidebar-nav-link">
+                            <a class="sidebar-nav-link" data-screen="scan-stealth">
                                 <i class="fas fa-user-secret"></i>
                                 <span>Stealth Mode</span>
                                 <span class="mode-indicator" id="stealth-mode-status"></span>
                             </a>
                         </li>
                         <li class="sidebar-nav-item scan-mode" data-mode="forensic">
-                            <a class="sidebar-nav-link">
+                            <a class="sidebar-nav-link" data-screen="scan-forensic">
                                 <i class="fas fa-microscope"></i>
                                 <span>Forensic Mode</span>
                                 <span class="mode-indicator" id="forensic-mode-status"></span>
@@ -546,7 +553,7 @@
             </div>
             <div class="agent-panel-status">
                 <span class="agent-status-dot" id="agent-main-status"></span>
-                <span class="agent-status-text" id="agent-status-text">Monitoring</span>
+                <span class="agent-status-text" id="agent-status-text">Initializing...</span>
             </div>
             <div class="agent-panel-controls">
                 <button class="agent-panel-minimize" id="agent-panel-minimize" title="Minimize Panel">
@@ -562,122 +569,68 @@
         </div>
         
         <div class="agent-panel-body" id="agent-panel-body">
-            <!-- Current Task & Last Action -->
-            <div class="agent-section">
-                <div class="agent-section-label">
-                    <i class="fas fa-bullseye"></i>
-                    CURRENT TASK
-                </div>
-                <div class="agent-current-task" id="agent-current-task">
-                    <span>Monitoring browser activity for security threats</span>
-                </div>
-                <div class="agent-last-action" id="agent-last-action">
-                    <span class="last-action-label">Last Action:</span>
-                    <span class="last-action-text">Scanned 15 requests (2m ago)</span>
-                </div>
-            </div>
-
-            <!-- Live Stats Bar -->
-            <div class="agent-live-stats">
-                <div class="agent-live-stat">
-                    <i class="fas fa-globe"></i>
-                    <span id="agent-browsers-count">0</span>
-                    <label>Browsers</label>
-                </div>
-                <div class="agent-live-stat">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span id="agent-requests-count">0</span>
-                    <label>Requests</label>
-                </div>
-                <div class="agent-live-stat threat">
-                    <i class="fas fa-shield-alt"></i>
-                    <span id="agent-threats-count">0</span>
-                    <label>Threats</label>
-                </div>
-                <div class="agent-live-stat">
-                    <i class="fas fa-clock"></i>
-                    <span id="agent-uptime">0:00</span>
-                    <label>Uptime</label>
-                </div>
-            </div>
-
-            <!-- Agent State Grid -->
+            <!-- Live System Stats -->
             <div class="agent-section">
                 <div class="agent-section-label">
                     <i class="fas fa-microchip"></i>
-                    AGENT STATE
+                    SYSTEM STATS
                 </div>
-                <div class="agent-state-grid">
-                    <div class="agent-state-item" data-state="idle">
-                        <i class="fas fa-pause-circle"></i>
-                        <span>Idle</span>
+                <div class="agent-live-stats">
+                    <div class="agent-live-stat">
+                        <i class="fas fa-microchip"></i>
+                        <span id="fp-cpu-pct">--</span>
+                        <label>CPU</label>
                     </div>
-                    <div class="agent-state-item active" data-state="monitoring">
-                        <i class="fas fa-eye"></i>
-                        <span>Monitoring</span>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-memory"></i>
+                        <span id="fp-mem-pct">--</span>
+                        <label>Memory</label>
                     </div>
-                    <div class="agent-state-item" data-state="analyzing">
-                        <i class="fas fa-cog fa-spin"></i>
-                        <span>Analyzing</span>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-clock"></i>
+                        <span id="fp-uptime">--</span>
+                        <label>Uptime</label>
                     </div>
-                    <div class="agent-state-item" data-state="investigating">
-                        <i class="fas fa-search"></i>
-                        <span>Investigating</span>
-                    </div>
-                    <div class="agent-state-item" data-state="waiting">
-                        <i class="fas fa-hourglass-half"></i>
-                        <span>Waiting</span>
-                    </div>
-                    <div class="agent-state-item" data-state="alert">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>Alert</span>
-                    </div>
-                    <div class="agent-state-item" data-state="error">
-                        <i class="fas fa-times-circle"></i>
-                        <span>Error</span>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-globe"></i>
+                        <span id="fp-browser-count">--</span>
+                        <label>Browsers</label>
                     </div>
                 </div>
             </div>
 
-            <!-- Reasoning Summary (Expandable) -->
-            <div class="agent-section agent-reasoning-section">
-                <div class="agent-section-label clickable" id="reasoning-toggle">
-                    <i class="fas fa-brain"></i>
-                    REASONING SUMMARY
-                    <i class="fas fa-chevron-right reasoning-chevron"></i>
-                </div>
-                <div class="agent-reasoning-content collapsed" id="agent-reasoning-content">
-                    <div class="reasoning-entry">
-                        <span class="reasoning-time">14:32</span>
-                        <span class="reasoning-text">Detected suspicious pattern in request headers</span>
-                    </div>
-                    <div class="reasoning-entry">
-                        <span class="reasoning-time">14:30</span>
-                        <span class="reasoning-text">ML model classified as medium threat (confidence: 0.78)</span>
-                    </div>
-                    <div class="reasoning-entry">
-                        <span class="reasoning-time">14:28</span>
-                        <span class="reasoning-text">Initiated deep scan of target domain</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Decisions -->
+            <!-- Detected Browsers -->
             <div class="agent-section">
                 <div class="agent-section-label">
-                    <i class="fas fa-gavel"></i>
-                    RECENT DECISIONS
+                    <i class="fas fa-globe"></i>
+                    DETECTED BROWSERS
+                    <button class="fp-refresh-btn" id="fp-refresh-browsers" title="Rescan browsers">
+                        <i class="fas fa-rotate"></i>
+                    </button>
                 </div>
-                <div class="agent-decisions-list" id="agent-decisions-list">
-                    <div class="decision-item decision-blocked">
-                        <i class="fas fa-ban"></i>
-                        <span>Blocked suspicious request to malicious-site.com</span>
-                        <span class="decision-time">5m ago</span>
+                <div class="fp-browsers-list" id="fp-browsers-list">
+                    <div class="fp-loading"><i class="fas fa-spinner fa-spin"></i> Scanning...</div>
+                </div>
+            </div>
+
+            <!-- Backend Status -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-server"></i>
+                    BACKEND STATUS
+                </div>
+                <div class="fp-backend-grid">
+                    <div class="fp-backend-item">
+                        <span class="fp-backend-label">Backend</span>
+                        <span class="fp-backend-value" id="fp-backend-status">checking...</span>
                     </div>
-                    <div class="decision-item decision-allowed">
-                        <i class="fas fa-check"></i>
-                        <span>Allowed legitimate API request</span>
-                        <span class="decision-time">12m ago</span>
+                    <div class="fp-backend-item">
+                        <span class="fp-backend-label">ML Service</span>
+                        <span class="fp-backend-value" id="fp-ml-status">checking...</span>
+                    </div>
+                    <div class="fp-backend-item">
+                        <span class="fp-backend-label">Agents</span>
+                        <span class="fp-backend-value" id="fp-agent-count">0</span>
                     </div>
                 </div>
             </div>
@@ -686,27 +639,17 @@
             <div class="agent-section">
                 <div class="agent-section-label">
                     <i class="fas fa-bolt"></i>
-                    QUICK CONTROLS
+                    CONTROLS
                 </div>
                 <div class="agent-quick-controls">
-                    <button class="agent-control-btn" id="agent-pause-btn" title="Pause Agent">
-                        <i class="fas fa-pause"></i>
-                        <span>Pause</span>
-                    </button>
-                    <button class="agent-control-btn" id="agent-resume-btn" title="Resume Agent" style="display: none;">
-                        <i class="fas fa-play"></i>
-                        <span>Resume</span>
-                    </button>
-                    <button class="agent-control-btn" id="agent-resync-btn" title="Resync Data">
+                    <button class="agent-control-btn" id="agent-resync-btn" title="Resync All Data">
                         <i class="fas fa-sync"></i>
                         <span>Resync</span>
                     </button>
-                    <button class="agent-control-btn" id="agent-scan-now" title="Run Quick Scan">
-                        <i class="fas fa-radar"></i>
-                        <span>Scan</span>
+                    <button class="agent-control-btn" id="fp-open-agent-center" title="Open Agent Center">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>Center</span>
                     </button>
-                </div>
-            </div>
                     <button class="agent-action-btn primary" id="agent-add-browser" title="Add Browser Manually">
                         <i class="fas fa-plus"></i>
                         <span>Add</span>
@@ -714,17 +657,14 @@
                 </div>
             </div>
 
-            <!-- Last Actions Log -->
+            <!-- Activity Log -->
             <div class="agent-section">
                 <div class="agent-section-label">
                     <i class="fas fa-history"></i>
                     ACTIVITY LOG
                 </div>
                 <div class="agent-actions-log" id="agent-actions-log">
-                    <div class="action-log-item">
-                        <span class="action-time">Just now</span>
-                        <span class="action-text">Agent initialized and monitoring started</span>
-                    </div>
+                    <!-- Populated by JS from real data -->
                 </div>
             </div>
         </div>

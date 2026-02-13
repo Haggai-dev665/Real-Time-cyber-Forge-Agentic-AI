@@ -14,6 +14,135 @@ class AppwriteService {
     this.isInitialized = false;
   }
 
+  // ==================== USER AUTH / PROFILE SYNC ====================
+
+  normalizeUserRole(role = 'user') {
+    if (role === 'analyst') return 'expert';
+    if (role === 'expert') return 'expert';
+    if (role === 'admin') return 'admin';
+    return 'user';
+  }
+
+  async findAuthUserByEmail(email) {
+    this.ensureInitialized();
+
+    try {
+      const result = await this.services.users.list([
+        Query.equal('email', [email.toLowerCase()])
+      ]);
+
+      return result.users?.[0] || null;
+    } catch (error) {
+      logger.error(`❌ Failed to find Appwrite auth user by email ${email}:`, error);
+      throw error;
+    }
+  }
+
+  async createAuthUser({ email, password, firstName, lastName }) {
+    this.ensureInitialized();
+
+    try {
+      const fullName = `${firstName || ''} ${lastName || ''}`.trim() || email;
+      const user = await this.services.users.create(
+        ID.unique(),
+        email.toLowerCase(),
+        undefined,
+        password,
+        fullName
+      );
+
+      logger.info(`✅ Appwrite auth user created: ${user.$id}`);
+      return user;
+    } catch (error) {
+      logger.error(`❌ Failed to create Appwrite auth user for ${email}:`, error);
+      throw error;
+    }
+  }
+
+  async upsertUserMetadata({ userId, role = 'user', status = 'active' }) {
+    this.ensureInitialized();
+
+    const normalizedRole = this.normalizeUserRole(role);
+
+    try {
+      const existing = await this.services.databases.listDocuments(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.users,
+        [Query.equal('user_id', [userId])]
+      );
+
+      if (existing.documents?.length > 0) {
+        const doc = existing.documents[0];
+        const updated = await this.services.databases.updateDocument(
+          APPWRITE_CONFIG.databaseId,
+          APPWRITE_CONFIG.collections.users,
+          doc.$id,
+          {
+            role: normalizedRole,
+            status
+          }
+        );
+        return updated;
+      }
+
+      const created = await this.services.databases.createDocument(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.users,
+        ID.unique(),
+        {
+          user_id: userId,
+          role: normalizedRole,
+          status,
+          created_at: new Date().toISOString()
+        },
+        [
+          Permission.read(Role.user(userId)),
+          Permission.update(Role.user(userId)),
+          Permission.delete(Role.user(userId)),
+          Permission.read(Role.label('agent'))
+        ]
+      );
+
+      logger.info(`✅ Appwrite users metadata created for: ${userId}`);
+      return created;
+    } catch (error) {
+      logger.error(`❌ Failed to upsert Appwrite users metadata for ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async registerAppwriteUser({ email, password, firstName, lastName, role = 'user' }) {
+    this.ensureInitialized();
+
+    if (!APPWRITE_CONFIG.apiKey) {
+      throw new Error('APPWRITE_API_KEY is missing. Set APPWRITE_API_KEY in backend .env with users.write and databases.write scopes.');
+    }
+
+    let authUser = null;
+
+    try {
+      authUser = await this.createAuthUser({ email, password, firstName, lastName });
+    } catch (error) {
+      if (error?.code === 409 || /already exists|duplicate/i.test(error?.message || '')) {
+        authUser = await this.findAuthUserByEmail(email);
+      } else {
+        throw error;
+      }
+    }
+
+    if (!authUser?.$id) {
+      throw new Error('Unable to resolve Appwrite auth user');
+    }
+
+    await this.upsertUserMetadata({
+      userId: authUser.$id,
+      role,
+      status: 'active'
+    });
+
+    return authUser;
+  }
+
   /**
    * Initialize Appwrite services
    */
@@ -47,24 +176,32 @@ class AppwriteService {
   async registerDevice(deviceData) {
     this.ensureInitialized();
     
-    const { userId, hostname, platform, type = 'agent', metadata = {} } = deviceData;
-    
-    const document = {
+    const {
       userId,
       hostname,
       platform,
-      type,
-      status: 'registered',
-      metadata: JSON.stringify(metadata),
-      registeredAt: new Date().toISOString(),
-      lastSeenAt: new Date().toISOString()
+      agentVersion = '1.0.0'
+    } = deviceData;
+
+    const deviceDocumentId = ID.unique();
+    const now = new Date().toISOString();
+
+    // Exact fields matching Appwrite devices collection schema
+    const document = {
+      device_id: deviceDocumentId,
+      user_id: userId,
+      os: (platform || process.platform || 'unknown').substring(0, 64),
+      hostname: (hostname || 'unknown-host').substring(0, 255),
+      agent_version: (agentVersion || '1.0.0').substring(0, 64),
+      last_seen: now,
+      created_at: now
     };
 
     try {
       const result = await this.services.databases.createDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.devices,
-        ID.unique(),
+        deviceDocumentId,
         document,
         [
           Permission.read(Role.user(userId)),
@@ -76,7 +213,7 @@ class AppwriteService {
       logger.info(`✅ Device registered: ${result.$id}`);
       return result;
     } catch (error) {
-      logger.error('❌ Failed to register device:', error);
+      logger.error('❌ Failed to register device:', JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -93,13 +230,13 @@ class AppwriteService {
         APPWRITE_CONFIG.collections.devices,
         deviceId,
         {
-          lastSeenAt: new Date().toISOString()
+          last_seen: new Date().toISOString()
         }
       );
       
       return result;
     } catch (error) {
-      logger.error(`❌ Failed to update device heartbeat for ${deviceId}:`, error);
+      logger.error(`❌ Failed to update device heartbeat for ${deviceId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -139,25 +276,29 @@ class AppwriteService {
       version, 
       capabilities = [] 
     } = agentData;
-    
+
+    const now = new Date().toISOString();
+    const generatedAgentId = ID.unique();
+
+    // Exact fields matching Appwrite agents collection schema
     const document = {
-      deviceId,
-      userId,
-      agentType,
-      version,
+      device_id: deviceId,
+      user_id: userId,
+      agent_type: (agentType || 'security_scanner').substring(0, 128),
+      agent_version: (version || '1.0.0').substring(0, 64),
       capabilities: JSON.stringify(capabilities),
       state: 'idle',
       status: 'online',
-      registeredAt: new Date().toISOString(),
-      lastHeartbeatAt: new Date().toISOString(),
-      errorCount: 0
+      error_count: 0,
+      last_heartbeat: now,
+      created_at: now
     };
 
     try {
       const result = await this.services.databases.createDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agents,
-        ID.unique(),
+        generatedAgentId,
         document,
         [
           Permission.read(Role.user(userId)),
@@ -169,7 +310,7 @@ class AppwriteService {
       logger.info(`✅ Agent registered: ${result.$id}`);
       return result;
     } catch (error) {
-      logger.error('❌ Failed to register agent:', error);
+      logger.error('❌ Failed to register agent:', JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -186,19 +327,19 @@ class AppwriteService {
     }
 
     try {
+      // Only send fields that exist in the agents schema
       const updateData = {
         state,
-        lastHeartbeatAt: new Date().toISOString(),
-        lastStateChange: new Date().toISOString()
+        last_heartbeat: new Date().toISOString()
       };
 
-      if (Object.keys(metadata).length > 0) {
-        updateData.metadata = JSON.stringify(metadata);
-      }
-
       if (state === 'error') {
-        const agent = await this.getAgent(agentId);
-        updateData.errorCount = (agent.errorCount || 0) + 1;
+        try {
+          const agent = await this.getAgent(agentId);
+          updateData.error_count = (agent.error_count || 0) + 1;
+        } catch (e) {
+          updateData.error_count = 1;
+        }
       }
 
       const result = await this.services.databases.updateDocument(
@@ -211,7 +352,7 @@ class AppwriteService {
       logger.info(`✅ Agent ${agentId} state updated to: ${state}`);
       return result;
     } catch (error) {
-      logger.error(`❌ Failed to update agent state for ${agentId}:`, error);
+      logger.error(`❌ Failed to update agent state for ${agentId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -228,14 +369,14 @@ class AppwriteService {
         APPWRITE_CONFIG.collections.agents,
         agentId,
         {
-          lastHeartbeatAt: new Date().toISOString(),
+          last_heartbeat: new Date().toISOString(),
           status: 'online'
         }
       );
       
       return result;
     } catch (error) {
-      logger.error(`❌ Failed to update agent heartbeat for ${agentId}:`, error);
+      logger.error(`❌ Failed to update agent heartbeat for ${agentId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -271,13 +412,13 @@ class AppwriteService {
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agents,
         [
-          Query.equal('deviceId', deviceId)
+          Query.equal('device_id', deviceId)
         ]
       );
       
       return result.documents;
     } catch (error) {
-      logger.error(`❌ Failed to list agents for device ${deviceId}:`, error);
+      logger.error(`❌ Failed to list agents for device ${deviceId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -294,40 +435,49 @@ class AppwriteService {
       agentId, 
       userId, 
       taskType, 
-      priority = 'normal', 
-      targetUrl,
-      parameters = {} 
+      priority = 5, 
     } = taskData;
-    
+
+    const now = new Date().toISOString();
+    const taskDocId = ID.unique();
+
+    // Convert priority to integer if string
+    let priorityInt = typeof priority === 'number' ? priority : 5;
+    if (typeof priority === 'string') {
+      const priorityMap = { low: 1, normal: 5, high: 8, critical: 10 };
+      priorityInt = priorityMap[priority] || 5;
+    }
+
+    // Exact fields matching Appwrite agent_tasks collection schema
     const document = {
-      agentId,
-      userId,
-      taskType,
-      priority,
-      targetUrl,
-      parameters: JSON.stringify(parameters),
+      task_id: taskDocId,
+      task_type: (taskType || 'scan').substring(0, 128),
       status: 'pending',
-      createdAt: new Date().toISOString(),
-      attempts: 0
+      priority: priorityInt,
+      retries: 0,
+      created_at: now,
+      updated_at: now,
+      agent_id: agentId || '',
+      user_id: userId || ''
     };
 
     try {
       const result = await this.services.databases.createDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agentTasks,
-        ID.unique(),
+        taskDocId,
         document,
-        [
+        userId ? [
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ]
+        ] : []
       );
       
       logger.info(`✅ Agent task created: ${result.$id}`);
       return result;
     } catch (error) {
-      logger.error('❌ Failed to create agent task:', error);
+      logger.error('❌ Failed to create agent task:', JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -343,7 +493,7 @@ class AppwriteService {
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agentTasks,
         [
-          Query.equal('agentId', agentId),
+          Query.equal('agent_id', agentId),
           Query.equal('status', 'pending'),
           Query.orderDesc('priority'),
           Query.limit(limit)
@@ -352,7 +502,7 @@ class AppwriteService {
       
       return result.documents;
     } catch (error) {
-      logger.error(`❌ Failed to poll tasks for agent ${agentId}:`, error);
+      logger.error(`❌ Failed to poll tasks for agent ${agentId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -363,23 +513,21 @@ class AppwriteService {
   async updateTaskStatus(taskId, status, resultData = {}) {
     this.ensureInitialized();
     
-    const validStatuses = ['pending', 'processing', 'completed', 'failed'];
-    if (!validStatuses.includes(status)) {
-      throw new Error(`Invalid task status: ${status}`);
+    // Map to the enum values the schema allows: pending, running, done, failed
+    const statusMap = { 'processing': 'running', 'completed': 'done', 'pending': 'pending', 'running': 'running', 'done': 'done', 'failed': 'failed' };
+    const mappedStatus = statusMap[status] || status;
+    
+    const validStatuses = ['pending', 'running', 'done', 'failed'];
+    if (!validStatuses.includes(mappedStatus)) {
+      throw new Error(`Invalid task status: ${status}. Must map to one of: ${validStatuses.join(', ')}`);
     }
 
     try {
+      // Only send fields that exist in the agent_tasks schema
       const updateData = {
-        status,
-        updatedAt: new Date().toISOString()
+        status: mappedStatus,
+        updated_at: new Date().toISOString()
       };
-
-      if (status === 'processing') {
-        updateData.startedAt = new Date().toISOString();
-      } else if (status === 'completed' || status === 'failed') {
-        updateData.completedAt = new Date().toISOString();
-        updateData.result = JSON.stringify(resultData);
-      }
 
       const result = await this.services.databases.updateDocument(
         APPWRITE_CONFIG.databaseId,
@@ -388,10 +536,10 @@ class AppwriteService {
         updateData
       );
       
-      logger.info(`✅ Task ${taskId} status updated to: ${status}`);
+      logger.info(`✅ Task ${taskId} status updated to: ${mappedStatus}`);
       return result;
     } catch (error) {
-      logger.error(`❌ Failed to update task status for ${taskId}:`, error);
+      logger.error(`❌ Failed to update task status for ${taskId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -428,52 +576,64 @@ class AppwriteService {
     const {
       userId,
       deviceId,
-      agentId,
-      taskId,
-      alertType,
       severity,
-      title,
+      source,
       description,
-      evidenceId,
-      mlOutputId,
-      riskScore,
-      metadata = {}
+      evidence = [],
+      confidence = 0.5,
+      riskScore
     } = alertData;
-    
+
+    const alertDocId = ID.unique();
+
+    // Map severity to allowed enum values: low, medium, high
+    let mappedSeverity = (severity || 'medium').toLowerCase();
+    if (!['low', 'medium', 'high'].includes(mappedSeverity)) {
+      if (mappedSeverity === 'critical') mappedSeverity = 'high';
+      else if (mappedSeverity === 'info') mappedSeverity = 'low';
+      else mappedSeverity = 'medium';
+    }
+
+    // Map source to allowed enum values: browser, scraper, model
+    let mappedSource = (source || 'model').toLowerCase();
+    if (!['browser', 'scraper', 'model'].includes(mappedSource)) {
+      mappedSource = 'model';
+    }
+
+    // Confidence from riskScore if provided (riskScore is 0-100, confidence is 0-1)
+    const resolvedConfidence = typeof confidence === 'number' ? Math.min(1, Math.max(0, confidence)) :
+      typeof riskScore === 'number' ? Math.min(1, Math.max(0, riskScore / 100)) : 0.5;
+
+    // Exact fields matching Appwrite alerts collection schema
     const document = {
-      userId,
-      deviceId,
-      agentId,
-      taskId,
-      evidenceId,
-      mlOutputId,
-      alertType,
-      severity,
-      title,
-      description,
-      riskScore,
-      status: 'open',
-      metadata: JSON.stringify(metadata),
-      createdAt: new Date().toISOString()
+      alert_id: alertDocId,
+      severity: mappedSeverity,
+      source: mappedSource,
+      description: (description || 'Security alert').substring(0, 4096),
+      evidence: Array.isArray(evidence) ? evidence.map(e => String(e).substring(0, 2048)) : [],
+      confidence: resolvedConfidence,
+      user_id: userId,
+      device_id: deviceId,
+      created_at: new Date().toISOString()
     };
 
     try {
       const result = await this.services.databases.createDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.alerts,
-        ID.unique(),
+        alertDocId,
         document,
-        [
+        userId ? [
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ]
+        ] : []
       );
       
       logger.info(`✅ Alert created: ${result.$id}`);
       return result;
     } catch (error) {
-      logger.error('❌ Failed to create alert:', error);
+      logger.error('❌ Failed to create alert:', JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }
@@ -484,16 +644,13 @@ class AppwriteService {
   async listAlerts(userId, filters = {}) {
     this.ensureInitialized();
     
-    const queries = [Query.equal('userId', userId)];
+    const queries = [Query.equal('user_id', userId)];
     
     if (filters.severity) {
       queries.push(Query.equal('severity', filters.severity));
     }
-    if (filters.status) {
-      queries.push(Query.equal('status', filters.status));
-    }
     
-    queries.push(Query.orderDesc('createdAt'));
+    queries.push(Query.orderDesc('created_at'));
     queries.push(Query.limit(filters.limit || 50));
 
     try {
@@ -505,7 +662,7 @@ class AppwriteService {
       
       return result.documents;
     } catch (error) {
-      logger.error(`❌ Failed to list alerts for user ${userId}:`, error);
+      logger.error(`❌ Failed to list alerts for user ${userId}:`, JSON.stringify(error?.response || error?.message || error));
       throw error;
     }
   }

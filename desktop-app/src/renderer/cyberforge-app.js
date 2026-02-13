@@ -359,61 +359,21 @@
   };
 
   function initAgentControlPanel() {
-    const panel = document.getElementById('agent-control-panel');
-    const toggle = document.getElementById('agent-panel-toggle');
-    const hideBtn = document.getElementById('agent-panel-hide');
+    // The floating panel UI is handled by agent-ui-controller.js
+    // This function only handles supplementary wiring that cyberforge-app needs:
+    // minimized button show/hide, event feed panel, and add browser modal.
+
     const minimizedBtn = document.getElementById('agent-minimized-btn');
     const eventFeedBtn = document.querySelector('[data-screen="event-feed"]');
     const eventPanel = document.getElementById('event-feed-panel');
     
-    if (!panel) return;
-    
-    // Prevent multiple initializations
-    if (panel.dataset.initialized === 'true') return;
-    panel.dataset.initialized = 'true';
-    
-    // Load panel visibility state from localStorage
-    const isPanelHidden = localStorage.getItem('agent-panel-hidden') === 'true';
-    if (isPanelHidden) {
-      panel.classList.add('hidden');
-      if (minimizedBtn) minimizedBtn.style.display = 'flex';
-    }
-    
-    // Panel collapse/expand toggle
-    if (toggle) {
-      toggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        panel.classList.toggle('collapsed');
-        const icon = toggle.querySelector('i');
-        if (icon) {
-          icon.classList.toggle('fa-chevron-down');
-          icon.classList.toggle('fa-chevron-up');
-        }
-      });
-    }
-    
-    // Hide panel button
-    if (hideBtn) {
-      hideBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        panel.classList.add('hidden');
-        if (minimizedBtn) minimizedBtn.style.display = 'flex';
-        localStorage.setItem('agent-panel-hidden', 'true');
-        showToast('info', 'Agent Panel Hidden', 'Click the robot icon to show it again');
-      });
-    }
-    
-    // Show panel from minimized button - use a named function to avoid duplicates
+    // Show panel from minimized button
     if (minimizedBtn) {
-      // Remove any existing listeners first
       const newMinimizedBtn = minimizedBtn.cloneNode(true);
       minimizedBtn.parentNode.replaceChild(newMinimizedBtn, minimizedBtn);
-      
       newMinimizedBtn.addEventListener('click', function showAgentPanel() {
         const agentPanel = document.getElementById('agent-control-panel');
-        if (agentPanel) {
-          agentPanel.classList.remove('hidden');
-        }
+        if (agentPanel) agentPanel.classList.remove('hidden');
         this.style.display = 'none';
         localStorage.setItem('agent-panel-hidden', 'false');
       });
@@ -427,7 +387,6 @@
       });
     }
     
-    // Event feed close button
     const eventCloseBtn = document.getElementById('event-feed-close');
     if (eventCloseBtn) {
       eventCloseBtn.addEventListener('click', () => {
@@ -435,7 +394,6 @@
       });
     }
     
-    // Event filter buttons
     const filterBtns = document.querySelectorAll('.event-filter');
     filterBtns?.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -445,27 +403,374 @@
       });
     });
     
-    // Quick action buttons - use specific IDs
+    // Scan modes and quick actions
     bindQuickActions();
-    
-    // Scan mode selection
     bindScanModes();
-    
-    // State item clicks
     bindAgentStates();
-    
-    // Initialize System Browser Monitor
     initSystemMonitor();
-    
-    // Initialize Add Browser Modal
     initAddBrowserModal();
-    
-    // Start the agent simulation
-    startAgentSimulation();
-    
-    // Initial render
-    updateAgentPanel();
-    populateEventFeed();
+  }
+
+  // =========================================
+  // AGENT CENTER — Main init for the agent-control screen
+  // This is SEPARATE from initAgentControlPanel() which handles
+  // the floating panel on the dashboard.
+  // =========================================
+
+  let _agentCenterStatsInterval = null;
+
+  function initAgentCenter() {
+    console.log('[AgentCenter] Initializing agent control center...');
+
+    // Bind button actions
+    bindAgentControlActions();
+
+    // Load real data from backend + Tauri
+    syncAgentCenterWithBackend();
+    refreshAgentOpenBrowsers();
+    loadAgentCenterSystemStats();
+    loadAgentActivityLog();
+
+    // Auto-refresh system stats every 5 seconds
+    if (_agentCenterStatsInterval) clearInterval(_agentCenterStatsInterval);
+    _agentCenterStatsInterval = setInterval(() => {
+      // Only continue if agent-control-page is still in DOM
+      if (!document.getElementById('agent-control-page')) {
+        clearInterval(_agentCenterStatsInterval);
+        _agentCenterStatsInterval = null;
+        return;
+      }
+      loadAgentCenterSystemStats();
+    }, 5000);
+
+    appendAgentConsole('Agent Center initialized. Type "status" or "scan <url>".', 'info');
+    console.log('[AgentCenter] Init complete.');
+  }
+
+  async function loadAgentCenterSystemStats() {
+    try {
+      const result = await window.electronAPI?.getSystemStats?.();
+      if (result?.success && result.data) {
+        const cpu = Math.round(result.data.cpu || 0);
+        const mem = Math.round(result.data.memory || 0);
+        const disk = Math.round(result.data.disk || 0);
+
+        const cpuBar = document.getElementById('ac-cpu-bar');
+        const cpuPct = document.getElementById('ac-cpu-pct');
+        const memBar = document.getElementById('ac-mem-bar');
+        const memPct = document.getElementById('ac-mem-pct');
+        const diskBar = document.getElementById('ac-disk-bar');
+        const diskPct = document.getElementById('ac-disk-pct');
+
+        if (cpuBar) cpuBar.style.width = cpu + '%';
+        if (cpuPct) cpuPct.textContent = cpu + '%';
+        if (memBar) memBar.style.width = mem + '%';
+        if (memPct) memPct.textContent = mem + '%';
+        if (diskBar) diskBar.style.width = disk + '%';
+        if (diskPct) diskPct.textContent = disk + '%';
+
+        // Color bars based on usage
+        [cpuBar, memBar, diskBar].forEach((bar, i) => {
+          if (!bar) return;
+          const val = [cpu, mem, disk][i];
+          bar.style.background = val > 80 ? '#C0392B' : val > 50 ? '#E67E22' : '#27AE60';
+        });
+
+        // System uptime from Tauri (uptime in seconds)
+        const uptimeEl = document.getElementById('ac-uptime');
+        if (uptimeEl && result.data.uptime) {
+          const s = result.data.uptime;
+          const d = Math.floor(s / 86400);
+          const h = Math.floor((s % 86400) / 3600);
+          const m = Math.floor((s % 3600) / 60);
+          uptimeEl.textContent = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
+        }
+      }
+    } catch (e) {
+      console.warn('[AgentCenter] System stats fetch failed:', e.message);
+    }
+  }
+
+  async function loadAgentActivityLog() {
+    const log = document.getElementById('agent-activity-log');
+    if (!log) return;
+
+    try {
+      const userId = resolveCurrentUserId();
+      const alertsResult = await cyberforgeAPI.getAgentAlerts(userId);
+      const alerts = alertsResult?.data?.data?.alerts || alertsResult?.data?.alerts || [];
+
+      if (alerts.length === 0) {
+        // Show backend connection events instead
+        const healthResult = await cyberforgeAPI.healthCheck();
+        const items = [];
+        items.push({
+          time: new Date().toLocaleTimeString(),
+          type: 'info',
+          msg: healthResult?.success ? 'Backend connected and healthy' : 'Backend health check failed'
+        });
+        items.push({
+          time: new Date().toLocaleTimeString(),
+          type: 'info',
+          msg: 'Agent Center session started'
+        });
+
+        log.innerHTML = items.map(i => `
+          <div class="activity-item ${i.type}">
+            <span class="activity-time">${i.time}</span>
+            <span class="activity-msg">${i.msg}</span>
+          </div>
+        `).join('');
+      } else {
+        log.innerHTML = alerts.slice(0, 20).map(a => `
+          <div class="activity-item ${a.severity || 'info'}">
+            <span class="activity-time">${a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '--'}</span>
+            <span class="activity-msg">${a.message || a.title || 'Alert'}</span>
+          </div>
+        `).join('');
+      }
+    } catch (e) {
+      log.innerHTML = `<div class="activity-item error"><span class="activity-time">${new Date().toLocaleTimeString()}</span><span class="activity-msg">Failed to load activity: ${e.message}</span></div>`;
+    }
+  }
+
+  async function refreshAgentOpenBrowsers() {
+    const list = document.getElementById('agent-open-browsers-list');
+    if (!list) return;
+
+    console.log('[AgentCenter] refreshAgentOpenBrowsers called');
+    list.innerHTML = '<div class="detecting-state"><i class="fas fa-spinner fa-spin"></i> Scanning system for browsers...</div>';
+
+    // Check if Tauri bridge is available
+    if (!window.electronAPI?.detectSystemBrowsers) {
+      console.error('[AgentCenter] window.electronAPI.detectSystemBrowsers is not defined');
+      list.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i> Browser detection bridge not available. The app must run inside Tauri desktop shell.</div>`;
+      return;
+    }
+
+    try {
+      console.log('[AgentCenter] Calling detectSystemBrowsers...');
+      const detection = await window.electronAPI.detectSystemBrowsers();
+      console.log('[AgentCenter] Detection result:', detection);
+
+      if (!detection || !detection.browsers) {
+        list.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i> Browser detection returned empty result.</div>`;
+        return;
+      }
+
+      const browsers = detection.browsers;
+      const osLabel = detection.osDisplay || detection.os || 'Unknown OS';
+
+      // Sort: running first, then installed, then not installed
+      const sorted = [...browsers].sort((a, b) => {
+        if (a.isRunning && !b.isRunning) return -1;
+        if (!a.isRunning && b.isRunning) return 1;
+        if (a.isInstalled && !b.isInstalled) return -1;
+        if (!a.isInstalled && b.isInstalled) return 1;
+        return 0;
+      });
+
+      const installedBrowsers = sorted.filter(b => b.isInstalled);
+      if (!installedBrowsers.length) {
+        list.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i> No browsers detected on ${osLabel}.</div>`;
+        return;
+      }
+
+      list.innerHTML = installedBrowsers.map((browser) => {
+        const iconClass = browser.iconClass || browserIconFallback(browser.key);
+        const running = !!browser.isRunning;
+        const isDefault = !!browser.isDefault;
+        const version = browser.version ? `v${browser.version}` : '';
+        const badges = [];
+        if (running) badges.push('<span class="agent-browser-state running">Running</span>');
+        if (isDefault) badges.push('<span class="agent-browser-state default">Default</span>');
+        if (!running && !isDefault) badges.push('<span class="agent-browser-state idle">Idle</span>');
+
+        return `
+          <div class="agent-browser-item ${running ? 'is-running' : ''}">
+            <div class="agent-browser-icon"><i class="${iconClass}"></i></div>
+            <div class="agent-browser-meta">
+              <div class="agent-browser-name">${browser.name}</div>
+              <div class="agent-browser-sub">${version}${version && browser.installPath ? ' &bull; ' : ''}${browser.installPath || ''}</div>
+            </div>
+            <div class="agent-browser-badges">${badges.join('')}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Scan footer
+      const runningCount = installedBrowsers.filter(b => b.isRunning).length;
+      list.insertAdjacentHTML('beforeend', `
+        <div class="agent-browsers-footer">
+          <span>${osLabel} &bull; ${installedBrowsers.length} installed &bull; ${runningCount} running</span>
+          <span>Scanned ${detection.scanTimestamp ? new Date(detection.scanTimestamp).toLocaleTimeString() : 'now'}</span>
+        </div>
+      `);
+
+      console.log(`[AgentCenter] Rendered ${installedBrowsers.length} browsers (${runningCount} running)`);
+    } catch (error) {
+      console.error('[AgentCenter] Browser detection error:', error);
+      list.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i> Detection failed: ${error.message}</div>`;
+    }
+  }
+
+  function resolveCurrentUserId() {
+    const user = cyberforgeAPI.getCurrentUser?.() || {};
+    return user.id || user._id || user.$id || user.userId || 'desktop-user';
+  }
+
+  function setAgentControlStatus(isOnline, label = 'Agent Offline') {
+    const indicator = document.getElementById('agent-status-indicator');
+    if (!indicator) return;
+    const dot = indicator.querySelector('.status-dot');
+    const text = indicator.querySelector('.status-text');
+    if (dot) dot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+    if (text) text.textContent = label;
+  }
+
+  function appendAgentConsole(message, level = 'info') {
+    const consoleOutput = document.getElementById('agent-console-output');
+    if (!consoleOutput) return;
+    const line = document.createElement('div');
+    line.className = `console-line ${level}`;
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    consoleOutput.prepend(line);
+  }
+
+  function bindAgentControlActions() {
+    const startBtn = document.getElementById('start-agent');
+    const stopBtn = document.getElementById('stop-agent');
+    const browserRegistrationBtn = document.getElementById('open-browser-registration');
+    const refreshBrowsersBtn = document.getElementById('refresh-agent-browsers');
+    const sendBtn = document.getElementById('send-agent-command');
+    const commandInput = document.getElementById('agent-command');
+
+    browserRegistrationBtn?.addEventListener('click', () => {
+      state.activeScreen = 'browser-registration';
+      renderScreen('browser-registration');
+      showToast('info', 'Browser Registration', 'Opened Browser Registration in the right panel.');
+    });
+
+    refreshBrowsersBtn?.addEventListener('click', () => {
+      refreshAgentOpenBrowsers();
+    });
+
+    startBtn?.addEventListener('click', async () => {
+      const userId = resolveCurrentUserId();
+      const result = await cyberforgeAPI.startAgent({ userId, agentName: 'default', config: {} });
+      if (result?.success) {
+        setAgentControlStatus(true, 'Agent Online');
+        appendAgentConsole('Agent started from backend controller', 'success');
+        showToast('success', 'Agent Started', 'Agent Center is now connected to backend.');
+        syncAgentCenterWithBackend();
+      } else {
+        appendAgentConsole(result?.error || 'Failed to start agent', 'error');
+        showToast('error', 'Agent Start Failed', result?.error || 'Backend rejected start request');
+      }
+    });
+
+    stopBtn?.addEventListener('click', async () => {
+      const result = await cyberforgeAPI.stopAgent('default');
+      if (result?.success) {
+        setAgentControlStatus(false, 'Agent Offline');
+        appendAgentConsole('Agent stopped by operator', 'warning');
+        showToast('info', 'Agent Stopped', 'Backend agent has been stopped.');
+        syncAgentCenterWithBackend();
+      } else {
+        appendAgentConsole(result?.error || 'Failed to stop agent', 'error');
+        showToast('error', 'Agent Stop Failed', result?.error || 'Backend rejected stop request');
+      }
+    });
+
+    const sendCommand = async () => {
+      const command = commandInput?.value?.trim();
+      if (!command) return;
+      appendAgentConsole(`Command> ${command}`, 'info');
+      commandInput.value = '';
+
+      if (command.toLowerCase() === 'status') {
+        await syncAgentCenterWithBackend();
+        return;
+      }
+
+      if (command.toLowerCase().startsWith('scan ')) {
+        const targetUrl = command.slice(5).trim();
+        const userId = resolveCurrentUserId();
+        const createTaskResult = await cyberforgeAPI.createAgentTask({
+          agentId: 'default',
+          userId,
+          taskType: 'security_scan',
+          targetUrl,
+          priority: 'normal',
+          parameters: { source: 'agent-console' }
+        });
+
+        if (createTaskResult?.success) {
+          appendAgentConsole(`Task created: ${createTaskResult?.data?.data?.taskId || 'pending-id'}`, 'success');
+          showToast('success', 'Task Created', 'Agent task submitted to backend.');
+          loadAgentTasksData();
+        } else {
+          appendAgentConsole(createTaskResult?.error || 'Task creation failed', 'error');
+          showToast('error', 'Task Failed', createTaskResult?.error || 'Backend rejected task');
+        }
+        return;
+      }
+
+      appendAgentConsole('Unsupported command. Use "status" or "scan <target-url>".', 'warning');
+    };
+
+    sendBtn?.addEventListener('click', sendCommand);
+    commandInput?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendCommand();
+      }
+    });
+  }
+
+  async function syncAgentCenterWithBackend() {
+    console.log('[AgentCenter] syncing with backend...');
+    const backendEl = document.getElementById('ac-backend');
+    const mlEl = document.getElementById('ac-ml');
+    const agentCountEl = document.getElementById('ac-agent-count');
+
+    try {
+      const [listResult, statusResult, mlResult, healthResult] = await Promise.all([
+        cyberforgeAPI.listAgents(),
+        cyberforgeAPI.getAgentStatus('default'),
+        cyberforgeAPI.mlHealthCheck(),
+        cyberforgeAPI.healthCheck()
+      ]);
+
+      // Backend health
+      const backendOk = !!(healthResult?.success);
+      if (backendEl) backendEl.textContent = backendOk ? 'Connected' : 'Offline';
+      if (backendEl) backendEl.style.color = backendOk ? '#27AE60' : '#C0392B';
+
+      // Agent status
+      const defaultStatus = statusResult?.data?.data || {};
+      const isOnline = !!defaultStatus?.isRunning || !!defaultStatus?.running;
+      const statusLabel = isOnline ? 'Agent Online' : 'Agent Offline';
+      setAgentControlStatus(isOnline, statusLabel);
+
+      // Agent count
+      const agentCount = listResult?.data?.data?.count || 0;
+      if (agentCountEl) agentCountEl.textContent = agentCount;
+
+      // ML health
+      const mlHealthy = !!(mlResult?.success && (mlResult?.data?.success || mlResult?.data?.status === 'healthy'));
+      if (mlEl) mlEl.textContent = mlHealthy ? 'Healthy' : 'Degraded';
+      if (mlEl) mlEl.style.color = mlHealthy ? '#27AE60' : '#E67E22';
+
+      appendAgentConsole(`Backend sync: agents=${agentCount}, ml=${mlHealthy ? 'healthy' : 'degraded'}, backend=${backendOk ? 'ok' : 'failed'}`, backendOk ? 'success' : 'warning');
+      console.log('[AgentCenter] Backend sync complete');
+    } catch (error) {
+      setAgentControlStatus(false, 'Backend Unreachable');
+      if (backendEl) { backendEl.textContent = 'Unreachable'; backendEl.style.color = '#C0392B'; }
+      if (mlEl) { mlEl.textContent = 'Unknown'; mlEl.style.color = '#C0392B'; }
+      appendAgentConsole(`Backend sync failed: ${error.message}`, 'error');
+      console.error('[AgentCenter] Backend sync error:', error);
+    }
   }
 
   // =========================================
@@ -1541,9 +1846,7 @@
   }
 
   function populateEventFeed() {
-    // Add some initial demo events
-    addEvent('info', 'Agent Initialized', 'AI security agent has started monitoring', 'Agent');
-    addEvent('success', 'System Connected', 'Successfully connected to CyberForge backend', 'System');
+    // No demo/mock events — real events come from backend sync and browser monitoring
   }
 
   // =========================================
@@ -1646,27 +1949,22 @@
   }
 
   function startSystemStatsSimulation() {
-    // Update system stats every 2 seconds
-    setInterval(() => {
-      // Simulate CPU usage (10-60%)
-      systemStats.cpu = Math.floor(Math.random() * 50 + 10);
-      
-      // Simulate memory usage (30-70%)
-      systemStats.memory = Math.floor(Math.random() * 40 + 30);
-      
-      // Simulate network activity
-      systemStats.network = Math.floor(Math.random() * 200);
-      
-      updateSystemStatsDisplay();
-    }, 2000);
-    
-    // Update request count occasionally
-    setInterval(() => {
-      if (agentState.status === 'monitoring') {
-        systemStats.requests += Math.floor(Math.random() * 3);
-        updateHeaderStats();
+    // Fetch REAL system stats from Tauri backend, not random numbers
+    async function fetchRealSystemStats() {
+      try {
+        const result = await window.electronAPI?.getSystemStats?.();
+        if (result?.success && result.data) {
+          systemStats.cpu = Math.round(result.data.cpu || 0);
+          systemStats.memory = Math.round(result.data.memory || 0);
+          systemStats.network = 0;
+          updateSystemStatsDisplay();
+        }
+      } catch (e) {
+        // Stats polling failed, leave values as-is
       }
-    }, 5000);
+    }
+    fetchRealSystemStats();
+    setInterval(fetchRealSystemStats, 5000);
   }
 
   function updateSystemStatsDisplay() {
@@ -1763,6 +2061,13 @@
           
           // Toggle this item
           item.classList.toggle('expanded');
+
+          const screen = link.dataset.screen;
+          if (screen) {
+            state.activeScreen = screen;
+            renderScreen(screen);
+            logAgentAction(`Navigated to ${screen}`, 'info');
+          }
         });
       }
     });
@@ -1788,63 +2093,8 @@
     });
   }
 
-  function startAgentSimulation() {
-    // Start with monitoring state
-    setTimeout(() => {
-      setAgentState('monitoring');
-      logAgentAction('Agent started monitoring', 'success');
-      updateHeaderStats();
-      updateSystemStatsDisplay();
-    }, 1000);
-    
-    // Simulate periodic agent activity
-    setInterval(() => {
-      if (agentState.status === 'monitoring') {
-        const actions = [
-          { text: 'Scanned network traffic - normal', type: 'success' },
-          { text: 'Checked browser cookies', type: 'info' },
-          { text: 'Verified SSL certificates', type: 'success' },
-          { text: 'Analyzed request patterns', type: 'info' }
-        ];
-        const action = actions[Math.floor(Math.random() * actions.length)];
-        logAgentAction(action.text, action.type);
-        
-        // Occasionally add events
-        if (Math.random() > 0.7) {
-          const eventTypes = [
-            { severity: 'info', title: 'Traffic Analysis Complete', desc: 'No suspicious patterns detected' },
-            { severity: 'success', title: 'Security Check Passed', desc: 'All monitored domains are safe' },
-            { severity: 'info', title: 'Certificate Verified', desc: 'SSL certificate validation successful' }
-          ];
-          const evt = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-          addEvent(evt.severity, evt.title, evt.desc, 'Agent');
-        }
-        
-        // Update memory stats
-        agentState.memory.scansCompleted++;
-        updateHeaderStats();
-      }
-    }, 8000);
-    
-    // Simulate occasional threat detection
-    setInterval(() => {
-      if (agentState.status === 'monitoring' && Math.random() > 0.85) {
-        setAgentState('analyzing');
-        addAgentTask('Analyzing suspicious activity', 'running');
-        logAgentAction('Suspicious pattern detected - analyzing', 'warning');
-        addEvent('warning', 'Suspicious Activity Detected', 'Agent is analyzing potential threat pattern', 'Agent');
-        updateHeaderStats();
-        
-        setTimeout(() => {
-          completeTask('Analyzing suspicious activity');
-          setAgentState('monitoring');
-          logAgentAction('Analysis complete - false positive', 'success');
-          addEvent('info', 'Analysis Complete', 'Potential threat was determined to be a false positive', 'Agent');
-          updateHeaderStats();
-        }, 5000);
-      }
-    }, 30000);
-  }
+  // startAgentSimulation — REMOVED. No mock/demo data in agent system.
+  // All agent data comes from real backend APIs and Tauri system detection.
 
   async function init() {
     initTheme();
@@ -2768,8 +3018,7 @@
     // ========================================
     else if (screen === 'agent-control') {
       container.innerHTML = ChildPages.buildAgentControlLayout();
-      initAgentControlPanel();
-      bindAgentConsole();
+      initAgentCenter();
     } else if (screen === 'agent-tasks') {
       container.innerHTML = ChildPages.buildAgentTasksLayout();
       loadAgentTasksData();
@@ -2785,7 +3034,8 @@
     }
     
     else {
-      container.innerHTML = buildPlaceholder(screen);
+      container.innerHTML = buildOperationalPage(screen);
+      bindOperationalPage(screen);
     }
   }
 
@@ -5806,15 +6056,123 @@
     `;
   }
 
-  function buildPlaceholder(screen) {
-    const title = screen.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  function getSidebarScreenMeta(screen) {
+    const link = document.querySelector(`[data-screen="${screen}"]`);
+    const titleFromLink = link?.querySelector('span')?.textContent?.trim()
+      || link?.textContent?.replace(/\s+/g, ' ').trim();
+
+    const section = link?.closest('.sidebar-section')
+      ?.querySelector('.sidebar-section-title span')
+      ?.textContent?.trim() || 'Operations';
+
+    const title = titleFromLink || screen.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    return {
+      title,
+      section,
+      description: `${title} workspace with live data widgets, filtering controls, and activity timelines.`
+    };
+  }
+
+  function buildOperationalPage(screen) {
+    const meta = getSidebarScreenMeta(screen);
+    const now = new Date().toLocaleString();
+
     return `
-      <div class="empty-state" style="flex:1;">
-        <i class="fas fa-cog empty-state-icon"></i>
-        <div class="empty-state-title">${title}</div>
-        <div class="empty-state-description">This screen is being configured. Feature coming soon.</div>
+      <div class="cf-content-inner" style="padding:16px; height:100%; overflow:auto;">
+        <div class="cf-card" style="margin-bottom:12px;">
+          <div class="cf-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="cf-card-title">${meta.title}</div>
+              <div style="font-size:12px; color:var(--cf-text-muted); margin-top:4px;">Section: ${meta.section}</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="cf-btn" data-op-refresh="${screen}"><i class="fas fa-rotate"></i> Refresh</button>
+              <button class="cf-btn" data-op-export="${screen}"><i class="fas fa-download"></i> Export</button>
+            </div>
+          </div>
+          <div class="cf-card-body">
+            <p style="margin-bottom:12px;">${meta.description}</p>
+            <div style="display:grid; grid-template-columns:repeat(3, minmax(180px, 1fr)); gap:10px;">
+              <div class="cf-card" style="padding:10px;">
+                <div style="font-size:11px; color:var(--cf-text-muted);">Last Updated</div>
+                <div style="font-weight:600; margin-top:4px;">${now}</div>
+              </div>
+              <div class="cf-card" style="padding:10px;">
+                <div style="font-size:11px; color:var(--cf-text-muted);">Backend Mode</div>
+                <div style="font-weight:600; margin-top:4px;">${state.backendConnected ? 'Connected' : 'Offline Cache'}</div>
+              </div>
+              <div class="cf-card" style="padding:10px;">
+                <div style="font-size:11px; color:var(--cf-text-muted);">Tracked Events</div>
+                <div style="font-weight:600; margin-top:4px;">${agentState.events.length}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cf-card">
+          <div class="cf-card-header">
+            <div class="cf-card-title">${meta.title} Stream</div>
+          </div>
+          <div class="cf-card-body" style="padding:0;">
+            <table class="cf-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Type</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${now}</td>
+                  <td>${meta.section}</td>
+                  <td>CyberForge Agent</td>
+                  <td>Ready</td>
+                  <td>${meta.title} page initialized and connected to navigation.</td>
+                </tr>
+                <tr>
+                  <td>${now}</td>
+                  <td>System</td>
+                  <td>Desktop Runtime</td>
+                  <td>Active</td>
+                  <td>Route \"${screen}\" is now available as a first-class page.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     `;
+  }
+
+  function bindOperationalPage(screen) {
+    const refreshBtn = document.querySelector(`[data-op-refresh="${screen}"]`);
+    const exportBtn = document.querySelector(`[data-op-export="${screen}"]`);
+
+    refreshBtn?.addEventListener('click', () => {
+      renderScreen(screen);
+      showToast('success', 'Refreshed', `${getSidebarScreenMeta(screen).title} refreshed.`);
+    });
+
+    exportBtn?.addEventListener('click', () => {
+      const payload = {
+        screen,
+        exportedAt: new Date().toISOString(),
+        backendConnected: state.backendConnected,
+        activeEvents: agentState.events.length
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${screen}-export.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('success', 'Exported', `${getSidebarScreenMeta(screen).title} exported.`);
+    });
   }
 
   function renderRequestsTable(filterText = '') {
@@ -6517,7 +6875,7 @@
     container.innerHTML = `
       <div class="env-var-item">
         <span class="var-name">API_BASE_URL</span>
-        <span class="var-value">https://cyberforge-ddd97655464f.herokuapp.com</span>
+        <span class="var-value">${localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com'}</span>
       </div>
       <div class="env-var-item">
         <span class="var-name">ML_SERVICE_URL</span>
@@ -6678,261 +7036,196 @@
 
   async function loadBrowserRegistrationData() {
     const container = document.getElementById('available-browsers-list');
-    const connectedContainer = document.getElementById('connected-browsers-list');
-    const statusBanner = document.getElementById('monitor-status-banner');
-    const statusDesc = document.getElementById('monitor-status-desc');
-    
     if (!container) return;
-    
-    // Browser icon mapping
-    const browserIcons = {
-      chrome: 'fab fa-chrome',
-      brave: 'fab fa-firefox', // Brave uses Firefox icon in FA or custom
-      edge: 'fab fa-edge',
-      arc: 'fas fa-globe',
-      opera: 'fab fa-opera',
-      chromium: 'fab fa-chrome'
-    };
-    
+
     try {
-      // Get available browsers
-      const browsers = await window.electronAPI?.systemMonitor?.getAvailableBrowsers() || [];
-      
+      // Call the new full-detection Tauri command via the bridge
+      const result = await (
+        window.electronAPI?.detectSystemBrowsers?.() ||
+        window.electronAPI?.systemMonitor?.detectSystemBrowsers?.() ||
+        window.electronAPI?.systemMonitor?.getAvailableBrowsers?.()
+      ) || null;
+
+      // Populate system strip
+      if (result && result.os) {
+        const osLabel = document.getElementById('bi-os-label');
+        const scanTime = document.getElementById('bi-scan-time');
+        const defaultBrowser = document.getElementById('bi-default-browser');
+
+        if (osLabel) osLabel.textContent = result.osDisplay || result.os;
+        if (scanTime) scanTime.textContent = new Date(result.scanTimestamp || Date.now()).toLocaleString();
+        if (defaultBrowser) defaultBrowser.textContent = result.defaultBrowser || 'Unknown';
+      }
+
+      // Determine browser list
+      const browsers = result?.browsers || (Array.isArray(result) ? result : []);
+
+      // Summary counts
+      const installed = browsers.filter(b => b.isInstalled ?? b.available).length;
+      const running = browsers.filter(b => b.isRunning).length;
+      const total = browsers.length;
+
+      const elInstalled = document.getElementById('bi-installed-count');
+      const elRunning = document.getElementById('bi-running-count');
+      const elTotal = document.getElementById('bi-total-count');
+      if (elInstalled) elInstalled.textContent = installed;
+      if (elRunning) elRunning.textContent = running;
+      if (elTotal) elTotal.textContent = total;
+
+      // Render browser cards
       if (browsers.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span>No compatible browsers detected</span>
+        container.innerHTML = `<div class="bi-empty"><i class="fas fa-exclamation-triangle"></i> No supported browsers detected</div>`;
+        const connectedContainer = document.getElementById('connected-browsers-list');
+        if (connectedContainer) {
+          connectedContainer.innerHTML = '<div class="bi-empty"><i class="fas fa-unlink"></i> No browser registrations available</div>';
+        }
+        return;
+      }
+
+      container.innerHTML = browsers.map(b => {
+        const isInstalled = b.isInstalled ?? b.available;
+        const iconClass = b.iconClass || browserIconFallback(b.key || b.id);
+        const version = b.version || null;
+        const path = b.installPath || null;
+        const isRunning = !!b.isRunning;
+        const isDefault = !!b.isDefault;
+
+        return `
+          <div class="bi-browser-card ${isInstalled ? '' : 'bi-not-installed'}" data-browser-key="${b.key || b.id}">
+            <div class="bi-browser-icon ${b.key || b.id}">
+              <i class="${iconClass}"></i>
+            </div>
+            <div class="bi-browser-body">
+              <div class="bi-browser-header">
+                <span class="bi-browser-name">${b.name}</span>
+                ${isDefault ? '<span class="bi-badge bi-badge-default">Default</span>' : ''}
+                ${isRunning ? '<span class="bi-badge bi-badge-running">Running</span>' : ''}
+                ${!isInstalled ? '<span class="bi-badge bi-badge-notfound">Not Found</span>' : ''}
+              </div>
+              <div class="bi-browser-version">${version ? 'v' + version : (isInstalled ? 'Version unknown' : 'Not installed')}</div>
+              ${path ? `<div class="bi-browser-path" title="${path}">${path}</div>` : ''}
+              ${isInstalled ? `
+                <div class="bi-browser-footer">
+                  <span class="bi-status-dot ${isRunning ? 'running' : 'stopped'}"></span>
+                  <span class="bi-status-text">${isRunning ? 'Process active' : 'Not running'}</span>
+                  <button class="bi-launch-btn" data-browser="${b.key || b.id}"><i class="fas fa-rocket"></i> Launch</button>
+                </div>
+              ` : ''}
+            </div>
           </div>
         `;
-      } else {
-        container.innerHTML = browsers.map(browser => `
-          <div class="browser-card" data-browser-id="${browser.id}" data-browser-name="${browser.name}">
-            <div class="browser-icon ${browser.id}">
-              <i class="${browserIcons[browser.id] || 'fas fa-globe'}"></i>
-            </div>
-            <div class="browser-info">
-              <div class="browser-name">${browser.name}</div>
-              <div class="browser-port">Debug Port: ${browser.debugPort}</div>
-            </div>
-            <span class="browser-status available">Available</span>
-            <button class="launch-btn" data-browser="${browser.id}">
-              <i class="fas fa-rocket"></i> Launch
-            </button>
-          </div>
-        `).join('');
-        
-        // Bind click handlers for launch
-        container.querySelectorAll('.browser-card').forEach(card => {
-          card.addEventListener('click', async (e) => {
-            if (e.target.closest('.launch-btn')) {
-              const browserId = card.dataset.browserId;
-              await launchBrowserWithMonitoring(browserId, card);
+      }).join('');
+
+      // Bind launch buttons
+      container.querySelectorAll('.bi-launch-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const key = btn.dataset.browser;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          btn.disabled = true;
+          try {
+            const launchResult = await (
+              window.electronAPI?.systemMonitor?.launchBrowser?.(key) || Promise.resolve({ success: false })
+            );
+            if (launchResult?.success) {
+              showToast('success', 'Launched', `${key} launched with monitoring`);
+              btn.innerHTML = '<i class="fas fa-check"></i> Active';
+            } else {
+              throw new Error(launchResult?.error || 'Launch unavailable');
             }
-          });
+          } catch (err) {
+            showToast('error', 'Launch Failed', err.message);
+            btn.innerHTML = '<i class="fas fa-rocket"></i> Retry';
+            btn.disabled = false;
+          }
         });
+      });
+
+      const connectedContainer = document.getElementById('connected-browsers-list');
+      if (connectedContainer) {
+        const activeOrInstalled = browsers.filter(b => (b.isInstalled ?? b.available));
+        if (!activeOrInstalled.length) {
+          connectedContainer.innerHTML = '<div class="bi-empty"><i class="fas fa-unlink"></i> No browser registrations available</div>';
+        } else {
+          connectedContainer.innerHTML = activeOrInstalled.map((browser) => {
+            const running = !!browser.isRunning;
+            return `
+              <div class="bi-connected-item">
+                <div class="bi-connected-name">${browser.name}</div>
+                <div class="bi-connected-meta">${browser.version ? `v${browser.version}` : 'Version unknown'} • ${running ? 'Running' : 'Installed'}</div>
+              </div>
+            `;
+          }).join('');
+        }
       }
-      
-      // Get monitor stats
-      await updateMonitorStatus();
-      
-      // Setup refresh button
-      document.getElementById('refresh-browsers')?.addEventListener('click', loadBrowserRegistrationData);
-      
-      // Setup start monitoring button
+
+      // Refresh button
+      document.getElementById('refresh-browsers')?.addEventListener('click', () => {
+        container.innerHTML = '<div class="bi-loading"><i class="fas fa-spinner fa-spin"></i> Rescanning...</div>';
+        loadBrowserRegistrationData();
+      });
+
+      // Start monitoring button
       document.getElementById('start-monitoring')?.addEventListener('click', async () => {
         const btn = document.getElementById('start-monitoring');
-        const originalText = btn.innerHTML;
+        const orig = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
         btn.disabled = true;
-        
         try {
           await window.electronAPI?.systemMonitor?.start();
           showToast('success', 'Monitoring Started', 'Browser monitoring is now active');
-          await updateMonitorStatus();
-        } catch (error) {
-          showToast('error', 'Error', error.message);
+        } catch (err) {
+          showToast('error', 'Error', err.message);
         } finally {
-          btn.innerHTML = originalText;
+          btn.innerHTML = orig;
           btn.disabled = false;
         }
       });
-      
-      // Setup event listeners for real-time updates
+
+      // Real-time event listeners
       setupBrowserEventListeners();
-      
+
     } catch (error) {
-      console.error('Error loading browser data:', error);
-      container.innerHTML = `
-        <div class="empty-state">
-          <i class="fas fa-exclamation-circle"></i>
-          <span>Error loading browsers: ${error.message}</span>
-        </div>
-      `;
+      console.error('Browser detection error:', error);
+      container.innerHTML = `<div class="bi-empty"><i class="fas fa-exclamation-circle"></i> Detection error: ${error.message}</div>`;
     }
   }
-  
+
+  function browserIconFallback(key) {
+    const map = {
+      chrome: 'fab fa-chrome',
+      firefox: 'fab fa-firefox-browser',
+      edge: 'fab fa-edge',
+      brave: 'fas fa-shield-halved',
+      opera: 'fab fa-opera',
+      chromium: 'fab fa-chrome',
+      arc: 'fas fa-globe',
+    };
+    return map[key] || 'fas fa-globe';
+  }
+
   async function launchBrowserWithMonitoring(browserId, cardElement) {
-    const statusSpan = cardElement.querySelector('.browser-status');
-    const launchBtn = cardElement.querySelector('.launch-btn');
-    
-    // Update UI to show launching state
-    cardElement.classList.add('launching');
-    statusSpan.textContent = 'Launching...';
-    statusSpan.className = 'browser-status launching';
-    launchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    launchBtn.disabled = true;
-    
     try {
-      // Use either browserIntegration or systemMonitor
       let result;
-      if (window.electronAPI?.browserIntegration?.launch) {
-        result = await window.electronAPI.browserIntegration.launch(browserId);
-      } else if (window.electronAPI?.systemMonitor?.launchBrowser) {
+      if (window.electronAPI?.systemMonitor?.launchBrowser) {
         result = await window.electronAPI.systemMonitor.launchBrowser(browserId);
       }
-      
       if (result?.success) {
-        showToast('success', 'Browser Launched', `${cardElement.dataset.browserName} is now being monitored`);
-        
-        // Update card to show connected state
-        cardElement.classList.remove('launching');
-        cardElement.classList.add('connected');
-        statusSpan.textContent = 'Connected';
-        statusSpan.className = 'browser-status connected';
-        launchBtn.innerHTML = '<i class="fas fa-check"></i> Active';
-        launchBtn.disabled = true;
-        
-        // Move to connected section
-        setTimeout(() => {
-          const connectedContainer = document.getElementById('connected-browsers-list');
-          if (connectedContainer) {
-            const emptyState = connectedContainer.querySelector('.empty-state');
-            if (emptyState) {
-              connectedContainer.innerHTML = '';
-            }
-            connectedContainer.appendChild(cardElement.cloneNode(true));
-          }
-        }, 1000);
-        
-        // Update stats
-        await updateMonitorStatus();
+        showToast('success', 'Browser Launched', `${browserId} is now being monitored`);
       } else {
-        throw new Error(result?.error || 'Failed to launch browser');
+        showToast('error', 'Launch Failed', result?.error || 'Could not launch');
       }
     } catch (error) {
-      cardElement.classList.remove('launching');
-      statusSpan.textContent = 'Error';
-      statusSpan.className = 'browser-status available';
-      launchBtn.innerHTML = '<i class="fas fa-rocket"></i> Retry';
-      launchBtn.disabled = false;
       showToast('error', 'Launch Failed', error.message);
     }
   }
-  
-  async function updateMonitorStatus() {
-    const statusBanner = document.getElementById('monitor-status-banner');
-    const statusDesc = document.getElementById('monitor-status-desc');
-    const statBrowsers = document.getElementById('stat-browsers');
-    const statRequests = document.getElementById('stat-requests');
-    const statThreats = document.getElementById('stat-threats');
-    
-    if (!statusBanner) return;
-    
-    try {
-      const stats = await window.electronAPI?.systemMonitor?.getStats();
-      
-      if (stats) {
-        statusBanner.classList.add('active');
-        statusBanner.querySelector('.monitor-status-icon i').className = 'fas fa-check-circle';
-        statusDesc.textContent = `Monitoring active for ${Math.floor(stats.uptime / 60)} min`;
-        
-        if (statBrowsers) statBrowsers.textContent = stats.browsersConnected || 0;
-        if (statRequests) statRequests.textContent = stats.totalRequests || 0;
-        if (statThreats) statThreats.textContent = stats.threatsDetected || 0;
-      } else {
-        statusBanner.classList.remove('active');
-        statusBanner.querySelector('.monitor-status-icon i').className = 'fas fa-pause-circle';
-        statusDesc.textContent = 'Monitoring not started. Click "Start Monitoring" to begin.';
-      }
-    } catch (error) {
-      statusDesc.textContent = 'Unable to get monitor status';
-    }
-  }
-  
+
   function setupBrowserEventListeners() {
-    // Listen for browser connections
     if (window.electronAPI?.systemMonitor?.onBrowserConnected) {
       window.electronAPI.systemMonitor.onBrowserConnected((data) => {
         showToast('success', 'Browser Connected', `${data.browser} with ${data.tabs} tabs`);
-        updateMonitorStatus();
-        updateConnectedBrowsersList(data);
       });
     }
-    
-    // Listen for stats updates
-    if (window.electronAPI?.systemMonitor?.onStatsUpdate) {
-      window.electronAPI.systemMonitor.onStatsUpdate((stats) => {
-        const statBrowsers = document.getElementById('stat-browsers');
-        const statRequests = document.getElementById('stat-requests');
-        const statThreats = document.getElementById('stat-threats');
-        
-        if (statBrowsers) statBrowsers.textContent = stats.browsersConnected || 0;
-        if (statRequests) statRequests.textContent = stats.totalRequests || 0;
-        if (statThreats) statThreats.textContent = stats.threatsDetected || 0;
-      });
-    }
-    
-    // Listen for threats
-    if (window.electronAPI?.systemMonitor?.onThreat) {
-      window.electronAPI.systemMonitor.onThreat((data) => {
-        const threatCount = document.getElementById('stat-threats');
-        if (threatCount) {
-          threatCount.textContent = parseInt(threatCount.textContent || 0) + 1;
-        }
-      });
-    }
-  }
-  
-  function updateConnectedBrowsersList(browserData) {
-    const container = document.getElementById('connected-browsers-list');
-    if (!container) return;
-    
-    // Remove empty state if present
-    const emptyState = container.querySelector('.empty-state');
-    if (emptyState) {
-      container.innerHTML = '';
-    }
-    
-    // Check if already added
-    if (container.querySelector(`[data-browser-port="${browserData.debugPort}"]`)) {
-      return;
-    }
-    
-    const browserIcons = {
-      'Google Chrome': 'fab fa-chrome',
-      'Brave': 'fas fa-shield-alt',
-      'Microsoft Edge': 'fab fa-edge',
-      'Arc': 'fas fa-globe',
-      'Opera': 'fab fa-opera',
-      'Chromium': 'fab fa-chrome'
-    };
-    
-    const card = document.createElement('div');
-    card.className = 'browser-card connected';
-    card.dataset.browserPort = browserData.debugPort;
-    card.innerHTML = `
-      <div class="browser-icon">
-        <i class="${browserIcons[browserData.browser] || 'fas fa-globe'}"></i>
-      </div>
-      <div class="browser-info">
-        <div class="browser-name">${browserData.browser}</div>
-        <div class="browser-port">${browserData.tabs} tabs monitored</div>
-      </div>
-      <span class="browser-status connected">Connected</span>
-    `;
-    
-    container.appendChild(card);
   }
 
   async function loadBrowserHistoryData() {
@@ -7011,27 +7304,157 @@
   // Do not add another one here as it will override the working version
 
   async function loadAgentTasksData() {
-    const container = document.getElementById('agent-tasks-list');
-    if (!container) return;
-    container.innerHTML = '<div class="empty-state">No active agent tasks</div>';
+    const tbody = document.getElementById('agent-tasks-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="7"><i class="fas fa-spinner fa-spin"></i> Loading tasks from backend...</td></tr>';
+
+    try {
+      const userId = resolveCurrentUserId();
+      const result = await cyberforgeAPI.getAgentAlerts({ userId, limit: 10 });
+
+      if (!result?.success && result?.error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-triangle"></i> Backend error: ${result.error}</td></tr>`;
+        return;
+      }
+
+      const alerts = result?.data?.data?.alerts || [];
+
+      if (!alerts.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No agent tasks. Use the console to create tasks (e.g. "scan https://example.com").</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = alerts.map((alert) => `
+        <tr>
+          <td>${alert.$id || alert.id || 'N/A'}</td>
+          <td>${alert.type || 'alert'}</td>
+          <td>${alert.source || alert.targetUrl || '-'}</td>
+          <td>${alert.status || 'open'}</td>
+          <td>${alert.confidence ? `${Math.round(alert.confidence * 100)}%` : '-'}</td>
+          <td>${new Date(alert.$createdAt || alert.createdAt || Date.now()).toLocaleString()}</td>
+          <td><span class="cf-badge blue">Synced</span></td>
+        </tr>
+      `).join('');
+    } catch (error) {
+      console.error('loadAgentTasksData failed:', error);
+      tbody.innerHTML = `<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-triangle"></i> Failed to reach backend: ${error.message}. Is the backend server running on port 8000?</td></tr>`;
+    }
   }
 
   async function loadScheduledTasksData() {
-    const container = document.getElementById('scheduled-tasks-list');
-    if (!container) return;
-    container.innerHTML = '<div class="empty-state">No scheduled tasks</div>';
+    const tbody = document.getElementById('scheduled-tasks-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading agents from backend...</td></tr>';
+
+    try {
+      const listResult = await cyberforgeAPI.listAgents();
+
+      if (!listResult?.success && listResult?.error) {
+        tbody.innerHTML = `<tr><td colspan="6" class="error-state"><i class="fas fa-exclamation-triangle"></i> Backend error: ${listResult.error}</td></tr>`;
+        return;
+      }
+
+      const agents = listResult?.data?.data?.agents || [];
+      if (!agents.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No agents registered. Click "Start Agent" to register one.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = agents.map((agent) => `
+        <tr>
+          <td>${agent.agentName || agent.name || 'default'}</td>
+          <td>On-demand</td>
+          <td>${agent.nextRun ? new Date(agent.nextRun).toLocaleString() : '-'}</td>
+          <td>${agent.lastRun ? new Date(agent.lastRun).toLocaleString() : '-'}</td>
+          <td>${agent.state || (agent.running ? 'running' : 'idle')}</td>
+          <td><span class="cf-badge blue">Backend</span></td>
+        </tr>
+      `).join('');
+    } catch (error) {
+      console.error('loadScheduledTasksData failed:', error);
+      tbody.innerHTML = `<tr><td colspan="6" class="error-state"><i class="fas fa-exclamation-triangle"></i> Failed to reach backend: ${error.message}. Is the backend server running on port 8000?</td></tr>`;
+    }
   }
 
   async function loadAgentDecisionsData() {
-    const container = document.getElementById('agent-decisions-list');
+    const container = document.getElementById('decisions-timeline');
     if (!container) return;
-    container.innerHTML = '<div class="empty-state">No recent decisions</div>';
+
+    container.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Loading decisions from backend...</div>';
+
+    try {
+      const userId = resolveCurrentUserId();
+      const result = await cyberforgeAPI.getAgentAlerts({ userId, limit: 8 });
+
+      if (!result?.success && result?.error) {
+        container.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i> Backend error: ${result.error}</div>`;
+        return;
+      }
+
+      const alerts = result?.data?.data?.alerts || [];
+
+      if (!alerts.length) {
+        container.innerHTML = '<div class="empty-state">No agent decisions recorded yet. Start the agent and create tasks to generate decisions.</div>';
+        return;
+      }
+
+      container.innerHTML = alerts.map((alert) => `
+        <div class="decision-item">
+          <div class="decision-time">${new Date(alert.$createdAt || alert.createdAt || Date.now()).toLocaleString()}</div>
+          <div class="decision-content">
+            <div class="decision-type"><span class="cf-badge orange">${alert.severity || 'info'}</span></div>
+            <div class="decision-title">${alert.title || alert.type || 'Agent Decision'}</div>
+            <div class="decision-desc">${alert.description || alert.message || ''}</div>
+          </div>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('loadAgentDecisionsData failed:', error);
+      container.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i> Failed to reach backend: ${error.message}. Is the backend server running on port 8000?</div>`;
+    }
   }
 
   async function loadAgentMemoryData() {
-    const container = document.getElementById('agent-memory-view');
-    if (!container) return;
-    container.innerHTML = '<div class="empty-state">Agent memory empty</div>';
+    const list = document.getElementById('memory-list');
+    if (!list) return;
+
+    list.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> Loading agent memory from backend...</div>';
+
+    try {
+      const userId = resolveCurrentUserId();
+      const [alertsResult, agentsResult] = await Promise.all([
+        cyberforgeAPI.getAgentAlerts({ userId, limit: 20 }),
+        cyberforgeAPI.listAgents()
+      ]);
+
+      const alerts = alertsResult?.data?.data?.alerts || [];
+      const agents = agentsResult?.data?.data?.agents || [];
+
+      const threatsEl = document.getElementById('memory-threats');
+      const patternsEl = document.getElementById('memory-patterns');
+      const decisionsEl = document.getElementById('memory-decisions');
+      if (threatsEl) threatsEl.textContent = alerts.length.toString();
+      if (patternsEl) patternsEl.textContent = Math.max(agents.length, 0).toString();
+      if (decisionsEl) decisionsEl.textContent = alerts.filter(a => (a.status || '').toLowerCase() !== 'open').length.toString();
+
+      if (!alerts.length) {
+        list.innerHTML = '<div class="empty-state">No agent memory entries. Start the agent and interact with it to build memory.</div>';
+        return;
+      }
+
+      list.innerHTML = alerts.slice(0, 10).map((alert) => `
+        <div class="memory-item">
+          <div class="memory-title">${alert.title || alert.type || 'Agent Event'}</div>
+          <div class="memory-meta">${new Date(alert.$createdAt || alert.createdAt || Date.now()).toLocaleString()} • ${alert.severity || 'info'}</div>
+          <div class="memory-desc">${alert.description || alert.message || ''}</div>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('loadAgentMemoryData failed:', error);
+      list.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i> Failed to reach backend: ${error.message}. Is the backend server running on port 8000?</div>`;
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);

@@ -53,6 +53,7 @@ fn main() {
             commands::get_analysis_data,
             // Browser Monitor
             commands::get_available_browsers,
+            commands::detect_system_browsers,
             commands::system_monitor_stats,
         ])
         .setup(|app| {

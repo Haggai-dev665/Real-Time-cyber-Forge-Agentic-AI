@@ -14,7 +14,7 @@ class SettingsScreen {
             scanFrequency: 'daily',
             threatAlerts: true,
             dataRetention: '30',
-            apiEndpoint: 'https://cyberforge-ddd97655464f.herokuapp.com'
+            apiEndpoint: localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com'
         };
         this.originalSettings = {};
     }
@@ -537,7 +537,7 @@ class SettingsScreen {
             scanFrequency: 'daily',
             threatAlerts: true,
             dataRetention: '30',
-            apiEndpoint: 'https://cyberforge-ddd97655464f.herokuapp.com'
+            apiEndpoint: localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com'
         };
 
         // Update form

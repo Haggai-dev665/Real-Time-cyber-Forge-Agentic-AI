@@ -43,7 +43,7 @@ class APIClient {
                     const config = (typeof window !== 'undefined' && window.electronAPI?.config) || {};
                     this.baseUrl = config.backendUrl || FALLBACK_API_BASE_URL;
                     this.wsUrl = config.wsUrl || FALLBACK_WS_URL;
-                    this.token = localStorage.getItem('cyberforge_token');
+                    this.token = localStorage.getItem('authToken');
                     this.ws = null;
                     this.wsReconnectAttempts = 0;
                     this.maxReconnectAttempts = 5;
@@ -84,7 +84,7 @@ class APIClient {
                 setToken(token) {
                     if (token) {
                         this.token = token;
-                        localStorage.setItem('cyberforge_token', token);
+                        localStorage.setItem('authToken', token);
                     }
                 }
 
@@ -179,7 +179,7 @@ class APIClient {
 
                 logout() {
                     this.token = null;
-                    localStorage.removeItem('cyberforge_token');
+                    localStorage.removeItem('authToken');
                     this.disconnectWebSocket();
                 }
 

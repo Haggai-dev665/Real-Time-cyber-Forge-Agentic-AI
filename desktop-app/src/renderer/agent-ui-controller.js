@@ -114,7 +114,11 @@
         }
         
         // Restore saved panel state
-        if (localStorage.getItem('agent-panel-hidden') === 'true') panel.classList.add('hidden');
+        // Do not auto-hide on startup to avoid visible flicker (appears then disappears).
+        panel.classList.remove('hidden');
+        if (localStorage.getItem('agent-panel-hidden') === 'true') {
+            localStorage.setItem('agent-panel-hidden', 'false');
+        }
         if (localStorage.getItem('agent-panel-minimized') === 'true') {
             panel.classList.add('minimized');
             if (minimizeBtn) minimizeBtn.querySelector('i').className = 'fas fa-window-maximize';
@@ -275,7 +279,7 @@
             var agentCount = 0;
             if (backendOk) {
                 try {
-                    var token = localStorage.getItem('auth_token') || '';
+                    var token = localStorage.getItem('authToken') || '';
                     var agentRes = await fetch(backendUrl + '/api/agent/list', {
                         headers: {
                             'Content-Type': 'application/json',

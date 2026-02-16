@@ -1,4 +1,4 @@
-// CyberForge AI Desktop — Tauri Application Entry Point
+// CyberForge Desktop — Tauri Application Entry Point
 // Replaces the Electron main.js with a Rust native backend.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
@@ -57,7 +57,7 @@ fn main() {
             commands::system_monitor_stats,
         ])
         .setup(|app| {
-            log::info!("🚀 CyberForge AI Tauri app starting...");
+            log::info!("🚀 CyberForge Tauri app starting...");
 
             // Spawn background WebSocket connection to backend
             let app_handle = app.handle().clone();
@@ -68,5 +68,5 @@ fn main() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running CyberForge AI");
+        .expect("error while running CyberForge");
 }

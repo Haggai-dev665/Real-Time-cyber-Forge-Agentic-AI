@@ -134,6 +134,9 @@ impl<T: Serialize> CmdResult<T> {
 pub struct LoginCredentials {
     pub email: String,
     pub password: String,
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub rememberMe: Option<bool>,
 }
 
 #[tauri::command]
@@ -159,7 +162,9 @@ pub async fn auth_login(
 
     let body: Value = resp.json().await.map_err(|e| e.to_string())?;
 
-    if body.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
+    let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    if success {
         if let (Some(user_val), Some(token)) = (
             body.pointer("/data/user"),
             body.pointer("/data/token").and_then(|t| t.as_str()),
@@ -168,9 +173,18 @@ pub async fn auth_login(
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
             let _ = crate::auth::store_token(token);
+
+            // Return flattened response so JS can read result.token directly
+            return Ok(serde_json::json!({
+                "success": true,
+                "token": token,
+                "user": body.pointer("/data/user"),
+                "message": "Login successful"
+            }));
         }
     }
 
+    // Return body as-is for error cases (already has success:false + message)
     Ok(body)
 }
 
@@ -179,6 +193,15 @@ pub struct RegisterData {
     pub name: String,
     pub email: String,
     pub password: String,
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub firstName: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub lastName: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub role: Option<String>,
 }
 
 #[tauri::command]
@@ -205,7 +228,9 @@ pub async fn auth_register(
 
     let body: Value = resp.json().await.map_err(|e| e.to_string())?;
 
-    if body.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
+    let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    if success {
         if let (Some(user_val), Some(token)) = (
             body.pointer("/data/user"),
             body.pointer("/data/token").and_then(|t| t.as_str()),
@@ -214,6 +239,13 @@ pub async fn auth_register(
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
             let _ = crate::auth::store_token(token);
+
+            return Ok(serde_json::json!({
+                "success": true,
+                "token": token,
+                "user": body.pointer("/data/user"),
+                "message": "Registration successful"
+            }));
         }
     }
 
@@ -370,15 +402,33 @@ pub async fn get_system_stats() -> Result<Value, String> {
     let cpu_usage: f64 = sys.cpus().iter().map(|c| c.cpu_usage() as f64).sum::<f64>()
         / sys.cpus().len().max(1) as f64;
 
+    // Use the system module's get_os_name for accurate OS detection
+    let os_name = crate::system::get_os_name();
+
+    // Gather detailed system info for the setup wizard
+    let cpu_model = sys.cpus().first()
+        .map(|c| c.brand().to_string())
+        .unwrap_or_else(|| format!("{} cores", sys.cpus().len()));
+    let cpu_count = sys.cpus().len();
+    let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_string());
+    let os_version = System::os_version().unwrap_or_default();
+    let os_long_name = System::long_os_version().unwrap_or_default();
+
     Ok(serde_json::json!({
         "success": true,
         "data": {
             "cpu": (cpu_usage * 10.0).round() / 10.0,
+            "cpu_model": cpu_model,
+            "cpu_count": cpu_count,
             "memory": (mem_percent * 10.0).round() / 10.0,
             "uptime": System::uptime(),
-            "platform": std::env::consts::OS,
+            "platform": os_name,
+            "os_name": os_long_name,
+            "os_version": os_version,
             "arch": std::env::consts::ARCH,
+            "hostname": hostname,
             "totalMemory": total_mem,
+            "total_memory": total_mem,
             "usedMemory": used_mem
         }
     }))
@@ -550,17 +600,26 @@ pub async fn get_available_browsers() -> Result<Value, String> {
 #[tauri::command]
 pub async fn system_monitor_stats() -> Result<Value, String> {
     let result = tokio::task::spawn_blocking(|| {
-        crate::system::detect_all_browsers()
+        let detection = crate::system::detect_all_browsers();
+
+        // Use count_running_processes to get a count of all browser-related processes
+        let browser_process_count = crate::system::process_checker::count_running_processes(
+            &["chrome", "firefox", "safari", "edge", "brave", "opera", "arc"]
+        );
+
+        (detection, browser_process_count)
     })
     .await
     .map_err(|e| format!("Detection task failed: {}", e))?;
 
-    let running_count = result.browsers.iter().filter(|b| b.is_running).count();
-    let installed_count = result.browsers.iter().filter(|b| b.is_installed).count();
+    let (detection, process_count) = result;
+    let running_count = detection.browsers.iter().filter(|b| b.is_running).count();
+    let installed_count = detection.browsers.iter().filter(|b| b.is_installed).count();
 
     Ok(serde_json::json!({
         "browsersInstalled": installed_count,
         "browsersRunning": running_count,
+        "browserProcesses": process_count,
         "requestsCaptured": 0,
         "threatsDetected": 0,
         "monitoring": false

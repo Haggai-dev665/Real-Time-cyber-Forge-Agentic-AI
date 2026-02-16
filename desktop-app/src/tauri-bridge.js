@@ -9,9 +9,22 @@
  * Under the hood, calls are routed to Tauri's invoke() and event system.
  */
 
-const { invoke } = window.__TAURI__.core;
-const { listen, emit } = window.__TAURI__.event;
-const { getCurrentWebviewWindow } = window.__TAURI__.webviewWindow;
+// Safely destructure Tauri APIs — withGlobalTauri must be true in tauri.conf.json
+let invoke, listen, emit, getCurrentWebviewWindow;
+try {
+    invoke = window.__TAURI__.core.invoke;
+    listen = window.__TAURI__.event.listen;
+    emit = window.__TAURI__.event.emit;
+    getCurrentWebviewWindow = window.__TAURI__.webviewWindow.getCurrentWebviewWindow;
+} catch (e) {
+    console.error('[CyberForge Bridge] window.__TAURI__ not available:', e.message);
+    console.error('[CyberForge Bridge] Ensure "withGlobalTauri": true is set in tauri.conf.json');
+    // Create no-op fallbacks so the rest of the file doesn't crash
+    invoke = function(cmd) { return Promise.reject(new Error('Tauri runtime not available — invoke(' + cmd + ') failed')); };
+    listen = function() { return Promise.resolve(function(){}); };
+    emit = function() { return Promise.resolve(); };
+    getCurrentWebviewWindow = function() { return {}; };
+}
 
 const PROD_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
 const backendUrl = (typeof localStorage !== 'undefined' && localStorage.getItem('cyberforge_backend_url')) || PROD_URL;

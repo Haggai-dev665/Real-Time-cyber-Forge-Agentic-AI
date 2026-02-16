@@ -85,7 +85,7 @@ class AppwriteService {
         return updated;
       }
 
-      const created = await this.services.databases.createDocument(
+      const created = await this.createDocumentWithPermissionFallback(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.users,
         ID.unique(),
@@ -100,7 +100,8 @@ class AppwriteService {
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId)),
           Permission.read(Role.label('agent'))
-        ]
+        ],
+        'users metadata upsert'
       );
 
       logger.info(`✅ Appwrite users metadata created for: ${userId}`);
@@ -166,6 +167,37 @@ class AppwriteService {
     }
   }
 
+  isAnyGuestsPermissionModeError(error) {
+    const raw = error?.response || error?.message || '';
+    const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    return /Permissions must be one of:\s*\(any,\s*guests\)/i.test(text);
+  }
+
+  async createDocumentWithPermissionFallback(databaseId, collectionId, documentId, document, permissions = [], context = 'document') {
+    this.ensureInitialized();
+
+    try {
+      return await this.services.databases.createDocument(
+        databaseId,
+        collectionId,
+        documentId,
+        document,
+        permissions
+      );
+    } catch (error) {
+      if (permissions?.length && this.isAnyGuestsPermissionModeError(error)) {
+        logger.warn(`⚠️ Appwrite collection is in any/guests permission mode for ${context}; retrying without explicit permissions.`);
+        return this.services.databases.createDocument(
+          databaseId,
+          collectionId,
+          documentId,
+          document
+        );
+      }
+      throw error;
+    }
+  }
+
   // ==================== DEVICE MANAGEMENT ====================
 
   /**
@@ -198,7 +230,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.services.databases.createDocument(
+      const result = await this.createDocumentWithPermissionFallback(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.devices,
         deviceDocumentId,
@@ -207,7 +239,8 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ]
+        ],
+        'device registration'
       );
       
       logger.info(`✅ Device registered: ${result.$id}`);
@@ -462,7 +495,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.services.databases.createDocument(
+      const result = await this.createDocumentWithPermissionFallback(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agentTasks,
         taskDocId,
@@ -471,7 +504,8 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ] : []
+        ] : [],
+        'agent task creation'
       );
       
       logger.info(`✅ Agent task created: ${result.$id}`);
@@ -618,7 +652,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.services.databases.createDocument(
+      const result = await this.createDocumentWithPermissionFallback(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.alerts,
         alertDocId,
@@ -627,7 +661,8 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ] : []
+        ] : [],
+        'alert creation'
       );
       
       logger.info(`✅ Alert created: ${result.$id}`);
@@ -703,7 +738,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.services.databases.createDocument(
+      const result = await this.createDocumentWithPermissionFallback(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.evidenceMetadata,
         ID.unique(),
@@ -712,7 +747,8 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ]
+        ],
+        'evidence metadata storage'
       );
       
       logger.info(`✅ Evidence metadata stored: ${result.$id}`);

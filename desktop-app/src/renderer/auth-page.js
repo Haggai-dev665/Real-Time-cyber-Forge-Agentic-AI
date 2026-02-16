@@ -307,22 +307,37 @@
         const statusText = statusElement?.querySelector('.status-text');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/health`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                timeout: 5000
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                state.backendConnected = true;
-                
-                if (statusElement) {
-                    statusElement.classList.add('connected');
-                    statusElement.classList.remove('error');
-                    statusText.textContent = `Connected to Cyber Forge (${data.environment || 'development'})`;
+            // Try Tauri IPC health check first (bypasses CORS entirely)
+            let data;
+            if (window.electronAPI && window.electronAPI.healthCheck) {
+                try {
+                    data = await window.electronAPI.healthCheck();
+                } catch (ipcErr) {
+                    // Fallback to direct fetch
+                    const response = await fetch(`${API_BASE_URL}/health`, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(8000)
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    data = await response.json();
                 }
-                console.log('✅ Backend connected:', data);
+            } else {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(8000)
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                data = await response.json();
+            }
+
+            state.backendConnected = true;
+            
+            if (statusElement) {
+                statusElement.classList.add('connected');
+                statusElement.classList.remove('error');
+                statusText.textContent = `Connected to Cyber Forge (${data.environment || 'production'})`;
+            }
+            console.log('✅ Backend connected:', data);
             } else {
                 throw new Error('Backend returned non-OK status');
             }
@@ -394,20 +409,31 @@
         try {
             let result;
             
-            // Try Electron IPC first
+            // Try Tauri IPC first, then direct API
             if (window.electronAPI) {
-                result = await window.electronAPI.auth.login({ email, password, rememberMe });
+                try {
+                    result = await window.electronAPI.auth.login({ email, password, rememberMe });
+                } catch (ipcErr) {
+                    console.warn('IPC login failed, falling back to direct API:', ipcErr);
+                    result = await loginViaAPI(email, password);
+                }
             } else {
-                // Fallback to direct API call
                 result = await loginViaAPI(email, password);
             }
 
             if (result.success) {
                 showToast('success', 'Welcome Back!', 'Login successful. Redirecting...');
                 
-                // Store token if available
-                if (result.token) {
-                    localStorage.setItem('cyberforge_token', result.token);
+                // Store token — check both flattened and nested locations
+                const token = result.token || result.data?.token;
+                if (token) {
+                    localStorage.setItem('authToken', token);
+                }
+                
+                // Store user data for the dashboard
+                const user = result.user || result.data?.user;
+                if (user) {
+                    localStorage.setItem('user', JSON.stringify(user));
                 }
                 
                 setTimeout(() => {
@@ -418,7 +444,7 @@
             }
         } catch (error) {
             console.error('Login error:', error);
-            showToast('error', 'Connection Error', 'Unable to connect to server. Please try again.');
+            showToast('error', 'Login Error', error.message || 'Unable to connect to server. Please try again.');
         } finally {
             setLoading('login-btn', false);
         }
@@ -464,11 +490,16 @@
         setLoading('register-btn', true);
 
         try {
-            const userData = { firstName, lastName, email, password, role };
+            const userData = { firstName, lastName, email, password, role, name: `${firstName} ${lastName}`.trim() };
             let result;
 
             if (window.electronAPI) {
-                result = await window.electronAPI.auth.register(userData);
+                try {
+                    result = await window.electronAPI.auth.register(userData);
+                } catch (ipcErr) {
+                    console.warn('IPC register failed, falling back to direct API:', ipcErr);
+                    result = await registerViaAPI(userData);
+                }
             } else {
                 result = await registerViaAPI(userData);
             }
@@ -476,8 +507,15 @@
             if (result.success) {
                 showToast('success', 'Account Created!', 'Your account has been created. Redirecting...');
                 
-                if (result.token) {
-                    localStorage.setItem('cyberforge_token', result.token);
+                const token = result.token || result.data?.token;
+                if (token) {
+                    localStorage.setItem('authToken', token);
+                }
+                
+                // Store user data for the dashboard
+                const user = result.user || result.data?.user;
+                if (user) {
+                    localStorage.setItem('user', JSON.stringify(user));
                 }
                 
                 setTimeout(() => {
@@ -488,7 +526,7 @@
             }
         } catch (error) {
             console.error('Registration error:', error);
-            showToast('error', 'Connection Error', 'Unable to connect to server. Please try again.');
+            showToast('error', 'Registration Error', error.message || 'Unable to connect to server. Please try again.');
         } finally {
             setLoading('register-btn', false);
         }
@@ -556,7 +594,12 @@
                 showToast('success', 'Welcome!', `Signed in as ${result.user?.email || 'user'}. Redirecting...`);
                 
                 if (result.token) {
-                    localStorage.setItem('cyberforge_token', result.token);
+                    localStorage.setItem('authToken', result.token);
+                }
+                
+                // Store user data for the dashboard
+                if (result.user) {
+                    localStorage.setItem('user', JSON.stringify(result.user));
                 }
                 
                 setTimeout(() => {
@@ -671,11 +714,12 @@
     // =========================================
 
     function redirectToDashboard() {
-        // Notify Electron main process to show dashboard
-        if (window.electronAPI && window.electronAPI.auth.onAuthSuccess) {
-            window.electronAPI.auth.onAuthSuccess();
-        } else {
-            // For web fallback, reload to main app
+        console.log('🚀 Navigating to dashboard...');
+        try {
+            // Use replace so back button doesn't return to login
+            window.location.replace('dashboard.html');
+        } catch (e) {
+            console.error('Navigation failed, trying fallback:', e);
             window.location.href = 'dashboard.html';
         }
     }
@@ -807,10 +851,13 @@
                 <div class="toast-title">${title}</div>
                 <div class="toast-message">${message}</div>
             </div>
-            <button class="toast-close" onclick="this.parentElement.remove()">
+            <button class="toast-close">
                 <i class="fas fa-times"></i>
             </button>
         `;
+
+        // Use addEventListener instead of inline onclick (CSP blocks inline handlers in Tauri v2)
+        toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
 
         container.appendChild(toast);
 

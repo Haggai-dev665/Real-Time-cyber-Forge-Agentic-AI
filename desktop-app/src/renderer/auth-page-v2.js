@@ -45,6 +45,30 @@ const elements = {
     toastContainer: null
 };
 
+function normalizeAuthResponse(payload) {
+    const data = payload || {};
+    const nested = data.data || {};
+
+    return {
+        success: Boolean(data.success),
+        message: data.message || nested.message,
+        token: data.token || nested.token,
+        refreshToken: data.refreshToken || nested.refreshToken,
+        user: data.user || nested.user,
+        errors: data.errors || nested.errors
+    };
+}
+
+function navigateToDashboard() {
+    setTimeout(() => {
+        try {
+            window.location.replace('dashboard.html');
+        } catch (_) {
+            window.location.href = 'dashboard.html';
+        }
+    }, 700);
+}
+
 // =====================================================
 // INITIALIZATION
 // =====================================================
@@ -253,29 +277,28 @@ async function handleLogin(event) {
         }
         
         console.log('📦 Login response data:', data);
-        
-        if (data.success) {
+
+        const auth = normalizeAuthResponse(data);
+
+        if (auth.success && auth.token) {
             // Also store in localStorage for api-client.js to use
             const storage = rememberMe ? localStorage : sessionStorage;
-            storage.setItem('authToken', data.token);
-            if (data.refreshToken) {
-                storage.setItem('refreshToken', data.refreshToken);
+            storage.setItem('authToken', auth.token);
+            if (auth.refreshToken) {
+                storage.setItem('refreshToken', auth.refreshToken);
             }
-            storage.setItem('user', JSON.stringify(data.user));
-            
-            showToast('success', 'Welcome Back!', `Signed in as ${data.user.email}`);
-            
-            // Notify main process to load dashboard if using IPC
-            if (useIPC) {
-                await window.electronAPI.auth.onAuthSuccess();
-            } else {
-                // Redirect to main app after short delay
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+            if (auth.user) {
+                storage.setItem('user', JSON.stringify(auth.user));
             }
+
+            const userEmail = auth.user?.email || email;
+            
+            showToast('success', 'Welcome Back!', `Signed in as ${userEmail}`);
+            
+            // Navigate to dashboard after short delay
+            navigateToDashboard();
         } else {
-            showToast('error', 'Login Failed', data.message || 'Invalid credentials. Please try again.');
+            showToast('error', 'Login Failed', auth.message || 'Invalid credentials. Please try again.');
         }
     } catch (error) {
         console.error('❌ Login error:', error);
@@ -402,35 +425,32 @@ async function handleRegister(event) {
         }
         
         console.log('📦 Register response data:', data);
-        
-        if (data.success) {
+
+        const auth = normalizeAuthResponse(data);
+
+        if (auth.success && auth.token) {
             showToast('success', 'Account Created!', 'You are now signed in.');
             
             // Store tokens in localStorage for api-client.js
             const storage = localStorage;
-            storage.setItem('authToken', data.token);
-            if (data.refreshToken) {
-                storage.setItem('refreshToken', data.refreshToken);
+            storage.setItem('authToken', auth.token);
+            if (auth.refreshToken) {
+                storage.setItem('refreshToken', auth.refreshToken);
             }
-            storage.setItem('user', JSON.stringify(data.user));
+            if (auth.user) {
+                storage.setItem('user', JSON.stringify(auth.user));
+            }
             
-            // Notify main process to load dashboard if using IPC
-            if (useIPC) {
-                await window.electronAPI.auth.onAuthSuccess();
-            } else {
-                // Redirect to main app after short delay
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
-            }
+            // Navigate to dashboard after short delay
+            navigateToDashboard();
         } else {
-            const validationMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? (data.errors[0].msg || data.errors[0].message)
+            const validationMsg = Array.isArray(auth?.errors) && auth.errors.length > 0
+                ? (auth.errors[0].msg || auth.errors[0].message)
                 : null;
             showToast(
                 'error',
                 'Registration Failed',
-                validationMsg || data.message || 'Unable to create account. Please try again.'
+                validationMsg || auth.message || 'Unable to create account. Please try again.'
             );
         }
     } catch (error) {

@@ -2,10 +2,31 @@
 // Handles navigation, table rendering, context menu, and interactions
 
 (() => {
-  // Import API client
-  const { cyberforgeAPI } = typeof require !== 'undefined' 
-    ? require('./api-client.js') 
-    : { cyberforgeAPI: window.cyberforgeAPI };
+  // Import API client (resilient across Tauri/Electron/web + script load timing)
+  let importedAPI = null;
+  if (typeof require !== 'undefined') {
+    try {
+      const apiModule = require('./api-client.js');
+      importedAPI = apiModule?.cyberforgeAPI || apiModule?.default?.cyberforgeAPI || null;
+    } catch (error) {
+      console.warn('[CyberForge] Could not require api-client.js, falling back to window API:', error?.message || error);
+    }
+  }
+
+  function resolveAPIClient() {
+    return importedAPI || window.cyberforgeAPI || window.apiClient || null;
+  }
+
+  const cyberforgeAPI = new Proxy({}, {
+    get(_target, prop) {
+      const api = resolveAPIClient();
+      const value = api?.[prop];
+      if (typeof value === 'function') {
+        return value.bind(api);
+      }
+      return value;
+    }
+  });
 
   // Import child page layouts
   const ChildPages = typeof require !== 'undefined'
@@ -35,7 +56,8 @@
     sidebarCollapsed: false,
     backendConnected: false,
     conversationId: null,
-    loading: {}
+    loading: {},
+    sidebarListenersBound: false
   };
 
   // =========================================
@@ -425,6 +447,9 @@
     // Bind button actions
     bindAgentControlActions();
 
+    // Ensure default agent is running whenever Agent Center opens
+    autoStartDefaultAgent();
+
     // Load real data from backend + Tauri
     syncAgentCenterWithBackend();
     refreshAgentOpenBrowsers();
@@ -445,6 +470,138 @@
 
     appendAgentConsole('Agent Center initialized. Type "status" or "scan <url>".', 'info');
     console.log('[AgentCenter] Init complete.');
+  }
+
+  async function safeGetAgentAlerts({ userId, limit = 20 } = {}) {
+    if (typeof cyberforgeAPI?.getAgentAlerts === 'function') {
+      return cyberforgeAPI.getAgentAlerts({ userId, limit });
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const token = localStorage.getItem('authToken') || '';
+    const params = new URLSearchParams();
+    if (userId) params.set('userId', userId);
+    if (limit) params.set('limit', String(limit));
+
+    const response = await fetch(`${backendUrl}/api/agent/alerts?${params.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      signal: AbortSignal.timeout(7000)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Agent alerts request failed: HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    return {
+      success: true,
+      data: {
+        data: {
+          alerts: payload?.data?.alerts || payload?.alerts || []
+        }
+      }
+    };
+  }
+
+  async function safeStartAgent({ userId, agentName = 'default', config = {} } = {}) {
+    if (typeof cyberforgeAPI?.startAgent === 'function') {
+      return cyberforgeAPI.startAgent({ userId, agentName, config });
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const token = localStorage.getItem('authToken') || '';
+    const response = await fetch(`${backendUrl}/api/agent/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ userId, agentName, config }),
+      signal: AbortSignal.timeout(9000)
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: payload?.message || `HTTP ${response.status}` };
+    }
+
+    return payload?.success !== false ? { success: true, data: payload?.data || payload } : payload;
+  }
+
+  async function safeGetAgentStatus(agentName = 'default') {
+    if (typeof cyberforgeAPI?.getAgentStatus === 'function') {
+      return cyberforgeAPI.getAgentStatus(agentName);
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const token = localStorage.getItem('authToken') || '';
+    const response = await fetch(`${backendUrl}/api/agent/status/${encodeURIComponent(agentName)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      signal: AbortSignal.timeout(7000)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Agent status request failed: HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    return {
+      success: true,
+      data: {
+        data: payload?.data || payload || {}
+      }
+    };
+  }
+
+  async function safeHealthCheck() {
+    if (typeof cyberforgeAPI?.healthCheck === 'function') {
+      return cyberforgeAPI.healthCheck();
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const response = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(7000) });
+    const payload = await response.json().catch(() => ({}));
+    return { success: response.ok, data: payload };
+  }
+
+  async function safeMLHealthCheck() {
+    if (typeof cyberforgeAPI?.mlHealthCheck === 'function') {
+      return cyberforgeAPI.mlHealthCheck();
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const response = await fetch(`${backendUrl}/api/cyberforge-ml/health`, { signal: AbortSignal.timeout(7000) });
+    const payload = await response.json().catch(() => ({}));
+    return { success: response.ok, data: payload };
+  }
+
+  async function autoStartDefaultAgent() {
+    try {
+      const statusResult = await safeGetAgentStatus('default');
+      const statusData = statusResult?.data?.data || statusResult?.data || {};
+      const isRunning = !!statusData?.isRunning || !!statusData?.running;
+      if (isRunning) {
+        setAgentControlStatus(true, 'Agent Online');
+        return;
+      }
+
+      const userId = resolveCurrentUserId();
+      const startResult = await safeStartAgent({ userId, agentName: 'default', config: { source: 'agent-center-auto-start' } });
+      if (startResult?.success) {
+        setAgentControlStatus(true, 'Agent Online');
+        appendAgentConsole('Default agent auto-started', 'success');
+      } else {
+        appendAgentConsole(startResult?.error || 'Auto-start failed', 'warning');
+      }
+    } catch (error) {
+      appendAgentConsole(`Auto-start check failed: ${error.message}`, 'warning');
+    }
   }
 
   async function loadAgentCenterSystemStats() {
@@ -497,7 +654,7 @@
 
     try {
       const userId = resolveCurrentUserId();
-      const alertsResult = await cyberforgeAPI.getAgentAlerts(userId);
+      const alertsResult = await safeGetAgentAlerts({ userId, limit: 20 });
       const alerts = alertsResult?.data?.data?.alerts || alertsResult?.data?.alerts || [];
 
       if (alerts.length === 0) {
@@ -657,7 +814,7 @@
 
     startBtn?.addEventListener('click', async () => {
       const userId = resolveCurrentUserId();
-      const result = await cyberforgeAPI.startAgent({ userId, agentName: 'default', config: {} });
+      const result = await safeStartAgent({ userId, agentName: 'default', config: {} });
       if (result?.success) {
         setAgentControlStatus(true, 'Agent Online');
         appendAgentConsole('Agent started from backend controller', 'success');
@@ -734,12 +891,43 @@
     const mlEl = document.getElementById('ac-ml');
     const agentCountEl = document.getElementById('ac-agent-count');
 
+    const safeListAgents = async () => {
+      if (typeof cyberforgeAPI?.listAgents === 'function') {
+        return cyberforgeAPI.listAgents();
+      }
+
+      const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+      const token = localStorage.getItem('authToken') || '';
+      const response = await fetch(`${backendUrl}/api/agent/list`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        signal: AbortSignal.timeout(7000)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Agent list request failed: HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      return {
+        success: true,
+        data: {
+          data: {
+            agents: payload?.data?.agents || payload?.agents || [],
+            count: payload?.data?.count ?? payload?.count ?? 0
+          }
+        }
+      };
+    };
+
     try {
       const [listResult, statusResult, mlResult, healthResult] = await Promise.all([
-        cyberforgeAPI.listAgents(),
-        cyberforgeAPI.getAgentStatus('default'),
-        cyberforgeAPI.mlHealthCheck(),
-        cyberforgeAPI.healthCheck()
+        safeListAgents(),
+        safeGetAgentStatus('default'),
+        safeMLHealthCheck(),
+        safeHealthCheck()
       ]);
 
       // Backend health
@@ -2478,6 +2666,8 @@
       collapseBtn.querySelector('span').textContent = state.sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar';
       collapseBtn.querySelector('i').className = state.sidebarCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
     });
+
+    state.sidebarListenersBound = true;
   }
 
   function bindTabs() {
@@ -7311,7 +7501,7 @@
 
     try {
       const userId = resolveCurrentUserId();
-      const result = await cyberforgeAPI.getAgentAlerts({ userId, limit: 10 });
+      const result = await safeGetAgentAlerts({ userId, limit: 10 });
 
       if (!result?.success && result?.error) {
         tbody.innerHTML = `<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-triangle"></i> Backend error: ${result.error}</td></tr>`;
@@ -7349,7 +7539,31 @@
     tbody.innerHTML = '<tr><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading agents from backend...</td></tr>';
 
     try {
-      const listResult = await cyberforgeAPI.listAgents();
+      let listResult;
+      if (typeof cyberforgeAPI?.listAgents === 'function') {
+        listResult = await cyberforgeAPI.listAgents();
+      } else {
+        const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+        const token = localStorage.getItem('authToken') || '';
+        const response = await fetch(`${backendUrl}/api/agent/list`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          signal: AbortSignal.timeout(7000)
+        });
+        if (!response.ok) throw new Error(`Agent list request failed: HTTP ${response.status}`);
+        const payload = await response.json();
+        listResult = {
+          success: true,
+          data: {
+            data: {
+              agents: payload?.data?.agents || payload?.agents || [],
+              count: payload?.data?.count ?? payload?.count ?? 0
+            }
+          }
+        };
+      }
 
       if (!listResult?.success && listResult?.error) {
         tbody.innerHTML = `<tr><td colspan="6" class="error-state"><i class="fas fa-exclamation-triangle"></i> Backend error: ${listResult.error}</td></tr>`;
@@ -7386,7 +7600,7 @@
 
     try {
       const userId = resolveCurrentUserId();
-      const result = await cyberforgeAPI.getAgentAlerts({ userId, limit: 8 });
+      const result = await safeGetAgentAlerts({ userId, limit: 8 });
 
       if (!result?.success && result?.error) {
         container.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-triangle"></i> Backend error: ${result.error}</div>`;
@@ -7424,9 +7638,34 @@
 
     try {
       const userId = resolveCurrentUserId();
+      const listAgentsPromise = typeof cyberforgeAPI?.listAgents === 'function'
+        ? cyberforgeAPI.listAgents()
+        : (async () => {
+            const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+            const token = localStorage.getItem('authToken') || '';
+            const response = await fetch(`${backendUrl}/api/agent/list`, {
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+              },
+              signal: AbortSignal.timeout(7000)
+            });
+            if (!response.ok) throw new Error(`Agent list request failed: HTTP ${response.status}`);
+            const payload = await response.json();
+            return {
+              success: true,
+              data: {
+                data: {
+                  agents: payload?.data?.agents || payload?.agents || [],
+                  count: payload?.data?.count ?? payload?.count ?? 0
+                }
+              }
+            };
+          })();
+
       const [alertsResult, agentsResult] = await Promise.all([
-        cyberforgeAPI.getAgentAlerts({ userId, limit: 20 }),
-        cyberforgeAPI.listAgents()
+        safeGetAgentAlerts({ userId, limit: 20 }),
+        listAgentsPromise
       ]);
 
       const alerts = alertsResult?.data?.data?.alerts || [];
@@ -7458,6 +7697,62 @@
   }
 
   document.addEventListener('DOMContentLoaded', init);
+
+  // Fallback sidebar navigation if init() fails before bindSidebarNav() executes
+  document.addEventListener('click', (e) => {
+    if (state.sidebarListenersBound) return;
+
+    const topLink = e.target.closest('.sidebar-nav-link');
+    if (topLink) {
+      e.preventDefault();
+
+      document.querySelectorAll('.sidebar-nav-link.active').forEach(link => link.classList.remove('active'));
+      topLink.classList.add('active');
+
+      const parentItem = topLink.closest('.sidebar-nav-item');
+      if (parentItem && parentItem.querySelector('.sidebar-nav-children')) {
+        parentItem.classList.toggle('expanded');
+      }
+
+      const screen = topLink.getAttribute('data-screen');
+      if (screen) {
+        state.activeScreen = screen;
+        try {
+          renderScreen(screen);
+        } catch (error) {
+          const container = document.getElementById('screen-container');
+          if (container) {
+            container.innerHTML = buildOperationalPage(screen);
+            bindOperationalPage(screen);
+          }
+          console.error('Fallback sidebar navigation error:', error);
+        }
+      }
+      return;
+    }
+
+    const childLink = e.target.closest('.sidebar-child-link');
+    if (childLink) {
+      e.preventDefault();
+      document.querySelectorAll('.sidebar-child-link.active').forEach(link => link.classList.remove('active'));
+      childLink.classList.add('active');
+
+      const screen = childLink.getAttribute('data-screen');
+      if (screen) {
+        state.activeScreen = screen;
+        try {
+          renderScreen(screen);
+        } catch (error) {
+          const container = document.getElementById('screen-container');
+          if (container) {
+            container.innerHTML = buildOperationalPage(screen);
+            bindOperationalPage(screen);
+          }
+          console.error('Fallback child navigation error:', error);
+        }
+      }
+    }
+  });
   
   // Global fallback handler for agent minimized button (uses event delegation)
   document.addEventListener('click', (e) => {

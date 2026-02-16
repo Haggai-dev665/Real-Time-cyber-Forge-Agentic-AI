@@ -1,6 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicegui/tauri-v2/main/core/tauri-config-schema/schema.json",
-  "productName": "CyberForge AI",
+  "productName": "CyberForge",
   "version": "2.0.0",
   "identifier": "com.cyberforge.desktop",
   "build": {
@@ -9,6 +8,7 @@
     "beforeBuildCommand": ""
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "CyberForge",

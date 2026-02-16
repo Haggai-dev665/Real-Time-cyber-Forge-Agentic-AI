@@ -581,6 +581,54 @@
     return { success: response.ok, data: payload };
   }
 
+  async function safeStopAgent(agentName = 'default') {
+    if (typeof cyberforgeAPI?.stopAgent === 'function') {
+      return cyberforgeAPI.stopAgent(agentName);
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const token = localStorage.getItem('authToken') || '';
+    const response = await fetch(`${backendUrl}/api/agent/stop`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ agentName }),
+      signal: AbortSignal.timeout(9000)
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: data?.message || `HTTP ${response.status}` };
+    }
+    return data?.success !== false ? { success: true, data: data?.data || data } : data;
+  }
+
+  async function safeCreateAgentTask(taskData) {
+    if (typeof cyberforgeAPI?.createAgentTask === 'function') {
+      return cyberforgeAPI.createAgentTask(taskData);
+    }
+
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const token = localStorage.getItem('authToken') || '';
+    const response = await fetch(`${backendUrl}/api/agent/task/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(taskData),
+      signal: AbortSignal.timeout(9000)
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: data?.message || `HTTP ${response.status}` };
+    }
+    return data?.success !== false ? { success: true, data: data?.data || data } : data;
+  }
+
   async function autoStartDefaultAgent() {
     try {
       const statusResult = await safeGetAgentStatus('default');
@@ -659,7 +707,7 @@
 
       if (alerts.length === 0) {
         // Show backend connection events instead
-        const healthResult = await cyberforgeAPI.healthCheck();
+        const healthResult = await safeHealthCheck();
         const items = [];
         items.push({
           time: new Date().toLocaleTimeString(),
@@ -827,7 +875,7 @@
     });
 
     stopBtn?.addEventListener('click', async () => {
-      const result = await cyberforgeAPI.stopAgent('default');
+      const result = await safeStopAgent('default');
       if (result?.success) {
         setAgentControlStatus(false, 'Agent Offline');
         appendAgentConsole('Agent stopped by operator', 'warning');
@@ -853,7 +901,7 @@
       if (command.toLowerCase().startsWith('scan ')) {
         const targetUrl = command.slice(5).trim();
         const userId = resolveCurrentUserId();
-        const createTaskResult = await cyberforgeAPI.createAgentTask({
+        const createTaskResult = await safeCreateAgentTask({
           agentId: 'default',
           userId,
           taskType: 'security_scan',

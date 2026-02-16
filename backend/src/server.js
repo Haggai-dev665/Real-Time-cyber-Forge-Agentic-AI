@@ -48,6 +48,10 @@ class CyberForgeServer {
   }
 
   setupMiddleware() {
+    // Trust proxy (required for Heroku / any reverse-proxy so that
+    // express-rate-limit can read X-Forwarded-For correctly)
+    this.app.set('trust proxy', 1);
+
     // Security middleware
     this.app.use(helmet({
       contentSecurityPolicy: false, // Disable for development

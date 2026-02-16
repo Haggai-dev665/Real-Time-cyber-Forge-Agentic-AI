@@ -167,14 +167,29 @@ class AppwriteService {
     }
   }
 
-  isAnyGuestsPermissionModeError(error) {
+  /**
+   * Detect Appwrite errors related to collection-level permission mode.
+   * Covers both "Permissions must be one of: (any, guests)" (user-scoped
+   * permissions rejected) and "No permissions provided for action 'create'"
+   * (empty permissions rejected).
+   */
+  isPermissionModeError(error) {
     const raw = error?.response || error?.message || '';
     const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
-    return /Permissions must be one of:\s*\(any,\s*guests\)/i.test(text);
+    return (
+      /Permissions must be one of:\s*\(any,\s*guests\)/i.test(text) ||
+      /No permissions provided for action/i.test(text)
+    );
   }
 
   async createDocumentWithPermissionFallback(databaseId, collectionId, documentId, document, permissions = [], context = 'document') {
     this.ensureInitialized();
+
+    // Broad any/guests permissions that Appwrite's collection-level mode accepts
+    const anyPermissions = [
+      Permission.read(Role.any()),
+      Permission.write(Role.any())
+    ];
 
     try {
       return await this.services.databases.createDocument(
@@ -182,16 +197,17 @@ class AppwriteService {
         collectionId,
         documentId,
         document,
-        permissions
+        permissions?.length ? permissions : anyPermissions
       );
     } catch (error) {
-      if (permissions?.length && this.isAnyGuestsPermissionModeError(error)) {
-        logger.warn(`⚠️ Appwrite collection is in any/guests permission mode for ${context}; retrying without explicit permissions.`);
+      if (this.isPermissionModeError(error)) {
+        logger.warn(`⚠️ Appwrite collection is in any/guests permission mode for ${context}; retrying with Role.any() permissions.`);
         return this.services.databases.createDocument(
           databaseId,
           collectionId,
           documentId,
-          document
+          document,
+          anyPermissions
         );
       }
       throw error;

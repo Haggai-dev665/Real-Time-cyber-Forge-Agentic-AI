@@ -636,6 +636,9 @@
       const isRunning = !!statusData?.isRunning || !!statusData?.running;
       if (isRunning) {
         setAgentControlStatus(true, 'Agent Online');
+        // Agent already running on backend — still start local monitoring
+        startBrowserIntelligencePolling(60000);
+        startUrlMonitoring();
         return;
       }
 
@@ -646,6 +649,8 @@
         appendAgentConsole('Default agent auto-started', 'success');
         // Start browser intelligence collection for auto-started agent
         startBrowserIntelligencePolling(60000);
+        // Start real-time URL monitoring
+        startUrlMonitoring();
       } else {
         appendAgentConsole(startResult?.error || 'Auto-start failed', 'warning');
       }
@@ -923,6 +928,301 @@
     }
   }
 
+  // ——————————————————————————————————————————————
+  // REAL-TIME URL MONITORING
+  // Polls active browser tabs every 5s, detects new URLs, auto-creates scan tasks
+  // ——————————————————————————————————————————————
+
+  let _urlMonitorPollingId = null;
+  const _seenUrls = new Set();          // Track already-processed URLs this session
+  const _urlScanHistory = [];           // Last 100 scanned URLs for UI display
+  const URL_MONITOR_INTERVAL = 5000;    // Check every 5 seconds
+  const MAX_SCAN_HISTORY = 100;
+
+  /**
+   * Start real-time URL monitoring.
+   * Polls the Tauri bridge for active browser tab URLs, and for each new URL:
+   *   1. Logs it in the Agent Center console
+   *   2. Creates a web_scan task on the backend
+   *   3. Tracks it for duplicate suppression
+   */
+  function startUrlMonitoring() {
+    stopUrlMonitoring();
+    console.log('[URLMonitor] Starting real-time URL monitoring...');
+    appendAgentConsole('URL monitoring started — scanning active browser tabs every 5s', 'info');
+    // Log to floating panel too
+    if (window.CyberForgeAgentUI?.fpLog) {
+      window.CyberForgeAgentUI.fpLog('URL monitor active');
+    }
+    // Update the URL monitor status badge
+    const badge = document.getElementById('url-monitor-status');
+    if (badge) {
+      badge.textContent = 'Monitoring';
+      badge.classList.add('active');
+    }
+
+    // Do an immediate first scan
+    _pollActiveUrls();
+
+    _urlMonitorPollingId = setInterval(_pollActiveUrls, URL_MONITOR_INTERVAL);
+  }
+
+  function stopUrlMonitoring() {
+    if (_urlMonitorPollingId) {
+      clearInterval(_urlMonitorPollingId);
+      _urlMonitorPollingId = null;
+      console.log('[URLMonitor] Stopped');
+      const badge = document.getElementById('url-monitor-status');
+      if (badge) {
+        badge.textContent = 'Stopped';
+        badge.classList.remove('active');
+      }
+      if (window.CyberForgeAgentUI?.fpLog) {
+        window.CyberForgeAgentUI.fpLog('URL monitor stopped');
+      }
+    }
+  }
+
+  async function _pollActiveUrls() {
+    try {
+      // Try Tauri bridge first, then systemMonitor fallback
+      const getUrls = window.electronAPI?.getActiveBrowserUrls
+        || window.electronAPI?.systemMonitor?.getActiveBrowserUrls;
+      if (!getUrls) return;
+
+      const result = await getUrls();
+      const tabs = result?.tabs || [];
+
+      for (const tab of tabs) {
+        if (!tab.url || tab.url === 'firefox-active-tab' || tab.url === 'linux-active-window') {
+          // Can't auto-scan without a real URL — but log the activity
+          if (tab.title && !_seenUrls.has(`title:${tab.title}`)) {
+            _seenUrls.add(`title:${tab.title}`);
+            appendAgentConsole(`🔍 [${tab.browser}] Active: ${tab.title}`, 'info');
+            _updateLiveUrlFeed(tab.browser, tab.title, '', 'detected');
+          }
+          continue;
+        }
+
+        // Normalise URL for dedup (strip trailing slash, fragment)
+        const normUrl = _normaliseUrl(tab.url);
+        if (_seenUrls.has(normUrl)) continue;
+        _seenUrls.add(normUrl);
+
+        // Log in the Agent Center console
+        const shortUrl = tab.url.length > 80 ? tab.url.substring(0, 77) + '...' : tab.url;
+        appendAgentConsole(`🌐 [${tab.browser}] Navigated to: ${shortUrl}`, 'info');
+
+        // Log to the floating panel activity log
+        if (window.CyberForgeAgentUI?.fpLog) {
+          window.CyberForgeAgentUI.fpLog(`🌐 ${tab.browser}: ${tab.url.length > 50 ? tab.url.substring(0, 47) + '...' : tab.url}`);
+        }
+
+        // Update the live URL feed in the Agent Center UI
+        _updateLiveUrlFeed(tab.browser, tab.title || shortUrl, tab.url, 'scanning');
+
+        // Auto-create a scan task on the backend
+        _autoCreateScanTask(tab).catch(err => {
+          console.warn('[URLMonitor] Task creation failed:', err.message);
+        });
+      }
+    } catch (err) {
+      // Silently ignore — this runs every 5s, don't spam errors
+      console.debug('[URLMonitor] Poll error:', err.message);
+    }
+  }
+
+  function _normaliseUrl(url) {
+    try {
+      const u = new URL(url);
+      // Remove fragment and normalize trailing slash
+      u.hash = '';
+      let path = u.pathname.replace(/\/+$/, '') || '/';
+      return `${u.protocol}//${u.host}${path}${u.search}`;
+    } catch {
+      return url;
+    }
+  }
+
+  async function _autoCreateScanTask(tab) {
+    const userId = resolveCurrentUserId();
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const token = localStorage.getItem('authToken') || '';
+    let agentId = localStorage.getItem('cyberforge_agent_id') || 'default';
+
+    // ── Call the real-time scan endpoint ──────────────────────────────
+    // This runs: webscrapper → analysis → ML classification → Gemini → results
+    const payload = {
+      url: tab.url,
+      browser: tab.browserKey || tab.browser,
+      pageTitle: tab.title || '',
+      userId,
+      agentId
+    };
+
+    appendAgentConsole(`⏳ Scanning ${tab.url.substring(0, 60)}...`, 'info');
+
+    const response = await fetch(`${backendUrl}/api/agent/scan-url`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(90000) // 90s — scraping can be slow
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data?.error || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    const scanData = result?.data;
+
+    if (!scanData) {
+      appendAgentConsole(`⚠️ No scan data returned for ${tab.url.substring(0, 50)}`, 'warning');
+      return result;
+    }
+
+    // ── Process scan results ─────────────────────────────────────────
+    const riskScore = scanData.riskScore || 0;
+    const category = scanData.category || 'unknown';
+    const riskLevel = scanData.riskLevel || 'unknown';
+    const confidence = Math.round((scanData.confidence || 0) * 100);
+
+    // Determine status for UI
+    let feedStatus = 'completed';
+    if (riskScore >= 70) feedStatus = 'threat';
+    else if (riskScore >= 30) feedStatus = 'scanning'; // medium risk = yellow
+    else feedStatus = 'completed'; // low/minimal = green
+
+    // Log to Agent Center console
+    const riskEmoji = riskScore >= 70 ? '🚨' : riskScore >= 30 ? '⚠️' : '✅';
+    const shortUrl = tab.url.length > 50 ? tab.url.substring(0, 47) + '...' : tab.url;
+    appendAgentConsole(
+      `${riskEmoji} [${category.toUpperCase()}] ${shortUrl} — Risk: ${riskScore}/100 (${confidence}% confidence)`,
+      riskScore >= 70 ? 'error' : riskScore >= 30 ? 'warning' : 'success'
+    );
+
+    // Log Gemini summary
+    if (scanData.summary) {
+      appendAgentConsole(`💡 Gemini: ${scanData.summary.substring(0, 120)}${scanData.summary.length > 120 ? '...' : ''}`, 'info');
+    }
+
+    // Log recommendations
+    if (scanData.recommendations && scanData.recommendations.length > 0) {
+      appendAgentConsole(`📋 Recommendations: ${scanData.recommendations.slice(0, 2).join(' | ')}`, 'info');
+    }
+
+    // Log to floating panel
+    if (window.CyberForgeAgentUI?.fpLog) {
+      window.CyberForgeAgentUI.fpLog(`${riskEmoji} ${category} (${riskScore}/100) — ${shortUrl}`);
+    }
+
+    // Update URL feed with final status
+    _updateLiveUrlFeed(tab.browser, tab.title || shortUrl, tab.url, feedStatus, null, scanData);
+
+    // If alert was created, show toast
+    if (scanData.alertCreated) {
+      if (typeof showToast === 'function') {
+        showToast('warning', '🚨 Security Alert',
+          `${category} threat detected on ${shortUrl} (risk: ${riskScore}/100)`);
+      }
+    }
+
+    // Log performance
+    console.log(`[URLMonitor] Scan complete for ${tab.url}: scraper=${scanData.scraperDuration}ms, ml=${scanData.mlDuration}ms, gemini=${scanData.geminiDuration}ms`);
+
+    return result;
+  }
+
+  /**
+   * Update the live URL scanning feed in the Agent Center UI.
+   * @param {string} browser
+   * @param {string} label
+   * @param {string} url
+   * @param {'detected'|'scanning'|'queued'|'completed'|'threat'} status
+   * @param {string|null} taskId
+   * @param {Object|null} scanData – full scan results from /api/agent/scan-url
+   */
+  function _updateLiveUrlFeed(browser, label, url, status, taskId, scanData) {
+    // Build entry with rich scan data when available
+    const entry = {
+      browser, label, url, status, taskId,
+      time: new Date().toLocaleTimeString(),
+      riskScore: scanData?.riskScore ?? null,
+      category: scanData?.category ?? null,
+      confidence: scanData?.confidence != null ? Math.round(scanData.confidence * 100) : null,
+      summary: scanData?.summary ?? null
+    };
+
+    _urlScanHistory.unshift(entry);
+    if (_urlScanHistory.length > MAX_SCAN_HISTORY) _urlScanHistory.pop();
+
+    // Render into the UI if the element exists
+    const feedContainer = document.getElementById('agent-url-feed');
+    if (!feedContainer) return;
+
+    feedContainer.innerHTML = _urlScanHistory.slice(0, 20).map(e => {
+      const statusBadge = {
+        detected: '<span class="url-status detected">Detected</span>',
+        scanning: '<span class="url-status scanning">Medium Risk</span>',
+        queued: '<span class="url-status queued">Queued</span>',
+        completed: '<span class="url-status completed">Safe</span>',
+        threat: '<span class="url-status threat">Threat</span>'
+      };
+
+      // If we have a risk score, show it instead of generic badge
+      let badge = statusBadge[e.status] || '';
+      if (e.riskScore != null && e.status !== 'detected') {
+        const scoreClass = e.riskScore >= 70 ? 'threat' : e.riskScore >= 30 ? 'scanning' : 'completed';
+        badge = `<span class="url-status ${scoreClass}">${e.riskScore}/100</span>`;
+      }
+
+      const displayLabel = e.label?.length > 40 ? e.label.substring(0, 37) + '...' : (e.label || '');
+      const categoryTag = e.category ? `<span class="url-feed-category">${e.category}</span>` : '';
+
+      return `
+        <div class="url-feed-item" title="${e.summary || e.url || ''}">
+          <span class="url-feed-time">${e.time}</span>
+          <span class="url-feed-browser">${e.browser}</span>
+          <span class="url-feed-label">${displayLabel}</span>
+          ${categoryTag}
+          ${badge}
+        </div>`;
+    }).join('');
+
+    // Also update the floating panel URL feed
+    _updateFloatingPanelUrlFeed();
+  }
+
+  /**
+   * Write a compact URL feed into the floating agent panel.
+   */
+  function _updateFloatingPanelUrlFeed() {
+    const fpFeed = document.getElementById('fp-url-feed');
+    const fpDot = document.getElementById('fp-url-scan-dot');
+    if (!fpFeed) return;
+
+    if (fpDot) fpDot.classList.add('pulse');
+
+    const recent = _urlScanHistory.slice(0, 5);
+    if (recent.length === 0) {
+      fpFeed.innerHTML = '<div class="fp-url-empty">Open a browser to start scanning</div>';
+      return;
+    }
+
+    fpFeed.innerHTML = recent.map(entry => {
+      const statusIcon = { detected: '🔍', scanning: '⏳', queued: '📋', completed: '✅', threat: '🚨' };
+      const icon = statusIcon[entry.status] || '🔍';
+      const displayLabel = (entry.url || entry.label || '').length > 35
+        ? (entry.url || entry.label).substring(0, 32) + '...'
+        : (entry.url || entry.label);
+      return `<div class="fp-url-row">${icon} <span class="fp-url-text" title="${entry.url || ''}">${displayLabel}</span></div>`;
+    }).join('');
+  }
+
   function resolveCurrentUserId() {
     const user = cyberforgeAPI.getCurrentUser?.() || {};
     return user.id || user._id || user.$id || user.userId || 'desktop-user';
@@ -974,6 +1274,8 @@
         syncAgentCenterWithBackend();
         // Start real-time browser intelligence collection (every 60s)
         startBrowserIntelligencePolling(60000);
+        // Start real-time URL monitoring (every 5s)
+        startUrlMonitoring();
         // Immediate first scan
         refreshAgentOpenBrowsers();
       } else {
@@ -990,6 +1292,7 @@
         showToast('info', 'Agent Stopped', 'Backend agent has been stopped.');
         syncAgentCenterWithBackend();
         stopBrowserIntelligencePolling();
+        stopUrlMonitoring();
       } else {
         appendAgentConsole(result?.error || 'Failed to stop agent', 'error');
         showToast('error', 'Agent Stop Failed', result?.error || 'Backend rejected stop request');

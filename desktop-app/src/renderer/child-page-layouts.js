@@ -2555,7 +2555,20 @@ window.ChildPageLayouts = (() => {
             </div>
           </div>
 
-          <!-- Row 3: Agent Console + Event Log -->
+          <!-- Row 3: Real-Time URL Monitor Feed -->
+          <div class="agent-card agent-url-feed-card">
+            <div class="agent-card-header">
+              <span><i class="fas fa-radar"></i> Real-Time URL Monitor</span>
+              <span class="url-feed-badge" id="url-monitor-status">Waiting for agent...</span>
+            </div>
+            <div class="agent-card-body">
+              <div class="agent-url-feed" id="agent-url-feed">
+                <div class="detecting-state"><i class="fas fa-satellite-dish"></i> URL monitoring will start when the agent is running...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: Agent Console + Event Log -->
           <div class="agent-center-row">
             <div class="agent-card agent-console-card">
               <div class="agent-card-header"><i class="fas fa-terminal"></i> Agent Console</div>

@@ -81,6 +81,7 @@ window.electronAPI = {
     // Browser selection and monitoring
     getBrowserList: () => invoke('get_available_browsers'),
     detectSystemBrowsers: () => invoke('detect_system_browsers'),
+    getActiveBrowserUrls: () => invoke('get_active_browser_urls'),
     selectBrowsers: (browserNames) => invoke('select_browsers', { browserNames }).catch(() => ({ success: true, browsers: browserNames })),
     checkDashboardAccess: () => Promise.resolve(true),
     getMonitoringData: () => Promise.resolve([]),
@@ -129,6 +130,7 @@ window.electronAPI = {
         launchBrowser: (browserKey) => Promise.resolve({ success: false, error: 'Use native browser launch' }),
         getAvailableBrowsers: () => invoke('get_available_browsers'),
         detectSystemBrowsers: () => invoke('detect_system_browsers'),
+        getActiveBrowserUrls: () => invoke('get_active_browser_urls'),
 
         // Event listeners for real-time data
         onRequest: (callback) => onEvent('browser-request', (_, data) => callback(data)),

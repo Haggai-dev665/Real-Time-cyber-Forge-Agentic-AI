@@ -55,6 +55,7 @@ fn main() {
             commands::get_available_browsers,
             commands::detect_system_browsers,
             commands::system_monitor_stats,
+            commands::get_active_browser_urls,
         ])
         .setup(|app| {
             log::info!("🚀 CyberForge Tauri app starting...");

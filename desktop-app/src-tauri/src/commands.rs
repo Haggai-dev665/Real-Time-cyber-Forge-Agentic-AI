@@ -625,3 +625,17 @@ pub async fn system_monitor_stats() -> Result<Value, String> {
         "monitoring": false
     }))
 }
+
+/// Get the active tab URL from ALL running browsers.
+/// Uses AppleScript on macOS, xdotool on Linux.
+/// Privacy-conscious — only reads the front tab URL, nothing else.
+#[tauri::command]
+pub async fn get_active_browser_urls() -> Result<Value, String> {
+    let result = tokio::task::spawn_blocking(|| {
+        crate::system::get_active_browser_urls()
+    })
+    .await
+    .map_err(|e| format!("URL monitor task failed: {}", e))?;
+
+    serde_json::to_value(&result).map_err(|e| e.to_string())
+}

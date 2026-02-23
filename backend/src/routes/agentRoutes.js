@@ -7,6 +7,8 @@ const express = require('express');
 const router = express.Router();
 const { agentManager } = require('../agent/AgentManager');
 const { appwriteService } = require('../services/appwriteService');
+const { webScraperAPIService } = require('../services/WebScraperAPIService');
+const { mlServiceClient } = require('../services/mlServiceClient');
 const logger = require('../utils/logger');
 
 /**
@@ -322,6 +324,159 @@ router.get('/browser-intelligence', async (req, res) => {
 
   } catch (error) {
     logger.error('Failed to list browser intelligence:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Direct URL scan — real-time pipeline
+ * Scrapes → Analyses → ML Classification → Gemini Explanation → Returns immediately
+ * POST /api/agent/scan-url
+ *
+ * This is the endpoint the desktop app's URL monitor calls for every new URL
+ * the user visits. No auth required (same as task/create) so the floating agent
+ * can call it without a login token.
+ */
+router.post('/scan-url', async (req, res) => {
+  try {
+    const { url, browser, pageTitle, userId, agentId } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ success: false, error: 'url is required' });
+    }
+
+    logger.info(`🌐 Real-time URL scan requested: ${url} (browser: ${browser || 'unknown'})`);
+
+    // ── Step 1: Web Scraper ──────────────────────────────────────────
+    const scraperStart = Date.now();
+    const scrapedData = await webScraperAPIService.scrapeWebsite(url);
+    const scraperDuration = Date.now() - scraperStart;
+
+    if (!scrapedData.success) {
+      logger.warn(`⚠️ Scraper failed for ${url}: ${scrapedData.error}`);
+      return res.json({
+        success: true,
+        data: {
+          url,
+          scraperSuccess: false,
+          scraperError: scrapedData.error,
+          riskScore: 0,
+          riskLevel: 'unknown',
+          category: 'unreachable',
+          summary: `Could not scrape ${url}: ${scrapedData.error}`,
+          recommendations: ['Verify the URL is correct and accessible'],
+          scraperDuration
+        }
+      });
+    }
+
+    // ── Step 2: Format for analysis ──────────────────────────────────
+    const analysisData = webScraperAPIService.formatForAIAnalysis(scrapedData);
+    const aiContext = webScraperAPIService.generateAIContext(analysisData);
+
+    logger.info(`📊 Scraper risk score for ${url}: ${analysisData.risk_score}/100 (${analysisData.risk_level})`);
+
+    // ── Step 3: ML Classification ────────────────────────────────────
+    let mlOutput;
+    const mlStart = Date.now();
+    try {
+      mlOutput = await mlServiceClient.classifyThreat(analysisData);
+      logger.info(`🤖 ML classification for ${url}: ${mlOutput.category} (score: ${mlOutput.riskScore}, confidence: ${mlOutput.confidence})`);
+    } catch (mlErr) {
+      logger.warn(`⚠️ ML classification failed for ${url}: ${mlErr.message}`);
+      mlOutput = mlServiceClient.fallbackClassification(analysisData);
+    }
+    const mlDuration = Date.now() - mlStart;
+
+    // ── Step 4: Gemini Explanation ────────────────────────────────────
+    let geminiExplanation;
+    const geminiStart = Date.now();
+    try {
+      geminiExplanation = await mlServiceClient.getExplanation(mlOutput);
+      logger.info(`💡 Gemini explanation generated for ${url}`);
+    } catch (geminiErr) {
+      logger.warn(`⚠️ Gemini explanation failed for ${url}: ${geminiErr.message}`);
+      geminiExplanation = {
+        summary: `${mlOutput.category} threat detected (${Math.round(mlOutput.confidence * 100)}% confidence)`,
+        recommendations: ['Block suspicious activity', 'Enable security headers', 'Monitor for similar patterns'],
+        technicalDetails: 'Detailed analysis unavailable'
+      };
+    }
+    const geminiDuration = Date.now() - geminiStart;
+
+    // ── Step 5: Store evidence + create alert if needed ──────────────
+    let alertCreated = false;
+    try {
+      if (mlOutput.riskScore >= 30 && userId) {
+        await appwriteService.createAlert({
+          userId,
+          deviceId: 'desktop',
+          severity: mlOutput.riskScore >= 70 ? 'critical' : mlOutput.riskScore >= 50 ? 'high' : 'medium',
+          source: 'scraper',
+          description: `[${mlOutput.category}] ${geminiExplanation.summary || ''} — ${url}`.substring(0, 4096),
+          evidence: [
+            `URL: ${url}`,
+            `Category: ${mlOutput.category}`,
+            `Browser: ${browser || 'unknown'}`,
+            ...(geminiExplanation.recommendations || []).slice(0, 2)
+          ],
+          confidence: mlOutput.confidence || 0.5,
+          riskScore: mlOutput.riskScore
+        });
+        alertCreated = true;
+        logger.info(`🚨 Alert created for ${url}`);
+      }
+    } catch (alertErr) {
+      logger.warn(`⚠️ Alert creation failed: ${alertErr.message}`);
+    }
+
+    // ── Return full results to desktop app ───────────────────────────
+    res.json({
+      success: true,
+      data: {
+        url,
+        browser: browser || 'unknown',
+        pageTitle: pageTitle || '',
+
+        // Scraper results
+        scraperSuccess: true,
+        scraperDuration,
+        securitySummary: analysisData.security_summary,
+        networkSummary: analysisData.network_summary,
+        performance: analysisData.performance,
+        missingHeaders: analysisData.missing_headers,
+        suspiciousRequests: analysisData.suspicious_requests,
+        externalDomains: analysisData.external_domains,
+
+        // ML classification
+        riskScore: mlOutput.riskScore,
+        riskLevel: analysisData.risk_level,
+        category: mlOutput.category,
+        confidence: mlOutput.confidence,
+        indicators: mlOutput.indicators,
+        mlDuration,
+
+        // Gemini analysis
+        summary: geminiExplanation.summary,
+        recommendations: geminiExplanation.recommendations,
+        technicalDetails: geminiExplanation.technicalDetails,
+        geminiDuration,
+
+        // Alert
+        alertCreated,
+
+        // Full AI context (for the floating agent panel)
+        formattedReport: aiContext,
+
+        scannedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    logger.error(`❌ URL scan failed:`, error);
     res.status(500).json({
       success: false,
       error: error.message

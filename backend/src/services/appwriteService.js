@@ -185,13 +185,13 @@ class AppwriteService {
   async createDocumentWithPermissionFallback(databaseId, collectionId, documentId, document, permissions = [], context = 'document') {
     this.ensureInitialized();
 
-    // Broad any/guests permissions that Appwrite's collection-level mode accepts
-    // NOTE: Permission.write() is deprecated in Appwrite SDK v22+; use granular create/update/delete
+    // Broad any/guests permissions for document-level access.
+    // Appwrite 1.8.x document permissions only accept: read, update, delete, write.
+    // "write" at document level covers update+delete. "create" is NOT valid for documents
+    // (it's a collection-level permission only).
     const anyPermissions = [
       Permission.read(Role.any()),
-      Permission.create(Role.any()),
-      Permission.update(Role.any()),
-      Permission.delete(Role.any())
+      Permission.write(Role.any()),
     ];
 
     try {

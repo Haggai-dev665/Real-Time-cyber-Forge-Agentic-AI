@@ -644,6 +644,8 @@
       if (startResult?.success) {
         setAgentControlStatus(true, 'Agent Online');
         appendAgentConsole('Default agent auto-started', 'success');
+        // Start browser intelligence collection for auto-started agent
+        startBrowserIntelligencePolling(60000);
       } else {
         appendAgentConsole(startResult?.error || 'Auto-start failed', 'warning');
       }

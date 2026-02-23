@@ -186,9 +186,12 @@ class AppwriteService {
     this.ensureInitialized();
 
     // Broad any/guests permissions that Appwrite's collection-level mode accepts
+    // NOTE: Permission.write() is deprecated in Appwrite SDK v22+; use granular create/update/delete
     const anyPermissions = [
       Permission.read(Role.any()),
-      Permission.write(Role.any())
+      Permission.create(Role.any()),
+      Permission.update(Role.any()),
+      Permission.delete(Role.any())
     ];
 
     try {

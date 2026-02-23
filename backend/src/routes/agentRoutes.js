@@ -379,32 +379,16 @@ router.post('/scan-url', async (req, res) => {
 
     logger.info(`📊 Scraper risk score for ${url}: ${analysisData.risk_score}/100 (${analysisData.risk_level})`);
 
-    // ── Step 3: ML Classification ────────────────────────────────────
-    let mlOutput;
+    // ── Step 3: ML Classification (no fallback — real HF ML models) ─
     const mlStart = Date.now();
-    try {
-      mlOutput = await mlServiceClient.classifyThreat(analysisData);
-      logger.info(`🤖 ML classification for ${url}: ${mlOutput.category} (score: ${mlOutput.riskScore}, confidence: ${mlOutput.confidence})`);
-    } catch (mlErr) {
-      logger.warn(`⚠️ ML classification failed for ${url}: ${mlErr.message}`);
-      mlOutput = mlServiceClient.fallbackClassification(analysisData);
-    }
+    const mlOutput = await mlServiceClient.classifyThreat(analysisData);
+    logger.info(`🤖 ML classification for ${url}: ${mlOutput.category} (score: ${mlOutput.riskScore}, confidence: ${mlOutput.confidence})`);
     const mlDuration = Date.now() - mlStart;
 
-    // ── Step 4: Gemini Explanation ────────────────────────────────────
-    let geminiExplanation;
+    // ── Step 4: Gemini Explanation (no fallback — real Gemini API) ────
     const geminiStart = Date.now();
-    try {
-      geminiExplanation = await mlServiceClient.getExplanation(mlOutput);
-      logger.info(`💡 Gemini explanation generated for ${url}`);
-    } catch (geminiErr) {
-      logger.warn(`⚠️ Gemini explanation failed for ${url}: ${geminiErr.message}`);
-      geminiExplanation = {
-        summary: `${mlOutput.category} threat detected (${Math.round(mlOutput.confidence * 100)}% confidence)`,
-        recommendations: ['Block suspicious activity', 'Enable security headers', 'Monitor for similar patterns'],
-        technicalDetails: 'Detailed analysis unavailable'
-      };
-    }
+    const geminiExplanation = await mlServiceClient.getExplanation(mlOutput, analysisData);
+    logger.info(`💡 Gemini explanation generated for ${url}`);
     const geminiDuration = Date.now() - geminiStart;
 
     // ── Step 5: Store evidence + create alert if needed ──────────────
@@ -457,12 +441,17 @@ router.post('/scan-url', async (req, res) => {
         category: mlOutput.category,
         confidence: mlOutput.confidence,
         indicators: mlOutput.indicators,
+        modelPredictions: mlOutput.modelPredictions,
         mlDuration,
 
         // Gemini analysis
         summary: geminiExplanation.summary,
+        fullAnalysis: geminiExplanation.fullAnalysis,
         recommendations: geminiExplanation.recommendations,
         technicalDetails: geminiExplanation.technicalDetails,
+        geminiRiskScore: geminiExplanation.geminiRiskScore,
+        geminiConfidence: geminiExplanation.geminiConfidence,
+        modelUsed: geminiExplanation.modelUsed,
         geminiDuration,
 
         // Alert

@@ -405,7 +405,7 @@ class CyberforgeAgent {
 
     // Step 3: Gemini reasoning (call ML service for explanation)
     const geminiStartTime = Date.now();
-    const geminiExplanation = await this.getGeminiExplanation(mlOutput);
+    const geminiExplanation = await this.getGeminiExplanation(mlOutput, analysisData);
     const geminiDuration = Date.now() - geminiStartTime;
 
     datadogMetrics.recordGeminiUsage(
@@ -459,53 +459,21 @@ class CyberforgeAgent {
    * Calls the Python ML service for threat analysis
    */
   async performMLClassification(analysisData) {
-    try {
-      // Call the ML service
-      const mlResult = await mlServiceClient.classifyThreat(analysisData);
-      
-      logger.info(`✅ ML classification: ${mlResult.category} (score: ${mlResult.riskScore}, confidence: ${mlResult.confidence})`);
-      
-      return mlResult;
-    } catch (error) {
-      logger.error('ML classification failed, using fallback:', error.message);
-      
-      // Fallback to basic classification
-      return {
-        riskScore: analysisData.risk_score || 0,
-        confidence: 0.5,
-        category: analysisData.risk_level === 'critical' ? 'malware' : 
-                  analysisData.risk_level === 'high' ? 'phishing' : 'benign',
-        indicators: ['Fallback classification']
-      };
-    }
+    // No fallback — calls real HF ML models via /analyze-url
+    const mlResult = await mlServiceClient.classifyThreat(analysisData);
+    logger.info(`✅ ML classification: ${mlResult.category} (score: ${mlResult.riskScore}, confidence: ${mlResult.confidence})`);
+    return mlResult;
   }
 
   /**
    * Get Gemini explanation
    * Calls the ML service for AI-generated explanation
    */
-  async getGeminiExplanation(mlOutput) {
-    try {
-      // Call the ML service for explanation
-      const explanation = await mlServiceClient.getExplanation(mlOutput);
-      
-      logger.info(`✅ Gemini explanation generated`);
-      
-      return explanation;
-    } catch (error) {
-      logger.error('Gemini explanation failed, using fallback:', error.message);
-      
-      // Fallback explanation
-      return {
-        summary: `Detected ${mlOutput.category} threat with ${Math.round(mlOutput.confidence * 100)}% confidence`,
-        recommendations: [
-          'Block access to suspicious domains',
-          'Enable additional security headers',
-          'Monitor for similar patterns'
-        ],
-        technicalDetails: 'Detailed analysis unavailable - using fallback explanation'
-      };
-    }
+  async getGeminiExplanation(mlOutput, analysisData) {
+    // No fallback — calls real Gemini via /scan-threats
+    const explanation = await mlServiceClient.getExplanation(mlOutput, analysisData);
+    logger.info(`✅ Gemini explanation generated`);
+    return explanation;
   }
 
   /**

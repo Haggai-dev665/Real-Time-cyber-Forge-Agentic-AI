@@ -25,7 +25,8 @@ const APPWRITE_CONFIG = {
     agents: process.env.APPWRITE_COLLECTION_AGENTS || 'agents',
     agentTasks: process.env.APPWRITE_COLLECTION_AGENT_TASKS || 'agent_tasks',
     alerts: process.env.APPWRITE_COLLECTION_ALERTS || 'alerts',
-    evidenceMetadata: process.env.APPWRITE_COLLECTION_EVIDENCE_METADATA || 'evidence_metadata'
+    evidenceMetadata: process.env.APPWRITE_COLLECTION_EVIDENCE_METADATA || 'evidence_metadata',
+    browserIntelligence: process.env.APPWRITE_COLLECTION_BROWSER_INTELLIGENCE || 'browser_intelligence'
   }
 };
 

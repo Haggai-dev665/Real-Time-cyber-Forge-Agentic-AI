@@ -231,4 +231,102 @@ router.get('/alerts', async (req, res) => {
   }
 });
 
+// ==================== BROWSER INTELLIGENCE ====================
+
+/**
+ * Save browser intelligence snapshot from desktop agent
+ * POST /api/agent/browser-intelligence
+ */
+router.post('/browser-intelligence', async (req, res) => {
+  try {
+    const {
+      userId,
+      deviceId,
+      os,
+      osDisplay,
+      defaultBrowser,
+      browsers,
+      scanTimestamp
+    } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    if (!browsers || !Array.isArray(browsers)) {
+      return res.status(400).json({
+        success: false,
+        error: 'browsers array is required'
+      });
+    }
+
+    const result = await appwriteService.saveBrowserIntelligence({
+      userId,
+      deviceId,
+      os,
+      osDisplay,
+      defaultBrowser,
+      browsers,
+      scanTimestamp
+    });
+
+    res.json({
+      success: true,
+      message: 'Browser intelligence saved',
+      data: {
+        documentId: result.$id,
+        installedCount: browsers.filter(b => b.isInstalled).length,
+        runningCount: browsers.filter(b => b.isRunning).length
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to save browser intelligence:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * Get browser intelligence history for a user
+ * GET /api/agent/browser-intelligence?userId=xxx&limit=20
+ */
+router.get('/browser-intelligence', async (req, res) => {
+  try {
+    const { userId, limit } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const snapshots = await appwriteService.listBrowserIntelligence(
+      userId,
+      limit ? parseInt(limit, 10) : 20
+    );
+
+    res.json({
+      success: true,
+      data: {
+        count: snapshots.length,
+        snapshots
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to list browser intelligence:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

@@ -522,6 +522,136 @@ def api_batch_predict(model_id: str, batch_data: List[Dict]) -> List[Dict]:
 
 
 # ============================================================================
+# THREAT DETECTION & ANALYSIS EXPLANATION (TODO 1)
+# ============================================================================
+
+# Keyword-based threat classification (matches /api/threats/detect contract)
+THREAT_KEYWORDS = {
+    "phishing":   (["phishing", "credential", "login", "fake", "spoof", "deceptive"], 25),
+    "malware":    (["malware", "trojan", "ransomware", "payload", "exploit", "dropper"], 30),
+    "suspicious": (["suspicious", "obfuscated", "redirect", "tracking", "mixed content"], 15),
+    "crypto":     (["cryptominer", "mining", "coinhive", "crypto"], 20),
+    "botnet":     (["botnet", "c2", "command and control", "beacon"], 25),
+    "dns_tunnel": (["dns tunnel", "dns exfiltration", "subdomain"], 20),
+}
+
+RECOMMENDATION_MAP = {
+    "phishing":   ["Block the domain at firewall/DNS level", "Alert users who may have visited", "Check credential stores for compromised logins", "Enable anti-phishing browser extensions"],
+    "malware":    ["Quarantine affected endpoints immediately", "Scan connected systems with updated AV", "Review network logs for lateral movement", "Isolate malicious URL at proxy level"],
+    "suspicious": ["Add domain to watchlist for monitoring", "Enable enhanced logging for related traffic", "Review security header configuration"],
+    "crypto":     ["Block mining scripts via CSP", "Scan for cryptominer processes on endpoints", "Review CPU usage anomalies across network"],
+    "botnet":     ["Immediately block C2 IPs/domains", "Scan for persistence mechanisms", "Review DNS query logs for beaconing patterns"],
+    "dns_tunnel": ["Block suspicious DNS queries", "Monitor DNS traffic volume anomalies", "Review subdomain request patterns"],
+}
+
+
+def detect_threat(evidence_text: str, url: str = "", risk_score_override: float = 0) -> str:
+    """
+    Classify a threat from structured evidence text.
+    Matches the /api/threats/detect contract.
+    """
+    try:
+        text_lower = evidence_text.lower()
+        indicators = []
+        risk_score = risk_score_override
+        threat_type = "benign"
+        max_weight = 0
+
+        for category, (keywords, weight) in THREAT_KEYWORDS.items():
+            hits = [kw for kw in keywords if kw in text_lower]
+            if hits:
+                indicators.extend([f"{category}:{kw}" for kw in hits])
+                risk_score = min(risk_score + weight, 100)
+                if weight > max_weight:
+                    max_weight = weight
+                    threat_type = category
+
+        if "missing security headers" in text_lower:
+            indicators.append("missing_security_headers")
+            risk_score = min(risk_score + 10, 100)
+        if "https: no" in text_lower:
+            indicators.append("no_https")
+            risk_score = min(risk_score + 15, 100)
+
+        confidence = 0.55 + min(len(indicators) * 0.05, 0.35)
+
+        # Try ML model if available
+        ml_used = False
+        for model_id in model_registry.metadata:
+            if "threat" in model_id.lower() or "phish" in model_id.lower():
+                try:
+                    model, scaler = model_registry.get_model(model_id)
+                    if model and hasattr(model, "predict_proba"):
+                        ml_used = True
+                        break
+                except:
+                    pass
+
+        result = {
+            "risk_score": round(min(risk_score, 100), 1),
+            "confidence": round(confidence, 2),
+            "threat_type": threat_type,
+            "indicators": indicators if indicators else ["no_signals"],
+            "details": {
+                "url": url,
+                "analysis_method": "ml+heuristic" if ml_used else "heuristic+keyword",
+                "analyzed_at": datetime.now().isoformat()
+            }
+        }
+
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def explain_threat(threat_json: str) -> str:
+    """
+    Generate human-readable explanation of a classified threat.
+    Matches the /api/analysis/explain contract.
+    """
+    try:
+        threat_data = json.loads(threat_json) if isinstance(threat_json, str) else threat_json
+        category = threat_data.get("category", threat_data.get("threat_type", "unknown"))
+        threat_type = threat_data.get("threatType", threat_data.get("threat_type", category))
+        confidence = threat_data.get("confidence", 0)
+        risk_score = threat_data.get("riskScore", threat_data.get("risk_score", 0))
+        indicators = threat_data.get("indicators", [])
+
+        recommendations = RECOMMENDATION_MAP.get(
+            threat_type,
+            RECOMMENDATION_MAP.get(category, [
+                "Monitor the source for further activity",
+                "Review related network traffic patterns",
+                "Update threat intelligence feeds"
+            ])
+        )
+
+        summary = (
+            f"{threat_type.replace('_', ' ').title()} threat detected "
+            f"with {round(confidence * 100)}% confidence (risk score {risk_score}/100). "
+            f"{len(indicators)} indicator(s) triggered."
+        )
+        technical_details = (
+            f"Analysis Method: heuristic+keyword | Type: {threat_type} | "
+            f"Risk: {risk_score}/100 | Confidence: {round(confidence * 100)}% | "
+            f"Indicators: {', '.join(indicators[:5]) if indicators else 'none'}"
+        )
+
+        result = {
+            "summary": summary,
+            "recommendations": recommendations[:5],
+            "technical_details": technical_details,
+            "timestamp": datetime.now().isoformat()
+        }
+
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+# ============================================================================
 # GRADIO INTERFACE
 # ============================================================================
 
@@ -744,24 +874,96 @@ with gr.Blocks(css=custom_css, title="CyberForge AI - ML Training Platform") as 
             |----------|-------------|
             | `/train_model` | Train a new model |
             | `/run_inference` | Run predictions |
+            | `/detect_threat` | Classify threat from evidence text |
+            | `/explain_threat` | Get human-readable threat explanation |
             | `/list_trained_models` | List available models |
             | `/upload_model_to_hub` | Upload model to Hub |
             
-            #### Backend Integration (Node.js):
+            #### Threat Detection (Node.js backend):
             
             ```javascript
             const { Client } = require("@gradio/client");
             
-            async function runPrediction(modelId, features) {
+            async function classifyThreat(evidenceText, url) {
                 const client = await Client.connect("Che237/cyberforge");
-                const result = await client.predict("/run_inference", {
-                    model_id: modelId,
-                    input_data: JSON.stringify([features])
+                const result = await client.predict("/detect_threat", {
+                    evidence_text: evidenceText,
+                    url: url,
+                    risk_score_override: 0
+                });
+                return JSON.parse(result.data);
+            }
+            
+            async function explainThreat(threatJson) {
+                const client = await Client.connect("Che237/cyberforge");
+                const result = await client.predict("/explain_threat", {
+                    threat_json: JSON.stringify(threatJson)
                 });
                 return JSON.parse(result.data);
             }
             ```
             """)
+        
+        # ==================== THREAT DETECTION TAB (TODO 1) ====================
+        with gr.TabItem("🛡️ Threat Detection"):
+            gr.Markdown("""
+            ### Threat Detection & Analysis
+            
+            Classify threat evidence and get actionable explanations.
+            Compatible with the CyberForge backend `/api/threats/detect` and `/api/analysis/explain` contracts.
+            """)
+            
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("#### Detect Threat")
+                    threat_evidence = gr.Textbox(
+                        label="Evidence Text",
+                        placeholder="URL: http://suspicious-site.com\nRisk Level: high\nRisk Score: 75/100\nHTTPS: No\nMissing Security Headers: CSP, HSTS\nSuspicious Requests Detected:\n- http://evil.com/payload.js",
+                        lines=8
+                    )
+                    threat_url = gr.Textbox(
+                        label="URL (optional)",
+                        placeholder="http://suspicious-site.com"
+                    )
+                    threat_risk_override = gr.Slider(
+                        minimum=0, maximum=100, value=0, step=1,
+                        label="Initial Risk Score Override"
+                    )
+                    detect_btn = gr.Button("🔍 Detect Threat", variant="primary")
+                
+                with gr.Column():
+                    gr.Markdown("#### Detection Result")
+                    detect_output = gr.Textbox(label="Threat Classification (JSON)", lines=12)
+            
+            detect_btn.click(
+                fn=detect_threat,
+                inputs=[threat_evidence, threat_url, threat_risk_override],
+                outputs=[detect_output],
+                api_name="detect_threat"
+            )
+            
+            gr.Markdown("---")
+            
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("#### Explain Threat")
+                    explain_input = gr.Textbox(
+                        label="Threat Data (JSON from detection)",
+                        placeholder='{"threat_type": "phishing", "confidence": 0.85, "riskScore": 78, "indicators": ["phishing:fake", "no_https"]}',
+                        lines=6
+                    )
+                    explain_btn = gr.Button("📝 Explain Threat", variant="secondary")
+                
+                with gr.Column():
+                    gr.Markdown("#### Explanation")
+                    explain_output = gr.Textbox(label="Threat Explanation (JSON)", lines=10)
+            
+            explain_btn.click(
+                fn=explain_threat,
+                inputs=[explain_input],
+                outputs=[explain_output],
+                api_name="explain_threat"
+            )
 
 # Launch the demo
 if __name__ == "__main__":

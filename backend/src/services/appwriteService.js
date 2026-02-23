@@ -344,7 +344,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.services.databases.createDocument(
+      const result = await this.createDocumentWithPermissionFallback(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agents,
         generatedAgentId,
@@ -353,7 +353,8 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ]
+        ],
+        'agent registration'
       );
       
       logger.info(`✅ Agent registered: ${result.$id}`);
@@ -719,6 +720,93 @@ class AppwriteService {
   }
 
   // ==================== EVIDENCE METADATA ====================
+
+  // ==================== BROWSER INTELLIGENCE ====================
+
+  /**
+   * Save browser intelligence snapshot from the desktop agent
+   * @param {Object} data - Browser detection result from Rust agent
+   * @returns {Promise<Object>} Created document
+   */
+  async saveBrowserIntelligence(data) {
+    this.ensureInitialized();
+
+    const {
+      userId,
+      deviceId,
+      os,
+      osDisplay,
+      defaultBrowser,
+      browsers = [],
+      scanTimestamp
+    } = data;
+
+    const docId = ID.unique();
+
+    // Flatten browsers array to JSON string for Appwrite storage
+    const document = {
+      user_id: userId,
+      device_id: deviceId || '',
+      os: (os || 'unknown').substring(0, 64),
+      os_display: (osDisplay || os || 'unknown').substring(0, 128),
+      default_browser: (defaultBrowser || 'unknown').substring(0, 128),
+      browsers_json: JSON.stringify(browsers).substring(0, 16384),
+      installed_count: browsers.filter(b => b.isInstalled).length,
+      running_count: browsers.filter(b => b.isRunning).length,
+      scan_timestamp: scanTimestamp || new Date().toISOString(),
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      const result = await this.createDocumentWithPermissionFallback(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.browserIntelligence,
+        docId,
+        document,
+        userId ? [
+          Permission.read(Role.user(userId)),
+          Permission.update(Role.user(userId)),
+          Permission.delete(Role.user(userId))
+        ] : [],
+        'browser intelligence'
+      );
+
+      logger.info(`✅ Browser intelligence saved: ${result.$id}`);
+      return result;
+    } catch (error) {
+      logger.error('❌ Failed to save browser intelligence:', JSON.stringify(error?.response || error?.message || error));
+      throw error;
+    }
+  }
+
+  /**
+   * List browser intelligence snapshots for a user
+   */
+  async listBrowserIntelligence(userId, limit = 20) {
+    this.ensureInitialized();
+
+    try {
+      const result = await this.services.databases.listDocuments(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.browserIntelligence,
+        [
+          Query.equal('user_id', userId),
+          Query.orderDesc('created_at'),
+          Query.limit(limit)
+        ]
+      );
+
+      return result.documents.map(doc => ({
+        ...doc,
+        browsers: (() => { try { return JSON.parse(doc.browsers_json || '[]'); } catch { return []; } })()
+      }));
+    } catch (error) {
+      logger.error(`❌ Failed to list browser intelligence for ${userId}:`, JSON.stringify(error?.response || error?.message || error));
+      throw error;
+    }
+  }
+
+  // ==================== EVIDENCE METADATA (continued) ====================
 
   /**
    * Store evidence metadata (not raw data)

@@ -885,6 +885,69 @@ class AppwriteService {
       throw error;
     }
   }
+
+  // ==================== BROWSER INTELLIGENCE ====================
+
+  /**
+   * Persist a browser intelligence snapshot
+   */
+  async createBrowserIntelligenceSnapshot(snapshotData) {
+    this.ensureInitialized();
+
+    const docId = ID.unique();
+    const document = {
+      snapshot_id: docId,
+      session_count: snapshotData.session_count || 0,
+      total_domains: snapshotData.total_domains || 0,
+      total_alerts: snapshotData.total_alerts || 0,
+      average_risk: snapshotData.average_risk || 0,
+      sessions_json: (snapshotData.sessions_json || '[]').substring(0, 16384),
+      device_id: snapshotData.device_id || 'unknown',
+      user_id: snapshotData.user_id || 'system',
+      created_at: snapshotData.created_at || new Date().toISOString()
+    };
+
+    try {
+      const result = await this.createDocumentWithPermissionFallback(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.browserIntelligence,
+        docId,
+        document,
+        [],
+        'browser intelligence snapshot'
+      );
+
+      logger.info(`✅ Browser intelligence snapshot stored: ${result.$id}`);
+      return result;
+    } catch (error) {
+      logger.error('❌ Failed to store browser intelligence snapshot:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the latest browser intelligence snapshot
+   */
+  async getLatestBrowserIntelligence() {
+    this.ensureInitialized();
+
+    try {
+      const { Query } = require('node-appwrite');
+      const result = await this.services.databases.listDocuments(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.browserIntelligence,
+        [
+          Query.orderDesc('created_at'),
+          Query.limit(1)
+        ]
+      );
+
+      return result.documents.length > 0 ? result.documents[0] : null;
+    } catch (error) {
+      logger.error('❌ Failed to get latest browser intelligence:', error.message);
+      throw error;
+    }
+  }
 }
 
 // Singleton instance

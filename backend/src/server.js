@@ -32,6 +32,7 @@ const featuresRoutes = require('./routes/features');
 const otxRoutes = require('./routes/otx');
 const childPagesRoutes = require('./routes/child-pages');
 const agentRoutes = require('./routes/agentRoutes');
+const browserIntelligenceRoutes = require('./routes/browser-intelligence');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
@@ -146,6 +147,7 @@ class CyberForgeServer {
     this.app.use('/api/cyberforge-ml', mlRoutes);  // CyberForge ML prediction API
     this.app.use('/api/otx', otxRoutes);           // OTX threat intelligence
     this.app.use('/api/agent', agentRoutes);       // TODO 1: Agent control and management
+    this.app.use('/api/browser-intelligence', browserIntelligenceRoutes); // TODO 2: Browser Intelligence Engine
     
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);

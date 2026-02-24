@@ -639,3 +639,65 @@ pub async fn get_active_browser_urls() -> Result<Value, String> {
 
     serde_json::to_value(&result).map_err(|e| e.to_string())
 }
+
+// ──────────────────────────────────────────────
+// BROWSER INTELLIGENCE COMMANDS
+// ──────────────────────────────────────────────
+
+/// Process a URL through the Browser Intelligence Engine.
+/// Called by the JS renderer after each URL poll.
+/// Returns any new behavioral alerts generated.
+#[tauri::command]
+pub async fn process_browser_intelligence(
+    browser: String,
+    browser_key: String,
+    url: String,
+    title: String,
+) -> Result<Value, String> {
+    let alerts = tokio::task::spawn_blocking(move || {
+        crate::system::process_url_observation(&browser, &browser_key, &url, &title)
+    })
+    .await
+    .map_err(|e| format!("Intelligence processing failed: {}", e))?;
+
+    serde_json::to_value(&alerts).map_err(|e| e.to_string())
+}
+
+/// Feed ML risk score from the scan pipeline back into the intelligence engine.
+#[tauri::command]
+pub async fn feed_intelligence_ml_risk(
+    browser_key: String,
+    risk_score: f64,
+) -> Result<Value, String> {
+    tokio::task::spawn_blocking(move || {
+        crate::system::feed_ml_risk_score(&browser_key, risk_score);
+    })
+    .await
+    .map_err(|e| format!("ML risk feed failed: {}", e))?;
+
+    Ok(serde_json::json!({ "success": true }))
+}
+
+/// Get intelligence snapshot: all sessions, alerts, metrics.
+#[tauri::command]
+pub async fn get_intelligence_snapshot() -> Result<Value, String> {
+    let snapshot = tokio::task::spawn_blocking(|| {
+        crate::system::get_intelligence_snapshot()
+    })
+    .await
+    .map_err(|e| format!("Snapshot failed: {}", e))?;
+
+    serde_json::to_value(&snapshot).map_err(|e| e.to_string())
+}
+
+/// Get current intelligence configuration.
+#[tauri::command]
+pub async fn get_intelligence_config() -> Result<Value, String> {
+    let config = tokio::task::spawn_blocking(|| {
+        crate::system::get_intelligence_config()
+    })
+    .await
+    .map_err(|e| format!("Config read failed: {}", e))?;
+
+    serde_json::to_value(&config).map_err(|e| e.to_string())
+}

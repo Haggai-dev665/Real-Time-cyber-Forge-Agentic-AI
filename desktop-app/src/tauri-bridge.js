@@ -86,6 +86,14 @@ window.electronAPI = {
     checkDashboardAccess: () => Promise.resolve(true),
     getMonitoringData: () => Promise.resolve([]),
 
+    // Browser Intelligence Engine
+    processBrowserIntelligence: (browser, browserKey, url, title) =>
+        invoke('process_browser_intelligence', { browser, browserKey, url, title }),
+    feedIntelligenceMlRisk: (browserKey, riskScore) =>
+        invoke('feed_intelligence_ml_risk', { browserKey, riskScore }),
+    getIntelligenceSnapshot: () => invoke('get_intelligence_snapshot'),
+    getIntelligenceConfig: () => invoke('get_intelligence_config'),
+
     // AI interface
     queryAI: (query) => invoke('query_ai', { query }).catch(() => 'AI service unavailable'),
 
@@ -119,6 +127,11 @@ window.electronAPI = {
     onNetworkResponseData: (callback) => onEvent('network-response-data', callback),
     onNetworkRequestData: (callback) => onEvent('network-request-data', callback),
     onSecurityWarning: (callback) => onEvent('security-warning', callback),
+
+    // Browser Intelligence events
+    onSessionUpdate: (callback) => onEvent('session-update', callback),
+    onBehavioralAlert: (callback) => onEvent('behavioral-alert', callback),
+    onRiskScoreUpdate: (callback) => onEvent('risk-score-update', callback),
 
     // System-wide browser monitor
     systemMonitor: {

@@ -56,6 +56,11 @@ fn main() {
             commands::detect_system_browsers,
             commands::system_monitor_stats,
             commands::get_active_browser_urls,
+            // Browser Intelligence Engine
+            commands::process_browser_intelligence,
+            commands::feed_intelligence_ml_risk,
+            commands::get_intelligence_snapshot,
+            commands::get_intelligence_config,
         ])
         .setup(|app| {
             log::info!("🚀 CyberForge Tauri app starting...");

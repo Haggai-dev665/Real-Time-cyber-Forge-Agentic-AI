@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/professional-components.css">
     <link rel="stylesheet" href="css/agent-ui-redesign.css">
     <link rel="stylesheet" href="css/threat-globe.css">
+    <link rel="stylesheet" href="css/browser-intelligence.css">
     <link rel="stylesheet" href="css/palette-override.css">
 
     <style>
@@ -187,9 +188,22 @@
                             </ul>
                         </li>
                         <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="browser-intel">
+                                <i class="fas fa-brain"></i>
+                                <span>Browser Intelligence</span>
+                                <span class="sidebar-nav-badge live-badge" id="intel-risk-badge">0</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="intel-sessions">Active Sessions</a></li>
+                                <li><a class="sidebar-child-link" data-screen="intel-alerts">Behavioral Alerts <span class="child-badge" id="intel-alerts-count">0</span></a></li>
+                                <li><a class="sidebar-child-link" data-screen="intel-domains">Domain Graph</a></li>
+                                <li><a class="sidebar-child-link" data-screen="intel-config">Configuration</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link" data-screen="http-history">
                                 <i class="fas fa-history"></i>
-                                <span>Browser Intelligence</span>
+                                <span>HTTP History</span>
                             </a>
                             <ul class="sidebar-nav-children">
                                 <li><a class="sidebar-child-link" data-screen="http-all">HTTP History</a></li>
@@ -677,6 +691,18 @@
                 </div>
                 <div class="fp-url-feed" id="fp-url-feed">
                     <div class="fp-url-empty">Open a browser to start scanning</div>
+                </div>
+            </div>
+
+            <!-- Behavioral Intelligence Alerts -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-brain"></i>
+                    BEHAVIORAL ALERTS
+                    <span class="fp-behavioral-badge" id="fp-behavioral-count">0</span>
+                </div>
+                <div class="fp-behavioral-alerts" id="fp-behavioral-alerts">
+                    <div class="fp-empty">No behavioral alerts</div>
                 </div>
             </div>
         </div>

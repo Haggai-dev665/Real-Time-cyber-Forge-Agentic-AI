@@ -125,6 +125,21 @@ fn handle_backend_message(app: &AppHandle, message: &serde_json::Value) {
                 let _ = app.emit("ai-insight", data.clone());
             }
         }
+        "session_update" => {
+            if let Some(data) = message.get("data") {
+                let _ = app.emit("session-update", data.clone());
+            }
+        }
+        "behavioral_alert" => {
+            if let Some(data) = message.get("data") {
+                let _ = app.emit("behavioral-alert", data.clone());
+            }
+        }
+        "risk_score_update" => {
+            if let Some(data) = message.get("data") {
+                let _ = app.emit("risk-score-update", data.clone());
+            }
+        }
         "heartbeat" | "heartbeat_response" | "connection_acknowledged" => {
             // Silent
         }

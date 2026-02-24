@@ -1,0 +1,21 @@
+{
+  "weights": {
+    "domain_switch_rate": 15.0,
+    "redirect_count": 10.0,
+    "suspicious_tld": 20.0,
+    "ml_risk_average": 30.0,
+    "http_downgrade": 15.0,
+    "rapid_switch_bonus": 10.0
+  },
+  "rapid_switch_threshold": 3,
+  "rapid_switch_window_secs": 15,
+  "alert_threshold": 40.0,
+  "max_domain_history": 200,
+  "suspicious_tlds": [
+    ".zip", ".top", ".xyz", ".tk", ".ml", ".ga", ".cf", ".gq",
+    ".buzz", ".icu", ".cam", ".rest", ".quest", ".surf", ".click",
+    ".loan", ".racing", ".win", ".bid", ".stream", ".download",
+    ".review", ".cricket", ".science", ".party", ".date"
+  ],
+  "session_timeout_secs": 1800
+}

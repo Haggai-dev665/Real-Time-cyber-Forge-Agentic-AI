@@ -60,6 +60,8 @@
     sidebarListenersBound: false
   };
 
+  const AUTH_PAGE_PATH = 'auth-page-v2.html';
+
   // =========================================
   // TOAST NOTIFICATION SYSTEM
   // =========================================
@@ -2798,8 +2800,9 @@
     // Listen for auth expiry
     cyberforgeAPI.on('auth:expired', handleAuthExpired);
     
-    // Ensure token is loaded from Electron before connecting
-    await cyberforgeAPI.initFromElectron();
+    // Ensure token/session is valid before loading dashboard runtime
+    const sessionReady = await bootstrapAuthSession();
+    if (!sessionReady) return;
     
     // Connect to backend and load data
     await connectToBackend();
@@ -3042,10 +3045,12 @@
     cyberforgeAPI.logout();
     
     // Redirect to login page
-    window.location.href = 'auth-page.html';
+    window.location.href = AUTH_PAGE_PATH;
   }
 
-  async function handleAuthExpired() {
+  async function handleAuthExpired(options = {}) {
+    const immediate = Boolean(options.immediate);
+
     // Check with Electron if user is actually authenticated in secure storage
     if (typeof window !== 'undefined' && window.electronAPI?.auth?.isAuthenticated) {
       try {
@@ -3065,9 +3070,45 @@
     
     // Only redirect if truly expired
     showNotification('Session Expired', 'Please log in again.');
+    if (immediate) {
+      window.location.href = AUTH_PAGE_PATH;
+      return;
+    }
+
     setTimeout(() => {
-      window.location.href = 'auth-page.html';
+      window.location.href = AUTH_PAGE_PATH;
     }, 1500);
+  }
+
+  async function bootstrapAuthSession() {
+    await cyberforgeAPI.initFromElectron();
+
+    const token = cyberforgeAPI.token || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    if (!token) {
+      window.location.href = AUTH_PAGE_PATH;
+      return false;
+    }
+
+    cyberforgeAPI.token = token;
+
+    const profileResult = await cyberforgeAPI.getProfile();
+    if (profileResult?.success) {
+      return true;
+    }
+
+    const refreshed = await cyberforgeAPI.refreshAuthToken();
+    if (!refreshed) {
+      await handleAuthExpired({ immediate: true });
+      return false;
+    }
+
+    const postRefreshProfile = await cyberforgeAPI.getProfile();
+    if (postRefreshProfile?.success) {
+      return true;
+    }
+
+    await handleAuthExpired({ immediate: true });
+    return false;
   }
 
   function bindHeaderControls() {
@@ -3113,16 +3154,28 @@
   }
 
   function initTheme() {
-    const saved = localStorage.getItem('cyberforge-theme') || 'light';
-    document.documentElement.setAttribute('data-theme', saved);
-    updateThemeIcon(saved);
+    const provider = window.CyberForgeTheme;
+    const mode = provider ? provider.initTheme('light') : (localStorage.getItem('cyberforge-theme') || 'light');
+
+    if (!provider) {
+      document.documentElement.setAttribute('data-theme', mode);
+    }
+
+    updateThemeIcon(mode);
   }
 
   function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('cyberforge-theme', next);
+    const provider = window.CyberForgeTheme;
+    const next = provider
+      ? provider.toggleTheme()
+      : (() => {
+          const current = document.documentElement.getAttribute('data-theme') || 'light';
+          const resolved = current === 'light' ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', resolved);
+          localStorage.setItem('cyberforge-theme', resolved);
+          return resolved;
+        })();
+
     updateThemeIcon(next);
     
     // Update globe theme if it exists

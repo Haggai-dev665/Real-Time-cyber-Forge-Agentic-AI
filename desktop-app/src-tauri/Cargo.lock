@@ -582,6 +582,7 @@ dependencies = [
  "env_logger",
  "futures-util",
  "keyring",
+ "lazy_static",
  "log",
  "reqwest 0.12.28",
  "serde",

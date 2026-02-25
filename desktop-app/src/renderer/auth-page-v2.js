@@ -18,7 +18,14 @@ const WS_URL = (localStorage.getItem('cyberforge_backend_url') || _HEROKU).repla
 const authState = {
     isConnected: false,
     isLoading: false,
+    isBootstrapping: true,
     currentForm: 'login' // 'login', 'register', 'reset'
+};
+
+const AUTH_STORAGE_KEYS = {
+    token: 'authToken',
+    refreshToken: 'refreshToken',
+    user: 'user'
 };
 
 // =====================================================
@@ -73,12 +80,147 @@ function navigateToDashboard() {
 // INITIALIZATION
 // =====================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 180ms ease-out';
+
+    initializeTheme();
     initializeElements();
-    checkServerConnection();
     setupEventListeners();
-    animateEntrance();
+
+    const hasSession = await bootstrapAuthSession();
+    if (!hasSession) {
+        checkServerConnection();
+        animateEntrance();
+        document.body.style.opacity = '1';
+    }
+
+    authState.isBootstrapping = false;
 });
+
+function initializeTheme() {
+    if (window.CyberForgeTheme) {
+        window.CyberForgeTheme.initTheme('light');
+        return;
+    }
+
+    const saved = localStorage.getItem('cyberforge-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+}
+
+async function bootstrapAuthSession() {
+    const electronToken = await tryHydrateSessionFromSecureStorage();
+    const token = electronToken
+        || sessionStorage.getItem(AUTH_STORAGE_KEYS.token)
+        || localStorage.getItem(AUTH_STORAGE_KEYS.token);
+
+    if (!token) {
+        return false;
+    }
+
+    const valid = await validateTokenWithProfile(token);
+    if (valid) {
+        navigateToDashboard();
+        return true;
+    }
+
+    const refreshed = await trySilentRefresh(token);
+    if (refreshed) {
+        navigateToDashboard();
+        return true;
+    }
+
+    clearAuthStorage();
+    return false;
+}
+
+async function tryHydrateSessionFromSecureStorage() {
+    if (!(typeof window !== 'undefined' && window.electronAPI?.auth)) {
+        return null;
+    }
+
+    try {
+        const auth = await window.electronAPI.auth.isAuthenticated();
+        if (!auth?.authenticated) return null;
+
+        const [tokenResult, userResult] = await Promise.all([
+            window.electronAPI.auth.getToken(),
+            window.electronAPI.auth.getUser()
+        ]);
+
+        const token = tokenResult?.token;
+        if (!token) return null;
+
+        localStorage.setItem(AUTH_STORAGE_KEYS.token, token);
+
+        if (userResult?.success && userResult?.user) {
+            localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(userResult.user));
+        }
+
+        return token;
+    } catch (error) {
+        console.warn('Secure auth hydration failed:', error?.message || error);
+        return null;
+    }
+}
+
+async function validateTokenWithProfile(token) {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+        return response.ok;
+    } catch (_) {
+        return false;
+    }
+}
+
+async function trySilentRefresh(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ refreshToken: token })
+        });
+
+        if (!response.ok) return false;
+
+        const payload = await response.json();
+        const auth = normalizeAuthResponse(payload);
+        if (!auth.success || !auth.token) return false;
+
+        localStorage.setItem(AUTH_STORAGE_KEYS.token, auth.token);
+        if (auth.user) {
+            localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(auth.user));
+        }
+
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function clearAuthStorage() {
+    localStorage.removeItem(AUTH_STORAGE_KEYS.token);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.user);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.token);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.user);
+}
 
 function initializeElements() {
     elements.loginForm = document.getElementById('login-form');
@@ -256,7 +398,7 @@ async function handleLogin(event) {
         if (useIPC) {
             // Use Electron IPC for persistent login (stores in electron-store)
             console.log('📡 Using Electron IPC for login...');
-            data = await window.electronAPI.auth.login({ email, password });
+            data = await window.electronAPI.auth.login({ email, password, rememberMe });
         } else {
             // Fallback to direct API call (web mode)
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -283,6 +425,12 @@ async function handleLogin(event) {
         if (auth.success && auth.token) {
             // Also store in localStorage for api-client.js to use
             const storage = rememberMe ? localStorage : sessionStorage;
+            const secondaryStorage = rememberMe ? sessionStorage : localStorage;
+
+            secondaryStorage.removeItem(AUTH_STORAGE_KEYS.token);
+            secondaryStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
+            secondaryStorage.removeItem(AUTH_STORAGE_KEYS.user);
+
             storage.setItem('authToken', auth.token);
             if (auth.refreshToken) {
                 storage.setItem('refreshToken', auth.refreshToken);
@@ -664,3 +812,86 @@ window.showRegisterForm = showRegisterForm;
 window.showResetPassword = showResetPassword;
 window.togglePassword = togglePassword;
 window.checkPasswordStrength = checkPasswordStrength;
+
+// =====================================================
+// VISUAL ENHANCEMENTS (no auth logic changes)
+// =====================================================
+
+/**
+ * Theme toggle button handler.
+ * Delegates to CyberForgeTheme if available, otherwise manual toggle.
+ */
+(function initVisualEnhancements() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-toggle-icon');
+
+    function updateThemeIcon(theme) {
+        if (!themeIcon) return;
+        themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    }
+
+    // Set initial icon based on current theme
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    updateThemeIcon(currentTheme);
+
+    // Listen for theme changes from CyberForgeTheme
+    document.addEventListener('cyberforge:theme-changed', (e) => {
+        updateThemeIcon(e.detail?.theme);
+    });
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            if (window.CyberForgeTheme) {
+                window.CyberForgeTheme.toggleTheme();
+            } else {
+                const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+                const next = cur === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('cyberforge-theme', next);
+                updateThemeIcon(next);
+            }
+        });
+    }
+
+    /**
+     * Enhanced form switching — focus first input after transition.
+     */
+    const origShowLogin = window.showLoginForm;
+    const origShowRegister = window.showRegisterForm;
+    const origShowReset = window.showResetPassword;
+
+    window.showLoginForm = function () {
+        origShowLogin();
+        requestAnimationFrame(() => {
+            document.getElementById('login-email')?.focus();
+        });
+    };
+
+    window.showRegisterForm = function () {
+        origShowRegister();
+        requestAnimationFrame(() => {
+            document.getElementById('register-firstname')?.focus();
+        });
+    };
+
+    window.showResetPassword = function () {
+        origShowReset();
+        requestAnimationFrame(() => {
+            document.getElementById('reset-email')?.focus();
+        });
+    };
+
+    /**
+     * Enhanced password toggle — add visual feedback class.
+     */
+    const origTogglePassword = window.togglePassword;
+    window.togglePassword = function (inputId) {
+        origTogglePassword(inputId);
+        const input = document.getElementById(inputId);
+        const btn = input?.parentElement?.querySelector('.password-toggle');
+        if (btn) {
+            const isText = input.type === 'text';
+            btn.classList.toggle('toggled', isText);
+        }
+    };
+})();

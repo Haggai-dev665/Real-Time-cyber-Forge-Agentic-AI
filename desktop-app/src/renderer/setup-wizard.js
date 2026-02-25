@@ -48,7 +48,7 @@
      First-run guard
      ════════════════════════════════════════════ */
   if (localStorage.getItem('cyberforge_setup_complete') === 'true') {
-    window.location.href = 'auth-page.html';
+    window.location.href = 'auth-page-v2.html';
   }
 
   /* ════════════════════════════════════════════
@@ -822,10 +822,10 @@
     if (typeof gsap !== 'undefined') {
       gsap.to('.wizard-shell', {
         opacity: 0, scale: 0.98, duration: 0.5,
-        onComplete: function () { window.location.href = 'auth-page.html'; }
+        onComplete: function () { window.location.href = 'auth-page-v2.html'; }
       });
     } else {
-      window.location.href = 'auth-page.html';
+      window.location.href = 'auth-page-v2.html';
     }
   };
 

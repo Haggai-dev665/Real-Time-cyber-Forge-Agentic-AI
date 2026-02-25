@@ -1,294 +1,271 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Forge - Agentic AI Security Platform</title>
-    
-    <!-- External Dependencies -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <title>CyberForge — Secure Authentication</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Advanced Motion & Animation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-    
-    <!-- Motion Illustrations CDN - unDraw SVG Illustrations -->
-    <script>
-        // Load unDraw illustration dynamically
-        window.UNDRAW_ILLUSTRATION_LOGIN = 'https://illustrations.popsy.co/violet/person-coding.svg';
-        window.UNDRAW_ILLUSTRATION_REGISTER = 'https://illustrations.popsy.co/violet/remote-work.svg';
-    </script>
-    
-    <!-- Modern Glassmorphism Auth Styles -->
-    <link rel="stylesheet" href="css/auth-styles-v2.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Enterprise Auth Stylesheet -->
+    <link rel="stylesheet" href="css/enterprise-auth.css">
 </head>
 <body>
+
     <div class="auth-container">
-        
-        <!-- =====================================================
-             LEFT SIDE - AI VISUAL PANEL
-             ===================================================== -->
+
+        <!-- ═══════════════════════════════════════════════════════════
+             LEFT PANEL — Visual Identity / Brand
+             ═══════════════════════════════════════════════════════════ -->
         <div class="auth-visual">
-            <!-- Animated Background -->
-            <div class="visual-background">
-                <div class="visual-grid"></div>
-                <div class="orb orb-1"></div>
-                <div class="orb orb-2"></div>
-                <div class="orb orb-3"></div>
+
+            <!-- Background layers -->
+            <div class="auth-visual-bg">
+                <div class="auth-grid"></div>
+                <div class="auth-scan-line"></div>
+                <div class="auth-vignette"></div>
             </div>
-            
-            <!-- Main Content -->
-            <div class="visual-content">
-                <!-- AI Illustration -->
-                <div class="ai-illustration">
-                    <div class="illustration-glow"></div>
-                    <!-- Security/Work Illustration - Simple SVG -->
-                    <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain;">
-                        <!-- Person working on laptop with security shield -->
-                        <defs>
-                            <linearGradient id="personGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#656D3F;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#7a8349;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        
-                        <!-- Background circle -->
-                        <circle cx="250" cy="250" r="180" fill="rgba(101, 109, 63, 0.1)" />
-                        
-                        <!-- Person sitting -->
-                        <ellipse cx="250" cy="350" rx="60" ry="20" fill="#BFC9D1" opacity="0.3" />
-                        
-                        <!-- Laptop -->
-                        <rect x="180" y="300" width="140" height="80" rx="5" fill="#25343F" />
-                        <rect x="185" y="305" width="130" height="60" rx="3" fill="#E8E2D8" />
-                        <line x1="180" y1="380" x2="140" y2="400" stroke="#25343F" stroke-width="8" stroke-linecap="round" />
-                        <line x1="320" y1="380" x2="360" y2="400" stroke="#25343F" stroke-width="8" stroke-linecap="round" />
-                        <rect x="130" y="398" width="240" height="4" rx="2" fill="#25343F" />
-                        
-                        <!-- Person body -->
-                        <ellipse cx="250" cy="280" rx="35" ry="50" fill="url(#personGrad2)" />
-                        
-                        <!-- Person head -->
-                        <circle cx="250" cy="220" r="30" fill="#E8E2D8" />
-                        
-                        <!-- Hair -->
-                        <path d="M 220 220 Q 220 190 250 190 Q 280 190 280 220" fill="#25343F" />
-                        
-                        <!-- Arms -->
-                        <ellipse cx="220" cy="290" rx="15" ry="40" fill="#E8E2D8" transform="rotate(-30 220 290)" />
-                        <ellipse cx="280" cy="290" rx="15" ry="40" fill="#E8E2D8" transform="rotate(30 280 290)" />
-                        
-                        <!-- Security shield -->
-                        <path d="M 380 150 L 380 200 Q 380 240 350 250 Q 380 240 380 200 L 380 150 Z" fill="none" stroke="#656D3F" stroke-width="3" />
-                        <path d="M 350 120 L 420 120 L 420 210 Q 420 250 385 270 Q 350 250 350 210 Z" fill="rgba(101, 109, 63, 0.2)" stroke="#656D3F" stroke-width="4" />
-                        <text x="385" y="185" font-size="40" fill="#656D3F" text-anchor="middle">🛡</text>
-                        
-                        <!-- Code/data lines on laptop screen -->
-                        <line x1="195" y1="320" x2="260" y2="320" stroke="#656D3F" stroke-width="2" opacity="0.6" />
-                        <line x1="195" y1="335" x2="240" y2="335" stroke="#656D3F" stroke-width="2" opacity="0.6" />
-                        <line x1="195" y1="350" x2="280" y2="350" stroke="#656D3F" stroke-width="2" opacity="0.6" />
+
+            <!-- Foreground content -->
+            <div class="auth-visual-content">
+
+                <!-- Brand lockup -->
+                <div class="auth-brand">
+                    <svg class="auth-brand-shield" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path d="M12 3L20 7V12C20 16.4 16.5 20.5 12 21.5C7.5 20.5 4 16.4 4 12V7L12 3Z" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 12L11 14L15 10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                    </svg>
+                    <span class="auth-brand-name">CYBERFORGE</span>
+                </div>
+
+                <!-- Animated network mesh illustration -->
+                <div class="auth-illustration">
+                    <svg viewBox="0 0 400 400" class="auth-illustration-svg" aria-hidden="true">
+
+                        <!-- Security perimeter rings -->
+                        <circle class="ill-ring" cx="200" cy="200" r="180" style="--ill-dur:90s"/>
+                        <circle class="ill-ring ill-ring-dashed" cx="200" cy="200" r="148" style="--ill-dur:70s;--ill-dir:reverse"/>
+                        <circle class="ill-ring" cx="200" cy="200" r="112" style="--ill-dur:80s"/>
+                        <circle class="ill-ring ill-ring-dashed" cx="200" cy="200" r="78" style="--ill-dur:60s"/>
+
+                        <!-- Node connection lines -->
+                        <g class="ill-lines">
+                            <line x1="200" y1="200" x2="200" y2="25"/>
+                            <line x1="200" y1="200" x2="345" y2="85"/>
+                            <line x1="200" y1="200" x2="375" y2="215"/>
+                            <line x1="200" y1="200" x2="305" y2="345"/>
+                            <line x1="200" y1="200" x2="200" y2="375"/>
+                            <line x1="200" y1="200" x2="95" y2="345"/>
+                            <line x1="200" y1="200" x2="25" y2="215"/>
+                            <line x1="200" y1="200" x2="55" y2="85"/>
+                        </g>
+
+                        <!-- Cross-connections between outer nodes -->
+                        <g class="ill-lines ill-lines-cross">
+                            <line x1="200" y1="25" x2="345" y2="85"/>
+                            <line x1="345" y1="85" x2="375" y2="215"/>
+                            <line x1="375" y1="215" x2="305" y2="345"/>
+                            <line x1="305" y1="345" x2="200" y2="375"/>
+                            <line x1="200" y1="375" x2="95" y2="345"/>
+                            <line x1="95" y1="345" x2="25" y2="215"/>
+                            <line x1="25" y1="215" x2="55" y2="85"/>
+                            <line x1="55" y1="85" x2="200" y2="25"/>
+                        </g>
+
+                        <!-- Outer network nodes -->
+                        <g class="ill-nodes">
+                            <circle cx="200" cy="25" r="5" style="--d:0s"/>
+                            <circle cx="345" cy="85" r="4.5" style="--d:0.8s"/>
+                            <circle cx="375" cy="215" r="5" style="--d:1.6s"/>
+                            <circle cx="305" cy="345" r="4.5" style="--d:2.4s"/>
+                            <circle cx="200" cy="375" r="5" style="--d:0.4s"/>
+                            <circle cx="95" cy="345" r="4.5" style="--d:1.2s"/>
+                            <circle cx="25" cy="215" r="5" style="--d:2s"/>
+                            <circle cx="55" cy="85" r="4.5" style="--d:2.8s"/>
+                        </g>
+
+                        <!-- Inner satellite nodes -->
+                        <g class="ill-sats">
+                            <circle cx="258" cy="128" r="2.5" style="--d:3s"/>
+                            <circle cx="285" cy="272" r="2.5" style="--d:3.6s"/>
+                            <circle cx="128" cy="280" r="2.5" style="--d:4.2s"/>
+                            <circle cx="118" cy="132" r="2.5" style="--d:4.8s"/>
+                            <circle cx="200" cy="120" r="2" style="--d:5.2s"/>
+                            <circle cx="280" cy="200" r="2" style="--d:5.8s"/>
+                            <circle cx="200" cy="280" r="2" style="--d:6.4s"/>
+                            <circle cx="120" cy="200" r="2" style="--d:7s"/>
+                        </g>
+
+                        <!-- Central shield -->
+                        <g class="ill-shield">
+                            <path class="ill-shield-fill" d="M200 138 L235 154 L235 195 Q235 218 200 232 Q165 218 165 195 L165 154 Z"/>
+                            <path class="ill-shield-stroke" d="M200 138 L235 154 L235 195 Q235 218 200 232 Q165 218 165 195 L165 154 Z"/>
+                            <path class="ill-check" d="M186 185 L196 195 L216 172"/>
+                        </g>
+
+                        <!-- Scanning sweep -->
+                        <line class="ill-scan" x1="0" y1="200" x2="400" y2="200"/>
+
                     </svg>
                 </div>
-                
-                <!-- Title -->
-                <div class="visual-title">
-                    <h1>Cyber Forge</h1>
-                    <p>AI-Powered Threat Analysis & Real-Time Security Intelligence</p>
-                </div>
-                
-                <!-- Feature Cards -->
-                <div class="feature-cards">
-                    <div class="feature-card">
-                        <div class="feature-card-icon">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <div class="feature-card-text">
-                            <h4>AI Analysis</h4>
-                            <p>ML-powered detection</p>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-card-icon">
-                            <i class="fas fa-shield-halved"></i>
-                        </div>
-                        <div class="feature-card-text">
-                            <h4>Real-Time Protection</h4>
-                            <p>24/7 monitoring</p>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-card-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="feature-card-text">
-                            <h4>Agentic AI</h4>
-                            <p>Autonomous response</p>
-                        </div>
-                    </div>
+
+                <!-- Tagline -->
+                <p class="auth-tagline">Intelligence. Precision. Control.</p>
+
+                <!-- Feature badges -->
+                <div class="auth-features">
+                    <span class="auth-feature">
+                        <i class="fas fa-shield-halved"></i>
+                        Threat Analysis
+                    </span>
+                    <span class="auth-feature">
+                        <i class="fas fa-brain"></i>
+                        AI Detection
+                    </span>
+                    <span class="auth-feature">
+                        <i class="fas fa-network-wired"></i>
+                        Real-Time Intel
+                    </span>
                 </div>
             </div>
         </div>
-        
-        <!-- =====================================================
-             RIGHT SIDE - AUTH FORMS PANEL
-             ===================================================== -->
+
+
+        <!-- ═══════════════════════════════════════════════════════════
+             RIGHT PANEL — Authentication Forms
+             ═══════════════════════════════════════════════════════════ -->
         <div class="auth-panel">
-            <div class="form-wrapper">
-                
-                <!-- Connection Status -->
+            <div class="auth-panel-scroll">
+
+                <!-- Theme toggle -->
+                <button class="auth-theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
+                    <i class="fas fa-moon" id="theme-toggle-icon"></i>
+                </button>
+
+                <!-- Connection status -->
                 <div class="connection-badge" id="connection-status">
                     <span class="connection-dot"></span>
-                    <span id="connection-text">Connected to server</span>
+                    <span id="connection-text">Connecting...</span>
                 </div>
-                
-                <!-- LOGIN FORM -->
+
+
+                <!-- ═══ LOGIN FORM ═══ -->
                 <div class="auth-form-card" id="login-form">
                     <div class="form-header">
                         <h2>Welcome Back</h2>
                         <p>Sign in to access your security dashboard</p>
                     </div>
-                    
+
                     <form id="login-form-element" onsubmit="return false;">
-                        <!-- Email -->
                         <div class="form-group">
-                            <label class="form-label" for="login-email">
-                                <i class="fas fa-envelope"></i>
-                                Email Address
-                            </label>
-                            <input type="email" 
-                                   id="login-email" 
-                                   name="email" 
-                                   class="form-input" 
-                                   placeholder="analyst@company.com" 
-                                   required 
+                            <label class="form-label" for="login-email">Email Address</label>
+                            <input type="email"
+                                   id="login-email"
+                                   name="email"
+                                   class="form-input"
+                                   placeholder="analyst@company.com"
+                                   required
                                    autocomplete="email">
                         </div>
-                        
-                        <!-- Password -->
+
                         <div class="form-group">
-                            <label class="form-label" for="login-password">
-                                <i class="fas fa-lock"></i>
-                                Password
-                            </label>
+                            <label class="form-label" for="login-password">Password</label>
                             <div class="password-wrapper">
-                                <input type="password" 
-                                       id="login-password" 
-                                       name="password" 
-                                       class="form-input" 
-                                       placeholder="Enter your password" 
-                                       required 
+                                <input type="password"
+                                       id="login-password"
+                                       name="password"
+                                       class="form-input"
+                                       placeholder="Enter your password"
+                                       required
                                        autocomplete="current-password">
-                                <button type="button" class="password-toggle" onclick="togglePassword('login-password')">
+                                <button type="button" class="password-toggle" onclick="togglePassword('login-password')" aria-label="Toggle password visibility">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
                         </div>
-                        
-                        <!-- Options Row -->
+
                         <div class="form-options">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="remember-me" name="remember" class="checkbox-input" checked>
-                                <span class="checkbox-custom"><i class="fas fa-check"></i></span>
+                                <span class="checkbox-custom"></span>
                                 Remember me
                             </label>
                             <a href="#" class="forgot-link" onclick="showResetPassword()">Forgot password?</a>
                         </div>
-                        
-                        <!-- Submit Button -->
+
                         <button type="submit" class="btn-primary" id="login-btn" onclick="handleLogin()">
                             <span class="btn-text">Sign In</span>
-                            <span class="btn-loader"><div class="spinner"></div></span>
+                            <span class="btn-loader"><span class="spinner"></span></span>
                             <i class="fas fa-arrow-right btn-icon"></i>
                         </button>
                     </form>
-                    
-                    <!-- Divider -->
-                    <div class="auth-divider">
-                        <span>or continue with</span>
-                    </div>
-                    
-                    <!-- Google Sign In -->
+
+                    <div class="auth-divider"><span>or continue with</span></div>
+
                     <button class="btn-google" id="google-login-btn" onclick="handleGoogleAuth()">
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
                         <span>Continue with Google</span>
                     </button>
-                    
-                    <!-- Switch to Register -->
+
                     <div class="auth-switch">
                         <p>Don't have an account? <a href="#" onclick="showRegisterForm()">Create Account</a></p>
                     </div>
                 </div>
-                
-                <!-- REGISTER FORM -->
+
+
+                <!-- ═══ REGISTER FORM ═══ -->
                 <div class="auth-form-card hidden" id="register-form">
                     <div class="form-header">
                         <h2>Create Account</h2>
                         <p>Join the next generation of cybersecurity</p>
                     </div>
-                    
+
                     <form id="register-form-element" onsubmit="return false;">
-                        <!-- Name Row -->
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label" for="register-firstname">
-                                    <i class="fas fa-user"></i>
-                                    First Name
-                                </label>
-                                <input type="text" 
-                                       id="register-firstname" 
-                                       name="firstName" 
-                                       class="form-input" 
-                                       placeholder="John" 
+                                <label class="form-label" for="register-firstname">First Name</label>
+                                <input type="text"
+                                       id="register-firstname"
+                                       name="firstName"
+                                       class="form-input"
+                                       placeholder="John"
                                        required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="register-lastname">
-                                    <i class="fas fa-user"></i>
-                                    Last Name
-                                </label>
-                                <input type="text" 
-                                       id="register-lastname" 
-                                       name="lastName" 
-                                       class="form-input" 
-                                       placeholder="Doe" 
+                                <label class="form-label" for="register-lastname">Last Name</label>
+                                <input type="text"
+                                       id="register-lastname"
+                                       name="lastName"
+                                       class="form-input"
+                                       placeholder="Doe"
                                        required>
                             </div>
                         </div>
-                        
-                        <!-- Email -->
+
                         <div class="form-group">
-                            <label class="form-label" for="register-email">
-                                <i class="fas fa-envelope"></i>
-                                Email Address
-                            </label>
-                            <input type="email" 
-                                   id="register-email" 
-                                   name="email" 
-                                   class="form-input" 
-                                   placeholder="analyst@company.com" 
-                                   required 
+                            <label class="form-label" for="register-email">Email Address</label>
+                            <input type="email"
+                                   id="register-email"
+                                   name="email"
+                                   class="form-input"
+                                   placeholder="analyst@company.com"
+                                   required
                                    autocomplete="email">
                         </div>
-                        
-                        <!-- Role -->
+
                         <div class="form-group">
-                            <label class="form-label" for="register-role">
-                                <i class="fas fa-briefcase"></i>
-                                Role
-                            </label>
+                            <label class="form-label" for="register-role">Role</label>
                             <select id="register-role" name="role" class="form-select" required>
                                 <option value="">Select your role</option>
                                 <option value="user">Security User</option>
@@ -296,23 +273,19 @@
                                 <option value="admin">Administrator</option>
                             </select>
                         </div>
-                        
-                        <!-- Password -->
+
                         <div class="form-group">
-                            <label class="form-label" for="register-password">
-                                <i class="fas fa-lock"></i>
-                                Password
-                            </label>
+                            <label class="form-label" for="register-password">Password</label>
                             <div class="password-wrapper">
-                                <input type="password" 
-                                       id="register-password" 
-                                       name="password" 
-                                       class="form-input" 
-                                       placeholder="Create a strong password" 
-                                       required 
+                                <input type="password"
+                                       id="register-password"
+                                       name="password"
+                                       class="form-input"
+                                       placeholder="Create a strong password"
+                                       required
                                        autocomplete="new-password"
                                        oninput="checkPasswordStrength(this.value)">
-                                <button type="button" class="password-toggle" onclick="togglePassword('register-password')">
+                                <button type="button" class="password-toggle" onclick="togglePassword('register-password')" aria-label="Toggle password visibility">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -323,125 +296,127 @@
                                 <span class="strength-text" id="strength-text">Password strength</span>
                             </div>
                         </div>
-                        
-                        <!-- Confirm Password -->
+
                         <div class="form-group">
-                            <label class="form-label" for="register-confirm-password">
-                                <i class="fas fa-lock"></i>
-                                Confirm Password
-                            </label>
+                            <label class="form-label" for="register-confirm-password">Confirm Password</label>
                             <div class="password-wrapper">
-                                <input type="password" 
-                                       id="register-confirm-password" 
-                                       name="confirmPassword" 
-                                       class="form-input" 
-                                       placeholder="Confirm your password" 
-                                       required 
+                                <input type="password"
+                                       id="register-confirm-password"
+                                       name="confirmPassword"
+                                       class="form-input"
+                                       placeholder="Confirm your password"
+                                       required
                                        autocomplete="new-password">
-                                <button type="button" class="password-toggle" onclick="togglePassword('register-confirm-password')">
+                                <button type="button" class="password-toggle" onclick="togglePassword('register-confirm-password')" aria-label="Toggle password visibility">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
                         </div>
-                        
-                        <!-- Terms Checkbox -->
-                        <div class="form-options" style="margin-top: 16px;">
+
+                        <div class="form-options terms-row">
                             <label class="checkbox-label terms-label">
                                 <input type="checkbox" id="terms-agree" name="terms" class="checkbox-input" required>
-                                <span class="checkbox-custom"><i class="fas fa-check"></i></span>
+                                <span class="checkbox-custom"></span>
                                 I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
                             </label>
                         </div>
-                        
-                        <!-- Submit Button -->
+
                         <button type="submit" class="btn-primary" id="register-btn" onclick="handleRegister()">
                             <span class="btn-text">Create Account</span>
-                            <span class="btn-loader"><div class="spinner"></div></span>
+                            <span class="btn-loader"><span class="spinner"></span></span>
                             <i class="fas fa-arrow-right btn-icon"></i>
                         </button>
                     </form>
-                    
-                    <!-- Divider -->
-                    <div class="auth-divider">
-                        <span>or continue with</span>
-                    </div>
-                    
-                    <!-- Google Sign Up -->
+
+                    <div class="auth-divider"><span>or continue with</span></div>
+
                     <button class="btn-google" onclick="handleGoogleAuth()">
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
                         <span>Continue with Google</span>
                     </button>
-                    
-                    <!-- Switch to Login -->
+
                     <div class="auth-switch">
                         <p>Already have an account? <a href="#" onclick="showLoginForm()">Sign In</a></p>
                     </div>
                 </div>
-                
-                <!-- RESET PASSWORD FORM -->
+
+
+                <!-- ═══ RESET PASSWORD FORM ═══ -->
                 <div class="auth-form-card hidden" id="reset-form">
-                    <div class="form-header" style="position: relative;">
-                        <button class="back-btn" onclick="showLoginForm()">
+                    <div class="form-header form-header--reset">
+                        <button class="back-btn" type="button" onclick="showLoginForm()" aria-label="Back to login">
                             <i class="fas fa-arrow-left"></i>
                         </button>
                         <h2>Reset Password</h2>
                         <p>Enter your email to receive reset instructions</p>
                     </div>
-                    
+
                     <form id="reset-form-element" onsubmit="return false;">
-                        <!-- Email -->
                         <div class="form-group">
-                            <label class="form-label" for="reset-email">
-                                <i class="fas fa-envelope"></i>
-                                Email Address
-                            </label>
-                            <input type="email" 
-                                   id="reset-email" 
-                                   name="email" 
-                                   class="form-input" 
-                                   placeholder="analyst@company.com" 
+                            <label class="form-label" for="reset-email">Email Address</label>
+                            <input type="email"
+                                   id="reset-email"
+                                   name="email"
+                                   class="form-input"
+                                   placeholder="analyst@company.com"
                                    required>
                         </div>
-                        
-                        <!-- Submit Button -->
+
                         <button type="submit" class="btn-primary" id="reset-btn" onclick="handleResetPassword()">
                             <span class="btn-text">Send Reset Link</span>
-                            <span class="btn-loader"><div class="spinner"></div></span>
+                            <span class="btn-loader"><span class="spinner"></span></span>
                             <i class="fas fa-paper-plane btn-icon"></i>
                         </button>
                     </form>
-                    
-                    <!-- Switch to Login -->
+
                     <div class="auth-switch">
                         <p>Remember your password? <a href="#" onclick="showLoginForm()">Sign In</a></p>
                     </div>
                 </div>
-                
+
+
+                <!-- ═══ Trust Signals ═══ -->
+                <div class="auth-trust">
+                    <div class="auth-trust-item">
+                        <i class="fas fa-lock"></i>
+                        <span>End-to-end encrypted session</span>
+                    </div>
+                    <div class="auth-trust-item">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Secure authentication via Appwrite</span>
+                    </div>
+                    <div class="auth-trust-item">
+                        <i class="fas fa-robot"></i>
+                        <span>Session monitored by CyberForge Agent</span>
+                    </div>
+                </div>
+
                 <!-- Footer -->
                 <div class="auth-footer">
-                    <p>&copy; 2024 Cyber Forge AI. All rights reserved.</p>
+                    <p>&copy; 2025 CyberForge AI. All rights reserved.</p>
                     <div class="footer-links">
                         <a href="#">Privacy</a>
                         <a href="#">Terms</a>
                         <a href="#">Support</a>
                     </div>
                 </div>
+
             </div>
         </div>
+
     </div>
-    
+
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
-    
-    <!-- Tauri Bridge -->
-    <script src="../tauri-bridge.js"></script>
 
-    <!-- Auth Script -->
+    <!-- Runtime Scripts (no heavy animation libs) -->
+    <script src="../tauri-bridge.js"></script>
+    <script src="utils/theme-provider.js"></script>
     <script src="auth-page-v2.js"></script>
 </body>
 </html>

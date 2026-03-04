@@ -8,6 +8,7 @@ mod auth;
 mod websocket;
 mod system;
 mod state;
+mod distributed;
 
 use state::AppState;
 use std::sync::Arc;
@@ -61,9 +62,26 @@ fn main() {
             commands::feed_intelligence_ml_risk,
             commands::get_intelligence_snapshot,
             commands::get_intelligence_config,
+            // TODO 4: Distributed Intelligence
+            commands::get_node_identity,
+            commands::register_node,
+            commands::sync_telemetry,
+            commands::get_sync_state,
+            commands::get_distributed_status,
+            commands::get_risk_weight_table,
+            commands::get_global_metrics,
+            commands::get_node_statuses,
+            commands::get_correlations,
+            commands::apply_risk_adjustment,
         ])
         .setup(|app| {
             log::info!("🚀 CyberForge Tauri app starting...");
+
+            // TODO 4: Initialize node identity on startup (non-blocking)
+            std::thread::spawn(|| {
+                let identity = distributed::initialize_node_identity();
+                log::info!("🆔 Node identity initialized: {}", identity.node_id);
+            });
 
             // Spawn background WebSocket connection to backend
             let app_handle = app.handle().clone();

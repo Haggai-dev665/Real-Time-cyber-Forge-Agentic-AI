@@ -33,6 +33,7 @@ const otxRoutes = require('./routes/otx');
 const childPagesRoutes = require('./routes/child-pages');
 const agentRoutes = require('./routes/agentRoutes');
 const browserIntelligenceRoutes = require('./routes/browser-intelligence');
+const distributedRoutes = require('./routes/distributed');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
@@ -148,6 +149,7 @@ class CyberForgeServer {
     this.app.use('/api/otx', otxRoutes);           // OTX threat intelligence
     this.app.use('/api/agent', agentRoutes);       // TODO 1: Agent control and management
     this.app.use('/api/browser-intelligence', browserIntelligenceRoutes); // TODO 2: Browser Intelligence Engine
+    this.app.use('/api/distributed', distributedRoutes); // TODO 4: Distributed Intelligence
     
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);
@@ -167,8 +169,8 @@ class CyberForgeServer {
 
     // Serve the built cyberforge-landing page in production
     if (process.env.NODE_ENV === 'production') {
-      // Serve static files from the built landing page
-      const landingPath = path.join(__dirname, '../../cyberforge-landing/dist');
+      // Serve static files from the built landing page (output by Vite into backend/public)
+      const landingPath = path.join(__dirname, '../public');
       this.app.use(express.static(landingPath));
       
       // API status endpoint
@@ -195,7 +197,17 @@ class CyberForgeServer {
           });
         }
         // Serve the React app for any other routes
-        res.sendFile(path.join(landingPath, 'index.html'));
+        const indexPath = path.join(landingPath, 'index.html');
+        const fs = require('fs');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(503).json({
+            error: 'Landing page not built',
+            message: 'Run "cd cyberforge-landing && npm run build" to generate the landing page.',
+            expected: indexPath
+          });
+        }
       });
     } else {
       // 404 handler for development

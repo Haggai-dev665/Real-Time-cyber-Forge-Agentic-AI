@@ -701,3 +701,196 @@ pub async fn get_intelligence_config() -> Result<Value, String> {
 
     serde_json::to_value(&config).map_err(|e| e.to_string())
 }
+
+// ──────────────────────────────────────────────
+// TODO 4: DISTRIBUTED INTELLIGENCE COMMANDS
+// All new, isolated commands for the distributed intelligence system.
+// These do NOT modify any existing command or state above.
+// ──────────────────────────────────────────────
+
+/// Get the local node identity (UUID, fingerprint, platform info).
+#[tauri::command]
+pub async fn get_node_identity() -> Result<Value, String> {
+    let identity = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_node_identity()
+    })
+    .await
+    .map_err(|e| format!("Node identity failed: {}", e))?;
+
+    serde_json::to_value(&identity).map_err(|e| e.to_string())
+}
+
+/// Register this node with the backend distributed intelligence service.
+#[tauri::command]
+pub async fn register_node(state: State<'_, SharedState>) -> Result<Value, String> {
+    let (backend_url, auth_token) = {
+        let s = state.lock().await;
+        (s.backend_url.clone(), s.auth_token.clone())
+    };
+
+    let result = crate::distributed::register_node_with_backend(
+        &backend_url,
+        auth_token.as_deref(),
+    )
+    .await;
+
+    match result {
+        Ok(resp) => serde_json::to_value(&resp).map_err(|e| e.to_string()),
+        Err(e) => Ok(serde_json::json!({
+            "success": false,
+            "error": e
+        })),
+    }
+}
+
+/// Sync telemetry data to the backend.
+#[tauri::command]
+pub async fn sync_telemetry(state: State<'_, SharedState>) -> Result<Value, String> {
+    let (backend_url, auth_token) = {
+        let s = state.lock().await;
+        (s.backend_url.clone(), s.auth_token.clone())
+    };
+
+    let result = crate::distributed::sync_telemetry(
+        &backend_url,
+        auth_token.as_deref(),
+    )
+    .await;
+
+    match result {
+        Ok(sync_result) => serde_json::to_value(&sync_result).map_err(|e| e.to_string()),
+        Err(e) => Ok(serde_json::json!({
+            "success": false,
+            "error": e
+        })),
+    }
+}
+
+/// Get the current telemetry sync state.
+#[tauri::command]
+pub async fn get_sync_state() -> Result<Value, String> {
+    let sync_state = crate::distributed::get_sync_state();
+    serde_json::to_value(&sync_state).map_err(|e| e.to_string())
+}
+
+/// Get a comprehensive distributed system status overview.
+#[tauri::command]
+pub async fn get_distributed_status() -> Result<Value, String> {
+    let identity = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_node_identity()
+    })
+    .await
+    .map_err(|e| format!("Identity failed: {}", e))?;
+
+    let sync_state = crate::distributed::get_sync_state();
+    let weight_table = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_weight_table()
+    })
+    .await
+    .map_err(|e| format!("Weight table failed: {}", e))?;
+
+    let node_statuses = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_node_statuses()
+    })
+    .await
+    .map_err(|e| format!("Node statuses failed: {}", e))?;
+
+    let global_metrics = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_global_metrics()
+    })
+    .await
+    .map_err(|e| format!("Global metrics failed: {}", e))?;
+
+    let broadcast_count = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_broadcast_count()
+    })
+    .await
+    .map_err(|e| format!("Broadcast count failed: {}", e))?;
+
+    Ok(serde_json::json!({
+        "nodeIdentity": serde_json::to_value(&identity).unwrap_or_default(),
+        "syncState": serde_json::to_value(&sync_state).unwrap_or_default(),
+        "weightTable": serde_json::to_value(&weight_table).unwrap_or_default(),
+        "connectedNodes": node_statuses.len(),
+        "nodeStatuses": serde_json::to_value(&node_statuses).unwrap_or_default(),
+        "globalMetrics": serde_json::to_value(&global_metrics).unwrap_or_default(),
+        "broadcastCount": broadcast_count,
+        "timestamp": chrono::Utc::now().to_rfc3339()
+    }))
+}
+
+/// Get the current risk weight table from distributed intelligence.
+#[tauri::command]
+pub async fn get_risk_weight_table() -> Result<Value, String> {
+    let table = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_weight_table()
+    })
+    .await
+    .map_err(|e| format!("Weight table failed: {}", e))?;
+
+    serde_json::to_value(&table).map_err(|e| e.to_string())
+}
+
+/// Get global metrics from the distributed intelligence network.
+#[tauri::command]
+pub async fn get_global_metrics() -> Result<Value, String> {
+    let metrics = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_global_metrics()
+    })
+    .await
+    .map_err(|e| format!("Global metrics failed: {}", e))?;
+
+    match metrics {
+        Some(m) => serde_json::to_value(&m).map_err(|e| e.to_string()),
+        None => Ok(serde_json::json!({
+            "available": false,
+            "message": "No global metrics received yet"
+        })),
+    }
+}
+
+/// Get statuses of all known distributed nodes.
+#[tauri::command]
+pub async fn get_node_statuses() -> Result<Value, String> {
+    let statuses = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_node_statuses()
+    })
+    .await
+    .map_err(|e| format!("Node statuses failed: {}", e))?;
+
+    serde_json::to_value(&statuses).map_err(|e| e.to_string())
+}
+
+/// Get recent cross-node correlation results.
+#[tauri::command]
+pub async fn get_correlations() -> Result<Value, String> {
+    let correlations = tokio::task::spawn_blocking(|| {
+        crate::distributed::get_correlations()
+    })
+    .await
+    .map_err(|e| format!("Correlations failed: {}", e))?;
+
+    serde_json::to_value(&correlations).map_err(|e| e.to_string())
+}
+
+/// Apply distributed risk adjustment to a base score for a given domain.
+/// Returns: { baseScore, multiplier, adjustedScore }
+#[tauri::command]
+pub async fn apply_risk_adjustment(
+    base_score: f64,
+    domain: String,
+) -> Result<Value, String> {
+    let (multiplier, adjusted) = tokio::task::spawn_blocking(move || {
+        let mult = crate::distributed::get_risk_multiplier(&domain);
+        let adj = crate::distributed::apply_distributed_risk_adjustment(base_score, &domain);
+        (mult, adj)
+    })
+    .await
+    .map_err(|e| format!("Risk adjustment failed: {}", e))?;
+
+    Ok(serde_json::json!({
+        "baseScore": base_score,
+        "multiplier": multiplier,
+        "adjustedScore": adjusted
+    }))
+}

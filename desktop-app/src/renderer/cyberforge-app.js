@@ -181,6 +181,8 @@
 
   async function connectToBackend() {
     try {
+      updateConnectionStatus(state.backendConnected, { pending: true });
+
       // Ensure token is loaded before making any requests
       console.log('🔑 Current token status:', cyberforgeAPI.token ? 'present' : 'missing');
       
@@ -188,7 +190,7 @@
       if (health.success) {
         state.backendConnected = true;
         console.log('✅ Connected to CyberForge backend');
-        updateConnectionStatus(true);
+        updateConnectionStatus(true, { checkedAt: new Date() });
         showToast('success', 'Connected', 'Successfully connected to CyberForge backend');
         
         // Connect WebSocket for real-time updates (token should be set now)
@@ -212,7 +214,7 @@
     } catch (error) {
       console.warn('⚠️ Backend not available:', error.message);
       state.backendConnected = false;
-      updateConnectionStatus(false);
+      updateConnectionStatus(false, { checkedAt: new Date() });
       showToast('warning', 'Offline Mode', 'Backend not available. Connect to start capturing.');
     }
   }
@@ -321,11 +323,41 @@
     }
   }
 
-  function updateConnectionStatus(connected) {
+  function updateConnectionStatus(connected, options = {}) {
+    const pending = Boolean(options.pending);
+    const checkedAt = options.checkedAt || new Date();
     const statusEl = document.getElementById('backend-status');
+    const footerSync = document.getElementById('footer-sync');
+
+    const timeLabel = checkedAt instanceof Date
+      ? checkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      : '';
+
     if (statusEl) {
-      statusEl.className = `cf-badge ${connected ? 'green' : 'red'}`;
-      statusEl.textContent = connected ? 'Connected' : 'Offline';
+      if (pending) {
+        statusEl.className = 'cf-badge yellow';
+        statusEl.textContent = 'Checking...';
+        statusEl.setAttribute('data-status', 'checking');
+        statusEl.title = 'Validating backend connectivity';
+      } else {
+        statusEl.className = `cf-badge ${connected ? 'green' : 'red'}`;
+        statusEl.textContent = connected ? 'Connected' : 'Offline';
+        statusEl.setAttribute('data-status', connected ? 'online' : 'offline');
+        statusEl.title = connected ? 'Backend connection is healthy' : 'Backend is unreachable';
+      }
+    }
+
+    if (footerSync) {
+      if (pending) {
+        footerSync.textContent = 'Checking...';
+        footerSync.setAttribute('data-state', 'checking');
+      } else if (connected) {
+        footerSync.textContent = `Synced ${timeLabel}`;
+        footerSync.setAttribute('data-state', 'online');
+      } else {
+        footerSync.textContent = 'Disconnected';
+        footerSync.setAttribute('data-state', 'offline');
+      }
     }
   }
 
@@ -1282,7 +1314,6 @@
   }
 
   function bindAgentControlActions() {
-    const startBtn = document.getElementById('start-agent');
     const stopBtn = document.getElementById('stop-agent');
     const browserRegistrationBtn = document.getElementById('open-browser-registration');
     const refreshBrowsersBtn = document.getElementById('refresh-agent-browsers');
@@ -1299,26 +1330,7 @@
       refreshAgentOpenBrowsers();
     });
 
-    startBtn?.addEventListener('click', async () => {
-      const userId = resolveCurrentUserId();
-      const result = await safeStartAgent({ userId, agentName: 'default', config: {} });
-      if (result?.success) {
-        setAgentControlStatus(true, 'Agent Online');
-        appendAgentConsole('Agent started from backend controller', 'success');
-        showToast('success', 'Agent Started', 'Agent Center is now connected to backend.');
-        syncAgentCenterWithBackend();
-        // Start real-time browser intelligence collection (every 60s)
-        startBrowserIntelligencePolling(60000);
-        // Start real-time URL monitoring (every 5s)
-        startUrlMonitoring();
-        // Immediate first scan
-        refreshAgentOpenBrowsers();
-      } else {
-        appendAgentConsole(result?.error || 'Failed to start agent', 'error');
-        showToast('error', 'Agent Start Failed', result?.error || 'Backend rejected start request');
-      }
-    });
-
+    // No Start button — agent auto-starts. Only Stop is available.
     stopBtn?.addEventListener('click', async () => {
       const result = await safeStopAgent('default');
       if (result?.success) {
@@ -1430,15 +1442,20 @@
       if (backendEl) backendEl.textContent = backendOk ? 'Connected' : 'Offline';
       if (backendEl) backendEl.style.color = backendOk ? '#27AE60' : '#C0392B';
 
-      // Agent status
-      const defaultStatus = statusResult?.data?.data || {};
-      const isOnline = !!defaultStatus?.isRunning || !!defaultStatus?.running;
+      // Agent status — check if default agent is actually running
+      const defaultStatus = statusResult?.data?.data || statusResult?.data || {};
+      const isOnline = !!defaultStatus?.isRunning || !!defaultStatus?.running || !!defaultStatus?.exists;
       const statusLabel = isOnline ? 'Agent Online' : 'Agent Offline';
       setAgentControlStatus(isOnline, statusLabel);
 
-      // Agent count
-      const agentCount = listResult?.data?.data?.count || 0;
-      if (agentCountEl) agentCountEl.textContent = agentCount;
+      // Agent count — use list count, but ensure at least 1 if agent is running
+      let agentCount = listResult?.data?.data?.count || 0;
+      if (isOnline && agentCount < 1) agentCount = 1;
+      if (backendOk && agentCount < 1 && isOnline) agentCount = 1;
+      if (agentCountEl) {
+        agentCountEl.textContent = agentCount;
+        agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B';
+      }
 
       // ML health
       const mlHealthy = !!(mlResult?.success && (mlResult?.data?.success || mlResult?.data?.status === 'healthy'));
@@ -2547,7 +2564,49 @@
     sessions: 1
   };
 
+  async function syncDeviceIdentity() {
+    const deviceNameEl = document.getElementById('device-name');
+    const deviceChipEl = document.getElementById('header-device-id');
+    if (!deviceNameEl) return;
+
+    const fallbackName = localStorage.getItem('cyberforge_device_id') || 'Local Device';
+    deviceNameEl.textContent = fallbackName;
+
+    try {
+      const result = await window.electronAPI?.getSystemStats?.();
+      if (!(result?.success && result?.data)) return;
+
+      const hostname = result.data.hostname || fallbackName;
+      const osName = result.data.os_name || result.data.platform || '';
+      const osVersion = result.data.os_version || '';
+      const detail = [osName, osVersion].filter(Boolean).join(' ');
+
+      deviceNameEl.textContent = hostname;
+      if (deviceChipEl) {
+        deviceChipEl.title = detail ? `${hostname} • ${detail}` : hostname;
+      }
+    } catch (_) {
+      // Keep fallback values if unavailable.
+    }
+  }
+
+  function startBackendStatusSync() {
+    const refresh = async () => {
+      updateConnectionStatus(state.backendConnected, { pending: true });
+
+      const health = await cyberforgeAPI.checkHealth();
+      const connected = Boolean(health?.success);
+      state.backendConnected = connected;
+      updateConnectionStatus(connected, { checkedAt: new Date() });
+    };
+
+    refresh();
+    setInterval(refresh, 15000);
+  }
+
   function initHeaderFooter() {
+    updateConnectionStatus(state.backendConnected, { pending: true });
+
     // Global search functionality
     const globalSearch = document.getElementById('global-search');
     if (globalSearch) {
@@ -2569,13 +2628,8 @@
       });
     }
     
-    // Notifications button
-    const notificationsBtn = document.getElementById('notifications-btn');
-    if (notificationsBtn) {
-      notificationsBtn.addEventListener('click', () => {
-        toggleNotificationsPanel();
-      });
-    }
+    // Notifications button — handled by bindHeaderControls() to avoid duplicate listeners
+    // (bindHeaderControls wires the bell to open event feed panel)
     
     // Stop button functionality
     const stopBtn = document.getElementById('stop-btn');
@@ -2592,15 +2646,72 @@
     
     // Start system stats simulation
     startSystemStatsSimulation();
+
+    // Header device identity
+    syncDeviceIdentity();
+    setInterval(syncDeviceIdentity, 60000);
+
+    // Keep backend badge and footer sync state fresh
+    startBackendStatusSync();
     
     // Initialize sidebar child components
     initSidebarChildren();
   }
 
   function performGlobalSearch(query) {
-    showToast('info', 'Searching...', `Looking for: ${query}`);
-    // Could integrate with actual search functionality
+    const lq = query.toLowerCase();
     logAgentAction(`Global search: "${query}"`, 'info');
+
+    // Smart routing: match query to known screens/sections
+    const screenMap = {
+      'scan': 'quick-scan',
+      'threat': 'findings-critical',
+      'alert': 'findings-critical',
+      'finding': 'findings-critical',
+      'agent': 'agent-control',
+      'browser': 'browser-registration',
+      'setting': 'settings',
+      'config': 'settings',
+      'intel': 'browser-intel',
+      'domain': 'intel-domains',
+      'session': 'intel-sessions',
+      'distributed': 'distributed-intelligence',
+      'node': 'dist-nodes',
+      'heatmap': 'dist-heatmap',
+      'correlation': 'dist-correlations',
+      'metric': 'dist-global-metrics',
+      'weight': 'dist-weights',
+      'export': 'exports-reports',
+      'plugin': 'plugins-installed',
+      'history': 'http-history',
+      'websocket': 'ws-history',
+      'sitemap': 'sitemap',
+      'cve': 'intel-cves',
+      'ioc': 'intel-iocs',
+    };
+
+    for (const [keyword, screen] of Object.entries(screenMap)) {
+      if (lq.includes(keyword)) {
+        state.activeScreen = screen;
+        renderScreen(screen);
+        showToast('info', 'Search Result', `Navigated to ${screen.replace(/-/g, ' ')}`);
+        return;
+      }
+    }
+
+    // If query looks like a URL, trigger a scan
+    if (lq.startsWith('http://') || lq.startsWith('https://') || lq.includes('.com') || lq.includes('.org') || lq.includes('.net')) {
+      showToast('info', 'URL Detected', `Analyzing: ${query}`);
+      cyberforgeAPI.cyberforgeML?.analyzeUrl?.(query).then(result => {
+        showToast('info', 'Analysis Complete', `Risk: ${result?.aggregate?.overall_risk_level || 'Unknown'}`);
+      }).catch(() => {});
+      return;
+    }
+
+    // Fallback: navigate to advanced search
+    state.activeScreen = 'search-advanced';
+    renderScreen('search-advanced');
+    showToast('info', 'Searching', `Looking for: "${query}"`);
   }
 
   function toggleNotificationsPanel() {
@@ -2641,6 +2752,7 @@
           systemStats.memory = Math.round(result.data.memory || 0);
           systemStats.network = 0;
           updateSystemStatsDisplay();
+          updateHeaderStats();
         }
       } catch (e) {
         // Stats polling failed, leave values as-is
@@ -2694,11 +2806,17 @@
       notifCount.style.display = unreadCount > 0 ? 'flex' : 'none';
     }
     
-    // Update header agent status
+    // Update header agent status — use real backend connection status
     const headerAgentStatus = document.getElementById('header-agent-status');
     if (headerAgentStatus) {
       const indicator = headerAgentStatus.querySelector('.agent-status-indicator-mini');
       const label = headerAgentStatus.querySelector('.agent-status-label');
+      
+      // Determine effective agent status from backend connection + agent state
+      let effectiveStatus = agentState.status;
+      if (state.backendConnected && effectiveStatus === 'idle') {
+        effectiveStatus = 'monitoring'; // If connected to backend, agent is at least monitoring
+      }
       
       const colors = {
         idle: '#6b7280',
@@ -2710,10 +2828,13 @@
       };
       
       if (indicator) {
-        indicator.style.background = colors[agentState.status] || '#10b981';
+        indicator.style.background = colors[effectiveStatus] || '#10b981';
       }
       if (label) {
-        label.textContent = `Agent ${agentState.status.charAt(0).toUpperCase() + agentState.status.slice(1)}`;
+        const statusLabel = state.backendConnected
+          ? `Agent ${effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}`
+          : 'Agent Offline';
+        label.textContent = statusLabel;
       }
     }
   }
@@ -3116,8 +3237,10 @@
     const settingsBtn = document.getElementById('settings-btn');
     const themeToggle = document.getElementById('theme-toggle');
     const notificationsBtn = document.getElementById('notifications-btn');
+    const alertWidget = document.getElementById('header-alert-widget');
+    const headerAgentStatus = document.getElementById('header-agent-status');
 
-    // Quick Scan button - triggers ML scan
+    // Quick Scan button — triggers quick scan screen + ML health check
     quickScanBtn?.addEventListener('click', async () => {
       quickScanBtn.disabled = true;
       quickScanBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
@@ -3129,6 +3252,10 @@
         // Also call the ML API directly for immediate feedback
         const scanResult = await cyberforgeAPI.cyberforgeML.health();
         console.log('ML Service Health:', scanResult);
+
+        // Navigate to the quick-scan screen for full results
+        state.activeScreen = 'quick-scan';
+        renderScreen('quick-scan');
       } catch (error) {
         console.error('Scan error:', error);
         showToast('error', 'Scan Failed', error.message);
@@ -3140,17 +3267,77 @@
       }
     });
 
-    // Settings button
+    // Settings button — navigate to settings screen
     settingsBtn?.addEventListener('click', () => {
       renderScreen('settings');
     });
 
-    // Notifications button
+    // Notifications button — open the event feed panel (real-time events)
     notificationsBtn?.addEventListener('click', () => {
-      showToast('info', 'Notifications', 'No new notifications');
+      const eventPanel = document.getElementById('event-feed-panel');
+      if (eventPanel) {
+        eventPanel.classList.toggle('open');
+      } else {
+        showToast('info', 'Notifications', 'No new notifications');
+      }
     });
 
+    // Alert count widget — navigate to findings screen
+    alertWidget?.addEventListener('click', () => {
+      state.activeScreen = 'findings-critical';
+      renderScreen('findings-critical');
+    });
+
+    // Header agent status — navigate to agent control center
+    headerAgentStatus?.addEventListener('click', () => {
+      state.activeScreen = 'agent-control';
+      renderScreen('agent-control');
+    });
+    // Make it feel clickable
+    if (headerAgentStatus) headerAgentStatus.style.cursor = 'pointer';
+
+    // Theme toggle
     themeToggle?.addEventListener('click', () => toggleTheme());
+
+    // Periodically update header alert count from real data
+    updateHeaderAlertCount();
+    setInterval(updateHeaderAlertCount, 10000);
+  }
+
+  // Update the header alert badge with real data from backend
+  async function updateHeaderAlertCount() {
+    const alertNumberEl = document.getElementById('header-alert-number');
+    const notifCountEl = document.getElementById('notification-count');
+    if (!alertNumberEl && !notifCountEl) return;
+
+    try {
+      // Try getting alerts from the agent alerts API
+      const result = await safeGetAgentAlerts({ limit: 50 });
+      const alerts = result?.data?.data?.alerts || [];
+      const criticalCount = alerts.filter(a =>
+        a.severity === 'critical' || a.severity === 'high' || a.risk_score >= 70
+      ).length;
+      const totalCount = alerts.length;
+
+      if (alertNumberEl) {
+        alertNumberEl.textContent = String(criticalCount);
+        alertNumberEl.style.color = criticalCount > 0 ? '#E74C3C' : '';
+      }
+
+      if (notifCountEl) {
+        const unread = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
+        const displayCount = Math.max(unread, criticalCount);
+        notifCountEl.textContent = String(displayCount);
+        notifCountEl.style.display = displayCount > 0 ? 'flex' : 'none';
+      }
+    } catch (e) {
+      // Use local event count as fallback
+      if (notifCountEl) {
+        const unread = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
+        notifCountEl.textContent = String(unread);
+        notifCountEl.style.display = unread > 0 ? 'flex' : 'none';
+      }
+    }
   }
 
   function initTheme() {
@@ -3787,6 +3974,36 @@
     } else if (screen === 'intel-config') {
       container.innerHTML = buildIntelConfigScreen();
       loadIntelConfig();
+    }
+    
+    // ========================================
+    // DISTRIBUTED INTELLIGENCE SCREENS (TODO 4)
+    // ========================================
+    else if (screen === 'distributed-intelligence' || screen === 'dist-nodes' ||
+             screen === 'dist-correlations' || screen === 'dist-heatmap' ||
+             screen === 'dist-global-metrics' || screen === 'dist-weights' ||
+             screen === 'dist-sync') {
+      try {
+        const distScreen = new DistributedIntelligenceScreen();
+        const tabMap = {
+          'distributed-intelligence': 'overview',
+          'dist-nodes': 'nodes',
+          'dist-correlations': 'correlations',
+          'dist-heatmap': 'heatmap',
+          'dist-global-metrics': 'metrics',
+          'dist-weights': 'weights',
+          'dist-sync': 'overview'
+        };
+        distScreen.render(container);
+        const targetTab = tabMap[screen] || 'overview';
+        if (targetTab !== 'overview') {
+          const tabBtn = container.querySelector(`.dist-tab-btn[data-tab="${targetTab}"]`);
+          if (tabBtn) tabBtn.click();
+        }
+      } catch (err) {
+        console.error('[CyberForge] Distributed Intelligence screen error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>Distributed Intelligence</h2><p>Screen loading error. Check console.</p></div>';
+      }
     }
     
     else {

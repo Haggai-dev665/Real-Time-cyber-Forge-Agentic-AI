@@ -275,33 +275,57 @@
                 mlEl.style.color = mlOk ? '#27AE60' : '#E67E22';
             }
             
-            // Agent count
+            // Agent status — check if default agent is running, count includes self
+            var agentRunning = false;
             var agentCount = 0;
             if (backendOk) {
                 try {
                     var token = localStorage.getItem('authToken') || '';
+                    var headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? 'Bearer ' + token : '',
+                        'User-Agent': 'cyber-forge-desktop/1.0'
+                    };
+                    // Check agent status first (more reliable than list)
+                    var statusRes = await fetch(backendUrl + '/api/agent/status/default', {
+                        headers: headers,
+                        signal: AbortSignal.timeout(5000)
+                    });
+                    if (statusRes.ok) {
+                        var statusData = await statusRes.json();
+                        var agentInfo = (statusData && statusData.data) || statusData || {};
+                        agentRunning = !!(agentInfo.isRunning || agentInfo.running);
+                    }
+                    // Also check agents list for total count
                     var agentRes = await fetch(backendUrl + '/api/agent/list', {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': token ? 'Bearer ' + token : '',
-                            'User-Agent': 'cyber-forge-desktop/1.0'
-                        },
+                        headers: headers,
                         signal: AbortSignal.timeout(5000)
                     });
                     if (agentRes.ok) {
                         var agentData = await agentRes.json();
                         agentCount = (agentData && agentData.data && agentData.data.count) || (agentData && agentData.count) || 0;
                     }
-                } catch (e) { /* agent list failed */ }
+                } catch (e) { /* agent check failed */ }
             }
             
-            if (agentCountEl) agentCountEl.textContent = String(agentCount);
+            // The desktop app itself is an agent — if backend is connected, count at least 1
+            if (backendOk && agentCount === 0) {
+                agentCount = agentRunning ? 1 : 0;
+            }
+            // Ensure running agent always counts
+            if (agentRunning && agentCount < 1) agentCount = 1;
             
-            // Update status indicator
-            if (statusDot) statusDot.style.background = backendOk ? '#27AE60' : '#C0392B';
-            if (statusText) statusText.textContent = backendOk ? 'Connected' : 'Offline';
+            if (agentCountEl) {
+                agentCountEl.textContent = String(agentCount);
+                agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B';
+            }
             
-            fpLog(backendOk ? 'Backend synced' : 'Backend unreachable');
+            // Update status indicator based on agent running state
+            var isActive = backendOk && agentRunning;
+            if (statusDot) statusDot.style.background = isActive ? '#27AE60' : backendOk ? '#E67E22' : '#C0392B';
+            if (statusText) statusText.textContent = isActive ? 'Agent Active' : backendOk ? 'Connected' : 'Offline';
+            
+            fpLog(isActive ? 'Agent active & synced' : backendOk ? 'Backend synced' : 'Backend unreachable');
             
         } catch (e) {
             if (backendEl) { backendEl.textContent = 'Error'; backendEl.style.color = '#C0392B'; }

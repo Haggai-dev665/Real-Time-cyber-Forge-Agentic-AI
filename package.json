@@ -27,7 +27,7 @@
     "start:landing": "cd cyberforge-landing && npm start",
     "start:backend": "cd backend && npm start",
     "start:ml": "cd ml-services && python main.py",
-    "heroku-postbuild": "cd backend && npm install && cd ../cyberforge-landing && npm install && npm run build",
+    "heroku-postbuild": "cd backend && npm install && cd ../cyberforge-landing && npm install && npm run build && echo 'Landing page built into backend/public'",
     "test": "npm run test:backend && npm run test:ml",
     "test:backend": "cd backend && npm test",
     "test:ml": "cd ml-services && pytest",

@@ -13,6 +13,9 @@
     <!-- Domain-specific component styles -->
     <link rel="stylesheet" href="css/threat-globe.css">
     <link rel="stylesheet" href="css/browser-intelligence.css">
+    <link rel="stylesheet" href="css/agent-core.css">
+    <!-- TODO 4: Distributed Intelligence -->
+    <link rel="stylesheet" href="css/distributed-intelligence.css">
 
     <style>
         html { color-scheme: light dark; }
@@ -373,6 +376,47 @@
                         <span>Scan Modes</span>
                         <i class="fas fa-chevron-down section-chevron"></i>
                     </div>
+
+                <!-- TODO 4: Distributed Intelligence Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="distributed-intel">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Distributed Intel</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="distributed-intelligence">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Intelligence Hub</span>
+                                <span class="sidebar-nav-badge live-badge" id="dist-nodes-badge">0</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link" data-screen="dist-nodes">Node Management</a></li>
+                                <li><a class="sidebar-child-link" data-screen="dist-correlations">Correlations</a></li>
+                                <li><a class="sidebar-child-link" data-screen="dist-heatmap">Threat Heatmap</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="dist-global-metrics">
+                                <i class="fas fa-chart-area"></i>
+                                <span>Global Metrics</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="dist-weights">
+                                <i class="fas fa-balance-scale"></i>
+                                <span>Risk Weights</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link" data-screen="dist-sync">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Sync Status</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
                     <ul class="sidebar-nav scan-modes">
                         <li class="sidebar-nav-item scan-mode" data-mode="quick">
                             <a class="sidebar-nav-link" data-screen="scan-quick">
@@ -863,6 +907,7 @@
     <script src="components/ai-assistant-v2.js"></script>
     <script src="screens/threat-globe.js"></script>
     <script src="agent-ui-controller.js"></script>
+    <script src="screens/distributed-intelligence.js"></script>
     <script src="cyberforge-app.js"></script>
 </body>
 </html>

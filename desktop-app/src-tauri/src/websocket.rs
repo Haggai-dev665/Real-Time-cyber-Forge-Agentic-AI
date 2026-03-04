@@ -140,6 +140,45 @@ fn handle_backend_message(app: &AppHandle, message: &serde_json::Value) {
                 let _ = app.emit("risk-score-update", data.clone());
             }
         }
+        // TODO 4: Distributed Intelligence broadcast handling
+        "intelligence_broadcast" => {
+            if let Some(data) = message.get("data") {
+                // Parse and process the broadcast through the intelligence listener
+                if let Ok(broadcast) = serde_json::from_value::<crate::distributed::IntelligenceBroadcast>(data.clone()) {
+                    let processed = crate::distributed::process_broadcast(broadcast);
+                    if processed {
+                        // Forward to frontend for UI updates
+                        let _ = app.emit("intelligence-broadcast", data.clone());
+                    }
+                } else {
+                    log::warn!("Failed to parse intelligence broadcast payload");
+                }
+            }
+        }
+        "node_status_update" => {
+            if let Some(data) = message.get("data") {
+                let _ = app.emit("node-status-update", data.clone());
+            }
+        }
+        "global_metrics_update" => {
+            if let Some(data) = message.get("data") {
+                let _ = app.emit("global-metrics-update", data.clone());
+            }
+        }
+        "correlation_alert" => {
+            if let Some(data) = message.get("data") {
+                let _ = app.emit("correlation-alert", data.clone());
+            }
+        }
+        "weight_table_update" => {
+            if let Some(data) = message.get("data") {
+                // Apply weight updates through intelligence listener
+                if let Ok(broadcast) = serde_json::from_value::<crate::distributed::IntelligenceBroadcast>(data.clone()) {
+                    crate::distributed::process_broadcast(broadcast);
+                }
+                let _ = app.emit("weight-table-update", data.clone());
+            }
+        }
         "heartbeat" | "heartbeat_response" | "connection_acknowledged" => {
             // Silent
         }

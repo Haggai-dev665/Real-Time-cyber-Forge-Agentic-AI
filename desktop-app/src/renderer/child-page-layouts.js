@@ -2497,8 +2497,7 @@ window.ChildPageLayouts = (() => {
           <div class="cf-panel-title"><i class="fas fa-robot"></i> AI Agent Control Center</div>
           <div class="cf-panel-actions">
             <button class="cf-btn" id="open-browser-registration"><i class="fas fa-globe"></i> Browser Registration</button>
-            <button class="cf-btn primary" id="start-agent"><i class="fas fa-play"></i> Start Agent</button>
-            <button class="cf-btn danger" id="stop-agent"><i class="fas fa-stop"></i> Stop</button>
+            <button class="cf-btn danger" id="stop-agent"><i class="fas fa-stop"></i> Stop Agent</button>
           </div>
         </div>
         <div class="cf-panel-content agent-center-grid">
@@ -2509,14 +2508,14 @@ window.ChildPageLayouts = (() => {
               <div class="agent-card-header"><i class="fas fa-circle-info"></i> Agent Status</div>
               <div class="agent-card-body">
                 <div class="status-indicator" id="agent-status-indicator">
-                  <span class="status-dot offline"></span>
-                  <span class="status-text">Connecting to backend...</span>
+                  <span class="status-dot online"></span>
+                  <span class="status-text">Agent Auto-Started</span>
                 </div>
                 <div class="agent-meta-grid" id="agent-meta-grid">
                   <div class="agent-meta-item"><span class="meta-label">Uptime</span><span class="meta-value" id="ac-uptime">--</span></div>
                   <div class="agent-meta-item"><span class="meta-label">Backend</span><span class="meta-value" id="ac-backend">checking...</span></div>
                   <div class="agent-meta-item"><span class="meta-label">ML Service</span><span class="meta-value" id="ac-ml">checking...</span></div>
-                  <div class="agent-meta-item"><span class="meta-label">Agents</span><span class="meta-value" id="ac-agent-count">0</span></div>
+                  <div class="agent-meta-item"><span class="meta-label">Agents</span><span class="meta-value" id="ac-agent-count">1</span></div>
                 </div>
               </div>
             </div>

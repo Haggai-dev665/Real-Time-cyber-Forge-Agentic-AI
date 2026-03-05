@@ -335,15 +335,20 @@
 
     if (statusEl) {
       if (pending) {
-        statusEl.className = 'cf-badge yellow';
-        statusEl.textContent = 'Checking...';
+        statusEl.className = 'cf-badge status-checking';
+        statusEl.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking';
         statusEl.setAttribute('data-status', 'checking');
         statusEl.title = 'Validating backend connectivity';
+      } else if (connected) {
+        statusEl.className = 'cf-badge status-online';
+        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Online';
+        statusEl.setAttribute('data-status', 'online');
+        statusEl.title = `Backend connected • ${timeLabel}`;
       } else {
-        statusEl.className = `cf-badge ${connected ? 'green' : 'red'}`;
-        statusEl.textContent = connected ? 'Connected' : 'Offline';
-        statusEl.setAttribute('data-status', connected ? 'online' : 'offline');
-        statusEl.title = connected ? 'Backend connection is healthy' : 'Backend is unreachable';
+        statusEl.className = 'cf-badge status-offline';
+        statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Offline';
+        statusEl.setAttribute('data-status', 'offline');
+        statusEl.title = 'Backend is unreachable';
       }
     }
 
@@ -2591,17 +2596,27 @@
   }
 
   function startBackendStatusSync() {
+    let firstRun = true;
     const refresh = async () => {
-      updateConnectionStatus(state.backendConnected, { pending: true });
+      // Only show "Checking..." on first run, not on periodic refreshes
+      if (firstRun) {
+        updateConnectionStatus(state.backendConnected, { pending: true });
+        firstRun = false;
+      }
 
-      const health = await cyberforgeAPI.checkHealth();
-      const connected = Boolean(health?.success);
-      state.backendConnected = connected;
-      updateConnectionStatus(connected, { checkedAt: new Date() });
+      try {
+        const health = await cyberforgeAPI.checkHealth();
+        const connected = Boolean(health?.success);
+        state.backendConnected = connected;
+        updateConnectionStatus(connected, { checkedAt: new Date() });
+      } catch (_) {
+        state.backendConnected = false;
+        updateConnectionStatus(false, { checkedAt: new Date() });
+      }
     };
 
     refresh();
-    setInterval(refresh, 15000);
+    setInterval(refresh, 30000);
   }
 
   function initHeaderFooter() {

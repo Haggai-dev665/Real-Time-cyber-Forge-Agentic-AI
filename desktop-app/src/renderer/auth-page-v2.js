@@ -92,8 +92,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!hasSession) {
         checkServerConnection();
         animateEntrance();
-        document.body.style.opacity = '1';
     }
+
+    // Always make the page visible — even if we're about to redirect,
+    // this prevents an invisible page if navigation is delayed.
+    document.body.style.opacity = '1';
 
     authState.isBootstrapping = false;
 });

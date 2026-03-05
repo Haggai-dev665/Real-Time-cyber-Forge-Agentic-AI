@@ -1890,11 +1890,17 @@
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.6);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: var(--cf-z-modal-backdrop);
     animation: cf-fade-in var(--cf-duration-fast) var(--cf-ease-out);
+}
+
+.modal-overlay.active,
+.modal.active,
+.cf-modal.active {
+    display: flex;
 }
 
 .modal-container,

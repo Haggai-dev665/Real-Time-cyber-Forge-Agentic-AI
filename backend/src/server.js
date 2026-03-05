@@ -118,10 +118,7 @@ class CyberForgeServer {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
-    // Serve static files in production (simple static files, not Next.js)
-    if (process.env.NODE_ENV === 'production') {
-      this.app.use(express.static(path.join(__dirname, '../public')));
-    }
+    // Note: Static file serving is configured in setupRoutes() for production
   }
 
   setupRoutes() {
@@ -171,7 +168,26 @@ class CyberForgeServer {
     if (process.env.NODE_ENV === 'production') {
       // Serve static files from the built landing page (output by Vite into backend/public)
       const landingPath = path.join(__dirname, '../public');
-      this.app.use(express.static(landingPath));
+      
+      // Static files with explicit MIME types
+      this.app.use('/assets', express.static(path.join(landingPath, 'assets'), {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+          } else if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+          } else if (filePath.endsWith('.png')) {
+            res.setHeader('Content-Type', 'image/png');
+          } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+            res.setHeader('Content-Type', 'image/jpeg');
+          } else if (filePath.endsWith('.svg')) {
+            res.setHeader('Content-Type', 'image/svg+xml');
+          }
+        }
+      }));
+      
+      // Serve root-level static files (favicon, robots.txt, etc.)
+      this.app.use(express.static(landingPath, { index: false }));
       
       // API status endpoint
       this.app.get('/api/status', (req, res) => {
@@ -187,16 +203,22 @@ class CyberForgeServer {
         });
       });
       
-      // Catch-all handler: serve index.html for any non-API routes
+      // Catch-all handler: serve index.html for any non-API/non-asset routes
       this.app.get('*', (req, res) => {
-        // Check if this is an API request
+        // Don't catch API requests or WebSocket
         if (req.path.startsWith('/api/') || req.path.startsWith('/ws')) {
           return res.status(404).json({
             error: 'Not Found',
             message: 'The requested API endpoint was not found'
           });
         }
-        // Serve the React app for any other routes
+        
+        // Don't catch static asset requests that already failed
+        if (req.path.startsWith('/assets/')) {
+          return res.status(404).send('Asset not found');
+        }
+        
+        // Serve the React app for SPA routing
         const indexPath = path.join(landingPath, 'index.html');
         const fs = require('fs');
         if (fs.existsSync(indexPath)) {

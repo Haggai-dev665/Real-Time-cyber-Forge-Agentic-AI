@@ -3365,8 +3365,8 @@
 
     updateThemeIcon(next);
     
-    // Update globe theme if it exists
-    if (window.cyberforgeGlobe) {
+    // Update map theme if it exists
+    if (window.cyberforgeGlobe && typeof window.cyberforgeGlobe.setTheme === 'function') {
       window.cyberforgeGlobe.setTheme(next === 'dark');
     }
   }
@@ -5925,53 +5925,29 @@
           <!-- Main Grid Layout -->
           <div style="display:grid; grid-template-columns:1fr 380px; gap:20px; flex:1; min-height:0; overflow:hidden;">
             
-            <!-- Left: Globe Container -->
+            <!-- Left: 2D Threat Map -->
             <div style="background:var(--cf-bg-medium); border:1px solid var(--cf-border); border-radius:16px; overflow:hidden; position:relative; min-height:400px;">
-              <div id="globe-container" style="width:100%; height:100%; min-height:400px;"></div>
-              
-              <!-- Globe Controls Overlay -->
-              <div style="position:absolute; bottom:16px; left:16px; display:flex; gap:8px; z-index:10;">
-                <button class="cf-btn" id="globe-reset" title="Reset View" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
-                  <i class="fas fa-compress-arrows-alt"></i>
-                </button>
-                <button class="cf-btn" id="globe-toggle-rotation" title="Toggle Rotation" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
-                  <i class="fas fa-sync"></i>
-                </button>
-                <button class="cf-btn" id="globe-add-traffic" title="Add Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
-                  <i class="fas fa-plus"></i>
-                </button>
-                <button class="cf-btn" id="globe-clear-traffic" title="Clear Traffic" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-              
-              <!-- Zoom Level Indicator -->
-              <div style="position:absolute; bottom:16px; right:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:8px 12px; border-radius:8px; font-size:11px; z-index:10; border:1px solid rgba(255,255,255,0.1);">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <i class="fas fa-search" style="color:var(--cf-accent-blue);"></i>
-                  <span>Zoom: <span id="globe-zoom-level">2</span></span>
-                </div>
-              </div>
+              <canvas id="dashboard-map-canvas" style="width:100%; height:100%; display:block;"></canvas>
               
               <!-- Legend Overlay -->
               <div style="position:absolute; top:16px; right:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:12px 16px; border-radius:10px; font-size:11px; z-index:10; border:1px solid rgba(255,255,255,0.1);">
                 <div style="font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-                  <i class="fas fa-globe" style="color:var(--cf-accent-purple);"></i> Network Traffic
+                  <i class="fas fa-map-marked-alt" style="color:var(--cf-accent-blue);"></i> Threat Map
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;"></span> Source</div>
-                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444;"></span> Destination</div>
-                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 6px #8b5cf6;"></span> Active Arc</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444;"></span> Critical</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b;"></span> Medium</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px #3b82f6;"></span> Low</div>
                 </div>
                 <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:10px; color:var(--cf-text-muted);">
-                  <i class="fas fa-map"></i> OpenStreetMap Data
+                  <i class="fas fa-satellite-dish"></i> AlienVault OTX
                 </div>
               </div>
               
-              <!-- Map Source Badge -->
+              <!-- Source Badge -->
               <div style="position:absolute; top:16px; left:16px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); padding:6px 10px; border-radius:6px; font-size:10px; z-index:10; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:6px;">
-                <i class="fas fa-layer-group" style="color:var(--cf-accent-green);"></i>
-                <span>Hybrid 3D • Leaflet + Three.js</span>
+                <i class="fas fa-map" style="color:var(--cf-accent-green);"></i>
+                <span>2D Threat Map • Real-time</span>
               </div>
             </div>
             
@@ -6073,80 +6049,10 @@
     // Setup OTX threat listeners
     setupOTXThreatListeners();
 
-    // Globe control buttons
-    document.getElementById('globe-reset')?.addEventListener('click', () => {
-      if (window.cyberforgeGlobe) {
-        // Use resetCamera if available (AdvancedEarthGlobe), otherwise fallback
-        if (typeof window.cyberforgeGlobe.resetCamera === 'function') {
-          window.cyberforgeGlobe.resetCamera();
-        } else if (window.cyberforgeGlobe.controls) {
-          window.cyberforgeGlobe.controls.reset();
-        }
-        showToast('info', 'Globe', 'View reset');
-      }
-    });
-
-    document.getElementById('globe-toggle-rotation')?.addEventListener('click', () => {
-      if (window.cyberforgeGlobe) {
-        // Use toggleRotation if available (AdvancedEarthGlobe)
-        let isRotating;
-        if (typeof window.cyberforgeGlobe.toggleRotation === 'function') {
-          isRotating = window.cyberforgeGlobe.toggleRotation();
-        } else {
-          window.cyberforgeGlobe.config = window.cyberforgeGlobe.config || {};
-          window.cyberforgeGlobe.config.autoRotate = !window.cyberforgeGlobe.config.autoRotate;
-          if (window.cyberforgeGlobe.controls) {
-            window.cyberforgeGlobe.controls.autoRotate = window.cyberforgeGlobe.config.autoRotate;
-          }
-          isRotating = window.cyberforgeGlobe.config.autoRotate;
-        }
-        showToast('info', 'Globe Rotation', isRotating ? 'Enabled' : 'Disabled');
-      }
-    });
-
-    document.getElementById('globe-add-traffic')?.addEventListener('click', () => {
-      if (window.cyberforgeGlobe) {
-        // Add random traffic between major cities
-        const cities = [
-          { name: 'New York', lat: 40.7128, lon: -74.0060 },
-          { name: 'London', lat: 51.5074, lon: -0.1278 },
-          { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
-          { name: 'Sydney', lat: -33.8688, lon: 151.2093 },
-          { name: 'Paris', lat: 48.8566, lon: 2.3522 },
-          { name: 'Singapore', lat: 1.3521, lon: 103.8198 },
-          { name: 'Dubai', lat: 25.2048, lon: 55.2708 },
-          { name: 'São Paulo', lat: -23.5505, lon: -46.6333 },
-          { name: 'Berlin', lat: 52.5200, lon: 13.4050 },
-          { name: 'Moscow', lat: 55.7558, lon: 37.6173 },
-          { name: 'Hong Kong', lat: 22.3193, lon: 114.1694 },
-          { name: 'Mumbai', lat: 19.0760, lon: 72.8777 }
-        ];
-        const from = cities[Math.floor(Math.random() * cities.length)];
-        let to = cities[Math.floor(Math.random() * cities.length)];
-        while (to === from) {
-          to = cities[Math.floor(Math.random() * cities.length)];
-        }
-        const colors = [0x22c55e, 0x3b82f6, 0xf59e0b, 0x8b5cf6, 0xef4444, 0x06b6d4, 0xec4899];
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        
-        // Use addConnection if available (AdvancedEarthGlobe), otherwise addArc
-        if (typeof window.cyberforgeGlobe.addConnection === 'function') {
-          window.cyberforgeGlobe.addConnection([from.lat, from.lon], [to.lat, to.lon], { color });
-        } else if (typeof window.cyberforgeGlobe.addArc === 'function') {
-          window.cyberforgeGlobe.addArc(from.lat, from.lon, to.lat, to.lon, { color });
-        }
-        
-        showToast('success', 'Traffic Added', `${from.name} → ${to.name}`);
-      }
-    });
-
-    // Add clear traffic button functionality if it exists
-    document.getElementById('globe-clear-traffic')?.addEventListener('click', () => {
-      if (window.cyberforgeGlobe && typeof window.cyberforgeGlobe.clearConnections === 'function') {
-        window.cyberforgeGlobe.clearConnections();
-        showToast('info', 'Traffic Cleared', 'All connections removed');
-      }
-    });
+    // Globe control buttons (2D map — simplified)
+    // The old globe-reset, globe-toggle-rotation, globe-add-traffic, globe-clear-traffic
+    // buttons are no longer in the dashboard layout, so these handlers are no-ops.
+    // Keeping for backward compatibility if custom buttons are added.
   }
 
   // Setup OTX threat listeners
@@ -6215,86 +6121,185 @@
     }
   }
 
-  // Initialize the 3D Globe with Leaflet integration
+  // Initialize the 2D Threat Map for Dashboard
   function initializeGlobe() {
-    const container = document.getElementById('globe-container');
-    if (!container) return;
+    const canvas = document.getElementById('dashboard-map-canvas');
+    if (!canvas) return;
 
-    // Check if Three.js is loaded
-    if (typeof THREE === 'undefined') {
-      console.warn('Three.js not loaded, globe will not render');
-      container.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--cf-text-muted);">
-          <div style="text-align:center;">
-            <i class="fas fa-globe" style="font-size:48px; opacity:0.5; margin-bottom:16px;"></i>
-            <div>3D Globe requires Three.js</div>
-          </div>
-        </div>
-      `;
-      return;
+    const ctx = canvas.getContext('2d');
+    const wrapper = canvas.parentElement;
+
+    // Use same world polygons from ThreatGlobeScreen if available
+    const POLYS = (typeof ThreatGlobeScreen !== 'undefined' && ThreatGlobeScreen.WORLD_POLYGONS) ?
+      ThreatGlobeScreen.WORLD_POLYGONS : [];
+
+    const pad = { top: 16, right: 16, bottom: 16, left: 16 };
+    let dW = 0, dH = 0;
+    let mapCacheCanvas = null;
+    let threats = [];
+    let animFrame = null;
+
+    function project(lat, lon) {
+      const mw = dW - pad.left - pad.right;
+      const mh = dH - pad.top - pad.bottom;
+      return {
+        x: pad.left + ((lon + 180) / 360) * mw,
+        y: pad.top + ((90 - lat) / 180) * mh
+      };
     }
 
-    // Check if Leaflet is loaded
-    if (typeof L === 'undefined') {
-      console.warn('Leaflet not loaded, using basic globe');
-    }
+    function buildCache() {
+      const isDark = document.body.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        localStorage.getItem('cyberforge-theme') === 'dark';
+      const bg = isDark ? '#0c1318' : '#f0f4f8';
+      const landFill = isDark ? '#1a2a36' : '#d0dbe5';
+      const landStroke = isDark ? '#243545' : '#b0c0d0';
+      const gridColor = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)';
 
-    // Check for globe classes (prefer HybridEarthGlobe for real map data)
-    const GlobeClass = typeof HybridEarthGlobe !== 'undefined' ? HybridEarthGlobe :
-                       typeof AdvancedEarthGlobe !== 'undefined' ? AdvancedEarthGlobe : 
-                       typeof CyberForgeGlobe !== 'undefined' ? CyberForgeGlobe : null;
-    
-    if (!GlobeClass) {
-      console.warn('Globe component not loaded');
-      container.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--cf-text-muted);">
-          <div style="text-align:center;">
-            <i class="fas fa-globe" style="font-size:48px; opacity:0.5; margin-bottom:16px;"></i>
-            <div>Globe component not available</div>
-          </div>
-        </div>
-      `;
-      return;
-    }
+      mapCacheCanvas = document.createElement('canvas');
+      mapCacheCanvas.width = dW;
+      mapCacheCanvas.height = dH;
+      const c = mapCacheCanvas.getContext('2d');
 
-    // Cleanup existing globe
-    if (window.cyberforgeGlobe) {
-      try {
-        window.cyberforgeGlobe.dispose();
-      } catch (e) {
-        console.warn('Error disposing previous globe:', e);
+      c.fillStyle = bg;
+      c.fillRect(0, 0, dW, dH);
+
+      // Grid
+      c.strokeStyle = gridColor;
+      c.lineWidth = 0.5;
+      for (let lon = -180; lon <= 180; lon += 30) {
+        const p = project(0, lon);
+        c.beginPath(); c.moveTo(p.x, 0); c.lineTo(p.x, dH); c.stroke();
       }
-    }
+      for (let lat = -90; lat <= 90; lat += 30) {
+        const p = project(lat, 0);
+        c.beginPath(); c.moveTo(0, p.y); c.lineTo(dW, p.y); c.stroke();
+      }
 
-    // Detect current theme
-    const isDarkTheme = document.body.classList.contains('dark') ||
-      document.documentElement.getAttribute('data-theme') === 'dark' ||
-      localStorage.getItem('cyberforge-theme') === 'dark';
-
-    // Initialize globe with real map data (no mock traffic)
-    try {
-      window.cyberforgeGlobe = new GlobeClass('globe-container', {
-        isDarkTheme: isDarkTheme,
-        autoRotate: true,
-        rotationSpeed: 0.0003,
-        showTraffic: true,
-        showSampleTraffic: false, // Disable mock sample traffic
-        initialZoom: 2,
-        initialCenter: [20, 0]
+      // Continents
+      POLYS.forEach(poly => {
+        c.beginPath();
+        poly.forEach(([lon, lat], i) => {
+          const p = project(lat, lon);
+          i === 0 ? c.moveTo(p.x, p.y) : c.lineTo(p.x, p.y);
+        });
+        c.closePath();
+        c.fillStyle = landFill;
+        c.fill();
+        c.strokeStyle = landStroke;
+        c.lineWidth = 0.8;
+        c.stroke();
       });
-      console.log('Hybrid Earth Globe with Leaflet initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize globe:', error);
-      container.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--cf-text-muted);">
-          <div style="text-align:center;">
-            <i class="fas fa-exclamation-triangle" style="font-size:48px; opacity:0.5; margin-bottom:16px; color:var(--cf-accent-orange);"></i>
-            <div>Failed to initialize globe</div>
-            <div style="font-size:12px; margin-top:8px;">${error.message}</div>
-          </div>
-        </div>
-      `;
+
+      // Vignette
+      const vg = c.createRadialGradient(dW/2, dH/2, dH*0.3, dW/2, dH/2, dW*0.7);
+      vg.addColorStop(0, 'transparent');
+      vg.addColorStop(1, isDark ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)');
+      c.fillStyle = vg;
+      c.fillRect(0, 0, dW, dH);
     }
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = wrapper.clientWidth;
+      const h = wrapper.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      dW = w;
+      dH = h;
+      buildCache();
+    }
+
+    function draw(time) {
+      if (mapCacheCanvas) ctx.drawImage(mapCacheCanvas, 0, 0);
+
+      // Draw threat arcs
+      threats.forEach(t => {
+        const elapsed = time - t.startTime;
+        const progress = (elapsed % 4000) / 4000;
+        const from = project(t.from[0], t.from[1]);
+        const to = project(t.to[0], t.to[1]);
+        const dx = to.x - from.x, dy = to.y - from.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const cpX = (from.x + to.x) / 2;
+        const cpY = Math.min(from.y, to.y) - dist * 0.28;
+
+        // Base arc
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.quadraticCurveTo(cpX, cpY, to.x, to.y);
+        ctx.strokeStyle = t.color + '15';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Particle
+        const pt = progress;
+        const px = (1-pt)*(1-pt)*from.x + 2*(1-pt)*pt*cpX + pt*pt*to.x;
+        const py = (1-pt)*(1-pt)*from.y + 2*(1-pt)*pt*cpY + pt*pt*to.y;
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI*2);
+        ctx.fillStyle = t.color;
+        ctx.shadowColor = t.color;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Endpoint dots
+        const pulse = Math.sin(time/400 + t.phase) * 0.5 + 0.5;
+        [from, to].forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3 + pulse*3, 0, Math.PI*2);
+          ctx.fillStyle = t.color + '18';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+          ctx.fillStyle = t.color;
+          ctx.fill();
+        });
+        ctx.restore();
+      });
+
+      animFrame = requestAnimationFrame(draw);
+    }
+
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(wrapper);
+    animFrame = requestAnimationFrame(draw);
+
+    // Create a map API compatible with old globe code
+    window.cyberforgeGlobe = {
+      addConnection: function(fromCoords, toCoords, opts) {
+        const colorNum = opts && opts.color ? opts.color : 0x3b82f6;
+        const hex = typeof colorNum === 'number' ? '#' + colorNum.toString(16).padStart(6, '0') : colorNum;
+        threats.push({
+          from: fromCoords, to: toCoords, color: hex,
+          startTime: performance.now(), phase: Math.random() * 6
+        });
+        // Keep max 30 arcs
+        if (threats.length > 30) threats.shift();
+      },
+      addArc: function(fromLat, fromLon, toLat, toLon, opts) {
+        this.addConnection([fromLat, fromLon], [toLat, toLon], opts);
+      },
+      clearConnections: function() { threats = []; },
+      clearArcs: function() { threats = []; },
+      setTheme: function() { buildCache(); },
+      toggleRotation: function() { return false; },
+      resetCamera: function() {},
+      dispose: function() {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        ro.disconnect();
+      },
+      config: { autoRotate: false }
+    };
+
+    console.log('2D Dashboard Threat Map initialized');
   }
 
   function buildSitemapLayout() {

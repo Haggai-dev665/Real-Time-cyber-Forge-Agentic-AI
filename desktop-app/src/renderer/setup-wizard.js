@@ -45,10 +45,11 @@
   }
 
   /* ════════════════════════════════════════════
-     First-run guard
+     First-run guard — splash.html handles routing now, but keep
+     as safety net in case wizard is loaded directly (e.g. bookmark)
      ════════════════════════════════════════════ */
   if (localStorage.getItem('cyberforge_setup_complete') === 'true') {
-    window.location.href = 'auth-page-v2.html';
+    window.location.replace('splash.html');
   }
 
   /* ════════════════════════════════════════════
@@ -818,14 +819,14 @@
       registerBrowsersWithBackend();
     }
 
-    // Animated transition
+    // Animated transition — route through splash screen
     if (typeof gsap !== 'undefined') {
       gsap.to('.wizard-shell', {
         opacity: 0, scale: 0.98, duration: 0.5,
-        onComplete: function () { window.location.href = 'auth-page-v2.html'; }
+        onComplete: function () { window.location.href = 'splash.html'; }
       });
     } else {
-      window.location.href = 'auth-page-v2.html';
+      window.location.href = 'splash.html';
     }
   };
 

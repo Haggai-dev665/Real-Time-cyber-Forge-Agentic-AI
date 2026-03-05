@@ -20,7 +20,7 @@
         "fullscreen": false,
         "decorations": true,
         "titleBarStyle": "Overlay",
-        "url": "renderer/setup-wizard.html"
+        "url": "renderer/splash.html"
       }
     ],
     "security": {

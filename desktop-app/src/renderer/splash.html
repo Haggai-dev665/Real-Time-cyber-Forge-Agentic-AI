@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberForge AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#080d14;--surface:#0d1520;--accent:#3b82f6;--accent2:#6366f1;--text:#e8eef4;--text2:#7a8fa0;--glow:rgba(59,130,246,.35)}
+    html,body{height:100%;overflow:hidden;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+    body{display:flex;align-items:center;justify-content:center;-webkit-user-select:none;user-select:none}
+
+    /* Animated background grid */
+    .bg-grid{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+    .bg-grid::before{content:'';position:absolute;inset:-50%;width:200%;height:200%;background:repeating-linear-gradient(0deg,transparent 0,transparent 59px,rgba(59,130,246,.04) 59px,rgba(59,130,246,.04) 60px),repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(59,130,246,.04) 59px,rgba(59,130,246,.04) 60px);animation:gridDrift 40s linear infinite}
+    @keyframes gridDrift{to{transform:translate(60px,60px)}}
+
+    /* Radial glow behind logo */
+    .bg-glow{position:fixed;inset:0;background:radial-gradient(600px circle at 50% 45%,rgba(59,130,246,.08),transparent 65%),radial-gradient(400px circle at 52% 48%,rgba(99,102,241,.06),transparent 55%);pointer-events:none;z-index:1}
+
+    /* Floating particles */
+    .particles{position:fixed;inset:0;z-index:1;pointer-events:none}
+    .particle{position:absolute;width:3px;height:3px;background:var(--accent);border-radius:50%;opacity:0;animation:particleFade 4s ease-in-out infinite}
+    .particle:nth-child(1){top:20%;left:15%;animation-delay:0s}
+    .particle:nth-child(2){top:70%;left:80%;animation-delay:.6s}
+    .particle:nth-child(3){top:40%;left:90%;animation-delay:1.2s}
+    .particle:nth-child(4){top:80%;left:25%;animation-delay:1.8s}
+    .particle:nth-child(5){top:10%;left:65%;animation-delay:2.4s}
+    .particle:nth-child(6){top:55%;left:10%;animation-delay:.9s}
+    .particle:nth-child(7){top:30%;left:50%;animation-delay:1.5s}
+    .particle:nth-child(8){top:85%;left:60%;animation-delay:2.1s}
+    @keyframes particleFade{0%,100%{opacity:0;transform:translateY(0) scale(.5)}50%{opacity:.6;transform:translateY(-20px) scale(1)}}
+
+    /* Main content */
+    .splash-center{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:0;opacity:0;animation:fadeIn .8s ease-out .2s forwards}
+    @keyframes fadeIn{to{opacity:1}}
+
+    /* Logo container with ring */
+    .logo-wrap{position:relative;width:140px;height:140px;margin-bottom:28px}
+    .logo-ring{position:absolute;inset:-8px;border-radius:50%;border:2px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent2);animation:ringSpin 2.4s linear infinite;opacity:.6}
+    .logo-ring-outer{position:absolute;inset:-18px;border-radius:50%;border:1px solid transparent;border-bottom-color:rgba(59,130,246,.25);border-left-color:rgba(99,102,241,.2);animation:ringSpinReverse 3.6s linear infinite;opacity:.45}
+    @keyframes ringSpin{to{transform:rotate(360deg)}}
+    @keyframes ringSpinReverse{to{transform:rotate(-360deg)}}
+
+    .logo-img{width:140px;height:140px;border-radius:28px;object-fit:contain;filter:drop-shadow(0 0 40px var(--glow));animation:logoPulse 3s ease-in-out infinite}
+    .logo-fallback{width:140px;height:140px;border-radius:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:2.8rem;font-weight:700;color:#fff;letter-spacing:2px;filter:drop-shadow(0 0 40px var(--glow));animation:logoPulse 3s ease-in-out infinite}
+    @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 40px var(--glow))}50%{filter:drop-shadow(0 0 60px rgba(59,130,246,.5))}}
+
+    /* Brand text */
+    .brand{font-family:'Space Grotesk','Inter',sans-serif;font-size:2.2rem;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,var(--text) 0%,var(--accent) 50%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+    .tagline{font-size:.82rem;color:var(--text2);letter-spacing:.12em;text-transform:uppercase;font-weight:400;margin-bottom:42px}
+
+    /* Progress bar */
+    .progress-track{width:220px;height:3px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:16px}
+    .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .3s ease-out}
+
+    /* Status text */
+    .status{font-size:.72rem;color:var(--text2);letter-spacing:.04em;min-height:18px;transition:opacity .2s}
+
+    /* Scanning lines effect */
+    .scan-line{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.15),transparent);z-index:2;pointer-events:none;animation:scanDown 4s ease-in-out infinite}
+    .scan-line:nth-child(2){animation-delay:2s;opacity:.5}
+    @keyframes scanDown{0%{top:-2px}100%{top:100%}}
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="scan-line"></div>
+  <div class="scan-line"></div>
+  <div class="particles">
+    <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    <div class="particle"></div><div class="particle"></div>
+  </div>
+
+  <div class="splash-center">
+    <div class="logo-wrap">
+      <div class="logo-ring-outer"></div>
+      <div class="logo-ring"></div>
+      <img class="logo-img" src="../assets/logo-icon.png" alt="CyberForge"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="logo-fallback" style="display:none">CF</div>
+    </div>
+    <div class="brand">CYBERFORGE</div>
+    <div class="tagline">Agentic Cyber Intelligence</div>
+    <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+    <div class="status" id="status">Initializing…</div>
+  </div>
+
+  <script>
+    /**
+     * Splash Screen — Entry Point Router
+     * Checks setup + auth state, then routes to the correct page.
+     * Shows an animated splash instead of flashing the wizard.
+     */
+    (function () {
+      var progress = document.getElementById('progress');
+      var status = document.getElementById('status');
+
+      var BACKEND_URL = localStorage.getItem('cyberforge_backend_url') ||
+                        'https://cyberforge-ddd97655464f.herokuapp.com';
+
+      function setProgress(pct, msg) {
+        if (progress) progress.style.width = pct + '%';
+        if (status && msg) status.textContent = msg;
+      }
+
+      function navigate(url) {
+        setProgress(100, 'Launching…');
+        setTimeout(function () {
+          try { window.location.replace(url); } catch (_) { window.location.href = url; }
+        }, 400);
+      }
+
+      async function validateToken(token) {
+        try {
+          var controller = new AbortController();
+          var timeout = setTimeout(function () { controller.abort(); }, 8000);
+          var resp = await fetch(BACKEND_URL + '/api/auth/profile', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+          return resp.ok;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function tryRefresh(token) {
+        try {
+          var resp = await fetch(BACKEND_URL + '/api/auth/refresh', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ refreshToken: token })
+          });
+          if (!resp.ok) return false;
+          var data = await resp.json();
+          var nested = data.data || data;
+          var newToken = data.token || nested.token;
+          if (!newToken) return false;
+          localStorage.setItem('authToken', newToken);
+          if (data.user || nested.user) {
+            localStorage.setItem('user', JSON.stringify(data.user || nested.user));
+          }
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      async function boot() {
+        // Step 1: Check if setup has been completed
+        setProgress(15, 'Checking configuration…');
+        await new Promise(function (r) { setTimeout(r, 300); });
+
+        var setupDone = localStorage.getItem('cyberforge_setup_complete') === 'true';
+        if (!setupDone) {
+          setProgress(50, 'First-time setup required…');
+          await new Promise(function (r) { setTimeout(r, 400); });
+          navigate('setup-wizard.html');
+          return;
+        }
+
+        // Step 2: Check for stored auth token
+        setProgress(35, 'Checking session…');
+        await new Promise(function (r) { setTimeout(r, 250); });
+
+        var token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
+        // Try Electron/Tauri secure storage
+        if (!token && window.electronAPI && window.electronAPI.auth && window.electronAPI.auth.getToken) {
+          try {
+            var result = await window.electronAPI.auth.getToken();
+            if (result && result.token) {
+              token = result.token;
+              localStorage.setItem('authToken', token);
+            }
+          } catch (_) {}
+        }
+
+        if (!token) {
+          setProgress(70, 'Sign-in required…');
+          await new Promise(function (r) { setTimeout(r, 300); });
+          navigate('auth-page-v2.html');
+          return;
+        }
+
+        // Step 3: Validate the token
+        setProgress(55, 'Verifying credentials…');
+        var valid = await validateToken(token);
+
+        if (valid) {
+          setProgress(85, 'Session verified');
+          await new Promise(function (r) { setTimeout(r, 200); });
+          navigate('dashboard.html');
+          return;
+        }
+
+        // Step 4: Try silent refresh
+        setProgress(70, 'Refreshing session…');
+        var refreshToken = localStorage.getItem('refreshToken') || token;
+        var refreshed = await tryRefresh(refreshToken);
+
+        if (refreshed) {
+          setProgress(90, 'Session restored');
+          await new Promise(function (r) { setTimeout(r, 200); });
+          navigate('dashboard.html');
+          return;
+        }
+
+        // Step 5: Token expired, require login
+        setProgress(85, 'Session expired…');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('refreshToken');
+        await new Promise(function (r) { setTimeout(r, 300); });
+        navigate('auth-page-v2.html');
+      }
+
+      // Start after a small delay so the splash animation is visible
+      setTimeout(boot, 600);
+    })();
+  </script>
+</body>
+</html>

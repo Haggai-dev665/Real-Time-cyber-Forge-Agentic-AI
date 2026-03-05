@@ -423,20 +423,16 @@ async function handleLogin(event) {
         const auth = normalizeAuthResponse(data);
 
         if (auth.success && auth.token) {
-            // Also store in localStorage for api-client.js to use
-            const storage = rememberMe ? localStorage : sessionStorage;
-            const secondaryStorage = rememberMe ? sessionStorage : localStorage;
-
-            secondaryStorage.removeItem(AUTH_STORAGE_KEYS.token);
-            secondaryStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
-            secondaryStorage.removeItem(AUTH_STORAGE_KEYS.user);
-
-            storage.setItem('authToken', auth.token);
+            // Always persist to localStorage for desktop app (survives app restart)
+            localStorage.setItem('authToken', auth.token);
+            sessionStorage.setItem('authToken', auth.token);
             if (auth.refreshToken) {
-                storage.setItem('refreshToken', auth.refreshToken);
+                localStorage.setItem('refreshToken', auth.refreshToken);
+                sessionStorage.setItem('refreshToken', auth.refreshToken);
             }
             if (auth.user) {
-                storage.setItem('user', JSON.stringify(auth.user));
+                localStorage.setItem('user', JSON.stringify(auth.user));
+                sessionStorage.setItem('user', JSON.stringify(auth.user));
             }
 
             const userEmail = auth.user?.email || email;

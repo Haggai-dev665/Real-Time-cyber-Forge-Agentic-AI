@@ -102,7 +102,7 @@
 
 .metric-icon.health {
     background: var(--gradient-success);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(3, 152, 85, 0.3);
 }
 
 .metric-actions .btn-icon {
@@ -203,7 +203,7 @@
 
 .indicator-dot.healthy {
     background: var(--success);
-    box-shadow: 0 0 4px rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 4px rgba(3, 152, 85, 0.5);
 }
 
 .indicator-dot.unhealthy {

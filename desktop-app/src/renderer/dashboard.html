@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="css/design-tokens.css">
     <!-- App Shell: Header, Sidebar, Content, Footer, Floating Panel, Motion -->
     <link rel="stylesheet" href="css/enterprise-shell.css">
+    <!-- Main Theme: Typography, Colors, Component Overrides -->
+    <link rel="stylesheet" href="css/cyberforge-theme.css">
     <!-- Domain-specific component styles -->
     <link rel="stylesheet" href="css/threat-globe.css">
     <link rel="stylesheet" href="css/browser-intelligence.css">
@@ -52,13 +54,14 @@
                 </button>
                 
                 <div class="cf-logo">
-                    <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image">
+                    <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image"
+                         onerror="this.style.display='none'">
                 </div>
                 
                 <!-- AI Agent Status in Header -->
-                <div class="header-agent-status" id="header-agent-status" title="AI Agent Status">
+                <div class="header-agent-status" id="header-agent-status" title="AI Agents Status">
                     <span class="agent-status-indicator-mini"></span>
-                    <span class="agent-status-label">Agent Active</span>
+                    <span class="agent-status-label">Agents Online</span>
                 </div>
                 
                 <!-- Quick Scan Button -->
@@ -71,21 +74,24 @@
             <div class="cf-header-center">
                 <div class="header-search" id="header-search">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search threats, URLs, events..." id="global-search">
+                    <input type="text" placeholder="Search threats, URLs, events…" id="global-search">
                     <kbd>⌘K</kbd>
                 </div>
             </div>
             
             <div class="cf-header-right">
+                <!-- Backend Status Badge -->
+                <span class="cf-badge" id="backend-status" title="Backend Connection"><i class="fas fa-circle-notch fa-spin"></i> Connecting</span>
+
                 <!-- Device Identity -->
                 <div class="header-device-id" id="header-device-id" title="Device Identity">
                     <i class="fas fa-desktop"></i>
-                    <span id="device-name">Device-001</span>
+                    <span id="device-name">Local</span>
                 </div>
                 
                 <!-- Active Alert Count -->
                 <div class="header-alert-count" id="header-alert-widget" title="Active Alerts">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-shield-alt"></i>
                     <span id="header-alert-number">0</span>
                 </div>
                 
@@ -94,14 +100,12 @@
                     <i class="fas fa-user-secret"></i>
                 </div>
                 
-                <span class="cf-badge" id="backend-status" title="Backend Connection"><i class="fas fa-circle-notch fa-spin" style="margin-right:4px;font-size:9px"></i>Connecting</span>
-                
                 <button class="header-btn" id="notifications-btn" title="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge" id="notification-count">0</span>
                 </button>
                 
-                <button class="header-btn" id="theme-toggle" title="Toggle Theme (Dark/Light)">
+                <button class="header-btn" id="theme-toggle" title="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
                 

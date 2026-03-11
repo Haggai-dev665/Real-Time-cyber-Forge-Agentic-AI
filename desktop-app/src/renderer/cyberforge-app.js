@@ -2835,15 +2835,15 @@
       
       const colors = {
         idle: '#6b7280',
-        monitoring: '#10b981',
-        analyzing: '#3b82f6',
-        investigating: '#f59e0b',
-        waiting: '#8b5cf6',
-        blocked: '#ef4444'
+        monitoring: '#039855',
+        analyzing: '#1570EF',
+        investigating: '#DC6803',
+        waiting: '#6941C6',
+        blocked: '#D92D20'
       };
       
       if (indicator) {
-        indicator.style.background = colors[effectiveStatus] || '#10b981';
+        indicator.style.background = colors[effectiveStatus] || '#039855';
       }
       if (label) {
         const statusLabel = state.backendConnected
@@ -4523,7 +4523,7 @@
             </div>
             <div class="cf-panel-actions" style="display:flex; gap:8px; align-items:center;">
               <span id="ai-status" class="cf-badge green" style="display:flex; align-items:center; gap:4px;">
-                <span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:#22c55e;"></span>
+                <span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:#039855;"></span>
                 Online
               </span>
               <button class="cf-btn ai-btn-bounce" id="toggle-sidebar-mobile" title="Toggle history" style="display:none;">
@@ -5151,7 +5151,7 @@
       }
       
       statusBadge.className = `cf-badge ${online ? 'green' : 'red'}`;
-      statusBadge.innerHTML = `<span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:${online ? '#22c55e' : '#ef4444'};"></span> ${online ? 'Online' : 'Offline'}`;
+      statusBadge.innerHTML = `<span class="status-dot" style="width:6px;height:6px;border-radius:50%;background:${online ? '#039855' : '#D92D20'};"></span> ${online ? 'Online' : 'Offline'}`;
     };
 
     // Quick action handlers
@@ -5950,9 +5950,9 @@
                   <i class="fas fa-map-marked-alt" style="color:var(--cf-accent-blue);"></i> Threat Map
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444;"></span> Critical</div>
-                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px #f59e0b;"></span> Medium</div>
-                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px #3b82f6;"></span> Low</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#D92D20;box-shadow:0 0 6px #D92D20;"></span> Critical</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#DC6803;box-shadow:0 0 6px #DC6803;"></span> Medium</div>
+                  <div style="display:flex; align-items:center; gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:#1570EF;box-shadow:0 0 6px #1570EF;"></span> Low</div>
                 </div>
                 <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:10px; color:var(--cf-text-muted);">
                   <i class="fas fa-satellite-dish"></i> AlienVault OTX

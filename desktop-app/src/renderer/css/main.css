@@ -3,10 +3,10 @@
    =========================== */
 
 :root {
-    /* Lavender White Color Palette */
-    --primary: #b388ff;
+    /* Enterprise Green Color Palette */
+    --primary: #2E7D32;
     --primary-dark: #9965e6;
-    --secondary: #1a1025;
+    --secondary: #0C111D;
     --accent: #7c4dff;
     --success: #69f0ae;
     --warning: #ffd740;
@@ -14,15 +14,15 @@
     --info: #7c9dff;
 
     /* Theme Colors */
-    --bg-primary: #1a1025;
-    --bg-secondary: #221533;
+    --bg-primary: #0C111D;
+    --bg-secondary: #1D2939;
     --bg-tertiary: #2a1a3e;
     --bg-card: #251838;
     --bg-hover: #352448;
 
     /* Text Colors */
-    --text-primary: #f0e6ff;
-    --text-secondary: #d4b8ff;
+    --text-primary: #F2F4F7;
+    --text-secondary: #98A2B3;
     --text-muted: #9e8cb8;
     --text-accent: var(--primary);
 
@@ -104,7 +104,7 @@
 [data-theme="light"] {
     --primary: #7c4dff;
     --primary-dark: #651fff;
-    --secondary: #f0e6ff;
+    --secondary: #F2F4F7;
     --accent: #ede7f6;
 
     --bg-primary: #f5f0ff;
@@ -113,7 +113,7 @@
     --bg-card: #ffffff;
     --bg-hover: #d1c4e9;
 
-    --text-primary: #1a1025;
+    --text-primary: #0C111D;
     --text-secondary: #4a3660;
     --text-muted: #7a6b8a;
     
@@ -306,13 +306,13 @@ body {
     position: relative;
     z-index: 1;
     font-size: 18px;
-    color: #b388ff;
+    color: #2E7D32;
     animation: agentIconGlow 2s ease-in-out infinite;
 }
 
 @keyframes agentIconGlow {
-    0%, 100% { filter: drop-shadow(0 0 5px #b388ff); }
-    50% { filter: drop-shadow(0 0 15px #b388ff); }
+    0%, 100% { filter: drop-shadow(0 0 5px #2E7D32); }
+    50% { filter: drop-shadow(0 0 15px #2E7D32); }
 }
 
 .agent-info {
@@ -332,7 +332,7 @@ body {
 .agent-state {
     font-size: var(--text-sm);
     font-weight: 500;
-    color: #b388ff;
+    color: #2E7D32;
     animation: agentStateFlicker 3s ease-in-out infinite;
 }
 
@@ -361,7 +361,7 @@ body {
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: linear-gradient(135deg, #b388ff, #7c4dff);
+    background: linear-gradient(135deg, #2E7D32, #7c4dff);
     border-radius: 10px;
     font-size: var(--text-xs);
     font-weight: 700;
@@ -393,7 +393,7 @@ body {
 }
 
 .status-dot.active {
-    background-color: #b388ff;
+    background-color: #2E7D32;
     animation: statusActive 1.5s ease-in-out infinite;
 }
 
@@ -403,8 +403,8 @@ body {
 }
 
 @keyframes statusActive {
-    0%, 100% { box-shadow: 0 0 5px #b388ff, 0 0 10px #b388ff; }
-    50% { box-shadow: 0 0 10px #b388ff, 0 0 20px #b388ff; }
+    0%, 100% { box-shadow: 0 0 5px #2E7D32, 0 0 10px #2E7D32; }
+    50% { box-shadow: 0 0 10px #2E7D32, 0 0 20px #2E7D32; }
 }
 
 #backend-status .status-dot.online { background-color: var(--success); }
@@ -451,7 +451,7 @@ body {
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
+    background: linear-gradient(135deg, #D92D20, #dc2626);
     border-radius: 9px;
     font-size: 10px;
     font-weight: 700;
@@ -536,7 +536,7 @@ body {
 
 .stat-icon {
     font-size: 16px;
-    color: #b388ff;
+    color: #2E7D32;
 }
 
 .stat-details {
@@ -578,21 +578,21 @@ body {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: radial-gradient(circle, #b388ff, #7c4dff);
+    background: radial-gradient(circle, #2E7D32, #7c4dff);
     animation: activityPulseGlow 1.5s ease-in-out infinite;
-    box-shadow: 0 0 10px #b388ff;
+    box-shadow: 0 0 10px #2E7D32;
 }
 
 @keyframes activityPulseGlow {
     0%, 100% {
         transform: scale(1);
         opacity: 1;
-        box-shadow: 0 0 10px #b388ff;
+        box-shadow: 0 0 10px #2E7D32;
     }
     50% {
         transform: scale(1.3);
         opacity: 0.7;
-        box-shadow: 0 0 20px #b388ff, 0 0 30px #7c4dff;
+        box-shadow: 0 0 20px #2E7D32, 0 0 30px #7c4dff;
     }
 }
 

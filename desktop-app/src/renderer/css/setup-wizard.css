@@ -15,7 +15,7 @@
   --wiz-success: #4A7C59;
   --wiz-warning: #C7923E;
   --wiz-danger: #DC3545;
-  --wiz-progress-bg: #E8E2D8;
+  --wiz-progress-bg: #F2F4F7;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

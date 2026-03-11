@@ -22,16 +22,16 @@
     --accent-light: #888888;
     
     /* Status Colors */
-    --success: #10b981;
-    --success-dark: #059669;
+    --success: #039855;
+    --success-dark: #027A48;
     --success-light: #34d399;
-    --warning: #f59e0b;
+    --warning: #DC6803;
     --warning-dark: #d97706;
     --warning-light: #fbbf24;
-    --error: #ef4444;
+    --error: #D92D20;
     --error-dark: #dc2626;
     --error-light: #f87171;
-    --info: #3b82f6;
+    --info: #1570EF;
     --info-dark: #2563eb;
     --info-light: #60a5fa;
     
@@ -100,18 +100,18 @@
     --accent-light: #888888;
     
     /* Status Colors */
-    --success: #059669;
+    --success: #027A48;
     --success-dark: #047857;
-    --success-light: #10b981;
+    --success-light: #039855;
     --warning: #d97706;
     --warning-dark: #b45309;
-    --warning-light: #f59e0b;
+    --warning-light: #DC6803;
     --error: #dc2626;
     --error-dark: #b91c1c;
-    --error-light: #ef4444;
+    --error-light: #D92D20;
     --info: #2563eb;
     --info-dark: #1d4ed8;
-    --info-light: #3b82f6;
+    --info-light: #1570EF;
     
     /* Background Colors */
     --bg-primary: #ffffff;
@@ -323,7 +323,7 @@
     /* Primary Colors */
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
-    --primary-light: #3b82f6;
+    --primary-light: #1570EF;
     --secondary: #7c3aed;
     --secondary-dark: #5b21b6;
     --secondary-light: #a855f7;
@@ -334,13 +334,13 @@
     --accent-light: #06b6d4;
     
     /* Status Colors - keeping standard */
-    --success: #10b981;
-    --success-dark: #059669;
+    --success: #039855;
+    --success-dark: #027A48;
     --success-light: #34d399;
-    --warning: #f59e0b;
+    --warning: #DC6803;
     --warning-dark: #d97706;
     --warning-light: #fbbf24;
-    --error: #ef4444;
+    --error: #D92D20;
     --error-dark: #dc2626;
     --error-light: #f87171;
     --info: var(--primary);

@@ -25,23 +25,23 @@
     --ai-text-link: #4d9fff;
     
     /* Accent Colors - Match the app accent palette */
-    --ai-accent-primary: #2dd4bf;
+    --ai-accent-primary: #67E3F9;
     --ai-accent-secondary: #22d3ee;
     --ai-accent-blue: #4d9fff;
     --ai-accent-cyan: #22d3ee;
     --ai-accent-orange: #ff6b35;
     --ai-accent-pink: #f472b6;
-    --ai-accent-green: #2dd4bf;
-    --ai-accent-red: #ff5757;
+    --ai-accent-green: #67E3F9;
+    --ai-accent-red: #F97066;
     --ai-accent-yellow: #fbbf24;
     
     /* Gradients - Using app accent color */
-    --ai-gradient-brand: linear-gradient(135deg, #2dd4bf 0%, #4d9fff 100%);
+    --ai-gradient-brand: linear-gradient(135deg, #67E3F9 0%, #4d9fff 100%);
     --ai-gradient-user: linear-gradient(135deg, #222235 0%, #1a1a28 100%);
-    --ai-gradient-ai: linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%);
-    --ai-gradient-success: linear-gradient(135deg, #2dd4bf 0%, #10b981 100%);
+    --ai-gradient-ai: linear-gradient(135deg, #67E3F9 0%, #22d3ee 100%);
+    --ai-gradient-success: linear-gradient(135deg, #67E3F9 0%, #039855 100%);
     --ai-gradient-warning: linear-gradient(135deg, #fbbf24 0%, #ff6b35 100%);
-    --ai-gradient-danger: linear-gradient(135deg, #ff5757 0%, #ef4444 100%);
+    --ai-gradient-danger: linear-gradient(135deg, #F97066 0%, #D92D20 100%);
     
     /* Glass Effects */
     --ai-glass-bg: rgba(255, 255, 255, 0.02);

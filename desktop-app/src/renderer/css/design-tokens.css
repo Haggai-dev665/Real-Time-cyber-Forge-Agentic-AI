@@ -2,7 +2,7 @@
    CYBERFORGE — ENTERPRISE DESIGN TOKEN SYSTEM
    ═══════════════════════════════════════════════════════════════════════
    Single source of truth for ALL visual tokens.
-   NO gradients. NO purple. NO pink. NO neon. SOC-grade enterprise.
+   Clean, professional forest-green enterprise palette.
    
    Architecture:
      Layer 0  →  Primitive palette (raw colors)
@@ -12,14 +12,50 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─── Google Fonts ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════
    LAYER 0 — PRIMITIVE PALETTE
    Raw colors. Never reference these directly in components.
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
-    /* ─── Neutrals (Slate) ─── */
+    /* ─── Neutrals (Warm Gray) ─── */
+    --raw-gray-25:  #FCFCFD;
+    --raw-gray-50:  #F9FAFB;
+    --raw-gray-100: #F2F4F7;
+    --raw-gray-200: #EAECF0;
+    --raw-gray-300: #D0D5DD;
+    --raw-gray-400: #98A2B3;
+    --raw-gray-500: #667085;
+    --raw-gray-600: #475467;
+    --raw-gray-700: #344054;
+    --raw-gray-800: #1D2939;
+    --raw-gray-900: #101828;
+    --raw-gray-950: #0C111D;
+
+    /* ─── Primary — Forest Green (from reference) ─── */
+    --raw-green-25:  #F6FEF9;
+    --raw-green-50:  #ECFDF3;
+    --raw-green-100: #D1FADF;
+    --raw-green-200: #A6F4C5;
+    --raw-green-300: #6CE9A6;
+    --raw-green-400: #32D583;
+    --raw-green-500: #12B76A;
+    --raw-green-600: #039855;
+    --raw-green-700: #027A48;
+    --raw-green-800: #05603A;
+    --raw-green-900: #054F31;
+    --raw-green-950: #053321;
+    
+    /* ─── Deep Forest Green (reference header/accents) ─── */
+    --raw-forest-400: #4CAF50;
+    --raw-forest-500: #388E3C;
+    --raw-forest-600: #2E7D32;
+    --raw-forest-700: #1B5E20;
+    --raw-forest-800: #1A4731;
+    --raw-forest-900: #14352A;
+
+    /* ─── Accent — Warm Neutral (secondary) ─── */
     --raw-slate-50:  #F8FAFC;
     --raw-slate-100: #F1F5F9;
     --raw-slate-150: #E8EDF2;
@@ -34,57 +70,32 @@
     --raw-slate-900: #0F172A;
     --raw-slate-950: #020617;
 
-    /* ─── Primary — Teal/Cyan (Enterprise Security) ─── */
-    --raw-teal-50:  #F0FDFA;
-    --raw-teal-100: #CCFBF1;
-    --raw-teal-200: #99F6E4;
-    --raw-teal-300: #5EEAD4;
-    --raw-teal-400: #2DD4BF;
-    --raw-teal-500: #14B8A6;
-    --raw-teal-600: #0D9488;
-    --raw-teal-700: #0F766E;
-    --raw-teal-800: #115E59;
-    --raw-teal-900: #134E4A;
-
-    /* ─── Accent — Steel Blue (SOC Console) ─── */
-    --raw-steel-50:  #F0F7FF;
-    --raw-steel-100: #E0EFFF;
-    --raw-steel-200: #BAD8FE;
-    --raw-steel-300: #7DB8FC;
-    --raw-steel-400: #3B93F7;
-    --raw-steel-500: #1A73E8;
-    --raw-steel-600: #0D5BC6;
-    --raw-steel-700: #0E47A1;
-    --raw-steel-800: #103D85;
-    --raw-steel-900: #13326E;
-
     /* ─── Status — Semantic Colors ─── */
-    --raw-green-400:  #4ADE80;
-    --raw-green-500:  #22C55E;
-    --raw-green-600:  #16A34A;
-    --raw-green-700:  #15803D;
-    --raw-green-900:  #14532D;
-    --raw-green-bg:   rgba(22, 163, 74, 0.10);
+    --raw-success-400:  #32D583;
+    --raw-success-500:  #12B76A;
+    --raw-success-600:  #039855;
+    --raw-success-700:  #027A48;
+    --raw-success-bg:   rgba(3, 152, 85, 0.08);
 
-    --raw-amber-400:  #FBBF24;
-    --raw-amber-500:  #F59E0B;
-    --raw-amber-600:  #D97706;
-    --raw-amber-700:  #B45309;
-    --raw-amber-900:  #78350F;
-    --raw-amber-bg:   rgba(245, 158, 11, 0.10);
+    --raw-amber-400:  #FDB022;
+    --raw-amber-500:  #F79009;
+    --raw-amber-600:  #DC6803;
+    --raw-amber-700:  #B54708;
+    --raw-amber-900:  #7A2E0E;
+    --raw-amber-bg:   rgba(247, 144, 9, 0.08);
 
-    --raw-red-400:    #F87171;
-    --raw-red-500:    #EF4444;
-    --raw-red-600:    #DC2626;
-    --raw-red-700:    #B91C1C;
-    --raw-red-900:    #7F1D1D;
-    --raw-red-bg:     rgba(239, 68, 68, 0.10);
+    --raw-red-400:    #F97066;
+    --raw-red-500:    #F04438;
+    --raw-red-600:    #D92D20;
+    --raw-red-700:    #B42318;
+    --raw-red-900:    #7A271A;
+    --raw-red-bg:     rgba(240, 68, 56, 0.08);
 
-    --raw-sky-400:    #38BDF8;
-    --raw-sky-500:    #0EA5E9;
-    --raw-sky-600:    #0284C7;
-    --raw-sky-700:    #0369A1;
-    --raw-sky-bg:     rgba(14, 165, 233, 0.10);
+    --raw-blue-400:   #53B1FD;
+    --raw-blue-500:   #2E90FA;
+    --raw-blue-600:   #1570EF;
+    --raw-blue-700:   #175CD3;
+    --raw-blue-bg:    rgba(46, 144, 250, 0.08);
 
     /* ─── Pure ─── */
     --raw-white:  #FFFFFF;
@@ -97,58 +108,58 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
     /* ─── Background System ─── */
-    --cf-bg-app:        var(--raw-slate-100);
-    --cf-bg-primary:    var(--raw-slate-100);
-    --cf-bg-secondary:  var(--raw-slate-150);
+    --cf-bg-app:        var(--raw-gray-50);
+    --cf-bg-primary:    var(--raw-gray-50);
+    --cf-bg-secondary:  var(--raw-gray-100);
     --cf-bg-elevated:   var(--raw-white);
-    --cf-bg-accent:     var(--raw-teal-600);
-    --cf-bg-accent-subtle: rgba(20, 184, 166, 0.08);
+    --cf-bg-accent:     var(--raw-forest-600);
+    --cf-bg-accent-subtle: rgba(46, 125, 50, 0.06);
 
     /* ─── Surface System (Cards, Panels, Containers) ─── */
     --cf-surface-0:     var(--raw-white);
-    --cf-surface-1:     var(--raw-slate-50);
-    --cf-surface-2:     var(--raw-slate-100);
-    --cf-surface-3:     var(--raw-slate-200);
+    --cf-surface-1:     var(--raw-gray-50);
+    --cf-surface-2:     var(--raw-gray-100);
+    --cf-surface-3:     var(--raw-gray-200);
 
     /* ─── Text System ─── */
-    --cf-text-primary:   var(--raw-slate-900);
-    --cf-text-secondary: var(--raw-slate-600);
-    --cf-text-tertiary:  var(--raw-slate-500);
-    --cf-text-muted:     var(--raw-slate-400);
+    --cf-text-primary:   var(--raw-gray-900);
+    --cf-text-secondary: var(--raw-gray-600);
+    --cf-text-tertiary:  var(--raw-gray-500);
+    --cf-text-muted:     var(--raw-gray-400);
     --cf-text-inverse:   var(--raw-white);
     --cf-text-on-accent: var(--raw-white);
 
     /* ─── Interactive System ─── */
-    --cf-interactive-default: var(--raw-teal-600);
-    --cf-interactive-hover:   var(--raw-teal-700);
-    --cf-interactive-active:  var(--raw-teal-800);
-    --cf-interactive-subtle:  rgba(20, 184, 166, 0.10);
-    --cf-interactive-focus:   rgba(20, 184, 166, 0.24);
+    --cf-interactive-default: var(--raw-forest-600);
+    --cf-interactive-hover:   var(--raw-forest-700);
+    --cf-interactive-active:  var(--raw-forest-800);
+    --cf-interactive-subtle:  rgba(46, 125, 50, 0.08);
+    --cf-interactive-focus:   rgba(46, 125, 50, 0.20);
 
     /* ─── Border System ─── */
-    --cf-border-light:   var(--raw-slate-200);
-    --cf-border-medium:  var(--raw-slate-300);
-    --cf-border-strong:  var(--raw-slate-400);
-    --cf-border-accent:  var(--raw-teal-500);
+    --cf-border-light:   var(--raw-gray-200);
+    --cf-border-medium:  var(--raw-gray-300);
+    --cf-border-strong:  var(--raw-gray-400);
+    --cf-border-accent:  var(--raw-forest-500);
 
     /* ─── Status Colors ─── */
-    --cf-status-success:     var(--raw-green-600);
-    --cf-status-success-bg:  var(--raw-green-bg);
+    --cf-status-success:     var(--raw-success-600);
+    --cf-status-success-bg:  var(--raw-success-bg);
     --cf-status-warning:     var(--raw-amber-600);
     --cf-status-warning-bg:  var(--raw-amber-bg);
     --cf-status-error:       var(--raw-red-600);
     --cf-status-error-bg:    var(--raw-red-bg);
-    --cf-status-info:        var(--raw-sky-600);
-    --cf-status-info-bg:     var(--raw-sky-bg);
+    --cf-status-info:        var(--raw-blue-600);
+    --cf-status-info-bg:     var(--raw-blue-bg);
 
-    /* ─── Shadows — Subtle, no purple ─── */
-    --cf-shadow-xs:  0 1px 2px rgba(15, 23, 42, 0.04);
-    --cf-shadow-sm:  0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --cf-shadow-md:  0 4px 6px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
-    --cf-shadow-lg:  0 10px 15px rgba(15, 23, 42, 0.06), 0 4px 6px rgba(15, 23, 42, 0.04);
-    --cf-shadow-xl:  0 20px 25px rgba(15, 23, 42, 0.08), 0 8px 10px rgba(15, 23, 42, 0.04);
-    --cf-shadow-2xl: 0 25px 50px rgba(15, 23, 42, 0.12);
-    --cf-shadow-inner: inset 0 2px 4px rgba(15, 23, 42, 0.05);
+    /* ─── Shadows — Clean, subtle ─── */
+    --cf-shadow-xs:  0 1px 2px rgba(16, 24, 40, 0.05);
+    --cf-shadow-sm:  0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.06);
+    --cf-shadow-md:  0 4px 8px rgba(16, 24, 40, 0.08), 0 2px 4px rgba(16, 24, 40, 0.04);
+    --cf-shadow-lg:  0 12px 16px rgba(16, 24, 40, 0.08), 0 4px 6px rgba(16, 24, 40, 0.03);
+    --cf-shadow-xl:  0 20px 24px rgba(16, 24, 40, 0.08), 0 8px 8px rgba(16, 24, 40, 0.03);
+    --cf-shadow-2xl: 0 24px 48px rgba(16, 24, 40, 0.12);
+    --cf-shadow-inner: inset 0 2px 4px rgba(16, 24, 40, 0.04);
     --cf-shadow-focus: 0 0 0 3px var(--cf-interactive-focus);
 
     /* ─── Typography ─── */
@@ -286,82 +297,82 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
     /* ─── Header ─── */
-    --cf-header-bg:         var(--raw-slate-900);
-    --cf-header-text:       var(--raw-slate-100);
-    --cf-header-text-muted: var(--raw-slate-400);
-    --cf-header-border:     var(--raw-slate-800);
-    --cf-header-btn-bg:     rgba(255, 255, 255, 0.06);
-    --cf-header-btn-hover:  rgba(255, 255, 255, 0.12);
+    --cf-header-bg:         var(--raw-white);
+    --cf-header-text:       var(--raw-gray-900);
+    --cf-header-text-muted: var(--raw-gray-500);
+    --cf-header-border:     var(--raw-gray-200);
+    --cf-header-btn-bg:     var(--raw-gray-50);
+    --cf-header-btn-hover:  var(--raw-gray-100);
 
     /* ─── Sidebar ─── */
-    --cf-sidebar-bg:         var(--cf-surface-0);
-    --cf-sidebar-border:     var(--cf-border-light);
-    --cf-sidebar-section:    var(--cf-text-muted);
-    --cf-sidebar-link:       var(--cf-text-secondary);
-    --cf-sidebar-link-hover: var(--cf-surface-2);
-    --cf-sidebar-link-active-bg:   rgba(20, 184, 166, 0.08);
-    --cf-sidebar-link-active-text: var(--cf-interactive-default);
-    --cf-sidebar-link-active-bar:  var(--cf-interactive-default);
-    --cf-sidebar-icon:       var(--cf-text-muted);
-    --cf-sidebar-icon-active: var(--cf-interactive-default);
+    --cf-sidebar-bg:         var(--raw-white);
+    --cf-sidebar-border:     var(--raw-gray-200);
+    --cf-sidebar-section:    var(--raw-gray-400);
+    --cf-sidebar-link:       var(--raw-gray-600);
+    --cf-sidebar-link-hover: var(--raw-gray-50);
+    --cf-sidebar-link-active-bg:   rgba(46, 125, 50, 0.08);
+    --cf-sidebar-link-active-text: var(--raw-forest-600);
+    --cf-sidebar-link-active-bar:  var(--raw-forest-600);
+    --cf-sidebar-icon:       var(--raw-gray-400);
+    --cf-sidebar-icon-active: var(--raw-forest-600);
 
     /* ─── Floating Agent Panel ─── */
-    --cf-panel-bg:           var(--cf-surface-0);
-    --cf-panel-header-bg:    var(--raw-slate-900);
-    --cf-panel-header-text:  var(--raw-slate-100);
-    --cf-panel-border:       var(--cf-border-light);
-    --cf-panel-section-bg:   var(--cf-surface-1);
-    --cf-panel-section-title: var(--cf-text-muted);
+    --cf-panel-bg:           var(--raw-white);
+    --cf-panel-header-bg:    var(--raw-forest-700);
+    --cf-panel-header-text:  var(--raw-white);
+    --cf-panel-border:       var(--raw-gray-200);
+    --cf-panel-section-bg:   var(--raw-gray-50);
+    --cf-panel-section-title: var(--raw-gray-500);
 
     /* ─── Footer ─── */
-    --cf-footer-bg:          var(--raw-slate-900);
-    --cf-footer-text:        var(--raw-slate-400);
-    --cf-footer-border:      var(--raw-slate-800);
+    --cf-footer-bg:          var(--raw-white);
+    --cf-footer-text:        var(--raw-gray-500);
+    --cf-footer-border:      var(--raw-gray-200);
 
     /* ─── Cards ─── */
-    --cf-card-bg:            var(--cf-surface-0);
-    --cf-card-border:        var(--cf-border-light);
-    --cf-card-header-bg:     var(--cf-surface-1);
+    --cf-card-bg:            var(--raw-white);
+    --cf-card-border:        var(--raw-gray-200);
+    --cf-card-header-bg:     var(--raw-gray-50);
     --cf-card-shadow:        var(--cf-shadow-sm);
 
     /* ─── Console / Code ─── */
-    --cf-console-bg:         var(--raw-slate-900);
-    --cf-console-text:       var(--raw-slate-200);
-    --cf-console-border:     var(--raw-slate-700);
+    --cf-console-bg:         var(--raw-gray-900);
+    --cf-console-text:       var(--raw-gray-200);
+    --cf-console-border:     var(--raw-gray-700);
 
     /* ─── Badges ─── */
-    --cf-badge-live-bg:      rgba(22, 163, 74, 0.15);
-    --cf-badge-live-text:    var(--raw-green-600);
-    --cf-badge-live-border:  var(--raw-green-600);
-    --cf-badge-agent-bg:     rgba(20, 184, 166, 0.12);
-    --cf-badge-agent-text:   var(--raw-teal-600);
-    --cf-badge-agent-border: var(--raw-teal-500);
+    --cf-badge-live-bg:      var(--raw-success-bg);
+    --cf-badge-live-text:    var(--raw-success-600);
+    --cf-badge-live-border:  var(--raw-success-500);
+    --cf-badge-agent-bg:     rgba(46, 125, 50, 0.08);
+    --cf-badge-agent-text:   var(--raw-forest-600);
+    --cf-badge-agent-border: var(--raw-forest-500);
     --cf-badge-alert-bg:     var(--raw-red-bg);
     --cf-badge-alert-text:   var(--raw-red-600);
     --cf-badge-alert-border: var(--raw-red-500);
 
     /* ─── Scrollbar ─── */
-    --cf-scrollbar-track:  var(--cf-surface-1);
-    --cf-scrollbar-thumb:  var(--cf-border-medium);
-    --cf-scrollbar-hover:  var(--cf-border-strong);
+    --cf-scrollbar-track:  transparent;
+    --cf-scrollbar-thumb:  var(--raw-gray-300);
+    --cf-scrollbar-hover:  var(--raw-gray-400);
 
     /* ─── Tab Bar ─── */
-    --cf-tab-bg:           var(--cf-surface-0);
-    --cf-tab-text:         var(--cf-text-tertiary);
-    --cf-tab-active-text:  var(--cf-interactive-default);
-    --cf-tab-active-bar:   var(--cf-interactive-default);
+    --cf-tab-bg:           var(--raw-white);
+    --cf-tab-text:         var(--raw-gray-500);
+    --cf-tab-active-text:  var(--raw-forest-600);
+    --cf-tab-active-bar:   var(--raw-forest-600);
     --cf-tab-hover-bg:     var(--cf-bg-accent-subtle);
 
     /* ─── Input / Forms ─── */
-    --cf-input-bg:         var(--cf-surface-0);
-    --cf-input-border:     var(--cf-border-light);
-    --cf-input-focus:      var(--cf-border-accent);
+    --cf-input-bg:         var(--raw-white);
+    --cf-input-border:     var(--raw-gray-300);
+    --cf-input-focus:      var(--raw-forest-500);
     --cf-input-focus-ring: var(--cf-interactive-focus);
 
     /* ─── Tables ─── */
-    --cf-table-header-bg:  var(--cf-surface-1);
-    --cf-table-row-hover:  var(--cf-bg-accent-subtle);
-    --cf-table-border:     var(--cf-border-light);
+    --cf-table-header-bg:  var(--raw-gray-50);
+    --cf-table-row-hover:  var(--raw-gray-50);
+    --cf-table-border:     var(--raw-gray-200);
 }
 
 
@@ -371,113 +382,118 @@
    ═══════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
     /* ─── Background ─── */
-    --cf-bg-app:        var(--raw-slate-950);
-    --cf-bg-primary:    var(--raw-slate-950);
-    --cf-bg-secondary:  var(--raw-slate-900);
-    --cf-bg-elevated:   var(--raw-slate-800);
-    --cf-bg-accent:     var(--raw-teal-500);
-    --cf-bg-accent-subtle: rgba(20, 184, 166, 0.08);
+    --cf-bg-app:        var(--raw-gray-950);
+    --cf-bg-primary:    var(--raw-gray-950);
+    --cf-bg-secondary:  var(--raw-gray-900);
+    --cf-bg-elevated:   var(--raw-gray-800);
+    --cf-bg-accent:     var(--raw-forest-500);
+    --cf-bg-accent-subtle: rgba(46, 125, 50, 0.08);
 
     /* ─── Surfaces ─── */
-    --cf-surface-0:     var(--raw-slate-900);
-    --cf-surface-1:     var(--raw-slate-850);
-    --cf-surface-2:     var(--raw-slate-800);
-    --cf-surface-3:     var(--raw-slate-700);
+    --cf-surface-0:     var(--raw-gray-900);
+    --cf-surface-1:     var(--raw-gray-800);
+    --cf-surface-2:     var(--raw-gray-700);
+    --cf-surface-3:     var(--raw-gray-600);
 
     /* ─── Text ─── */
-    --cf-text-primary:   var(--raw-slate-100);
-    --cf-text-secondary: var(--raw-slate-300);
-    --cf-text-tertiary:  var(--raw-slate-400);
-    --cf-text-muted:     var(--raw-slate-500);
-    --cf-text-inverse:   var(--raw-slate-900);
+    --cf-text-primary:   var(--raw-gray-50);
+    --cf-text-secondary: var(--raw-gray-300);
+    --cf-text-tertiary:  var(--raw-gray-400);
+    --cf-text-muted:     var(--raw-gray-500);
+    --cf-text-inverse:   var(--raw-gray-900);
 
     /* ─── Interactive ─── */
-    --cf-interactive-default: var(--raw-teal-400);
-    --cf-interactive-hover:   var(--raw-teal-300);
-    --cf-interactive-active:  var(--raw-teal-500);
-    --cf-interactive-subtle:  rgba(45, 212, 191, 0.10);
-    --cf-interactive-focus:   rgba(45, 212, 191, 0.24);
+    --cf-interactive-default: var(--raw-green-400);
+    --cf-interactive-hover:   var(--raw-green-300);
+    --cf-interactive-active:  var(--raw-green-500);
+    --cf-interactive-subtle:  rgba(50, 213, 131, 0.10);
+    --cf-interactive-focus:   rgba(50, 213, 131, 0.24);
 
     /* ─── Borders ─── */
-    --cf-border-light:   var(--raw-slate-800);
-    --cf-border-medium:  var(--raw-slate-700);
-    --cf-border-strong:  var(--raw-slate-600);
-    --cf-border-accent:  var(--raw-teal-500);
+    --cf-border-light:   var(--raw-gray-800);
+    --cf-border-medium:  var(--raw-gray-700);
+    --cf-border-strong:  var(--raw-gray-600);
+    --cf-border-accent:  var(--raw-green-500);
 
     /* ─── Status ─── */
-    --cf-status-success:     var(--raw-green-400);
-    --cf-status-success-bg:  rgba(74, 222, 128, 0.10);
+    --cf-status-success:     var(--raw-success-400);
+    --cf-status-success-bg:  rgba(50, 213, 131, 0.10);
     --cf-status-warning:     var(--raw-amber-400);
-    --cf-status-warning-bg:  rgba(251, 191, 36, 0.10);
+    --cf-status-warning-bg:  rgba(253, 176, 34, 0.10);
     --cf-status-error:       var(--raw-red-400);
-    --cf-status-error-bg:    rgba(248, 113, 113, 0.10);
-    --cf-status-info:        var(--raw-sky-400);
-    --cf-status-info-bg:     rgba(56, 189, 248, 0.10);
+    --cf-status-error-bg:    rgba(249, 112, 102, 0.10);
+    --cf-status-info:        var(--raw-blue-400);
+    --cf-status-info-bg:     rgba(83, 177, 253, 0.10);
 
     /* ─── Shadows (deeper for dark) ─── */
-    --cf-shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.15);
-    --cf-shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.12);
-    --cf-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.12);
-    --cf-shadow-lg:  0 10px 15px rgba(0, 0, 0, 0.25), 0 4px 6px rgba(0, 0, 0, 0.12);
-    --cf-shadow-xl:  0 20px 25px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.12);
-    --cf-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.4);
+    --cf-shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.20);
+    --cf-shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.16);
+    --cf-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.28), 0 2px 4px rgba(0, 0, 0, 0.16);
+    --cf-shadow-lg:  0 10px 15px rgba(0, 0, 0, 0.28), 0 4px 6px rgba(0, 0, 0, 0.16);
+    --cf-shadow-xl:  0 20px 25px rgba(0, 0, 0, 0.32), 0 8px 10px rgba(0, 0, 0, 0.16);
+    --cf-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.44);
 
     /* ─── Component: Header ─── */
-    --cf-header-bg:         var(--raw-slate-950);
-    --cf-header-border:     var(--raw-slate-800);
+    --cf-header-bg:         var(--raw-gray-900);
+    --cf-header-text:       var(--raw-gray-50);
+    --cf-header-text-muted: var(--raw-gray-400);
+    --cf-header-border:     var(--raw-gray-800);
+    --cf-header-btn-bg:     rgba(255, 255, 255, 0.06);
+    --cf-header-btn-hover:  rgba(255, 255, 255, 0.12);
 
     /* ─── Component: Sidebar ─── */
-    --cf-sidebar-bg:        var(--raw-slate-900);
-    --cf-sidebar-border:    var(--raw-slate-800);
-    --cf-sidebar-link-hover: var(--raw-slate-800);
-    --cf-sidebar-link-active-bg: rgba(45, 212, 191, 0.08);
-    --cf-sidebar-link-active-text: var(--raw-teal-400);
-    --cf-sidebar-link-active-bar:  var(--raw-teal-400);
-    --cf-sidebar-icon-active: var(--raw-teal-400);
+    --cf-sidebar-bg:        var(--raw-gray-900);
+    --cf-sidebar-border:    var(--raw-gray-800);
+    --cf-sidebar-link-hover: var(--raw-gray-800);
+    --cf-sidebar-link-active-bg: rgba(50, 213, 131, 0.10);
+    --cf-sidebar-link-active-text: var(--raw-green-400);
+    --cf-sidebar-link-active-bar:  var(--raw-green-400);
+    --cf-sidebar-icon-active: var(--raw-green-400);
 
     /* ─── Component: Panel ─── */
-    --cf-panel-bg:          var(--raw-slate-900);
-    --cf-panel-header-bg:   var(--raw-slate-950);
-    --cf-panel-section-bg:  var(--raw-slate-850);
+    --cf-panel-bg:          var(--raw-gray-900);
+    --cf-panel-header-bg:   var(--raw-forest-900);
+    --cf-panel-section-bg:  var(--raw-gray-800);
 
     /* ─── Component: Footer ─── */
-    --cf-footer-bg:         var(--raw-slate-950);
-    --cf-footer-border:     var(--raw-slate-800);
+    --cf-footer-bg:         var(--raw-gray-900);
+    --cf-footer-text:       var(--raw-gray-400);
+    --cf-footer-border:     var(--raw-gray-800);
 
     /* ─── Cards ─── */
-    --cf-card-bg:           var(--raw-slate-900);
-    --cf-card-border:       var(--raw-slate-800);
-    --cf-card-header-bg:    var(--raw-slate-850);
+    --cf-card-bg:           var(--raw-gray-900);
+    --cf-card-border:       var(--raw-gray-800);
+    --cf-card-header-bg:    var(--raw-gray-800);
 
     /* ─── Console ─── */
-    --cf-console-bg:        var(--raw-slate-950);
-    --cf-console-border:    var(--raw-slate-800);
+    --cf-console-bg:        var(--raw-gray-950);
+    --cf-console-border:    var(--raw-gray-800);
 
     /* ─── Badges ─── */
-    --cf-badge-live-bg:     rgba(74, 222, 128, 0.12);
+    --cf-badge-live-bg:     rgba(50, 213, 131, 0.12);
     --cf-badge-live-text:   var(--raw-green-400);
     --cf-badge-live-border: var(--raw-green-500);
-    --cf-badge-agent-bg:    rgba(45, 212, 191, 0.12);
-    --cf-badge-agent-text:  var(--raw-teal-400);
-    --cf-badge-agent-border: var(--raw-teal-500);
+    --cf-badge-agent-bg:    rgba(50, 213, 131, 0.12);
+    --cf-badge-agent-text:  var(--raw-green-400);
+    --cf-badge-agent-border: var(--raw-green-500);
 
     /* ─── Scrollbar ─── */
-    --cf-scrollbar-track:   var(--raw-slate-900);
-    --cf-scrollbar-thumb:   var(--raw-slate-700);
-    --cf-scrollbar-hover:   var(--raw-slate-600);
+    --cf-scrollbar-track:   transparent;
+    --cf-scrollbar-thumb:   var(--raw-gray-700);
+    --cf-scrollbar-hover:   var(--raw-gray-600);
 
     /* ─── Tabs ─── */
-    --cf-tab-bg:            var(--raw-slate-900);
-    --cf-tab-active-text:   var(--raw-teal-400);
-    --cf-tab-active-bar:    var(--raw-teal-400);
+    --cf-tab-bg:            var(--raw-gray-900);
+    --cf-tab-active-text:   var(--raw-green-400);
+    --cf-tab-active-bar:    var(--raw-green-400);
 
     /* ─── Input ─── */
-    --cf-input-bg:          var(--raw-slate-850);
-    --cf-input-border:      var(--raw-slate-700);
+    --cf-input-bg:          var(--raw-gray-800);
+    --cf-input-border:      var(--raw-gray-700);
 
     /* ─── Table ─── */
-    --cf-table-header-bg:   var(--raw-slate-850);
-    --cf-table-row-hover:   rgba(45, 212, 191, 0.04);
+    --cf-table-header-bg:   var(--raw-gray-800);
+    --cf-table-row-hover:   rgba(50, 213, 131, 0.04);
 }
 
 

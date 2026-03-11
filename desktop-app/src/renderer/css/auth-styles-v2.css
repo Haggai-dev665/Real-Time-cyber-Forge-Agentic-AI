@@ -7,7 +7,7 @@
 :root {
     /* Background Colors - Professional Palette with Light Cream Background */
     --auth-bg-primary: #F1F3E0;      /* Light cream background */
-    --auth-bg-secondary: #E8E2D8;    /* Beige secondary */
+    --auth-bg-secondary: #FFFFFF;    /* Beige secondary */
     --auth-bg-card: rgba(37, 52, 63, 0.05);
     --auth-bg-input: rgba(37, 52, 63, 0.03);
     --auth-bg-hover: rgba(37, 52, 63, 0.08);
@@ -26,7 +26,7 @@
     /* Accent Colors - Olive green (NO gradients) */
     --accent-primary: #656D3F;       /* Olive green */
     --accent-secondary: #7a8349;     /* Lighter olive */
-    --accent-tertiary: #BFC9D1;      /* Light blue-gray */
+    --accent-tertiary: #F2F4F7;      /* Light blue-gray */
     --accent-glow: 0 0 30px rgba(101, 109, 63, 0.3);
     
     /* Borders */
@@ -368,8 +368,8 @@ body {
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(3, 152, 85, 0.1);
+    border: 1px solid rgba(3, 152, 85, 0.2);
     border-radius: 100px;
     font-size: 0.8rem;
     color: var(--auth-success);

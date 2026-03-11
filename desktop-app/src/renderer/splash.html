@@ -9,17 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#080d14;--surface:#0d1520;--accent:#3b82f6;--accent2:#6366f1;--text:#e8eef4;--text2:#7a8fa0;--glow:rgba(59,130,246,.35)}
+    :root{--bg:#080d14;--surface:#0d1520;--accent:#2E7D32;--accent2:#039855;--text:#e8eef4;--text2:#7a8fa0;--glow:rgba(46,125,50,.35)}
     html,body{height:100%;overflow:hidden;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text)}
     body{display:flex;align-items:center;justify-content:center;-webkit-user-select:none;user-select:none}
 
     /* Animated background grid */
     .bg-grid{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-    .bg-grid::before{content:'';position:absolute;inset:-50%;width:200%;height:200%;background:repeating-linear-gradient(0deg,transparent 0,transparent 59px,rgba(59,130,246,.04) 59px,rgba(59,130,246,.04) 60px),repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(59,130,246,.04) 59px,rgba(59,130,246,.04) 60px);animation:gridDrift 40s linear infinite}
+    .bg-grid::before{content:'';position:absolute;inset:-50%;width:200%;height:200%;background:repeating-linear-gradient(0deg,transparent 0,transparent 59px,rgba(46,125,50,.04) 59px,rgba(46,125,50,.04) 60px),repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(46,125,50,.04) 59px,rgba(46,125,50,.04) 60px);animation:gridDrift 40s linear infinite}
     @keyframes gridDrift{to{transform:translate(60px,60px)}}
 
     /* Radial glow behind logo */
-    .bg-glow{position:fixed;inset:0;background:radial-gradient(600px circle at 50% 45%,rgba(59,130,246,.08),transparent 65%),radial-gradient(400px circle at 52% 48%,rgba(99,102,241,.06),transparent 55%);pointer-events:none;z-index:1}
+    .bg-glow{position:fixed;inset:0;background:radial-gradient(600px circle at 50% 45%,rgba(46,125,50,.08),transparent 65%),radial-gradient(400px circle at 52% 48%,rgba(3,152,85,.06),transparent 55%);pointer-events:none;z-index:1}
 
     /* Floating particles */
     .particles{position:fixed;inset:0;z-index:1;pointer-events:none}
@@ -41,13 +41,13 @@
     /* Logo container with ring */
     .logo-wrap{position:relative;width:140px;height:140px;margin-bottom:28px}
     .logo-ring{position:absolute;inset:-8px;border-radius:50%;border:2px solid transparent;border-top-color:var(--accent);border-right-color:var(--accent2);animation:ringSpin 2.4s linear infinite;opacity:.6}
-    .logo-ring-outer{position:absolute;inset:-18px;border-radius:50%;border:1px solid transparent;border-bottom-color:rgba(59,130,246,.25);border-left-color:rgba(99,102,241,.2);animation:ringSpinReverse 3.6s linear infinite;opacity:.45}
+    .logo-ring-outer{position:absolute;inset:-18px;border-radius:50%;border:1px solid transparent;border-bottom-color:rgba(46,125,50,.25);border-left-color:rgba(3,152,85,.2);animation:ringSpinReverse 3.6s linear infinite;opacity:.45}
     @keyframes ringSpin{to{transform:rotate(360deg)}}
     @keyframes ringSpinReverse{to{transform:rotate(-360deg)}}
 
     .logo-img{width:140px;height:140px;border-radius:28px;object-fit:contain;filter:drop-shadow(0 0 40px var(--glow));animation:logoPulse 3s ease-in-out infinite}
     .logo-fallback{width:140px;height:140px;border-radius:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:2.8rem;font-weight:700;color:#fff;letter-spacing:2px;filter:drop-shadow(0 0 40px var(--glow));animation:logoPulse 3s ease-in-out infinite}
-    @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 40px var(--glow))}50%{filter:drop-shadow(0 0 60px rgba(59,130,246,.5))}}
+    @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 40px var(--glow))}50%{filter:drop-shadow(0 0 60px rgba(46,125,50,.5))}}
 
     /* Brand text */
     .brand{font-family:'Space Grotesk','Inter',sans-serif;font-size:2.2rem;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,var(--text) 0%,var(--accent) 50%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
@@ -61,7 +61,7 @@
     .status{font-size:.72rem;color:var(--text2);letter-spacing:.04em;min-height:18px;transition:opacity .2s}
 
     /* Scanning lines effect */
-    .scan-line{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.15),transparent);z-index:2;pointer-events:none;animation:scanDown 4s ease-in-out infinite}
+    .scan-line{position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(46,125,50,.15),transparent);z-index:2;pointer-events:none;animation:scanDown 4s ease-in-out infinite}
     .scan-line:nth-child(2){animation-delay:2s;opacity:.5}
     @keyframes scanDown{0%{top:-2px}100%{top:100%}}
   </style>

@@ -383,7 +383,7 @@ class DashboardScreen {
             datasets: [{
                 label: 'Threats Detected',
                 data: [],
-                borderColor: '#ef4444',
+                borderColor: '#D92D20',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 fill: true
             }]
@@ -743,13 +743,13 @@ class DashboardScreen {
         let level, color;
         if (score < 30) {
             level = 'LOW';
-            color = '#10b981';
+            color = '#039855';
         } else if (score < 70) {
             level = 'MEDIUM';
-            color = '#f59e0b';
+            color = '#DC6803';
         } else {
             level = 'HIGH';
-            color = '#ef4444';
+            color = '#D92D20';
         }
         
         if (labelElement) labelElement.textContent = level;

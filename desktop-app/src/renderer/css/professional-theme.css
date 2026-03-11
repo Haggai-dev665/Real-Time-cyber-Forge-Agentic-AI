@@ -8,7 +8,7 @@
     /* === Professional Color Palette === */
     /* Primary Colors - Light backgrounds */
     --cf-bg-primary: #EAEFEF;        /* Main background - light neutral */
-    --cf-bg-secondary: #BFC9D1;       /* Secondary background - soft gray-blue */
+    --cf-bg-secondary: #F2F4F7;       /* Secondary background - soft gray-blue */
     --cf-bg-dark: #25343F;            /* Dark accents - deep slate */
     --cf-bg-accent: #656D3F;          /* Accent background - muted olive */
     
@@ -39,7 +39,7 @@
     
     /* Border Colors */
     --cf-border-light: #D9E1E4;
-    --cf-border-medium: #BFC9D1;
+    --cf-border-medium: #F2F4F7;
     --cf-border-strong: #8A9BA8;
     --cf-border-dark: #25343F;
     
@@ -143,7 +143,7 @@
     --cf-surface-3: var(--cf-surface-dark-3);
     
     --cf-text-primary: #EAEFEF;
-    --cf-text-secondary: #BFC9D1;
+    --cf-text-secondary: #F2F4F7;
     --cf-text-tertiary: #8A9BA8;
     --cf-text-muted: #6B7D8C;
     --cf-text-inverse: #25343F;

@@ -106,7 +106,7 @@
                         }
                     },
                     color: {
-                        value: ['#656D3F', '#BFC9D1', '#EAEFEF']
+                        value: ['#656D3F', '#F2F4F7', '#EAEFEF']
                     },
                     shape: {
                         type: 'circle',

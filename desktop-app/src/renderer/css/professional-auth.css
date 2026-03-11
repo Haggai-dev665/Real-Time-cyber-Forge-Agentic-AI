@@ -162,7 +162,7 @@ body {
 
 .feature-content p {
     font-size: 0.875rem;
-    color: #BFC9D1;
+    color: #98A2B3;
     line-height: 1.5;
 }
 
@@ -177,7 +177,7 @@ body {
 
 .visual-tagline {
     font-size: 1.125rem;
-    color: #BFC9D1;
+    color: #98A2B3;
     margin-bottom: 1rem;
     line-height: 1.6;
 }
@@ -460,7 +460,7 @@ body {
 
 .auth-social-btn:hover {
     background: #F5F8F8;
-    border-color: #BFC9D1;
+    border-color: #98A2B3;
 }
 
 /* Footer */
@@ -568,7 +568,7 @@ body {
 }
 
 [data-theme="dark"] .auth-subtitle {
-    color: #BFC9D1;
+    color: #98A2B3;
 }
 
 [data-theme="dark"] .auth-tabs {

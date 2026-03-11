@@ -261,10 +261,10 @@ class DistributedIntelligenceScreen {
               <!-- Heatmap cells generated dynamically -->
             </div>
             <div class="heatmap-legend">
-              <span class="legend-item"><span class="legend-color" style="background:#10b981"></span> Low</span>
-              <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> Medium</span>
-              <span class="legend-item"><span class="legend-color" style="background:#ef4444"></span> High</span>
-              <span class="legend-item"><span class="legend-color" style="background:#7c3aed"></span> Critical</span>
+              <span class="legend-item"><span class="legend-color" style="background:#039855"></span> Low</span>
+              <span class="legend-item"><span class="legend-color" style="background:#DC6803"></span> Medium</span>
+              <span class="legend-item"><span class="legend-color" style="background:#D92D20"></span> High</span>
+              <span class="legend-item"><span class="legend-color" style="background:#6941C6"></span> Critical</span>
             </div>
           </div>
           <div class="panel" style="margin-top:16px">
@@ -490,7 +490,7 @@ class DistributedIntelligenceScreen {
     }
 
     grid.innerHTML = domains.map(d => {
-      const color = d.riskScore >= 80 ? '#7c3aed' : d.riskScore >= 60 ? '#ef4444' : d.riskScore >= 40 ? '#f59e0b' : '#10b981';
+      const color = d.riskScore >= 80 ? '#6941C6' : d.riskScore >= 60 ? '#D92D20' : d.riskScore >= 40 ? '#DC6803' : '#039855';
       return `
         <div class="heatmap-cell" style="background:${color}" title="${d.domain}: ${d.riskScore.toFixed(0)} risk">
           <span class="heatmap-domain">${d.domain}</span>

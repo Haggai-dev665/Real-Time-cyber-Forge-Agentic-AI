@@ -292,11 +292,11 @@
     text-transform: uppercase;
 }
 
-.method-badge.get { background: #10b981; color: white; }
-.method-badge.post { background: #3b82f6; color: white; }
-.method-badge.put { background: #f59e0b; color: black; }
-.method-badge.patch { background: #8b5cf6; color: white; }
-.method-badge.delete { background: #ef4444; color: white; }
+.method-badge.get { background: #039855; color: white; }
+.method-badge.post { background: #1570EF; color: white; }
+.method-badge.put { background: #DC6803; color: black; }
+.method-badge.patch { background: #6941C6; color: white; }
+.method-badge.delete { background: #D92D20; color: white; }
 
 .status-badge {
     display: inline-block;
@@ -308,13 +308,13 @@
 
 .status-badge.active,
 .status-badge.completed,
-.status-badge.success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.status-badge.success { background: rgba(3, 152, 85, 0.2); color: #039855; }
 .status-badge.pending,
-.status-badge.running { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.status-badge.running { background: rgba(21, 112, 239, 0.2); color: #1570EF; }
 .status-badge.paused,
-.status-badge.warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.status-badge.warning { background: rgba(220, 104, 3, 0.2); color: #DC6803; }
 .status-badge.failed,
-.status-badge.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.status-badge.error { background: rgba(217, 45, 32, 0.2); color: #D92D20; }
 .status-badge.inactive { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
 
 .severity-badge {
@@ -526,8 +526,8 @@ input:checked + .slider:before {
     align-items: flex-start;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(217, 45, 32, 0.1);
+    border: 1px solid rgba(217, 45, 32, 0.3);
     border-radius: 8px;
     margin-bottom: 1.5rem;
     color: #fecaca;
@@ -543,8 +543,8 @@ input:checked + .slider:before {
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: rgba(21, 112, 239, 0.1);
+    border: 1px solid rgba(21, 112, 239, 0.3);
     border-radius: 8px;
     margin-bottom: 1.5rem;
 }
@@ -642,7 +642,7 @@ input:checked + .slider:before {
 .console-entry .log-browser {
     font-size: 0.75rem;
     color: var(--cf-interactive-default);
-    background: rgba(var(--accent-rgb, 59, 130, 246), 0.15);
+    background: rgba(var(--accent-rgb, 21, 112, 239), 0.15);
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
     white-space: nowrap;
@@ -678,23 +678,23 @@ input:checked + .slider:before {
 }
 
 .console-entry.error {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(217, 45, 32, 0.1);
     color: #fecaca;
 }
 
 .console-entry.error .log-icon {
-    color: #ef4444;
+    color: #D92D20;
 }
 
 .console-entry.warn,
 .console-entry.warning {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(220, 104, 3, 0.1);
     color: #fef3c7;
 }
 
 .console-entry.warn .log-icon,
 .console-entry.warning .log-icon {
-    color: #f59e0b;
+    color: #DC6803;
 }
 
 .console-entry.info {
@@ -702,7 +702,7 @@ input:checked + .slider:before {
 }
 
 .console-entry.info .log-icon {
-    color: #3b82f6;
+    color: #1570EF;
 }
 
 .console-entry.exception {
@@ -956,7 +956,7 @@ input:checked + .slider:before {
 }
 
 .status-indicator.active {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(3, 152, 85, 0.2);
     color: var(--success);
 }
 

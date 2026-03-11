@@ -97,9 +97,9 @@ class ThreatGlobeScreen {
             '<span class="counter-label">active threats</span></div></div>' +
             '<div class="map-overlay-bl"><div class="map-legend">' +
             '<div class="legend-title">Severity</div>' +
-            '<div class="legend-row"><span class="legend-dot" style="background:#ef4444;box-shadow:0 0 6px #ef4444"></span>Critical</div>' +
-            '<div class="legend-row"><span class="legend-dot" style="background:#f59e0b;box-shadow:0 0 6px #f59e0b"></span>Medium</div>' +
-            '<div class="legend-row"><span class="legend-dot" style="background:#3b82f6;box-shadow:0 0 6px #3b82f6"></span>Low</div>' +
+            '<div class="legend-row"><span class="legend-dot" style="background:#D92D20;box-shadow:0 0 6px #D92D20"></span>Critical</div>' +
+            '<div class="legend-row"><span class="legend-dot" style="background:#DC6803;box-shadow:0 0 6px #DC6803"></span>Medium</div>' +
+            '<div class="legend-row"><span class="legend-dot" style="background:#1570EF;box-shadow:0 0 6px #1570EF"></span>Low</div>' +
             '</div></div>' +
             '<div class="map-overlay-tr"><div class="data-source-badge"><i class="fas fa-satellite-dish"></i> AlienVault OTX</div></div>' +
             '<div class="map-state-overlay" id="map-loading"><i class="fas fa-satellite-dish fa-pulse"></i><span>Connecting to threat intelligence\u2026</span></div>' +
@@ -118,9 +118,9 @@ class ThreatGlobeScreen {
             '<div class="modal-header"><h3>Filter Threats</h3><button class="tm-btn-icon" id="close-filter-btn"><i class="fas fa-times"></i></button></div>' +
             '<div class="modal-body"><div class="filter-group"><label class="filter-label">Severity Level</label>' +
             '<div class="checkbox-group">' +
-            '<label class="cb-label"><input type="checkbox" checked data-filter="severity" value="high"><span class="cb-dot" style="background:#ef4444"></span>Critical</label>' +
-            '<label class="cb-label"><input type="checkbox" checked data-filter="severity" value="medium"><span class="cb-dot" style="background:#f59e0b"></span>Medium</label>' +
-            '<label class="cb-label"><input type="checkbox" checked data-filter="severity" value="low"><span class="cb-dot" style="background:#3b82f6"></span>Low</label>' +
+            '<label class="cb-label"><input type="checkbox" checked data-filter="severity" value="high"><span class="cb-dot" style="background:#D92D20"></span>Critical</label>' +
+            '<label class="cb-label"><input type="checkbox" checked data-filter="severity" value="medium"><span class="cb-dot" style="background:#DC6803"></span>Medium</label>' +
+            '<label class="cb-label"><input type="checkbox" checked data-filter="severity" value="low"><span class="cb-dot" style="background:#1570EF"></span>Low</label>' +
             '</div></div></div>' +
             '<div class="modal-footer"><button class="tm-btn tm-btn-ghost" id="reset-filter-btn">Reset</button><button class="tm-btn tm-btn-accent" id="apply-filter-btn">Apply</button></div>' +
             '</div></div></div>';
@@ -515,8 +515,8 @@ class ThreatGlobeScreen {
     }
 
     getSeverityColor(severity) {
-        var c = { high: "#ef4444", critical: "#ef4444", medium: "#f59e0b", low: "#3b82f6" };
-        return c[severity] || "#3b82f6";
+        var c = { high: "#D92D20", critical: "#D92D20", medium: "#DC6803", low: "#1570EF" };
+        return c[severity] || "#1570EF";
     }
 
     formatTime(timestamp) {

@@ -31,7 +31,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
     
     <!-- Leaflet JS for Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -54,13 +54,23 @@
                 </button>
                 
                 <div class="cf-logo">
-                    <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image"
-                         onerror="this.style.display='none'">
+                    <div class="cf-logo-mark">
+                        <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image"
+                             onerror="this.style.display='none'">
+                    </div>
+                    <div class="cf-logo-text">
+                        <span class="cf-logo-name">CyberForge</span>
+                        <span class="cf-logo-tag">AI Security</span>
+                    </div>
                 </div>
+
+                <div class="header-divider"></div>
                 
                 <!-- AI Agent Status in Header -->
                 <div class="header-agent-status" id="header-agent-status" title="AI Agents Status">
-                    <span class="agent-status-indicator-mini"></span>
+                    <span class="agent-status-ring">
+                        <span class="agent-status-indicator-mini"></span>
+                    </span>
                     <span class="agent-status-label">Agents Online</span>
                 </div>
                 
@@ -73,9 +83,9 @@
             
             <div class="cf-header-center">
                 <div class="header-search" id="header-search">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search threats, URLs, events…" id="global-search">
-                    <kbd>⌘K</kbd>
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" placeholder="Search threats, assets, events…" id="global-search">
+                    <kbd class="search-kbd"><span class="kbd-symbol">⌘</span>K</kbd>
                 </div>
             </div>
             
@@ -99,22 +109,25 @@
                 <div class="header-privacy-mode" id="header-privacy-mode" title="Privacy Mode">
                     <i class="fas fa-user-secret"></i>
                 </div>
+
+                <div class="header-divider"></div>
                 
-                <button class="header-btn" id="notifications-btn" title="Notifications">
+                <button class="header-btn header-btn-icon" id="notifications-btn" title="Notifications">
                     <i class="fas fa-bell"></i>
                     <span class="notification-badge" id="notification-count">0</span>
                 </button>
                 
-                <button class="header-btn" id="theme-toggle" title="Toggle Theme">
+                <button class="header-btn header-btn-icon" id="theme-toggle" title="Toggle Theme">
                     <i class="fas fa-moon"></i>
                 </button>
                 
-                <button class="header-btn" id="settings-btn" title="Settings">
+                <button class="header-btn header-btn-icon" id="settings-btn" title="Settings">
                     <i class="fas fa-cog"></i>
                 </button>
                 
                 <div class="user-avatar" id="user-avatar" title="User Menu">
                     <i class="fas fa-user"></i>
+                    <span class="avatar-online-dot"></span>
                 </div>
             </div>
         </header>

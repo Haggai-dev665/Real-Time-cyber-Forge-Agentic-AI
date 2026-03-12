@@ -1,52 +1,24 @@
 /**
- * Threat Map Screen - 2D Real-time Threat Intelligence Visualization
- * Canvas-based flat world map with animated threat arcs
+ * Threat Map Screen - Real-time Threat Intelligence Visualization
+ * Powered by Leaflet.js + CartoDB/OpenStreetMap tiles
  * Data powered by AlienVault OTX - NO mock/fallback data
  */
 
 class ThreatGlobeScreen {
 
-    static WORLD_POLYGONS = [
-        [[-130,55],[-125,60],[-120,65],[-110,70],[-100,72],[-90,70],[-85,65],[-80,60],[-78,55],[-75,45],[-80,32],[-82,25],[-85,18],[-90,15],[-97,17],[-105,22],[-117,32],[-122,37],[-125,45],[-130,55]],
-        [[-90,15],[-87,14],[-84,11],[-82,8],[-78,8],[-80,10],[-84,12],[-87,15],[-90,15]],
-        [[-80,10],[-75,12],[-65,10],[-55,4],[-50,0],[-45,-5],[-35,-8],[-35,-15],[-40,-20],[-43,-23],[-48,-28],[-53,-34],[-60,-42],[-65,-55],[-70,-52],[-72,-45],[-70,-30],[-70,-18],[-75,-10],[-78,-2],[-80,10]],
-        [[-10,36],[0,43],[5,46],[3,48],[8,48],[6,52],[10,55],[18,56],[22,55],[30,60],[30,65],[25,68],[20,65],[15,60],[10,58],[5,52],[0,49],[-5,43],[-10,36]],
-        [[5,58],[10,62],[15,65],[18,68],[22,70],[28,71],[30,70],[28,66],[22,60],[15,57],[10,56],[5,58]],
-        [[-17,15],[-15,25],[-10,30],[-5,34],[0,36],[10,37],[20,35],[30,32],[33,30],[35,15],[40,12],[43,10],[50,12],[45,0],[42,-5],[40,-15],[35,-25],[30,-34],[25,-34],[18,-28],[12,-18],[8,-5],[5,0],[0,5],[-5,5],[-10,8],[-17,15]],
-        [[28,42],[35,42],[40,45],[50,52],[60,55],[70,55],[80,55],[90,55],[100,55],[110,52],[120,55],[130,58],[140,55],[150,58],[160,60],[170,62],[180,65],[180,72],[170,72],[160,70],[145,68],[130,60],[110,55],[90,52],[70,52],[55,52],[45,48],[40,45],[35,42],[28,42]],
-        [[68,28],[72,24],[75,22],[78,18],[80,12],[80,8],[78,10],[75,15],[72,20],[68,25],[68,28]],
-        [[75,30],[85,28],[90,22],[95,18],[100,15],[105,20],[110,22],[115,28],[120,30],[125,38],[130,42],[128,46],[122,48],[118,45],[110,42],[100,35],[90,30],[80,30],[75,30]],
-        [[130,31],[133,34],[136,36],[139,38],[141,42],[142,45],[140,44],[137,38],[134,34],[130,31]],
-        [[95,6],[100,2],[105,-2],[106,-5],[108,-8],[112,-8],[114,-5],[106,0],[102,5],[95,6]],
-        [[95,4],[100,0],[105,-3],[108,-7],[112,-8],[115,-8],[118,-8],[120,-5],[125,-3],[130,-4],[135,-5],[140,-6],[141,-3],[138,0],[132,-2],[125,-5],[120,-7],[115,-7],[106,-5],[104,-1],[100,2],[95,4]],
-        [[115,-14],[125,-13],[130,-12],[135,-12],[142,-12],[148,-16],[153,-25],[152,-32],[148,-38],[142,-38],[135,-35],[128,-32],[122,-28],[117,-22],[115,-14]],
-        [[166,-35],[170,-37],[174,-40],[175,-44],[174,-46],[172,-44],[168,-38],[166,-35]],
-        [[-8,50],[-6,52],[-4,54],[-3,57],[0,58],[2,54],[1,51],[-2,50],[-5,50],[-8,50]],
-        [[-55,60],[-48,62],[-40,65],[-30,70],[-22,73],[-18,77],[-20,80],[-30,82],[-42,84],[-50,83],[-55,78],[-58,72],[-55,60]],
-        [[-24,64],[-22,65],[-18,66],[-14,66],[-14,64],[-18,63],[-24,64]],
-        [[44,-12],[48,-15],[50,-18],[48,-22],[47,-25],[44,-23],[43,-18],[44,-12]],
-        [[30,32],[35,37],[40,38],[48,36],[50,30],[55,25],[60,25],[55,22],[50,24],[45,28],[40,32],[35,35],[30,32]],
-    ];
-
     constructor() {
         this.container = null;
-        this.canvas = null;
-        this.ctx = null;
-        this.mapCanvas = null;
-        this.mapCtx = null;
+        this.map = null;
         this.isActive = false;
         this.isPaused = false;
         this.threatData = [];
-        this.animatedThreats = [];
+        this.threatLayers = [];
+        this.arcLayers = [];
         this.updateInterval = null;
-        this.animationFrame = null;
-        this.resizeObserver = null;
         this.UPDATE_INTERVAL_MS = 30000;
-        this.mapPadding = { top: 24, right: 24, bottom: 24, left: 24 };
-        this.isDark = true;
-        this.displayWidth = 0;
-        this.displayHeight = 0;
         this.activeFilters = { severity: ["high", "medium", "low"] };
+        this.isDark = false;
+        this.tileLayer = null;
     }
 
     async show(container) {
@@ -66,12 +38,10 @@ class ThreatGlobeScreen {
     hide() {
         this.isActive = false;
         this.stopRealTimeUpdates();
-        if (this.animationFrame) { cancelAnimationFrame(this.animationFrame); this.animationFrame = null; }
-        if (this.resizeObserver) { this.resizeObserver.disconnect(); this.resizeObserver = null; }
+        if (this.map) { this.map.remove(); this.map = null; }
     }
 
     createHTML() {
-        var q = '"';
         return '<div class="threat-globe-screen">' +
             '<div class="globe-header"><div class="header-content">' +
             '<div class="globe-title-section">' +
@@ -91,12 +61,12 @@ class ThreatGlobeScreen {
 
             '<div class="globe-main-container">' +
             '<div class="globe-visualization-wrapper">' +
-            '<canvas id="threat-map-canvas" class="threat-map-canvas"></canvas>' +
+            '<div id="threat-leaflet-map" style="width:100%;height:100%;border-radius:12px;z-index:1;"></div>' +
             '<div class="map-overlay-tl"><div class="threat-counter-chip">' +
             '<span class="counter-value" id="threat-count">0</span>' +
-            '<span class="counter-label">active threats</span></div></div>' +
+            '<span class="counter-label">ACTIVE THREATS</span></div></div>' +
             '<div class="map-overlay-bl"><div class="map-legend">' +
-            '<div class="legend-title">Severity</div>' +
+            '<div class="legend-title">SEVERITY</div>' +
             '<div class="legend-row"><span class="legend-dot" style="background:#D92D20;box-shadow:0 0 6px #D92D20"></span>Critical</div>' +
             '<div class="legend-row"><span class="legend-dot" style="background:#DC6803;box-shadow:0 0 6px #DC6803"></span>Medium</div>' +
             '<div class="legend-row"><span class="legend-dot" style="background:#1570EF;box-shadow:0 0 6px #1570EF"></span>Low</div>' +
@@ -127,179 +97,137 @@ class ThreatGlobeScreen {
     }
 
     initializeMap() {
-        this.canvas = this.container.querySelector("#threat-map-canvas");
-        if (!this.canvas) return;
-        this.ctx = this.canvas.getContext("2d");
-        this.handleResize();
-        this.resizeObserver = new ResizeObserver(() => this.handleResize());
-        this.resizeObserver.observe(this.canvas.parentElement);
-        this.animationFrame = requestAnimationFrame(t => this.draw(t));
-    }
+        var mapEl = this.container.querySelector("#threat-leaflet-map");
+        if (!mapEl || typeof L === "undefined") return;
 
-    handleResize() {
-        var wrapper = this.canvas.parentElement;
-        var dpr = window.devicePixelRatio || 1;
-        var w = wrapper.clientWidth;
-        var h = wrapper.clientHeight;
-        this.canvas.width = w * dpr;
-        this.canvas.height = h * dpr;
-        this.canvas.style.width = w + "px";
-        this.canvas.style.height = h + "px";
-        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        this.displayWidth = w;
-        this.displayHeight = h;
-        this.buildMapCache();
-    }
+        this.map = L.map(mapEl, {
+            center: [20, 0],
+            zoom: 2,
+            minZoom: 1,
+            maxZoom: 8,
+            zoomControl: false,
+            attributionControl: false,
+            worldCopyJump: true,
+            maxBounds: [[-85, -180], [85, 180]],
+            maxBoundsViscosity: 1.0,
+            zoomSnap: 0.5,
+            zoomDelta: 0.5
+        });
 
-    buildMapCache() {
-        var w = this.displayWidth, h = this.displayHeight;
-        if (!w || !h) return;
-        this.mapCanvas = document.createElement("canvas");
-        this.mapCanvas.width = w;
-        this.mapCanvas.height = h;
-        this.mapCtx = this.mapCanvas.getContext("2d");
-        var ctx = this.mapCtx;
-        var dark = this.isDark;
-        var bg = dark ? "#0c1318" : "#f0f4f8";
-        var landFill = dark ? "#1a2a36" : "#d0dbe5";
-        var landStroke = dark ? "#243545" : "#b0c0d0";
-        var gridColor = dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
+        L.control.zoom({ position: "topright" }).addTo(this.map);
+        L.control.attribution({ position: "bottomright", prefix: false })
+            .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OSM</a> | <a href="https://carto.com/" target="_blank">CARTO</a>')
+            .addTo(this.map);
 
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, w, h);
+        this.setTileLayer();
 
-        ctx.strokeStyle = gridColor;
-        ctx.lineWidth = 0.5;
-        for (var lon = -180; lon <= 180; lon += 30) {
-            var p = this._project(0, lon, w, h);
-            ctx.beginPath(); ctx.moveTo(p.x, 0); ctx.lineTo(p.x, h); ctx.stroke();
-        }
-        for (var lat = -90; lat <= 90; lat += 30) {
-            var p = this._project(lat, 0, w, h);
-            ctx.beginPath(); ctx.moveTo(0, p.y); ctx.lineTo(w, p.y); ctx.stroke();
-        }
-
-        ThreatGlobeScreen.WORLD_POLYGONS.forEach(function(poly) {
-            ctx.beginPath();
-            var self2 = this;
-            poly.forEach(function(coords, i) {
-                var p = this._project(coords[1], coords[0], w, h);
-                i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-            }.bind(this));
-            ctx.closePath();
-            ctx.fillStyle = landFill;
-            ctx.fill();
-            ctx.strokeStyle = landStroke;
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-        }.bind(this));
-
-        var vg = ctx.createRadialGradient(w/2, h/2, h*0.3, w/2, h/2, w*0.7);
-        vg.addColorStop(0, "transparent");
-        vg.addColorStop(1, dark ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.08)");
-        ctx.fillStyle = vg;
-        ctx.fillRect(0, 0, w, h);
-    }
-
-    _project(lat, lon, w, h) {
-        var p = this.mapPadding;
-        var mw = (w || this.displayWidth) - p.left - p.right;
-        var mh = (h || this.displayHeight) - p.top - p.bottom;
-        return { x: p.left + ((lon + 180) / 360) * mw, y: p.top + ((90 - lat) / 180) * mh };
-    }
-
-    project(lat, lon) {
-        return this._project(lat, lon, this.displayWidth, this.displayHeight);
-    }
-
-    draw(timestamp) {
-        if (!this.isActive) return;
-        var ctx = this.ctx;
-        if (this.mapCanvas) ctx.drawImage(this.mapCanvas, 0, 0);
-        if (!this.isPaused) this.drawThreats(timestamp);
-        this.animationFrame = requestAnimationFrame(function(t) { this.draw(t); }.bind(this));
-    }
-
-    drawThreats(time) {
-        var ctx = this.ctx;
         var self = this;
-        this.animatedThreats.forEach(function(at) {
-            var elapsed = time - at.startTime;
-            var cycle = 4000;
-            var progress = (elapsed % cycle) / cycle;
-            var color = at.color;
-            var from = self.project(at.origin.lat, at.origin.lon);
-            var to = self.project(at.destination.lat, at.destination.lon);
-
-            var dx = to.x - from.x, dy = to.y - from.y;
-            var dist = Math.sqrt(dx*dx + dy*dy);
-            var cpX = (from.x + to.x) / 2;
-            var cpY = Math.min(from.y, to.y) - dist * 0.28;
-
-            ctx.save();
-            // Base arc
-            ctx.beginPath();
-            ctx.moveTo(from.x, from.y);
-            ctx.quadraticCurveTo(cpX, cpY, to.x, to.y);
-            ctx.strokeStyle = color + "15";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // Animated trail
-            var trailLen = 0.35;
-            var tStart = Math.max(0, progress - trailLen);
-            var steps = 40;
-            ctx.beginPath();
-            var first = true;
-            for (var i = 0; i <= steps; i++) {
-                var t = tStart + (progress - tStart) * (i / steps);
-                if (t < 0 || t > 1) continue;
-                var px = (1-t)*(1-t)*from.x + 2*(1-t)*t*cpX + t*t*to.x;
-                var py = (1-t)*(1-t)*from.y + 2*(1-t)*t*cpY + t*t*to.y;
-                if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+        setTimeout(function() {
+            if (self.map) {
+                self.map.invalidateSize();
+                self.map.fitWorld({ padding: [20, 20], maxZoom: 3 });
             }
-            var grad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-            grad.addColorStop(0, color + "20");
-            grad.addColorStop(0.5, color + "BB");
-            grad.addColorStop(1, color + "20");
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+        }, 250);
+    }
 
-            // Moving particle
-            var pt = progress;
-            var ppx = (1-pt)*(1-pt)*from.x + 2*(1-pt)*pt*cpX + pt*pt*to.x;
-            var ppy = (1-pt)*(1-pt)*from.y + 2*(1-pt)*pt*cpY + pt*pt*to.y;
-            ctx.beginPath();
-            ctx.arc(ppx, ppy, 3.5, 0, Math.PI*2);
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 14;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.restore();
+    setTileLayer() {
+        if (this.tileLayer && this.map) {
+            this.map.removeLayer(this.tileLayer);
+        }
+        if (this.isDark) {
+            this.tileLayer = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                { subdomains: "abcd", maxZoom: 19 }
+            );
+        } else {
+            this.tileLayer = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                { subdomains: "abcd", maxZoom: 19 }
+            );
+        }
+        this.tileLayer.addTo(this.map);
+    }
 
-            // Endpoint dots
-            var pulse = Math.sin(time/400 + at.phaseOffset) * 0.5 + 0.5;
-            self._drawDot(ctx, from.x, from.y, color, pulse);
-            self._drawDot(ctx, to.x, to.y, color, pulse);
+    clearThreatLayers() {
+        var self = this;
+        this.threatLayers.forEach(function(layer) { if (self.map) self.map.removeLayer(layer); });
+        this.threatLayers = [];
+        this.arcLayers.forEach(function(layer) { if (self.map) self.map.removeLayer(layer); });
+        this.arcLayers = [];
+    }
+
+    visualizeThreats() {
+        this.clearThreatLayers();
+        if (!this.map) return;
+
+        var self = this;
+        var filtered = this.threatData.filter(function(t) {
+            return self.activeFilters.severity.indexOf(t.severity || "low") !== -1;
+        });
+
+        filtered.forEach(function(threat) {
+            var color = self.getSeverityColor(threat.severity);
+            var origin = threat.origin || { lat: 0, lon: 0 };
+            var dest = threat.destination || { lat: 0, lon: 0 };
+
+            // Glow ring
+            var glow = L.circleMarker([origin.lat, origin.lon], {
+                radius: 16, fillColor: color, color: "transparent", fillOpacity: 0.10
+            }).addTo(self.map);
+
+            // Origin marker
+            var originM = L.circleMarker([origin.lat, origin.lon], {
+                radius: 7, fillColor: color, color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9
+            }).addTo(self.map);
+
+            // Destination marker
+            var destM = L.circleMarker([dest.lat, dest.lon], {
+                radius: 5, fillColor: color, color: "#fff", weight: 1.5, opacity: 0.8, fillOpacity: 0.7
+            }).addTo(self.map);
+
+            // Popup
+            originM.bindPopup(
+                '<div class="leaflet-threat-popup">' +
+                '<div class="popup-severity ' + (threat.severity || "low") + '">' + (threat.severity || "low").toUpperCase() + '</div>' +
+                '<div class="popup-title">' + self._esc(threat.threat || "Unknown Threat") + '</div>' +
+                '<div class="popup-route"><i class="fas fa-location-arrow"></i> ' +
+                self._esc((origin.country) || "??") + " \u2192 " +
+                self._esc((dest.country) || "??") + '</div>' +
+                (threat.adversary ? '<div class="popup-adversary"><i class="fas fa-user-secret"></i> ' + self._esc(threat.adversary) + '</div>' : '') +
+                '</div>',
+                { className: "threat-popup-container", maxWidth: 280 }
+            );
+
+            // Arc
+            var arcPts = self.computeArcPoints([origin.lat, origin.lon], [dest.lat, dest.lon], 50);
+            var bgArc = L.polyline(arcPts, { color: color, weight: 1.5, opacity: 0.12, smoothFactor: 1 }).addTo(self.map);
+            var fgArc = L.polyline(arcPts, {
+                color: color, weight: 2.5, opacity: 0.65, smoothFactor: 1,
+                dashArray: "8 12", className: "threat-arc-animated"
+            }).addTo(self.map);
+            fgArc.on("click", function() { self.showThreatDetails(threat); });
+
+            self.threatLayers.push(glow, originM, destM);
+            self.arcLayers.push(bgArc, fgArc);
         });
     }
 
-    _drawDot(ctx, x, y, color, pulse) {
-        ctx.save();
-        var r = 4 + pulse * 4;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = color + "18";
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 10;
-        ctx.fill();
-        ctx.restore();
+    computeArcPoints(from, to, n) {
+        var pts = [];
+        for (var i = 0; i <= n; i++) {
+            var t = i / n;
+            var lat = from[0] + (to[0] - from[0]) * t;
+            var lon = from[1] + (to[1] - from[1]) * t;
+            var h = Math.sin(t * Math.PI) * this.getArcHeight(from, to);
+            pts.push([lat + h, lon]);
+        }
+        return pts;
+    }
+
+    getArcHeight(from, to) {
+        var dLat = to[0] - from[0], dLon = to[1] - from[1];
+        var dist = Math.sqrt(dLat * dLat + dLon * dLon);
+        return Math.min(dist * 0.15, 15);
     }
 
     setupEventListeners() {
@@ -312,15 +240,15 @@ class ThreatGlobeScreen {
             self.isPaused = true;
             pauseBtn.style.display = "none";
             resumeBtn.style.display = "inline-flex";
-            self.canvas.style.opacity = "0.45";
-            self.canvas.style.filter = "grayscale(40%)";
+            var el = self.container.querySelector("#threat-leaflet-map");
+            if (el) { el.style.opacity = "0.45"; el.style.filter = "grayscale(40%)"; }
         });
         if (resumeBtn) resumeBtn.addEventListener("click", function() {
             self.isPaused = false;
             resumeBtn.style.display = "none";
             pauseBtn.style.display = "inline-flex";
-            self.canvas.style.opacity = "1";
-            self.canvas.style.filter = "none";
+            var el = self.container.querySelector("#threat-leaflet-map");
+            if (el) { el.style.opacity = "1"; el.style.filter = "none"; }
         });
 
         var refreshBtn = $("#refresh-threats-btn");
@@ -365,22 +293,6 @@ class ThreatGlobeScreen {
         if (closeDetails) closeDetails.addEventListener("click", function() {
             $("#threat-details-panel").style.display = "none";
         });
-
-        if (this.canvas) this.canvas.addEventListener("click", function(e) {
-            var rect = self.canvas.getBoundingClientRect();
-            var mx = e.clientX - rect.left;
-            var my = e.clientY - rect.top;
-            var closest = null, closestDist = 30;
-            self.animatedThreats.forEach(function(at) {
-                var from = self.project(at.origin.lat, at.origin.lon);
-                var to = self.project(at.destination.lat, at.destination.lon);
-                var d1 = Math.hypot(from.x - mx, from.y - my);
-                var d2 = Math.hypot(to.x - mx, to.y - my);
-                var d = Math.min(d1, d2);
-                if (d < closestDist) { closestDist = d; closest = at.threat; }
-            });
-            if (closest) self.showThreatDetails(closest);
-        });
     }
 
     async loadThreatData() {
@@ -417,23 +329,6 @@ class ThreatGlobeScreen {
         }
     }
 
-    visualizeThreats() {
-        var self = this;
-        var filtered = this.threatData.filter(function(t) {
-            return self.activeFilters.severity.indexOf(t.severity || "low") !== -1;
-        });
-        this.animatedThreats = filtered.map(function(threat, i) {
-            return {
-                threat: threat,
-                origin: threat.origin || { lat: 0, lon: 0 },
-                destination: threat.destination || { lat: 0, lon: 0 },
-                color: self.getSeverityColor(threat.severity),
-                startTime: performance.now() - i * 600,
-                phaseOffset: i * 1.3
-            };
-        });
-    }
-
     updateThreatFeed() {
         var feedList = this.container.querySelector("#threat-feed-list");
         if (!feedList) return;
@@ -461,7 +356,12 @@ class ThreatGlobeScreen {
                 self._esc((threat.destination && threat.destination.country) || "??") + '</div>' +
                 (threat.adversary ? '<div class="threat-adversary"><i class="fas fa-user-secret"></i> ' + self._esc(threat.adversary) + '</div>' : '') +
                 '</div>';
-            item.addEventListener("click", function() { self.showThreatDetails(threat); });
+            item.addEventListener("click", function() {
+                self.showThreatDetails(threat);
+                if (self.map && threat.origin) {
+                    self.map.flyTo([threat.origin.lat, threat.origin.lon], 4, { duration: 1.2 });
+                }
+            });
             feedList.appendChild(item);
         });
     }
@@ -496,8 +396,8 @@ class ThreatGlobeScreen {
             '<div class="detail-row"><span class="detail-label">Adversary</span><span class="detail-value">' + this._esc(threat.adversary || "Unknown") + '</span></div>' +
             '<div class="detail-row"><span class="detail-label">Detected</span><span class="detail-value">' + (threat.timestamp ? new Date(threat.timestamp).toLocaleString() : "\u2014") + '</span></div></div>' +
             '<div class="detail-section"><h4>Location</h4>' +
-            '<div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">' + this._esc((threat.origin && threat.origin.country) || "??") + ' (' + ((threat.origin && threat.origin.lat) || 0).toFixed(2) + ', ' + ((threat.origin && threat.origin.lon) || 0).toFixed(2) + ')</span></div>' +
-            '<div class="detail-row"><span class="detail-label">Target</span><span class="detail-value">' + this._esc((threat.destination && threat.destination.country) || "??") + ' (' + ((threat.destination && threat.destination.lat) || 0).toFixed(2) + ', ' + ((threat.destination && threat.destination.lon) || 0).toFixed(2) + ')</span></div></div>' +
+            '<div class="detail-row"><span class="detail-label">Origin</span><span class="detail-value">' + this._esc((threat.origin && threat.origin.country) || "??") + ' (' + ((threat.origin && threat.origin.lat) || 0).toFixed(2) + '\u00b0, ' + ((threat.origin && threat.origin.lon) || 0).toFixed(2) + '\u00b0)</span></div>' +
+            '<div class="detail-row"><span class="detail-label">Target</span><span class="detail-value">' + this._esc((threat.destination && threat.destination.country) || "??") + ' (' + ((threat.destination && threat.destination.lat) || 0).toFixed(2) + '\u00b0, ' + ((threat.destination && threat.destination.lon) || 0).toFixed(2) + '\u00b0)</span></div></div>' +
             '<div class="detail-section"><h4>Description</h4>' +
             '<p class="detail-desc">' + this._esc(threat.description || "No description available.") + '</p></div>';
         panel.style.display = "flex";
@@ -528,11 +428,6 @@ class ThreatGlobeScreen {
         var h = Math.floor(m / 60);
         if (h < 24) return h + "h ago";
         return Math.floor(h / 24) + "d ago";
-    }
-
-    getCurrentTime() {
-        var n = new Date();
-        return String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0");
     }
 
     _esc(str) {

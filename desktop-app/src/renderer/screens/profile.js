@@ -279,7 +279,8 @@ class ProfileScreen {
                                         <div style="font-size:var(--text-xs); color:var(--text-muted);">${item.desc}</div>
                                     </div>
                                     <div onclick="this.classList.toggle('on'); this.querySelector('div').style.left = this.classList.contains('on') ? '18px' : '2px'; this.style.background = this.classList.contains('on') ? 'var(--success)' : 'var(--bg-secondary)'"
-                                         style="width:36px; height:20px; border-radius:99px; background:${item.val ? 'var(--success)' : 'var(--bg-secondary)'}; border:1px solid var(--border-color); position:relative; cursor:pointer; flex-shrink:0; ${item.val ? 'class:on' : ''}">
+                                         style="width:36px; height:20px; border-radius:99px; background:${item.val ? 'var(--success)' : 'var(--bg-secondary)'}; border:1px solid var(--border-color); position:relative; cursor:pointer; flex-shrink:0"
+                                         class="${item.val ? 'on' : ''}">
                                         <div style="width:14px; height:14px; border-radius:50%; background:white; position:absolute; top:2px; left:${item.val ? '18px' : '2px'}; transition:left 0.2s;"></div>
                                     </div>
                                 </div>

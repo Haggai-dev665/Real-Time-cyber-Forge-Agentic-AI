@@ -91,77 +91,211 @@
         <div class="main-layout">
             <!-- Modern Sidebar -->
             <aside class="sidebar" id="sidebar">
-                <ul class="nav-menu">
-                    <li class="nav-section-title"><span>Core</span></li>
-                    <li class="nav-item active" data-screen="dashboard">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-home"></i>
-                            <span class="nav-text">Dashboard</span>
-                            <span class="tooltip">Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" data-screen="real-time-monitor">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-chart-line"></i>
-                            <span class="nav-text">Real-time Monitor</span>
-                            <span class="tooltip">Real-time Monitor</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" data-screen="threat-center">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-exclamation-triangle"></i>
-                            <span class="nav-text">Threat Center</span>
-                            <span class="alert-badge" id="threat-count">0</span>
-                            <span class="tooltip">Threat Center</span>
-                        </a>
-                    </li>
+    <ul class="nav-menu">
+        <li class="nav-section-title"><span>Core</span></li>
+        <li class="nav-item active" data-screen="dashboard">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-home"></i>
+                <span class="nav-text">Dashboard</span>
+                <span class="tooltip">Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="real-time-monitor">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-chart-line"></i>
+                <span class="nav-text">Real-time Monitor</span>
+                <span class="tooltip">Real-time Monitor</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="threat-center">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-exclamation-triangle"></i>
+                <span class="nav-text">Threat Center</span>
+                <span class="alert-badge" id="threat-count">0</span>
+                <span class="tooltip">Threat Center</span>
+            </a>
+        </li>
 
-                    <li class="nav-section-title"><span>Analysis</span></li>
-                    <li class="nav-item" data-screen="deep-analysis">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-microscope"></i>
-                            <span class="nav-text">Deep Analysis</span>
-                            <span class="tooltip">Deep Analysis</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" data-screen="ai-assistant">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-robot"></i>
-                            <span class="nav-text">AI Assistant</span>
-                            <span class="tooltip">AI Assistant</span>
-                        </a>
-                    </li>
-                     <li class="nav-item" data-screen="ai-insights">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-lightbulb"></i>
-                            <span class="nav-text">AI Insights</span>
-                             <span class="tooltip">AI Insights</span>
-                        </a>
-                    </li>
+        <li class="nav-section-title"><span>Analysis</span></li>
+        <li class="nav-item" data-screen="deep-analysis">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-microscope"></i>
+                <span class="nav-text">Deep Analysis</span>
+                <span class="tooltip">Deep Analysis</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="network-analysis">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-network-wired"></i>
+                <span class="nav-text">Network Analysis</span>
+                <span class="tooltip">Network Analysis</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="malware-detection">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-virus"></i>
+                <span class="nav-text">Malware Detection</span>
+                <span class="tooltip">Malware Detection</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="vulnerability-scanner">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-bug"></i>
+                <span class="nav-text">Vulnerability Scanner</span>
+                <span class="tooltip">Vulnerability Scanner</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="penetration-testing">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-user-ninja"></i>
+                <span class="nav-text">Penetration Testing</span>
+                <span class="tooltip">Penetration Testing</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="digital-forensics">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-search-plus"></i>
+                <span class="nav-text">Digital Forensics</span>
+                <span class="tooltip">Digital Forensics</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="behavioral-analysis">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-user-check"></i>
+                <span class="nav-text">Behavioral Analysis</span>
+                <span class="tooltip">Behavioral Analysis</span>
+            </a>
+        </li>
 
-                    <li class="nav-section-title"><span>System</span></li>
-                    <li class="nav-item" data-screen="settings">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-cog"></i>
-                            <span class="nav-text">Settings</span>
-                            <span class="tooltip">Settings</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" data-screen="profile">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-user-circle"></i>
-                            <span class="nav-text">Profile</span>
-                            <span class="tooltip">Profile</span>
-                        </a>
-                    </li>
-                </ul>
+        <li class="nav-section-title"><span>Intelligence</span></li>
+        <li class="nav-item" data-screen="ai-assistant">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-robot"></i>
+                <span class="nav-text">AI Assistant</span>
+                <span class="tooltip">AI Assistant</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="ai-insights">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-lightbulb"></i>
+                <span class="nav-text">AI Insights</span>
+                <span class="tooltip">AI Insights</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="predictions">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-chart-area"></i>
+                <span class="nav-text">Predictions</span>
+                <span class="tooltip">Predictions</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="threat-intel">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-shield-virus"></i>
+                <span class="nav-text">Threat Intelligence</span>
+                <span class="tooltip">Threat Intelligence</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="osint-tools">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-globe"></i>
+                <span class="nav-text">OSINT Tools</span>
+                <span class="tooltip">OSINT Tools</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="domain-intelligence">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-globe-americas"></i>
+                <span class="nav-text">Domain Intelligence</span>
+                <span class="tooltip">Domain Intelligence</span>
+            </a>
+        </li>
 
-                <div class="sidebar-footer">
-                    <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse Sidebar">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                </div>
-            </aside>
+        <li class="nav-section-title"><span>Response</span></li>
+        <li class="nav-item" data-screen="incident-response">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-fire-extinguisher"></i>
+                <span class="nav-text">Incident Response</span>
+                <span class="tooltip">Incident Response</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="risk-assessment">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-balance-scale"></i>
+                <span class="nav-text">Risk Assessment</span>
+                <span class="tooltip">Risk Assessment</span>
+            </a>
+        </li>
+
+        <li class="nav-section-title"><span>Reports</span></li>
+        <li class="nav-item" data-screen="security-metrics">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-chart-bar"></i>
+                <span class="nav-text">Security Metrics</span>
+                <span class="tooltip">Security Metrics</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="reports">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-file-alt"></i>
+                <span class="nav-text">Reports</span>
+                <span class="tooltip">Reports</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="compliance">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-clipboard-check"></i>
+                <span class="nav-text">Compliance</span>
+                <span class="tooltip">Compliance</span>
+            </a>
+        </li>
+
+        <li class="nav-section-title"><span>ML &amp; Data</span></li>
+        <li class="nav-item" data-screen="ml-models">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-brain"></i>
+                <span class="nav-text">ML Models</span>
+                <span class="tooltip">ML Models</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="datasets">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-database"></i>
+                <span class="nav-text">Datasets</span>
+                <span class="tooltip">Datasets</span>
+            </a>
+        </li>
+
+        <li class="nav-section-title"><span>System</span></li>
+        <li class="nav-item" data-screen="system-logs">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-file-code"></i>
+                <span class="nav-text">System Logs</span>
+                <span class="tooltip">System Logs</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="settings">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-cog"></i>
+                <span class="nav-text">Settings</span>
+                <span class="tooltip">Settings</span>
+            </a>
+        </li>
+        <li class="nav-item" data-screen="profile">
+            <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-user-circle"></i>
+                <span class="nav-text">Profile</span>
+                <span class="tooltip">Profile</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse Sidebar">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+    </div>
+</aside>
 
             <!-- Main Content Area -->
             <main class="content-area">
@@ -240,11 +374,29 @@
     <script src="screens/real-time-monitor.js"></script>
     <script src="screens/threat-center.js"></script>
     <script src="screens/deep-analysis.js"></script>
+    <script src="screens/network-analysis.js"></script>
+    <script src="screens/malware-detection.js"></script>
+    <script src="screens/vulnerability-scanner.js"></script>
+    <script src="screens/penetration-testing.js"></script>
+    <script src="screens/digital-forensics.js"></script>
+    <script src="screens/behavioral-analysis.js"></script>
     <script src="screens/ai-assistant.js"></script>
     <script src="screens/ai-insights.js"></script>
+    <script src="screens/predictions.js"></script>
+    <script src="screens/threat-intel-screen.js"></script>
+    <script src="screens/osint-tools.js"></script>
+    <script src="screens/domain-intelligence.js"></script>
+    <script src="screens/incident-response.js"></script>
+    <script src="screens/risk-assessment.js"></script>
+    <script src="screens/security-metrics.js"></script>
+    <script src="screens/reports.js"></script>
+    <script src="screens/compliance.js"></script>
+    <script src="screens/ml-models.js"></script>
+    <script src="screens/datasets.js"></script>
+    <script src="screens/system-logs.js"></script>
     <script src="screens/settings.js"></script>
     <script src="screens/profile.js"></script>
-    
+
     <!-- Main Application Controller -->
     <script src="app.js"></script>
 </body>

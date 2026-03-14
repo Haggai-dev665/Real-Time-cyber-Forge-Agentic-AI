@@ -35,6 +35,27 @@
     }
   }
 
+  // Cross-module references resolved at call-time from the main app's window globals.
+  // The main app must expose these via window.CyberForgeApp or equivalent.
+  function browserIconFallback(key) {
+    if (window.CyberForgeApp?.browserIconFallback) return window.CyberForgeApp.browserIconFallback(key);
+    const map = { chrome: 'fab fa-chrome', firefox: 'fab fa-firefox-browser', edge: 'fab fa-edge', brave: 'fas fa-shield-halved', opera: 'fab fa-opera', chromium: 'fab fa-chrome', arc: 'fas fa-globe' };
+    return map[key] || 'fas fa-globe';
+  }
+  function startUrlMonitoring() { if (window.CyberForgeApp?.startUrlMonitoring) window.CyberForgeApp.startUrlMonitoring(); }
+  function stopUrlMonitoring() { if (window.CyberForgeApp?.stopUrlMonitoring) window.CyberForgeApp.stopUrlMonitoring(); }
+  function loadAgentTasksData() { if (window.CyberForgeApp?.loadAgentTasksData) window.CyberForgeApp.loadAgentTasksData(); }
+
+  // Lazy accessor for shared app state (navigation, screen rendering)
+  function _getAppState() { return window.CyberForgeApp?.state || {}; }
+  function renderScreen(screen) { if (window.CyberForgeApp?.renderScreen) window.CyberForgeApp.renderScreen(screen); }
+
+  // Proxy object so `state.activeScreen = ...` writes through to the main app state
+  const state = new Proxy({}, {
+    get(_t, prop) { return _getAppState()[prop]; },
+    set(_t, prop, value) { const s = _getAppState(); s[prop] = value; return true; }
+  });
+
   // =========================================
   // AGENT CENTER — Main init for the agent-control screen
   // This is SEPARATE from initAgentControlPanel() which handles

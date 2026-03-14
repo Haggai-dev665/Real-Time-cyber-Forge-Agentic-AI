@@ -178,36 +178,42 @@ class ReportsScreen {
         this.renderReports(this.reports);
     }
 
+    _esc(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     renderReports(reports) {
         const tbody = document.getElementById('reports-tbody');
         if (!tbody) return;
 
+        // Store reports by index for safe onclick references
+        this._renderedReports = reports;
         const typeColors = { threat:'var(--error)', vulnerability:'var(--warning)', compliance:'var(--success)', incident:'#ff9500', executive:'var(--primary)', forensics:'var(--info)' };
 
-        tbody.innerHTML = reports.map(r => `
+        tbody.innerHTML = reports.map((r, idx) => `
             <tr style="border-bottom:1px solid var(--border-color);"
                 onmouseenter="this.style.background='var(--bg-hover)'"
                 onmouseleave="this.style.background=''">
                 <td style="padding:var(--space-sm) var(--space-md);">
                     <div style="display:flex; align-items:center; gap:var(--space-sm);">
                         <i class="fas fa-file-pdf" style="color:var(--error);"></i>
-                        <span style="font-weight:500; color:var(--text-primary);">${r.name}</span>
+                        <span style="font-weight:500; color:var(--text-primary);">${this._esc(r.name)}</span>
                     </div>
                 </td>
                 <td style="padding:var(--space-sm) var(--space-md);">
-                    <span style="background:${typeColors[r.type] || 'var(--text-muted)'}22; color:${typeColors[r.type] || 'var(--text-muted)'}; padding:2px 8px; border-radius:99px; font-size:var(--text-xs); font-weight:500; text-transform:capitalize;">${r.type}</span>
+                    <span style="background:${typeColors[r.type] || 'var(--text-muted)'}22; color:${typeColors[r.type] || 'var(--text-muted)'}; padding:2px 8px; border-radius:99px; font-size:var(--text-xs); font-weight:500; text-transform:capitalize;">${this._esc(r.type)}</span>
                 </td>
-                <td style="padding:var(--space-sm) var(--space-md); color:var(--text-secondary); font-size:var(--text-sm);">${r.date}</td>
-                <td style="padding:var(--space-sm) var(--space-md); color:var(--text-secondary); font-size:var(--text-sm);">${r.period}</td>
-                <td style="padding:var(--space-sm) var(--space-md); text-align:center; color:var(--text-muted); font-size:var(--text-sm);">${r.size}</td>
+                <td style="padding:var(--space-sm) var(--space-md); color:var(--text-secondary); font-size:var(--text-sm);">${this._esc(r.date)}</td>
+                <td style="padding:var(--space-sm) var(--space-md); color:var(--text-secondary); font-size:var(--text-sm);">${this._esc(r.period)}</td>
+                <td style="padding:var(--space-sm) var(--space-md); text-align:center; color:var(--text-muted); font-size:var(--text-sm);">${this._esc(r.size)}</td>
                 <td style="padding:var(--space-sm) var(--space-md); text-align:center;">
-                    <span style="background:var(--success)22; color:var(--success); padding:2px 8px; border-radius:99px; font-size:var(--text-xs);">${r.status}</span>
+                    <span style="background:var(--success)22; color:var(--success); padding:2px 8px; border-radius:99px; font-size:var(--text-xs);">${this._esc(r.status)}</span>
                 </td>
                 <td style="padding:var(--space-sm) var(--space-md); text-align:center;">
-                    <button class="btn btn-sm btn-primary" onclick="window._reportsScreen?.downloadReport('${r.name}')" style="margin-right:4px;" title="Download">
+                    <button class="btn btn-sm btn-primary" onclick="window._reportsScreen?.downloadReportByIdx(${idx})" style="margin-right:4px;" title="Download">
                         <i class="fas fa-download"></i>
                     </button>
-                    <button class="btn btn-sm btn-secondary" onclick="window._reportsScreen?.viewReport('${r.name}')" title="View">
+                    <button class="btn btn-sm btn-secondary" onclick="window._reportsScreen?.viewReportByIdx(${idx})" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
                 </td>
@@ -255,12 +261,14 @@ class ReportsScreen {
         }, 3000);
     }
 
-    downloadReport(name) {
-        alert(`Downloading: ${name}`);
+    downloadReportByIdx(idx) {
+        const r = this._renderedReports?.[idx];
+        if (r) alert(`Downloading: ${r.name}`);
     }
 
-    viewReport(name) {
-        alert(`Viewing report: ${name}\n\nOpening report viewer...`);
+    viewReportByIdx(idx) {
+        const r = this._renderedReports?.[idx];
+        if (r) alert(`Viewing report: ${r.name}\n\nOpening report viewer...`);
     }
 
     addSchedule() {

@@ -160,6 +160,10 @@ class DigitalForensicsScreen {
         this.updateStats();
     }
 
+    _esc(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     renderCases() {
         const container = document.getElementById('df-case-list');
         if (!container) return;
@@ -167,17 +171,17 @@ class DigitalForensicsScreen {
         const priorityColor = { critical:'var(--error)', high:'#ff9500', medium:'var(--warning)', low:'var(--info)' };
         const statusColor = { active:'var(--success)', in_review:'var(--warning)', closed:'var(--text-muted)' };
 
-        container.innerHTML = this.cases.map(c => `
-            <div onclick="window._dfScreen?.selectCase('${c.id}')" style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:var(--space-sm) var(--space-md); cursor:pointer; transition:all var(--transition-fast);"
+        container.innerHTML = this.cases.map((c, idx) => `
+            <div onclick="window._dfScreen?.selectCaseByIdx(${idx})" style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:var(--space-sm) var(--space-md); cursor:pointer; transition:all var(--transition-fast);"
                 onmouseenter="this.style.borderColor='var(--primary)'"
                 onmouseleave="this.style.borderColor='var(--border-color)'">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                    <span style="font-size:var(--text-xs); font-family:var(--font-mono); color:var(--primary);">${c.id}</span>
-                    <span style="font-size:var(--text-xs); color:${statusColor[c.status]}; text-transform:uppercase;">${c.status.replace('_',' ')}</span>
+                    <span style="font-size:var(--text-xs); font-family:var(--font-mono); color:var(--primary);">${this._esc(c.id)}</span>
+                    <span style="font-size:var(--text-xs); color:${statusColor[c.status]}; text-transform:uppercase;">${this._esc(c.status.replace('_',' '))}</span>
                 </div>
-                <div style="font-size:var(--text-sm); font-weight:500; color:var(--text-primary); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.title}</div>
+                <div style="font-size:var(--text-sm); font-weight:500; color:var(--text-primary); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${this._esc(c.title)}</div>
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <span style="font-size:var(--text-xs); color:${priorityColor[c.priority]};">${c.priority} priority</span>
+                    <span style="font-size:var(--text-xs); color:${priorityColor[c.priority]};">${this._esc(c.priority)} priority</span>
                     <span style="font-size:var(--text-xs); color:var(--text-muted);">${c.evidence} items</span>
                 </div>
             </div>
@@ -237,6 +241,12 @@ class DigitalForensicsScreen {
         if (el('df-evidence')) el('df-evidence').textContent = totalEvidence;
         if (el('df-artifacts')) el('df-artifacts').textContent = this.evidence.length;
         if (el('df-analyzed')) el('df-analyzed').textContent = Math.floor(totalEvidence * 2.3);
+    }
+
+    selectCaseByIdx(idx) {
+        const c = this.cases[idx];
+        if (!c) return;
+        console.log('Selected case:', c);
     }
 
     selectCase(id) {

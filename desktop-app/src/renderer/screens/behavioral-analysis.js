@@ -9,6 +9,9 @@ class BehavioralAnalysisScreen {
         this.analysisResults = [];
         this.activeAnalyses = new Map();
         this.baselineData = new Map();
+        this.container = null;
+        this.isActive = false;
+        this.monitoringInterval = null;
     }
 
     async init() {
@@ -565,14 +568,22 @@ class BehavioralAnalysisScreen {
     exportAnomalies() {
         console.log('Exporting anomalies');
     }
+    async show(container, options = {}) {
+        this.container = container;
+        this.isActive = true;
+        container.innerHTML = this.render();
+        await this.init();
+        container.classList.add('screen-enter');
+    }
+
+    hide() {
+        this.isActive = false;
+        if (this.monitoringInterval) {
+            clearInterval(this.monitoringInterval);
+            this.monitoringInterval = null;
+        }
+    }
 }
 
 // Initialize and export
-const behavioralAnalysisScreen = new BehavioralAnalysisScreen();
-
-// Auto-initialize when screen is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.behavioral-analysis-screen')) {
-        behavioralAnalysisScreen.init();
-    }
-});
+window.BehavioralAnalysisScreen = BehavioralAnalysisScreen;

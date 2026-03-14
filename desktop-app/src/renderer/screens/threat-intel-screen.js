@@ -151,3 +151,41 @@
 
   window.CyberForgeThreatIntel = { buildThreatIntelLayout, bindThreatIntelEvents };
 })();
+
+// Wrapper class for app.js compatibility
+class ThreatIntelScreen {
+    constructor() {
+        this.container = null;
+        this.isActive = false;
+    }
+
+    async show(container, options = {}) {
+        this.container = container;
+        this.isActive = true;
+        const layout = window.CyberForgeThreatIntel?.buildThreatIntelLayout?.() || this.fallbackHTML();
+        container.innerHTML = `<div class="screen-content" style="padding:var(--space-lg)">${layout}</div>`;
+        window.CyberForgeThreatIntel?.bindThreatIntelEvents?.();
+        container.classList.add('screen-enter');
+    }
+
+    hide() {
+        this.isActive = false;
+    }
+
+    fallbackHTML() {
+        return `
+            <div class="threat-intel-screen">
+                <div class="screen-header">
+                    <h2><i class="fas fa-shield-virus"></i> Threat Intelligence</h2>
+                    <p>Real-time threat intelligence feeds and IOC management</p>
+                </div>
+                <div class="no-data">
+                    <i class="fas fa-database"></i>
+                    <p>Loading threat intelligence data...</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+window.ThreatIntelScreen = ThreatIntelScreen;

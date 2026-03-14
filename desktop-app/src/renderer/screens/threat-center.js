@@ -70,7 +70,46 @@ class ThreatCenterScreen {
                     </div>
                 </div>
 
+                
+                <!-- Advanced Visualizations -->
+                <div class="threat-visualizations" style="margin-bottom: 20px;">
+                    <div class="viz-row" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <!-- Custom CSS SVG Map -->
+                        <div class="viz-card map-container" style="flex: 2; background: var(--bg-secondary); border-radius: 12px; padding: 20px; border: 1px solid var(--border-color); position: relative; overflow: hidden; min-height: 350px;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-globe-americas" style="color: var(--primary);"></i> Live Global Threat Vectors
+                            </h3>
+                            <div id="advanced-threat-map" style="width: 100%; height: 280px; position: relative;">
+                                <!-- SVG map populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Doughnut Chart -->
+                        <div class="viz-card chart-container" style="flex: 1; background: var(--bg-secondary); border-radius: 12px; padding: 20px; border: 1px solid var(--border-color); display: flex; flex-direction: column;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-radar" style="color: var(--warning);"></i> Threat Distribution
+                            </h3>
+                            <div style="flex-grow: 1; position: relative;">
+                                <canvas id="threat-distribution-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="viz-row" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <!-- Timeline Line Chart -->
+                        <div class="viz-card chart-container" style="flex: 1; background: var(--bg-secondary); border-radius: 12px; padding: 20px; border: 1px solid var(--border-color); min-height: 300px; display: flex; flex-direction: column;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-chart-line" style="color: var(--info);"></i> Threat Activity Timeline
+                            </h3>
+                            <div style="flex-grow: 1; position: relative;">
+                                <canvas id="threat-timeline-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Stats Overview -->
+
                 <div class="threat-stats-grid">
                     <div class="stat-card critical">
                         <div class="stat-icon">
@@ -318,9 +357,10 @@ class ThreatCenterScreen {
         try {
             this.showTableLoading();
             
+            this.threats = []; // Enforce pure real data, no mock fallbacks
             if (window.apiClient) {
                 const response = await window.apiClient.getThreats({ 
-                    limit: 100,
+                    limit: 200,
                     status: 'all'
                 });
                 
@@ -328,19 +368,16 @@ class ThreatCenterScreen {
                     this.threats = response.data?.threats || response.data || [];
                 }
             }
-
-            if (!this.threats || this.threats.length === 0) {
-                this.threats = this.generateMockThreats();
-            }
             
             this.threatsTable.setData(this.threats);
             this.updateThreatStats();
+            this.renderVisualizations(); // Initialize advanced charts and arrays based on pure data
             
         } catch (error) {
             console.error('Failed to load threats:', error);
-            this.threats = this.generateMockThreats();
             this.threatsTable.setData(this.threats);
-            window.notificationSystem?.error('Load Error', 'Failed to load some threat data');
+            this.renderVisualizations();
+            window.notificationSystem?.error('Load Error', 'Failed to fetch threat data from backend');
         }
     }
 
@@ -391,6 +428,253 @@ class ThreatCenterScreen {
         document.getElementById('medium-threats').textContent = stats.medium;
         document.getElementById('blocked-threats').textContent = stats.blocked;
     }
+
+
+    renderVisualizations() {
+        if (!this.threats) return;
+        
+        // Slight delay to ensure DOM layout is complete for canvas dimensions
+        setTimeout(() => {
+            this.renderDistributionChart();
+            this.renderTimelineChart();
+            this.renderThreatMap();
+        }, 100);
+    }
+
+    renderDistributionChart() {
+        const ctx = document.getElementById('threat-distribution-chart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        
+        if (this.distributionChart) {
+            this.distributionChart.destroy();
+        }
+
+        const counts = { phishing: 0, malware: 0, network: 0, suspicious: 0, web_attack: 0, anomaly: 0 };
+        this.threats.forEach(t => {
+            const type = (t.type || 'suspicious').toLowerCase();
+            counts[type] = (counts[type] || 0) + 1;
+        });
+
+        // Ensure we show something if empty, but explicitly state 0
+        const dataValues = Object.values(counts);
+        const hasData = dataValues.some(v => v > 0);
+
+        this.distributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(counts).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+                datasets: [{
+                    data: hasData ? dataValues : [1], // fallback slice if no data
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.8)',   // Red
+                        'rgba(245, 158, 11, 0.8)',  // Orange
+                        'rgba(59, 130, 246, 0.8)',  // Blue
+                        'rgba(16, 185, 129, 0.8)',  // Green
+                        'rgba(139, 92, 246, 0.8)',  // Purple
+                        'rgba(236, 72, 153, 0.8)'   // Pink
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { 
+                        position: 'left', 
+                        labels: { 
+                            padding: 20,
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary') || '#fff' 
+                        } 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (!hasData) return ' No Threats Recorded';
+                                return ` ${context.label}: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderTimelineChart() {
+        const ctx = document.getElementById('threat-timeline-chart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        
+        if (this.timelineChart) {
+            this.timelineChart.destroy();
+        }
+
+        // Group by day for simple timeline, sorted
+        const timelineMap = {};
+        
+        if (this.threats.length === 0) {
+            // Setup empty 7 days axis if no true data
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                timelineMap[`${d.getMonth() + 1}/${d.getDate()}`] = 0;
+            }
+        } else {
+            // Last 7 days baseline
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                timelineMap[`${d.getMonth() + 1}/${d.getDate()}`] = 0;
+            }
+            this.threats.forEach(t => {
+                const d = new Date(t.timestamp || t.created_at || Date.now());
+                const dateKey = `${d.getMonth() + 1}/${d.getDate()}`;
+                if(timelineMap[dateKey] !== undefined) {
+                    timelineMap[dateKey]++;
+                } else {
+                    timelineMap[dateKey] = 1;
+                }
+            });
+        }
+        
+        const labels = Object.keys(timelineMap);
+        const dataValues = Object.values(timelineMap);
+
+        this.timelineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Threats Detected',
+                    data: dataValues,
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderColor: 'rgba(239, 68, 68, 0.8)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+                        ticks: { color: '#888', stepSize: 1 } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { color: '#888' } 
+                    }
+                },
+                plugins: { 
+                    legend: { display: false } 
+                }
+            }
+        });
+    }
+
+    renderThreatMap() {
+        const container = document.getElementById('advanced-threat-map');
+        if (!container) return;
+        container.innerHTML = ''; // prevent duplicates
+
+        // Render procedural SVG map grid
+        const svgHTML = `
+        <svg viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" style="width:100%; height:100%; opacity:0.8;">
+            <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+                </pattern>
+                <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            
+            <!-- Abstract Map Outlines (North America, Europe, Asia, Africa, South America) -->
+            <path d="M120,80 Q200,50 280,120 T320,200 Q250,280 180,220 T120,80 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
+            <path d="M180,230 Q220,220 250,280 T260,350 Q200,400 160,320 T180,230 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
+            <path d="M400,60 Q480,40 550,100 T600,180 Q520,220 450,150 T400,60 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
+            <path d="M600,100 Q700,80 750,150 T780,230 Q700,280 650,200 T600,100 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
+            <path d="M430,220 Q500,200 550,280 T560,360 Q480,420 420,320 T430,220 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
+            
+            <g id="map-nodes"></g>
+        </svg>
+        `;
+        container.innerHTML = svgHTML;
+        const nodesGroup = container.querySelector('#map-nodes');
+
+        if (this.threats.length === 0) {
+            container.innerHTML += `<div style="position: absolute; top:50%; left:50%; transform:translate(-50%, -50%); color: var(--text-muted); font-size: 0.9rem; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--border-color);">No Active Geographic Threats Handled</div>`;
+            return;
+        }
+
+        // Render nodes based on actual threats
+        this.threats.forEach((t, i) => {
+            // Map coords out of string hash of the source for deterministic random
+            let hash = 0;
+            const srcStr = t.source || t.url || String(t.id);
+            for (let i = 0; i < srcStr.length; i++) hash = srcStr.charCodeAt(i) + ((hash << 5) - hash);
+            
+            // Map to abstract SVG dimensions (800x400)
+            const x = Math.abs(hash) % 760 + 20;
+            const y = Math.abs(hash * 3) % 360 + 20;
+            const r = t.severity === 'critical' ? 6 : (t.severity === 'high' ? 4 : 3);
+            const color = t.severity === 'critical' ? '#ef4444' : (t.severity === 'high' ? '#f59e0b' : '#3b82f6');
+            
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', r);
+            circle.setAttribute('fill', color);
+            circle.setAttribute('filter', 'url(#glow-effect)');
+            
+            // Animating ping
+            const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+            anim.setAttribute('attributeName', 'opacity');
+            anim.setAttribute('values', '1;0.4;1');
+            anim.setAttribute('dur', (Math.random() * 2 + 1) + 's');
+            anim.setAttribute('repeatCount', 'indefinite');
+            circle.appendChild(anim);
+
+            nodesGroup.appendChild(circle);
+            
+            // Interconnecting lines for visual flair
+            if (i > 0 && i % 2 === 0) {
+                const prevHash = hash ^ (i * 123);
+                const prevX = Math.abs(prevHash) % 760 + 20;
+                const prevY = Math.abs(prevHash * 3) % 360 + 20;
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                line.setAttribute('d', `M ${prevX} ${prevY} Q ${(x + prevX)/2} ${y - 50} ${x} ${y}`);
+                line.setAttribute('fill', 'none');
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '0.5');
+                line.setAttribute('opacity', '0.2');
+                line.style.strokeDasharray = '5,5';
+                
+                // Animation for lines
+                const lineAnim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                lineAnim.setAttribute('attributeName', 'stroke-dashoffset');
+                lineAnim.setAttribute('values', '10;0');
+                lineAnim.setAttribute('dur', '2s');
+                lineAnim.setAttribute('repeatCount', 'indefinite');
+                line.appendChild(lineAnim);
+
+                nodesGroup.appendChild(line);
+            }
+        });
+    }
+
 
     generateMockThreats() {
         const threats = [];

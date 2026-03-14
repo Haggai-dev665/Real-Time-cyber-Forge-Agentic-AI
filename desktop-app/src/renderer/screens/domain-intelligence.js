@@ -9,6 +9,8 @@ class DomainIntelligenceScreen {
         this.analysisHistory = [];
         this.watchedDomains = [];
         this.domainData = new Map();
+        this.container = null;
+        this.isActive = false;
     }
 
     async init() {
@@ -862,14 +864,19 @@ class DomainIntelligenceScreen {
             </div>
         `).join('');
     }
+
+    async show(container, options = {}) {
+        this.container = container;
+        this.isActive = true;
+        container.innerHTML = this.render();
+        await this.init();
+        container.classList.add('screen-enter');
+    }
+
+    hide() {
+        this.isActive = false;
+    }
 }
 
 // Initialize and export
-const domainIntelligenceScreen = new DomainIntelligenceScreen();
-
-// Auto-initialize when screen is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.domain-intelligence-screen')) {
-        domainIntelligenceScreen.init();
-    }
-});
+window.DomainIntelligenceScreen = DomainIntelligenceScreen;

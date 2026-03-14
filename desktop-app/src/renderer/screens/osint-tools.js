@@ -9,6 +9,8 @@ class OSINTToolsScreen {
         this.activeInvestigations = [];
         this.osintSources = [];
         this.searchResults = new Map();
+        this.container = null;
+        this.isActive = false;
     }
 
     async init() {
@@ -776,14 +778,19 @@ class OSINTToolsScreen {
     generateReport() {
         console.log('Generating OSINT report');
     }
+
+    async show(container, options = {}) {
+        this.container = container;
+        this.isActive = true;
+        container.innerHTML = this.render();
+        await this.init();
+        container.classList.add('screen-enter');
+    }
+
+    hide() {
+        this.isActive = false;
+    }
 }
 
 // Initialize and export
-const osintToolsScreen = new OSINTToolsScreen();
-
-// Auto-initialize when screen is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.osint-tools-screen')) {
-        osintToolsScreen.init();
-    }
-});
+window.OSINTToolsScreen = OSINTToolsScreen;

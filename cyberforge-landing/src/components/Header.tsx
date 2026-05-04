@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
-import logo from '../assets/logo.png'
+import { Menu, X, Shield } from 'lucide-react'
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -37,7 +36,7 @@ export function Header() {
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 group">
             <div className="relative">
-              <img src={logo} alt="CyberForge" className="w-10 h-10 transition-transform group-hover:scale-110" />
+              <Shield className="w-8 h-8 text-primary-400 transition-transform group-hover:scale-110" />
               <div className="absolute inset-0 bg-status-safe/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </a>

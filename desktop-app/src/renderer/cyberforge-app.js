@@ -2867,6 +2867,11 @@
         
         // Toggle expanded state on click
         link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          if (href && href !== '#') {
+            window.location.href = href;
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           
@@ -3313,6 +3318,9 @@
 
     // Theme toggle
     themeToggle?.addEventListener('click', () => toggleTheme());
+    if (themeToggle) {
+      themeToggle.setAttribute('data-theme-managed', 'true');
+    }
 
     // Periodically update header alert count from real data
     updateHeaderAlertCount();
@@ -3396,7 +3404,20 @@
   function bindSidebarNav() {
     const links = document.querySelectorAll('.sidebar-nav-link');
     links.forEach(link => {
+      const labelNode = link.querySelector('span');
+      const label = (labelNode?.textContent || '').trim();
+      if (label) {
+        link.setAttribute('data-tooltip', label);
+        if (!link.getAttribute('title')) link.setAttribute('title', label);
+        if (!link.getAttribute('aria-label')) link.setAttribute('aria-label', label);
+      }
+
       link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+          window.location.href = href;
+          return;
+        }
         e.preventDefault();
         links.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
@@ -3408,11 +3429,29 @@
 
     const collapseBtn = document.getElementById('collapse-sidebar');
     const sidebar = document.getElementById('sidebar');
+
+    // Desktop app: enforce icon-rail sidebar by default on non-mobile widths.
+    const isMobileViewport = window.innerWidth <= 768;
+    const storedExpanded = localStorage.getItem('cf-sidebar-expanded');
+    state.sidebarCollapsed = isMobileViewport ? (storedExpanded !== 'true') : true;
+    if (sidebar) {
+      sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
+    }
+    if (!isMobileViewport) {
+      localStorage.setItem('cf-sidebar-expanded', 'false');
+    }
+    if (collapseBtn) {
+      collapseBtn.querySelector('span').textContent = state.sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar';
+      collapseBtn.querySelector('i').className = state.sidebarCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+    }
+
     collapseBtn?.addEventListener('click', () => {
-      state.sidebarCollapsed = !state.sidebarCollapsed;
+      const isMobile = window.innerWidth <= 768;
+      state.sidebarCollapsed = isMobile ? !state.sidebarCollapsed : true;
       sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
       collapseBtn.querySelector('span').textContent = state.sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar';
       collapseBtn.querySelector('i').className = state.sidebarCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+      localStorage.setItem('cf-sidebar-expanded', isMobile ? String(!state.sidebarCollapsed) : 'false');
     });
 
     state.sidebarListenersBound = true;
@@ -3566,13 +3605,9 @@
       container.innerHTML = buildThreatIntelLayout();
       bindThreatIntelEvents();
     } else if (screen === 'threat-globe') {
-      // Initialize Threat Globe Screen
-      if (window.ThreatGlobeScreen) {
-        const globeScreen = new ThreatGlobeScreen();
-        globeScreen.show(container);
-      } else {
-        container.innerHTML = '<div class="screen-error"><p>Threat Globe screen not available</p></div>';
-      }
+      // Threat Globe now uses the same OTX-backed map pipeline as Threat Map
+      container.innerHTML = ChildPages.buildThreatMapLayout();
+      initThreatMap();
     } else if (screen === 'environment') {
       container.innerHTML = buildEnvironmentLayout();
       bindEnvironmentEvents();

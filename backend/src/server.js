@@ -34,6 +34,8 @@ const childPagesRoutes = require('./routes/child-pages');
 const agentRoutes = require('./routes/agentRoutes');
 const browserIntelligenceRoutes = require('./routes/browser-intelligence');
 const distributedRoutes = require('./routes/distributed');
+const policyRoutes = require('./routes/policy');
+const auditRoutes = require('./routes/audit');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
@@ -147,7 +149,9 @@ class CyberForgeServer {
     this.app.use('/api/agent', agentRoutes);       // TODO 1: Agent control and management
     this.app.use('/api/browser-intelligence', browserIntelligenceRoutes); // TODO 2: Browser Intelligence Engine
     this.app.use('/api/distributed', distributedRoutes); // TODO 4: Distributed Intelligence
-    
+    this.app.use('/api/policy', policyRoutes);           // TODO 5: Policy Engine
+    this.app.use('/api/audit', auditRoutes);             // TODO 6: Audit Trail
+
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);
     

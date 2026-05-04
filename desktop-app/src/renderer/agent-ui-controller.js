@@ -9,6 +9,9 @@
 
     let _fpStatsInterval = null;
     let _fpBrowsersInterval = null;
+    const FP_STYLE_KEY = 'cyberforge-agent-panel-style';
+    const FP_STYLE_MODE_KEY = 'cyberforge-agent-panel-style-mode';
+    const FP_STYLES = ['tactical', 'ai-lab', 'enterprise'];
 
     // =========================================
     // HIERARCHICAL SIDEBAR CONTROLLER
@@ -48,6 +51,7 @@
         const openCenterBtn = document.getElementById('fp-open-agent-center');
         
         makePanelDraggable(panel);
+        initFloatingPanelVisualMode(panel);
         
         if (minimizeBtn) {
             minimizeBtn.addEventListener('click', (e) => {
@@ -255,11 +259,8 @@
                 backendOk = healthRes.ok;
             } catch (e) { /* offline */ }
             
-            if (backendEl) {
-                backendEl.textContent = backendOk ? 'Connected' : 'Offline';
-                backendEl.style.color = backendOk ? '#27AE60' : '#C0392B';
-            }
-            
+            setChip(backendEl, backendOk ? 'online' : 'offline', backendOk ? 'Connected' : 'Offline');
+
             // ML service health
             var mlOk = false;
             try {
@@ -269,11 +270,8 @@
                     mlOk = !!(mlData && (mlData.success || mlData.status === 'healthy'));
                 }
             } catch (e) { /* offline */ }
-            
-            if (mlEl) {
-                mlEl.textContent = mlOk ? 'Healthy' : 'Degraded';
-                mlEl.style.color = mlOk ? '#27AE60' : '#E67E22';
-            }
+
+            setChip(mlEl, mlOk ? 'online' : 'degraded', mlOk ? 'Healthy' : 'Degraded');
             
             // Agent status — check if default agent is running, count includes self
             var agentRunning = false;
@@ -315,23 +313,28 @@
             // Ensure running agent always counts
             if (agentRunning && agentCount < 1) agentCount = 1;
             
-            if (agentCountEl) {
-                agentCountEl.textContent = String(agentCount);
-                agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B';
-            }
-            
-            // Update status indicator based on agent running state
+            if (agentCountEl) agentCountEl.textContent = String(agentCount);
+
+            // Update header status indicator
             var isActive = backendOk && agentRunning;
-            if (statusDot) statusDot.style.background = isActive ? '#27AE60' : backendOk ? '#E67E22' : '#C0392B';
-            if (statusText) statusText.textContent = isActive ? 'Agent Active' : backendOk ? 'Connected' : 'Offline';
-            
+            var dotColor = isActive ? 'var(--cf-status-success,#22c55e)' : backendOk ? 'var(--cf-status-warning,#f59e0b)' : 'var(--cf-status-error,#ef4444)';
+            if (statusDot) statusDot.style.background = dotColor;
+            if (statusText) statusText.textContent = isActive ? 'Active' : backendOk ? 'Connected' : 'Offline';
+
             fpLog(isActive ? 'Agent active & synced' : backendOk ? 'Backend synced' : 'Backend unreachable');
-            
+
         } catch (e) {
-            if (backendEl) { backendEl.textContent = 'Error'; backendEl.style.color = '#C0392B'; }
+            setChip(backendEl, 'offline', 'Error');
             if (statusText) statusText.textContent = 'Error';
             console.error('[FloatingPanel] Backend status error:', e);
         }
+    }
+
+    // Updates an agent-conn-chip element's class and text
+    function setChip(el, state, label) {
+        if (!el) return;
+        el.className = 'agent-conn-chip ' + state;
+        el.textContent = label;
     }
     
     // =========================================
@@ -361,6 +364,80 @@
             chromium: 'fab fa-chrome', arc: 'fas fa-globe'
         };
         return map[key] || 'fas fa-globe';
+    }
+
+    function getCurrentThemeMode() {
+        return document.documentElement.getAttribute('data-theme')
+            || document.body.dataset.theme
+            || localStorage.getItem('cyberforge-theme')
+            || localStorage.getItem('theme')
+            || 'dark';
+    }
+
+    function getPreferredFloatingPanelStyle(theme) {
+        return theme === 'light' ? 'enterprise' : 'ai-lab';
+    }
+
+    function applyFloatingPanelStyle(panel, style) {
+        if (!panel) return;
+        FP_STYLES.forEach(function(name) {
+            panel.classList.remove('fp-style-' + name);
+        });
+        var resolved = FP_STYLES.includes(style) ? style : getPreferredFloatingPanelStyle(getCurrentThemeMode());
+        panel.classList.add('fp-style-' + resolved);
+        panel.setAttribute('data-fp-style', resolved);
+    }
+
+    function initFloatingPanelVisualMode(panel) {
+        if (!panel) return;
+
+        var styleMode = localStorage.getItem(FP_STYLE_MODE_KEY) || 'auto';
+        var savedStyle = localStorage.getItem(FP_STYLE_KEY);
+        var initialStyle = (styleMode === 'manual' && savedStyle)
+            ? savedStyle
+            : getPreferredFloatingPanelStyle(getCurrentThemeMode());
+
+        applyFloatingPanelStyle(panel, initialStyle);
+
+        var header = panel.querySelector('.agent-panel-header');
+        if (header && !header.dataset.fpStyleBound) {
+            header.dataset.fpStyleBound = 'true';
+            header.title = 'Double-click to cycle panel style, Alt+double-click to return to theme auto mode';
+
+            header.addEventListener('dblclick', function(e) {
+                if (e.target.closest('button')) return;
+
+                if (e.altKey) {
+                    localStorage.setItem(FP_STYLE_MODE_KEY, 'auto');
+                    var autoStyle = getPreferredFloatingPanelStyle(getCurrentThemeMode());
+                    localStorage.setItem(FP_STYLE_KEY, autoStyle);
+                    applyFloatingPanelStyle(panel, autoStyle);
+                    fpLog('Panel style switched to theme auto mode');
+                    return;
+                }
+
+                var current = panel.getAttribute('data-fp-style') || getPreferredFloatingPanelStyle(getCurrentThemeMode());
+                var index = FP_STYLES.indexOf(current);
+                var next = FP_STYLES[(index + 1) % FP_STYLES.length];
+                localStorage.setItem(FP_STYLE_MODE_KEY, 'manual');
+                localStorage.setItem(FP_STYLE_KEY, next);
+                applyFloatingPanelStyle(panel, next);
+                fpLog('Panel style: ' + next);
+            });
+        }
+
+        var observer = new MutationObserver(function() {
+            var mode = localStorage.getItem(FP_STYLE_MODE_KEY) || 'auto';
+            if (mode === 'auto') {
+                var autoStyle = getPreferredFloatingPanelStyle(getCurrentThemeMode());
+                localStorage.setItem(FP_STYLE_KEY, autoStyle);
+                applyFloatingPanelStyle(panel, autoStyle);
+                return;
+            }
+            var manualStyle = localStorage.getItem(FP_STYLE_KEY) || initialStyle;
+            applyFloatingPanelStyle(panel, manualStyle);
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     }
     
     function makePanelDraggable(panel) {
@@ -411,19 +488,36 @@
     function initHeaderEnhancements() {
         var themeToggle = document.getElementById('theme-toggle');
         var privacyMode = document.getElementById('header-privacy-mode');
+        var themeObserver = null;
+
+        function syncThemeState() {
+            var rootTheme = document.documentElement.getAttribute('data-theme')
+                || localStorage.getItem('cyberforge-theme')
+                || localStorage.getItem('theme')
+                || 'dark';
+
+            document.body.dataset.theme = rootTheme;
+            localStorage.setItem('theme', rootTheme);
+
+            var icon = themeToggle ? themeToggle.querySelector('i') : null;
+            if (icon) icon.className = rootTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+        }
         
         if (themeToggle) {
-            themeToggle.addEventListener('click', function() {
-                var currentTheme = document.body.dataset.theme || 'dark';
-                var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                document.body.dataset.theme = newTheme;
-                localStorage.setItem('theme', newTheme);
-                var icon = themeToggle.querySelector('i');
-                if (icon) icon.className = newTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
-            });
-            var savedTheme = localStorage.getItem('theme') || 'dark';
-            var icon = themeToggle.querySelector('i');
-            if (savedTheme === 'light' && icon) icon.className = 'fas fa-sun';
+            var managedByMainApp = themeToggle.getAttribute('data-theme-managed') === 'true';
+            if (!managedByMainApp) {
+                themeToggle.addEventListener('click', function() {
+                    var currentTheme = getCurrentThemeMode();
+                    var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('cyberforge-theme', newTheme);
+                    syncThemeState();
+                });
+            }
+
+            syncThemeState();
+            themeObserver = new MutationObserver(syncThemeState);
+            themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
         }
         
         if (privacyMode) {
@@ -438,6 +532,12 @@
         
         var deviceName = document.getElementById('device-name');
         if (deviceName) deviceName.textContent = localStorage.getItem('device-name') || 'Device-001';
+
+        if (themeObserver) {
+            window.addEventListener('beforeunload', function() {
+                themeObserver.disconnect();
+            }, { once: true });
+        }
     }
 
     // =========================================

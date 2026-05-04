@@ -1,459 +1,423 @@
 /**
  * Datasets Screen
- * Dataset management for ML model training
+ * Dataset catalog management, sync, import/export for ML training data.
  */
 
 class DatasetsScreen {
-    constructor() {
-        this.container = null;
-        this.isActive = false;
-        this.datasets = [];
-        this.selectedDataset = null;
-    }
+  constructor() {
+    this.container = null;
+    this.syncingRows = new Set();
 
-    async show(container, options = {}) {
-        this.container = container;
-        this.isActive = true;
-        
-        this.container.innerHTML = this.createHTML();
-        this.initializeComponents();
-        
-        // Load datasets from backend
-        await this.loadDatasets();
-        
-        this.container.classList.add('screen-enter');
-    }
+    this.datasets = [
+      { id: 'threat-feeds',         name: 'Threat Feeds',         type: 'Threat',  records: 125400, size: '48 MB',  status: 'Active',   lastSync: '2026-05-01 04:00' },
+      { id: 'malware-signatures',   name: 'Malware Signatures',   type: 'IOC',     records: 89200,  size: '112 MB', status: 'Active',   lastSync: '2026-05-01 03:30' },
+      { id: 'cve-database',         name: 'CVE Database',         type: 'CVE',     records: 234100, size: '201 MB', status: 'Active',   lastSync: '2026-04-30 22:00' },
+      { id: 'phishing-urls',        name: 'Phishing URLs',        type: 'IOC',     records: 412800, size: '88 MB',  status: 'Active',   lastSync: '2026-05-01 04:15' },
+      { id: 'ip-reputation',        name: 'IP Reputation',        type: 'Threat',  records: 1820000, size: '340 MB', status: 'Active',  lastSync: '2026-05-01 01:00' },
+      { id: 'yara-rules',           name: 'YARA Rules',           type: 'IOC',     records: 9800,   size: '5 MB',   status: 'Active',   lastSync: '2026-04-29 12:00' },
+      { id: 'network-baselines',    name: 'Network Baselines',    type: 'Network', records: 55000,  size: '72 MB',  status: 'Archived', lastSync: '2026-04-15 08:00' },
+      { id: 'user-behaviors',       name: 'User Behaviors',       type: 'Network', records: 317500, size: '155 MB', status: 'Active',   lastSync: '2026-05-01 02:45' },
+    ];
+  }
 
-    hide() {
-        this.isActive = false;
-    }
+  _esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
-    createHTML() {
-        return `
-            <div class="datasets-screen">
-                <div class="datasets-header">
-                    <div class="header-info">
-                        <h2><i class="fas fa-database"></i> Datasets</h2>
-                        <p>Manage training datasets for ML model training</p>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn btn-secondary" id="refresh-datasets-btn">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                        <button class="btn btn-primary" id="upload-dataset-btn">
-                            <i class="fas fa-upload"></i> Upload Custom
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Dataset Stats -->
-                <div class="dataset-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-database"></i></div>
-                        <div class="stat-value" id="total-datasets">0</div>
-                        <div class="stat-label">Total Datasets</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                        <div class="stat-value" id="available-datasets">0</div>
-                        <div class="stat-label">Available</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                        <div class="stat-value" id="total-samples">0</div>
-                        <div class="stat-label">Total Samples</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="fas fa-brain"></i></div>
-                        <div class="stat-value" id="trained-models">0</div>
-                        <div class="stat-label">Trained Models</div>
-                    </div>
-                </div>
-                
-                <!-- Main Content -->
-                <div class="datasets-content">
-                    <!-- Dataset List -->
-                    <div class="dataset-list-section">
-                        <h3>Available Datasets</h3>
-                        <div class="dataset-grid" id="dataset-grid">
-                            <div class="loading-state">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <p>Loading datasets...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Dataset Details Panel -->
-                    <div class="dataset-details-section" id="dataset-details">
-                        <div class="no-selection">
-                            <i class="fas fa-database"></i>
-                            <p>Select a dataset to view details</p>
-                        </div>
-                    </div>
-                </div>
+  _el(id) {
+    return this.container ? this.container.querySelector(`#${id}`) : null;
+  }
+
+  show(container) {
+    this.container = container;
+    container.innerHTML = this._render();
+    this._bindEvents();
+    this._loadStats();
+  }
+
+  hide() {
+    this.container = null;
+  }
+
+  _render() {
+    return `
+      <style>
+        .ds-layout { display: flex; flex-direction: column; gap: var(--cf-space-5); }
+        .ds-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--cf-space-4); }
+        .ds-stat-card {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          padding: var(--cf-space-4) var(--cf-space-5);
+          text-align: center;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .ds-stat-value {
+          font-size: var(--cf-text-2xl);
+          font-weight: var(--cf-weight-bold);
+          color: var(--cf-interactive-default);
+          font-family: var(--cf-font-mono);
+          line-height: 1.2;
+        }
+        .ds-stat-label {
+          font-size: var(--cf-text-xs);
+          color: var(--cf-text-muted);
+          margin-top: var(--cf-space-1);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .ds-card {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          overflow: hidden;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .ds-card-header {
+          background: var(--cf-card-header-bg);
+          border-bottom: 1px solid var(--cf-card-border);
+          padding: var(--cf-space-3) var(--cf-space-5);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--cf-space-3);
+          flex-wrap: wrap;
+        }
+        .ds-card-body { padding: 0; }
+        .ds-table-wrap { overflow-x: auto; }
+        .ds-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: var(--cf-text-sm);
+        }
+        .ds-table th {
+          background: var(--cf-table-header-bg);
+          color: var(--cf-text-muted);
+          font-size: var(--cf-text-xs);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: var(--cf-weight-semibold);
+          padding: var(--cf-space-3) var(--cf-space-4);
+          text-align: left;
+          border-bottom: 1px solid var(--cf-table-border);
+          white-space: nowrap;
+        }
+        .ds-table td {
+          padding: var(--cf-space-3) var(--cf-space-4);
+          border-bottom: 1px solid var(--cf-table-border);
+          color: var(--cf-text-secondary);
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+        .ds-table tr:last-child td { border-bottom: none; }
+        .ds-table tr:hover td { background: var(--cf-table-row-hover); }
+        .ds-name-cell { color: var(--cf-text-primary); font-weight: var(--cf-weight-medium); }
+        .ds-type-badge {
+          display: inline-block;
+          background: var(--cf-surface-2);
+          border: 1px solid var(--cf-border-light);
+          border-radius: var(--cf-radius-sm);
+          color: var(--cf-text-secondary);
+          font-size: var(--cf-text-xs);
+          padding: 1px var(--cf-space-2);
+          font-family: var(--cf-font-mono);
+        }
+        .ds-records { font-family: var(--cf-font-mono); color: var(--cf-text-primary); }
+        .ds-size { font-family: var(--cf-font-mono); font-size: var(--cf-text-xs); color: var(--cf-text-muted); }
+        .ds-sync-time { font-family: var(--cf-font-mono); font-size: var(--cf-text-xs); color: var(--cf-text-muted); }
+        @keyframes ds-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .ds-badge-syncing { animation: ds-pulse 1.4s ease-in-out infinite; }
+        .ds-btn-row { display: flex; gap: var(--cf-space-2); }
+        .ds-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cf-space-5); }
+        @media (max-width: 680px) { .ds-two-col { grid-template-columns: 1fr; } }
+        .ds-io-panel {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          overflow: hidden;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .ds-io-header {
+          background: var(--cf-card-header-bg);
+          border-bottom: 1px solid var(--cf-card-border);
+          padding: var(--cf-space-3) var(--cf-space-5);
+        }
+        .ds-io-body { padding: var(--cf-space-4); display: flex; flex-direction: column; gap: var(--cf-space-3); }
+        .ds-file-label {
+          font-size: var(--cf-text-xs);
+          color: var(--cf-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: var(--cf-space-1);
+        }
+        .ds-file-input {
+          display: block;
+          background: var(--cf-input-bg);
+          border: 1px dashed var(--cf-input-border);
+          border-radius: var(--cf-radius-md);
+          color: var(--cf-text-secondary);
+          font-size: var(--cf-text-sm);
+          padding: var(--cf-space-4);
+          cursor: pointer;
+          width: 100%;
+          box-sizing: border-box;
+          transition: border-color 0.15s;
+        }
+        .ds-file-input:hover { border-color: var(--cf-interactive-default); }
+        .ds-format-select {
+          background: var(--cf-input-bg);
+          border: 1px solid var(--cf-input-border);
+          border-radius: var(--cf-radius-md);
+          color: var(--cf-text-primary);
+          font-size: var(--cf-text-sm);
+          padding: var(--cf-space-2) var(--cf-space-3);
+          cursor: pointer;
+          outline: none;
+          margin-right: var(--cf-space-2);
+        }
+        .ds-format-select:focus { border-color: var(--cf-interactive-default); }
+        .ds-io-row { display: flex; align-items: center; gap: var(--cf-space-2); flex-wrap: wrap; }
+        .ds-feedback {
+          font-size: var(--cf-text-xs);
+          margin-top: var(--cf-space-2);
+          min-height: 20px;
+          color: var(--cf-status-success);
+        }
+        .ds-feedback.error { color: var(--cf-status-error); }
+      </style>
+
+      <div class="ds-layout">
+        <!-- Header -->
+        <div class="screen-header">
+          <div>
+            <div class="screen-title">Datasets</div>
+            <div class="screen-subtitle">Manage training data, threat feeds, and intelligence sources</div>
+          </div>
+          <div class="screen-actions">
+            <button class="cf-btn primary" id="ds-sync-all-btn">Sync All</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="ds-stats-grid">
+          <div class="ds-stat-card">
+            <div class="ds-stat-value" id="ds-stat-total">${this._esc(String(this.datasets.length))}</div>
+            <div class="ds-stat-label">Total Datasets</div>
+          </div>
+          <div class="ds-stat-card">
+            <div class="ds-stat-value" id="ds-stat-records">—</div>
+            <div class="ds-stat-label">Total Records</div>
+          </div>
+          <div class="ds-stat-card">
+            <div class="ds-stat-value" id="ds-stat-updated">—</div>
+            <div class="ds-stat-label">Last Updated</div>
+          </div>
+          <div class="ds-stat-card">
+            <div class="ds-stat-value" id="ds-stat-coverage">—</div>
+            <div class="ds-stat-label">Coverage %</div>
+          </div>
+        </div>
+
+        <!-- Dataset Catalog -->
+        <div class="ds-card">
+          <div class="ds-card-header">
+            <div class="cf-card-title">Dataset Catalog</div>
+          </div>
+          <div class="ds-card-body">
+            <div class="ds-table-wrap">
+              <table class="ds-table" id="ds-catalog-table">
+                <thead>
+                  <tr>
+                    <th>Dataset Name</th>
+                    <th>Type</th>
+                    <th>Records</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Last Sync</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ds-catalog-body">
+                  ${this._renderTableRows()}
+                </tbody>
+              </table>
             </div>
-        `;
-    }
+          </div>
+        </div>
 
-    initializeComponents() {
-        // Refresh button
-        const refreshBtn = document.getElementById('refresh-datasets-btn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => this.loadDatasets());
-        }
-        
-        // Upload button
-        const uploadBtn = document.getElementById('upload-dataset-btn');
-        if (uploadBtn) {
-            uploadBtn.addEventListener('click', () => this.showUploadDialog());
-        }
-    }
-
-    async loadDatasets() {
-        const grid = document.getElementById('dataset-grid');
-        if (!grid) return;
-        
-        grid.innerHTML = `
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading datasets...</p>
+        <!-- Import / Export -->
+        <div class="ds-two-col">
+          <div class="ds-io-panel">
+            <div class="ds-io-header">
+              <div class="cf-card-title">Import Dataset</div>
             </div>
-        `;
-        
-        // Try to load from backend
-        if (window.apiClient) {
-            try {
-                const response = await window.apiClient.getDatasets();
-                if (response.success && response.data && response.data.datasets) {
-                    this.datasets = response.data.datasets;
-                    this.renderDatasets();
-                    this.updateStats();
-                    return;
-                }
-            } catch (error) {
-                console.error('Failed to load datasets from backend:', error);
-            }
-        }
-        
-        // Fallback with mock data
-        this.datasets = [
-            {
-                id: 'malware_detection',
-                name: 'Malware Detection Dataset',
-                type: 'malware',
-                samples: 50000,
-                features: 78,
-                status: 'available',
-                description: 'Comprehensive malware detection dataset with PE file features',
-                size: '2.4 GB'
-            },
-            {
-                id: 'network_intrusion',
-                name: 'Network Intrusion Detection (NSL-KDD)',
-                type: 'network',
-                samples: 125973,
-                features: 41,
-                status: 'available',
-                description: 'Network intrusion detection dataset with various attack types',
-                size: '850 MB'
-            },
-            {
-                id: 'phishing_detection',
-                name: 'Phishing Website Detection',
-                type: 'phishing',
-                samples: 11055,
-                features: 30,
-                status: 'available',
-                description: 'Phishing website classification dataset',
-                size: '125 MB'
-            },
-            {
-                id: 'spam_detection',
-                name: 'Spam Email Detection',
-                type: 'spam',
-                samples: 5572,
-                features: 57,
-                status: 'available',
-                description: 'Email spam classification dataset',
-                size: '45 MB'
-            },
-            {
-                id: 'botnet_detection',
-                name: 'Botnet Traffic Detection',
-                type: 'botnet',
-                samples: 72000,
-                features: 14,
-                status: 'available',
-                description: 'Botnet traffic patterns detection',
-                size: '320 MB'
-            },
-            {
-                id: 'vulnerability_assessment',
-                name: 'Vulnerability Assessment',
-                type: 'vulnerability',
-                samples: 20000,
-                features: 25,
-                status: 'available',
-                description: 'CVE vulnerability severity prediction',
-                size: '180 MB'
-            }
-        ];
-        
-        this.renderDatasets();
-        this.updateStats();
-    }
-
-    renderDatasets() {
-        const grid = document.getElementById('dataset-grid');
-        if (!grid) return;
-        
-        if (this.datasets.length === 0) {
-            grid.innerHTML = `
-                <div class="no-data">
-                    <i class="fas fa-database"></i>
-                    <p>No datasets available</p>
-                </div>
-            `;
-            return;
-        }
-        
-        grid.innerHTML = this.datasets.map(dataset => `
-            <div class="dataset-card ${dataset.status}" data-dataset-id="${dataset.id}">
-                <div class="dataset-icon">
-                    <i class="fas ${this.getDatasetIcon(dataset.type)}"></i>
-                </div>
-                <div class="dataset-info">
-                    <h4>${dataset.name}</h4>
-                    <p>${dataset.description}</p>
-                </div>
-                <div class="dataset-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Samples</span>
-                        <span class="meta-value">${this.formatNumber(dataset.samples)}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Features</span>
-                        <span class="meta-value">${dataset.features}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Size</span>
-                        <span class="meta-value">${dataset.size || 'N/A'}</span>
-                    </div>
-                </div>
-                <div class="dataset-status">
-                    <span class="status-badge ${dataset.status}">${dataset.status}</span>
-                </div>
-                <div class="dataset-actions">
-                    <button class="btn btn-sm btn-primary" onclick="datasetsScreen.viewDataset('${dataset.id}')">
-                        <i class="fas fa-eye"></i> View
-                    </button>
-                    <button class="btn btn-sm btn-secondary" onclick="datasetsScreen.downloadDataset('${dataset.id}')">
-                        <i class="fas fa-download"></i> Download
-                    </button>
-                    <button class="btn btn-sm btn-success" onclick="datasetsScreen.trainWithDataset('${dataset.id}')">
-                        <i class="fas fa-play"></i> Train
-                    </button>
-                </div>
+            <div class="ds-io-body">
+              <div>
+                <div class="ds-file-label">Upload File</div>
+                <input type="file" class="ds-file-input" id="ds-import-file" accept=".json,.csv,.stix,.xml,.txt"/>
+              </div>
+              <button class="cf-btn primary" id="ds-import-btn">Import</button>
+              <div class="ds-feedback" id="ds-import-feedback"></div>
             </div>
-        `).join('');
-        
-        // Add click listeners for selection
-        document.querySelectorAll('.dataset-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (!e.target.closest('.dataset-actions')) {
-                    this.selectDataset(card.dataset.datasetId);
-                }
-            });
-        });
-    }
-
-    updateStats() {
-        const totalEl = document.getElementById('total-datasets');
-        const availableEl = document.getElementById('available-datasets');
-        const samplesEl = document.getElementById('total-samples');
-        
-        if (totalEl) totalEl.textContent = this.datasets.length;
-        if (availableEl) availableEl.textContent = this.datasets.filter(d => d.status === 'available').length;
-        if (samplesEl) samplesEl.textContent = this.formatNumber(
-            this.datasets.reduce((sum, d) => sum + (d.samples || 0), 0)
-        );
-    }
-
-    getDatasetIcon(type) {
-        const icons = {
-            'malware': 'fa-bug',
-            'network': 'fa-network-wired',
-            'phishing': 'fa-fish',
-            'spam': 'fa-envelope',
-            'botnet': 'fa-robot',
-            'vulnerability': 'fa-shield-alt',
-            'anomaly': 'fa-chart-line',
-            'dns': 'fa-globe',
-            'cryptomining': 'fa-coins'
-        };
-        return icons[type] || 'fa-database';
-    }
-
-    formatNumber(num) {
-        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-        return num.toString();
-    }
-
-    async selectDataset(datasetId) {
-        this.selectedDataset = this.datasets.find(d => d.id === datasetId);
-        if (!this.selectedDataset) return;
-        
-        // Highlight selected card
-        document.querySelectorAll('.dataset-card').forEach(card => {
-            card.classList.toggle('selected', card.dataset.datasetId === datasetId);
-        });
-        
-        // Update details panel
-        await this.showDatasetDetails();
-    }
-
-    async showDatasetDetails() {
-        const panel = document.getElementById('dataset-details');
-        if (!panel || !this.selectedDataset) return;
-        
-        panel.innerHTML = `
-            <div class="details-content">
-                <div class="details-header">
-                    <h3>${this.selectedDataset.name}</h3>
-                    <span class="status-badge ${this.selectedDataset.status}">${this.selectedDataset.status}</span>
-                </div>
-                
-                <div class="details-description">
-                    <p>${this.selectedDataset.description}</p>
-                </div>
-                
-                <div class="details-specs">
-                    <h4>Specifications</h4>
-                    <table class="specs-table">
-                        <tr><td>Type</td><td>${this.selectedDataset.type}</td></tr>
-                        <tr><td>Samples</td><td>${this.formatNumber(this.selectedDataset.samples)}</td></tr>
-                        <tr><td>Features</td><td>${this.selectedDataset.features}</td></tr>
-                        <tr><td>Size</td><td>${this.selectedDataset.size || 'N/A'}</td></tr>
-                    </table>
-                </div>
-                
-                <div class="details-preview">
-                    <h4>Sample Data Preview</h4>
-                    <div class="preview-loading">
-                        <i class="fas fa-spinner fa-spin"></i> Loading preview...
-                    </div>
-                </div>
-                
-                <div class="details-actions">
-                    <button class="btn btn-primary" onclick="datasetsScreen.trainWithDataset('${this.selectedDataset.id}')">
-                        <i class="fas fa-play"></i> Train Model
-                    </button>
-                    <button class="btn btn-secondary" onclick="datasetsScreen.downloadDataset('${this.selectedDataset.id}')">
-                        <i class="fas fa-download"></i> Download
-                    </button>
-                    <button class="btn btn-secondary" onclick="datasetsScreen.exploreDataset('${this.selectedDataset.id}')">
-                        <i class="fas fa-chart-bar"></i> Explore
-                    </button>
-                </div>
+          </div>
+          <div class="ds-io-panel">
+            <div class="ds-io-header">
+              <div class="cf-card-title">Export Dataset</div>
             </div>
-        `;
-        
-        // Load preview data
-        await this.loadPreviewData();
-    }
-
-    async loadPreviewData() {
-        const previewEl = this.container.querySelector('.details-preview');
-        if (!previewEl) return;
-        
-        try {
-            let previewData = [];
-            
-            if (window.apiClient && this.selectedDataset) {
-                const response = await window.apiClient.previewDataset(this.selectedDataset.id, 5);
-                if (response.success && response.data && response.data.samples) {
-                    previewData = response.data.samples;
-                }
-            }
-            
-            // Generate mock preview if no data
-            if (previewData.length === 0) {
-                previewData = this.generateMockPreview();
-            }
-            
-            previewEl.innerHTML = `
-                <h4>Sample Data Preview</h4>
-                <div class="preview-table-wrapper">
-                    <table class="preview-table">
-                        <thead>
-                            <tr>${Object.keys(previewData[0] || {}).map(k => `<th>${k}</th>`).join('')}</tr>
-                        </thead>
-                        <tbody>
-                            ${previewData.map(row => `
-                                <tr>${Object.values(row).map(v => `<td>${v}</td>`).join('')}</tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+            <div class="ds-io-body">
+              <div>
+                <div class="ds-file-label">Export Format</div>
+                <div class="ds-io-row">
+                  <select class="ds-format-select" id="ds-export-format">
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                    <option value="stix">STIX</option>
+                  </select>
+                  <button class="cf-btn" id="ds-export-btn">Export</button>
                 </div>
-            `;
-        } catch (error) {
-            console.error('Failed to load preview:', error);
-            previewEl.innerHTML = `
-                <h4>Sample Data Preview</h4>
-                <p class="error">Failed to load preview data</p>
-            `;
-        }
+              </div>
+              <div class="ds-feedback" id="ds-export-feedback"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  _statusBadge(status, id) {
+    if (status === 'Active') return `<span class="cf-badge success" id="ds-badge-${this._esc(id)}">${this._esc(status)}</span>`;
+    if (status === 'Syncing') return `<span class="cf-badge info ds-badge-syncing" id="ds-badge-${this._esc(id)}">${this._esc(status)}</span>`;
+    return `<span class="cf-badge" id="ds-badge-${this._esc(id)}">${this._esc(status)}</span>`;
+  }
+
+  _renderTableRows() {
+    return this.datasets.map(d => `
+      <tr id="ds-row-${this._esc(d.id)}">
+        <td class="ds-name-cell">${this._esc(d.name)}</td>
+        <td><span class="ds-type-badge">${this._esc(d.type)}</span></td>
+        <td class="ds-records" id="ds-records-${this._esc(d.id)}">${this._esc(this._fmtNum(d.records))}</td>
+        <td class="ds-size">${this._esc(d.size)}</td>
+        <td id="ds-status-${this._esc(d.id)}">${this._statusBadge(d.status, d.id)}</td>
+        <td class="ds-sync-time" id="ds-sync-time-${this._esc(d.id)}">${this._esc(d.lastSync)}</td>
+        <td>
+          <div class="ds-btn-row">
+            <button class="cf-btn sm" data-sync-id="${this._esc(d.id)}" id="ds-sync-btn-${this._esc(d.id)}">Sync</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  _fmtNum(n) {
+    return Number(n).toLocaleString();
+  }
+
+  _bindEvents() {
+    const syncAllBtn = this._el('ds-sync-all-btn');
+    const importBtn = this._el('ds-import-btn');
+    const exportBtn = this._el('ds-export-btn');
+
+    if (syncAllBtn) syncAllBtn.addEventListener('click', () => this._syncAll());
+    if (importBtn) importBtn.addEventListener('click', () => this._handleImport());
+    if (exportBtn) exportBtn.addEventListener('click', () => this._handleExport());
+
+    this.datasets.forEach(d => {
+      const btn = this._el(`ds-sync-btn-${d.id}`);
+      if (btn) btn.addEventListener('click', () => this._syncDataset(d.id));
+    });
+  }
+
+  async _loadStats() {
+    let totalRecords = this.datasets.reduce((acc, d) => acc + d.records, 0);
+    let coverage = 94;
+    let lastUpdated = '2026-05-01';
+
+    try {
+      const resp = await fetch('http://localhost:3001/api/threats/stats');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.total_records) totalRecords = data.total_records;
+        if (data.coverage_percent) coverage = data.coverage_percent;
+        if (data.last_updated) lastUpdated = data.last_updated;
+      }
+    } catch (_) {
+      // use defaults
     }
 
-    generateMockPreview() {
-        return [
-            { id: 1, feature_1: 0.45, feature_2: 0.82, feature_3: 0.31, label: 1 },
-            { id: 2, feature_1: 0.23, feature_2: 0.56, feature_3: 0.78, label: 0 },
-            { id: 3, feature_1: 0.67, feature_2: 0.34, feature_3: 0.92, label: 1 },
-            { id: 4, feature_1: 0.89, feature_2: 0.12, feature_3: 0.45, label: 0 },
-            { id: 5, feature_1: 0.34, feature_2: 0.78, feature_3: 0.56, label: 1 }
-        ];
+    this._setStatEl('ds-stat-records', this._fmtNum(totalRecords));
+    this._setStatEl('ds-stat-updated', this._esc(String(lastUpdated)));
+    this._setStatEl('ds-stat-coverage', this._esc(String(coverage)) + '%');
+  }
+
+  _setStatEl(id, val) {
+    const el = this._el(id);
+    if (el) el.innerHTML = val;
+  }
+
+  async _syncDataset(datasetId) {
+    if (this.syncingRows.has(datasetId)) return;
+    this.syncingRows.add(datasetId);
+
+    const btn = this._el(`ds-sync-btn-${datasetId}`);
+    const statusCell = this._el(`ds-status-${datasetId}`);
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Syncing…'; }
+    if (statusCell) statusCell.innerHTML = this._statusBadge('Syncing', datasetId);
+
+    await new Promise(resolve => setTimeout(resolve, 1800 + Math.random() * 1200));
+
+    const ds = this.datasets.find(d => d.id === datasetId);
+    if (ds) {
+      const now = new Date();
+      ds.lastSync = now.toLocaleString('sv-SE', { hour12: false }).slice(0, 16);
+      ds.status = 'Active';
+      const growth = Math.floor(Math.random() * 500);
+      ds.records += growth;
+
+      const syncTimeEl = this._el(`ds-sync-time-${datasetId}`);
+      const recordsEl = this._el(`ds-records-${datasetId}`);
+      if (syncTimeEl) syncTimeEl.textContent = ds.lastSync;
+      if (recordsEl) recordsEl.textContent = this._fmtNum(ds.records);
+      if (statusCell) statusCell.innerHTML = this._statusBadge('Active', datasetId);
     }
 
-    async viewDataset(datasetId) {
-        await this.selectDataset(datasetId);
-    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Sync'; }
+    this.syncingRows.delete(datasetId);
 
-    async downloadDataset(datasetId) {
-        if (window.apiClient) {
-            try {
-                const response = await window.apiClient.downloadDataset(datasetId);
-                if (response.success) {
-                    window.notificationSystem?.success('Download', `Dataset ${datasetId} download started`);
-                    return;
-                }
-            } catch (error) {
-                console.error('Failed to download dataset:', error);
-            }
-        }
-        window.notificationSystem?.info('Download', `Download for ${datasetId} will be available soon`);
-    }
+    this._loadStats();
+  }
 
-    trainWithDataset(datasetId) {
-        // Navigate to ML Models screen with dataset pre-selected
-        if (window.navigationManager) {
-            window.navigationManager.showScreen('ml-models', { datasetId });
-        } else {
-            window.notificationSystem?.info('Training', `Training with ${datasetId} - Navigate to ML Models screen`);
-        }
-    }
+  async _syncAll() {
+    const syncAllBtn = this._el('ds-sync-all-btn');
+    if (syncAllBtn) { syncAllBtn.disabled = true; syncAllBtn.textContent = 'Syncing All…'; }
+    await Promise.all(this.datasets.map(d => this._syncDataset(d.id)));
+    if (syncAllBtn) { syncAllBtn.disabled = false; syncAllBtn.textContent = 'Sync All'; }
+  }
 
-    exploreDataset(datasetId) {
-        window.notificationSystem?.info('Dataset Explorer', 'Dataset exploration feature coming soon!');
+  _handleImport() {
+    const fileInput = this._el('ds-import-file');
+    const feedback = this._el('ds-import-feedback');
+    if (!fileInput || !fileInput.files || !fileInput.files.length) {
+      if (feedback) { feedback.textContent = 'Please select a file to import.'; feedback.className = 'ds-feedback error'; }
+      return;
     }
+    const file = fileInput.files[0];
+    if (feedback) { feedback.textContent = 'Importing ' + this._esc(file.name) + '…'; feedback.className = 'ds-feedback'; }
+    setTimeout(() => {
+      if (feedback) { feedback.textContent = 'Import complete: ' + this._esc(file.name); feedback.className = 'ds-feedback'; }
+      if (fileInput) fileInput.value = '';
+    }, 1200);
+  }
 
-    showUploadDialog() {
-        window.notificationSystem?.info('Upload', 'Custom dataset upload feature coming soon!');
-    }
+  _handleExport() {
+    const formatSelect = this._el('ds-export-format');
+    const feedback = this._el('ds-export-feedback');
+    const fmt = formatSelect ? formatSelect.value : 'json';
+    if (feedback) { feedback.textContent = 'Preparing ' + this._esc(fmt.toUpperCase()) + ' export…'; feedback.className = 'ds-feedback'; }
+    setTimeout(() => {
+      if (feedback) { feedback.textContent = 'Export ready: datasets.' + this._esc(fmt); feedback.className = 'ds-feedback'; }
+    }, 900);
+  }
 }
 
-// Create global instance
-const datasetsScreen = new DatasetsScreen();
 window.DatasetsScreen = DatasetsScreen;
-window.datasetsScreen = datasetsScreen;

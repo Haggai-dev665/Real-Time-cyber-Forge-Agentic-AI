@@ -45,8 +45,20 @@ router.get('/',
         type
       } = req.query;
 
-      // Mock threat data for now
-      const threats = [];
+      // Get real threat data from DB
+      const Threat = require('../models/Threat');
+      const query = {};
+      if (severity) query.severity = severity;
+      if (status) query.status = status;
+      if (type) query.type = type;
+
+      const totalCount = await Threat.countDocuments(query);
+      const threats = await Threat.find(query)
+        .sort({ 'detection.timestamp': -1 })
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit));
+        
+      const totalPages = Math.ceil(totalCount / limit);
       
       res.json({
         success: true,
@@ -54,10 +66,10 @@ router.get('/',
           threats,
           pagination: {
             currentPage: parseInt(page),
-            totalPages: 0,
-            totalCount: 0,
-            hasNext: false,
-            hasPrev: false
+            totalPages,
+            totalCount,
+            hasNext: page < totalPages,
+            hasPrev: page > 1
           }
         }
       });

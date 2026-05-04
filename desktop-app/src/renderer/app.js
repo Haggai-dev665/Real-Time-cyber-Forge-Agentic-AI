@@ -32,11 +32,14 @@ class CyberForgeApp {
 
     async init() {
         console.log('🚀 Starting Cyber Forge AI Application...');
-        
+
         try {
+            // Apply saved theme immediately before anything renders
+            this.initTheme();
+
             // Show loading screen
             this.showLoadingScreen();
-            
+
             // Initialize core systems
             await this.initializeCore();
             
@@ -54,6 +57,9 @@ class CyberForgeApp {
             
             // Restore sidebar state
             this.restoreSidebarState();
+
+            // Restore sidebar layout preference (icons-only by default)
+            this.applySidebarLayoutPreference();
             
             // Add navigation enhancements
             this.addNavigationEnhancements();
@@ -66,7 +72,8 @@ class CyberForgeApp {
             
             // Hide loading screen
             this.hideLoadingScreen();
-            
+            if (typeof window._cfLoaderDone === 'function') window._cfLoaderDone();
+
             this.isInitialized = true;
             console.log('✅ Application initialized successfully');
             
@@ -367,6 +374,7 @@ class CyberForgeApp {
             'dashboard': typeof DashboardScreen !== 'undefined' ? DashboardScreen : null,
             'real-time-monitor': typeof RealTimeMonitorScreen !== 'undefined' ? RealTimeMonitorScreen : null,
             'threat-center': typeof ThreatCenterScreen !== 'undefined' ? ThreatCenterScreen : null,
+            'threat-globe': typeof ThreatGlobeScreen !== 'undefined' ? ThreatGlobeScreen : null,
             'deep-analysis': typeof DeepAnalysisScreen !== 'undefined' ? DeepAnalysisScreen : null,
             'network-analysis': typeof NetworkAnalysisScreen !== 'undefined' ? NetworkAnalysisScreen : null,
             'malware-detection': typeof MalwareDetectionScreen !== 'undefined' ? MalwareDetectionScreen : null,
@@ -390,6 +398,11 @@ class CyberForgeApp {
             'system-logs': typeof SystemLogsScreen !== 'undefined' ? SystemLogsScreen : null,
             'settings': typeof SettingsScreen !== 'undefined' ? SettingsScreen : null,
             'profile': typeof ProfileScreen !== 'undefined' ? ProfileScreen : null,
+            'sandbox-scanner': typeof SandboxScannerScreen !== 'undefined' ? SandboxScannerScreen : null,
+            'distributed-intelligence': typeof DistributedIntelligenceScreen !== 'undefined' ? DistributedIntelligenceScreen : null,
+            'browser-intel': typeof BrowserIntelScreen !== 'undefined' ? BrowserIntelScreen : null,
+            'policy-control': typeof PolicyControlScreen !== 'undefined' ? PolicyControlScreen : null,
+            'soc-dashboard': typeof SOCDashboardScreen !== 'undefined' ? SOCDashboardScreen : null,
         };
 
         // Only initialize screens that have classes defined
@@ -671,13 +684,36 @@ class CyberForgeApp {
         if (window.innerWidth < 1024) {
             sidebar?.classList.add('collapsed');
         } else {
-            sidebar?.classList.remove('collapsed');
+            this.applySidebarLayoutPreference();
         }
     }
 
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
-        sidebar?.classList.toggle('collapsed');
+        if (!sidebar) return;
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            sidebar.classList.toggle('collapsed');
+            const expanded = !sidebar.classList.contains('collapsed');
+            localStorage.setItem('cf-sidebar-expanded', String(expanded));
+        } else {
+            // Desktop app: keep icon-rail collapsed state persistent.
+            sidebar.classList.add('collapsed');
+            localStorage.setItem('cf-sidebar-expanded', 'false');
+        }
+    }
+
+    applySidebarLayoutPreference() {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            const expanded = localStorage.getItem('cf-sidebar-expanded') === 'true';
+            sidebar.classList.toggle('collapsed', !expanded);
+        } else {
+            sidebar.classList.add('collapsed');
+            localStorage.setItem('cf-sidebar-expanded', 'false');
+        }
     }
 
     toggleFullscreen() {
@@ -1097,24 +1133,34 @@ class CyberForgeApp {
     }
 
     toggleTheme() {
-        if (window.themeManager) {
-            window.themeManager.toggleTheme();
-        } else {
-            document.body.classList.toggle('light-theme');
-        }
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
 
-        // Update theme icon
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('cf-theme', next);
+
+        // Update icon
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
             const icon = themeToggle.querySelector('i');
             if (icon) {
-                icon.className = document.body.classList.contains('light-theme') 
-                    ? 'fas fa-sun' 
-                    : 'fas fa-moon';
+                icon.className = next === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
             }
         }
 
-        window.notificationSystem?.success('Theme', 'Theme changed successfully');
+        // Notify any child page iframes / panels listening for theme changes
+        window.dispatchEvent(new CustomEvent('cf-theme-change', { detail: { theme: next } }));
+    }
+
+    initTheme() {
+        const saved = localStorage.getItem('cf-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) icon.className = saved === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
     }
 
     openAIChat() {

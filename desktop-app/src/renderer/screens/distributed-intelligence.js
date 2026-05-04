@@ -1,635 +1,473 @@
 /**
- * CyberForge Distributed Intelligence — Dashboard Screen
- * TODO 4: Main entry screen for distributed intelligence features.
- * 
- * ISOLATION: New screen file. Does NOT modify any existing screen.
- * Renders inside the existing content area when its data-screen is activated.
+ * Distributed Intelligence Screen — CyberForge
+ * Multi-node cloud sync, threat correlation, and global metrics.
+ * Fetches directly from Heroku backend — no Tauri dependency.
  */
 
 class DistributedIntelligenceScreen {
-  constructor() {
-    this.container = null;
-    this.refreshInterval = null;
-    this.data = {
-      nodeIdentity: null,
-      syncState: null,
-      distributedStatus: null,
-      globalMetrics: null,
-      nodeStatuses: [],
-      correlations: [],
-      weightTable: null,
-    };
-  }
-
-  /**
-   * Render the distributed intelligence dashboard into a container element.
-   */
-  render(container) {
-    this.container = container;
-    this.container.innerHTML = this._buildHTML();
-    this._bindEvents();
-    this._startAutoRefresh();
-    this._loadData();
-  }
-
-  destroy() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = null;
+    constructor() {
+        this.container = null;
+        this.isActive = false;
+        this.refreshTimer = null;
+        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+        this.data = { nodes: [], metrics: null, correlations: [], weights: null };
     }
-  }
 
-  _buildHTML() {
-    return `
-      <div class="distributed-intelligence-screen">
-        <!-- Header -->
-        <div class="screen-header">
-          <div class="screen-header-left">
-            <h1 class="screen-title">
-              <i class="fas fa-network-wired"></i>
-              Distributed Intelligence
-            </h1>
-            <span class="screen-subtitle">Multi-Node Cloud Sync & Threat Correlation</span>
-          </div>
-          <div class="screen-header-right">
-            <button class="btn btn-sm btn-outline" id="dist-refresh-btn" title="Refresh">
-              <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-            <button class="btn btn-sm btn-primary" id="dist-sync-btn" title="Sync Now">
-              <i class="fas fa-cloud-upload-alt"></i> Sync Now
-            </button>
-            <button class="btn btn-sm btn-outline" id="dist-register-btn" title="Register Node">
-              <i class="fas fa-plus-circle"></i> Register Node
-            </button>
-          </div>
-        </div>
+    async show(container) {
+        this.container = container;
+        this.isActive = true;
+        this.container.innerHTML = this._shell();
+        this._bind();
+        await this._loadAll();
+        this.refreshTimer = setInterval(() => { if (this.isActive) this._loadAll(); }, 30000);
+    }
 
-        <!-- Status Cards Row -->
-        <div class="metrics-grid metrics-grid-4" id="dist-status-cards">
-          <div class="metric-card">
-            <div class="metric-icon"><i class="fas fa-fingerprint"></i></div>
-            <div class="metric-content">
-              <div class="metric-value" id="dist-node-id">—</div>
-              <div class="metric-label">Node ID</div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon"><i class="fas fa-server"></i></div>
-            <div class="metric-content">
-              <div class="metric-value" id="dist-active-nodes">0</div>
-              <div class="metric-label">Active Nodes</div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon"><i class="fas fa-cloud-download-alt"></i></div>
-            <div class="metric-content">
-              <div class="metric-value" id="dist-sync-count">0</div>
-              <div class="metric-label">Total Syncs</div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon"><i class="fas fa-project-diagram"></i></div>
-            <div class="metric-content">
-              <div class="metric-value" id="dist-correlation-count">0</div>
-              <div class="metric-label">Correlations</div>
-            </div>
-          </div>
-        </div>
+    hide() {
+        this.isActive = false;
+        clearInterval(this.refreshTimer);
+    }
 
-        <!-- Tabs -->
-        <div class="content-tabs" id="dist-tabs">
-          <button class="tab-btn active" data-tab="dist-overview">Overview</button>
-          <button class="tab-btn" data-tab="dist-nodes">Node Management</button>
-          <button class="tab-btn" data-tab="dist-correlations">Correlations</button>
-          <button class="tab-btn" data-tab="dist-heatmap">Threat Heatmap</button>
-          <button class="tab-btn" data-tab="dist-metrics">Global Metrics</button>
-          <button class="tab-btn" data-tab="dist-weights">Risk Weights</button>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="tab-content" id="dist-tab-content">
-          <!-- Overview Tab -->
-          <div class="tab-pane active" id="dist-overview">
-            ${this._buildOverviewTab()}
-          </div>
-          <!-- Node Management Tab -->
-          <div class="tab-pane" id="dist-nodes" style="display:none">
-            ${this._buildNodesTab()}
-          </div>
-          <!-- Correlations Tab -->
-          <div class="tab-pane" id="dist-correlations" style="display:none">
-            ${this._buildCorrelationsTab()}
-          </div>
-          <!-- Heatmap Tab -->
-          <div class="tab-pane" id="dist-heatmap" style="display:none">
-            ${this._buildHeatmapTab()}
-          </div>
-          <!-- Global Metrics Tab -->
-          <div class="tab-pane" id="dist-metrics" style="display:none">
-            ${this._buildGlobalMetricsTab()}
-          </div>
-          <!-- Risk Weights Tab -->
-          <div class="tab-pane" id="dist-weights" style="display:none">
-            ${this._buildWeightsTab()}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  _buildOverviewTab() {
-    return `
-      <div class="panel-grid panel-grid-2">
-        <!-- Node Identity Panel -->
-        <div class="panel">
-          <div class="panel-header">
-            <h3><i class="fas fa-id-card"></i> This Node</h3>
-          </div>
-          <div class="panel-body" id="dist-node-identity-panel">
-            <div class="info-row"><span class="info-label">Node ID</span><span class="info-value mono" id="ov-node-id">Loading...</span></div>
-            <div class="info-row"><span class="info-label">Fingerprint</span><span class="info-value mono" id="ov-fingerprint">—</span></div>
-            <div class="info-row"><span class="info-label">Hostname</span><span class="info-value" id="ov-hostname">—</span></div>
-            <div class="info-row"><span class="info-label">Platform</span><span class="info-value" id="ov-platform">—</span></div>
-            <div class="info-row"><span class="info-label">Version</span><span class="info-value" id="ov-version">—</span></div>
-          </div>
-        </div>
-
-        <!-- Sync Status Panel -->
-        <div class="panel">
-          <div class="panel-header">
-            <h3><i class="fas fa-sync"></i> Sync Status</h3>
-          </div>
-          <div class="panel-body" id="dist-sync-status-panel">
-            <div class="info-row"><span class="info-label">Last Sync</span><span class="info-value" id="ov-last-sync">Never</span></div>
-            <div class="info-row"><span class="info-label">Sequence</span><span class="info-value mono" id="ov-sequence">0</span></div>
-            <div class="info-row"><span class="info-label">Total Syncs</span><span class="info-value" id="ov-total-syncs">0</span></div>
-            <div class="info-row"><span class="info-label">Failed Syncs</span><span class="info-value" id="ov-failed-syncs">0</span></div>
-            <div class="info-row"><span class="info-label">Retry Queue</span><span class="info-value" id="ov-retry-queue">0</span></div>
-            <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="ov-sync-status"><span class="status-badge idle">Idle</span></span></div>
-          </div>
-        </div>
-
-        <!-- Recent Correlations -->
-        <div class="panel">
-          <div class="panel-header">
-            <h3><i class="fas fa-project-diagram"></i> Recent Correlations</h3>
-          </div>
-          <div class="panel-body" id="dist-recent-correlations">
-            <div class="empty-state">
-              <i class="fas fa-search"></i>
-              <p>No cross-node correlations detected yet</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Global Risk Multiplier -->
-        <div class="panel">
-          <div class="panel-header">
-            <h3><i class="fas fa-balance-scale"></i> Risk Multiplier</h3>
-          </div>
-          <div class="panel-body" id="dist-risk-multiplier-panel">
-            <div class="risk-multiplier-display">
-              <div class="risk-multiplier-value" id="ov-global-multiplier">1.0x</div>
-              <div class="risk-multiplier-label">Global Multiplier</div>
-            </div>
-            <div class="info-row"><span class="info-label">Domain Overrides</span><span class="info-value" id="ov-domain-overrides">0</span></div>
-            <div class="info-row"><span class="info-label">TLD Overrides</span><span class="info-value" id="ov-tld-overrides">0</span></div>
-            <div class="info-row"><span class="info-label">Last Updated</span><span class="info-value" id="ov-weights-updated">—</span></div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  _buildNodesTab() {
-    return `
-      <div class="panel">
-        <div class="panel-header">
-          <h3><i class="fas fa-server"></i> Registered Nodes</h3>
-          <span class="badge" id="nodes-count-badge">0</span>
-        </div>
-        <div class="panel-body">
-          <table class="data-table" id="dist-nodes-table">
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Node ID</th>
-                <th>Hostname</th>
-                <th>Platform</th>
-                <th>Alerts</th>
-                <th>Avg Risk</th>
-                <th>Last Seen</th>
-              </tr>
-            </thead>
-            <tbody id="dist-nodes-tbody">
-              <tr><td colspan="7" class="empty-state">No nodes registered yet</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  _buildCorrelationsTab() {
-    return `
-      <div class="panel">
-        <div class="panel-header">
-          <h3><i class="fas fa-project-diagram"></i> Cross-Node Correlations</h3>
-          <span class="badge" id="corr-count-badge">0</span>
-        </div>
-        <div class="panel-body">
-          <div id="dist-correlations-list" class="correlation-list">
-            <div class="empty-state">
-              <i class="fas fa-search"></i>
-              <p>No correlations detected yet. Correlations appear when multiple nodes flag the same domain.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  _buildHeatmapTab() {
-    return `
-      <div class="panel">
-        <div class="panel-header">
-          <h3><i class="fas fa-fire"></i> Global Threat Heatmap</h3>
-        </div>
-        <div class="panel-body">
-          <div id="dist-heatmap-container" class="heatmap-container">
-            <div class="heatmap-grid" id="dist-heatmap-grid">
-              <!-- Heatmap cells generated dynamically -->
-            </div>
-            <div class="heatmap-legend">
-              <span class="legend-item"><span class="legend-color" style="background:#039855"></span> Low</span>
-              <span class="legend-item"><span class="legend-color" style="background:#DC6803"></span> Medium</span>
-              <span class="legend-item"><span class="legend-color" style="background:#D92D20"></span> High</span>
-              <span class="legend-item"><span class="legend-color" style="background:#6941C6"></span> Critical</span>
-            </div>
-          </div>
-          <div class="panel" style="margin-top:16px">
-            <div class="panel-header"><h4>Top Threat Domains</h4></div>
-            <div class="panel-body">
-              <table class="data-table" id="dist-threat-domains-table">
-                <thead>
-                  <tr><th>Domain</th><th>Risk Score</th><th>Seen By Nodes</th><th>Category</th></tr>
-                </thead>
-                <tbody id="dist-threat-domains-tbody">
-                  <tr><td colspan="4" class="empty-state">No threat data available</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  _buildGlobalMetricsTab() {
-    return `
-      <div class="metrics-grid metrics-grid-3" id="dist-global-metrics-cards">
-        <div class="metric-card">
-          <div class="metric-icon"><i class="fas fa-server"></i></div>
-          <div class="metric-content">
-            <div class="metric-value" id="gm-total-nodes">0</div>
-            <div class="metric-label">Total Nodes</div>
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-icon"><i class="fas fa-exclamation-triangle"></i></div>
-          <div class="metric-content">
-            <div class="metric-value" id="gm-alerts-24h">0</div>
-            <div class="metric-label">Alerts (24h)</div>
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
-          <div class="metric-content">
-            <div class="metric-value" id="gm-avg-risk">0</div>
-            <div class="metric-label">Avg Risk Score</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-top:16px">
-        <div class="panel-header">
-          <h3><i class="fas fa-chart-bar"></i> Distributed System Metrics</h3>
-        </div>
-        <div class="panel-body">
-          <div class="info-row"><span class="info-label">Active Nodes</span><span class="info-value" id="gm-active-nodes">0</span></div>
-          <div class="info-row"><span class="info-label">Correlation Count (24h)</span><span class="info-value" id="gm-corr-24h">0</span></div>
-          <div class="info-row"><span class="info-label">Global Multiplier</span><span class="info-value" id="gm-global-mult">1.0x</span></div>
-          <div class="info-row"><span class="info-label">Broadcast Count</span><span class="info-value" id="gm-broadcast-count">0</span></div>
-          <div class="info-row"><span class="info-label">Last Updated</span><span class="info-value" id="gm-last-updated">—</span></div>
-        </div>
-      </div>
-    `;
-  }
-
-  _buildWeightsTab() {
-    return `
-      <div class="panel-grid panel-grid-2">
-        <div class="panel">
-          <div class="panel-header">
-            <h3><i class="fas fa-balance-scale"></i> Global Multiplier</h3>
-          </div>
-          <div class="panel-body">
-            <div class="risk-multiplier-display large">
-              <div class="risk-multiplier-value" id="wt-global-multiplier">1.0x</div>
-              <div class="risk-multiplier-label">Applied to all scores before final output</div>
-              <div class="info-text">Formula: adjusted_score = base_score × global_multiplier</div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h3><i class="fas fa-globe"></i> Domain Multipliers</h3>
-            <span class="badge" id="wt-domain-count">0</span>
-          </div>
-          <div class="panel-body">
-            <table class="data-table" id="dist-domain-weights-table">
-              <thead><tr><th>Domain</th><th>Multiplier</th></tr></thead>
-              <tbody id="dist-domain-weights-tbody">
-                <tr><td colspan="2" class="empty-state">No domain-specific weights</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  // ──────────────────────────────────────────────
-  // Data Loading
-  // ──────────────────────────────────────────────
-
-  async _loadData() {
-    try {
-      // Use Tauri invoke for desktop, API for web
-      if (window.__TAURI__) {
-        const [identity, syncState, status] = await Promise.all([
-          window.__TAURI__.core.invoke('get_node_identity'),
-          window.__TAURI__.core.invoke('get_sync_state'),
-          window.__TAURI__.core.invoke('get_distributed_status'),
+    async _loadAll() {
+        await Promise.allSettled([
+            this._loadNodes(),
+            this._loadMetrics(),
+            this._loadCorrelations(),
+            this._loadWeights(),
         ]);
-        this.data.nodeIdentity = identity;
-        this.data.syncState = syncState;
-        this.data.distributedStatus = status;
-        this.data.globalMetrics = status?.globalMetrics || null;
-        this.data.nodeStatuses = status?.nodeStatuses || [];
-        this.data.weightTable = status?.weightTable || null;
-      }
-      this._updateUI();
-    } catch (err) {
-      console.error('[Distributed] Failed to load data:', err);
-    }
-  }
-
-  _updateUI() {
-    const { nodeIdentity, syncState, distributedStatus, globalMetrics, nodeStatuses, weightTable } = this.data;
-
-    // Status cards
-    if (nodeIdentity) {
-      const shortId = nodeIdentity.nodeId?.substring(0, 8) || '—';
-      this._setText('dist-node-id', shortId + '...');
-      this._setText('ov-node-id', nodeIdentity.nodeId || '—');
-      this._setText('ov-fingerprint', nodeIdentity.deviceFingerprint || '—');
-      this._setText('ov-hostname', nodeIdentity.hostname || '—');
-      this._setText('ov-platform', `${nodeIdentity.platform || '—'} / ${nodeIdentity.arch || '—'}`);
-      this._setText('ov-version', nodeIdentity.version || '—');
     }
 
-    if (distributedStatus) {
-      this._setText('dist-active-nodes', distributedStatus.connectedNodes || 0);
-      this._setText('dist-correlation-count', distributedStatus.broadcastCount || 0);
+    async _loadNodes() {
+        try {
+            const res = await fetch(`${this.BACKEND}/distributed/nodes`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            this.data.nodes = json.data ?? json.nodes ?? json ?? [];
+            this._renderNodes();
+            this._updateStatusCards();
+        } catch { /* backend may not have distributed routes yet */ }
     }
 
-    if (syncState) {
-      this._setText('dist-sync-count', syncState.totalSyncs || 0);
-      this._setText('ov-last-sync', syncState.lastSyncAt ? new Date(syncState.lastSyncAt).toLocaleString() : 'Never');
-      this._setText('ov-sequence', syncState.lastSyncSequence || 0);
-      this._setText('ov-total-syncs', syncState.totalSyncs || 0);
-      this._setText('ov-failed-syncs', syncState.failedSyncs || 0);
-      this._setText('ov-retry-queue', syncState.retryQueueSize || 0);
-      const statusEl = document.getElementById('ov-sync-status');
-      if (statusEl) {
-        statusEl.innerHTML = syncState.isSyncing
-          ? '<span class="status-badge syncing">Syncing...</span>'
-          : '<span class="status-badge idle">Idle</span>';
-      }
+    async _loadMetrics() {
+        try {
+            const res = await fetch(`${this.BACKEND}/distributed/metrics/global`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            this.data.metrics = json.data ?? json;
+            this._renderMetrics();
+            this._renderHeatmap();
+        } catch { this._renderMetricsFallback(); }
     }
 
-    if (weightTable) {
-      this._setText('ov-global-multiplier', `${(weightTable.globalMultiplier || 1.0).toFixed(1)}x`);
-      this._setText('ov-domain-overrides', Object.keys(weightTable.domainMultipliers || {}).length);
-      this._setText('ov-tld-overrides', Object.keys(weightTable.tldMultipliers || {}).length);
-      this._setText('ov-weights-updated', weightTable.lastUpdated ? new Date(weightTable.lastUpdated).toLocaleString() : '—');
-      this._setText('wt-global-multiplier', `${(weightTable.globalMultiplier || 1.0).toFixed(1)}x`);
-      this._setText('wt-domain-count', Object.keys(weightTable.domainMultipliers || {}).length);
-      this._updateDomainWeightsTable(weightTable.domainMultipliers || {});
+    async _loadCorrelations() {
+        try {
+            const res = await fetch(`${this.BACKEND}/distributed/correlations`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            this.data.correlations = json.data ?? json.correlations ?? json ?? [];
+            this._renderCorrelations();
+        } catch { /* silent */ }
     }
 
-    if (nodeStatuses && nodeStatuses.length > 0) {
-      this._updateNodesTable(nodeStatuses);
+    async _loadWeights() {
+        try {
+            const res = await fetch(`${this.BACKEND}/distributed/weights`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            this.data.weights = json.data ?? json;
+            this._renderWeights();
+        } catch { /* silent */ }
     }
 
-    if (globalMetrics) {
-      this._updateGlobalMetrics(globalMetrics);
-    }
-  }
-
-  _updateNodesTable(nodes) {
-    const tbody = document.getElementById('dist-nodes-tbody');
-    if (!tbody) return;
-
-    const countBadge = document.getElementById('nodes-count-badge');
-    if (countBadge) countBadge.textContent = nodes.length;
-
-    if (nodes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No nodes registered</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = nodes.map(n => `
-      <tr>
-        <td><span class="status-dot ${n.isOnline ? 'online' : 'offline'}"></span></td>
-        <td class="mono">${(n.nodeId || '').substring(0, 12)}...</td>
-        <td>${n.hostname || '—'}</td>
-        <td>${n.platform || '—'}</td>
-        <td>${n.alertCount || 0}</td>
-        <td>${(n.avgRiskScore || 0).toFixed(1)}</td>
-        <td>${n.lastSeen ? new Date(n.lastSeen).toLocaleTimeString() : '—'}</td>
-      </tr>
-    `).join('');
-  }
-
-  _updateGlobalMetrics(metrics) {
-    this._setText('gm-total-nodes', metrics.totalNodes || 0);
-    this._setText('gm-active-nodes', metrics.activeNodes || 0);
-    this._setText('gm-alerts-24h', metrics.totalAlerts24h || 0);
-    this._setText('gm-avg-risk', (metrics.avgRiskScore || 0).toFixed(1));
-    this._setText('gm-corr-24h', metrics.correlationCount24h || 0);
-    this._setText('gm-broadcast-count', this.data.distributedStatus?.broadcastCount || 0);
-    this._setText('gm-global-mult', `${(this.data.weightTable?.globalMultiplier || 1.0).toFixed(1)}x`);
-    this._setText('gm-last-updated', metrics.timestamp ? new Date(metrics.timestamp).toLocaleString() : '—');
-
-    // Update heatmap
-    if (metrics.topThreatDomains) {
-      this._updateHeatmap(metrics.topThreatDomains);
-      this._updateThreatDomainsTable(metrics.topThreatDomains);
-    }
-  }
-
-  _updateHeatmap(domains) {
-    const grid = document.getElementById('dist-heatmap-grid');
-    if (!grid) return;
-
-    if (domains.length === 0) {
-      grid.innerHTML = '<div class="empty-state">No threat data for heatmap</div>';
-      return;
+    async _syncTelemetry() {
+        const btn = document.getElementById('dist-sync-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
+        try {
+            const res = await fetch(`${this.BACKEND}/distributed/telemetry/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nodeId: this._localNodeId(), timestamp: Date.now() }),
+                signal: AbortSignal.timeout(8000),
+            });
+            const json = await res.json();
+            this._showToast(res.ok ? 'Telemetry synced successfully' : `Sync failed: ${json.message || res.status}`, res.ok ? 'success' : 'error');
+            if (res.ok) await this._loadAll();
+        } catch {
+            this._showToast('Sync failed — backend unreachable', 'error');
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Sync Now'; }
     }
 
-    grid.innerHTML = domains.map(d => {
-      const color = d.riskScore >= 80 ? '#6941C6' : d.riskScore >= 60 ? '#D92D20' : d.riskScore >= 40 ? '#DC6803' : '#039855';
-      return `
-        <div class="heatmap-cell" style="background:${color}" title="${d.domain}: ${d.riskScore.toFixed(0)} risk">
-          <span class="heatmap-domain">${d.domain}</span>
-          <span class="heatmap-score">${d.riskScore.toFixed(0)}</span>
-        </div>
-      `;
-    }).join('');
-  }
-
-  _updateThreatDomainsTable(domains) {
-    const tbody = document.getElementById('dist-threat-domains-tbody');
-    if (!tbody) return;
-
-    if (domains.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No threat data</td></tr>';
-      return;
+    async _registerNode() {
+        const btn = document.getElementById('dist-register-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+        try {
+            const res = await fetch(`${this.BACKEND}/distributed/nodes/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nodeId: this._localNodeId(), platform: navigator.platform, hostname: location.hostname }),
+                signal: AbortSignal.timeout(8000),
+            });
+            this._showToast(res.ok ? 'Node registered' : 'Registration failed', res.ok ? 'success' : 'error');
+            if (res.ok) await this._loadNodes();
+        } catch {
+            this._showToast('Registration failed — backend unreachable', 'error');
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus-circle"></i> Register Node'; }
     }
 
-    tbody.innerHTML = domains.map(d => `
-      <tr>
-        <td class="mono">${d.domain}</td>
-        <td><span class="risk-badge risk-${d.riskScore >= 80 ? 'critical' : d.riskScore >= 60 ? 'high' : d.riskScore >= 40 ? 'medium' : 'low'}">${d.riskScore.toFixed(0)}</span></td>
-        <td>${d.seenByNodes || 0}</td>
-        <td>${d.category || 'unknown'}</td>
-      </tr>
-    `).join('');
-  }
-
-  _updateDomainWeightsTable(domainMultipliers) {
-    const tbody = document.getElementById('dist-domain-weights-tbody');
-    if (!tbody) return;
-
-    const entries = Object.entries(domainMultipliers);
-    if (entries.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="2" class="empty-state">No domain weights</td></tr>';
-      return;
+    _localNodeId() {
+        let id = localStorage.getItem('cf_node_id');
+        if (!id) { id = 'node_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('cf_node_id', id); }
+        return id;
     }
 
-    tbody.innerHTML = entries
-      .sort((a, b) => b[1] - a[1])
-      .map(([domain, mult]) => `
-        <tr>
-          <td class="mono">${domain}</td>
-          <td>${mult.toFixed(2)}x</td>
-        </tr>
-      `).join('');
-  }
+    _updateStatusCards() {
+        const online = this.data.nodes.filter(n => n.isOnline || n.status === 'online').length;
+        this._setText('dist-active-nodes', online);
+        this._setText('dist-total-nodes', this.data.nodes.length);
+        this._setText('dist-sync-count', this.data.metrics?.totalSyncs ?? '—');
+        this._setText('dist-node-id', this._localNodeId().slice(0, 10) + '...');
+    }
 
-  // ──────────────────────────────────────────────
-  // Events
-  // ──────────────────────────────────────────────
+    _renderNodes() {
+        const tbody = document.getElementById('dist-nodes-tbody');
+        const badge = document.getElementById('nodes-count-badge');
+        if (!tbody) return;
+        if (badge) badge.textContent = this.data.nodes.length;
+        if (!this.data.nodes.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--cf-text-muted)">No nodes registered yet</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = this.data.nodes.map(n => {
+            const online = n.isOnline || n.status === 'online';
+            return `<tr>
+                <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${online ? 'var(--cf-status-success)' : 'var(--cf-status-error)'}"></span></td>
+                <td style="font-family:var(--cf-font-mono);font-size:11px;color:var(--cf-text-muted)">${this._esc((n.nodeId || '').slice(0, 12))}...</td>
+                <td>${this._esc(n.hostname || '—')}</td>
+                <td>${this._esc(n.platform || '—')}</td>
+                <td>${n.alertCount ?? 0}</td>
+                <td>${(n.avgRiskScore ?? 0).toFixed(1)}</td>
+                <td style="font-size:11px;color:var(--cf-text-muted)">${n.lastSeen ? new Date(n.lastSeen).toLocaleTimeString() : '—'}</td>
+            </tr>`;
+        }).join('');
+    }
 
-  _bindEvents() {
-    // Tab switching
-    const tabs = this.container?.querySelectorAll('#dist-tabs .tab-btn');
-    if (tabs) {
-      tabs.forEach(btn => {
-        btn.addEventListener('click', () => {
-          tabs.forEach(t => t.classList.remove('active'));
-          btn.classList.add('active');
-          const tabId = btn.dataset.tab;
-          const panes = this.container.querySelectorAll('.tab-pane');
-          panes.forEach(p => {
-            p.style.display = p.id === tabId ? 'block' : 'none';
-            if (p.id === tabId) p.classList.add('active');
-            else p.classList.remove('active');
-          });
+    _renderMetrics() {
+        const m = this.data.metrics;
+        if (!m) return;
+        this._setText('gm-total-nodes', m.totalNodes ?? 0);
+        this._setText('gm-active-nodes', m.activeNodes ?? 0);
+        this._setText('gm-alerts-24h', m.totalAlerts24h ?? m.alerts24h ?? 0);
+        this._setText('gm-avg-risk', (m.avgRiskScore ?? 0).toFixed(1));
+        this._setText('gm-corr-24h', m.correlationCount24h ?? 0);
+        this._setText('gm-global-mult', `${(m.globalMultiplier ?? 1.0).toFixed(1)}x`);
+        this._setText('gm-last-updated', m.timestamp ? new Date(m.timestamp).toLocaleString() : '—');
+
+        if (m.topThreatDomains?.length) {
+            this._renderHeatmapDomains(m.topThreatDomains);
+            this._renderThreatDomainsTable(m.topThreatDomains);
+        }
+    }
+
+    _renderMetricsFallback() {
+        const el = document.getElementById('dist-metrics-panel');
+        if (el) el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--cf-text-muted)"><i class="fas fa-plug" style="font-size:24px;display:block;margin-bottom:8px"></i>Backend offline — metrics unavailable</div>`;
+    }
+
+    _renderHeatmap() {
+        const domains = this.data.metrics?.topThreatDomains ?? [];
+        this._renderHeatmapDomains(domains);
+    }
+
+    _renderHeatmapDomains(domains) {
+        const grid = document.getElementById('dist-heatmap-grid');
+        if (!grid) return;
+        if (!domains.length) {
+            grid.innerHTML = `<div style="color:var(--cf-text-muted);text-align:center;padding:40px;grid-column:1/-1">No threat heatmap data</div>`;
+            return;
+        }
+        grid.innerHTML = domains.map(d => {
+            const s = d.riskScore ?? 0;
+            const col = s >= 80 ? 'var(--cf-status-error)' : s >= 60 ? 'var(--cf-status-warning)' : s >= 40 ? 'var(--cf-interactive-default)' : 'var(--cf-status-success)';
+            return `<div style="background:${col};opacity:0.85;border-radius:var(--cf-radius-md);padding:var(--cf-space-2) var(--cf-space-3);cursor:default" title="${this._esc(d.domain)}: ${s.toFixed(0)} risk">
+                <div style="font-size:10px;font-weight:var(--cf-weight-semibold);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px">${this._esc(d.domain)}</div>
+                <div style="font-size:13px;font-weight:var(--cf-weight-bold);color:#fff">${s.toFixed(0)}</div>
+            </div>`;
+        }).join('');
+    }
+
+    _renderThreatDomainsTable(domains) {
+        const tbody = document.getElementById('dist-threat-domains-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = domains.map(d => {
+            const s = d.riskScore ?? 0;
+            const cls = s >= 80 ? 'error' : s >= 60 ? 'warning' : 'info';
+            return `<tr>
+                <td style="font-family:var(--cf-font-mono);font-size:11px">${this._esc(d.domain)}</td>
+                <td><span class="cf-badge ${cls}">${s.toFixed(0)}</span></td>
+                <td>${d.seenByNodes ?? 1}</td>
+                <td style="color:var(--cf-text-muted);font-size:11px">${this._esc(d.category || 'unknown')}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    _renderCorrelations() {
+        const list = document.getElementById('dist-correlations-list');
+        const badge = document.getElementById('corr-count-badge');
+        if (!list) return;
+        if (badge) badge.textContent = this.data.correlations.length;
+        if (!this.data.correlations.length) {
+            list.innerHTML = `<div style="text-align:center;padding:40px;color:var(--cf-text-muted)"><i class="fas fa-project-diagram" style="font-size:24px;display:block;margin-bottom:8px"></i>No cross-node correlations detected</div>`;
+            return;
+        }
+        list.innerHTML = this.data.correlations.map(c => {
+            const sev = (c.severity || 'low').toLowerCase();
+            const cls = sev === 'critical' || sev === 'high' ? 'error' : sev === 'medium' ? 'warning' : 'info';
+            return `<div style="display:flex;align-items:flex-start;gap:var(--cf-space-3);padding:var(--cf-space-3);border-bottom:1px solid var(--cf-border-light)">
+                <span class="cf-badge ${cls}" style="flex-shrink:0;margin-top:2px">${this._esc(sev)}</span>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-medium);color:var(--cf-text-primary)">${this._esc(c.pattern || c.type || 'Correlation')}</div>
+                    <div style="font-size:11px;color:var(--cf-text-muted);margin-top:2px">${this._esc(c.description || '')} · ${c.nodeCount ?? 0} nodes · ${c.matchCount ?? 0} matches</div>
+                </div>
+                <span style="font-size:10px;color:var(--cf-text-muted);white-space:nowrap">${c.timestamp ? new Date(c.timestamp).toLocaleTimeString() : ''}</span>
+            </div>`;
+        }).join('');
+    }
+
+    _renderWeights() {
+        const w = this.data.weights;
+        if (!w) return;
+        const gm = (w.globalMultiplier ?? 1.0).toFixed(1);
+        this._setText('wt-global-multiplier', `${gm}x`);
+
+        const domainMults = w.domainMultipliers ?? {};
+        const entries = Object.entries(domainMults);
+        this._setText('wt-domain-count', entries.length);
+        const tbody = document.getElementById('dist-domain-weights-tbody');
+        if (!tbody) return;
+        if (!entries.length) {
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;padding:24px;color:var(--cf-text-muted)">No domain-specific weights</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = entries.sort((a, b) => b[1] - a[1]).map(([domain, mult]) =>
+            `<tr>
+                <td style="font-family:var(--cf-font-mono);font-size:11px">${this._esc(domain)}</td>
+                <td style="font-weight:var(--cf-weight-semibold)">${mult.toFixed(2)}x</td>
+            </tr>`
+        ).join('');
+    }
+
+    _showToast(msg, type = 'info') {
+        const t = document.createElement('div');
+        const col = type === 'success' ? 'var(--cf-status-success)' : type === 'error' ? 'var(--cf-status-error)' : 'var(--cf-interactive-default)';
+        t.style.cssText = `position:fixed;bottom:24px;right:24px;background:var(--cf-card-bg);border:1px solid ${col};border-radius:var(--cf-radius-lg);padding:var(--cf-space-3) var(--cf-space-4);color:var(--cf-text-primary);font-size:var(--cf-text-sm);z-index:9999;box-shadow:var(--cf-shadow-lg)`;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+    }
+
+    _bind() {
+        document.getElementById('dist-refresh-btn')?.addEventListener('click', () => this._loadAll());
+        document.getElementById('dist-sync-btn')?.addEventListener('click', () => this._syncTelemetry());
+        document.getElementById('dist-register-btn')?.addEventListener('click', () => this._registerNode());
+
+        const tabs = this.container?.querySelectorAll('.dist-tab-btn');
+        tabs?.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabs.forEach(t => { t.classList.remove('active'); t.style.borderBottomColor = 'transparent'; t.style.color = 'var(--cf-text-muted)'; });
+                btn.classList.add('active');
+                btn.style.borderBottomColor = 'var(--cf-interactive-default)';
+                btn.style.color = 'var(--cf-text-primary)';
+                const id = btn.dataset.tab;
+                this.container.querySelectorAll('.dist-tab-pane').forEach(p => {
+                    p.style.display = p.id === id ? 'block' : 'none';
+                });
+            });
         });
-      });
     }
 
-    // Sync button
-    const syncBtn = document.getElementById('dist-sync-btn');
-    if (syncBtn) {
-      syncBtn.addEventListener('click', async () => {
-        syncBtn.disabled = true;
-        syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
-        try {
-          if (window.__TAURI__) {
-            await window.__TAURI__.core.invoke('sync_telemetry');
-          }
-          await this._loadData();
-        } catch (err) {
-          console.error('[Distributed] Sync failed:', err);
-        }
-        syncBtn.disabled = false;
-        syncBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Sync Now';
-      });
+    _setText(id, v) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = v;
     }
 
-    // Register button
-    const regBtn = document.getElementById('dist-register-btn');
-    if (regBtn) {
-      regBtn.addEventListener('click', async () => {
-        regBtn.disabled = true;
-        try {
-          if (window.__TAURI__) {
-            await window.__TAURI__.core.invoke('register_node');
-          }
-          await this._loadData();
-        } catch (err) {
-          console.error('[Distributed] Registration failed:', err);
-        }
-        regBtn.disabled = false;
-      });
+    _esc(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // Refresh button
-    const refreshBtn = document.getElementById('dist-refresh-btn');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => this._loadData());
+    _shell() {
+        return `
+<style>
+.dist-stat-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:var(--cf-space-4); }
+.dist-stat { background:var(--cf-card-bg);border:1px solid var(--cf-card-border);border-radius:var(--cf-radius-xl);padding:var(--cf-space-4) var(--cf-space-5);text-align:center; }
+.dist-stat-val { font-size:var(--cf-text-2xl);font-weight:var(--cf-weight-bold);font-family:var(--cf-font-mono);color:var(--cf-text-primary); }
+.dist-stat-lbl { font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-top:2px; }
+.dist-tab-bar { display:flex;gap:0;border-bottom:2px solid var(--cf-border-light);margin-bottom:var(--cf-space-4); }
+.dist-tab-btn { padding:var(--cf-space-2) var(--cf-space-4);font-size:var(--cf-text-sm);font-weight:var(--cf-weight-medium);background:none;border:none;border-bottom:2px solid transparent;color:var(--cf-text-muted);cursor:pointer;transition:color 0.15s,border-color 0.15s;margin-bottom:-2px; }
+.dist-tab-btn.active { border-bottom-color:var(--cf-interactive-default);color:var(--cf-text-primary); }
+.dist-tab-btn:hover:not(.active) { color:var(--cf-text-secondary); }
+.dist-heatmap-grid { display:flex;flex-wrap:wrap;gap:var(--cf-space-2); }
+@media(max-width:900px){.dist-stat-grid{grid-template-columns:1fr 1fr;}}
+</style>
+
+<div style="display:flex;flex-direction:column;gap:var(--cf-space-5)">
+
+    <div class="screen-header">
+        <div>
+            <h1 class="screen-title">Distributed Intelligence</h1>
+            <p class="screen-subtitle">Multi-node cloud sync, threat correlation &amp; global metrics</p>
+        </div>
+        <div class="screen-actions">
+            <button class="cf-btn" id="dist-register-btn"><i class="fas fa-plus-circle"></i> Register Node</button>
+            <button class="cf-btn" id="dist-refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button class="cf-btn primary" id="dist-sync-btn"><i class="fas fa-cloud-upload-alt"></i> Sync Now</button>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="dist-stat-grid">
+        <div class="dist-stat">
+            <div class="dist-stat-val" style="font-size:13px;word-break:break-all" id="dist-node-id">—</div>
+            <div class="dist-stat-lbl">Local Node ID</div>
+        </div>
+        <div class="dist-stat">
+            <div class="dist-stat-val" id="dist-active-nodes">—</div>
+            <div class="dist-stat-lbl">Online Nodes</div>
+        </div>
+        <div class="dist-stat">
+            <div class="dist-stat-val" id="dist-total-nodes">—</div>
+            <div class="dist-stat-lbl">Total Nodes</div>
+        </div>
+        <div class="dist-stat">
+            <div class="dist-stat-val" id="dist-sync-count">—</div>
+            <div class="dist-stat-lbl">Total Syncs</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="cf-card">
+        <div class="cf-card-body">
+            <div class="dist-tab-bar">
+                <button class="dist-tab-btn active" data-tab="dist-tab-nodes"><i class="fas fa-server"></i> Nodes</button>
+                <button class="dist-tab-btn" data-tab="dist-tab-correlations"><i class="fas fa-project-diagram"></i> Correlations</button>
+                <button class="dist-tab-btn" data-tab="dist-tab-heatmap"><i class="fas fa-fire"></i> Heatmap</button>
+                <button class="dist-tab-btn" data-tab="dist-tab-metrics"><i class="fas fa-chart-bar"></i> Global Metrics</button>
+                <button class="dist-tab-btn" data-tab="dist-tab-weights"><i class="fas fa-balance-scale"></i> Weights</button>
+            </div>
+
+            <!-- Nodes Tab -->
+            <div id="dist-tab-nodes" class="dist-tab-pane">
+                <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:var(--cf-text-sm)">
+                        <thead><tr>
+                            ${['','Node ID','Hostname','Platform','Alerts','Avg Risk','Last Seen'].map(h =>
+                                `<th style="padding:var(--cf-space-2) var(--cf-space-3);text-align:left;font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);background:var(--cf-table-header-bg);border-bottom:1px solid var(--cf-table-border)">${h}</th>`
+                            ).join('')}
+                        </tr></thead>
+                        <tbody id="dist-nodes-tbody">
+                            <tr><td colspan="7" style="text-align:center;padding:40px">
+                                <div class="cf-loading"><div class="cf-spinner"></div><span>Loading nodes...</span></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);padding:var(--cf-space-2) 0;display:flex;align-items:center;gap:var(--cf-space-2)">
+                    <span id="nodes-count-badge" class="cf-badge info">0</span> registered nodes
+                </div>
+            </div>
+
+            <!-- Correlations Tab -->
+            <div id="dist-tab-correlations" class="dist-tab-pane" style="display:none">
+                <div style="display:flex;align-items:center;gap:var(--cf-space-2);margin-bottom:var(--cf-space-3)">
+                    <span style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary)">Cross-Node Correlations</span>
+                    <span id="corr-count-badge" class="cf-badge info">0</span>
+                </div>
+                <div id="dist-correlations-list" style="border:1px solid var(--cf-border-light);border-radius:var(--cf-radius-lg);overflow:hidden">
+                    <div class="cf-loading" style="padding:40px"><div class="cf-spinner"></div><span>Loading correlations...</span></div>
+                </div>
+            </div>
+
+            <!-- Heatmap Tab -->
+            <div id="dist-tab-heatmap" class="dist-tab-pane" style="display:none">
+                <div style="margin-bottom:var(--cf-space-3)">
+                    <div style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary);margin-bottom:var(--cf-space-2)">Global Threat Heatmap</div>
+                    <div class="dist-heatmap-grid" id="dist-heatmap-grid">
+                        <div class="cf-loading"><div class="cf-spinner"></div><span>Loading heatmap...</span></div>
+                    </div>
+                    <div style="display:flex;gap:var(--cf-space-3);margin-top:var(--cf-space-2);flex-wrap:wrap">
+                        ${[['Low','var(--cf-status-success)'],['Medium','var(--cf-interactive-default)'],['High','var(--cf-status-warning)'],['Critical','var(--cf-status-error)']].map(([l,c]) =>
+                            `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--cf-text-muted)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c}"></span>${l}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+                <div style="overflow-x:auto;margin-top:var(--cf-space-4)">
+                    <div style="font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);margin-bottom:var(--cf-space-2)">Top Threat Domains</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:var(--cf-text-sm)">
+                        <thead><tr>
+                            ${['Domain','Risk Score','Seen By','Category'].map(h =>
+                                `<th style="padding:var(--cf-space-2) var(--cf-space-3);text-align:left;font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);background:var(--cf-table-header-bg);border-bottom:1px solid var(--cf-table-border)">${h}</th>`
+                            ).join('')}
+                        </tr></thead>
+                        <tbody id="dist-threat-domains-tbody">
+                            <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--cf-text-muted)">No threat domains found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Global Metrics Tab -->
+            <div id="dist-tab-metrics" class="dist-tab-pane" style="display:none" id="dist-metrics-panel">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--cf-space-4);margin-bottom:var(--cf-space-4)">
+                    ${[['gm-total-nodes','Total Nodes','fa-server'],['gm-alerts-24h','Alerts (24h)','fa-exclamation-triangle'],['gm-avg-risk','Avg Risk Score','fa-chart-line']].map(([id,lbl,icon]) =>
+                        `<div style="background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:var(--cf-radius-xl);padding:var(--cf-space-4);text-align:center">
+                            <i class="fas ${icon}" style="font-size:20px;color:var(--cf-interactive-default);margin-bottom:var(--cf-space-2);display:block"></i>
+                            <div style="font-size:var(--cf-text-2xl);font-weight:var(--cf-weight-bold);font-family:var(--cf-font-mono);color:var(--cf-text-primary)" id="${id}">—</div>
+                            <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-top:2px">${lbl}</div>
+                        </div>`
+                    ).join('')}
+                </div>
+                <div style="background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:var(--cf-radius-xl);padding:var(--cf-space-4)">
+                    ${[['gm-active-nodes','Active Nodes'],['gm-corr-24h','Correlations (24h)'],['gm-global-mult','Global Multiplier'],['gm-last-updated','Last Updated']].map(([id,lbl]) =>
+                        `<div style="display:flex;justify-content:space-between;align-items:center;padding:var(--cf-space-2) 0;border-bottom:1px solid var(--cf-border-light)">
+                            <span style="font-size:var(--cf-text-sm);color:var(--cf-text-muted)">${lbl}</span>
+                            <span style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-medium);color:var(--cf-text-primary)" id="${id}">—</span>
+                        </div>`
+                    ).join('')}
+                </div>
+            </div>
+
+            <!-- Weights Tab -->
+            <div id="dist-tab-weights" class="dist-tab-pane" style="display:none">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--cf-space-4)">
+                    <div style="background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:var(--cf-radius-xl);padding:var(--cf-space-5);text-align:center">
+                        <div style="font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);margin-bottom:var(--cf-space-3)">Global Multiplier</div>
+                        <div style="font-size:48px;font-weight:var(--cf-weight-bold);font-family:var(--cf-font-mono);color:var(--cf-interactive-default)" id="wt-global-multiplier">1.0x</div>
+                        <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-top:var(--cf-space-2)">Applied to all scores before final output</div>
+                    </div>
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--cf-space-3)">
+                            <span style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary)">Domain Multipliers</span>
+                            <span id="wt-domain-count" class="cf-badge info">0</span>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table style="width:100%;border-collapse:collapse;font-size:var(--cf-text-sm)">
+                                <thead><tr>
+                                    <th style="padding:var(--cf-space-2) var(--cf-space-3);text-align:left;font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);background:var(--cf-table-header-bg);border-bottom:1px solid var(--cf-table-border)">Domain</th>
+                                    <th style="padding:var(--cf-space-2) var(--cf-space-3);text-align:left;font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);background:var(--cf-table-header-bg);border-bottom:1px solid var(--cf-table-border)">Multiplier</th>
+                                </tr></thead>
+                                <tbody id="dist-domain-weights-tbody">
+                                    <tr><td colspan="2" style="text-align:center;padding:24px;color:var(--cf-text-muted)">No domain weights</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>`;
     }
-
-    // Listen for real-time events from Tauri
-    if (window.__TAURI__) {
-      window.__TAURI__.event.listen('intelligence-broadcast', (event) => {
-        console.log('[Distributed] Intelligence broadcast received:', event.payload);
-        this._loadData();
-      });
-      window.__TAURI__.event.listen('node-status-update', () => this._loadData());
-      window.__TAURI__.event.listen('global-metrics-update', () => this._loadData());
-      window.__TAURI__.event.listen('correlation-alert', () => this._loadData());
-      window.__TAURI__.event.listen('weight-table-update', () => this._loadData());
-    }
-  }
-
-  _startAutoRefresh() {
-    this.refreshInterval = setInterval(() => this._loadData(), 30000);
-  }
-
-  _setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  }
 }
 
-// Export for use by the page controller
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = DistributedIntelligenceScreen;
-} else {
-  window.DistributedIntelligenceScreen = DistributedIntelligenceScreen;
-}
+window.DistributedIntelligenceScreen = DistributedIntelligenceScreen;

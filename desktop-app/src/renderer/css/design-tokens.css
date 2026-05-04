@@ -12,7 +12,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─── Google Fonts ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════
    LAYER 0 — PRIMITIVE PALETTE
@@ -163,9 +163,9 @@
     --cf-shadow-focus: 0 0 0 3px var(--cf-interactive-focus);
 
     /* ─── Typography ─── */
-    --cf-font-primary:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --cf-font-headings: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
-    --cf-font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --cf-font-primary:  'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --cf-font-headings: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --cf-font-mono:     'Roboto Mono', 'Cascadia Code', 'Consolas', monospace;
 
     /* Font Sizes — Modular Scale (1.200) */
     --cf-text-2xs:  0.625rem;  /* 10px */
@@ -236,8 +236,8 @@
     --cf-radius-full: 9999px;
 
     /* ─── Layout — Structural Dimensions ─── */
-    --cf-header-height:     48px;
-    --cf-sidebar-width:     248px;
+    --cf-header-height:     52px;
+    --cf-sidebar-width:     240px;
     --cf-sidebar-collapsed: 56px;
     --cf-footer-height:     32px;
     --cf-content-max-width: 1600px;
@@ -382,48 +382,48 @@
    ═══════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
     /* ─── Background ─── */
-    --cf-bg-app:        var(--raw-gray-950);
-    --cf-bg-primary:    var(--raw-gray-950);
-    --cf-bg-secondary:  var(--raw-gray-900);
-    --cf-bg-elevated:   var(--raw-gray-800);
-    --cf-bg-accent:     var(--raw-forest-500);
-    --cf-bg-accent-subtle: rgba(46, 125, 50, 0.08);
+    --cf-bg-app:        #111213;
+    --cf-bg-primary:    #111213;
+    --cf-bg-secondary:  #1a1c1e;
+    --cf-bg-elevated:   #23262a;
+    --cf-bg-accent:     #9a9fa6;
+    --cf-bg-accent-subtle: rgba(154, 159, 166, 0.10);
 
     /* ─── Surfaces ─── */
-    --cf-surface-0:     var(--raw-gray-900);
-    --cf-surface-1:     var(--raw-gray-800);
-    --cf-surface-2:     var(--raw-gray-700);
-    --cf-surface-3:     var(--raw-gray-600);
+    --cf-surface-0:     #1a1c1e;
+    --cf-surface-1:     #23262a;
+    --cf-surface-2:     #2b2f35;
+    --cf-surface-3:     #383c42;
 
     /* ─── Text ─── */
-    --cf-text-primary:   var(--raw-gray-50);
-    --cf-text-secondary: var(--raw-gray-300);
-    --cf-text-tertiary:  var(--raw-gray-400);
-    --cf-text-muted:     var(--raw-gray-500);
-    --cf-text-inverse:   var(--raw-gray-900);
+    --cf-text-primary:   #e6e8ea;
+    --cf-text-secondary: #b5bcc4;
+    --cf-text-tertiary:  #9a9fa6;
+    --cf-text-muted:     #7f8791;
+    --cf-text-inverse:   #111213;
 
     /* ─── Interactive ─── */
-    --cf-interactive-default: var(--raw-green-400);
-    --cf-interactive-hover:   var(--raw-green-300);
-    --cf-interactive-active:  var(--raw-green-500);
-    --cf-interactive-subtle:  rgba(50, 213, 131, 0.10);
-    --cf-interactive-focus:   rgba(50, 213, 131, 0.24);
+    --cf-interactive-default: #9a9fa6;
+    --cf-interactive-hover:   #b0b5bb;
+    --cf-interactive-active:  #7f8791;
+    --cf-interactive-subtle:  rgba(154, 159, 166, 0.12);
+    --cf-interactive-focus:   rgba(154, 159, 166, 0.24);
 
     /* ─── Borders ─── */
-    --cf-border-light:   var(--raw-gray-800);
-    --cf-border-medium:  var(--raw-gray-700);
-    --cf-border-strong:  var(--raw-gray-600);
-    --cf-border-accent:  var(--raw-green-500);
+    --cf-border-light:   #2b2f35;
+    --cf-border-medium:  #383c42;
+    --cf-border-strong:  #454a51;
+    --cf-border-accent:  #9a9fa6;
 
     /* ─── Status ─── */
-    --cf-status-success:     var(--raw-success-400);
-    --cf-status-success-bg:  rgba(50, 213, 131, 0.10);
-    --cf-status-warning:     var(--raw-amber-400);
-    --cf-status-warning-bg:  rgba(253, 176, 34, 0.10);
-    --cf-status-error:       var(--raw-red-400);
-    --cf-status-error-bg:    rgba(249, 112, 102, 0.10);
-    --cf-status-info:        var(--raw-blue-400);
-    --cf-status-info-bg:     rgba(83, 177, 253, 0.10);
+    --cf-status-success:     #59d98b;
+    --cf-status-success-bg:  rgba(89, 217, 139, 0.12);
+    --cf-status-warning:     #ffcc66;
+    --cf-status-warning-bg:  rgba(255, 204, 102, 0.12);
+    --cf-status-error:       #ff5d6c;
+    --cf-status-error-bg:    rgba(255, 93, 108, 0.12);
+    --cf-status-info:        #8f969e;
+    --cf-status-info-bg:     rgba(143, 150, 158, 0.12);
 
     /* ─── Shadows (deeper for dark) ─── */
     --cf-shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.20);
@@ -434,66 +434,66 @@
     --cf-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.44);
 
     /* ─── Component: Header ─── */
-    --cf-header-bg:         var(--raw-gray-900);
-    --cf-header-text:       var(--raw-gray-50);
-    --cf-header-text-muted: var(--raw-gray-400);
-    --cf-header-border:     var(--raw-gray-800);
-    --cf-header-btn-bg:     rgba(255, 255, 255, 0.06);
-    --cf-header-btn-hover:  rgba(255, 255, 255, 0.12);
+    --cf-header-bg:         #171a1d;
+    --cf-header-text:       #e6e8ea;
+    --cf-header-text-muted: #9a9fa6;
+    --cf-header-border:     #383c42;
+    --cf-header-btn-bg:     rgba(154, 159, 166, 0.12);
+    --cf-header-btn-hover:  rgba(154, 159, 166, 0.22);
 
     /* ─── Component: Sidebar ─── */
-    --cf-sidebar-bg:        var(--raw-gray-900);
-    --cf-sidebar-border:    var(--raw-gray-800);
-    --cf-sidebar-link-hover: var(--raw-gray-800);
-    --cf-sidebar-link-active-bg: rgba(50, 213, 131, 0.10);
-    --cf-sidebar-link-active-text: var(--raw-green-400);
-    --cf-sidebar-link-active-bar:  var(--raw-green-400);
-    --cf-sidebar-icon-active: var(--raw-green-400);
+    --cf-sidebar-bg:        #1a1c1e;
+    --cf-sidebar-border:    #383c42;
+    --cf-sidebar-link-hover: rgba(154, 159, 166, 0.12);
+    --cf-sidebar-link-active-bg: rgba(89, 217, 139, 0.14);
+    --cf-sidebar-link-active-text: #59d98b;
+    --cf-sidebar-link-active-bar:  #59d98b;
+    --cf-sidebar-icon-active: #59d98b;
 
     /* ─── Component: Panel ─── */
-    --cf-panel-bg:          var(--raw-gray-900);
-    --cf-panel-header-bg:   var(--raw-forest-900);
-    --cf-panel-section-bg:  var(--raw-gray-800);
+    --cf-panel-bg:          #1a1c1e;
+    --cf-panel-header-bg:   #171a1d;
+    --cf-panel-section-bg:  #23262a;
 
     /* ─── Component: Footer ─── */
-    --cf-footer-bg:         var(--raw-gray-900);
-    --cf-footer-text:       var(--raw-gray-400);
-    --cf-footer-border:     var(--raw-gray-800);
+    --cf-footer-bg:         #171a1d;
+    --cf-footer-text:       #9a9fa6;
+    --cf-footer-border:     #383c42;
 
     /* ─── Cards ─── */
-    --cf-card-bg:           var(--raw-gray-900);
-    --cf-card-border:       var(--raw-gray-800);
-    --cf-card-header-bg:    var(--raw-gray-800);
+    --cf-card-bg:           #1a1c1e;
+    --cf-card-border:       #2b2f35;
+    --cf-card-header-bg:    #23262a;
 
     /* ─── Console ─── */
-    --cf-console-bg:        var(--raw-gray-950);
-    --cf-console-border:    var(--raw-gray-800);
+    --cf-console-bg:        #111213;
+    --cf-console-border:    #2b2f35;
 
     /* ─── Badges ─── */
-    --cf-badge-live-bg:     rgba(50, 213, 131, 0.12);
-    --cf-badge-live-text:   var(--raw-green-400);
-    --cf-badge-live-border: var(--raw-green-500);
-    --cf-badge-agent-bg:    rgba(50, 213, 131, 0.12);
-    --cf-badge-agent-text:  var(--raw-green-400);
-    --cf-badge-agent-border: var(--raw-green-500);
+    --cf-badge-live-bg:     rgba(89, 217, 139, 0.16);
+    --cf-badge-live-text:   #59d98b;
+    --cf-badge-live-border: rgba(89, 217, 139, 0.4);
+    --cf-badge-agent-bg:    rgba(89, 217, 139, 0.16);
+    --cf-badge-agent-text:  #59d98b;
+    --cf-badge-agent-border: rgba(89, 217, 139, 0.4);
 
     /* ─── Scrollbar ─── */
     --cf-scrollbar-track:   transparent;
-    --cf-scrollbar-thumb:   var(--raw-gray-700);
-    --cf-scrollbar-hover:   var(--raw-gray-600);
+    --cf-scrollbar-thumb:   #383c42;
+    --cf-scrollbar-hover:   #454a51;
 
     /* ─── Tabs ─── */
-    --cf-tab-bg:            var(--raw-gray-900);
-    --cf-tab-active-text:   var(--raw-green-400);
-    --cf-tab-active-bar:    var(--raw-green-400);
+    --cf-tab-bg:            #171a1d;
+    --cf-tab-active-text:   #59d98b;
+    --cf-tab-active-bar:    #59d98b;
 
     /* ─── Input ─── */
-    --cf-input-bg:          var(--raw-gray-800);
-    --cf-input-border:      var(--raw-gray-700);
+    --cf-input-bg:          #23262a;
+    --cf-input-border:      #383c42;
 
     /* ─── Table ─── */
-    --cf-table-header-bg:   var(--raw-gray-800);
-    --cf-table-row-hover:   rgba(50, 213, 131, 0.04);
+    --cf-table-header-bg:   #23262a;
+    --cf-table-row-hover:   rgba(154, 159, 166, 0.08);
 }
 
 

@@ -1308,10 +1308,743 @@
     }
   }
 
+  function formatThreatTime(value) {
+    const dt = value ? new Date(value) : new Date();
+    if (Number.isNaN(dt.getTime())) return 'now';
+    return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function toLabel(value, fallback) {
+    if (!value) return fallback;
+    return String(value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function normalizeThreat(threat, index) {
+    const origin = threat.origin || {};
+    const destination = threat.destination || {};
+    const createdAt = threat.createdAt || threat.$createdAt || threat.updatedAt || threat.timestamp || Date.now();
+    const severityRaw = (threat.severity || 'medium').toLowerCase();
+    const severity = severityRaw === 'critical' ? 'high' : severityRaw;
+    const status = (threat.status || 'active').toLowerCase();
+    const type = toLabel(threat.type || threat.threat || 'unknown', 'Unknown');
+    const confidenceVal = threat.confidence;
+    const confidence = typeof confidenceVal === 'number'
+      ? Math.max(0, Math.min(100, Math.round(confidenceVal <= 1 ? confidenceVal * 100 : confidenceVal)))
+      : 70;
+
+    return {
+      id: threat.id || threat.$id || `th-${index + 1}`,
+      type,
+      severity,
+      status,
+      createdAt,
+      confidence,
+      source: origin.country || origin.city || 'Unknown source',
+      target: destination.country || destination.city || 'Unknown target',
+      sourceLat: Number(origin.lat || 0),
+      sourceLon: Number(origin.lon || 0),
+      targetLat: Number(destination.lat || 0),
+      targetLon: Number(destination.lon || 0),
+      malwareFamily: threat.family || threat.malware_family || 'Unclassified',
+      ioc: threat.ioc || threat.indicator || threat.indicator_type || 'N/A',
+      confidenceSource: threat.source || 'OTX',
+      raw: threat
+    };
+  }
+
+  const THREAT_SEVERITY_COLORS = {
+    high: '#ef4444',
+    medium: '#f59e0b',
+    low: '#22d3ee'
+  };
+
+  // User-requested frontend key path for Threat Globe direct OTX access.
+  const OTX_FRONTEND_API_KEY = 'e80a674c5bab3cd2f9acaebf9eedabe7c82735443b6c986a2b9e3791488c928d';
+
+  const THREAT_SEVERITY_WEIGHT = {
+    high: 3,
+    medium: 2,
+    low: 1
+  };
+
+  const COUNTRY_CENTROIDS = {
+    US: [39.8283, -98.5795],
+    CA: [56.1304, -106.3468],
+    MX: [23.6345, -102.5528],
+    BR: [-14.2350, -51.9253],
+    AR: [-38.4161, -63.6167],
+    GB: [55.3781, -3.4360],
+    FR: [46.2276, 2.2137],
+    DE: [51.1657, 10.4515],
+    ES: [40.4637, -3.7492],
+    IT: [41.8719, 12.5674],
+    NL: [52.1326, 5.2913],
+    RU: [61.5240, 105.3188],
+    UA: [48.3794, 31.1656],
+    TR: [38.9637, 35.2433],
+    SA: [23.8859, 45.0792],
+    AE: [23.4241, 53.8478],
+    IN: [20.5937, 78.9629],
+    CN: [35.8617, 104.1954],
+    JP: [36.2048, 138.2529],
+    KR: [35.9078, 127.7669],
+    SG: [1.3521, 103.8198],
+    AU: [-25.2744, 133.7751],
+    NZ: [-40.9006, 174.8860],
+    ZA: [-30.5595, 22.9375],
+    NG: [9.0820, 8.6753],
+    EG: [26.8206, 30.8025]
+  };
+
+  function hashString(input) {
+    const text = String(input || 'threat');
+    let hash = 0;
+    for (let i = 0; i < text.length; i += 1) {
+      hash = ((hash << 5) - hash) + text.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function inferCountryCode(value) {
+    if (!value) return null;
+    const text = String(value).trim();
+    const code = text.length === 2 ? text.toUpperCase() : null;
+    if (code && COUNTRY_CENTROIDS[code]) return code;
+
+    const upper = text.toUpperCase();
+    const named = Object.keys(COUNTRY_CENTROIDS).find((cc) => upper.includes(cc));
+    return named || null;
+  }
+
+  function inferCoordsFromText(seedText) {
+    const hash = hashString(seedText);
+    const lat = ((hash % 12000) / 100) - 60;
+    const lon = (((Math.floor(hash / 12000)) % 32000) / 100) - 160;
+    return [Math.max(-60, Math.min(75, lat)), Math.max(-170, Math.min(170, lon))];
+  }
+
+  function resolveThreatPoint(threat, kind) {
+    const isSource = kind === 'source';
+    const lat = Number(isSource ? threat.sourceLat : threat.targetLat);
+    const lon = Number(isSource ? threat.sourceLon : threat.targetLon);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0)) {
+      return [lat, lon];
+    }
+
+    const label = isSource ? threat.source : threat.target;
+    const code = inferCountryCode(label);
+    if (code && COUNTRY_CENTROIDS[code]) {
+      return COUNTRY_CENTROIDS[code];
+    }
+
+    return inferCoordsFromText(`${threat.id}-${kind}-${label || 'unknown'}`);
+  }
+
+  function ensureThreatLeafletContainer() {
+    const container = document.getElementById('threat-map-container');
+    if (!container) return null;
+
+    const canvas = document.getElementById('dashboard-map-canvas');
+    if (canvas) {
+      canvas.style.display = 'none';
+      canvas.setAttribute('aria-hidden', 'true');
+    }
+
+    let mapEl = document.getElementById('threat-leaflet-map');
+    if (!mapEl) {
+      mapEl = document.createElement('div');
+      mapEl.id = 'threat-leaflet-map';
+      container.insertBefore(mapEl, container.firstChild);
+    }
+    return mapEl;
+  }
+
+  function ensureLeafletLoaded() {
+    if (window.L?.map) return Promise.resolve(window.L);
+    if (window.__cfLeafletLoadingPromise) return window.__cfLeafletLoadingPromise;
+
+    window.__cfLeafletLoadingPromise = new Promise((resolve, reject) => {
+      const finalize = () => {
+        if (window.L?.map) resolve(window.L);
+        else reject(new Error('Leaflet library did not initialize.'));
+      };
+
+      if (!document.getElementById('cf-leaflet-css')) {
+        const link = document.createElement('link');
+        link.id = 'cf-leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      const existing = document.getElementById('cf-leaflet-js');
+      if (existing) {
+        existing.addEventListener('load', finalize, { once: true });
+        existing.addEventListener('error', () => reject(new Error('Leaflet script failed to load.')), { once: true });
+        if (window.L?.map) finalize();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'cf-leaflet-js';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.async = true;
+      script.onload = finalize;
+      script.onerror = () => reject(new Error('Leaflet script failed to load.'));
+      document.head.appendChild(script);
+    }).finally(() => {
+      window.__cfLeafletLoadingPromise = null;
+    });
+
+    return window.__cfLeafletLoadingPromise;
+  }
+
+  function ensureThreatLeafletMap() {
+    if (!window.L?.map) throw new Error('Leaflet is not available');
+
+    const mapEl = ensureThreatLeafletContainer();
+    if (!mapEl) return null;
+
+    const existing = window.__cfThreatLeafletMap;
+    if (existing?.container === mapEl && existing?.map) {
+      if (!existing.zoomListenerBound) {
+        existing.map.on('zoomend', () => {
+          if (Array.isArray(existing.latestThreats) && existing.latestThreats.length) {
+            renderThreatsOnLeaflet(existing.latestThreats, { refit: false, preserveZoom: true });
+          }
+        });
+        existing.zoomListenerBound = true;
+      }
+      setTimeout(() => existing.map.invalidateSize(), 0);
+      return existing;
+    }
+
+    if (existing?.map) {
+      existing.map.remove();
+    }
+
+    const map = window.L.map(mapEl, {
+      center: [20, 0],
+      zoom: 2,
+      minZoom: 2,
+      maxZoom: 7,
+      zoomControl: true,
+      worldCopyJump: true,
+      preferCanvas: true
+    });
+
+    map.createPane('arcsPane');
+    map.getPane('arcsPane').style.zIndex = '420';
+    map.createPane('hotspotsPane');
+    map.getPane('hotspotsPane').style.zIndex = '650';
+
+    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 19,
+      opacity: 0.72,
+      pane: 'overlayPane'
+    }).addTo(map);
+
+    const arcsLayer = window.L.layerGroup().addTo(map);
+    const markersLayer = window.L.layerGroup().addTo(map);
+    const hotspotsLayer = window.L.layerGroup().addTo(map);
+
+    const state = {
+      map,
+      container: mapEl,
+      arcsLayer,
+      markersLayer,
+      hotspotsLayer,
+      latestThreats: [],
+      zoomListenerBound: false
+    };
+    window.__cfThreatLeafletMap = state;
+
+    map.on('zoomend', () => {
+      if (Array.isArray(state.latestThreats) && state.latestThreats.length) {
+        renderThreatsOnLeaflet(state.latestThreats, { refit: false, preserveZoom: true });
+      }
+    });
+    state.zoomListenerBound = true;
+
+    setTimeout(() => map.invalidateSize(), 60);
+    return state;
+  }
+
+  function buildThreatPopup(threat) {
+    return `
+      <div class="leaflet-threat-popup">
+        <div class="popup-severity ${threat.severity}">${threat.severity}</div>
+        <div class="popup-title">${threat.type}</div>
+        <div class="popup-route"><i class="fas fa-location-arrow"></i> ${threat.source} -> ${threat.target}</div>
+        <div class="popup-adversary"><i class="fas fa-virus"></i> ${threat.malwareFamily} | Confidence ${threat.confidence}%</div>
+      </div>
+    `;
+  }
+
+  function buildThreatClusterPopup(cluster) {
+    const sampleText = cluster.samples.slice(0, 4).map((s) => `${s.type} (${s.confidence}%)`).join('<br>');
+    return `
+      <div class="leaflet-threat-popup">
+        <div class="popup-severity ${cluster.severity}">${cluster.count} threats</div>
+        <div class="popup-title">${cluster.label}</div>
+        <div class="popup-route"><i class="fas fa-bullseye"></i> Confidence avg ${cluster.avgConfidence}%</div>
+        <div class="popup-adversary"><i class="fas fa-list"></i> ${sampleText || 'No sample details'}</div>
+      </div>
+    `;
+  }
+
+  function compareThreatPriority(a, b) {
+    const sevDiff = (THREAT_SEVERITY_WEIGHT[b.severity] || 0) - (THREAT_SEVERITY_WEIGHT[a.severity] || 0);
+    if (sevDiff !== 0) return sevDiff;
+    const confDiff = (b.confidence || 0) - (a.confidence || 0);
+    if (confDiff !== 0) return confDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  }
+
+  function getClusterCellStepForZoom(zoom, totalThreats) {
+    const z = Number.isFinite(zoom) ? zoom : 2;
+    const base = 7.6 - (z * 1.05);
+    const densityBoost = totalThreats > 260 ? 1.4 : totalThreats > 160 ? 1.0 : totalThreats > 90 ? 0.5 : 0;
+    return Math.max(0.45, Math.min(6.5, base + densityBoost));
+  }
+
+  function aggregateThreatTargets(threats, zoom) {
+    const byCell = new Map();
+    const cellStep = getClusterCellStepForZoom(zoom, threats.length);
+
+    threats.forEach((threat) => {
+      const point = resolveThreatPoint(threat, 'target');
+      if (!point) return;
+
+      const cellLat = Math.round(point[0] / cellStep);
+      const cellLon = Math.round(point[1] / cellStep);
+      const key = `${cellLat}:${cellLon}`;
+      const existing = byCell.get(key) || {
+        point,
+        count: 0,
+        severity: 'low',
+        confidenceTotal: 0,
+        label: threat.target,
+        samples: []
+      };
+
+      existing.count += 1;
+      existing.confidenceTotal += (threat.confidence || 0);
+      if ((THREAT_SEVERITY_WEIGHT[threat.severity] || 0) > (THREAT_SEVERITY_WEIGHT[existing.severity] || 0)) {
+        existing.severity = threat.severity;
+      }
+      if (existing.samples.length < 6) {
+        existing.samples.push(threat);
+      }
+
+      byCell.set(key, existing);
+    });
+
+    return Array.from(byCell.values()).map((cluster) => ({
+      ...cluster,
+      avgConfidence: Math.round(cluster.confidenceTotal / Math.max(cluster.count, 1))
+    }));
+  }
+
+  function hotspotIcon(severity) {
+    const klass = severity === 'high' ? 'high' : severity === 'medium' ? 'medium' : 'low';
+    return window.L.divIcon({
+      className: `threat-pulse-marker ${klass}`,
+      html: '<span class="pulse-core"></span>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+  }
+
+  function renderThreatsOnLeaflet(threats, options = {}) {
+    const state = window.__cfThreatLeafletMap;
+    if (!state?.map || !window.L) return;
+
+    const { refit = true } = options;
+    const { map, arcsLayer, markersLayer, hotspotsLayer } = state;
+    state.latestThreats = Array.isArray(threats) ? threats : [];
+    arcsLayer.clearLayers();
+    markersLayer.clearLayers();
+    hotspotsLayer.clearLayers();
+
+    if (!Array.isArray(threats) || !threats.length) return;
+
+    const orderedThreats = [...threats].sort(compareThreatPriority);
+    const arcThreats = orderedThreats.slice(0, Math.min(120, orderedThreats.length));
+    const hotspotThreats = orderedThreats.filter((t) => t.severity === 'high').slice(0, 18);
+    const currentZoom = map.getZoom();
+    const targetClusters = aggregateThreatTargets(orderedThreats, currentZoom);
+    const boundsPoints = [];
+
+    arcThreats.forEach((threat) => {
+      const sourcePoint = resolveThreatPoint(threat, 'source');
+      const targetPoint = resolveThreatPoint(threat, 'target');
+      const color = THREAT_SEVERITY_COLORS[threat.severity] || THREAT_SEVERITY_COLORS.medium;
+
+      if (sourcePoint) {
+        boundsPoints.push(sourcePoint);
+        window.L.circleMarker(sourcePoint, {
+          radius: 3 + Math.round((threat.confidence || 50) / 45),
+          color,
+          fillColor: color,
+          fillOpacity: 0.75,
+          opacity: 0.8,
+          weight: 1
+        }).bindPopup(buildThreatPopup(threat), { className: 'threat-popup-container' }).addTo(markersLayer);
+      }
+
+      if (sourcePoint && targetPoint) {
+        window.L.polyline([sourcePoint, targetPoint], {
+          color,
+          pane: 'arcsPane',
+          weight: threat.severity === 'high' ? 1.8 : 1.2,
+          opacity: threat.severity === 'high' ? 0.7 : 0.38,
+          lineCap: 'round',
+          lineJoin: 'round',
+          smoothFactor: 1.2,
+          dashArray: threat.severity === 'high' ? '8 6' : '4 8'
+        }).addTo(arcsLayer);
+      }
+    });
+
+    targetClusters.forEach((cluster) => {
+      const color = THREAT_SEVERITY_COLORS[cluster.severity] || THREAT_SEVERITY_COLORS.medium;
+      const radius = Math.max(4, Math.min(16, Math.round(3 + (Math.sqrt(cluster.count) * 2.1))));
+      boundsPoints.push(cluster.point);
+
+      const marker = window.L.circleMarker(cluster.point, {
+        radius,
+        color,
+        fillColor: color,
+        fillOpacity: Math.min(0.7, 0.24 + (cluster.count * 0.05)),
+        opacity: 0.9,
+        weight: cluster.count > 1 ? 2 : 1
+      }).addTo(markersLayer);
+
+      if (cluster.count > 1) {
+        marker.bindTooltip(String(cluster.count), {
+          permanent: true,
+          direction: 'center',
+          className: 'threat-cluster-count'
+        });
+        marker.bindPopup(buildThreatClusterPopup(cluster), { className: 'threat-popup-container' });
+      } else if (cluster.samples[0]) {
+        marker.bindPopup(buildThreatPopup(cluster.samples[0]), { className: 'threat-popup-container' });
+      }
+    });
+
+    hotspotThreats.forEach((threat) => {
+      const hotspotPoint = resolveThreatPoint(threat, 'target');
+      if (!hotspotPoint) return;
+      window.L.marker(hotspotPoint, {
+        icon: hotspotIcon(threat.severity),
+        pane: 'hotspotsPane',
+        interactive: false,
+        keyboard: false
+      }).addTo(hotspotsLayer);
+    });
+
+    if (refit && boundsPoints.length > 1) {
+      const bounds = window.L.latLngBounds(boundsPoints);
+      map.fitBounds(bounds.pad(0.24), { maxZoom: 4, animate: true, duration: 0.35 });
+    }
+  }
+
+  function bindThreatMapLeafletControls() {
+    const map = window.__cfThreatLeafletMap?.map;
+    if (!map) return;
+
+    const controls = document.querySelectorAll('#threat-map-container .tg-map-controls .tg-icon-btn');
+    if (!controls.length) return;
+
+    controls[0].onclick = () => map.zoomIn();
+    controls[1].onclick = () => map.zoomOut();
+    controls[2].onclick = () => map.setView([20, 0], 2, { animate: true });
+  }
+
+  function renderThreatInfo(selected) {
+    const infoEl = document.getElementById('threat-globe-info');
+    const idEl = document.getElementById('threat-globe-info-id');
+    if (!infoEl) return;
+
+    if (!selected) {
+      infoEl.innerHTML = '<div class="tg-info-empty"><span>Select a live threat from the stream to inspect details.</span></div>';
+      if (idEl) idEl.textContent = 'No selection';
+      return;
+    }
+
+    if (idEl) idEl.textContent = `ID: ${selected.id}`;
+
+    infoEl.innerHTML = `
+      <div class="tg-info-card">
+        <div class="tg-info-header">
+          <div class="tg-info-title">${selected.type}</div>
+          <span class="severity-badge ${selected.severity}">${selected.severity}</span>
+        </div>
+        <div class="tg-info-section">
+          <div class="tg-info-subtitle">Position Data</div>
+          <div class="tg-info-row"><span>Source</span><span class="tg-info-value">${selected.source}</span></div>
+          <div class="tg-info-row"><span>Target</span><span class="tg-info-value">${selected.target}</span></div>
+          <div class="tg-info-row"><span>Coordinates</span><span class="tg-info-value">${selected.sourceLat.toFixed(2)}, ${selected.sourceLon.toFixed(2)} -> ${selected.targetLat.toFixed(2)}, ${selected.targetLon.toFixed(2)}</span></div>
+        </div>
+        <div class="tg-info-section">
+          <div class="tg-info-subtitle">Threat Data</div>
+          <div class="tg-info-row"><span>Status</span><span class="tg-info-value">${selected.status}</span></div>
+          <div class="tg-info-row"><span>Malware Family</span><span class="tg-info-value">${selected.malwareFamily}</span></div>
+          <div class="tg-info-row"><span>Indicator</span><span class="tg-info-value">${selected.ioc}</span></div>
+          <div class="tg-info-row"><span>Confidence</span><span class="tg-info-value">${selected.confidence}%</span></div>
+        </div>
+        <div class="tg-info-section">
+          <div class="tg-info-subtitle">Telemetry</div>
+          <div class="tg-info-row"><span>Source</span><span class="tg-info-value">${selected.confidenceSource}</span></div>
+          <div class="tg-info-row"><span>Updated</span><span class="tg-info-value">${formatThreatTime(selected.createdAt)}</span></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderThreatTimeline(items) {
+    const timelineEl = document.getElementById('threat-globe-timeline');
+    if (!timelineEl) return;
+
+    if (!items.length) {
+      timelineEl.innerHTML = '<div class="tg-info-empty"><span>No active timeline data yet.</span></div>';
+      return;
+    }
+
+    const now = Date.now();
+    const buckets = [0, 1, 2, 3].map((hour) => {
+      const start = now - ((hour + 1) * 60 * 60 * 1000);
+      const end = now - (hour * 60 * 60 * 1000);
+      const count = items.filter((it) => {
+        const ts = new Date(it.createdAt).getTime();
+        return ts >= start && ts < end;
+      }).length;
+      return { hour, count };
+    }).reverse();
+
+    const max = Math.max(...buckets.map((b) => b.count), 1);
+    timelineEl.innerHTML = buckets.map((b) => {
+      const width = Math.max(6, Math.round((b.count / max) * 100));
+      return `
+        <div class="tg-timeline-row">
+          <span>${b.hour + 1}h ago</span>
+          <div class="tg-timeline-track"><span style="width:${width}%;"></span></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderThreatEvents(items) {
+    const body = document.getElementById('threat-globe-events-body');
+    if (!body) return;
+
+    if (!items.length) {
+      body.innerHTML = '<tr><td colspan="5" class="tg-empty-cell">No events in cache.</td></tr>';
+      return;
+    }
+
+    const top = items.slice(0, 8);
+    body.innerHTML = top.map((item) => `
+      <tr>
+        <td class="tg-row-title">${item.type}</td>
+        <td>${item.source}</td>
+        <td>${item.target}</td>
+        <td>${item.confidence}%</td>
+        <td>${formatThreatTime(item.createdAt)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderThreatStream(threats, selectedId) {
+    const body = document.getElementById('threat-globe-feed-body');
+    const countEl = document.getElementById('threat-globe-stream-count');
+    if (!body) return null;
+
+    if (countEl) countEl.textContent = `${threats.length} signals`;
+
+    if (!threats.length) {
+      body.innerHTML = '<tr><td colspan="4" class="tg-empty-cell">No threats for the selected filter.</td></tr>';
+      return null;
+    }
+
+    body.innerHTML = threats.slice(0, 16).map((item) => {
+      const isActive = selectedId && selectedId === item.id;
+      const sevClass = item.severity === 'high' ? 'high' : item.severity === 'medium' ? 'medium' : 'low';
+      return `
+        <tr class="tg-row ${isActive ? 'active' : ''}" data-threat-id="${item.id}">
+          <td class="tg-row-title">${item.type}</td>
+          <td>${item.source} -> ${item.target}</td>
+          <td><span class="severity-badge ${sevClass}">${item.severity}</span></td>
+          <td>${item.status}</td>
+        </tr>
+      `;
+    }).join('');
+
+    return threats[0];
+  }
+
+  function updateThreatCounters(threats) {
+    const totalEl = document.getElementById('dashboard-threats');
+    if (totalEl) {
+      const active = threats.filter((t) => t.status === 'active').length;
+      totalEl.textContent = String(active);
+    }
+  }
+
+  function bindThreatStreamSelection(threats) {
+    const body = document.getElementById('threat-globe-feed-body');
+    if (!body) return;
+
+    body.onclick = (event) => {
+      const row = event.target.closest('tr[data-threat-id]');
+      if (!row) return;
+      const selected = threats.find((t) => t.id === row.getAttribute('data-threat-id'));
+      renderThreatStream(threats, selected?.id);
+      renderThreatInfo(selected || null);
+    };
+  }
+
+  function applyThreatFilter(threats) {
+    const filterEl = document.getElementById('threat-map-filter');
+    const filter = (filterEl?.value || 'all').toLowerCase();
+    if (filter === 'all') return threats;
+    return threats.filter((item) => item.type.toLowerCase().includes(filter));
+  }
+
+  function mapOTXSeverity(pulse) {
+    const tlp = String(pulse?.tlp || pulse?.TLP || '').toLowerCase();
+    if (tlp === 'red') return 'high';
+    if (tlp === 'amber') return 'medium';
+    if (tlp === 'green' || tlp === 'white') return 'low';
+    const tags = Array.isArray(pulse?.tags) ? pulse.tags.join(' ').toLowerCase() : '';
+    if (/ransom|botnet|exploit|cve|zeroday|zero-day/.test(tags)) return 'high';
+    if (/phish|malware|suspicious/.test(tags)) return 'medium';
+    return 'low';
+  }
+
+  function mapOTXPulseToThreat(pulse, index) {
+    const tags = Array.isArray(pulse?.tags) ? pulse.tags : [];
+    const countries = Array.isArray(pulse?.targeted_countries) ? pulse.targeted_countries : [];
+    const severity = mapOTXSeverity(pulse);
+    const indicatorCount = Number(pulse?.indicator_count || 0);
+    const confidence = Math.max(42, Math.min(96, 55 + Math.round(indicatorCount * 0.9)));
+    const pulseName = String(pulse?.name || pulse?.title || `OTX Pulse ${index + 1}`).trim();
+    const type = pulseName.length > 72 ? `${pulseName.slice(0, 72)}...` : pulseName;
+    const sourceLabel = pulse?.author_name || pulse?.author?.username || 'OTX Community';
+    const targetLabel = countries[0] || tags[0] || 'Global Internet';
+
+    return {
+      id: pulse?.id || pulse?.pulse_id || pulse?.$id || `otx-${index + 1}`,
+      type,
+      severity,
+      status: 'active',
+      createdAt: pulse?.modified || pulse?.created || pulse?.created_at || Date.now(),
+      confidence,
+      source: sourceLabel,
+      target: targetLabel,
+      sourceLat: 0,
+      sourceLon: 0,
+      targetLat: 0,
+      targetLon: 0,
+      malwareFamily: tags[0] || pulse?.adversary || 'Unclassified',
+      ioc: indicatorCount > 0 ? `${indicatorCount} indicators` : 'N/A',
+      confidenceSource: 'AlienVault OTX',
+      raw: pulse
+    };
+  }
+
+  async function fetchThreatsFromOTXFrontend(limit = 60) {
+    const key = localStorage.getItem('otx_api_key') || OTX_FRONTEND_API_KEY;
+    if (!key) throw new Error('Missing OTX API key');
+
+    const endpoint = `https://otx.alienvault.com/api/v1/pulses/subscribed?limit=${Math.max(1, Math.min(200, limit))}`;
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'X-OTX-API-KEY': key,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`OTX request failed: HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const pulses = payload?.results || payload?.pulses || payload?.data || [];
+    if (!Array.isArray(pulses)) return [];
+
+    return pulses.slice(0, limit).map(mapOTXPulseToThreat);
+  }
+
+  function renderThreatMapPanels(rawThreats) {
+    const normalized = rawThreats.map(normalizeThreat).sort((a, b) => {
+      const ta = new Date(a.createdAt).getTime();
+      const tb = new Date(b.createdAt).getTime();
+      return tb - ta;
+    });
+
+    const filtered = applyThreatFilter(normalized);
+    const first = renderThreatStream(filtered);
+    renderThreatInfo(first || null);
+    renderThreatTimeline(filtered);
+    renderThreatEvents(filtered);
+    updateThreatCounters(filtered);
+    bindThreatStreamSelection(filtered);
+  }
+
   function initThreatMap() {
-    const container = document.getElementById('threat-map-canvas');
-    if (!container) return;
-    container.innerHTML = '<div class="map-placeholder">Interactive threat map</div>';
+    if (!document.getElementById('threat-map-container')) return;
+
+    const loadThreats = () => {
+      fetchThreatsFromOTXFrontend(60).then((threats) => {
+        renderThreatMapPanels(threats);
+        const normalized = threats.map(normalizeThreat);
+        renderThreatsOnLeaflet(normalized, { refit: true });
+      }).catch((error) => {
+        console.warn('[ThreatMap] Frontend OTX fetch failed, trying fallback API client:', error?.message || error);
+        if (!window.apiClient || typeof window.apiClient.getThreats !== 'function') return;
+        window.apiClient.getThreats({ limit: 60 }).then((response) => {
+          if (!response?.success || !Array.isArray(response.data)) return;
+          renderThreatMapPanels(response.data);
+          const normalized = response.data.map(normalizeThreat);
+          renderThreatsOnLeaflet(normalized, { refit: true });
+        }).catch((fallbackErr) => {
+          console.warn('[ThreatMap] Fallback threat fetch failed:', fallbackErr?.message || fallbackErr);
+        });
+      });
+    };
+
+    ensureLeafletLoaded()
+      .then(() => {
+        ensureThreatLeafletMap();
+        bindThreatMapLeafletControls();
+        loadThreats();
+      })
+      .catch((error) => {
+        console.error('[ThreatMap] Leaflet unavailable:', error);
+        loadThreats();
+      });
+
+    const refreshBtn = document.getElementById('refresh-threat-map');
+    if (refreshBtn) refreshBtn.onclick = () => loadThreats();
+
+    const filterEl = document.getElementById('threat-map-filter');
+    if (filterEl) filterEl.onchange = () => loadThreats();
+
+    if (window.__cfThreatMapRefreshTimer) {
+      clearInterval(window.__cfThreatMapRefreshTimer);
+    }
+    window.__cfThreatMapRefreshTimer = setInterval(loadThreats, 15000);
   }
 
   function initQuickScan() {

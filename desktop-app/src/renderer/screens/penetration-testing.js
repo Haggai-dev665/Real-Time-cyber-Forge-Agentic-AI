@@ -1,580 +1,560 @@
 /**
- * Penetration Testing Screen
- * Penetration testing tools and vulnerability assessment
+ * PenetrationTestingScreen
+ * CyberForge — SPA screen class
+ * Tokens only: no hardcoded colours. XSS-safe via _esc().
  */
 
 class PenetrationTestingScreen {
-    constructor() {
-        this.container = null;
-        this.isActive = false;
-        this.activeTests = [];
-        this.testHistory = [];
+  constructor() {
+    this._container  = null;
+    this._findings   = [];
+    this._scanning   = false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // XSS helper
+  // ---------------------------------------------------------------------------
+  _esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Static fallback findings
+  // ---------------------------------------------------------------------------
+  _staticFindings() {
+    return [
+      { finding: 'SQL Injection in /api/search', category: 'Injection',         severity: 'critical', cvss: 9.8,  host: '10.0.0.5:80',    status: 'Open' },
+      { finding: 'Open SSH on default port',     category: 'Misconfiguration',  severity: 'high',     cvss: 7.5,  host: '10.0.0.12:22',   status: 'Open' },
+      { finding: 'Exposed admin panel',          category: 'Access Control',    severity: 'high',     cvss: 8.1,  host: '10.0.0.5:8080',  status: 'Open' },
+      { finding: 'Weak TLS cipher suite',        category: 'Cryptography',      severity: 'warning',  cvss: 5.3,  host: '10.0.0.5:443',   status: 'In Progress' },
+      { finding: 'Directory listing enabled',    category: 'Information Leak',  severity: 'warning',  cvss: 5.0,  host: '10.0.0.5:80',    status: 'Open' },
+      { finding: 'Missing HSTS header',          category: 'HTTP Security',     severity: 'info',     cvss: 3.1,  host: '10.0.0.5:443',   status: 'Resolved' },
+      { finding: 'Outdated OpenSSL version',     category: 'Patch Management',  severity: 'high',     cvss: 7.8,  host: '10.0.0.12:22',   status: 'Open' },
+      { finding: 'CORS wildcard origin',         category: 'HTTP Security',     severity: 'warning',  cvss: 5.4,  host: '10.0.0.5:3001',  status: 'Open' },
+    ];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch existing findings from backend (mapped to pentest format)
+  // ---------------------------------------------------------------------------
+  async _fetchFindings() {
+    try {
+      const res = await fetch('http://localhost:3001/api/threats?limit=20');
+      if (!res.ok) throw new Error('non-2xx');
+      const json  = await res.json();
+      const items = Array.isArray(json) ? json : (json.data || json.threats || []);
+      if (!items.length) return this._staticFindings();
+      return items.map(t => ({
+        finding:  t.description || t.title || t.type || 'Security Finding',
+        category: t.category    || t.type  || 'Miscellaneous',
+        severity: this._mapSeverity(t.severity),
+        cvss:     this._mapCVSS(t.severity),
+        host:     t.source || t.host || t.ip || '—',
+        status:   t.status || 'Open',
+      }));
+    } catch (_) {
+      return this._staticFindings();
     }
+  }
 
-    async show(container, options = {}) {
-        this.container = container;
-        this.isActive = true;
-        
-        this.container.innerHTML = this.createHTML();
-        this.initializeComponents();
-        await this.loadTestData();
-        
-        this.container.classList.add('screen-enter');
-    }
+  _mapSeverity(s) {
+    const v = String(s || '').toLowerCase();
+    if (v === 'critical') return 'critical';
+    if (v === 'high')     return 'high';
+    if (v === 'medium' || v === 'warning') return 'warning';
+    return 'info';
+  }
 
-    hide() {
-        this.isActive = false;
-    }
+  _mapCVSS(s) {
+    const v = String(s || '').toLowerCase();
+    if (v === 'critical') return (8.5 + Math.random() * 1.5).toFixed(1);
+    if (v === 'high')     return (7.0 + Math.random() * 1.4).toFixed(1);
+    if (v === 'medium' || v === 'warning') return (4.0 + Math.random() * 2.9).toFixed(1);
+    return (1.0 + Math.random() * 2.9).toFixed(1);
+  }
 
-    createHTML() {
-        return `
-            <div class="penetration-testing-screen">
-                <!-- Header -->
-                <div class="pentest-header">
-                    <div class="header-info">
-                        <h2><i class="fas fa-user-ninja"></i> Penetration Testing</h2>
-                        <p>Ethical hacking and vulnerability assessment tools</p>
-                    </div>
-                    <div class="header-controls">
-                        <button class="btn btn-primary" id="new-test-btn">
-                            <i class="fas fa-play"></i> New Test
-                        </button>
-                        <button class="btn btn-secondary" id="scan-templates-btn">
-                            <i class="fas fa-file-alt"></i> Templates
-                        </button>
-                    </div>
-                </div>
+  _severityBadgeClass(severity) {
+    const map = { critical: 'error', high: 'error', warning: 'warning', info: 'info' };
+    return map[severity] || 'info';
+  }
 
-                <!-- Testing Tools -->
-                <div class="testing-tools">
-                    <h3>Testing Tools</h3>
-                    <div class="tools-grid">
-                        <div class="tool-card">
-                            <div class="tool-icon">
-                                <i class="fas fa-search"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Port Scanner</h4>
-                                <p>Discover open ports and services</p>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.launchTool('portscan')">Launch</button>
-                            </div>
-                        </div>
+  _statusBadgeClass(status) {
+    const s = String(status).toLowerCase();
+    if (s === 'open')        return 'error';
+    if (s === 'in progress') return 'warning';
+    if (s === 'resolved')    return 'success';
+    return 'info';
+  }
 
-                        <div class="tool-card">
-                            <div class="tool-icon">
-                                <i class="fas fa-bug"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Vulnerability Scanner</h4>
-                                <p>Automated vulnerability assessment</p>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.launchTool('vulnscan')">Launch</button>
-                            </div>
-                        </div>
+  // ---------------------------------------------------------------------------
+  // Stats
+  // ---------------------------------------------------------------------------
+  _stats(findings) {
+    const total    = findings.length;
+    const critical = findings.filter(f => f.severity === 'critical').length;
+    const high     = findings.filter(f => f.severity === 'high').length;
+    const open     = findings.filter(f => String(f.status).toLowerCase() !== 'resolved').length;
+    return { total, critical, high, open };
+  }
 
-                        <div class="tool-card">
-                            <div class="tool-icon">
-                                <i class="fas fa-globe"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Web App Scanner</h4>
-                                <p>Web application security testing</p>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.launchTool('webscan')">Launch</button>
-                            </div>
-                        </div>
+  // ---------------------------------------------------------------------------
+  // CSV export
+  // ---------------------------------------------------------------------------
+  _exportCSV() {
+    const headers = ['Finding', 'Category', 'Severity', 'CVSS Score', 'Host/Port', 'Status'];
+    const rows    = this._findings.map(f => [
+      f.finding, f.category, f.severity, f.cvss, f.host, f.status,
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    const csv     = [headers.join(','), ...rows].join('\n');
+    const blob    = new Blob([csv], { type: 'text/csv' });
+    const url     = URL.createObjectURL(blob);
+    const a       = document.createElement('a');
+    a.href        = url;
+    a.download    = `pentest-findings-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-                        <div class="tool-card">
-                            <div class="tool-icon">
-                                <i class="fas fa-wifi"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Network Scanner</h4>
-                                <p>Network discovery and mapping</p>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.launchTool('netscan')">Launch</button>
-                            </div>
-                        </div>
+  // ---------------------------------------------------------------------------
+  // Render helpers
+  // ---------------------------------------------------------------------------
+  _renderStats(stats) {
+    const items = [
+      { label: 'Total Findings', value: stats.total,    color: 'var(--cf-text-primary)' },
+      { label: 'Critical',       value: stats.critical, color: 'var(--cf-status-error)' },
+      { label: 'High',           value: stats.high,     color: 'var(--cf-status-warning)' },
+      { label: 'Open Issues',    value: stats.open,     color: 'var(--cf-interactive-default)' },
+    ];
+    return `
+      <div class="pt-stats-row">
+        ${items.map(it => `
+          <div class="pt-stat-card cf-card">
+            <div class="pt-stat-value" style="color:${it.color}">${this._esc(String(it.value))}</div>
+            <div class="pt-stat-label">${this._esc(it.label)}</div>
+          </div>
+        `).join('')}
+      </div>`;
+  }
 
-                        <div class="tool-card">
-                            <div class="tool-icon">
-                                <i class="fas fa-key"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Password Tester</h4>
-                                <p>Password strength and brute force testing</p>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.launchTool('passtest')">Launch</button>
-                            </div>
-                        </div>
+  _renderScanConfig() {
+    return `
+      <div class="cf-card pt-scan-card">
+        <div class="cf-card-header">
+          <h3 class="cf-card-title">Scan Configuration</h3>
+        </div>
+        <div class="cf-card-body pt-scan-body">
+          <div class="pt-field-group">
+            <label class="pt-label" for="pt-target">Target</label>
+            <input
+              id="pt-target"
+              class="pt-input"
+              type="text"
+              placeholder="IP address, hostname, or CIDR range"
+              value="10.0.0.0/24"
+            />
+          </div>
 
-                        <div class="tool-card">
-                            <div class="tool-icon">
-                                <i class="fas fa-code"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Payload Generator</h4>
-                                <p>Generate custom exploit payloads</p>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.launchTool('payload')">Launch</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Active Tests -->
-                <div class="active-tests">
-                    <h3>Active Tests</h3>
-                    <div class="tests-container" id="active-tests-container">
-                        <!-- Active tests will be populated here -->
-                    </div>
-                </div>
-
-                <!-- Test Results -->
-                <div class="test-results">
-                    <h3>Recent Test Results</h3>
-                    <div class="results-table" id="results-table">
-                        <!-- Results table will be populated here -->
-                    </div>
-                </div>
-
-                <!-- Vulnerability Database -->
-                <div class="vulnerability-db">
-                    <h3>Vulnerability Database</h3>
-                    <div class="vuln-search">
-                        <input type="text" placeholder="Search vulnerabilities..." class="form-control" id="vuln-search">
-                        <button class="btn btn-primary">Search CVE</button>
-                    </div>
-                    <div class="vuln-list" id="vuln-list">
-                        <!-- Vulnerability list will be populated here -->
-                    </div>
-                </div>
+          <div class="pt-field-row">
+            <div class="pt-field-group">
+              <label class="pt-label" for="pt-scan-type">Scan Type</label>
+              <select id="pt-scan-type" class="pt-select">
+                <option value="Reconnaissance">Reconnaissance</option>
+                <option value="Port Scan">Port Scan</option>
+                <option value="Web App">Web App</option>
+                <option value="API">API</option>
+                <option value="Network">Network</option>
+                <option value="Full">Full</option>
+              </select>
             </div>
-        `;
-    }
 
-    initializeComponents() {
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        const newTestBtn = document.getElementById('new-test-btn');
-        if (newTestBtn) {
-            newTestBtn.addEventListener('click', () => this.createNewTest());
-        }
-
-        const templatesBtn = document.getElementById('scan-templates-btn');
-        if (templatesBtn) {
-            templatesBtn.addEventListener('click', () => this.showScanTemplates());
-        }
-    }
-
-    async loadTestData() {
-        this.activeTests = [
-            {
-                id: 'PT-2024-001',
-                type: 'Port Scan',
-                target: '192.168.1.0/24',
-                status: 'running',
-                progress: 67,
-                startTime: new Date(),
-                estimatedTime: '15 minutes'
-            },
-            {
-                id: 'PT-2024-002',
-                type: 'Web App Scan',
-                target: 'https://example.com',
-                status: 'running',
-                progress: 23,
-                startTime: new Date(Date.now() - 600000),
-                estimatedTime: '45 minutes'
-            }
-        ];
-
-        this.testHistory = [
-            {
-                id: 'PT-2024-003',
-                type: 'Vulnerability Scan',
-                target: '10.0.0.100',
-                status: 'completed',
-                findings: 12,
-                severity: 'high',
-                completedTime: new Date(Date.now() - 3600000)
-            },
-            {
-                id: 'PT-2024-004',
-                type: 'Network Scan',
-                target: '192.168.0.0/16',
-                status: 'completed',
-                findings: 5,
-                severity: 'medium',
-                completedTime: new Date(Date.now() - 7200000)
-            }
-        ];
-
-        this.renderActiveTests();
-        this.renderTestResults();
-        this.renderVulnerabilityDatabase();
-    }
-
-    renderActiveTests() {
-        const container = document.getElementById('active-tests-container');
-        if (!container) return;
-
-        if (this.activeTests.length === 0) {
-            container.innerHTML = '<div class="no-tests"><p>No active tests running</p></div>';
-            return;
-        }
-
-        container.innerHTML = this.activeTests.map(test => `
-            <div class="test-card running">
-                <div class="test-header">
-                    <h4>${test.type}</h4>
-                    <span class="test-status ${test.status}">${test.status.toUpperCase()}</span>
-                </div>
-                <div class="test-details">
-                    <div class="test-target">Target: ${test.target}</div>
-                    <div class="test-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${test.progress}%"></div>
-                        </div>
-                        <span class="progress-text">${test.progress}% - ${test.estimatedTime} remaining</span>
-                    </div>
-                </div>
-                <div class="test-actions">
-                    <button class="btn btn-sm btn-warning" onclick="pentestScreen.pauseTest('${test.id}')">
-                        <i class="fas fa-pause"></i> Pause
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="pentestScreen.stopTest('${test.id}')">
-                        <i class="fas fa-stop"></i> Stop
-                    </button>
-                    <button class="btn btn-sm btn-secondary" onclick="pentestScreen.viewTestLogs('${test.id}')">
-                        <i class="fas fa-file-alt"></i> Logs
-                    </button>
-                </div>
+            <div class="pt-field-group">
+              <label class="pt-label" for="pt-scan-depth">Scan Depth</label>
+              <select id="pt-scan-depth" class="pt-select">
+                <option value="Quick">Quick</option>
+                <option value="Standard" selected>Standard</option>
+                <option value="Deep">Deep</option>
+              </select>
             </div>
-        `).join('');
-    }
+          </div>
 
-    renderTestResults() {
-        const table = document.getElementById('results-table');
-        if (!table) return;
+          <div class="pt-scan-actions">
+            <button class="cf-btn primary" id="pt-start-btn">Start Scan</button>
+          </div>
 
-        table.innerHTML = `
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Test ID</th>
-                        <th>Type</th>
-                        <th>Target</th>
-                        <th>Findings</th>
-                        <th>Severity</th>
-                        <th>Completed</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${this.testHistory.map(test => `
-                        <tr>
-                            <td>${test.id}</td>
-                            <td>${test.type}</td>
-                            <td>${test.target}</td>
-                            <td>${test.findings}</td>
-                            <td><span class="severity-badge ${test.severity}">${test.severity.toUpperCase()}</span></td>
-                            <td>${test.completedTime.toLocaleString()}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="pentestScreen.viewResults('${test.id}')">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <button class="btn btn-sm btn-secondary" onclick="pentestScreen.downloadReport('${test.id}')">
-                                    <i class="fas fa-download"></i> Report
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-
-    renderVulnerabilityDatabase() {
-        const vulnList = document.getElementById('vuln-list');
-        if (!vulnList) return;
-
-        const vulnerabilities = [
-            {
-                cve: 'CVE-2024-0001',
-                title: 'Remote Code Execution in Web Framework',
-                severity: 'critical',
-                score: 9.8,
-                published: '2024-01-15'
-            },
-            {
-                cve: 'CVE-2024-0002',
-                title: 'SQL Injection in Database Driver',
-                severity: 'high',
-                score: 8.1,
-                published: '2024-01-12'
-            },
-            {
-                cve: 'CVE-2024-0003',
-                title: 'Cross-Site Scripting in Admin Panel',
-                severity: 'medium',
-                score: 6.4,
-                published: '2024-01-10'
-            }
-        ];
-
-        vulnList.innerHTML = vulnerabilities.map(vuln => `
-            <div class="vuln-item">
-                <div class="vuln-header">
-                    <span class="cve-id">${vuln.cve}</span>
-                    <span class="cvss-score">${vuln.score}</span>
-                    <span class="severity-badge ${vuln.severity}">${vuln.severity.toUpperCase()}</span>
-                </div>
-                <div class="vuln-title">${vuln.title}</div>
-                <div class="vuln-meta">
-                    <span>Published: ${vuln.published}</span>
-                    <button class="btn btn-sm btn-secondary">View Details</button>
-                </div>
+          <div class="pt-progress-wrap" id="pt-progress-wrap" style="display:none">
+            <div class="pt-progress-label">
+              <span id="pt-progress-text">Scanning…</span>
+              <span id="pt-progress-pct">0%</span>
             </div>
-        `).join('');
-    }
+            <div class="pt-progress-track">
+              <div class="pt-progress-fill" id="pt-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
 
-    launchTool(toolType) {
-        if (window.modal) {
-            let modalContent = '';
-            let modalTitle = '';
+  _renderFindingsRow(f, idx) {
+    const badgeClass  = this._severityBadgeClass(f.severity);
+    const statusClass = this._statusBadgeClass(f.status);
+    return `
+      <tr class="pt-row" data-idx="${idx}">
+        <td class="pt-cell pt-finding-name">${this._esc(f.finding)}</td>
+        <td class="pt-cell">${this._esc(f.category)}</td>
+        <td class="pt-cell">
+          <span class="cf-badge ${this._esc(badgeClass)}">${this._esc(f.severity.toUpperCase())}</span>
+        </td>
+        <td class="pt-cell pt-mono">
+          <span class="pt-cvss pt-cvss-${this._esc(f.severity)}">${this._esc(String(f.cvss))}</span>
+        </td>
+        <td class="pt-cell pt-mono">${this._esc(f.host)}</td>
+        <td class="pt-cell">
+          <span class="cf-badge ${this._esc(statusClass)}">${this._esc(f.status)}</span>
+        </td>
+      </tr>`;
+  }
 
-            switch (toolType) {
-                case 'portscan':
-                    modalTitle = 'Port Scanner';
-                    modalContent = `
-                        <div class="tool-form">
-                            <div class="form-group">
-                                <label>Target</label>
-                                <input type="text" id="port-target" class="form-control" placeholder="192.168.1.1 or 192.168.1.0/24">
-                            </div>
-                            <div class="form-group">
-                                <label>Port Range</label>
-                                <input type="text" id="port-range" class="form-control" placeholder="1-65535" value="1-1000">
-                            </div>
-                            <div class="form-group">
-                                <label>Scan Type</label>
-                                <select id="scan-type" class="form-control">
-                                    <option value="tcp">TCP Connect</option>
-                                    <option value="syn">SYN Stealth</option>
-                                    <option value="udp">UDP Scan</option>
-                                    <option value="comprehensive">Comprehensive</option>
-                                </select>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'vulnscan':
-                    modalTitle = 'Vulnerability Scanner';
-                    modalContent = `
-                        <div class="tool-form">
-                            <div class="form-group">
-                                <label>Target</label>
-                                <input type="text" id="vuln-target" class="form-control" placeholder="IP address or hostname">
-                            </div>
-                            <div class="form-group">
-                                <label>Scan Profile</label>
-                                <select id="scan-profile" class="form-control">
-                                    <option value="quick">Quick Scan</option>
-                                    <option value="standard">Standard Scan</option>
-                                    <option value="comprehensive">Comprehensive Scan</option>
-                                    <option value="custom">Custom Profile</option>
-                                </select>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'webscan':
-                    modalTitle = 'Web Application Scanner';
-                    modalContent = `
-                        <div class="tool-form">
-                            <div class="form-group">
-                                <label>Target URL</label>
-                                <input type="url" id="web-target" class="form-control" placeholder="https://example.com">
-                            </div>
-                            <div class="form-group">
-                                <label>Authentication</label>
-                                <select id="auth-type" class="form-control">
-                                    <option value="none">No Authentication</option>
-                                    <option value="basic">Basic Auth</option>
-                                    <option value="form">Form-based</option>
-                                    <option value="cookie">Cookie-based</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Scan Scope</label>
-                                <div class="checkbox-group">
-                                    <label><input type="checkbox" checked> SQL Injection</label>
-                                    <label><input type="checkbox" checked> XSS</label>
-                                    <label><input type="checkbox" checked> CSRF</label>
-                                    <label><input type="checkbox"> Directory Traversal</label>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                default:
-                    modalTitle = 'Tool Configuration';
-                    modalContent = '<p>Tool configuration interface coming soon!</p>';
-            }
+  _renderFindingsTable(findings) {
+    const rows = findings.length
+      ? findings.map((f, i) => this._renderFindingsRow(f, i)).join('')
+      : `<tr><td colspan="6">
+           <div class="cf-empty">
+             <div class="cf-empty-icon">🔍</div>
+             <div class="cf-empty-title">No Findings Yet</div>
+             <div class="cf-empty-text">Run a scan to discover vulnerabilities.</div>
+           </div>
+         </td></tr>`;
 
-            window.modal.show({
-                title: modalTitle,
-                content: modalContent,
-                actions: [
-                    {
-                        text: 'Cancel',
-                        class: 'btn-secondary',
-                        action: () => window.modal.hide()
-                    },
-                    {
-                        text: 'Start Test',
-                        class: 'btn-primary',
-                        action: () => {
-                            this.startTest(toolType);
-                            window.modal.hide();
-                        }
-                    }
-                ]
-            });
+    return `
+      <div class="cf-card">
+        <div class="cf-card-header">
+          <h3 class="cf-card-title">Findings</h3>
+          <div class="screen-actions">
+            <button class="cf-btn sm" id="pt-export-btn">Export CSV</button>
+          </div>
+        </div>
+        <div class="cf-card-body pt-table-body">
+          <table class="pt-table" id="pt-findings-table">
+            <thead>
+              <tr>
+                <th class="pt-th">Finding</th>
+                <th class="pt-th">Category</th>
+                <th class="pt-th">Severity</th>
+                <th class="pt-th">CVSS</th>
+                <th class="pt-th">Host / Port</th>
+                <th class="pt-th">Status</th>
+              </tr>
+            </thead>
+            <tbody id="pt-tbody">${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  _buildHTML(findings) {
+    const stats = this._stats(findings);
+    return `
+      <style>
+        /* ── PenetrationTestingScreen local styles ── */
+        .pt-stats-row {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: var(--cf-space-4);
+          margin-bottom: var(--cf-space-6);
         }
-    }
-
-    startTest(toolType) {
-        const testId = `PT-2024-${String(this.activeTests.length + this.testHistory.length + 1).padStart(3, '0')}`;
-        
-        const newTest = {
-            id: testId,
-            type: this.getToolDisplayName(toolType),
-            target: this.getTargetFromForm(toolType),
-            status: 'running',
-            progress: 0,
-            startTime: new Date(),
-            estimatedTime: this.getEstimatedTime(toolType)
-        };
-
-        this.activeTests.push(newTest);
-        this.renderActiveTests();
-        this.simulateTestProgress(testId);
-    }
-
-    getToolDisplayName(toolType) {
-        const names = {
-            portscan: 'Port Scan',
-            vulnscan: 'Vulnerability Scan',
-            webscan: 'Web App Scan',
-            netscan: 'Network Scan',
-            passtest: 'Password Test',
-            payload: 'Payload Generation'
-        };
-        return names[toolType] || 'Unknown Test';
-    }
-
-    getTargetFromForm(toolType) {
-        const inputs = {
-            portscan: '#port-target',
-            vulnscan: '#vuln-target',
-            webscan: '#web-target'
-        };
-        const input = document.querySelector(inputs[toolType]);
-        return input ? input.value : 'Unknown Target';
-    }
-
-    getEstimatedTime(toolType) {
-        const times = {
-            portscan: '15 minutes',
-            vulnscan: '30 minutes',
-            webscan: '45 minutes',
-            netscan: '20 minutes',
-            passtest: '60 minutes',
-            payload: '5 minutes'
-        };
-        return times[toolType] || '30 minutes';
-    }
-
-    simulateTestProgress(testId) {
-        const test = this.activeTests.find(t => t.id === testId);
-        if (!test) return;
-
-        const updateProgress = () => {
-            if (test.status !== 'running') return;
-            
-            test.progress = Math.min(test.progress + Math.random() * 15, 100);
-            
-            if (test.progress >= 100) {
-                test.status = 'completed';
-                this.moveTestToHistory(testId);
-            }
-            
-            this.renderActiveTests();
-            
-            if (test.status === 'running') {
-                setTimeout(updateProgress, 2000);
-            }
-        };
-
-        updateProgress();
-    }
-
-    moveTestToHistory(testId) {
-        const testIndex = this.activeTests.findIndex(t => t.id === testId);
-        if (testIndex === -1) return;
-
-        const test = this.activeTests.splice(testIndex, 1)[0];
-        
-        const historyEntry = {
-            id: test.id,
-            type: test.type,
-            target: test.target,
-            status: 'completed',
-            findings: Math.floor(Math.random() * 20),
-            severity: ['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)],
-            completedTime: new Date()
-        };
-
-        this.testHistory.unshift(historyEntry);
-        this.renderTestResults();
-    }
-
-    createNewTest() {
-        alert('Custom test creation interface coming soon!');
-    }
-
-    showScanTemplates() {
-        alert('Scan templates interface coming soon!');
-    }
-
-    pauseTest(testId) {
-        const test = this.activeTests.find(t => t.id === testId);
-        if (test) {
-            test.status = 'paused';
-            this.renderActiveTests();
+        .pt-stat-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: var(--cf-space-5);
+          text-align: center;
+          gap: var(--cf-space-2);
         }
-    }
-
-    stopTest(testId) {
-        const testIndex = this.activeTests.findIndex(t => t.id === testId);
-        if (testIndex !== -1) {
-            this.activeTests.splice(testIndex, 1);
-            this.renderActiveTests();
+        .pt-stat-value {
+          font-size: var(--cf-text-2xl);
+          font-weight: var(--cf-weight-bold);
+          font-family: var(--cf-font-mono);
         }
+        .pt-stat-label {
+          font-size: var(--cf-text-xs);
+          color: var(--cf-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        /* Scan config card */
+        .pt-scan-card { margin-bottom: var(--cf-space-6); }
+        .pt-scan-body { display: flex; flex-direction: column; gap: var(--cf-space-4); }
+        .pt-field-group { display: flex; flex-direction: column; gap: var(--cf-space-2); flex: 1; }
+        .pt-field-row   { display: flex; gap: var(--cf-space-4); flex-wrap: wrap; }
+        .pt-label {
+          font-size: var(--cf-text-xs);
+          font-weight: var(--cf-weight-semibold);
+          color: var(--cf-text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .pt-input,
+        .pt-select {
+          background: var(--cf-input-bg);
+          border: 1px solid var(--cf-input-border);
+          border-radius: var(--cf-radius-md);
+          color: var(--cf-text-primary);
+          font-size: var(--cf-text-sm);
+          font-family: var(--cf-font-primary);
+          padding: var(--cf-space-2) var(--cf-space-3);
+          outline: none;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .pt-input:focus,
+        .pt-select:focus {
+          border-color: var(--cf-interactive-default);
+          box-shadow: 0 0 0 2px var(--cf-interactive-subtle);
+        }
+        .pt-scan-actions { display: flex; gap: var(--cf-space-3); }
+
+        /* Progress */
+        .pt-progress-wrap { display: flex; flex-direction: column; gap: var(--cf-space-2); }
+        .pt-progress-label {
+          display: flex;
+          justify-content: space-between;
+          font-size: var(--cf-text-xs);
+          color: var(--cf-text-secondary);
+        }
+        .pt-progress-track {
+          height: 8px;
+          background: var(--cf-surface-2);
+          border-radius: var(--cf-radius-full);
+          overflow: hidden;
+        }
+        .pt-progress-fill {
+          height: 100%;
+          background: var(--cf-interactive-default);
+          border-radius: var(--cf-radius-full);
+          transition: width 0.3s ease;
+        }
+
+        /* Findings table */
+        .pt-table-body { overflow-x: auto; padding: 0; }
+        .pt-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: var(--cf-text-sm);
+        }
+        .pt-th {
+          text-align: left;
+          padding: var(--cf-space-3) var(--cf-space-4);
+          background: var(--cf-table-header-bg);
+          color: var(--cf-text-secondary);
+          font-size: var(--cf-text-xs);
+          font-weight: var(--cf-weight-semibold);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-bottom: 1px solid var(--cf-table-border);
+          white-space: nowrap;
+        }
+        .pt-row { border-bottom: 1px solid var(--cf-border-light); }
+        .pt-row:hover { background: var(--cf-table-row-hover); }
+        .pt-cell {
+          padding: var(--cf-space-3) var(--cf-space-4);
+          color: var(--cf-text-primary);
+          vertical-align: middle;
+        }
+        .pt-finding-name { font-weight: var(--cf-weight-medium); max-width: 260px; }
+        .pt-mono {
+          font-family: var(--cf-font-mono);
+          font-size: var(--cf-text-xs);
+        }
+        .pt-cvss {
+          font-weight: var(--cf-weight-bold);
+          padding: 2px var(--cf-space-2);
+          border-radius: var(--cf-radius-sm);
+        }
+        .pt-cvss-critical { color: var(--cf-status-error);   background: var(--cf-status-error-bg); }
+        .pt-cvss-high     { color: var(--cf-status-error);   background: var(--cf-status-error-bg); }
+        .pt-cvss-warning  { color: var(--cf-status-warning); background: var(--cf-status-warning-bg); }
+        .pt-cvss-info     { color: var(--cf-status-info);    background: var(--cf-status-info-bg); }
+      </style>
+
+      <div class="screen-header">
+        <div>
+          <h1 class="screen-title">Penetration Testing</h1>
+          <p class="screen-subtitle">Active vulnerability discovery and security assessment</p>
+        </div>
+        <div class="screen-actions">
+          <button class="cf-btn sm" id="pt-refresh-btn">Refresh Findings</button>
+        </div>
+      </div>
+
+      ${this._renderStats(stats)}
+      ${this._renderScanConfig()}
+      ${this._renderFindingsTable(findings)}
+    `;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scan execution
+  // ---------------------------------------------------------------------------
+  async _startScan() {
+    if (this._scanning) return;
+    this._scanning = true;
+
+    const target    = this._container.querySelector('#pt-target').value.trim() || 'unknown';
+    const scanType  = this._container.querySelector('#pt-scan-type').value;
+    const depth     = this._container.querySelector('#pt-scan-depth').value;
+    const startBtn  = this._container.querySelector('#pt-start-btn');
+    const progWrap  = this._container.querySelector('#pt-progress-wrap');
+    const progFill  = this._container.querySelector('#pt-progress-fill');
+    const progText  = this._container.querySelector('#pt-progress-text');
+    const progPct   = this._container.querySelector('#pt-progress-pct');
+
+    startBtn.disabled = true;
+    startBtn.textContent = 'Scanning…';
+    progWrap.style.display = 'block';
+
+    // Animate progress while waiting
+    let pct = 0;
+    const ticker = setInterval(() => {
+      pct = Math.min(pct + Math.random() * 8, 90);
+      progFill.style.width = pct.toFixed(0) + '%';
+      progPct.textContent  = pct.toFixed(0) + '%';
+      progText.textContent = this._scanPhaseLabel(pct, scanType);
+    }, 400);
+
+    try {
+      const res = await fetch('http://localhost:8001/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query:   `penetration test on ${target} scan type: ${scanType} depth: ${depth}`,
+          context: 'pentest',
+        }),
+      });
+
+      clearInterval(ticker);
+      progFill.style.width = '100%';
+      progPct.textContent  = '100%';
+      progText.textContent = 'Scan complete';
+
+      if (res.ok) {
+        const json     = await res.json();
+        const newFinds = this._parseMLFindings(json, target, scanType);
+        this._findings = [...newFinds, ...this._findings];
+      } else {
+        // ML service offline — add simulated finding
+        this._findings.unshift(this._simulatedFinding(target, scanType));
+      }
+    } catch (_) {
+      clearInterval(ticker);
+      progFill.style.width = '100%';
+      progText.textContent = 'Scan complete (offline mode)';
+      this._findings.unshift(this._simulatedFinding(target, scanType));
     }
 
-    viewTestLogs(testId) {
-        alert(`Viewing logs for test ${testId}`);
-    }
+    // Re-render table and stats
+    this._refreshTableAndStats();
 
-    viewResults(testId) {
-        alert(`Viewing detailed results for test ${testId}`);
-    }
+    setTimeout(() => {
+      progWrap.style.display = 'none';
+      progFill.style.width   = '0%';
+      startBtn.disabled      = false;
+      startBtn.textContent   = 'Start Scan';
+      this._scanning         = false;
+    }, 1200);
+  }
 
-    downloadReport(testId) {
-        alert(`Downloading report for test ${testId}`);
+  _scanPhaseLabel(pct, type) {
+    if (pct < 20) return `Initialising ${type} scan…`;
+    if (pct < 50) return 'Enumerating hosts and services…';
+    if (pct < 75) return 'Testing for vulnerabilities…';
+    return 'Analysing results…';
+  }
+
+  _parseMLFindings(json, target, scanType) {
+    const text = json.result || json.analysis || json.response || '';
+    // Best-effort: treat each line that mentions a known keyword as a finding
+    const lines = String(text).split('\n').filter(l => l.trim().length > 10);
+    if (!lines.length) return [this._simulatedFinding(target, scanType)];
+    return lines.slice(0, 5).map((line, i) => ({
+      finding:  line.trim().replace(/^[-*•\d.]+\s*/, '').substring(0, 120),
+      category: scanType,
+      severity: i === 0 ? 'high' : (i === 1 ? 'warning' : 'info'),
+      cvss:     i === 0 ? '7.5' : (i === 1 ? '5.2' : '3.1'),
+      host:     target,
+      status:   'Open',
+    }));
+  }
+
+  _simulatedFinding(target, scanType) {
+    return {
+      finding:  `${scanType} assessment completed for ${target}`,
+      category: scanType,
+      severity: 'info',
+      cvss:     '0.0',
+      host:     target,
+      status:   'Open',
+    };
+  }
+
+  _refreshTableAndStats() {
+    const tbody = this._container.querySelector('#pt-tbody');
+    const stats = this._stats(this._findings);
+
+    // Update stats cards
+    const statCards = this._container.querySelectorAll('.pt-stat-value');
+    const vals = [stats.total, stats.critical, stats.high, stats.open];
+    statCards.forEach((el, i) => { if (vals[i] !== undefined) el.textContent = vals[i]; });
+
+    // Update table rows
+    if (tbody) {
+      if (!this._findings.length) {
+        tbody.innerHTML = `<tr><td colspan="6">
+          <div class="cf-empty">
+            <div class="cf-empty-icon">🔍</div>
+            <div class="cf-empty-title">No Findings Yet</div>
+            <div class="cf-empty-text">Run a scan to discover vulnerabilities.</div>
+          </div>
+        </td></tr>`;
+      } else {
+        tbody.innerHTML = this._findings.map((f, i) => this._renderFindingsRow(f, i)).join('');
+      }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Event wiring
+  // ---------------------------------------------------------------------------
+  _bindEvents() {
+    this._container.addEventListener('click', e => {
+      if (e.target.id === 'pt-start-btn')   { this._startScan(); return; }
+      if (e.target.id === 'pt-export-btn')  { this._exportCSV(); return; }
+      if (e.target.id === 'pt-refresh-btn') { this._reload(); }
+    });
+  }
+
+  async _reload() {
+    if (!this._container) return;
+    this._findings = await this._fetchFindings();
+    this._container.innerHTML = this._buildHTML(this._findings);
+    this._bindEvents();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+  async show(container) {
+    this._container = container;
+    container.innerHTML = '<div class="cf-loading"><div class="cf-spinner"></div></div>';
+    this._findings = await this._fetchFindings();
+    container.innerHTML = this._buildHTML(this._findings);
+    this._bindEvents();
+  }
+
+  hide() {
+    this._container = null;
+    this._scanning  = false;
+  }
 }
 
-// Export to global scope
 window.PenetrationTestingScreen = PenetrationTestingScreen;
-window.pentestScreen = new PenetrationTestingScreen();

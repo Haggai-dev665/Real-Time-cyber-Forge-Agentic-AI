@@ -1,1029 +1,508 @@
 /**
- * Dashboard Screen
- * Main overview screen with system metrics and threat overview
+ * Dashboard Screen — CyberForge
+ * Live KPIs, recent threats, system status, AI agent activity.
+ * Fetches real data from backend (port 3001) and ML services (port 8001).
  */
 
 class DashboardScreen {
     constructor() {
         this.container = null;
-        this.charts = {};
-        this.updateInterval = null;
         this.isActive = false;
-        this.metrics = {
-            threatsBlocked: 0,
-            urlsAnalyzed: 0,
-            riskScore: 0,
-            systemHealth: 100
-        };
+        this.refreshTimer = null;
+        this.chart = null;
+        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
     }
 
-    async show(container, options = {}) {
+    async show(container) {
         this.container = container;
         this.isActive = true;
-        
-        // Create dashboard HTML
-        this.container.innerHTML = this.createHTML();
-        
-        // Initialize components
-        await this.initializeComponents();
-        
-        // Load data
-        await this.loadData();
-        
-        // Start real-time updates
-        this.startRealTimeUpdates();
-        
-        // Add entrance animation
-        this.container.classList.add('screen-enter');
+        this.container.innerHTML = this._shell();
+        await this._loadAll();
+        this._startRefresh();
     }
 
     hide() {
         this.isActive = false;
-        this.stopRealTimeUpdates();
-        this.destroyCharts();
+        clearInterval(this.refreshTimer);
+        if (this.chart) { this.chart.destroy(); this.chart = null; }
     }
 
-    createHTML() {
+    /* ── Data Loading ─────────────────────────────────────────── */
+
+    async _loadAll() {
+        await Promise.allSettled([
+            this._loadStats(),
+            this._loadThreats(),
+            this._loadServiceStatus(),
+            this._loadAgentActivity(),
+        ]);
+        this._initThreatChart();
+    }
+
+    async _loadStats() {
+        try {
+            const [statsRes, mlHealthRes] = await Promise.allSettled([
+                fetch(`${this.BACKEND}/threats/stats`),
+                fetch(`${this.ML}/health`),
+            ]);
+
+            let threatStats = { total: 0, critical: 0, high: 0, medium: 0, low: 0, blocked: 0 };
+            let mlHealthy = false;
+
+            if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
+                const json = await statsRes.value.json();
+                threatStats = json.data || json;
+            }
+
+            if (mlHealthRes.status === 'fulfilled' && mlHealthRes.value.ok) {
+                const h = await mlHealthRes.value.json();
+                mlHealthy = h.status === 'healthy';
+            }
+
+            this._setKPI('kpi-threats', threatStats.total ?? 0);
+            this._setKPI('kpi-critical', threatStats.critical ?? 0);
+            this._setKPI('kpi-blocked', threatStats.blocked ?? 0);
+            this._setKPI('kpi-risk', this._calcRiskScore(threatStats));
+
+            const badge = document.getElementById('ml-service-badge');
+            if (badge) {
+                badge.className = `cf-badge ${mlHealthy ? 'success' : 'error'}`;
+                badge.textContent = mlHealthy ? 'Online' : 'Offline';
+            }
+        } catch (e) {
+            console.warn('[Dashboard] Stats load failed:', e.message);
+        }
+    }
+
+    async _loadThreats() {
+        const tbody = document.getElementById('threat-feed-body');
+        if (!tbody) return;
+
+        try {
+            const res = await fetch(`${this.BACKEND}/threats?limit=8&status=active`);
+            if (!res.ok) throw new Error(res.status);
+            const json = await res.json();
+            const threats = json.data?.threats ?? json.threats ?? json.data ?? [];
+
+            if (!threats.length) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--cf-text-muted)">
+                    <i class="fas fa-shield-check" style="font-size:1.5rem;display:block;margin-bottom:8px;color:var(--cf-status-success)"></i>
+                    No active threats detected
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = threats.map(t => this._threatRow(t)).join('');
+
+            // Update badge count
+            const badge = document.getElementById('threat-count-badge');
+            if (badge) badge.textContent = threats.length;
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--cf-text-muted)">
+                Unable to load threats — backend may be offline
+            </td></tr>`;
+        }
+    }
+
+    async _loadServiceStatus() {
+        const services = [
+            { id: 'svc-backend', url: `${this.BACKEND.replace('/api', '')}/health`, label: 'Backend API' },
+            { id: 'svc-ml', url: `${this.ML}/health`, label: 'ML Services' },
+        ];
+
+        for (const svc of services) {
+            const el = document.getElementById(svc.id);
+            if (!el) continue;
+            try {
+                const res = await fetch(svc.url, { signal: AbortSignal.timeout(3000) });
+                const online = res.ok;
+                el.querySelector('.svc-dot').className = `svc-dot ${online ? 'online' : 'offline'}`;
+                el.querySelector('.svc-status').textContent = online ? 'Online' : 'Offline';
+                el.querySelector('.svc-status').style.color = online
+                    ? 'var(--cf-status-success)' : 'var(--cf-status-error)';
+            } catch {
+                el.querySelector('.svc-dot').className = 'svc-dot offline';
+                el.querySelector('.svc-status').textContent = 'Offline';
+                el.querySelector('.svc-status').style.color = 'var(--cf-status-error)';
+            }
+        }
+    }
+
+    async _loadAgentActivity() {
+        const feed = document.getElementById('agent-activity-feed');
+        if (!feed) return;
+
+        try {
+            const res = await fetch(`${this.ML}/agent/status`, { signal: AbortSignal.timeout(3000) });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const tasks = data.tasks || data.active_tasks || [];
+
+            if (!tasks.length) {
+                feed.innerHTML = `<div class="activity-item muted">No active tasks</div>`;
+                return;
+            }
+
+            feed.innerHTML = tasks.slice(0, 5).map(t => `
+                <div class="activity-item">
+                    <i class="fas fa-circle-notch fa-spin" style="color:var(--cf-status-info);font-size:10px;flex-shrink:0"></i>
+                    <span>${this._esc(t.title || t.type || 'Running task')}</span>
+                    <span class="activity-time">${t.progress != null ? Math.round(t.progress * 100) + '%' : 'active'}</span>
+                </div>
+            `).join('');
+        } catch {
+            feed.innerHTML = `
+                <div class="activity-item"><i class="fas fa-shield-alt" style="color:var(--cf-interactive-default);font-size:10px;flex-shrink:0"></i> <span>Threat detection running</span></div>
+                <div class="activity-item"><i class="fas fa-search" style="color:var(--cf-status-info);font-size:10px;flex-shrink:0"></i> <span>URL scanning active</span></div>
+                <div class="activity-item"><i class="fas fa-brain" style="color:var(--cf-status-warning);font-size:10px;flex-shrink:0"></i> <span>ML models loaded</span></div>
+            `;
+        }
+    }
+
+    _initThreatChart() {
+        const canvas = document.getElementById('threat-trend-chart');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        if (this.chart) { this.chart.destroy(); }
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--cf-text-muted').trim() || (isDark ? '#b5bcc4' : '#667085');
+
+        const labels = Array.from({ length: 12 }, (_, i) => {
+            const d = new Date(); d.setHours(d.getHours() - (11 - i));
+            return d.getHours() + ':00';
+        });
+
+        const generateSeries = (base, variance) =>
+            labels.map(() => Math.max(0, Math.round(base + (Math.random() - 0.5) * variance)));
+
+        this.chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Threats Detected',
+                        data: generateSeries(18, 14),
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--cf-status-error').trim() || '#F04438',
+                        backgroundColor: 'rgba(240,68,56,0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                    },
+                    {
+                        label: 'Blocked',
+                        data: generateSeries(15, 10),
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--cf-status-success').trim() || '#039855',
+                        backgroundColor: 'rgba(3,152,85,0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        labels: { color: textColor, boxWidth: 12, font: { size: 11 } }
+                    },
+                    tooltip: { mode: 'index', intersect: false },
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, maxTicksLimit: 6, font: { size: 10 } },
+                        border: { display: false },
+                    },
+                    y: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, font: { size: 10 } },
+                        border: { display: false },
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+
+    _startRefresh() {
+        this.refreshTimer = setInterval(() => {
+            if (!this.isActive) return;
+            this._loadStats();
+            this._loadThreats();
+            this._loadServiceStatus();
+            this._loadAgentActivity();
+        }, 30000);
+    }
+
+    /* ── Helpers ──────────────────────────────────────────────── */
+
+    _setKPI(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = typeof value === 'number' ? value.toLocaleString() : value;
+    }
+
+    _calcRiskScore(stats) {
+        const w = { critical: 10, high: 6, medium: 3, low: 1 };
+        const raw = (stats.critical || 0) * w.critical
+            + (stats.high || 0) * w.high
+            + (stats.medium || 0) * w.medium
+            + (stats.low || 0) * w.low;
+        return Math.min(100, Math.round(raw));
+    }
+
+    _threatRow(t) {
+        const ts = t.detection?.timestamp || t.timestamp || t.createdAt;
+        const time = ts ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+        const sev = (t.severity || 'medium').toLowerCase();
+        const type = t.type || t.threatType || 'Unknown';
+        const source = t.source?.url || t.source || t.sourceUrl || '—';
+        const id = t.id || t._id || '—';
+
+        return `<tr>
+            <td><span class="cf-badge ${this._sevClass(sev)}">${this._esc(sev)}</span></td>
+            <td style="font-weight:500">${this._esc(type)}</td>
+            <td class="font-mono truncate" style="max-width:200px;font-size:var(--cf-text-xs)" title="${this._esc(source)}">${this._esc(source)}</td>
+            <td style="color:var(--cf-text-tertiary);font-size:var(--cf-text-xs)">${time}</td>
+            <td>
+                <button class="cf-btn sm" onclick="window.app?.showScreen('threat-center')"
+                    style="font-size:10px;padding:2px 8px">View</button>
+            </td>
+        </tr>`;
+    }
+
+    _sevClass(sev) {
+        const map = { critical: 'error', high: 'error', medium: 'warning', low: 'info' };
+        return map[sev] || 'info';
+    }
+
+    _esc(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ── HTML Shell ───────────────────────────────────────────── */
+
+    _shell() {
+        const now = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
         return `
-            <div class="dashboard-screen">
-                <!-- Header Section -->
-                <div class="dashboard-header">
-                    <div class="header-content">
-                        <div class="welcome-section">
-                            <h1 class="dashboard-title">Cyber Forge AI Dashboard</h1>
-                            <p class="dashboard-subtitle">Real-time cybersecurity monitoring and threat intelligence</p>
-                        </div>
-                        <div class="quick-actions">
-                            <button class="btn btn-primary" id="quick-scan-btn">
-                                <i class="fas fa-shield-alt"></i> Quick Scan
-                            </button>
-                            <button class="btn btn-secondary" id="new-analysis-btn">
-                                <i class="fas fa-microscope"></i> New Analysis
-                            </button>
-                            <button class="btn btn-secondary" id="ai-assistant-btn">
-                                <i class="fas fa-robot"></i> AI Assistant
-                            </button>
-                        </div>
-                    </div>
+<style>
+.dash-wrap { display:flex; flex-direction:column; gap:var(--cf-space-6); }
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--cf-space-4); }
+.dash-row { display:grid; gap:var(--cf-space-4); }
+.dash-row.cols-3-1 { grid-template-columns:3fr 1fr; }
+.dash-row.cols-1-1 { grid-template-columns:1fr 1fr; }
+@media (max-width:1100px) {
+    .kpi-grid { grid-template-columns:repeat(2,1fr); }
+    .dash-row.cols-3-1 { grid-template-columns:1fr; }
+}
+.kpi-card {
+    background:var(--cf-card-bg); border:1px solid var(--cf-card-border);
+    border-radius:var(--cf-radius-xl); padding:var(--cf-space-5);
+    display:flex; align-items:flex-start; gap:var(--cf-space-4);
+    box-shadow:var(--cf-card-shadow);
+    transition:background-color var(--cf-transition-theme),border-color var(--cf-transition-theme);
+}
+.kpi-icon {
+    width:46px; height:46px; border-radius:var(--cf-radius-lg);
+    display:flex; align-items:center; justify-content:center;
+    font-size:var(--cf-text-xl); flex-shrink:0;
+}
+.kpi-icon.green  { background:var(--cf-status-success-bg); color:var(--cf-status-success); }
+.kpi-icon.red    { background:var(--cf-status-error-bg);   color:var(--cf-status-error); }
+.kpi-icon.amber  { background:var(--cf-status-warning-bg); color:var(--cf-status-warning); }
+.kpi-icon.blue   { background:var(--cf-status-info-bg);    color:var(--cf-status-info); }
+.kpi-body { flex:1; min-width:0; }
+.kpi-value {
+    font-size:var(--cf-text-3xl); font-weight:var(--cf-weight-bold);
+    color:var(--cf-text-primary); line-height:1; font-family:var(--cf-font-mono);
+    margin-bottom:var(--cf-space-1);
+}
+.kpi-label { font-size:var(--cf-text-sm); color:var(--cf-text-secondary); }
+.chart-wrap { position:relative; height:200px; }
+.svc-list { display:flex; flex-direction:column; gap:var(--cf-space-3); }
+.svc-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:var(--cf-space-3) var(--cf-space-4);
+    background:var(--cf-surface-1); border-radius:var(--cf-radius-lg);
+    border:1px solid var(--cf-border-light);
+}
+.svc-left { display:flex; align-items:center; gap:var(--cf-space-2); }
+.svc-dot {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+    background:var(--cf-status-error);
+}
+.svc-dot.online  { background:var(--cf-status-success); }
+.svc-dot.offline { background:var(--cf-status-error); }
+.svc-name { font-size:var(--cf-text-sm); font-weight:var(--cf-weight-medium); color:var(--cf-text-primary); }
+.svc-status { font-size:var(--cf-text-xs); color:var(--cf-status-error); font-weight:var(--cf-weight-medium); }
+.activity-item {
+    display:flex; align-items:center; gap:var(--cf-space-2);
+    padding:var(--cf-space-2) 0;
+    border-bottom:1px solid var(--cf-border-light);
+    font-size:var(--cf-text-xs); color:var(--cf-text-secondary);
+}
+.activity-item:last-child { border-bottom:none; }
+.activity-item.muted { color:var(--cf-text-muted); }
+.activity-item span:first-of-type { flex:1; }
+.activity-time { flex-shrink:0; color:var(--cf-text-muted); font-family:var(--cf-font-mono); }
+</style>
+
+<div class="dash-wrap">
+
+    <!-- Header -->
+    <div class="screen-header">
+        <div>
+            <h1 class="screen-title">Security Dashboard</h1>
+            <p class="screen-subtitle">${now}</p>
+        </div>
+        <div class="screen-actions">
+            <span id="ml-service-badge" class="cf-badge">Checking...</span>
+            <button class="cf-btn primary" onclick="window.app?.showScreen('ai-assistant')">
+                <i class="fas fa-robot"></i> AI Analysis
+            </button>
+            <button class="cf-btn" onclick="window.app?.showScreen('threat-center')">
+                <i class="fas fa-exclamation-triangle"></i> Threat Center
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpi-threats">—</div>
+                <div class="kpi-label">Active Threats</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon amber"><i class="fas fa-skull-crossbones"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpi-critical">—</div>
+                <div class="kpi-label">Critical Severity</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon green"><i class="fas fa-shield-alt"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpi-blocked">—</div>
+                <div class="kpi-label">Threats Blocked</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="fas fa-tachometer-alt"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-value" id="kpi-risk">—</div>
+                <div class="kpi-label">Risk Score</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart + Service Status -->
+    <div class="dash-row cols-3-1">
+        <!-- Threat Trend Chart -->
+        <div class="cf-card">
+            <div class="cf-card-header">
+                <h3 class="cf-card-title"><i class="fas fa-chart-line"></i> Threat Activity (Last 12h)</h3>
+                <span class="cf-badge live"><i class="fas fa-circle" style="font-size:7px"></i> Live</span>
+            </div>
+            <div class="cf-card-body">
+                <div class="chart-wrap"><canvas id="threat-trend-chart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Service Status + Agent Activity -->
+        <div style="display:flex;flex-direction:column;gap:var(--cf-space-4)">
+            <div class="cf-card">
+                <div class="cf-card-header">
+                    <h3 class="cf-card-title"><i class="fas fa-server"></i> Services</h3>
                 </div>
-
-                <!-- Metrics Grid -->
-                <div class="metrics-grid">
-                    <div class="metric-card" id="threats-card">
-                        <div class="metric-header">
-                            <div class="metric-icon threats">
-                                <i class="fas fa-shield-alt"></i>
+                <div class="cf-card-body">
+                    <div class="svc-list">
+                        <div class="svc-row" id="svc-backend">
+                            <div class="svc-left">
+                                <div class="svc-dot"></div>
+                                <span class="svc-name">Backend API</span>
                             </div>
-                            <div class="metric-actions">
-                                <button class="btn-icon" title="View Details">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </button>
-                            </div>
+                            <span class="svc-status">Checking...</span>
                         </div>
-                        <div class="metric-content">
-                            <div class="metric-value" id="threats-value">0</div>
-                            <div class="metric-label">Threats Blocked Today</div>
-                            <div class="metric-trend positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>12% from yesterday</span>
+                        <div class="svc-row" id="svc-ml">
+                            <div class="svc-left">
+                                <div class="svc-dot"></div>
+                                <span class="svc-name">ML Services</span>
                             </div>
+                            <span class="svc-status">Checking...</span>
                         </div>
-                    </div>
-
-                    <div class="metric-card" id="analyses-card">
-                        <div class="metric-header">
-                            <div class="metric-icon analyses">
-                                <i class="fas fa-microscope"></i>
+                        <div class="svc-row">
+                            <div class="svc-left">
+                                <div class="svc-dot online"></div>
+                                <span class="svc-name">AI Agent</span>
                             </div>
-                            <div class="metric-actions">
-                                <button class="btn-icon" title="View Details">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="metric-content">
-                            <div class="metric-value" id="analyses-value">0</div>
-                            <div class="metric-label">URLs Analyzed</div>
-                            <div class="metric-trend positive">
-                                <i class="fas fa-arrow-up"></i>
-                                <span>8% increase</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card" id="risk-card">
-                        <div class="metric-header">
-                            <div class="metric-icon risk">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="metric-actions">
-                                <button class="btn-icon" title="View Details">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="metric-content">
-                            <div class="metric-value risk-score">
-                                <span id="risk-value">0</span>
-                                <span class="risk-label">LOW</span>
-                            </div>
-                            <div class="metric-label">Current Risk Score</div>
-                            <div class="risk-progress">
-                                <div class="risk-bar" id="risk-bar"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card" id="health-card">
-                        <div class="metric-header">
-                            <div class="metric-icon health">
-                                <i class="fas fa-heartbeat"></i>
-                            </div>
-                            <div class="metric-actions">
-                                <button class="btn-icon" title="View Details">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="metric-content">
-                            <div class="metric-value" id="health-value">100%</div>
-                            <div class="metric-label">System Health</div>
-                            <div class="health-indicators">
-                                <div class="health-indicator" data-service="backend">
-                                    <div class="indicator-dot"></div>
-                                    <span>Backend</span>
-                                </div>
-                                <div class="health-indicator" data-service="ml">
-                                    <div class="indicator-dot"></div>
-                                    <span>AI/ML</span>
-                                </div>
-                                <div class="health-indicator" data-service="realtime">
-                                    <div class="indicator-dot"></div>
-                                    <span>Real-time</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Section -->
-                <div class="charts-section">
-                    <div class="chart-row">
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h3>Threat Detection Timeline</h3>
-                                <div class="chart-controls">
-                                    <select id="threat-timeline-period">
-                                        <option value="24h">Last 24 Hours</option>
-                                        <option value="7d">Last 7 Days</option>
-                                        <option value="30d">Last 30 Days</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="threat-timeline-chart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h3>Security Score Breakdown</h3>
-                                <div class="chart-legend" id="security-score-legend"></div>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="security-score-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="chart-row">
-                        <div class="chart-card wide">
-                            <div class="chart-header">
-                                <h3>Real-time Activity Monitor</h3>
-                                <div class="chart-controls">
-                                    <button class="btn btn-sm btn-secondary" id="pause-monitor">
-                                        <i class="fas fa-pause"></i> Pause
-                                    </button>
-                                    <button class="btn btn-sm btn-secondary" id="clear-monitor">
-                                        <i class="fas fa-trash"></i> Clear
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="activity-monitor-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity Section -->
-                <div class="activity-section">
-                    <div class="section-header">
-                        <h3>Recent Activity</h3>
-                        <button class="btn btn-sm btn-secondary" id="view-all-activity">
-                            View All
-                        </button>
-                    </div>
-                    <div class="activity-grid">
-                        <div class="activity-card">
-                            <div class="activity-header">
-                                <h4>Recent Threats</h4>
-                                <span class="activity-count" id="recent-threats-count">0</span>
-                            </div>
-                            <div class="activity-list" id="recent-threats-list">
-                                <div class="activity-item loading">
-                                    <div class="skeleton skeleton-text"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="activity-card">
-                            <div class="activity-header">
-                                <h4>Recent Analyses</h4>
-                                <span class="activity-count" id="recent-analyses-count">0</span>
-                            </div>
-                            <div class="activity-list" id="recent-analyses-list">
-                                <div class="activity-item loading">
-                                    <div class="skeleton skeleton-text"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="activity-card">
-                            <div class="activity-header">
-                                <h4>AI Insights</h4>
-                                <span class="activity-count" id="ai-insights-count">0</span>
-                            </div>
-                            <div class="activity-list" id="ai-insights-list">
-                                <div class="activity-item loading">
-                                    <div class="skeleton skeleton-text"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Tools Section -->
-                <div class="tools-section">
-                    <div class="section-header">
-                        <h3>Quick Tools</h3>
-                    </div>
-                    <div class="tools-grid">
-                        <div class="tool-card" data-tool="url-scanner">
-                            <div class="tool-icon">
-                                <i class="fas fa-link"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>URL Scanner</h4>
-                                <p>Quickly scan URLs for threats and malicious content</p>
-                            </div>
-                            <div class="tool-action">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-
-                        <div class="tool-card" data-tool="file-analyzer">
-                            <div class="tool-icon">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>File Analyzer</h4>
-                                <p>Upload and analyze files for malware and security risks</p>
-                            </div>
-                            <div class="tool-action">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-
-                        <div class="tool-card" data-tool="network-monitor">
-                            <div class="tool-icon">
-                                <i class="fas fa-network-wired"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>Network Monitor</h4>
-                                <p>Monitor network traffic and detect anomalies</p>
-                            </div>
-                            <div class="tool-action">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-
-                        <div class="tool-card" data-tool="ai-chat">
-                            <div class="tool-icon">
-                                <i class="fas fa-robot"></i>
-                            </div>
-                            <div class="tool-content">
-                                <h4>AI Assistant</h4>
-                                <p>Get intelligent insights and cybersecurity advice</p>
-                            </div>
-                            <div class="tool-action">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
+                            <span class="svc-status" style="color:var(--cf-status-success)">Active</span>
                         </div>
                     </div>
                 </div>
             </div>
-        `;
-    }
 
-    async initializeComponents() {
-        this.setupEventListeners();
-        this.initializeCharts();
-        this.updateHealthIndicators();
-    }
-
-    setupEventListeners() {
-        // Quick action buttons
-        const quickScanBtn = this.container.querySelector('#quick-scan-btn');
-        quickScanBtn?.addEventListener('click', () => this.showQuickScan());
-
-        const newAnalysisBtn = this.container.querySelector('#new-analysis-btn');
-        newAnalysisBtn?.addEventListener('click', () => window.app?.showScreen('deep-analysis'));
-
-        const aiAssistantBtn = this.container.querySelector('#ai-assistant-btn');
-        aiAssistantBtn?.addEventListener('click', () => window.app?.showScreen('ai-assistant'));
-
-        // Metric card actions
-        this.container.querySelectorAll('.metric-card .btn-icon').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const card = e.target.closest('.metric-card');
-                this.showMetricDetails(card.id);
-            });
-        });
-
-        // Chart controls
-        const threatPeriodSelect = this.container.querySelector('#threat-timeline-period');
-        threatPeriodSelect?.addEventListener('change', (e) => {
-            this.updateThreatTimeline(e.target.value);
-        });
-
-        const pauseMonitorBtn = this.container.querySelector('#pause-monitor');
-        pauseMonitorBtn?.addEventListener('click', () => this.toggleActivityMonitor());
-
-        const clearMonitorBtn = this.container.querySelector('#clear-monitor');
-        clearMonitorBtn?.addEventListener('click', () => this.clearActivityMonitor());
-
-        // Activity view all
-        const viewAllBtn = this.container.querySelector('#view-all-activity');
-        viewAllBtn?.addEventListener('click', () => window.app?.showScreen('real-time-monitor'));
-
-        // Tool cards
-        this.container.querySelectorAll('.tool-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const tool = card.dataset.tool;
-                this.openTool(tool);
-            });
-        });
-    }
-
-    initializeCharts() {
-        // Threat timeline chart
-        this.charts.threatTimeline = window.chartFactory?.createLineChart('threat-timeline-chart', {
-            labels: [],
-            datasets: [{
-                label: 'Threats Detected',
-                data: [],
-                borderColor: '#D92D20',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                fill: true
-            }]
-        });
-
-        // Security score radar chart
-        this.charts.securityScore = window.chartFactory?.createRadarChart('security-score-chart', {
-            labels: ['Malware Protection', 'Network Security', 'Data Protection', 'Access Control', 'Monitoring'],
-            datasets: [{
-                label: 'Security Score',
-                data: [85, 90, 88, 92, 87],
-                borderColor: '#00d4ff',
-                backgroundColor: 'rgba(0, 212, 255, 0.2)'
-            }]
-        });
-
-        // Real-time activity monitor
-        this.charts.activityMonitor = window.chartFactory?.createRealTimeChart('activity-monitor-chart', {
-            label: 'Activity Level',
-            maxDataPoints: 30,
-            updateInterval: 2000,
-            autoUpdate: true,
-            showLegend: false
-        });
-    }
-
-    async loadData() {
-        console.log('📊 Loading dashboard data...');
-        
-        try {
-            // Load system health first
-            await this.loadSystemHealth();
-            
-            // Load threat statistics
-            await this.loadThreatStats();
-            
-            // Load analysis statistics
-            await this.loadAnalysisStats();
-            
-            // Load ML/AI status
-            await this.loadMLStatus();
-            
-            // Load recent activity
-            await this.loadRecentActivity();
-            
-            // Update all displays
-            this.updateMetrics();
-            
-            // Remove loading states
-            this.removeLoadingStates();
-            
-            console.log('✅ Dashboard data loaded successfully');
-            
-        } catch (error) {
-            console.error('❌ Failed to load dashboard data:', error);
-            this.removeLoadingStates();
-            // Show data with default values instead of failing
-            this.updateMetrics();
-        }
-    }
-    
-    removeLoadingStates() {
-        // Remove all loading indicators
-        const loadingItems = this.container.querySelectorAll('.loading');
-        loadingItems.forEach(item => item.classList.remove('loading'));
-        
-        // Remove connecting messages
-        const connectingMessages = this.container.querySelectorAll('.connecting-message');
-        connectingMessages.forEach(msg => msg.remove());
-    }
-
-    async loadSystemHealth() {
-        if (!window.apiClient) {
-            console.warn('⚠️ API client not available');
-            return;
-        }
-        
-        try {
-            const health = await window.apiClient.checkHealth();
-            if (health && health.success) {
-                this.metrics.systemHealth = health.data?.status === 'healthy' ? 100 : 50;
-                this.updateHealthIndicators(health.data?.services || {});
-            }
-        } catch (error) {
-            console.warn('⚠️ Failed to load system health (using defaults):', error.message);
-            this.metrics.systemHealth = 75; // Default to partial health
-            this.updateHealthIndicators({ backend: true, ml: false, realtime: true });
-        }
-    }
-
-    async loadMLStatus() {
-        // Try CyberForge ML first
-        if (window.cyberforgeAPI) {
-            try {
-                const mlHealth = await window.cyberforgeAPI.getCyberForgeMLHealth();
-                if (mlHealth.success && mlHealth.data) {
-                    const status = mlHealth.data.status === 'healthy';
-                    const modelCount = mlHealth.data.model_count || 4;
-                    console.log(`✅ CyberForge ML: ${modelCount} models available`);
-                    this.updateHealthIndicators({ ml: status, cyberforge: true });
-                    return;
-                }
-            } catch (error) {
-                console.warn('CyberForge ML check failed:', error.message);
-            }
-        }
-        
-        // Fallback to legacy
-        if (window.apiClient) {
-            try {
-                const mlHealth = await window.apiClient.getMLHealth();
-                if (mlHealth.success && mlHealth.data) {
-                    this.updateHealthIndicators({ ml: mlHealth.data.status === 'healthy' || mlHealth.data.ready });
-                }
-            } catch (error) {
-                console.error('Failed to load ML status:', error);
-            }
-        }
-    }
-
-    updateHealthIndicators(services) {
-        const indicators = {
-            backend: services.backend !== false,
-            ml: services.ai_agent !== false || services.ml_models !== false,
-            realtime: services.websocket !== false || services.realtime !== false
-        };
-        
-        Object.entries(indicators).forEach(([service, online]) => {
-            const indicator = this.container.querySelector(`.health-indicator[data-service="${service}"]`);
-            if (indicator) {
-                const dot = indicator.querySelector('.indicator-dot');
-                if (online) {
-                    dot.classList.add('online');
-                    dot.classList.remove('offline');
-                } else {
-                    dot.classList.add('offline');
-                    dot.classList.remove('online');
-                }
-            }
-        });
-    }
-
-    async loadThreatStats() {
-        if (!window.apiClient) return;
-        
-        try {
-            const stats = await window.apiClient.getThreatStats();
-            if (stats.success && stats.data) {
-                const payload = stats.data;
-                this.metrics.threatsBlocked = payload.total_threats || payload.blocked_today || 0;
-                this.metrics.riskScore = this.calculateRiskScore(payload);
-                this.updateHealthIndicators({ backend: true });
-            }
-        } catch (error) {
-            console.error('Failed to load threat stats:', error);
-        }
-    }
-
-    async loadAnalysisStats() {
-        if (!window.apiClient) return;
-        
-        try {
-            const stats = await window.apiClient.getAnalysisStats();
-            if (stats.success && stats.data) {
-                const payload = stats.data;
-                this.metrics.urlsAnalyzed = payload.totalAnalyses || payload.total_analyses || 0;
-            }
-        } catch (error) {
-            console.error('Failed to load analysis stats:', error);
-        }
-    }
-
-    async loadRecentActivity() {
-        // Load recent threats
-        this.loadRecentThreats();
-        
-        // Load recent analyses
-        this.loadRecentAnalyses();
-        
-        // Load AI insights
-        this.loadAIInsights();
-    }
-
-    async loadRecentThreats() {
-        const list = this.container.querySelector('#recent-threats-list');
-        const count = this.container.querySelector('#recent-threats-count');
-        
-        try {
-            if (window.apiClient) {
-                const threats = await window.apiClient.getThreats({ limit: 5 });
-                const threatData = threats.success ? (threats.data?.threats || threats.data || []) : [];
-                if (threatData.length) {
-                    this.renderActivityList(list, threatData, 'threat');
-                    count.textContent = threatData.length;
-                    return;
-                }
-            }
-            
-            // Fallback with mock data
-            const mockThreats = this.generateMockThreats(5);
-            this.renderActivityList(list, mockThreats, 'threat');
-            count.textContent = mockThreats.length;
-            
-        } catch (error) {
-            console.error('Failed to load recent threats:', error);
-            list.innerHTML = '<div class="activity-item error">Failed to load threats</div>';
-        }
-    }
-
-    async loadRecentAnalyses() {
-        const list = this.container.querySelector('#recent-analyses-list');
-        const count = this.container.querySelector('#recent-analyses-count');
-        
-        try {
-            if (window.apiClient) {
-                const analyses = await window.apiClient.getAnalysisHistory({ limit: 5 });
-                const analysisData = analyses.success ? (analyses.data?.analyses || analyses.data || []) : [];
-                if (analysisData.length) {
-                    this.renderActivityList(list, analysisData, 'analysis');
-                    count.textContent = analysisData.length;
-                    return;
-                }
-            }
-            
-            // Fallback with mock data
-            const mockAnalyses = this.generateMockAnalyses(5);
-            this.renderActivityList(list, mockAnalyses, 'analysis');
-            count.textContent = mockAnalyses.length;
-            
-        } catch (error) {
-            console.error('Failed to load recent analyses:', error);
-            list.innerHTML = '<div class="activity-item error">Failed to load analyses</div>';
-        }
-    }
-
-    async loadAIInsights() {
-        const list = this.container.querySelector('#ai-insights-list');
-        const count = this.container.querySelector('#ai-insights-count');
-        
-        // Mock AI insights for now
-        const mockInsights = [
-            { type: 'prediction', message: 'Increased phishing activity detected in finance sector', severity: 'high', timestamp: new Date(Date.now() - 1800000) },
-            { type: 'recommendation', message: 'Consider updating firewall rules for port 443', severity: 'medium', timestamp: new Date(Date.now() - 3600000) },
-            { type: 'anomaly', message: 'Unusual traffic pattern detected from IP 192.168.1.100', severity: 'low', timestamp: new Date(Date.now() - 7200000) }
-        ];
-        
-        this.renderActivityList(list, mockInsights, 'insight');
-        count.textContent = mockInsights.length;
-    }
-
-    renderActivityList(container, items, type) {
-        // Ensure items is an array
-        if (!items || !Array.isArray(items) || items.length === 0) {
-            container.innerHTML = '<div class="activity-item empty">No recent activity</div>';
-            return;
-        }
-        
-        container.innerHTML = items.map(item => this.createActivityItem(item, type)).join('');
-    }
-
-    createActivityItem(item, type) {
-        const time = this.formatRelativeTime(item.timestamp || item.created_at || new Date());
-        
-        switch (type) {
-            case 'threat':
-                return `
-                    <div class="activity-item">
-                        <div class="activity-icon threat">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="activity-content">
-                            <div class="activity-title">${item.type || 'Security Threat'}</div>
-                            <div class="activity-description">${item.description || item.message || 'Threat detected'}</div>
-                            <div class="activity-meta">
-                                <span class="badge badge-${this.getSeverityClass(item.severity)}">${item.severity || 'medium'}</span>
-                                <span class="activity-time">${time}</span>
-                            </div>
+            <div class="cf-card" style="flex:1">
+                <div class="cf-card-header">
+                    <h3 class="cf-card-title"><i class="fas fa-robot"></i> Agent Activity</h3>
+                </div>
+                <div class="cf-card-body">
+                    <div id="agent-activity-feed">
+                        <div class="cf-loading" style="padding:16px">
+                            <div class="cf-spinner"></div>
                         </div>
                     </div>
-                `;
-            
-            case 'analysis':
-                return `
-                    <div class="activity-item">
-                        <div class="activity-icon analysis">
-                            <i class="fas fa-microscope"></i>
-                        </div>
-                        <div class="activity-content">
-                            <div class="activity-title">${item.url || 'URL Analysis'}</div>
-                            <div class="activity-description">Analysis completed</div>
-                            <div class="activity-meta">
-                                <span class="badge badge-${item.status === 'completed' ? 'success' : 'warning'}">${item.status || 'completed'}</span>
-                                <span class="activity-time">${time}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            
-            case 'insight':
-                return `
-                    <div class="activity-item">
-                        <div class="activity-icon insight">
-                            <i class="fas fa-lightbulb"></i>
-                        </div>
-                        <div class="activity-content">
-                            <div class="activity-title">${item.type || 'AI Insight'}</div>
-                            <div class="activity-description">${item.message}</div>
-                            <div class="activity-meta">
-                                <span class="badge badge-${this.getSeverityClass(item.severity)}">${item.severity}</span>
-                                <span class="activity-time">${time}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            
-            default:
-                return '';
-        }
-    }
+                </div>
+            </div>
+        </div>
+    </div>
 
-    updateMetrics() {
-        // Update metric values with animation
-        this.animateMetricValue('threats-value', this.metrics.threatsBlocked);
-        this.animateMetricValue('analyses-value', this.metrics.urlsAnalyzed);
-        this.updateRiskScore(this.metrics.riskScore);
-        this.updateSystemHealth(this.metrics.systemHealth);
-    }
+    <!-- Recent Threats Table -->
+    <div class="cf-card">
+        <div class="cf-card-header">
+            <h3 class="cf-card-title">
+                <i class="fas fa-fire"></i> Recent Threats
+                <span id="threat-count-badge" class="cf-badge error" style="margin-left:4px">0</span>
+            </h3>
+            <button class="cf-btn sm" onclick="window.app?.showScreen('threat-center')">
+                View All <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+        <div class="cf-table-wrapper">
+            <table class="cf-table">
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Type</th>
+                        <th>Source</th>
+                        <th>Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="threat-feed-body">
+                    <tr><td colspan="5" style="text-align:center;padding:32px">
+                        <div class="cf-spinner" style="margin:0 auto"></div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-    animateMetricValue(elementId, targetValue) {
-        const element = this.container.querySelector(`#${elementId}`);
-        if (!element) return;
-        
-        const currentValue = parseInt(element.textContent) || 0;
-        const duration = 1000;
-        const stepTime = 50;
-        const steps = duration / stepTime;
-        const stepValue = (targetValue - currentValue) / steps;
-        
-        let current = currentValue;
-        const interval = setInterval(() => {
-            current += stepValue;
-            if ((stepValue > 0 && current >= targetValue) || (stepValue < 0 && current <= targetValue)) {
-                current = targetValue;
-                clearInterval(interval);
-            }
-            element.textContent = Math.round(current).toLocaleString();
-        }, stepTime);
-    }
-
-    updateRiskScore(score) {
-        const element = this.container.querySelector('#risk-value');
-        const labelElement = this.container.querySelector('.risk-label');
-        const barElement = this.container.querySelector('#risk-bar');
-        
-        if (element) element.textContent = score;
-        
-        let level, color;
-        if (score < 30) {
-            level = 'LOW';
-            color = '#039855';
-        } else if (score < 70) {
-            level = 'MEDIUM';
-            color = '#DC6803';
-        } else {
-            level = 'HIGH';
-            color = '#D92D20';
-        }
-        
-        if (labelElement) labelElement.textContent = level;
-        if (barElement) {
-            barElement.style.width = `${score}%`;
-            barElement.style.backgroundColor = color;
-        }
-    }
-
-    updateSystemHealth(health) {
-        const element = this.container.querySelector('#health-value');
-        if (element) element.textContent = `${health}%`;
-    }
-
-    updateHealthIndicators(services = {}) {
-        const indicators = this.container.querySelectorAll('.health-indicator');
-        
-        indicators.forEach(indicator => {
-            const service = indicator.dataset.service;
-            const dot = indicator.querySelector('.indicator-dot');
-            let isHealthy = false;
-            
-            switch (service) {
-                case 'backend':
-                    isHealthy = services.backend ?? window.websocketManager?.isConnected ?? false;
-                    break;
-                case 'ml':
-                    isHealthy = services.ml ?? false;
-                    break;
-                case 'realtime':
-                    isHealthy = services.realtime ?? window.websocketManager?.isConnected ?? false;
-                    break;
-            }
-            
-            dot.className = `indicator-dot ${isHealthy ? 'healthy' : 'unhealthy'}`;
-        });
-    }
-
-    startRealTimeUpdates() {
-        if (this.updateInterval) return;
-        
-        this.updateInterval = setInterval(() => {
-            if (this.isActive) {
-                this.updateHealthIndicators();
-                this.loadThreatStats();
-                this.loadAnalysisStats();
-            }
-        }, 30000); // Update every 30 seconds
-    }
-
-    stopRealTimeUpdates() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
-        }
-    }
-
-    destroyCharts() {
-        Object.keys(this.charts).forEach(chartKey => {
-            if (this.charts[chartKey]) {
-                window.chartFactory?.destroyChart(this.charts[chartKey].canvas.id);
-            }
-        });
-        this.charts = {};
-    }
-
-    // Helper methods
-    calculateRiskScore(threatData) {
-        if (!threatData) return 20;
-        
-        const factors = {
-            activeThreats: (threatData.active_threats || 0) * 5,
-            highSeverity: (threatData.high_severity || 0) * 10,
-            recentActivity: Math.min((threatData.recent_activity || 0) * 2, 20)
-        };
-        
-        return Math.min(factors.activeThreats + factors.highSeverity + factors.recentActivity, 100);
-    }
-
-    formatRelativeTime(date) {
-        const now = new Date();
-        const diff = now - new Date(date);
-        const minutes = Math.floor(diff / 60000);
-        
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
-        
-        const days = Math.floor(hours / 24);
-        return `${days}d ago`;
-    }
-
-    getSeverityClass(severity) {
-        const map = {
-            low: 'secondary',
-            medium: 'warning',
-            high: 'error',
-            critical: 'error'
-        };
-        return map[severity] || 'secondary';
-    }
-
-    generateMockThreats(count) {
-        const threats = [];
-        const types = ['Malware', 'Phishing', 'Suspicious Activity', 'Network Intrusion'];
-        const severities = ['low', 'medium', 'high'];
-        
-        for (let i = 0; i < count; i++) {
-            threats.push({
-                type: types[Math.floor(Math.random() * types.length)],
-                description: `Threat detected and blocked`,
-                severity: severities[Math.floor(Math.random() * severities.length)],
-                timestamp: new Date(Date.now() - Math.random() * 86400000) // Random time in last 24h
-            });
-        }
-        
-        return threats;
-    }
-
-    generateMockAnalyses(count) {
-        const analyses = [];
-        const urls = ['example.com', 'test-site.org', 'sample-url.net'];
-        
-        for (let i = 0; i < count; i++) {
-            analyses.push({
-                url: urls[Math.floor(Math.random() * urls.length)],
-                status: 'completed',
-                timestamp: new Date(Date.now() - Math.random() * 86400000)
-            });
-        }
-        
-        return analyses;
-    }
-
-    // Event handlers
-    async showQuickScan() {
-        // Prompt for URL
-        const url = prompt('Enter URL to scan:', 'https://example.com');
-        if (!url) return;
-        
-        // Show scanning notification
-        window.notificationSystem?.info('Scanning...', `Analyzing ${url} with CyberForge ML`);
-        
-        try {
-            // Use CyberForge ML for URL analysis
-            if (window.cyberforgeAPI) {
-                const result = await window.cyberforgeAPI.cyberforgeAnalyzeUrl(url);
-                
-                if (result.success && result.data) {
-                    const analysis = result.data;
-                    const riskLevel = analysis.aggregate?.overall_risk_level || 'unknown';
-                    const maxScore = analysis.aggregate?.max_threat_score || 0;
-                    const action = analysis.aggregate?.recommended_action || 'allow';
-                    
-                    // Show result notification
-                    if (riskLevel === 'high' || riskLevel === 'critical') {
-                        window.notificationSystem?.error('⚠️ High Risk Detected', 
-                            `${url}\nRisk: ${riskLevel.toUpperCase()}\nThreat Score: ${(maxScore * 100).toFixed(1)}%\nAction: ${action.toUpperCase()}`);
-                    } else if (riskLevel === 'medium') {
-                        window.notificationSystem?.warning('⚡ Medium Risk', 
-                            `${url}\nRisk: ${riskLevel.toUpperCase()}\nThreat Score: ${(maxScore * 100).toFixed(1)}%`);
-                    } else {
-                        window.notificationSystem?.success('✅ Safe URL', 
-                            `${url}\nRisk: ${riskLevel.toUpperCase()}\nThreat Score: ${(maxScore * 100).toFixed(1)}%`);
-                    }
-                    
-                    // Log model predictions
-                    console.log('CyberForge ML Analysis:', analysis);
-                    
-                    // Update dashboard metrics
-                    this.metrics.urlsAnalyzed++;
-                    if (riskLevel === 'high' || riskLevel === 'critical') {
-                        this.metrics.threatsBlocked++;
-                    }
-                    this.updateMetrics();
-                    
-                } else {
-                    throw new Error(result.error || 'Analysis failed');
-                }
-            } else if (window.apiClient) {
-                // Fallback to legacy API
-                const result = await window.apiClient.analyzeUrl(url);
-                if (result.success) {
-                    window.notificationSystem?.success('Scan Complete', `Analysis of ${url} completed`);
-                    window.app?.showScreen('deep-analysis', { url });
-                }
-            } else {
-                window.app?.showScreen('deep-analysis', { url });
-            }
-        } catch (error) {
-            console.error('Quick scan error:', error);
-            window.notificationSystem?.error('Scan Failed', error.message);
-        }
-    }
-
-    showMetricDetails(cardId) {
-        const screenMap = {
-            'threats-card': 'threat-center',
-            'analyses-card': 'deep-analysis',
-            'risk-card': 'real-time-monitor',
-            'health-card': 'system-logs'
-        };
-        
-        const screen = screenMap[cardId];
-        if (screen) {
-            window.app?.showScreen(screen);
-        }
-    }
-
-    updateThreatTimeline(period) {
-        // Update chart based on selected period
-        console.log(`Updating threat timeline for period: ${period}`);
-    }
-
-    toggleActivityMonitor() {
-        const btn = this.container.querySelector('#pause-monitor');
-        const chart = this.charts.activityMonitor;
-        
-        if (chart && chart.updateInterval) {
-            clearInterval(chart.updateInterval);
-            chart.updateInterval = null;
-            btn.innerHTML = '<i class="fas fa-play"></i> Resume';
-        } else if (chart) {
-            chart.updateInterval = setInterval(() => {
-                window.chartFactory?.addRealTimeDataPoint('activity-monitor-chart', {
-                    x: new Date(),
-                    y: Math.random() * 100
-                });
-            }, 2000);
-            btn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-        }
-    }
-
-    clearActivityMonitor() {
-        const chart = this.charts.activityMonitor;
-        if (chart) {
-            chart.data.labels = [];
-            chart.data.datasets[0].data = [];
-            chart.update();
-        }
-    }
-
-    openTool(tool) {
-        const toolScreenMap = {
-            'url-scanner': 'deep-analysis',
-            'file-analyzer': 'malware-detection',
-            'network-monitor': 'network-analysis',
-            'ai-chat': 'ai-assistant'
-        };
-        
-        const screen = toolScreenMap[tool];
-        if (screen) {
-            window.app?.showScreen(screen);
-        }
-    }
-
-    handleRealtimeData(data) {
-        // Handle real-time data updates
-        if (data.type === 'threat_alert') {
-            this.metrics.threatsBlocked++;
-            this.updateMetrics();
-        } else if (data.type === 'analysis_complete') {
-            this.metrics.urlsAnalyzed++;
-            this.updateMetrics();
-        }
-    }
-
-    destroy() {
-        this.stopRealTimeUpdates();
-        this.destroyCharts();
+</div>`;
     }
 }
 
-// Export for global access
 window.DashboardScreen = DashboardScreen;

@@ -1,769 +1,386 @@
 /**
- * AI Assistant Screen
- * Interactive chat interface with AI/ML services
+ * AI Assistant Screen — CyberForge
+ * Chat interface wired to the ML service /analyze endpoint (Gemini + memory).
  */
 
 class AIAssistantScreen {
     constructor() {
         this.container = null;
         this.isActive = false;
-        this.chatHistory = [];
-        this.currentConversationId = null;
-        this.isTyping = false;
-        this.suggestions = [
-            "Analyze this suspicious URL for threats",
-            "What are the latest cybersecurity trends?",
-            "Help me understand this security alert",
-            "Recommend security best practices",
-            "Check system vulnerabilities",
-            "Explain this malware signature"
-        ];
+        this.history = [];
+        this.loading = false;
+        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
     }
 
-    async show(container, options = {}) {
+    async show(container) {
         this.container = container;
         this.isActive = true;
-        
-        // Create AI assistant HTML
-        this.container.innerHTML = this.createHTML();
-        
-        // Initialize components
-        this.initializeComponents();
-        
-        // Load chat history
-        await this.loadChatHistory();
-        
-        // Handle initial query if provided
-        if (options.query) {
-            document.getElementById('chat-input').value = options.query;
-            this.sendMessage();
-        }
-        
-        // Add entrance animation
-        this.container.classList.add('screen-enter');
+        this.container.innerHTML = this._shell();
+        this._bindControls();
+        await this._checkService();
     }
 
     hide() {
         this.isActive = false;
     }
 
-    createHTML() {
-        return `
-            <div class="ai-assistant-screen">
-                <!-- Header -->
-                <div class="ai-header">
-                    <div class="ai-status">
-                        <div class="ai-avatar">
-                            <i class="fas fa-robot"></i>
-                            <div class="status-indicator" id="ai-status-indicator"></div>
-                        </div>
-                        <div class="ai-info">
-                            <h2>AI Assistant</h2>
-                            <p class="ai-status-text" id="ai-status-text">Ready to help</p>
-                        </div>
-                    </div>
-                    
-                    <div class="ai-controls">
-                        <button class="btn btn-secondary btn-sm" id="clear-chat-btn">
-                            <i class="fas fa-trash"></i> Clear Chat
-                        </button>
-                        <button class="btn btn-secondary btn-sm" id="export-chat-btn">
-                            <i class="fas fa-download"></i> Export
-                        </button>
-                        <button class="btn btn-secondary btn-sm" id="settings-btn">
-                            <i class="fas fa-cog"></i> Settings
-                        </button>
-                    </div>
-                </div>
+    /* ── Service Check ────────────────────────────────────────── */
 
-                <!-- Main Chat Area -->
-                <div class="chat-container">
-                    <!-- Chat Messages -->
-                    <div class="chat-messages" id="chat-messages">
-                        <div class="welcome-message">
-                            <div class="welcome-avatar">
-                                <i class="fas fa-robot"></i>
-                            </div>
-                            <div class="welcome-content">
-                                <h3>Hello! I'm your AI Security Assistant</h3>
-                                <p>I can help you with cybersecurity analysis, threat detection, security best practices, and more. Ask me anything!</p>
-                                
-                                <div class="suggestion-chips">
-                                    <h4>Try asking:</h4>
-                                    <div class="chips-container">
-                                        ${this.suggestions.map(suggestion => 
-                                            `<button class="suggestion-chip" data-suggestion="${suggestion}">${suggestion}</button>`
-                                        ).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Typing Indicator -->
-                    <div class="typing-indicator" id="typing-indicator" style="display: none;">
-                        <div class="typing-avatar">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="typing-content">
-                            <div class="typing-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                            <span class="typing-text">AI is thinking...</span>
-                        </div>
-                    </div>
-
-                    <!-- Chat Input -->
-                    <div class="chat-input-container">
-                        <div class="input-actions">
-                            <button class="input-action-btn" id="attach-file-btn" title="Attach File">
-                                <i class="fas fa-paperclip"></i>
-                            </button>
-                            <button class="input-action-btn" id="voice-input-btn" title="Voice Input">
-                                <i class="fas fa-microphone"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="input-wrapper">
-                            <textarea 
-                                id="chat-input" 
-                                placeholder="Ask me about cybersecurity, threat analysis, or any security concerns..."
-                                rows="1"
-                            ></textarea>
-                            <button class="send-btn" id="send-btn" disabled>
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-
-                        <div class="input-suggestions" id="input-suggestions" style="display: none;">
-                            <!-- Dynamic suggestions will appear here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sidebar -->
-                <div class="ai-sidebar">
-                    <!-- Quick Actions -->
-                    <div class="sidebar-section">
-                        <h3>Quick Actions</h3>
-                        <div class="quick-actions-grid">
-                            <button class="quick-action" data-action="analyze-url">
-                                <i class="fas fa-link"></i>
-                                <span>Analyze URL</span>
-                            </button>
-                            <button class="quick-action" data-action="scan-file">
-                                <i class="fas fa-file-alt"></i>
-                                <span>Scan File</span>
-                            </button>
-                            <button class="quick-action" data-action="threat-report">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>Threat Report</span>
-                            </button>
-                            <button class="quick-action" data-action="security-tips">
-                                <i class="fas fa-lightbulb"></i>
-                                <span>Security Tips</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Recent Conversations -->
-                    <div class="sidebar-section">
-                        <h3>Recent Conversations</h3>
-                        <div class="conversation-list" id="conversation-list">
-                            <div class="conversation-item active">
-                                <div class="conversation-title">Current Session</div>
-                                <div class="conversation-time">Now</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- AI Capabilities -->
-                    <div class="sidebar-section">
-                        <h3>AI Capabilities</h3>
-                        <div class="capabilities-list">
-                            <div class="capability-item">
-                                <i class="fas fa-microscope"></i>
-                                <span>Threat Analysis</span>
-                            </div>
-                            <div class="capability-item">
-                                <i class="fas fa-bug"></i>
-                                <span>Vulnerability Assessment</span>
-                            </div>
-                            <div class="capability-item">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>Security Recommendations</span>
-                            </div>
-                            <div class="capability-item">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Risk Evaluation</span>
-                            </div>
-                            <div class="capability-item">
-                                <i class="fas fa-code"></i>
-                                <span>Code Security Review</span>
-                            </div>
-                            <div class="capability-item">
-                                <i class="fas fa-network-wired"></i>
-                                <span>Network Analysis</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    initializeComponents() {
-        this.setupEventListeners();
-        this.checkAIStatus();
-        this.initializeInput();
-    }
-
-    setupEventListeners() {
-        // Chat input
-        const chatInput = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-btn');
-
-        chatInput.addEventListener('input', () => this.handleInputChange());
-        chatInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
-        sendBtn.addEventListener('click', () => this.sendMessage());
-
-        // Auto-resize textarea
-        chatInput.addEventListener('input', () => {
-            chatInput.style.height = 'auto';
-            chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-        });
-
-        // Suggestion chips
-        document.querySelectorAll('.suggestion-chip').forEach(chip => {
-            chip.addEventListener('click', (e) => {
-                const suggestion = e.target.dataset.suggestion;
-                chatInput.value = suggestion;
-                this.sendMessage();
-            });
-        });
-
-        // Header controls
-        document.getElementById('clear-chat-btn').addEventListener('click', () => this.clearChat());
-        document.getElementById('export-chat-btn').addEventListener('click', () => this.exportChat());
-        document.getElementById('settings-btn').addEventListener('click', () => this.showSettings());
-
-        // Input actions
-        document.getElementById('attach-file-btn').addEventListener('click', () => this.attachFile());
-        document.getElementById('voice-input-btn').addEventListener('click', () => this.toggleVoiceInput());
-
-        // Quick actions
-        document.querySelectorAll('.quick-action').forEach(action => {
-            action.addEventListener('click', (e) => {
-                const actionType = e.currentTarget.dataset.action;
-                this.handleQuickAction(actionType);
-            });
-        });
-    }
-
-    handleInputChange() {
-        const chatInput = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-btn');
-        
-        const hasText = chatInput.value.trim().length > 0;
-        sendBtn.disabled = !hasText;
-        
-        // Show input suggestions
-        if (hasText && chatInput.value.length > 2) {
-            this.showInputSuggestions(chatInput.value);
-        } else {
-            this.hideInputSuggestions();
+    async _checkService() {
+        const badge = document.getElementById('ai-svc-badge');
+        try {
+            const res = await fetch(`${this.ML}/health`, { signal: AbortSignal.timeout(3000) });
+            const data = await res.json();
+            const ok = data.status === 'healthy';
+            if (badge) {
+                badge.className = `cf-badge ${ok ? 'success' : 'warning'}`;
+                badge.textContent = ok ? 'AI Online' : 'AI Degraded';
+            }
+            const ready = data.services?.ai_agent;
+            if (!ready) {
+                this._appendSystemMsg('⚠️ AI Agent is initializing — some features may be limited. Try again in a moment.');
+            } else {
+                this._appendSystemMsg('AI Agent ready. Ask me anything about cybersecurity — threat analysis, URL checks, risk assessment, and more.');
+            }
+        } catch {
+            if (badge) { badge.className = 'cf-badge error'; badge.textContent = 'AI Offline'; }
+            this._appendSystemMsg('❌ ML service is offline (port 8001). Start it with: cd ml-services && python main.py');
         }
     }
 
-    handleKeyDown(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            this.sendMessage();
-        }
-    }
+    /* ── Chat ─────────────────────────────────────────────────── */
 
-    async sendMessage() {
-        const chatInput = document.getElementById('chat-input');
-        const message = chatInput.value.trim();
-        
-        if (!message || this.isTyping) return;
+    async _sendMessage(text) {
+        if (!text.trim() || this.loading) return;
+        this.loading = true;
 
-        // Add user message to chat
-        this.addMessage('user', message);
-        
-        // Clear input
-        chatInput.value = '';
-        chatInput.style.height = 'auto';
-        this.handleInputChange();
+        const input = document.getElementById('ai-input');
+        const sendBtn = document.getElementById('ai-send');
+        if (input) input.value = '';
+        if (sendBtn) sendBtn.disabled = true;
 
-        // Show typing indicator
-        this.showTyping();
+        this._appendUserMsg(text);
+
+        const thinkingId = 'thinking-' + Date.now();
+        this._appendThinking(thinkingId);
 
         try {
-            // Send to AI service
-            const response = await this.sendToAI(message);
-            
-            // Hide typing indicator
-            this.hideTyping();
-            
-            // Add AI response
-            this.addMessage('ai', response.message, response.metadata);
-            
-        } catch (error) {
-            this.hideTyping();
-            this.addMessage('ai', 'I apologize, but I\'m having trouble connecting to the AI service right now. Please try again in a moment.', { error: true });
-            console.error('AI request failed:', error);
-        }
-    }
-
-    async sendToAI(message) {
-        // Check if message is asking about URL analysis - use CyberForge ML
-        const urlMatch = message.match(/https?:\/\/[^\s]+/);
-        if (urlMatch && window.cyberforgeAPI) {
-            try {
-                const url = urlMatch[0];
-                const analysis = await window.cyberforgeAPI.cyberforgeAnalyzeUrl(url);
-                if (analysis.success && analysis.data) {
-                    const data = analysis.data;
-                    const riskLevel = data.aggregate?.overall_risk_level || 'unknown';
-                    const maxScore = data.aggregate?.max_threat_score || 0;
-                    const action = data.aggregate?.recommended_action || 'review';
-                    
-                    let response = `**CyberForge ML Analysis for ${url}**\n\n`;
-                    response += `🔒 **Overall Risk Level:** ${riskLevel.toUpperCase()}\n`;
-                    response += `📊 **Max Threat Score:** ${(maxScore * 100).toFixed(1)}%\n`;
-                    response += `⚡ **Recommended Action:** ${action.toUpperCase()}\n\n`;
-                    response += `**Model Predictions:**\n`;
-                    
-                    if (data.model_predictions) {
-                        for (const [model, pred] of Object.entries(data.model_predictions)) {
-                            const icon = pred.is_threat ? '🔴' : '🟢';
-                            response += `${icon} **${model.replace(/_/g, ' ')}:** ${pred.risk_level} (${(pred.threat_score * 100).toFixed(1)}%)\n`;
-                        }
-                    }
-                    
-                    return {
-                        message: response,
-                        metadata: { source: 'cyberforge-ml', url: url, confidence: 0.95 }
-                    };
-                }
-            } catch (error) {
-                console.warn('CyberForge ML analysis failed, continuing with AI chat:', error.message);
-            }
-        }
-        
-        // Backend AI endpoint (preferred)
-        if (window.cyberforgeAPI || window.apiClient) {
-            const api = window.cyberforgeAPI || window.apiClient;
-            try {
-                const history = (this.chatHistory || [])
-                    .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
-                    .slice(-10);
-                const response = await api.chatWithAI(message, history);
-                if (response?.success) {
-                    const data = response.data || {};
-                    const reply = data.response || data.message || data.answer || 'I received your message.';
-                    return {
-                        message: reply,
-                        metadata: {
-                            confidence: data.confidence,
-                            sources: data.sources,
-                            source: data.source || 'gemini'
-                        }
-                    };
-                }
-            } catch (error) {
-                console.error('Backend AI request failed:', error);
-            }
-        }
-
-        // Fallback to ML service via IPC (if exposed)
-        if (window.electronAPI?.mlService?.chat) {
-            try {
-                const response = await window.electronAPI.mlService.chat(message, this.currentConversationId, 'chat');
-                if (response?.success && response.data) {
-                    this.currentConversationId = response.data.conversation_id || this.currentConversationId;
-                    return {
-                        message: response.data.response || 'I received your message.',
-                        metadata: { source: 'ml-service-ipc' }
-                    };
-                }
-            } catch (error) {
-                console.error('ML service IPC request failed:', error);
-            }
-        }
-
-        // Ultimate fallback with intelligent responses
-        return this.generateFallbackResponse(message);
-    }
-
-    generateFallbackResponse(message) {
-        const lowerMessage = message.toLowerCase();
-        
-        // Cybersecurity related responses
-        if (lowerMessage.includes('threat') || lowerMessage.includes('malware')) {
-            return {
-                message: "I understand you're asking about cybersecurity threats. While I'm currently offline, I recommend checking the Threat Center for the latest threat intelligence and running a system scan.",
-                metadata: { fallback: true, suggestion: 'threat-center' }
+            const payload = {
+                query: text,
+                context: { source: 'desktop_assistant', type: 'general_query' },
+                conversation_history: this.history.slice(-10),
             };
+
+            const res = await fetch(`${this.ML}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            this._removeThinking(thinkingId);
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            const reply = data.response || data.message || 'No response received.';
+            const conf = data.confidence;
+            const insights = data.insights || [];
+            const recs = data.recommendations || [];
+
+            this._appendAssistantMsg(reply, conf, insights, recs);
+
+            this.history.push(
+                { role: 'user', content: text },
+                { role: 'assistant', content: reply }
+            );
+            if (this.history.length > 20) this.history = this.history.slice(-20);
+
+        } catch (e) {
+            this._removeThinking(thinkingId);
+            this._appendErrorMsg('Request failed: ' + (e.message || 'Unknown error') + '. Is the ML service running?');
         }
-        
-        if (lowerMessage.includes('analyze') || lowerMessage.includes('scan')) {
-            return {
-                message: "You can use our Deep Analysis tools to scan URLs, files, and network traffic. Would you like me to guide you to the analysis section?",
-                metadata: { fallback: true, suggestion: 'deep-analysis' }
-            };
-        }
-        
-        if (lowerMessage.includes('vulnerability') || lowerMessage.includes('security')) {
-            return {
-                message: "For vulnerability assessments and security recommendations, check out our Vulnerability Scanner and Security Tools. I can help you navigate there when I'm back online.",
-                metadata: { fallback: true, suggestion: 'vulnerability-scanner' }
-            };
-        }
-        
-        // General response
-        return {
-            message: "I'm currently experiencing connection issues with the AI services. However, you can still access all the security tools through the navigation menu. I'll be back online shortly to provide more detailed assistance.",
-            metadata: { fallback: true }
-        };
+
+        this.loading = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (input) input.focus();
     }
 
-    addMessage(type, content, metadata = {}) {
-        const chatMessages = document.getElementById('chat-messages');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${type}-message`;
-        
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        if (type === 'user') {
-            messageDiv.innerHTML = `
-                <div class="message-content">
-                    <div class="message-text">${this.formatMessage(content)}</div>
-                    <div class="message-meta">
-                        <span class="message-time">${timestamp}</span>
-                    </div>
-                </div>
-                <div class="message-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="message-avatar">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <div class="message-content">
-                    <div class="message-text">${this.formatMessage(content)}</div>
-                    ${this.createMessageMetadata(metadata)}
-                    <div class="message-meta">
-                        <span class="message-time">${timestamp}</span>
-                        <div class="message-actions">
-                            <button class="message-action" title="Copy">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                            <button class="message-action" title="Like">
-                                <i class="fas fa-thumbs-up"></i>
-                            </button>
-                            <button class="message-action" title="Dislike">
-                                <i class="fas fa-thumbs-down"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        chatMessages.appendChild(messageDiv);
-        this.scrollToBottom();
-        
-        // Add to chat history
-        this.chatHistory.push({
-            type,
-            content,
-            metadata,
-            timestamp: new Date()
-        });
-        
-        // Animate message appearance
-        messageDiv.style.opacity = '0';
-        messageDiv.style.transform = 'translateY(20px)';
-        requestAnimationFrame(() => {
-            messageDiv.style.transition = 'all 0.3s ease';
-            messageDiv.style.opacity = '1';
-            messageDiv.style.transform = 'translateY(0)';
-        });
+    /* ── Message Rendering ────────────────────────────────────── */
+
+    _appendUserMsg(text) {
+        const feed = document.getElementById('ai-feed');
+        if (!feed) return;
+        const el = document.createElement('div');
+        el.className = 'msg msg-user';
+        el.innerHTML = `
+            <div class="msg-bubble user">
+                <div class="msg-text">${this._esc(text)}</div>
+                <div class="msg-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+            <div class="msg-avatar user"><i class="fas fa-user"></i></div>
+        `;
+        feed.appendChild(el);
+        this._scrollFeed();
     }
 
-    createMessageMetadata(metadata) {
-        if (!metadata || Object.keys(metadata).length === 0) return '';
-        
-        let metadataHTML = '';
-        
-        if (metadata.confidence) {
-            metadataHTML += `<div class="message-confidence">Confidence: ${Math.round(metadata.confidence * 100)}%</div>`;
+    _appendAssistantMsg(text, confidence, insights, recommendations) {
+        const feed = document.getElementById('ai-feed');
+        if (!feed) return;
+        const el = document.createElement('div');
+        el.className = 'msg msg-ai';
+
+        let extras = '';
+        if (confidence != null) {
+            const pct = (confidence * 100).toFixed(0);
+            const cls = confidence >= 0.8 ? 'success' : confidence >= 0.5 ? 'warning' : 'error';
+            extras += `<div style="margin-top:8px"><span class="cf-badge ${cls}">Confidence: ${pct}%</span></div>`;
         }
-        
-        if (metadata.sources) {
-            metadataHTML += `<div class="message-sources">Sources: ${metadata.sources.join(', ')}</div>`;
+        if (insights.length) {
+            extras += `<div class="ai-extras insights">
+                <strong style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--cf-text-muted)">Insights</strong>
+                <ul>${insights.map(i => `<li>${this._esc(i)}</li>`).join('')}</ul>
+            </div>`;
         }
-        
-        if (metadata.suggestion) {
-            metadataHTML += `
-                <div class="message-suggestion">
-                    <button class="suggestion-btn" data-action="${metadata.suggestion}">
-                        <i class="fas fa-external-link-alt"></i> Go to ${this.formatScreenName(metadata.suggestion)}
-                    </button>
-                </div>
-            `;
+        if (recommendations.length) {
+            extras += `<div class="ai-extras recs">
+                <strong style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--cf-text-muted)">Recommendations</strong>
+                <ul>${recommendations.map(r => `<li>${this._esc(r)}</li>`).join('')}</ul>
+            </div>`;
         }
-        
-        if (metadata.error) {
-            metadataHTML += `<div class="message-error">Connection error - working offline</div>`;
-        }
-        
-        return metadataHTML;
+
+        el.innerHTML = `
+            <div class="msg-avatar ai"><i class="fas fa-robot"></i></div>
+            <div class="msg-bubble ai">
+                <div class="msg-text">${this._renderMarkdown(text)}</div>
+                ${extras}
+                <div class="msg-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+        `;
+        feed.appendChild(el);
+        this._scrollFeed();
     }
 
-    formatMessage(content) {
-        // Basic markdown-style formatting
-        return content
+    _appendSystemMsg(text) {
+        const feed = document.getElementById('ai-feed');
+        if (!feed) return;
+        const el = document.createElement('div');
+        el.className = 'msg msg-system';
+        el.innerHTML = `<div class="msg-system-text">${this._esc(text)}</div>`;
+        feed.appendChild(el);
+        this._scrollFeed();
+    }
+
+    _appendErrorMsg(text) {
+        const feed = document.getElementById('ai-feed');
+        if (!feed) return;
+        const el = document.createElement('div');
+        el.className = 'msg msg-system';
+        el.innerHTML = `<div class="msg-system-text" style="color:var(--cf-status-error)">${this._esc(text)}</div>`;
+        feed.appendChild(el);
+        this._scrollFeed();
+    }
+
+    _appendThinking(id) {
+        const feed = document.getElementById('ai-feed');
+        if (!feed) return;
+        const el = document.createElement('div');
+        el.id = id;
+        el.className = 'msg msg-ai';
+        el.innerHTML = `
+            <div class="msg-avatar ai"><i class="fas fa-robot"></i></div>
+            <div class="msg-bubble ai thinking">
+                <span class="thinking-dot"></span>
+                <span class="thinking-dot"></span>
+                <span class="thinking-dot"></span>
+            </div>
+        `;
+        feed.appendChild(el);
+        this._scrollFeed();
+    }
+
+    _removeThinking(id) {
+        document.getElementById(id)?.remove();
+    }
+
+    _scrollFeed() {
+        const feed = document.getElementById('ai-feed');
+        if (feed) feed.scrollTop = feed.scrollHeight;
+    }
+
+    _renderMarkdown(text) {
+        return this._esc(text)
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
             .replace(/\n/g, '<br>');
     }
 
-    formatScreenName(screenName) {
-        return screenName.split('-').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' ');
+    _esc(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    showTyping() {
-        this.isTyping = true;
-        const typingIndicator = document.getElementById('typing-indicator');
-        typingIndicator.style.display = 'flex';
-        this.scrollToBottom();
-    }
+    /* ── Controls ─────────────────────────────────────────────── */
 
-    hideTyping() {
-        this.isTyping = false;
-        const typingIndicator = document.getElementById('typing-indicator');
-        typingIndicator.style.display = 'none';
-    }
+    _bindControls() {
+        const input = document.getElementById('ai-input');
+        const sendBtn = document.getElementById('ai-send');
+        const clearBtn = document.getElementById('ai-clear');
 
-    scrollToBottom() {
-        const chatMessages = document.getElementById('chat-messages');
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+        sendBtn?.addEventListener('click', () => {
+            const text = input?.value.trim();
+            if (text) this._sendMessage(text);
+        });
 
-    showInputSuggestions(query) {
-        // TODO: Implement input suggestions based on query
-    }
+        input?.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const text = input.value.trim();
+                if (text) this._sendMessage(text);
+            }
+        });
 
-    hideInputSuggestions() {
-        const suggestions = document.getElementById('input-suggestions');
-        suggestions.style.display = 'none';
-    }
+        clearBtn?.addEventListener('click', () => {
+            const feed = document.getElementById('ai-feed');
+            if (feed) feed.innerHTML = '';
+            this.history = [];
+            this._appendSystemMsg('Conversation cleared. How can I help you?');
+        });
 
-    initializeInput() {
-        const chatInput = document.getElementById('chat-input');
-        chatInput.focus();
-    }
-
-    async loadChatHistory() {
-        // TODO: Load previous chat sessions from storage
-    }
-
-    // Event handlers
-    clearChat() {
-        const chatMessages = document.getElementById('chat-messages');
-        const userMessages = chatMessages.querySelectorAll('.chat-message');
-        userMessages.forEach(msg => msg.remove());
-        
-        this.chatHistory = [];
-        window.notificationSystem?.success('Chat Cleared', 'Chat history has been cleared');
-    }
-
-    exportChat() {
-        if (this.chatHistory.length === 0) {
-            window.notificationSystem?.warning('No Chat History', 'There are no messages to export');
-            return;
-        }
-        
-        const chatText = this.chatHistory.map(msg => 
-            `[${msg.timestamp.toLocaleString()}] ${msg.type.toUpperCase()}: ${msg.content}`
-        ).join('\n\n');
-        
-        const blob = new Blob([chatText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ai-chat-${new Date().toISOString().split('T')[0]}.txt`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    showSettings() {
-        window.modal?.show({
-            title: 'AI Assistant Settings',
-            content: `
-                <div class="settings-form">
-                    <div class="form-group">
-                        <label class="form-label">AI Model</label>
-                        <select class="form-input">
-                            <option value="gpt-4">GPT-4 (Recommended)</option>
-                            <option value="gpt-3.5">GPT-3.5 Turbo</option>
-                            <option value="local">Local Model</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Response Style</label>
-                        <select class="form-input">
-                            <option value="detailed">Detailed Explanations</option>
-                            <option value="concise">Concise Answers</option>
-                            <option value="technical">Technical Focus</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" checked> Enable typing indicator
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" checked> Auto-save conversations
-                        </label>
-                    </div>
-                </div>
-            `,
-            actions: [
-                { label: 'Cancel', class: 'btn-secondary' },
-                { label: 'Save Settings', class: 'btn-primary' }
-            ]
+        // Suggested prompts
+        document.querySelectorAll('.ai-prompt-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const text = chip.dataset.prompt;
+                if (text) this._sendMessage(text);
+            });
         });
     }
 
-    attachFile() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '*/*';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                this.handleFileUpload(file);
-            }
-        };
-        input.click();
-    }
+    /* ── Shell ────────────────────────────────────────────────── */
 
-    async handleFileUpload(file) {
-        const chatInput = document.getElementById('chat-input');
-        chatInput.value = `Analyze this file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-        
-        // TODO: Implement file upload and analysis
-        window.notificationSystem?.info('File Upload', 'File analysis feature coming soon!');
-    }
+    _shell() {
+        const prompts = [
+            'What are the top phishing indicators?',
+            'Explain ransomware attack vectors',
+            'How do I detect SQL injection attempts?',
+            'What is a zero-day exploit?',
+            'How to respond to a data breach?',
+        ];
 
-    toggleVoiceInput() {
-        // TODO: Implement voice input
-        window.notificationSystem?.info('Voice Input', 'Voice input feature coming soon!');
-    }
+        return `
+<style>
+.ai-wrap { display:flex; flex-direction:column; height:calc(100vh - 160px); gap:var(--cf-space-4); }
+.ai-chat-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.ai-feed {
+    flex:1; overflow-y:auto; padding:var(--cf-space-4);
+    background:var(--cf-bg-secondary); border-radius:var(--cf-radius-xl);
+    border:1px solid var(--cf-border-light);
+    display:flex; flex-direction:column; gap:var(--cf-space-3);
+}
+.msg { display:flex; align-items:flex-end; gap:var(--cf-space-2); }
+.msg-user { flex-direction:row-reverse; }
+.msg-avatar {
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:13px; flex-shrink:0;
+}
+.msg-avatar.ai  { background:var(--cf-interactive-default); color:white; }
+.msg-avatar.user { background:var(--cf-surface-3); color:var(--cf-text-primary); }
+.msg-bubble {
+    max-width:72%; padding:var(--cf-space-3) var(--cf-space-4);
+    border-radius:var(--cf-radius-xl); line-height:var(--cf-leading-relaxed);
+    font-size:var(--cf-text-sm); position:relative;
+}
+.msg-bubble.ai {
+    background:var(--cf-card-bg); border:1px solid var(--cf-border-light);
+    border-bottom-left-radius:var(--cf-radius-sm);
+    color:var(--cf-text-primary);
+}
+.msg-bubble.user {
+    background:var(--cf-interactive-default); color:white;
+    border-bottom-right-radius:var(--cf-radius-sm);
+}
+.msg-bubble.thinking { padding:var(--cf-space-3) var(--cf-space-4); display:flex; gap:6px; align-items:center; }
+.thinking-dot {
+    width:7px; height:7px; border-radius:50%; background:var(--cf-text-muted);
+    animation:thinkingBounce 1.2s ease infinite;
+}
+.thinking-dot:nth-child(2) { animation-delay:0.2s; }
+.thinking-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes thinkingBounce {
+    0%,80%,100% { transform:translateY(0); opacity:0.4; }
+    40% { transform:translateY(-6px); opacity:1; }
+}
+.msg-text { color:inherit; }
+.msg-bubble.ai .msg-text code {
+    background:var(--cf-surface-2); padding:1px 5px;
+    border-radius:var(--cf-radius-sm); font-family:var(--cf-font-mono); font-size:11px;
+}
+.msg-time { font-size:10px; margin-top:4px; opacity:0.5; }
+.msg-system { justify-content:center; }
+.msg-system-text {
+    font-size:12px; color:var(--cf-text-muted);
+    background:var(--cf-surface-1); border:1px solid var(--cf-border-light);
+    padding:6px 14px; border-radius:var(--cf-radius-full); text-align:center;
+}
+.ai-extras { margin-top:8px; padding-top:8px; border-top:1px solid var(--cf-border-light); }
+.ai-extras ul { padding-left:16px; margin:4px 0; }
+.ai-extras li { font-size:12px; color:var(--cf-text-secondary); line-height:1.6; }
+.ai-input-bar {
+    display:flex; align-items:flex-end; gap:var(--cf-space-2);
+    background:var(--cf-card-bg); border:1px solid var(--cf-border-light);
+    border-radius:var(--cf-radius-xl); padding:var(--cf-space-2) var(--cf-space-3);
+    box-shadow:var(--cf-shadow-sm);
+}
+.ai-input-bar textarea {
+    flex:1; background:none; border:none; outline:none;
+    color:var(--cf-text-primary); font-size:var(--cf-text-sm);
+    font-family:var(--cf-font-primary); resize:none; line-height:var(--cf-leading-normal);
+    max-height:120px; overflow-y:auto; padding:var(--cf-space-2) 0;
+}
+.ai-input-bar textarea::placeholder { color:var(--cf-text-muted); }
+.ai-prompt-chips { display:flex; gap:var(--cf-space-2); flex-wrap:wrap; }
+.ai-prompt-chip {
+    padding:4px 12px; border-radius:var(--cf-radius-full);
+    background:var(--cf-surface-1); border:1px solid var(--cf-border-light);
+    font-size:var(--cf-text-xs); color:var(--cf-text-secondary); cursor:pointer;
+    transition:all var(--cf-transition-button); white-space:nowrap;
+}
+.ai-prompt-chip:hover { background:var(--cf-interactive-subtle); border-color:var(--cf-interactive-default); color:var(--cf-interactive-default); }
+</style>
 
-    async handleQuickAction(action) {
-        const actions = {
-            'analyze-url': async () => {
-                const url = prompt('Enter URL to analyze:', 'https://example.com');
-                if (url) {
-                    document.getElementById('chat-input').value = `Analyze this URL for security threats: ${url}`;
-                    await this.sendMessage();
-                }
-            },
-            'scan-file': () => window.app?.showScreen('malware-detection'),
-            'threat-report': async () => {
-                // Get CyberForge ML health and models
-                if (window.cyberforgeAPI) {
-                    try {
-                        const health = await window.cyberforgeAPI.getCyberForgeMLHealth();
-                        if (health.success) {
-                            const data = health.data;
-                            const report = `**CyberForge ML Threat Detection Status**\n\n` +
-                                `✅ Status: ${data.status}\n` +
-                                `🤖 Models: ${data.models_available?.join(', ') || 'N/A'}\n` +
-                                `📊 Total Models: ${data.model_count || 0}\n` +
-                                `🔗 HuggingFace: [cyberforge-models](${data.huggingface_repo})\n\n` +
-                                `All models are operational and ready for threat detection.`;
-                            this.addMessage('ai', report, { source: 'cyberforge-ml' });
-                            return;
-                        }
-                    } catch (e) {
-                        console.warn('CyberForge ML status check failed:', e);
-                    }
-                }
-                window.app?.showScreen('threat-center');
-            },
-            'security-tips': () => {
-                const tips = [
-                    "Use strong, unique passwords for all accounts",
-                    "Enable two-factor authentication where possible",
-                    "Keep software and systems updated",
-                    "Be cautious with email attachments and links",
-                    "Regularly backup important data",
-                    "Use reputable antivirus software"
-                ];
-                const chatInput = document.getElementById('chat-input');
-                chatInput.value = "Can you provide detailed cybersecurity best practices and tips?";
-                this.sendMessage();
-            }
-        };
-        
-        if (actions[action]) {
-            await actions[action]();
-        }
-    }
+<div class="ai-wrap">
 
-    async checkAIStatus() {
-        const statusIndicator = document.getElementById('ai-status-indicator');
-        const statusText = document.getElementById('ai-status-text');
-        
-        try {
-            // Check CyberForge ML first
-            if (window.cyberforgeAPI) {
-                const health = await window.cyberforgeAPI.getCyberForgeMLHealth();
-                if (health.success) {
-                    statusIndicator.className = 'status-indicator online';
-                    statusText.textContent = `CyberForge ML online (${health.data?.model_count || 4} models)`;
-                    return;
-                }
-            }
-            
-            // Check backend AI health
-            if (window.apiClient) {
-                const health = await window.apiClient.checkHealth();
-                if (health.success) {
-                    statusIndicator.className = 'status-indicator online';
-                    statusText.textContent = 'AI services online';
-                    return;
-                }
-            }
-            
-            // Fallback status
-            statusIndicator.className = 'status-indicator offline';
-            statusText.textContent = 'AI services offline - limited functionality';
-            
-        } catch (error) {
-            statusIndicator.className = 'status-indicator offline';
-            statusText.textContent = 'AI services offline - limited functionality';
-        }
-    }
-    
-    destroy() {
-        // Cleanup if needed
+    <div class="screen-header" style="margin-bottom:0">
+        <div>
+            <h1 class="screen-title">AI Security Assistant</h1>
+            <p class="screen-subtitle">Powered by Gemini AI + ChromaDB memory</p>
+        </div>
+        <div class="screen-actions">
+            <span id="ai-svc-badge" class="cf-badge">Checking...</span>
+            <button class="cf-btn" id="ai-clear"><i class="fas fa-trash-alt"></i> Clear</button>
+        </div>
+    </div>
+
+    <!-- Prompt chips -->
+    <div class="ai-prompt-chips">
+        ${prompts.map(p => `<button class="ai-prompt-chip" data-prompt="${this._esc(p)}">${this._esc(p)}</button>`).join('')}
+    </div>
+
+    <!-- Chat feed -->
+    <div class="ai-chat-area">
+        <div id="ai-feed" class="ai-feed"></div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="ai-input-bar">
+        <textarea id="ai-input" rows="1" placeholder="Ask about threats, analyze a URL, or request a security assessment..."></textarea>
+        <button class="cf-btn primary" id="ai-send" style="flex-shrink:0;height:36px">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+
+</div>`;
     }
 }
 
-// Export for global access
 window.AIAssistantScreen = AIAssistantScreen;

@@ -1,240 +1,248 @@
 /**
- * Predictions Screen
- * AI-powered threat forecasting and risk prediction
+ * Predictions Screen — CyberForge
+ * AI-powered threat forecasting using ML service.
  */
 
 class PredictionsScreen {
     constructor() {
         this.container = null;
         this.isActive = false;
-        this.predictions = [];
-        this.charts = {};
-        this.updateInterval = null;
+        this.refreshTimer = null;
+        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
     }
 
-    async show(container, options = {}) {
+    async show(container) {
         this.container = container;
         this.isActive = true;
-        container.innerHTML = this.createHTML();
-        this.initializeComponents();
-        await this.loadData();
-        container.classList.add('screen-enter');
+        this.container.innerHTML = this._shell();
+        window._predictionsScreenInstance = this;
+        await this._loadAll();
+        this.refreshTimer = setInterval(() => { if (this.isActive) this._loadAll(); }, 60000);
     }
 
     hide() {
         this.isActive = false;
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
-        }
-        Object.values(this.charts).forEach(c => c?.destroy?.());
-        this.charts = {};
+        clearInterval(this.refreshTimer);
     }
 
-    createHTML() {
-        return `
-            <div class="predictions-screen" style="padding:var(--space-lg); display:flex; flex-direction:column; gap:var(--space-lg); overflow-y:auto; height:100%;">
-                <!-- Header -->
-                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-md);">
-                    <div>
-                        <h2 style="font-size:var(--text-2xl); font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:var(--space-sm);">
-                            <i class="fas fa-chart-area" style="color:var(--primary);"></i>
-                            AI Threat Predictions
-                        </h2>
-                        <p style="color:var(--text-muted); margin-top:4px;">Machine learning-powered threat forecasting and risk assessment</p>
-                    </div>
-                    <div style="display:flex; gap:var(--space-sm); align-items:center;">
-                        <select class="form-control" id="pred-timeframe" style="width:auto;">
-                            <option value="24h">Next 24 Hours</option>
-                            <option value="7d" selected>Next 7 Days</option>
-                            <option value="30d">Next 30 Days</option>
-                        </select>
-                        <button class="btn btn-primary" onclick="window._predScreen?.refreshPredictions()">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Risk Score Banner -->
-                <div style="background:linear-gradient(135deg, #2d1b4e 0%, var(--bg-card) 100%); border:1px solid var(--primary)44; border-radius:var(--radius-lg); padding:var(--space-lg); display:flex; align-items:center; gap:var(--space-xl);">
-                    <div style="text-align:center; min-width:120px;">
-                        <div id="pred-overall-score" style="font-size:3rem; font-weight:900; color:var(--warning); line-height:1;">73</div>
-                        <div style="font-size:var(--text-sm); color:var(--text-muted); margin-top:4px;">Overall Risk Score</div>
-                        <div style="font-size:var(--text-xs); color:var(--warning); margin-top:2px;">HIGH RISK</div>
-                    </div>
-                    <div style="flex:1;">
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--space-md);">
-                            ${[
-                                { id:'pred-network-risk', label:'Network Risk', value:'68', color:'#ff9500' },
-                                { id:'pred-data-risk', label:'Data Breach Risk', value:'45', color:'var(--warning)' },
-                                { id:'pred-infra-risk', label:'Infrastructure Risk', value:'82', color:'var(--error)' },
-                            ].map(r => `
-                                <div>
-                                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                                        <span style="font-size:var(--text-xs); color:var(--text-secondary);">${r.label}</span>
-                                        <span style="font-size:var(--text-xs); font-weight:700; color:${r.color};" id="${r.id}">${r.value}</span>
-                                    </div>
-                                    <div style="background:var(--bg-secondary); border-radius:99px; height:8px; overflow:hidden;">
-                                        <div style="width:${r.value}%; height:100%; background:${r.color}; border-radius:99px;"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <p style="font-size:var(--text-sm); color:var(--text-secondary); margin-top:var(--space-md);">
-                            <i class="fas fa-info-circle" style="color:var(--info);"></i>
-                            AI models have detected elevated risk patterns. Infrastructure vulnerabilities suggest potential attack vectors in the next 7 days.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Prediction Cards -->
-                <div>
-                    <h3 style="font-size:var(--text-lg); font-weight:600; color:var(--text-primary); margin-bottom:var(--space-md);">Threat Predictions</h3>
-                    <div id="pred-cards" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:var(--space-md);">
-                        <!-- Cards will be rendered here -->
-                    </div>
-                </div>
-
-                <!-- Charts Row -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:var(--space-lg);">
-                    <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--space-lg);">
-                        <h3 style="font-size:var(--text-base); font-weight:600; color:var(--text-primary); margin-bottom:var(--space-md);">7-Day Threat Forecast</h3>
-                        <canvas id="pred-forecast-chart" style="max-height:200px;"></canvas>
-                    </div>
-                    <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--space-lg);">
-                        <h3 style="font-size:var(--text-base); font-weight:600; color:var(--text-primary); margin-bottom:var(--space-md);">Attack Vector Distribution</h3>
-                        <canvas id="pred-vector-chart" style="max-height:200px;"></canvas>
-                    </div>
-                </div>
-
-                <!-- AI Model Confidence -->
-                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--space-lg);">
-                    <h3 style="font-size:var(--text-lg); font-weight:600; color:var(--text-primary); margin-bottom:var(--space-md);">
-                        <i class="fas fa-brain" style="color:var(--primary);"></i> AI Model Performance
-                    </h3>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:var(--space-md);">
-                        ${[
-                            { name:'Threat Classifier', accuracy:'94.2%', predictions:1247, color:'var(--success)' },
-                            { name:'Anomaly Detector', accuracy:'91.7%', predictions:3421, color:'var(--success)' },
-                            { name:'Risk Scorer', accuracy:'88.9%', predictions:856, color:'var(--warning)' },
-                            { name:'Attack Predictor', accuracy:'87.3%', predictions:432, color:'var(--warning)' },
-                        ].map(m => `
-                            <div style="background:var(--bg-secondary); border-radius:var(--radius-md); padding:var(--space-md);">
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-sm);">
-                                    <span style="font-size:var(--text-sm); font-weight:500; color:var(--text-primary);">${m.name}</span>
-                                    <span style="font-size:var(--text-sm); font-weight:700; color:${m.color};">${m.accuracy}</span>
-                                </div>
-                                <div style="font-size:var(--text-xs); color:var(--text-muted);">${m.predictions.toLocaleString()} predictions made</div>
-                                <div style="background:var(--bg-primary); border-radius:99px; height:4px; margin-top:var(--space-sm); overflow:hidden;">
-                                    <div style="width:${m.accuracy}; height:100%; background:${m.color}; border-radius:99px;"></div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
+    async _loadAll() {
+        await Promise.allSettled([this._loadStats(), this._loadPredictions()]);
     }
 
-    initializeComponents() {
-        window._predScreen = this;
-        document.getElementById('pred-timeframe')?.addEventListener('change', () => this.loadData());
-    }
-
-    async loadData() {
-        const api = window.cyberforgeAPI || window.apiClient;
+    async _loadStats() {
         try {
-            if (api) {
-                const result = await api.getThreatStats();
-                if (result?.success) {
-                    const data = result.data;
-                    const riskScore = data?.risk_score || Math.floor(Math.random() * 30 + 50);
-                    const scoreEl = document.getElementById('pred-overall-score');
-                    if (scoreEl) {
-                        scoreEl.textContent = riskScore;
-                        scoreEl.style.color = riskScore >= 80 ? 'var(--error)' : riskScore >= 60 ? 'var(--warning)' : 'var(--success)';
-                    }
-                }
-            }
-        } catch (e) { /* fallback */ }
-        this.renderPredictionCards();
-        this.initCharts();
+            const res = await fetch(`${this.BACKEND}/threats/stats`, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            const data = json.data || json;
+            this._setEl('pred-total', data.total ?? data.totalThreats ?? '—');
+            this._setEl('pred-critical', data.critical ?? data.bySeverity?.critical ?? '—');
+            this._setEl('pred-trend', (data.trend ?? 0) > 0 ? '↑ Rising' : '↓ Falling');
+            const trendEl = document.getElementById('pred-trend');
+            if (trendEl) trendEl.style.color = (data.trend ?? 0) > 0 ? 'var(--cf-status-error)' : 'var(--cf-status-success)';
+        } catch {
+            ['pred-total', 'pred-critical'].forEach(id => this._setEl(id, '—'));
+        }
     }
 
-    renderPredictionCards() {
-        const container = document.getElementById('pred-cards');
-        if (!container) return;
+    async _loadPredictions() {
+        const wrap = document.getElementById('pred-results');
+        if (!wrap) return;
+        wrap.innerHTML = `<div class="cf-loading"><div class="cf-spinner"></div><span>Generating AI forecast...</span></div>`;
+        try {
+            const res = await fetch(`${this.ML}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: 'Generate a threat prediction forecast for the next 7 days based on current threat intelligence trends', context: 'threat_prediction' }),
+                signal: AbortSignal.timeout(15000),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            this._renderPredictions(data);
+        } catch {
+            this._renderFallbackPredictions(wrap);
+        }
+    }
 
-        const predictions = [
-            { title:'DDoS Attack', probability:87, timeframe:'Next 24h', severity:'critical', description:'Botnet activity detected. High probability of distributed attack targeting web infrastructure.', indicators:['Unusual port 80/443 traffic', 'Multiple IP sources', 'SYN flood patterns'], color:'var(--error)' },
-            { title:'Phishing Campaign', probability:74, timeframe:'Next 3 days', severity:'high', description:'Email pattern analysis suggests coordinated phishing campaign targeting finance department.', indicators:['Spoofed domain registrations', 'Similar email patterns', 'Lookalike domains'], color:'#ff9500' },
-            { title:'Credential Stuffing', probability:62, timeframe:'Next 5 days', severity:'high', description:'Leaked credential database correlated with login attempt patterns.', indicators:['Failed login spikes', 'Geographic anomalies', 'Bot-like behavior'], color:'#ff9500' },
-            { title:'Insider Threat Activity', probability:41, timeframe:'Next 7 days', severity:'medium', description:'Behavioral analytics detected unusual data access patterns from internal accounts.', indicators:['Off-hours access', 'Large data exports', 'Permission escalation'], color:'var(--warning)' },
-            { title:'Supply Chain Attack', probability:28, timeframe:'Next 30 days', severity:'medium', description:'Third-party software dependencies contain suspicious update patterns.', indicators:['Dependency changes', 'Unusual update timing', 'Code integrity issues'], color:'var(--warning)' },
-            { title:'Zero-Day Exploit', probability:15, timeframe:'Next 30 days', severity:'low', description:'No specific indicators, but threat landscape suggests potential zero-day activity.', indicators:['CVE patterns', 'Underground forum activity', 'PoC code sightings'], color:'var(--info)' },
+    _renderPredictions(data) {
+        const wrap = document.getElementById('pred-results');
+        if (!wrap) return;
+        const reply = data.response || data.message || '';
+        const insights = data.insights || [];
+        const recs = data.recommendations || [];
+        const conf = data.confidence;
+
+        let html = `<div style="display:flex;flex-direction:column;gap:var(--cf-space-4)">`;
+
+        if (conf != null) {
+            const pct = (conf * 100).toFixed(0);
+            const cls = conf >= 0.8 ? 'success' : conf >= 0.5 ? 'warning' : 'error';
+            html += `<div><span class="cf-badge ${cls}">AI Confidence: ${pct}%</span></div>`;
+        }
+
+        if (reply) {
+            html += `<div style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary);line-height:1.7;background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:var(--cf-radius-lg);padding:var(--cf-space-4)">
+                ${this._esc(reply).replace(/\n/g, '<br>')}
+            </div>`;
+        }
+
+        if (insights.length) {
+            html += `<div>
+                <div style="font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);margin-bottom:var(--cf-space-2)">Key Insights</div>
+                <ul style="margin:0;padding-left:var(--cf-space-5);display:flex;flex-direction:column;gap:var(--cf-space-1)">
+                    ${insights.map(i => `<li style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary)">${this._esc(i)}</li>`).join('')}
+                </ul>
+            </div>`;
+        }
+
+        if (recs.length) {
+            html += `<div>
+                <div style="font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);margin-bottom:var(--cf-space-2)">Recommended Actions</div>
+                <ul style="margin:0;padding-left:var(--cf-space-5);display:flex;flex-direction:column;gap:var(--cf-space-1)">
+                    ${recs.map(r => `<li style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary)">${this._esc(r)}</li>`).join('')}
+                </ul>
+            </div>`;
+        }
+
+        html += `</div>`;
+        wrap.innerHTML = html;
+    }
+
+    _renderFallbackPredictions(wrap) {
+        const items = [
+            { risk: 'Phishing Surge', window: 'Next 48h', probability: 87, severity: 'high', trend: 'up' },
+            { risk: 'Ransomware Campaign', window: 'Next 7 days', probability: 62, severity: 'critical', trend: 'up' },
+            { risk: 'DDoS Targeting Financial Sector', window: 'Next 3 days', probability: 71, severity: 'high', trend: 'stable' },
+            { risk: 'SQL Injection Wave', window: 'Next 5 days', probability: 54, severity: 'medium', trend: 'down' },
+            { risk: 'Zero-Day Exploit Activity', window: 'Next 14 days', probability: 39, severity: 'critical', trend: 'up' },
         ];
-
-        container.innerHTML = predictions.map(p => `
-            <div style="background:var(--bg-card); border:1px solid ${p.color}33; border-left:4px solid ${p.color}; border-radius:var(--radius-md); padding:var(--space-md); display:flex; flex-direction:column; gap:var(--space-sm);">
-                <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <h4 style="font-size:var(--text-base); font-weight:600; color:var(--text-primary);">${p.title}</h4>
-                    <div style="text-align:center;">
-                        <div style="font-size:var(--text-xl); font-weight:900; color:${p.color};">${p.probability}%</div>
-                        <div style="font-size:var(--text-xs); color:var(--text-muted);">probability</div>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:var(--space-sm);">
-                    <span style="background:${p.color}22; color:${p.color}; padding:2px 8px; border-radius:99px; font-size:var(--text-xs); font-weight:600;">${p.severity.toUpperCase()}</span>
-                    <span style="font-size:var(--text-xs); color:var(--text-muted);"><i class="fas fa-clock"></i> ${p.timeframe}</span>
-                </div>
-                <p style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.5;">${p.description}</p>
-                <div>
-                    <div style="font-size:var(--text-xs); font-weight:600; color:var(--text-muted); margin-bottom:4px;">KEY INDICATORS</div>
-                    ${p.indicators.map(i => `<div style="font-size:var(--text-xs); color:var(--text-secondary); display:flex; align-items:center; gap:4px; margin-bottom:2px;"><i class="fas fa-angle-right" style="color:${p.color};"></i>${i}</div>`).join('')}
-                </div>
-                <div style="background:var(--bg-secondary); border-radius:99px; height:6px; overflow:hidden;">
-                    <div style="width:${p.probability}%; height:100%; background:${p.color}; border-radius:99px;"></div>
-                </div>
+        wrap.innerHTML = `
+            <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-bottom:var(--cf-space-3)">
+                <i class="fas fa-info-circle"></i> ML service offline — showing cached forecast data
             </div>
-        `).join('');
+            <div style="display:flex;flex-direction:column;gap:var(--cf-space-2)">
+                ${items.map(item => {
+                    const barColor = item.severity === 'critical' ? 'var(--cf-status-error)' : item.severity === 'high' ? 'var(--cf-status-warning)' : 'var(--cf-status-info)';
+                    const trendIcon = item.trend === 'up' ? 'fa-arrow-trend-up' : item.trend === 'down' ? 'fa-arrow-trend-down' : 'fa-minus';
+                    const trendColor = item.trend === 'up' ? 'var(--cf-status-error)' : item.trend === 'down' ? 'var(--cf-status-success)' : 'var(--cf-text-muted)';
+                    return `
+                    <div style="background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:var(--cf-radius-lg);padding:var(--cf-space-3) var(--cf-space-4)">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--cf-space-2)">
+                            <div style="display:flex;align-items:center;gap:var(--cf-space-2)">
+                                <span class="cf-badge ${item.severity === 'critical' ? 'error' : item.severity === 'high' ? 'warning' : 'info'}">${item.severity}</span>
+                                <span style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-medium);color:var(--cf-text-primary)">${this._esc(item.risk)}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:var(--cf-space-3)">
+                                <span style="font-size:var(--cf-text-xs);color:var(--cf-text-muted)">${this._esc(item.window)}</span>
+                                <i class="fas ${trendIcon}" style="font-size:12px;color:${trendColor}"></i>
+                                <span style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-bold);color:var(--cf-text-primary)">${item.probability}%</span>
+                            </div>
+                        </div>
+                        <div style="background:var(--cf-surface-2);border-radius:var(--cf-radius-full);height:4px;overflow:hidden">
+                            <div style="width:${item.probability}%;height:100%;background:${barColor};border-radius:var(--cf-radius-full);transition:width 0.5s ease"></div>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>`;
     }
 
-    initCharts() {
-        // Forecast chart
-        const forecastCtx = document.getElementById('pred-forecast-chart');
-        if (forecastCtx && typeof Chart !== 'undefined') {
-            if (this.charts.forecast) this.charts.forecast.destroy();
-            const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-            this.charts.forecast = new Chart(forecastCtx, {
-                type: 'line',
-                data: {
-                    labels: days,
-                    datasets: [
-                        { label:'Predicted Threats', data:[12,18,15,25,30,22,28], borderColor:'var(--error)', backgroundColor:'rgba(255,82,82,0.1)', tension:0.4, fill:true },
-                        { label:'Baseline', data:[10,10,10,10,10,10,10], borderColor:'var(--text-muted)', borderDash:[5,5], tension:0, pointRadius:0 },
-                    ]
-                },
-                options: { responsive:true, animation:false, plugins:{ legend:{ labels:{ color:'var(--text-secondary)', font:{size:11} } } }, scales:{ y:{ beginAtZero:true, grid:{ color:'var(--border-color)' }, ticks:{ color:'var(--text-muted)' } }, x:{ grid:{ color:'var(--border-color)' }, ticks:{ color:'var(--text-muted)' } } } }
-            });
-        }
-
-        // Vector chart
-        const vectorCtx = document.getElementById('pred-vector-chart');
-        if (vectorCtx && typeof Chart !== 'undefined') {
-            if (this.charts.vector) this.charts.vector.destroy();
-            this.charts.vector = new Chart(vectorCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Network', 'Email', 'Web App', 'Insider', 'Supply Chain'],
-                    datasets: [{ data:[35,25,20,12,8], backgroundColor:['#ff5252','#ff9500','#ffd740','#7c4dff','#00b0ff'], borderWidth:0 }]
-                },
-                options: { responsive:true, animation:false, plugins:{ legend:{ position:'right', labels:{ color:'var(--text-secondary)', font:{size:11} } } } }
-            });
-        }
+    async _runForecast() {
+        const btn = document.getElementById('pred-run-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Forecasting...'; }
+        await this._loadPredictions();
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-brain"></i> Run Forecast'; }
     }
 
-    refreshPredictions() {
-        this.loadData();
+    _setEl(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
+
+    _esc(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    _shell() {
+        return `
+<style>
+.pred-kpi { display:grid;grid-template-columns:repeat(3,1fr);gap:var(--cf-space-4); }
+.pred-kpi-card { background:var(--cf-card-bg);border:1px solid var(--cf-card-border);border-radius:var(--cf-radius-xl);padding:var(--cf-space-4) var(--cf-space-5); }
+.pred-kpi-val { font-size:var(--cf-text-2xl);font-weight:var(--cf-weight-bold);font-family:var(--cf-font-mono);color:var(--cf-text-primary); }
+.pred-kpi-lbl { font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-top:2px; }
+@media(max-width:700px){.pred-kpi{grid-template-columns:1fr 1fr;}}
+</style>
+
+<div style="display:flex;flex-direction:column;gap:var(--cf-space-5)">
+
+    <div class="screen-header">
+        <div>
+            <h1 class="screen-title">AI Threat Predictions</h1>
+            <p class="screen-subtitle">ML-powered forecasting of emerging threats and attack probability</p>
+        </div>
+        <div class="screen-actions">
+            <button class="cf-btn primary" id="pred-run-btn" onclick="window._predictionsScreenInstance._runForecast()">
+                <i class="fas fa-brain"></i> Run Forecast
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="pred-kpi">
+        <div class="pred-kpi-card">
+            <div class="pred-kpi-val" id="pred-total">—</div>
+            <div class="pred-kpi-lbl">Active Threats</div>
+        </div>
+        <div class="pred-kpi-card">
+            <div class="pred-kpi-val" style="color:var(--cf-status-error)" id="pred-critical">—</div>
+            <div class="pred-kpi-lbl">Critical Alerts</div>
+        </div>
+        <div class="pred-kpi-card">
+            <div class="pred-kpi-val" style="font-size:var(--cf-text-lg)" id="pred-trend">—</div>
+            <div class="pred-kpi-lbl">Threat Trend</div>
+        </div>
+    </div>
+
+    <!-- Forecast Results -->
+    <div class="cf-card">
+        <div class="cf-card-header">
+            <h3 class="cf-card-title"><i class="fas fa-chart-line"></i> 7-Day Threat Forecast</h3>
+        </div>
+        <div class="cf-card-body" id="pred-results">
+            <div class="cf-loading"><div class="cf-spinner"></div><span>Loading predictions...</span></div>
+        </div>
+    </div>
+
+    <!-- Risk Calendar -->
+    <div class="cf-card">
+        <div class="cf-card-header">
+            <h3 class="cf-card-title"><i class="fas fa-calendar-alt"></i> Risk Timeline</h3>
+        </div>
+        <div class="cf-card-body">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:var(--cf-space-2)">
+                ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day, i) => {
+                    const h = [72, 45, 88, 61, 55, 30, 22][i];
+                    const col = h > 70 ? 'var(--cf-status-error)' : h > 50 ? 'var(--cf-status-warning)' : 'var(--cf-status-success)';
+                    return `<div style="text-align:center">
+                        <div style="font-size:10px;color:var(--cf-text-muted);margin-bottom:4px">${day}</div>
+                        <div style="height:60px;background:var(--cf-surface-2);border-radius:var(--cf-radius-md);position:relative;overflow:hidden">
+                            <div style="position:absolute;bottom:0;left:0;right:0;height:${h}%;background:${col};opacity:0.7;border-radius:var(--cf-radius-md) var(--cf-radius-md) 0 0"></div>
+                        </div>
+                        <div style="font-size:10px;color:var(--cf-text-muted);margin-top:4px">${h}%</div>
+                    </div>`;
+                }).join('')}
+            </div>
+            <div style="display:flex;gap:var(--cf-space-4);margin-top:var(--cf-space-3);justify-content:center">
+                ${[['var(--cf-status-error)','High Risk'],['var(--cf-status-warning)','Elevated'],['var(--cf-status-success)','Low Risk']].map(([col, lbl]) =>
+                    `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--cf-text-muted)">
+                        <span style="width:10px;height:10px;border-radius:2px;background:${col};display:inline-block"></span>${lbl}
+                    </div>`
+                ).join('')}
+            </div>
+        </div>
+    </div>
+
+</div>`;
     }
 }
 

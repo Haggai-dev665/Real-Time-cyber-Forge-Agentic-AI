@@ -1,7 +1,327 @@
 /**
- * Threat Center Screen
- * Comprehensive threat management and monitoring
+ * Threat Center Screen — CyberForge
+ * Live threat feed with filtering, severity breakdown, and ML analysis.
  */
+
+class ThreatCenterScreen {
+    constructor() {
+        this.container = null;
+        this.isActive = false;
+        this.refreshTimer = null;
+        this.threats = [];
+        this.filters = { severity: 'all', type: 'all', status: 'active', page: 1, limit: 25 };
+        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+    }
+
+    async show(container) {
+        this.container = container;
+        this.isActive = true;
+        this.container.innerHTML = this._shell();
+        this._bindControls();
+        await this._loadThreats();
+        this._startRefresh();
+    }
+
+    hide() {
+        this.isActive = false;
+        clearInterval(this.refreshTimer);
+    }
+
+    async _loadThreats() {
+        const tbody = document.getElementById('tc-tbody');
+        if (!tbody) return;
+
+        const qs = new URLSearchParams({
+            limit: this.filters.limit,
+            page: this.filters.page,
+            status: this.filters.status,
+        });
+        if (this.filters.severity !== 'all') qs.set('severity', this.filters.severity);
+        if (this.filters.type !== 'all') qs.set('type', this.filters.type);
+
+        try {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px">
+                <div class="cf-spinner" style="margin:0 auto"></div></td></tr>`;
+
+            const res = await fetch(`${this.BACKEND}/threats?${qs}`);
+            if (!res.ok) throw new Error(res.status);
+            const json = await res.json();
+
+            this.threats = json.data?.threats ?? json.threats ?? json.data ?? [];
+            const pagination = json.data?.pagination || {};
+
+            this._renderRows(tbody);
+            this._updatePagination(pagination);
+            this._updateStats();
+        } catch {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--cf-text-muted)">
+                <i class="fas fa-exclamation-circle" style="font-size:1.5rem;display:block;margin-bottom:8px;color:var(--cf-status-error)"></i>
+                Could not load threats — ensure backend is running on port 3001
+            </td></tr>`;
+        }
+    }
+
+    async _analyzeUrl(url) {
+        const result = document.getElementById('tc-analysis-result');
+        if (!result) return;
+
+        result.innerHTML = `<div class="cf-loading" style="padding:12px"><div class="cf-spinner"></div><span>Analyzing...</span></div>`;
+
+        try {
+            const res = await fetch(`${this.ML}/analyze-url`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url }),
+            });
+            const data = await res.json();
+            const risk = data.risk_level || 'Unknown';
+            const conf = data.confidence ? (data.confidence * 100).toFixed(0) + '%' : '—';
+            const recs = data.recommendations || [];
+            const riskClass = { Low: 'success', Medium: 'warning', High: 'error', Critical: 'error' }[risk] || 'info';
+
+            result.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                    <span class="cf-badge ${riskClass}" style="font-size:13px;padding:4px 12px">${this._esc(risk)} Risk</span>
+                    <span style="color:var(--cf-text-muted);font-size:12px">Confidence: ${conf}</span>
+                </div>
+                ${recs.length ? `<ul style="padding-left:16px;color:var(--cf-text-secondary);font-size:13px;line-height:1.8">
+                    ${recs.map(r => `<li>${this._esc(r)}</li>`).join('')}
+                </ul>` : ''}
+            `;
+        } catch {
+            result.innerHTML = `<span style="color:var(--cf-status-error);font-size:13px">Analysis failed — ML service may be offline</span>`;
+        }
+    }
+
+    _renderRows(tbody) {
+        if (!this.threats.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--cf-text-muted)">
+                <i class="fas fa-shield-check" style="font-size:2rem;display:block;margin-bottom:10px;color:var(--cf-status-success)"></i>
+                No threats match the current filters
+            </td></tr>`;
+            return;
+        }
+        tbody.innerHTML = this.threats.map(t => this._row(t)).join('');
+    }
+
+    _row(t) {
+        const ts = t.detection?.timestamp || t.timestamp || t.createdAt;
+        const time = ts ? new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+        const sev = (t.severity || 'medium').toLowerCase();
+        const type = t.type || t.threatType || 'Unknown';
+        const source = t.source?.url || t.source || t.sourceUrl || '—';
+        const status = t.status || 'active';
+        const id = t._id || t.id || '';
+        const conf = t.detection?.confidence ?? t.confidence;
+
+        return `<tr>
+            <td><span class="cf-badge ${this._sevBadge(sev)}">${sev}</span></td>
+            <td style="font-weight:500;color:var(--cf-text-primary)">${this._esc(type)}</td>
+            <td class="font-mono truncate" style="max-width:220px;font-size:11px" title="${this._esc(source)}">${this._esc(source)}</td>
+            <td style="font-size:12px;color:var(--cf-text-tertiary)">${time}</td>
+            <td style="font-size:12px;font-family:var(--cf-font-mono)">${conf != null ? (conf * 100).toFixed(0) + '%' : '—'}</td>
+            <td><span class="cf-badge ${status === 'active' ? 'error' : status === 'resolved' ? 'success' : 'info'}">${status}</span></td>
+            <td>
+                <div style="display:flex;gap:4px">
+                    <button class="cf-btn sm" onclick="window.ThreatCenterInstance?._resolveId('${id}')" title="Mark Resolved">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }
+
+    async _resolveId(id) {
+        if (!id || !confirm('Mark this threat as resolved?')) return;
+        try {
+            await fetch(`${this.BACKEND}/threats/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'resolved' }),
+            });
+            await this._loadThreats();
+        } catch { alert('Could not update threat status.'); }
+    }
+
+    _updateStats() {
+        const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+        this.threats.forEach(t => {
+            const s = (t.severity || 'low').toLowerCase();
+            if (counts[s] !== undefined) counts[s]++;
+        });
+        ['critical', 'high', 'medium', 'low'].forEach(s => {
+            const el = document.getElementById(`stat-${s}`);
+            if (el) el.textContent = counts[s];
+        });
+        const total = document.getElementById('stat-total');
+        if (total) total.textContent = this.threats.length;
+    }
+
+    _updatePagination(p) {
+        const el = document.getElementById('tc-pagination');
+        if (!el) return;
+        el.innerHTML = `
+            <span style="color:var(--cf-text-muted);font-size:12px">
+                Page ${p.currentPage || 1} of ${p.totalPages || 1} · ${p.totalCount || this.threats.length} total
+            </span>
+            <div style="display:flex;gap:4px;margin-left:8px">
+                <button class="cf-btn sm" ${!p.hasPrev ? 'disabled' : ''} onclick="window.ThreatCenterInstance?._prevPage()">
+                    <i class="fas fa-chevron-left"></i></button>
+                <button class="cf-btn sm" ${!p.hasNext ? 'disabled' : ''} onclick="window.ThreatCenterInstance?._nextPage()">
+                    <i class="fas fa-chevron-right"></i></button>
+            </div>`;
+    }
+
+    _prevPage() { if (this.filters.page > 1) { this.filters.page--; this._loadThreats(); } }
+    _nextPage() { this.filters.page++; this._loadThreats(); }
+
+    _bindControls() {
+        window.ThreatCenterInstance = this;
+
+        document.getElementById('tc-sev-filter')?.addEventListener('change', e => {
+            this.filters.severity = e.target.value;
+            this.filters.page = 1;
+            this._loadThreats();
+        });
+
+        document.getElementById('tc-status-filter')?.addEventListener('change', e => {
+            this.filters.status = e.target.value;
+            this.filters.page = 1;
+            this._loadThreats();
+        });
+
+        document.getElementById('tc-refresh')?.addEventListener('click', () => this._loadThreats());
+
+        const analyzeBtn = document.getElementById('tc-analyze-btn');
+        const urlInput = document.getElementById('tc-url-input');
+        analyzeBtn?.addEventListener('click', () => {
+            const url = urlInput?.value.trim();
+            if (url) this._analyzeUrl(url);
+        });
+        urlInput?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { const url = e.target.value.trim(); if (url) this._analyzeUrl(url); }
+        });
+    }
+
+    _startRefresh() {
+        this.refreshTimer = setInterval(() => { if (this.isActive) this._loadThreats(); }, 30000);
+    }
+
+    _sevBadge(s) { return { critical: 'error', high: 'error', medium: 'warning', low: 'info' }[s] || 'info'; }
+
+    _esc(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    _shell() {
+        return `
+<style>
+.tc-stat-row { display:grid; grid-template-columns:repeat(5,1fr); gap:var(--cf-space-3); margin-bottom:var(--cf-space-5); }
+.tc-stat {
+    background:var(--cf-card-bg); border:1px solid var(--cf-card-border);
+    border-radius:var(--cf-radius-lg); padding:var(--cf-space-4); text-align:center;
+    transition:background-color var(--cf-transition-theme);
+}
+.tc-stat-val { font-size:var(--cf-text-2xl); font-weight:var(--cf-weight-bold); font-family:var(--cf-font-mono); color:var(--cf-text-primary); }
+.tc-stat-val.red   { color:var(--cf-status-error); }
+.tc-stat-val.amber { color:var(--cf-status-warning); }
+.tc-stat-val.blue  { color:var(--cf-status-info); }
+.tc-toolbar { display:flex; align-items:center; gap:var(--cf-space-3); margin-bottom:var(--cf-space-4); flex-wrap:wrap; }
+.tc-toolbar select, .tc-toolbar input {
+    padding:var(--cf-space-2) var(--cf-space-3); background:var(--cf-input-bg);
+    border:1px solid var(--cf-input-border); border-radius:var(--cf-radius-md);
+    color:var(--cf-text-primary); font-size:var(--cf-text-sm); font-family:var(--cf-font-primary);
+}
+.tc-toolbar select:focus, .tc-toolbar input:focus { outline:none; border-color:var(--cf-interactive-default); }
+.analyze-row { display:flex; gap:var(--cf-space-3); align-items:flex-start; flex-wrap:wrap; }
+.analyze-row input { flex:1; min-width:200px; padding:var(--cf-space-2) var(--cf-space-3);
+    background:var(--cf-input-bg); border:1px solid var(--cf-input-border);
+    border-radius:var(--cf-radius-md); color:var(--cf-text-primary); font-size:var(--cf-text-sm); font-family:var(--cf-font-primary); }
+</style>
+
+<div style="display:flex;flex-direction:column;gap:var(--cf-space-6)">
+
+    <div class="screen-header">
+        <div>
+            <h1 class="screen-title">Threat Center</h1>
+            <p class="screen-subtitle">Live threat detection, investigation, and response</p>
+        </div>
+        <div class="screen-actions">
+            <button class="cf-btn" id="tc-refresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button class="cf-btn primary" onclick="window.app?.showScreen('incident-response')">
+                <i class="fas fa-fire-extinguisher"></i> Incident Response
+            </button>
+        </div>
+    </div>
+
+    <div class="tc-stat-row">
+        <div class="tc-stat"><div class="tc-stat-val" id="stat-total">—</div><div class="tc-stat-lbl" style="font-size:11px;color:var(--cf-text-muted);margin-top:2px">Total Active</div></div>
+        <div class="tc-stat"><div class="tc-stat-val red" id="stat-critical">—</div><div class="tc-stat-lbl" style="font-size:11px;color:var(--cf-text-muted);margin-top:2px">Critical</div></div>
+        <div class="tc-stat"><div class="tc-stat-val red" id="stat-high">—</div><div class="tc-stat-lbl" style="font-size:11px;color:var(--cf-text-muted);margin-top:2px">High</div></div>
+        <div class="tc-stat"><div class="tc-stat-val amber" id="stat-medium">—</div><div class="tc-stat-lbl" style="font-size:11px;color:var(--cf-text-muted);margin-top:2px">Medium</div></div>
+        <div class="tc-stat"><div class="tc-stat-val blue" id="stat-low">—</div><div class="tc-stat-lbl" style="font-size:11px;color:var(--cf-text-muted);margin-top:2px">Low</div></div>
+    </div>
+
+    <div class="cf-card">
+        <div class="cf-card-header">
+            <h3 class="cf-card-title"><i class="fas fa-search"></i> Real-Time URL Analysis (ML)</h3>
+        </div>
+        <div class="cf-card-body">
+            <div class="analyze-row">
+                <input type="url" id="tc-url-input" placeholder="Enter URL to analyze for threats...">
+                <button class="cf-btn primary" id="tc-analyze-btn"><i class="fas fa-shield-alt"></i> Analyze</button>
+            </div>
+            <div id="tc-analysis-result" style="margin-top:var(--cf-space-3)"></div>
+        </div>
+    </div>
+
+    <div class="cf-card">
+        <div class="cf-card-header">
+            <h3 class="cf-card-title"><i class="fas fa-list"></i> Threat Feed</h3>
+        </div>
+        <div class="cf-card-body" style="padding-bottom:0">
+            <div class="tc-toolbar">
+                <select id="tc-sev-filter">
+                    <option value="all">All Severities</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+                <select id="tc-status-filter">
+                    <option value="active">Active</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="dismissed">Dismissed</option>
+                </select>
+                <span style="margin-left:auto;color:var(--cf-text-muted);font-size:12px">Auto-refreshes every 30s</span>
+            </div>
+        </div>
+        <div class="cf-table-wrapper" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+            <table class="cf-table">
+                <thead>
+                    <tr>
+                        <th>Severity</th><th>Type</th><th>Source</th>
+                        <th>Detected</th><th>Confidence</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tc-tbody">
+                    <tr><td colspan="7" style="text-align:center;padding:32px">
+                        <div class="cf-spinner" style="margin:0 auto"></div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="cf-card-footer" style="display:flex;align-items:center">
+            <div id="tc-pagination" style="display:flex;align-items:center;gap:8px"></div>
+        </div>
+    </div>
+
+</div>`;
+    }
+}
+
+window.ThreatCenterScreen = ThreatCenterScreen;
 
 class ThreatCenterScreen {
     constructor() {

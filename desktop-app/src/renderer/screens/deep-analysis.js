@@ -1,599 +1,460 @@
 /**
  * Deep Analysis Screen
- * Advanced security analysis and forensic investigation tools
+ * Advanced URL and content security analysis powered by the ML service.
  */
 
 class DeepAnalysisScreen {
     constructor() {
         this.container = null;
         this.isActive = false;
-        this.analysisType = 'file';
-        this.currentAnalysis = null;
+        this.activeTab = 'url';
         this.analysisHistory = [];
+        this._bound = {};
     }
 
-    async show(container, options = {}) {
+    // -------------------------------------------------------------------------
+    // Lifecycle
+    // -------------------------------------------------------------------------
+
+    show(container) {
         this.container = container;
         this.isActive = true;
-        
-        // Create HTML
-        this.container.innerHTML = this.createHTML();
-        
-        // Initialize components
-        this.initializeComponents();
-        
-        // Load analysis history
-        await this.loadAnalysisHistory();
-        
-        // Handle pre-selected analysis type
-        if (options.type) {
-            this.selectAnalysisType(options.type);
-        }
-        
-        // Add entrance animation
-        this.container.classList.add('screen-enter');
+        this.container.innerHTML = this._shell();
+        this._bindEvents();
+        this._renderTab(this.activeTab);
     }
 
     hide() {
         this.isActive = false;
+        this.container = null;
     }
 
-    createHTML() {
+    // -------------------------------------------------------------------------
+    // XSS helpers
+    // -------------------------------------------------------------------------
+
+    _esc(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // -------------------------------------------------------------------------
+    // Shell HTML
+    // -------------------------------------------------------------------------
+
+    _shell() {
         return `
-            <div class="deep-analysis-screen">
-                <!-- Header -->
-                <div class="analysis-header">
-                    <div class="header-info">
-                        <h2><i class="fas fa-microscope"></i> Deep Analysis</h2>
-                        <p>Advanced security analysis and forensic investigation</p>
-                    </div>
-                    <div class="header-controls">
-                        <button class="btn btn-primary" id="new-analysis-btn">
-                            <i class="fas fa-plus"></i> New Analysis
-                        </button>
-                    </div>
-                </div>
+<div id="deep-analysis-root" style="
+    display:flex;
+    flex-direction:column;
+    gap:var(--cf-space-5);
+    padding:var(--cf-space-6);
+    min-height:100%;
+    background:var(--cf-bg-app);
+    color:var(--cf-text-primary);
+    font-family:var(--cf-font-primary);
+">
+    <!-- Header -->
+    <div class="screen-header">
+        <div>
+            <div class="screen-title">Deep Analysis</div>
+            <div class="screen-subtitle">Advanced URL and content security analysis via the ML service</div>
+        </div>
+        <div class="screen-actions">
+            <button class="cf-btn sm" id="da-clear-history-btn">Clear History</button>
+        </div>
+    </div>
 
-                <!-- Analysis Type Selector -->
-                <div class="analysis-types">
-                    <button class="analysis-type-btn active" data-type="file">
-                        <i class="fas fa-file-alt"></i>
-                        <span>File Analysis</span>
-                    </button>
-                    <button class="analysis-type-btn" data-type="url">
-                        <i class="fas fa-link"></i>
-                        <span>URL Analysis</span>
-                    </button>
-                    <button class="analysis-type-btn" data-type="network">
-                        <i class="fas fa-network-wired"></i>
-                        <span>Network Analysis</span>
-                    </button>
-                    <button class="analysis-type-btn" data-type="memory">
-                        <i class="fas fa-memory"></i>
-                        <span>Memory Analysis</span>
-                    </button>
-                    <button class="analysis-type-btn" data-type="behavioral">
-                        <i class="fas fa-user-secret"></i>
-                        <span>Behavioral Analysis</span>
-                    </button>
-                </div>
+    <!-- Tab bar -->
+    <div id="da-tab-bar" style="
+        display:flex;
+        gap:var(--cf-space-2);
+        border-bottom:1px solid var(--cf-border-medium);
+        padding-bottom:0;
+    ">
+        ${['url','content','history'].map(t => this._tabBtn(t)).join('')}
+    </div>
 
-                <!-- Main Content -->
-                <div class="analysis-content">
-                    <!-- Analysis Input Panel -->
-                    <div class="analysis-input-panel" id="input-panel">
-                        ${this.createInputPanelHTML('file')}
-                    </div>
+    <!-- Tab content -->
+    <div id="da-tab-content" style="flex:1;"></div>
+</div>`;
+    }
 
-                    <!-- Analysis Results Panel -->
-                    <div class="analysis-results-panel" id="results-panel">
-                        <div class="results-header">
-                            <h3>Analysis Results</h3>
-                            <div class="results-controls">
-                                <button class="btn btn-secondary btn-sm" id="export-results">
-                                    <i class="fas fa-download"></i> Export
-                                </button>
-                                <button class="btn btn-secondary btn-sm" id="share-results">
-                                    <i class="fas fa-share"></i> Share
-                                </button>
-                            </div>
-                        </div>
-                        <div class="results-content" id="results-content">
-                            <div class="no-analysis">
-                                <i class="fas fa-search"></i>
-                                <p>Start an analysis to see results here</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    _tabBtn(tab) {
+        const labels = { url: 'URL Analysis', content: 'Content Analysis', history: 'History' };
+        return `<button
+            class="cf-btn da-tab-btn"
+            data-tab="${tab}"
+            style="
+                border-radius:var(--cf-radius-md) var(--cf-radius-md) 0 0;
+                border-bottom:3px solid transparent;
+                background:transparent;
+                color:var(--cf-text-secondary);
+            "
+        >${this._esc(labels[tab])}</button>`;
+    }
 
-                <!-- Analysis History -->
-                <div class="analysis-history">
-                    <h3>Recent Analyses</h3>
-                    <div class="history-list" id="history-list">
-                        <!-- History items will be populated here -->
-                    </div>
-                </div>
+    // -------------------------------------------------------------------------
+    // Event binding
+    // -------------------------------------------------------------------------
+
+    _bindEvents() {
+        const root = this.container.querySelector('#deep-analysis-root');
+
+        root.querySelector('#da-tab-bar').addEventListener('click', e => {
+            const btn = e.target.closest('.da-tab-btn');
+            if (!btn) return;
+            this._renderTab(btn.dataset.tab);
+        });
+
+        root.querySelector('#da-clear-history-btn').addEventListener('click', () => {
+            this.analysisHistory = [];
+            if (this.activeTab === 'history') this._renderTab('history');
+            this._showToast('History cleared.');
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Tab rendering
+    // -------------------------------------------------------------------------
+
+    _renderTab(tab) {
+        this.activeTab = tab;
+        const root = this.container.querySelector('#deep-analysis-root');
+
+        // Update tab button styles
+        root.querySelectorAll('.da-tab-btn').forEach(btn => {
+            const active = btn.dataset.tab === tab;
+            btn.style.borderBottomColor = active ? 'var(--cf-interactive-default)' : 'transparent';
+            btn.style.color = active ? 'var(--cf-interactive-default)' : 'var(--cf-text-secondary)';
+            btn.style.fontWeight = active ? 'var(--cf-weight-semibold)' : 'var(--cf-weight-normal)';
+        });
+
+        const pane = root.querySelector('#da-tab-content');
+
+        switch (tab) {
+            case 'url':     pane.innerHTML = this._urlTabHTML();     this._bindUrlTab(pane);     break;
+            case 'content': pane.innerHTML = this._contentTabHTML(); this._bindContentTab(pane); break;
+            case 'history': pane.innerHTML = this._historyTabHTML(); this._bindHistoryTab(pane); break;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // URL Analysis tab
+    // -------------------------------------------------------------------------
+
+    _urlTabHTML() {
+        return `
+<div style="display:flex;flex-direction:column;gap:var(--cf-space-5);">
+    <div class="cf-card">
+        <div class="cf-card-header"><span class="cf-card-title">URL Analysis</span></div>
+        <div class="cf-card-body" style="display:flex;flex-direction:column;gap:var(--cf-space-4);">
+            <div style="display:flex;gap:var(--cf-space-3);">
+                <input
+                    id="da-url-input"
+                    type="url"
+                    placeholder="https://example.com/path"
+                    style="
+                        flex:1;
+                        padding:var(--cf-space-3) var(--cf-space-4);
+                        background:var(--cf-input-bg);
+                        border:1px solid var(--cf-input-border);
+                        border-radius:var(--cf-radius-md);
+                        color:var(--cf-text-primary);
+                        font-family:var(--cf-font-mono);
+                        font-size:var(--cf-text-sm);
+                        outline:none;
+                    "
+                />
+                <button id="da-url-analyze-btn" class="cf-btn primary">Analyze</button>
             </div>
-        `;
+            <div id="da-url-result"></div>
+        </div>
+    </div>
+</div>`;
     }
 
-    createInputPanelHTML(type) {
-        switch (type) {
-            case 'file':
-                return `
-                    <div class="input-section">
-                        <h3>File Analysis</h3>
-                        <div class="file-drop-zone" id="file-drop-zone">
-                            <div class="drop-zone-content">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <p>Drop file here or click to browse</p>
-                                <input type="file" id="file-input" multiple accept="*/*" style="display: none;">
-                                <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
-                                    Browse Files
-                                </button>
-                            </div>
-                        </div>
-                        <div class="analysis-options">
-                            <h4>Analysis Options</h4>
-                            <label><input type="checkbox" checked> Static Analysis</label>
-                            <label><input type="checkbox" checked> Dynamic Analysis</label>
-                            <label><input type="checkbox"> Sandbox Execution</label>
-                            <label><input type="checkbox"> Signature Matching</label>
-                        </div>
-                        <button class="btn btn-success" id="start-analysis">
-                            <i class="fas fa-play"></i> Start Analysis
-                        </button>
-                    </div>
-                `;
-            case 'url':
-                return `
-                    <div class="input-section">
-                        <h3>URL Analysis</h3>
-                        <div class="url-input-group">
-                            <input type="url" id="url-input" placeholder="Enter URL to analyze..." class="form-control">
-                            <button class="btn btn-secondary" id="url-scan-btn">
-                                <i class="fas fa-search"></i> Scan
-                            </button>
-                        </div>
-                        <div class="analysis-options">
-                            <h4>Analysis Options</h4>
-                            <label><input type="checkbox" checked> Reputation Check</label>
-                            <label><input type="checkbox" checked> Content Analysis</label>
-                            <label><input type="checkbox"> Screenshot Capture</label>
-                            <label><input type="checkbox"> SSL Certificate Check</label>
-                        </div>
-                        <button class="btn btn-success" id="start-analysis">
-                            <i class="fas fa-play"></i> Start Analysis
-                        </button>
-                    </div>
-                `;
-            case 'network':
-                return `
-                    <div class="input-section">
-                        <h3>Network Analysis</h3>
-                        <div class="network-options">
-                            <div class="input-group">
-                                <label>Target IP/Range:</label>
-                                <input type="text" id="network-target" placeholder="192.168.1.0/24" class="form-control">
-                            </div>
-                            <div class="input-group">
-                                <label>Analysis Type:</label>
-                                <select id="network-type" class="form-control">
-                                    <option value="port-scan">Port Scan</option>
-                                    <option value="traffic-analysis">Traffic Analysis</option>
-                                    <option value="vulnerability-scan">Vulnerability Scan</option>
-                                    <option value="packet-capture">Packet Capture</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button class="btn btn-success" id="start-analysis">
-                            <i class="fas fa-play"></i> Start Analysis
-                        </button>
-                    </div>
-                `;
-            case 'memory':
-                return `
-                    <div class="input-section">
-                        <h3>Memory Analysis</h3>
-                        <div class="memory-input">
-                            <div class="input-group">
-                                <label>Memory Dump:</label>
-                                <input type="file" id="memory-file" accept=".mem,.raw,.vmem" class="form-control">
-                            </div>
-                            <div class="input-group">
-                                <label>OS Profile:</label>
-                                <select id="os-profile" class="form-control">
-                                    <option value="win10">Windows 10</option>
-                                    <option value="win7">Windows 7</option>
-                                    <option value="linux">Linux</option>
-                                    <option value="macos">macOS</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="analysis-options">
-                            <h4>Analysis Modules</h4>
-                            <label><input type="checkbox" checked> Process List</label>
-                            <label><input type="checkbox" checked> Network Connections</label>
-                            <label><input type="checkbox"> Registry Keys</label>
-                            <label><input type="checkbox"> Malware Signatures</label>
-                        </div>
-                        <button class="btn btn-success" id="start-analysis">
-                            <i class="fas fa-play"></i> Start Analysis
-                        </button>
-                    </div>
-                `;
-            case 'behavioral':
-                return `
-                    <div class="input-section">
-                        <h3>Behavioral Analysis</h3>
-                        <div class="behavioral-input">
-                            <div class="input-group">
-                                <label>Sample File:</label>
-                                <input type="file" id="sample-file" class="form-control">
-                            </div>
-                            <div class="input-group">
-                                <label>Sandbox Environment:</label>
-                                <select id="sandbox-env" class="form-control">
-                                    <option value="windows">Windows Sandbox</option>
-                                    <option value="linux">Linux Container</option>
-                                    <option value="isolated">Isolated VM</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Analysis Duration:</label>
-                                <select id="analysis-duration" class="form-control">
-                                    <option value="30">30 seconds</option>
-                                    <option value="60">1 minute</option>
-                                    <option value="300">5 minutes</option>
-                                    <option value="600">10 minutes</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button class="btn btn-success" id="start-analysis">
-                            <i class="fas fa-play"></i> Start Analysis
-                        </button>
-                    </div>
-                `;
-            default:
-                return '<div class="input-section"><p>Select an analysis type</p></div>';
-        }
-    }
+    _bindUrlTab(pane) {
+        const input = pane.querySelector('#da-url-input');
+        const btn   = pane.querySelector('#da-url-analyze-btn');
+        const result = pane.querySelector('#da-url-result');
 
-    initializeComponents() {
-        this.setupEventListeners();
-        this.setupFileDropZone();
-    }
+        const run = async () => {
+            const url = (input.value || '').trim();
+            if (!url) { this._showError(result, 'Please enter a URL.'); return; }
 
-    setupEventListeners() {
-        // Analysis type buttons
-        document.querySelectorAll('.analysis-type-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const type = e.currentTarget.dataset.type;
-                this.selectAnalysisType(type);
-            });
-        });
+            this._showSpinner(result, 'Analyzing URL…');
+            btn.disabled = true;
 
-        // Start analysis button
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'start-analysis' || e.target.closest('#start-analysis')) {
-                this.startAnalysis();
+            try {
+                const res = await fetch('http://localhost:8001/analyze-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                if (!res.ok) throw new Error(`ML service returned ${res.status}`);
+                const data = await res.json();
+                const card = this._buildUrlResultCard(url, data);
+                result.innerHTML = card;
+                this._saveHistory('url', url, data);
+            } catch (err) {
+                this._showError(result, err.message || 'Request failed.');
+            } finally {
+                btn.disabled = false;
             }
-        });
-
-        // Export and share buttons
-        const exportBtn = document.getElementById('export-results');
-        const shareBtn = document.getElementById('share-results');
-        
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.exportResults());
-        }
-        
-        if (shareBtn) {
-            shareBtn.addEventListener('click', () => this.shareResults());
-        }
-
-        // New analysis button
-        const newAnalysisBtn = document.getElementById('new-analysis-btn');
-        if (newAnalysisBtn) {
-            newAnalysisBtn.addEventListener('click', () => this.newAnalysis());
-        }
-    }
-
-    setupFileDropZone() {
-        const dropZone = document.getElementById('file-drop-zone');
-        const fileInput = document.getElementById('file-input');
-        
-        if (dropZone && fileInput) {
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('drag-over');
-            });
-
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('drag-over');
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('drag-over');
-                const files = e.dataTransfer.files;
-                this.handleFiles(files);
-            });
-
-            fileInput.addEventListener('change', (e) => {
-                this.handleFiles(e.target.files);
-            });
-        }
-    }
-
-    selectAnalysisType(type) {
-        this.analysisType = type;
-        
-        // Update active button
-        document.querySelectorAll('.analysis-type-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelector(`[data-type="${type}"]`).classList.add('active');
-        
-        // Update input panel
-        const inputPanel = document.getElementById('input-panel');
-        inputPanel.innerHTML = this.createInputPanelHTML(type);
-        
-        // Re-setup event listeners for new content
-        this.setupEventListeners();
-        if (type === 'file') {
-            this.setupFileDropZone();
-        }
-    }
-
-    handleFiles(files) {
-        const fileList = Array.from(files);
-        const dropZone = document.getElementById('file-drop-zone');
-        
-        if (fileList.length > 0) {
-            dropZone.innerHTML = `
-                <div class="files-selected">
-                    <i class="fas fa-check-circle"></i>
-                    <p>${fileList.length} file(s) selected</p>
-                    <ul>
-                        ${fileList.map(file => `<li>${file.name} (${this.formatFileSize(file.size)})</li>`).join('')}
-                    </ul>
-                    <button class="btn btn-secondary btn-sm" onclick="location.reload()">
-                        Change Files
-                    </button>
-                </div>
-            `;
-        }
-    }
-
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    async startAnalysis() {
-        const resultsContent = document.getElementById('results-content');
-        if (!window.apiClient) {
-            resultsContent.innerHTML = '<p class="text-danger">API client not available. Please restart the app.</p>';
-            return;
-        }
-
-        const payload = await this.buildAnalysisPayload();
-        if (!payload) return;
-
-        resultsContent.innerHTML = `
-            <div class="analysis-loading">
-                <div class="spinner"></div>
-                <h3>Analysis in Progress</h3>
-                <p>Running ${this.analysisType} analysis...</p>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <p class="progress-text" id="progress-text">Submitting to backend...</p>
-            </div>
-        `;
-
-        try {
-            const response = await window.apiClient.analyzeUrl(payload.url, payload.options);
-            if (!response.success) {
-                resultsContent.innerHTML = `<p class="text-danger">${response.error || 'Analysis failed. Please try again.'}</p>`;
-                return;
-            }
-
-            const analysis = response.data?.analysis || response.data || {};
-            this.currentAnalysis = analysis;
-
-            this.showAnalysisResults(analysis);
-            this.addToHistory(analysis);
-            window.notificationSystem?.success('Analysis Submitted', 'ML service is processing your request.');
-            await this.loadAnalysisHistory();
-        } catch (error) {
-            console.error('Analysis request failed:', error);
-            resultsContent.innerHTML = `<p class="text-danger">${error.message || 'Analysis failed.'}</p>`;
-        }
-    }
-
-    async buildAnalysisPayload() {
-        switch (this.analysisType) {
-            case 'url': {
-                const urlInput = document.getElementById('url-input');
-                const url = urlInput?.value?.trim();
-                if (!url) {
-                    window.notificationSystem?.warning('Enter URL', 'Please enter a URL to analyze.');
-                    return null;
-                }
-                return { url, options: { analysisType: 'url', priority: 'medium' } };
-            }
-            case 'file':
-            case 'network':
-            case 'memory':
-            case 'behavioral':
-                window.notificationSystem?.info('URL Analysis Available', 'Backend currently accepts URL analyses. Other types are coming soon.');
-                return null;
-            default:
-                return null;
-        }
-    }
-
-    showAnalysisResults(analysis) {
-        const resultsContent = document.getElementById('results-content');
-        const results = analysis?.results || {};
-
-        const threatLevel = (results.riskLevel || results.threatLevel || 'medium').toLowerCase();
-        const confidence = Math.round((results.confidence || results.confidenceScore || 0.5) * 100);
-        const icon = threatLevel === 'low' ? 'shield-alt' : threatLevel === 'critical' ? 'skull-crossbones' : 'exclamation-triangle';
-        const findings = results.insights || results.findings || [];
-        const recommendations = results.recommendations || results.actions || [];
-        const technicalDetails = results.technicalDetails || {
-            URL: analysis.url || 'N/A',
-            Risk: results.riskLevel || 'unknown',
-            SecurityScore: results.securityScore ?? 'n/a'
         };
 
-        resultsContent.innerHTML = `
-            <div class="analysis-results">
-                <div class="results-summary">
-                    <div class="threat-level ${threatLevel}">
-                        <i class="fas fa-${icon}"></i>
-                        <span>${threatLevel.toUpperCase()}</span>
-                    </div>
-                    <div class="confidence-score">
-                        <h4>Confidence Score</h4>
-                        <div class="score-circle">
-                            <span>${confidence}%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="results-details">
-                    <div class="detail-section">
-                        <h4>Key Findings</h4>
-                        <ul>
-                            ${findings.length ? findings.map(finding => `<li>${finding}</li>`).join('') : '<li>No findings reported yet.</li>'}
-                        </ul>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h4>Technical Details</h4>
-                        <table class="results-table">
-                            ${Object.entries(technicalDetails).map(([key, value]) => 
-                                `<tr><td>${key}</td><td>${value ?? 'n/a'}</td></tr>`
-                            ).join('')}
-                        </table>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h4>Recommendations</h4>
-                        <ul>
-                            ${recommendations.length ? recommendations.map(rec => `<li>${rec}</li>`).join('') : '<li>Awaiting ML recommendations.</li>'}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `;
+        btn.addEventListener('click', run);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
     }
 
-    addToHistory(analysis) {
-        if (!analysis) return;
-        const historyItem = {
-            id: analysis.id || analysis._id || Date.now(),
-            type: analysis.analysisType || this.analysisType,
-            timestamp: analysis.createdAt ? new Date(analysis.createdAt) : new Date(),
-            threatLevel: analysis.results?.riskLevel || analysis.results?.threatLevel || 'medium',
-            confidence: Math.round((analysis.results?.confidence || 0.5) * 100)
+    _buildUrlResultCard(url, data) {
+        const score      = typeof data.threat_score === 'number' ? data.threat_score : (data.score ?? 0);
+        const pct        = Math.min(100, Math.max(0, Math.round(score * 100)));
+        const barColor   = pct >= 70 ? 'var(--cf-status-error)' : pct >= 40 ? 'var(--cf-status-warning)' : 'var(--cf-status-success)';
+        const verdictCls = pct >= 70 ? 'error' : pct >= 40 ? 'warning' : 'success';
+        const verdict    = this._esc(data.verdict || (pct >= 70 ? 'Malicious' : pct >= 40 ? 'Suspicious' : 'Clean'));
+        const insights   = Array.isArray(data.insights) ? data.insights : (data.findings ? [data.findings] : []);
+        const recs       = Array.isArray(data.recommendations) ? data.recommendations : [];
+
+        return `
+<div class="cf-card" style="margin-top:var(--cf-space-4);border-left:3px solid ${barColor};">
+    <div class="cf-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="cf-card-title" style="font-family:var(--cf-font-mono);font-size:var(--cf-text-sm);">${this._esc(url)}</span>
+        <span class="cf-badge ${verdictCls}">${verdict}</span>
+    </div>
+    <div class="cf-card-body" style="display:flex;flex-direction:column;gap:var(--cf-space-4);">
+        <!-- Threat score bar -->
+        <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:var(--cf-space-1);">
+                <span style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);">Threat Score</span>
+                <span style="font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);color:${barColor};">${pct}%</span>
+            </div>
+            <div style="height:8px;border-radius:var(--cf-radius-full);background:var(--cf-surface-1);overflow:hidden;">
+                <div style="height:100%;width:${pct}%;background:${barColor};border-radius:var(--cf-radius-full);transition:width .4s ease;"></div>
+            </div>
+        </div>
+
+        ${insights.length ? `
+        <div>
+            <div style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary);margin-bottom:var(--cf-space-2);">Insights</div>
+            <ul style="margin:0;padding-left:var(--cf-space-5);display:flex;flex-direction:column;gap:var(--cf-space-1);">
+                ${insights.map(i => `<li style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary);">${this._esc(i)}</li>`).join('')}
+            </ul>
+        </div>` : ''}
+
+        ${recs.length ? `
+        <div>
+            <div style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary);margin-bottom:var(--cf-space-2);">Recommendations</div>
+            <ul style="margin:0;padding-left:var(--cf-space-5);display:flex;flex-direction:column;gap:var(--cf-space-1);">
+                ${recs.map(r => `<li style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary);">${this._esc(r)}</li>`).join('')}
+            </ul>
+        </div>` : ''}
+    </div>
+</div>`;
+    }
+
+    // -------------------------------------------------------------------------
+    // Content Analysis tab
+    // -------------------------------------------------------------------------
+
+    _contentTabHTML() {
+        return `
+<div style="display:flex;flex-direction:column;gap:var(--cf-space-5);">
+    <div class="cf-card">
+        <div class="cf-card-header"><span class="cf-card-title">Content Analysis</span></div>
+        <div class="cf-card-body" style="display:flex;flex-direction:column;gap:var(--cf-space-4);">
+            <textarea
+                id="da-content-input"
+                placeholder="Paste text, code, log output, or any content to analyse…"
+                style="
+                    width:100%;
+                    min-height:180px;
+                    padding:var(--cf-space-3) var(--cf-space-4);
+                    background:var(--cf-input-bg);
+                    border:1px solid var(--cf-input-border);
+                    border-radius:var(--cf-radius-md);
+                    color:var(--cf-text-primary);
+                    font-family:var(--cf-font-mono);
+                    font-size:var(--cf-text-sm);
+                    resize:vertical;
+                    outline:none;
+                    box-sizing:border-box;
+                "
+            ></textarea>
+            <div style="display:flex;justify-content:flex-end;">
+                <button id="da-content-analyze-btn" class="cf-btn primary">Analyze</button>
+            </div>
+            <div id="da-content-result"></div>
+        </div>
+    </div>
+</div>`;
+    }
+
+    _bindContentTab(pane) {
+        const textarea = pane.querySelector('#da-content-input');
+        const btn      = pane.querySelector('#da-content-analyze-btn');
+        const result   = pane.querySelector('#da-content-result');
+
+        const run = async () => {
+            const content = (textarea.value || '').trim();
+            if (!content) { this._showError(result, 'Please paste some content to analyse.'); return; }
+
+            this._showSpinner(result, 'Running content analysis…');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('http://localhost:8001/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: content, context: 'deep_analysis' })
+                });
+                if (!res.ok) throw new Error(`ML service returned ${res.status}`);
+                const data = await res.json();
+                result.innerHTML = this._buildContentResultCard(data);
+                this._saveHistory('content', content.slice(0, 80) + (content.length > 80 ? '…' : ''), data);
+            } catch (err) {
+                this._showError(result, err.message || 'Request failed.');
+            } finally {
+                btn.disabled = false;
+            }
         };
 
-        this.analysisHistory.unshift(historyItem);
-        this.updateHistoryDisplay();
+        btn.addEventListener('click', run);
     }
 
-    updateHistoryDisplay() {
-        const historyList = document.getElementById('history-list');
-        if (!historyList) return;
+    _buildContentResultCard(data) {
+        const response   = this._esc(data.response || data.result || data.analysis || JSON.stringify(data));
+        const confidence = typeof data.confidence === 'number' ? Math.round(data.confidence * 100) : null;
+        const confBadge  = confidence !== null
+            ? `<span class="cf-badge ${confidence >= 70 ? 'success' : confidence >= 40 ? 'warning' : 'error'}">${confidence}% confidence</span>`
+            : '';
 
-        historyList.innerHTML = this.analysisHistory.slice(0, 10).map(item => {
-            const ts = item.timestamp ? new Date(item.timestamp) : new Date();
+        return `
+<div class="cf-card" style="margin-top:var(--cf-space-4);">
+    <div class="cf-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="cf-card-title">AI Response</span>
+        ${confBadge}
+    </div>
+    <div class="cf-card-body">
+        <p style="
+            font-size:var(--cf-text-sm);
+            color:var(--cf-text-secondary);
+            line-height:1.6;
+            white-space:pre-wrap;
+            margin:0;
+        ">${response}</p>
+    </div>
+</div>`;
+    }
+
+    // -------------------------------------------------------------------------
+    // History tab
+    // -------------------------------------------------------------------------
+
+    _historyTabHTML() {
+        if (!this.analysisHistory.length) {
             return `
-                <div class="history-item" data-id="${item.id}">
-                    <div class="history-icon">
-                        <i class="fas fa-${this.getAnalysisIcon(item.analysisType || item.type)}"></i>
-                    </div>
-                    <div class="history-content">
-                        <div class="history-header">
-                            <span class="history-type">${(item.analysisType || item.type || 'analysis').toString().toUpperCase()}</span>
-                            <span class="history-threat ${(item.threatLevel || 'medium').toLowerCase()}">${(item.threatLevel || 'medium').toString().toUpperCase()}</span>
-                        </div>
-                        <div class="history-details">
-                            <span class="history-time">${ts.toLocaleString()}</span>
-                            <span class="history-confidence">${item.confidence ?? '–'}% confidence</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    getAnalysisIcon(type) {
-        const icons = {
-            file: 'file-alt',
-            url: 'link',
-            network: 'network-wired',
-            memory: 'memory',
-            behavioral: 'user-secret'
-        };
-        return icons[type] || 'search';
-    }
-
-    async loadAnalysisHistory() {
-        if (!window.apiClient) return;
-
-        const response = await window.apiClient.getAnalysisHistory({ limit: 10 });
-        if (response.success) {
-            this.analysisHistory = response.data?.analyses || [];
-            this.updateHistoryDisplay();
-        }
-    }
-
-    newAnalysis() {
-        // Reset the analysis
-        const resultsContent = document.getElementById('results-content');
-        resultsContent.innerHTML = `
-            <div class="no-analysis">
-                <i class="fas fa-search"></i>
-                <p>Start an analysis to see results here</p>
-            </div>
-        `;
-    }
-
-    exportResults() {
-        if (!this.currentAnalysis) {
-            alert('No analysis results to export');
-            return;
+<div class="cf-empty" style="padding:var(--cf-space-10) 0;">
+    <div class="cf-empty-icon">&#128269;</div>
+    <div class="cf-empty-title">No Analysis History</div>
+    <div class="cf-empty-text">Run a URL or content analysis to see history here.</div>
+</div>`;
         }
 
-        const data = {
-            analysis: this.currentAnalysis,
-            timestamp: new Date().toISOString(),
-            type: this.analysisType
-        };
+        const rows = this.analysisHistory.map((item, idx) => `
+<div class="da-hist-row" data-idx="${idx}" style="
+    display:flex;
+    align-items:center;
+    gap:var(--cf-space-4);
+    padding:var(--cf-space-3) var(--cf-space-4);
+    border-radius:var(--cf-radius-md);
+    cursor:pointer;
+    background:var(--cf-surface-0);
+    border:1px solid var(--cf-border-light);
+    transition:background .15s;
+" onmouseover="this.style.background='var(--cf-cf-table-row-hover,var(--cf-surface-1))'"
+   onmouseout="this.style.background='var(--cf-surface-0)'">
+    <span class="cf-badge ${item.type === 'url' ? 'info' : 'warning'}">${this._esc(item.type)}</span>
+    <span style="flex:1;font-size:var(--cf-text-sm);color:var(--cf-text-primary);font-family:var(--cf-font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this._esc(item.label)}</span>
+    <span style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);white-space:nowrap;">${this._esc(item.timestamp)}</span>
+</div>`).join('');
 
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `analysis-results-${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        return `
+<div class="cf-card">
+    <div class="cf-card-header"><span class="cf-card-title">Analysis History (${this.analysisHistory.length})</span></div>
+    <div class="cf-card-body" style="display:flex;flex-direction:column;gap:var(--cf-space-2);">
+        ${rows}
+    </div>
+</div>
+<div id="da-hist-detail" style="margin-top:var(--cf-space-4);"></div>`;
     }
 
-    shareResults() {
-        alert('Share functionality coming soon!');
+    _bindHistoryTab(pane) {
+        pane.querySelectorAll('.da-hist-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const idx  = parseInt(row.dataset.idx, 10);
+                const item = this.analysisHistory[idx];
+                if (!item) return;
+                const detail = pane.querySelector('#da-hist-detail');
+                if (!detail) return;
+
+                if (item.type === 'url') {
+                    detail.innerHTML = this._buildUrlResultCard(item.label, item.raw);
+                } else {
+                    detail.innerHTML = this._buildContentResultCard(item.raw);
+                }
+                detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // History persistence (in-memory)
+    // -------------------------------------------------------------------------
+
+    _saveHistory(type, label, raw) {
+        this.analysisHistory.unshift({
+            type,
+            label,
+            raw,
+            timestamp: new Date().toLocaleString()
+        });
+        // Cap at 50 entries
+        if (this.analysisHistory.length > 50) this.analysisHistory.length = 50;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared UI helpers
+    // -------------------------------------------------------------------------
+
+    _showSpinner(el, msg) {
+        el.innerHTML = `
+<div class="cf-loading" style="padding:var(--cf-space-6) 0;">
+    <div class="cf-spinner"></div>
+    <span style="margin-left:var(--cf-space-3);color:var(--cf-text-muted);font-size:var(--cf-text-sm);">${this._esc(msg)}</span>
+</div>`;
+    }
+
+    _showError(el, msg) {
+        el.innerHTML = `
+<div style="
+    padding:var(--cf-space-4);
+    border-radius:var(--cf-radius-md);
+    background:var(--cf-status-error-bg);
+    color:var(--cf-status-error);
+    font-size:var(--cf-text-sm);
+    border:1px solid var(--cf-status-error);
+">${this._esc(msg)}</div>`;
+    }
+
+    _showToast(msg) {
+        if (window.notificationSystem?.info) {
+            window.notificationSystem.info('Deep Analysis', msg);
+        }
     }
 }
 
-// Export to global scope
 window.DeepAnalysisScreen = DeepAnalysisScreen;

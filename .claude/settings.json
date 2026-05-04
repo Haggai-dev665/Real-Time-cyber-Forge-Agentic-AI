@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(perl -pi -e \"s|'http://localhost:3001/api'|window.CF_API?.API \\\\|\\\\| 'https://cyberforge-ddd97655464f.herokuapp.com/api'|g; s|'http://localhost:3001'|window.CF_API?.BACKEND \\\\|\\\\| 'https://cyberforge-ddd97655464f.herokuapp.com'|g; s|'http://localhost:8001'|window.CF_API?.ML \\\\|\\\\| 'https://che237-cyberforge-models.hf.space'|g\" *.js)",
+      "Bash(grep -E \"\\\\.js$\")"
+    ]
+  }
+}

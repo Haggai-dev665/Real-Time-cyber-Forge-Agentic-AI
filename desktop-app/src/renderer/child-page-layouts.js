@@ -2067,40 +2067,139 @@ window.ChildPageLayouts = (() => {
 
   function buildThreatMapLayout() {
     return `
-      <div class="child-page-container" id="threat-map-page">
-        <div class="cf-panel-header">
-          <div class="cf-panel-title"><i class="fas fa-globe-americas"></i> Global Threat Map</div>
-          <div class="cf-panel-actions">
-            <select id="threat-map-filter" class="cf-select">
-              <option value="all">All Threats</option>
-              <option value="malware">Malware</option>
-              <option value="ddos">DDoS</option>
-              <option value="phishing">Phishing</option>
-            </select>
-            <button class="cf-btn" id="refresh-threat-map"><i class="fas fa-sync"></i></button>
+      <div class="child-page-container threat-globe-screen" id="threat-map-page">
+        <div class="tg-topbar">
+          <div class="tg-topbar-row">
+            <div class="tg-group">
+              <span class="tg-group-label">Threat Group</span>
+              <select id="threat-map-filter" class="tg-select">
+                <option value="all">All Threats</option>
+                <option value="malware">Malware</option>
+                <option value="ddos">DDoS</option>
+                <option value="phishing">Phishing</option>
+                <option value="botnet">Botnet</option>
+                <option value="ransomware">Ransomware</option>
+              </select>
+            </div>
+            <div class="tg-topbar-spacer"></div>
+            <div class="tg-status-pill"><i class="fas fa-shield-virus"></i> Live: <strong id="dashboard-threats">0</strong></div>
+            <button class="tg-icon-btn" id="refresh-threat-map" title="Refresh OTX feed"><i class="fas fa-sync"></i></button>
+          </div>
+          <div class="tg-chip-row">
+            <button class="tg-chip active">OTX Global Feed</button>
+            <button class="tg-chip">Malware C2</button>
+            <button class="tg-chip">Phishing Campaigns</button>
+            <button class="tg-chip">Ransomware IOCs</button>
+            <button class="tg-chip">DDoS Botnet Signals</button>
+            <button class="tg-chip">Zero-Day Mentions</button>
           </div>
         </div>
-        <div class="cf-panel-content">
-          <div class="threat-map-container" id="threat-map-container">
-            <div class="map-placeholder">
-              <i class="fas fa-globe-americas" style="font-size: 64px; color: var(--cf-primary);"></i>
-              <p>Global Threat Map Visualization</p>
-              <p class="text-secondary">Real-time threat activity from around the world</p>
+
+        <div class="tg-main-grid">
+          <section class="tg-panel tg-map-panel">
+            <header class="tg-panel-header">
+              <span>Bird's Eye Threat View</span>
+              <div class="tg-panel-actions">
+                <span class="tg-panel-meta"><i class="fas fa-satellite-dish"></i> AlienVault OTX</span>
+              </div>
+            </header>
+            <div class="tg-panel-body">
+              <div class="threat-map-container" id="threat-map-container">
+                <canvas id="dashboard-map-canvas"></canvas>
+                <div class="map-overlay-tl">
+                  <div class="data-source-badge"><i class="fas fa-map"></i> 2D Cyber Threat Map</div>
+                </div>
+                <div class="map-overlay-tr">
+                  <div class="map-legend">
+                    <div class="legend-title">Severity</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#ef4444;"></span> Critical / High</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#f59e0b;"></span> Medium</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#22d3ee;"></span> Low</div>
+                  </div>
+                </div>
+                <div class="map-overlay-bl tg-map-controls">
+                  <button class="tg-icon-btn" title="Zoom In"><i class="fas fa-plus"></i></button>
+                  <button class="tg-icon-btn" title="Zoom Out"><i class="fas fa-minus"></i></button>
+                  <button class="tg-icon-btn" title="Center Map"><i class="fas fa-crosshairs"></i></button>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="threat-map-legend">
-            <div class="legend-item"><span class="legend-dot red"></span> Active Attacks</div>
-            <div class="legend-item"><span class="legend-dot orange"></span> Potential Threats</div>
-            <div class="legend-item"><span class="legend-dot blue"></span> Monitored Regions</div>
-          </div>
+          </section>
+
+          <section class="tg-panel tg-stream-panel">
+            <header class="tg-panel-header">
+              <span>Live Threat Stream</span>
+              <span class="tg-panel-meta" id="threat-globe-stream-count">0 signals</span>
+            </header>
+            <div class="tg-panel-body" style="overflow:auto; padding:0;">
+              <table class="tg-table">
+                <thead>
+                  <tr>
+                    <th>Threat</th>
+                    <th>Vector</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="threat-globe-feed-body">
+                  <tr><td colspan="4" class="tg-empty-cell">Waiting for OTX threat feed...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="tg-panel tg-info-panel">
+            <header class="tg-panel-header">
+              <span>Threat Intelligence</span>
+              <span class="tg-panel-meta" id="threat-globe-info-id">No selection</span>
+            </header>
+            <div class="tg-panel-body" id="threat-globe-info">
+              <div class="tg-info-empty">
+                <span>Select a live threat from the stream to inspect details.</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tg-bottom-grid">
+          <section class="tg-panel">
+            <header class="tg-panel-header">
+              <span>Threat Activity Window</span>
+              <span class="tg-panel-meta" id="threat-globe-window">Last 4 hours</span>
+            </header>
+            <div class="tg-panel-body">
+              <div class="tg-timeline" id="threat-globe-timeline">
+                <div class="tg-info-empty"><span>No active timeline data yet.</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tg-panel">
+            <header class="tg-panel-header">
+              <span>Recent OTX Signals</span>
+              <span class="tg-panel-meta">Real-time telemetry</span>
+            </header>
+            <div class="tg-panel-body" style="overflow:auto; padding:0;">
+              <table class="tg-table tg-pass-table">
+                <thead>
+                  <tr>
+                    <th>Signal</th>
+                    <th>Origin</th>
+                    <th>Target</th>
+                    <th>Confidence</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody id="threat-globe-events-body">
+                  <tr><td colspan="5" class="tg-empty-cell">No events in cache.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </div>
     `;
   }
-
-  // =========================================
-  // SCAN MODES CHILD PAGES
-  // =========================================
 
   function buildScanModeLayout(mode) {
     const modeConfig = {

@@ -3430,15 +3430,10 @@
     const collapseBtn = document.getElementById('collapse-sidebar');
     const sidebar = document.getElementById('sidebar');
 
-    // Desktop app: enforce icon-rail sidebar by default on non-mobile widths.
-    const isMobileViewport = window.innerWidth <= 768;
     const storedExpanded = localStorage.getItem('cf-sidebar-expanded');
-    state.sidebarCollapsed = isMobileViewport ? (storedExpanded !== 'true') : true;
+    state.sidebarCollapsed = storedExpanded !== 'true';
     if (sidebar) {
       sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
-    }
-    if (!isMobileViewport) {
-      localStorage.setItem('cf-sidebar-expanded', 'false');
     }
     if (collapseBtn) {
       collapseBtn.querySelector('span').textContent = state.sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar';
@@ -3446,12 +3441,11 @@
     }
 
     collapseBtn?.addEventListener('click', () => {
-      const isMobile = window.innerWidth <= 768;
-      state.sidebarCollapsed = isMobile ? !state.sidebarCollapsed : true;
+      state.sidebarCollapsed = !state.sidebarCollapsed;
       sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
       collapseBtn.querySelector('span').textContent = state.sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar';
       collapseBtn.querySelector('i').className = state.sidebarCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
-      localStorage.setItem('cf-sidebar-expanded', isMobile ? String(!state.sidebarCollapsed) : 'false');
+      localStorage.setItem('cf-sidebar-expanded', String(!state.sidebarCollapsed));
     });
 
     state.sidebarListenersBound = true;

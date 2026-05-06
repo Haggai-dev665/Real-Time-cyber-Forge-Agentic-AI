@@ -386,7 +386,7 @@ class CyberForgeApp {
             'ai-insights': typeof AIInsightsScreen !== 'undefined' ? AIInsightsScreen : null,
             'predictions': typeof PredictionsScreen !== 'undefined' ? PredictionsScreen : null,
             'threat-intel': typeof ThreatIntelScreen !== 'undefined' ? ThreatIntelScreen : null,
-            'osint-tools': typeof OSINTToolsScreen !== 'undefined' ? OSINTToolsScreen : null,
+            'osint-tools': typeof OsintToolsScreen !== 'undefined' ? OsintToolsScreen : null,
             'domain-intelligence': typeof DomainIntelligenceScreen !== 'undefined' ? DomainIntelligenceScreen : null,
             'incident-response': typeof IncidentResponseScreen !== 'undefined' ? IncidentResponseScreen : null,
             'risk-assessment': typeof RiskAssessmentScreen !== 'undefined' ? RiskAssessmentScreen : null,
@@ -401,6 +401,7 @@ class CyberForgeApp {
             'sandbox-scanner': typeof SandboxScannerScreen !== 'undefined' ? SandboxScannerScreen : null,
             'distributed-intelligence': typeof DistributedIntelligenceScreen !== 'undefined' ? DistributedIntelligenceScreen : null,
             'browser-intel': typeof BrowserIntelScreen !== 'undefined' ? BrowserIntelScreen : null,
+            'threat-hunting': typeof ThreatHuntingScreen !== 'undefined' ? ThreatHuntingScreen : null,
             'policy-control': typeof PolicyControlScreen !== 'undefined' ? PolicyControlScreen : null,
             'soc-dashboard': typeof SOCDashboardScreen !== 'undefined' ? SOCDashboardScreen : null,
         };
@@ -679,10 +680,10 @@ class CyberForgeApp {
     }
 
     handleResize() {
-        // Handle responsive behavior
         const sidebar = document.getElementById('sidebar');
-        if (window.innerWidth < 1024) {
-            sidebar?.classList.add('collapsed');
+        if (!sidebar) return;
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('collapsed');
         } else {
             this.applySidebarLayoutPreference();
         }
@@ -691,28 +692,26 @@ class CyberForgeApp {
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            sidebar.classList.toggle('collapsed');
-            const expanded = !sidebar.classList.contains('collapsed');
-            localStorage.setItem('cf-sidebar-expanded', String(expanded));
-        } else {
-            // Desktop app: keep icon-rail collapsed state persistent.
-            sidebar.classList.add('collapsed');
-            localStorage.setItem('cf-sidebar-expanded', 'false');
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('cf-sidebar-collapsed', String(isCollapsed));
+
+        // Update toggle icon direction
+        const toggleIcon = sidebar.querySelector('.sidebar-toggle i');
+        if (toggleIcon) {
+            toggleIcon.style.transform = isCollapsed ? 'rotate(180deg)' : '';
         }
     }
 
     applySidebarLayoutPreference() {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            const expanded = localStorage.getItem('cf-sidebar-expanded') === 'true';
-            sidebar.classList.toggle('collapsed', !expanded);
-        } else {
+        // Default to expanded; respect saved preference
+        const savedCollapsed = localStorage.getItem('cf-sidebar-collapsed');
+        if (savedCollapsed === 'true') {
             sidebar.classList.add('collapsed');
-            localStorage.setItem('cf-sidebar-expanded', 'false');
+        } else {
+            sidebar.classList.remove('collapsed');
         }
     }
 

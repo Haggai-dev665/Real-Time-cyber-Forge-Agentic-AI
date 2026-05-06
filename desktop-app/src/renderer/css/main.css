@@ -281,6 +281,7 @@ html, body {
     flex: 1;
     overflow: hidden;
     min-height: 0;
+    position: relative; /* needed so absolute-positioned sidebar overlays content */
 }
 
 /* ── Sidebar ── */

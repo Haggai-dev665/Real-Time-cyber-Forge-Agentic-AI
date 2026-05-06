@@ -294,6 +294,68 @@
 .sidebar.collapsed {
     width: 52px;
     min-width: 52px;
+    /* Keep overflow hidden so content doesn't bleed at rest */
+    overflow: hidden;
+}
+
+/* ── Hover Expand (overlay — content area never shrinks) ── */
+/* When collapsed, hovering expands the sidebar as an overlay above the content.
+   The content area's width is unchanged because min-width stays 52px in the flex.
+   We switch to absolute positioning to float above content without pushing it. */
+@media (min-width: 769px) {
+    .sidebar.collapsed:hover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 224px;
+        min-width: 224px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 600;
+        box-shadow: 4px 0 32px rgba(0, 0, 0, 0.45);
+        transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar.collapsed:hover .nav-text,
+    .sidebar.collapsed:hover .nav-section-title span,
+    .sidebar.collapsed:hover .nav-section-title::after,
+    .sidebar.collapsed:hover .alert-badge,
+    .sidebar.collapsed:hover .nav-badge,
+    .sidebar.collapsed:hover .nav-live-dot {
+        display: block !important;
+    }
+
+    .sidebar.collapsed:hover .nav-link {
+        justify-content: flex-start;
+        width: auto;
+        height: 33px;
+        margin: 0;
+        border-radius: 8px;
+        padding: 0;
+    }
+
+    .sidebar.collapsed:hover .nav-icon-zone {
+        width: 33px;
+        height: 33px;
+    }
+
+    .sidebar.collapsed:hover .nav-item {
+        margin: 1px 7px;
+    }
+
+    .sidebar.collapsed:hover .nav-section-title {
+        padding: 16px 12px 5px;
+        justify-content: flex-start;
+    }
+
+    .sidebar.collapsed:hover .nav-item.active .nav-link::before {
+        display: block;
+    }
+
+    .sidebar.collapsed:hover .tooltip {
+        display: none;
+    }
 }
 
 .sidebar.collapsed .nav-text,

@@ -155,6 +155,25 @@ router.post('/analyze/website', async (req, res) => {
 });
 
 /**
+ * @route   POST /api/ml/analyze
+ * @desc    AI analysis – proxies to HF Space /analyze (Gemini + ML fallback)
+ * @access  Public
+ * @body    { query: string, context?: object, conversation_history?: array }
+ */
+router.post('/analyze', async (req, res) => {
+    try {
+        const { query, context = {}, conversation_history = [] } = req.body;
+        if (!query) {
+            return res.status(400).json({ error: 'query required' });
+        }
+        const result = await cyberforgeML.analyze(query, context, conversation_history);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
  * @route   POST /api/ml/scan
  * @desc    Quick threat scan with all models
  * @access  Public

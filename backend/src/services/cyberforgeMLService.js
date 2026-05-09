@@ -296,16 +296,56 @@ class CyberForgeMLService {
     }
 
     /**
-     * Health check
+     * AI analysis — proxies to HF Space /analyze (Gemini + ML fallback)
+     */
+    async analyze(query, context = {}, conversationHistory = []) {
+        try {
+            const response = await axios.post(`${this.hfSpaceUrl}/analyze`, {
+                query,
+                context,
+                conversation_history: conversationHistory,
+            }, {
+                timeout: 30000,
+                headers: { 'Content-Type': 'application/json' },
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`⚠️ HF Space /analyze failed: ${error.message}`);
+            return {
+                response: 'ML service temporarily unavailable. Please try again.',
+                confidence: 0.1,
+                risk_level: 'Unknown',
+                risk_score: 0,
+                insights: [],
+                recommendations: ['Retry in a moment'],
+                model_used: 'error-fallback',
+                timestamp: new Date().toISOString(),
+            };
+        }
+    }
+
+    /**
+     * Health check — includes live HF Space status
      */
     async healthCheck() {
+        let hfStatus = 'unknown';
+        let mlModelsLoaded = [];
+        try {
+            const res = await axios.get(`${this.hfSpaceUrl}/health`, { timeout: 10000 });
+            hfStatus = res.data?.status || 'healthy';
+            mlModelsLoaded = res.data?.services?.models_loaded || [];
+        } catch {
+            hfStatus = 'unreachable';
+        }
         return {
-            status: 'healthy',
+            status: hfStatus === 'unreachable' ? 'degraded' : 'healthy',
             models_available: Object.keys(this.models),
             model_count: Object.keys(this.models).length,
+            hf_space_status: hfStatus,
+            ml_models_loaded: mlModelsLoaded,
             huggingface_repo: 'https://huggingface.co/Che237/cyberforge-models',
             training_space: 'https://huggingface.co/spaces/Che237/cyberforge',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
     }
 }

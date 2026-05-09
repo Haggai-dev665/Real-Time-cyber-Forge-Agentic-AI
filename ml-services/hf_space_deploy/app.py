@@ -210,18 +210,123 @@ Provide a comprehensive cybersecurity analysis:"""
             return self._fallback(query)
 
     def _fallback(self, query: str) -> Dict:
+        """ML-powered analysis when Gemini is unavailable"""
+        import re
+        global ml_loader
+
+        url_pattern = re.compile(r'https?://[^\s"\'<>]+')
+        urls = url_pattern.findall(query)
+
+        risk_level = "Unknown"
+        risk_score = 0.0
+        insights = []
+        response_lines = ["## CyberForge ML Security Analysis\n"]
+
+        try:
+            loader = ml_loader
+            n_loaded = len(loader.models)
+        except Exception:
+            loader = None
+            n_loaded = 0
+
+        if urls and loader and n_loaded > 0:
+            threat_models_fired = []
+            all_scores = []
+
+            for url in urls[:3]:
+                features = extract_url_features(url)
+                url_threats = []
+                url_scores = []
+
+                for model_name in ["phishing_detection", "malware_detection", "web_attack_detection"]:
+                    pred = loader.predict(model_name, features)
+                    if pred.get("prediction", 0) == 1:
+                        label = model_name.replace("_detection", "").replace("_", " ").title()
+                        url_threats.append(label)
+                        url_scores.append(pred.get("confidence", 0.5))
+                        threat_models_fired.append(model_name)
+
+                avg = sum(url_scores) / len(url_scores) if url_scores else 0.15
+                all_scores.append(avg)
+                lvl = "HIGH" if avg > 0.6 else "MEDIUM" if avg > 0.35 else "LOW"
+                threats_str = ", ".join(url_threats) if url_threats else "None detected"
+                display_url = url if len(url) <= 70 else url[:67] + "..."
+                response_lines.append(f"**URL:** `{display_url}`")
+                response_lines.append(f"- Risk: **{lvl}** | Threats: {threats_str} | Score: {avg:.0%}\n")
+
+            overall = sum(all_scores) / len(all_scores) if all_scores else 0.2
+            if overall > 0.65:
+                risk_level, risk_score = "High", 7.5
+            elif overall > 0.4:
+                risk_level, risk_score = "Medium", 5.0
+            else:
+                risk_level, risk_score = "Low", 2.5
+
+            insights = [f"{n_loaded} ML models active"] + [
+                f"Threat model triggered: {m.replace('_detection', '').replace('_', ' ').title()}"
+                for m in set(threat_models_fired)
+            ]
+
+            if risk_level == "High":
+                response_lines.append("### Recommendation\n⚠️ **Block immediately.** Phishing or malware indicators detected — do not visit this URL.")
+            elif risk_level == "Medium":
+                response_lines.append("### Recommendation\n⚡ **Exercise caution.** Validate with additional threat intelligence before accessing.")
+            else:
+                response_lines.append("### Recommendation\n✅ **URL appears structurally safe** based on ML analysis.")
+
+        else:
+            query_lower = query.lower()
+            malware_kws = ["malware", "virus", "ransomware", "trojan", "spyware", "backdoor", "worm"]
+            phishing_kws = ["phishing", "credential", "fake login", "spoof", "scam", "social engineering"]
+            safe_kws = ["safe", "legitimate", "trusted", "secure", "verify"]
+
+            if any(k in query_lower for k in malware_kws):
+                risk_level, risk_score = "High", 7.0
+                response_lines.append(
+                    "**Malware indicators detected in your query.**\n\n"
+                    "Recommended actions:\n"
+                    "- Isolate the affected system immediately\n"
+                    "- Run a full endpoint detection scan\n"
+                    "- Review recently installed software and browser extensions\n"
+                    "- Check startup processes and scheduled tasks for persistence\n"
+                    "- Rotate credentials if any exposure is suspected"
+                )
+            elif any(k in query_lower for k in phishing_kws):
+                risk_level, risk_score = "High", 7.0
+                response_lines.append(
+                    "**Phishing threat indicators detected.**\n\n"
+                    "Recommended actions:\n"
+                    "- Do not submit credentials to the suspected site\n"
+                    "- Verify sender identity through a secondary channel\n"
+                    "- Report to your IT security team immediately\n"
+                    "- Enable MFA on all accounts that may be affected\n"
+                    "- Review email headers for spoofing indicators"
+                )
+            elif any(k in query_lower for k in safe_kws):
+                risk_level, risk_score = "Low", 2.0
+                response_lines.append("No immediate threat indicators detected. Continue standard monitoring procedures.")
+            else:
+                response_lines.append(
+                    f"CyberForge ML is operational with **{n_loaded}/4 models** loaded.\n\n"
+                    "For best results, include a URL or specific threat indicators in your query.\n\n"
+                    "**Available analysis capabilities:**\n"
+                    "- URL threat analysis (phishing, malware, web attacks)\n"
+                    "- Network anomaly detection\n"
+                    "- Real-time threat event monitoring\n\n"
+                    "*AI chat (Gemini) is currently unavailable. Provide a URL for full ML-based analysis.*"
+                )
+            insights = [f"{n_loaded} ML models active"]
+
+        response_lines.append("\n---\n*Powered by CyberForge ML models — Gemini AI offline.*")
+
         return {
-            "response": (
-                "CyberForge AI is temporarily running in limited mode. "
-                "The Gemini AI service could not process your request. "
-                "Please check that the GEMINI_API_KEY is set correctly in the Space secrets."
-            ),
-            "confidence": 0.1,
-            "risk_level": "Unknown",
-            "risk_score": 0,
-            "insights": [],
-            "recommendations": ["Verify GEMINI_API_KEY is set", "Check Space logs"],
-            "model_used": "fallback",
+            "response": "\n".join(response_lines),
+            "confidence": 0.65 if urls else 0.4,
+            "risk_level": risk_level,
+            "risk_score": risk_score,
+            "insights": insights,
+            "recommendations": [],
+            "model_used": "cyberforge-ml-fallback",
             "timestamp": datetime.utcnow().isoformat(),
         }
 
@@ -247,8 +352,18 @@ class MLModelLoader:
 
     def initialize(self):
         loaded = 0
+        # All directories where models might exist (notebooks save to ../models)
+        search_dirs = [
+            MODELS_DIR,                          # trained_models/
+            APP_DIR / "models",                  # models/ (where notebooks output)
+            APP_DIR.parent / "models",           # one level up fallback
+        ]
+
         for name in self.MODEL_NAMES:
+            if name in self.models:
+                continue
             try:
+                # 1. Try HuggingFace Hub first
                 model_file = f"{name}/best_model.pkl"
                 scaler_file = f"{name}/scaler.pkl"
                 try:
@@ -264,43 +379,47 @@ class MLModelLoader:
                     self.scalers[name] = joblib.load(scaler_path)
                     loaded += 1
                     logger.info(f"✅ Loaded model from Hub: {name}")
-                except Exception:
-                    # Try flat filename pattern
-                    try:
-                        model_path = hf_hub_download(
-                            repo_id=HF_MODEL_REPO, filename=f"{name}_model.pkl",
-                            token=HF_TOKEN or None, cache_dir=str(MODELS_DIR),
-                        )
-                        self.models[name] = joblib.load(model_path)
-                        loaded += 1
-                        logger.info(f"✅ Loaded model (flat): {name}")
-                    except Exception:
-                        pass
-                    # Try local
-                    local_model = MODELS_DIR / name / "best_model.pkl"
-                    if local_model.exists() and name not in self.models:
-                        self.models[name] = joblib.load(local_model)
-                        local_scaler = MODELS_DIR / name / "scaler.pkl"
-                        if local_scaler.exists():
-                            self.scalers[name] = joblib.load(local_scaler)
-                        loaded += 1
-                        logger.info(f"✅ Loaded model from local: {name}")
-            except Exception as e:
-                logger.warning(f"Error loading model {name}: {e}")
-
-        # Also check trained_models dir for any .pkl files
-        for pkl in MODELS_DIR.glob("*.pkl"):
-            stem = pkl.stem.replace("_model", "").replace("_best", "")
-            if stem not in self.models:
-                try:
-                    self.models[stem] = joblib.load(pkl)
-                    loaded += 1
-                    logger.info(f"✅ Loaded local model: {stem}")
+                    continue
                 except Exception:
                     pass
 
+                # 2. Try all local search directories
+                for sdir in search_dirs:
+                    if name in self.models:
+                        break
+                    for model_fname in [f"{name}/best_model.pkl", f"{name}/model.pkl", f"{name}_model.pkl"]:
+                        candidate = sdir / model_fname
+                        if candidate.exists():
+                            self.models[name] = joblib.load(candidate)
+                            # Try to find matching scaler
+                            for scaler_fname in [f"{name}/scaler.pkl", f"{name}_scaler.pkl"]:
+                                sc = sdir / scaler_fname
+                                if sc.exists():
+                                    self.scalers[name] = joblib.load(sc)
+                                    break
+                            loaded += 1
+                            logger.info(f"✅ Loaded model from {sdir.name}/{model_fname}: {name}")
+                            break
+
+            except Exception as e:
+                logger.warning(f"Error loading model {name}: {e}")
+
+        # Sweep all search dirs for any .pkl files not yet loaded
+        for sdir in search_dirs:
+            if not sdir.exists():
+                continue
+            for pkl in sdir.glob("*.pkl"):
+                stem = pkl.stem.replace("_model", "").replace("_best", "")
+                if stem not in self.models:
+                    try:
+                        self.models[stem] = joblib.load(pkl)
+                        loaded += 1
+                        logger.info(f"✅ Loaded model sweep: {stem} from {sdir.name}")
+                    except Exception:
+                        pass
+
         self.ready = loaded > 0
-        logger.info(f"ML Models: {loaded} loaded ({list(ml_loader.models.keys()) if loaded else 'none'})")
+        logger.info(f"ML Models: {loaded} loaded — {list(self.models.keys())}")
 
     def predict(self, model_name: str, features: Dict) -> Dict:
         if model_name not in self.models:

@@ -9,7 +9,7 @@ class AIAssistantScreen {
         this.isActive = false;
         this.history = [];
         this.loading = false;
-        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+        this.ML = window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
         this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
     }
 
@@ -30,22 +30,29 @@ class AIAssistantScreen {
     async _checkService() {
         const badge = document.getElementById('ai-svc-badge');
         try {
-            const res = await fetch(`${this.ML}/health`, { signal: AbortSignal.timeout(3000) });
+            const res = await fetch(`${this.ML}/health`, { signal: AbortSignal.timeout(18000) });
             const data = await res.json();
             const ok = data.status === 'healthy';
+            const mlReady = data.services?.ml_models ?? false;
+            const geminiReady = data.services?.gemini ?? false;
+            const modelsLoaded = data.services?.models_loaded ?? [];
+
             if (badge) {
                 badge.className = `cf-badge ${ok ? 'success' : 'warning'}`;
                 badge.textContent = ok ? 'AI Online' : 'AI Degraded';
             }
-            const ready = data.services?.ai_agent;
-            if (!ready) {
-                this._appendSystemMsg('⚠️ AI Agent is initializing — some features may be limited. Try again in a moment.');
+
+            if (!ok) {
+                this._appendSystemMsg('⚠️ ML service is degraded. Responses may be limited.');
+            } else if (mlReady) {
+                const engine = geminiReady ? 'Gemini AI + ML Models' : `ML Models (${modelsLoaded.length} active)`;
+                this._appendSystemMsg(`AI Agent ready — powered by ${engine}. Ask me anything: threat analysis, URL checks, risk assessment, and more.`);
             } else {
-                this._appendSystemMsg('AI Agent ready. Ask me anything about cybersecurity — threat analysis, URL checks, risk assessment, and more.');
+                this._appendSystemMsg('⚠️ ML models are still loading. Try again in a moment.');
             }
         } catch {
             if (badge) { badge.className = 'cf-badge error'; badge.textContent = 'AI Offline'; }
-            this._appendSystemMsg('❌ ML service is offline (port 8001). Start it with: cd ml-services && python main.py');
+            this._appendSystemMsg('❌ ML service is unreachable. Check your connection or the Heroku backend status.');
         }
     }
 
@@ -353,7 +360,7 @@ class AIAssistantScreen {
     <div class="screen-header" style="margin-bottom:0">
         <div>
             <h1 class="screen-title">AI Security Assistant</h1>
-            <p class="screen-subtitle">Powered by Gemini AI + ChromaDB memory</p>
+            <p class="screen-subtitle">Powered by CyberForge ML Models + Gemini AI</p>
         </div>
         <div class="screen-actions">
             <span id="ai-svc-badge" class="cf-badge">Checking...</span>

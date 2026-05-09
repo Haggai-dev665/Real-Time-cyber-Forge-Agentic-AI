@@ -2628,7 +2628,6 @@
   function startBackendStatusSync() {
     let firstRun = true;
     const refresh = async () => {
-      // Only show "Checking..." on first run, not on periodic refreshes
       if (firstRun) {
         updateConnectionStatus(state.backendConnected, { pending: true });
         firstRun = false;
@@ -2643,6 +2642,11 @@
         state.backendConnected = false;
         updateConnectionStatus(false, { checkedAt: new Date() });
       }
+      // Always refresh header agent label and footer agent count after status resolves.
+      // header-agent-label defaults to "—" and header-agent-count defaults to empty;
+      // updateHeaderStats() is the only place that reliably sets them.
+      updateHeaderStats();
+      updateFooterAgentCount();
     };
 
     refresh();
@@ -3469,6 +3473,8 @@
   }
 
   async function updateFooterAgentCount() {
+    const footerCount = document.getElementById('footer-agent-count');
+    const headerCount = document.getElementById('header-agent-count');
     try {
       const backendUrl = (window.CF_API?.BACKEND) || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
       const token = localStorage.getItem('authToken') || '';
@@ -3476,16 +3482,26 @@
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         signal: AbortSignal.timeout(15000)
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Backend reachable but route failed — count the desktop app itself as 1
+        if (state.backendConnected) {
+          if (footerCount) footerCount.textContent = '1';
+          if (headerCount) headerCount.textContent = '1';
+        }
+        return;
+      }
       const data   = await res.json();
       const agents = data?.data?.agents || data?.agents || [];
-      const count  = agents.length;
+      // The desktop app is always an active agent when the backend is connected.
+      // Count registered agents + 1 (self) so the footer never shows 0 while connected.
+      const registeredCount = agents.length;
+      const count = state.backendConnected ? Math.max(registeredCount + 1, 1) : registeredCount;
 
-      const footerCount  = document.getElementById('footer-agent-count');
-      const headerCount  = document.getElementById('header-agent-count');
-      if (footerCount)  footerCount.textContent  = String(count);
-      if (headerCount)  headerCount.textContent  = String(count);
-    } catch (_e) { /* stay silent */ }
+      if (footerCount) footerCount.textContent = String(count);
+      if (headerCount) headerCount.textContent = String(count);
+    } catch (_e) {
+      // Silently keep whatever is displayed
+    }
   }
 
   async function updateFooterBrowserCount() {

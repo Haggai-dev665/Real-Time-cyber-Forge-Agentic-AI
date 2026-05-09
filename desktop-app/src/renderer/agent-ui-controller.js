@@ -306,22 +306,20 @@
                 } catch (e) { /* agent check failed */ }
             }
             
-            // The desktop app itself is an agent — if backend is connected, count at least 1
-            if (backendOk && agentCount === 0) {
-                agentCount = agentRunning ? 1 : 0;
+            // Desktop app is always an active agent when backend is reachable.
+            // Count registered agents + 1 (self); never show 0 while connected.
+            if (backendOk) {
+                agentCount = Math.max(agentCount + 1, 1);
             }
-            // Ensure running agent always counts
-            if (agentRunning && agentCount < 1) agentCount = 1;
-            
+
             if (agentCountEl) agentCountEl.textContent = String(agentCount);
 
-            // Update header status indicator
-            var isActive = backendOk && agentRunning;
-            var dotColor = isActive ? 'var(--cf-status-success,#22c55e)' : backendOk ? 'var(--cf-status-warning,#f59e0b)' : 'var(--cf-status-error,#ef4444)';
+            // Desktop app IS the agent — show Active whenever backend is reachable.
+            var dotColor = backendOk ? 'var(--cf-status-success,#22c55e)' : 'var(--cf-status-error,#ef4444)';
             if (statusDot) statusDot.style.background = dotColor;
-            if (statusText) statusText.textContent = isActive ? 'Active' : backendOk ? 'Connected' : 'Offline';
+            if (statusText) statusText.textContent = backendOk ? 'Active' : 'Offline';
 
-            fpLog(isActive ? 'Agent active & synced' : backendOk ? 'Backend synced' : 'Backend unreachable');
+            fpLog(backendOk ? 'Agent active & synced' : 'Backend unreachable');
 
         } catch (e) {
             setChip(backendEl, 'offline', 'Error');

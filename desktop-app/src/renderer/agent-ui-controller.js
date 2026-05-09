@@ -255,16 +255,16 @@
             // Health check
             var backendOk = false;
             try {
-                var healthRes = await fetch(backendUrl + '/health', { signal: AbortSignal.timeout(5000) });
+                var healthRes = await fetch(backendUrl + '/health', { signal: AbortSignal.timeout(18000) });
                 backendOk = healthRes.ok;
             } catch (e) { /* offline */ }
-            
+
             setChip(backendEl, backendOk ? 'online' : 'offline', backendOk ? 'Connected' : 'Offline');
 
             // ML service health
             var mlOk = false;
             try {
-                var mlRes = await fetch(backendUrl + '/api/cyberforge-ml/health', { signal: AbortSignal.timeout(5000) });
+                var mlRes = await fetch(backendUrl + '/api/cyberforge-ml/health', { signal: AbortSignal.timeout(18000) });
                 if (mlRes.ok) {
                     var mlData = await mlRes.json();
                     mlOk = !!(mlData && (mlData.success || mlData.status === 'healthy'));
@@ -272,7 +272,7 @@
             } catch (e) { /* offline */ }
 
             setChip(mlEl, mlOk ? 'online' : 'degraded', mlOk ? 'Healthy' : 'Degraded');
-            
+
             // Agent status — check if default agent is running, count includes self
             var agentRunning = false;
             var agentCount = 0;
@@ -287,7 +287,7 @@
                     // Check agent status first (more reliable than list)
                     var statusRes = await fetch(backendUrl + '/api/agent/status/default', {
                         headers: headers,
-                        signal: AbortSignal.timeout(5000)
+                        signal: AbortSignal.timeout(15000)
                     });
                     if (statusRes.ok) {
                         var statusData = await statusRes.json();
@@ -297,7 +297,7 @@
                     // Also check agents list for total count
                     var agentRes = await fetch(backendUrl + '/api/agent/list', {
                         headers: headers,
-                        signal: AbortSignal.timeout(5000)
+                        signal: AbortSignal.timeout(15000)
                     });
                     if (agentRes.ok) {
                         var agentData = await agentRes.json();

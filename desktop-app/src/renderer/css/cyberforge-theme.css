@@ -3539,19 +3539,16 @@ code {
     body .cf-app .cf-main > .cf-sidebar {
         width: var(--cf-rail-width);
         min-width: var(--cf-rail-width);
-        max-width: var(--cf-rail-width);
         padding-top: 6px;
         overflow-y: auto;
-        overflow-x: visible;
+        overflow-x: hidden;
         position: relative;
         z-index: calc(var(--z-sidebar) + 2);
-        transition: width 180ms ease, margin-right 180ms ease, box-shadow 180ms ease;
+        transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     body .cf-app .cf-main > .cf-content {
-        width: calc(100% - var(--cf-rail-width));
-        max-width: calc(100% - var(--cf-rail-width));
-        flex: 0 0 calc(100% - var(--cf-rail-width));
+        flex: 1;
         min-width: 0;
     }
 
@@ -3624,10 +3621,7 @@ code {
 
     body .cf-app .cf-main > .cf-sidebar:hover {
         width: var(--sidebar-width);
-        min-width: var(--sidebar-width);
-        max-width: var(--sidebar-width);
-        margin-right: calc(var(--cf-rail-width) - var(--sidebar-width));
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.22);
     }
 
     body .cf-app .cf-main > .cf-sidebar:hover .sidebar-section-title {

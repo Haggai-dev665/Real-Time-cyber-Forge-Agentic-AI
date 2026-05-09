@@ -2592,97 +2592,167 @@ window.ChildPageLayouts = (() => {
   function buildAgentControlLayout() {
     return `
       <div class="child-page-container" id="agent-control-page">
-        <div class="cf-panel-header">
-          <div class="cf-panel-title"><i class="fas fa-robot"></i> AI Agent Control Center</div>
-          <div class="cf-panel-actions">
-            <button class="cf-btn" id="open-browser-registration"><i class="fas fa-globe"></i> Browser Registration</button>
-            <button class="cf-btn danger" id="stop-agent"><i class="fas fa-stop"></i> Stop Agent</button>
+
+        <!-- ── Hero Header ─────────────────────────────────── -->
+        <div class="ac-hero">
+          <div class="ac-hero-top">
+            <div class="ac-agent-orb"><i class="fas fa-robot"></i></div>
+            <div class="ac-hero-info">
+              <div class="ac-hero-title">AI Agent Command Center</div>
+              <div class="ac-hero-sub">CyberForge Autonomous Intelligence &middot; v2.1 &middot; agentic</div>
+            </div>
+            <div class="ac-hero-actions">
+              <button class="ac-btn ac-btn-ghost" id="open-browser-registration">
+                <i class="fas fa-globe"></i> Register Browser
+              </button>
+              <button class="ac-btn ac-btn-danger" id="stop-agent">
+                <i class="fas fa-stop-circle"></i> Stop Agent
+              </button>
+            </div>
+          </div>
+          <!-- KPI tiles -->
+          <div class="ac-kpi-row">
+            <div class="ac-kpi">
+              <div class="ac-kpi-icon teal"><i class="fas fa-robot"></i></div>
+              <div class="ac-kpi-data">
+                <div class="ac-kpi-value" id="ac-kpi-agents">1</div>
+                <div class="ac-kpi-label">Active Agents</div>
+              </div>
+            </div>
+            <div class="ac-kpi">
+              <div class="ac-kpi-icon red"><i class="fas fa-shield-exclamation"></i></div>
+              <div class="ac-kpi-data">
+                <div class="ac-kpi-value" id="ac-kpi-threats">0</div>
+                <div class="ac-kpi-label">Threats Found</div>
+              </div>
+            </div>
+            <div class="ac-kpi">
+              <div class="ac-kpi-icon blue"><i class="fas fa-window-restore"></i></div>
+              <div class="ac-kpi-data">
+                <div class="ac-kpi-value" id="ac-kpi-browsers">0</div>
+                <div class="ac-kpi-label">Browsers Tracked</div>
+              </div>
+            </div>
+            <div class="ac-kpi">
+              <div class="ac-kpi-icon amber"><i class="fas fa-satellite-dish"></i></div>
+              <div class="ac-kpi-data">
+                <div class="ac-kpi-value" id="ac-kpi-scans">0</div>
+                <div class="ac-kpi-label">URLs Scanned</div>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- ── Content Grid ────────────────────────────────── -->
         <div class="cf-panel-content agent-center-grid">
 
-          <!-- Row 1: Status + System Stats -->
-          <div class="agent-center-row">
-            <div class="agent-card agent-status-card">
-              <div class="agent-card-header"><i class="fas fa-circle-info"></i> Agent Status</div>
-              <div class="agent-card-body">
-                <div class="status-indicator" id="agent-status-indicator">
-                  <span class="status-dot online"></span>
-                  <span class="status-text">Agent Auto-Started</span>
-                </div>
-                <div class="agent-meta-grid" id="agent-meta-grid">
-                  <div class="agent-meta-item"><span class="meta-label">Uptime</span><span class="meta-value" id="ac-uptime">--</span></div>
-                  <div class="agent-meta-item"><span class="meta-label">Backend</span><span class="meta-value" id="ac-backend">checking...</span></div>
-                  <div class="agent-meta-item"><span class="meta-label">ML Service</span><span class="meta-value" id="ac-ml">checking...</span></div>
-                  <div class="agent-meta-item"><span class="meta-label">Agents</span><span class="meta-value" id="ac-agent-count">1</span></div>
-                </div>
-              </div>
+          <!-- Agent Status -->
+          <div class="agent-card ac-card-status agent-status-card">
+            <div class="agent-card-header">
+              <span><i class="fas fa-circle-info"></i> Agent Status</span>
             </div>
-            <div class="agent-card agent-stats-card">
-              <div class="agent-card-header"><i class="fas fa-microchip"></i> System Resources</div>
-              <div class="agent-card-body">
-                <div class="agent-stat-row">
-                  <span class="stat-label">CPU</span>
-                  <div class="stat-bar"><div class="stat-bar-fill" id="ac-cpu-bar" style="width:0%"></div></div>
-                  <span class="stat-pct" id="ac-cpu-pct">0%</span>
+            <div class="agent-card-body">
+              <div class="status-indicator" id="agent-status-indicator">
+                <span class="status-dot online"></span>
+                <span class="status-text">Agent Auto-Started</span>
+              </div>
+              <div class="agent-meta-grid" id="agent-meta-grid">
+                <div class="agent-meta-item">
+                  <span class="meta-label">Uptime</span>
+                  <span class="meta-value" id="ac-uptime">--</span>
                 </div>
-                <div class="agent-stat-row">
-                  <span class="stat-label">Memory</span>
-                  <div class="stat-bar"><div class="stat-bar-fill" id="ac-mem-bar" style="width:0%"></div></div>
-                  <span class="stat-pct" id="ac-mem-pct">0%</span>
+                <div class="agent-meta-item">
+                  <span class="meta-label">Backend</span>
+                  <span class="meta-value" id="ac-backend">checking…</span>
                 </div>
-                <div class="agent-stat-row">
-                  <span class="stat-label">Disk</span>
-                  <div class="stat-bar"><div class="stat-bar-fill" id="ac-disk-bar" style="width:0%"></div></div>
-                  <span class="stat-pct" id="ac-disk-pct">0%</span>
+                <div class="agent-meta-item">
+                  <span class="meta-label">ML Service</span>
+                  <span class="meta-value" id="ac-ml">checking…</span>
+                </div>
+                <div class="agent-meta-item">
+                  <span class="meta-label">Agents</span>
+                  <span class="meta-value" id="ac-agent-count">1</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Row 2: Detected Browsers -->
-          <div class="agent-card agent-browsers-card">
+          <!-- System Resources -->
+          <div class="agent-card ac-card-resources agent-stats-card">
             <div class="agent-card-header">
-              <span><i class="fas fa-globe"></i> Detected Browsers</span>
-              <button class="cf-btn small" id="refresh-agent-browsers"><i class="fas fa-rotate"></i> Refresh</button>
+              <span><i class="fas fa-microchip"></i> System Resources</span>
+            </div>
+            <div class="agent-card-body">
+              <div class="agent-stat-row">
+                <span class="stat-label">CPU</span>
+                <div class="stat-bar"><div class="stat-bar-fill" id="ac-cpu-bar" style="width:0%"></div></div>
+                <span class="stat-pct" id="ac-cpu-pct">0%</span>
+              </div>
+              <div class="agent-stat-row">
+                <span class="stat-label">Memory</span>
+                <div class="stat-bar"><div class="stat-bar-fill" id="ac-mem-bar" style="width:0%"></div></div>
+                <span class="stat-pct" id="ac-mem-pct">0%</span>
+              </div>
+              <div class="agent-stat-row">
+                <span class="stat-label">Disk</span>
+                <div class="stat-bar"><div class="stat-bar-fill" id="ac-disk-bar" style="width:0%"></div></div>
+                <span class="stat-pct" id="ac-disk-pct">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detected Browsers (full width) -->
+          <div class="agent-card ac-card-browsers agent-browsers-card">
+            <div class="agent-card-header">
+              <span><i class="fas fa-window-restore"></i> Detected Browsers</span>
+              <button class="ac-btn ac-btn-ghost" id="refresh-agent-browsers" style="padding:4px 10px;font-size:11px">
+                <i class="fas fa-rotate"></i> Refresh
+              </button>
             </div>
             <div class="agent-card-body">
               <div class="agent-open-browsers-list" id="agent-open-browsers-list">
-                <div class="detecting-state"><i class="fas fa-spinner fa-spin"></i> Scanning system for browsers...</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 3: Real-Time URL Monitor Feed -->
-          <div class="agent-card agent-url-feed-card">
-            <div class="agent-card-header">
-              <span><i class="fas fa-radar"></i> Real-Time URL Monitor</span>
-              <span class="url-feed-badge" id="url-monitor-status">Waiting for agent...</span>
-            </div>
-            <div class="agent-card-body">
-              <div class="agent-url-feed" id="agent-url-feed">
-                <div class="detecting-state"><i class="fas fa-satellite-dish"></i> URL monitoring will start when the agent is running...</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 4: Agent Console + Event Log -->
-          <div class="agent-center-row">
-            <div class="agent-card agent-console-card">
-              <div class="agent-card-header"><i class="fas fa-terminal"></i> Agent Console</div>
-              <div class="agent-card-body">
-                <div class="console-output" id="agent-console-output"></div>
-                <div class="console-input">
-                  <input type="text" id="agent-command" class="cf-input" placeholder="Type 'status' or 'scan &lt;url&gt;'...">
-                  <button class="cf-btn primary" id="send-agent-command"><i class="fas fa-paper-plane"></i></button>
+                <div class="detecting-state">
+                  <span class="agent-loader-orbit"></span> Scanning system for browsers…
                 </div>
               </div>
             </div>
-            <div class="agent-card agent-log-card">
-              <div class="agent-card-header"><i class="fas fa-list-ul"></i> Recent Activity</div>
-              <div class="agent-card-body">
-                <div class="agent-activity-log" id="agent-activity-log">
-                  <div class="detecting-state"><i class="fas fa-spinner fa-spin"></i> Loading activity...</div>
+          </div>
+
+          <!-- URL Monitor (full width) -->
+          <div class="agent-card ac-card-url agent-url-feed-card">
+            <div class="agent-card-header">
+              <span><i class="fas fa-satellite-dish"></i> Real-Time URL Monitor</span>
+              <span class="url-feed-badge" id="url-monitor-status">Waiting for agent…</span>
+            </div>
+            <div class="agent-card-body">
+              <div class="agent-url-feed" id="agent-url-feed">
+                <div class="detecting-state">
+                  <i class="fas fa-satellite-dish"></i> URL monitoring starts when the agent is active…
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Console -->
+          <div class="agent-card ac-card-console agent-console-card">
+            <div class="agent-card-header"><i class="fas fa-terminal"></i> Agent Console</div>
+            <div class="agent-card-body">
+              <div class="console-output" id="agent-console-output"></div>
+              <div class="console-input">
+                <span class="console-prompt">$</span>
+                <input type="text" id="agent-command" placeholder="status  |  scan &lt;url&gt;  |  help">
+                <button id="send-agent-command"><i class="fas fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="agent-card ac-card-activity agent-log-card">
+            <div class="agent-card-header"><i class="fas fa-list-ul"></i> Recent Activity</div>
+            <div class="agent-card-body">
+              <div class="agent-activity-log" id="agent-activity-log">
+                <div class="detecting-state">
+                  <span class="agent-loader-orbit"></span> Loading activity…
                 </div>
               </div>
             </div>

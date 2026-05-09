@@ -102,7 +102,7 @@ class SettingsScreen {
 
     _shell() {
         const backendUrl = localStorage.getItem('cf-backend-url') || window.CF_API?.BACKEND || 'https://cyberforge-ddd97655464f.herokuapp.com';
-        const mlUrl = localStorage.getItem('cf-ml-url') || window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+        const mlUrl = localStorage.getItem('cf-ml-url') || window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
 
         return `
 <style>

@@ -188,7 +188,7 @@
     }
 
     const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
-    const response = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(7000) });
+    const response = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(18000) });
     const payload = await response.json().catch(() => ({}));
     return { success: response.ok, data: payload };
   }
@@ -199,7 +199,7 @@
     }
 
     const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
-    const response = await fetch(`${backendUrl}/api/cyberforge-ml/health`, { signal: AbortSignal.timeout(7000) });
+    const response = await fetch(`${backendUrl}/api/cyberforge-ml/health`, { signal: AbortSignal.timeout(18000) });
     const payload = await response.json().catch(() => ({}));
     return { success: response.ok, data: payload };
   }

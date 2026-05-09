@@ -11,7 +11,7 @@ class RealTimeMonitorScreen {
         this.events = [];
         this.maxEvents = 100;
         this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
-        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+        this.ML = window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
         this.paused = false;
     }
 
@@ -72,8 +72,8 @@ class RealTimeMonitorScreen {
     async _fetchHealth() {
         try {
             const [bkRes, mlRes] = await Promise.allSettled([
-                fetch(`${this.BACKEND.replace('/api', '')}/health`, { signal: AbortSignal.timeout(3000) }),
-                fetch(`${this.ML}/health`, { signal: AbortSignal.timeout(3000) }),
+                fetch(`${this.BACKEND.replace('/api', '')}/health`, { signal: AbortSignal.timeout(18000) }),
+                fetch(`${this.ML}/health`, { signal: AbortSignal.timeout(18000) }),
             ]);
             this._setConnectionStatus(
                 bkRes.status === 'fulfilled' && bkRes.value.ok, 'backend'

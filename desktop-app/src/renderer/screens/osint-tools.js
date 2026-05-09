@@ -9,7 +9,7 @@ class OsintToolsScreen {
         this.isActive = false;
         this.results = [];
         this.activeTab = 'domain';
-        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+        this.ML = window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
         this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
     }
 

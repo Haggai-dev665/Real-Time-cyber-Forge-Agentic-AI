@@ -34,7 +34,7 @@
     : window.ChildPageLayouts;
 
   const state = {
-    activeScreen: 'http-history',
+    activeScreen: 'threat-globe',
     activeTab: 'requests',
     requests: [],
     intercepts: [],
@@ -186,11 +186,13 @@
       // Ensure token is loaded before making any requests
       console.log('🔑 Current token status:', cyberforgeAPI.token ? 'present' : 'missing');
       
+      const t0     = performance.now();
       const health = await cyberforgeAPI.checkHealth();
+      const latMs  = Math.round(performance.now() - t0);
       if (health.success) {
         state.backendConnected = true;
         console.log('✅ Connected to CyberForge backend');
-        updateConnectionStatus(true, { checkedAt: new Date() });
+        updateConnectionStatus(true, { checkedAt: new Date(), latencyMs: latMs });
         showToast('success', 'Connected', 'Successfully connected to CyberForge backend');
         
         // Connect WebSocket for real-time updates (token should be set now)
@@ -324,10 +326,14 @@
   }
 
   function updateConnectionStatus(connected, options = {}) {
-    const pending = Boolean(options.pending);
-    const checkedAt = options.checkedAt || new Date();
-    const statusEl = document.getElementById('backend-status');
+    const pending    = Boolean(options.pending);
+    const checkedAt  = options.checkedAt || new Date();
+    const latencyMs  = typeof options.latencyMs === 'number' ? options.latencyMs : null;
+    const statusEl   = document.getElementById('backend-status');
     const footerSync = document.getElementById('footer-sync');
+    const latencyEl  = document.getElementById('backend-latency');
+    const pingDot    = document.getElementById('footer-ping-dot');
+    const pingVal    = document.getElementById('footer-ping-val');
 
     const timeLabel = checkedAt instanceof Date
       ? checkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -343,7 +349,7 @@
         statusEl.className = 'cf-badge status-online';
         statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Online';
         statusEl.setAttribute('data-status', 'online');
-        statusEl.title = `Backend connected • ${timeLabel}`;
+        statusEl.title = `Backend connected • ${timeLabel}${latencyMs !== null ? ` • ${latencyMs}ms` : ''}`;
       } else {
         statusEl.className = 'cf-badge status-offline';
         statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Offline';
@@ -352,9 +358,34 @@
       }
     }
 
+    if (latencyEl) {
+      if (connected && latencyMs !== null) {
+        const quality = latencyMs < 300 ? 'good' : latencyMs < 800 ? 'medium' : 'slow';
+        latencyEl.textContent = `${latencyMs}ms`;
+        latencyEl.setAttribute('data-quality', quality);
+      } else {
+        latencyEl.textContent = '';
+        latencyEl.removeAttribute('data-quality');
+      }
+    }
+
+    if (pingDot && pingVal) {
+      if (pending) {
+        pingDot.className = 'footer-ping-dot';
+        pingVal.textContent = '…';
+      } else if (connected && latencyMs !== null) {
+        const quality = latencyMs < 300 ? 'good' : latencyMs < 800 ? 'medium' : 'slow';
+        pingDot.className = `footer-ping-dot ${quality}`;
+        pingVal.textContent = `${latencyMs}ms`;
+      } else if (!connected) {
+        pingDot.className = 'footer-ping-dot slow';
+        pingVal.textContent = '—';
+      }
+    }
+
     if (footerSync) {
       if (pending) {
-        footerSync.textContent = 'Checking...';
+        footerSync.textContent = 'Checking…';
         footerSync.setAttribute('data-state', 'checking');
       } else if (connected) {
         footerSync.textContent = `Synced ${timeLabel}`;
@@ -604,7 +635,7 @@
     }
 
     const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
-    const response = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(7000) });
+    const response = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(18000) });
     const payload = await response.json().catch(() => ({}));
     return { success: response.ok, data: payload };
   }
@@ -615,7 +646,7 @@
     }
 
     const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
-    const response = await fetch(`${backendUrl}/api/cyberforge-ml/health`, { signal: AbortSignal.timeout(7000) });
+    const response = await fetch(`${backendUrl}/api/cyberforge-ml/health`, { signal: AbortSignal.timeout(18000) });
     const payload = await response.json().catch(() => ({}));
     return { success: response.ok, data: payload };
   }
@@ -2570,29 +2601,28 @@
   };
 
   async function syncDeviceIdentity() {
-    const deviceNameEl = document.getElementById('device-name');
-    const deviceChipEl = document.getElementById('header-device-id');
-    if (!deviceNameEl) return;
-
-    const fallbackName = localStorage.getItem('cyberforge_device_id') || 'Local Device';
-    deviceNameEl.textContent = fallbackName;
+    const userNameEl  = document.getElementById('header-user-name');
+    const avatarEl    = document.getElementById('user-avatar');
 
     try {
       const result = await window.electronAPI?.getSystemStats?.();
-      if (!(result?.success && result?.data)) return;
+      if (result?.success && result?.data) {
+        const hostname  = result.data.hostname || '';
+        const osName    = result.data.os_name || result.data.platform || '';
+        const osVersion = result.data.os_version || '';
+        const detail    = [osName, osVersion].filter(Boolean).join(' ');
 
-      const hostname = result.data.hostname || fallbackName;
-      const osName = result.data.os_name || result.data.platform || '';
-      const osVersion = result.data.os_version || '';
-      const detail = [osName, osVersion].filter(Boolean).join(' ');
+        if (avatarEl && hostname) {
+          avatarEl.title = detail ? `${hostname} • ${detail}` : hostname;
+        }
 
-      deviceNameEl.textContent = hostname;
-      if (deviceChipEl) {
-        deviceChipEl.title = detail ? `${hostname} • ${detail}` : hostname;
+        // Only set user name from hostname if no auth name is available
+        const hasAuthName = localStorage.getItem('userEmail') || localStorage.getItem('userName');
+        if (!hasAuthName && userNameEl && hostname) {
+          userNameEl.textContent = hostname.split('.')[0];
+        }
       }
-    } catch (_) {
-      // Keep fallback values if unavailable.
-    }
+    } catch (_) { /* non-critical */ }
   }
 
   function startBackendStatusSync() {
@@ -2778,78 +2808,67 @@
   }
 
   function updateSystemStatsDisplay() {
-    const cpuEl = document.getElementById('footer-cpu');
-    const memEl = document.getElementById('footer-memory');
-    const netEl = document.getElementById('footer-network');
-    
-    if (cpuEl) cpuEl.textContent = `CPU: ${systemStats.cpu}%`;
-    if (memEl) memEl.textContent = `MEM: ${systemStats.memory}%`;
-    if (netEl) netEl.textContent = `NET: ${systemStats.network} KB/s`;
-    
-    // Update footer agent status
-    const footerAgentDot = document.getElementById('footer-agent-dot');
+    const cpuVal = document.getElementById('footer-cpu-val');
+    const memVal = document.getElementById('footer-mem-val');
+    const netVal = document.getElementById('footer-net-val');
+    const cpuBar = document.getElementById('footer-cpu-bar');
+    const memBar = document.getElementById('footer-mem-bar');
+
+    if (cpuVal) cpuVal.textContent = `${systemStats.cpu}%`;
+    if (memVal) memVal.textContent = `${systemStats.memory}%`;
+    if (netVal) netVal.textContent = `${systemStats.network > 0 ? systemStats.network + ' KB/s' : '—'}`;
+    if (cpuBar) cpuBar.style.width = `${Math.min(systemStats.cpu, 100)}%`;
+    if (memBar) memBar.style.width = `${Math.min(systemStats.memory, 100)}%`;
+
+    const footerAgentDot  = document.getElementById('footer-agent-dot');
     const footerAgentText = document.getElementById('footer-agent-text');
-    
+
     if (footerAgentDot) {
       footerAgentDot.className = 'footer-status-dot ' + agentState.status;
     }
     if (footerAgentText) {
       const statusLabels = {
-        idle: 'AI Agent: Idle',
-        monitoring: 'AI Agent: Monitoring',
-        analyzing: 'AI Agent: Analyzing',
-        investigating: 'AI Agent: Investigating',
-        waiting: 'AI Agent: Waiting',
-        blocked: 'AI Agent: Blocked'
+        idle:         'Agent: Idle',
+        monitoring:   'Agent: Monitoring',
+        analyzing:    'Agent: Analyzing',
+        investigating:'Agent: Investigating',
+        waiting:      'Agent: Waiting',
+        blocked:      'Agent: Blocked'
       };
-      footerAgentText.textContent = statusLabels[agentState.status] || 'AI Agent: Unknown';
+      footerAgentText.textContent = statusLabels[agentState.status] || 'Agent: Unknown';
     }
   }
 
   function updateHeaderStats() {
-    const requestsEl = document.getElementById('stat-requests');
-    const threatsEl = document.getElementById('stat-threats');
-    const eventsEl = document.getElementById('stat-events');
     const notifCount = document.getElementById('notification-count');
-    
-    if (requestsEl) requestsEl.textContent = systemStats.requests;
-    if (threatsEl) threatsEl.textContent = agentState.memory.threatsDetected;
-    if (eventsEl) eventsEl.textContent = agentState.events.length;
     if (notifCount) {
       const unreadCount = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
-      notifCount.textContent = unreadCount;
+      notifCount.textContent = String(unreadCount);
       notifCount.style.display = unreadCount > 0 ? 'flex' : 'none';
     }
-    
-    // Update header agent status — use real backend connection status
+
     const headerAgentStatus = document.getElementById('header-agent-status');
     if (headerAgentStatus) {
       const indicator = headerAgentStatus.querySelector('.agent-status-indicator-mini');
-      const label = headerAgentStatus.querySelector('.agent-status-label');
-      
-      // Determine effective agent status from backend connection + agent state
+      const label     = document.getElementById('header-agent-label');
+
       let effectiveStatus = agentState.status;
-      if (state.backendConnected && effectiveStatus === 'idle') {
-        effectiveStatus = 'monitoring'; // If connected to backend, agent is at least monitoring
-      }
-      
+      if (state.backendConnected && effectiveStatus === 'idle') effectiveStatus = 'monitoring';
+
       const colors = {
-        idle: '#6b7280',
-        monitoring: '#039855',
-        analyzing: '#1570EF',
-        investigating: '#DC6803',
-        waiting: '#6941C6',
-        blocked: '#D92D20'
+        idle:         '#6b7280',
+        monitoring:   '#039855',
+        analyzing:    '#1570EF',
+        investigating:'#DC6803',
+        waiting:      '#6941C6',
+        blocked:      '#D92D20'
       };
-      
-      if (indicator) {
-        indicator.style.background = colors[effectiveStatus] || '#039855';
-      }
+
+      if (indicator) indicator.style.background = colors[effectiveStatus] || '#039855';
       if (label) {
-        const statusLabel = state.backendConnected
+        label.textContent = state.backendConnected
           ? `Agent ${effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}`
           : 'Agent Offline';
-        label.textContent = statusLabel;
       }
     }
   }
@@ -3322,44 +3341,197 @@
       themeToggle.setAttribute('data-theme-managed', 'true');
     }
 
-    // Periodically update header alert count from real data
+    // Scan stop button in header
+    document.getElementById('header-scan-stop')?.addEventListener('click', () => {
+      safeStopAgent().catch(() => {});
+      const ind = document.getElementById('header-scan-indicator');
+      if (ind) ind.style.display = 'none';
+    });
+
+    // User display name from auth session
+    initHeaderUserName();
+
+    // Kick off all live header/footer data feeds
     updateHeaderAlertCount();
-    setInterval(updateHeaderAlertCount, 10000);
+    updateHeaderMLStatus();
+    updateFooterAgentCount();
+    updateFooterBrowserCount();
+    measureAndDisplayLatency();
+
+    setInterval(updateHeaderAlertCount,     12000);
+    setInterval(updateHeaderMLStatus,       60000);
+    setInterval(updateFooterAgentCount,     30000);
+    setInterval(updateFooterBrowserCount,   30000);
+    setInterval(measureAndDisplayLatency,   30000);
   }
 
-  // Update the header alert badge with real data from backend
   async function updateHeaderAlertCount() {
-    const alertNumberEl = document.getElementById('header-alert-number');
-    const notifCountEl = document.getElementById('notification-count');
-    if (!alertNumberEl && !notifCountEl) return;
+    const alertNumberEl  = document.getElementById('header-alert-number');
+    const notifCountEl   = document.getElementById('notification-count');
+    const threatLevelEl  = document.getElementById('header-threat-level');
+    const threatTextEl   = document.getElementById('threat-level-text');
+    const footerThreatEl = document.getElementById('footer-threat-count');
+    const footerChip     = document.getElementById('footer-threats-chip');
 
     try {
-      // Try getting alerts from the agent alerts API
-      const result = await safeGetAgentAlerts({ limit: 50 });
-      const alerts = result?.data?.data?.alerts || [];
-      const criticalCount = alerts.filter(a =>
-        a.severity === 'critical' || a.severity === 'high' || a.risk_score >= 70
-      ).length;
-      const totalCount = alerts.length;
+      const result   = await safeGetAgentAlerts({ limit: 100 });
+      const alerts   = result?.data?.data?.alerts || result?.data?.alerts || [];
+      const critical = alerts.filter(a => a.severity === 'critical' || a.risk_score >= 90).length;
+      const high     = alerts.filter(a => a.severity === 'high'     || (a.risk_score >= 70 && a.risk_score < 90)).length;
+      const medium   = alerts.filter(a => a.severity === 'medium'   || (a.risk_score >= 40 && a.risk_score < 70)).length;
+      const total    = alerts.length;
 
-      if (alertNumberEl) {
-        alertNumberEl.textContent = String(criticalCount);
-        alertNumberEl.style.color = criticalCount > 0 ? '#E74C3C' : '';
-      }
+      if (alertNumberEl) alertNumberEl.textContent = String(critical + high);
 
       if (notifCountEl) {
         const unread = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
-        const displayCount = Math.max(unread, criticalCount);
-        notifCountEl.textContent = String(displayCount);
-        notifCountEl.style.display = displayCount > 0 ? 'flex' : 'none';
+        const display = Math.max(unread, critical + high);
+        notifCountEl.textContent = String(display);
+        notifCountEl.style.display = display > 0 ? 'flex' : 'none';
       }
-    } catch (e) {
-      // Use local event count as fallback
+
+      if (footerThreatEl) footerThreatEl.textContent = String(total);
+      if (footerChip) {
+        footerChip.classList.toggle('has-threats', total > 0);
+      }
+
+      // Determine threat level
+      let level = 'low', label = 'LOW';
+      if (critical > 0) { level = 'critical'; label = 'CRITICAL'; }
+      else if (high > 0) { level = 'high';     label = 'HIGH'; }
+      else if (medium > 0){ level = 'medium';   label = 'MEDIUM'; }
+
+      if (threatLevelEl) threatLevelEl.setAttribute('data-level', level);
+      if (threatTextEl)  threatTextEl.textContent = label;
+
+    } catch (_e) {
+      const unread = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
       if (notifCountEl) {
-        const unread = agentState.events.filter(e => e.severity === 'warning' || e.severity === 'critical').length;
         notifCountEl.textContent = String(unread);
         notifCountEl.style.display = unread > 0 ? 'flex' : 'none';
       }
+      if (threatLevelEl) threatLevelEl.setAttribute('data-level', '');
+      if (threatTextEl)  threatTextEl.textContent = '—';
+    }
+  }
+
+  async function updateHeaderMLStatus() {
+    const backendUrl = (window.CF_API?.BACKEND) || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const headerDots  = document.querySelectorAll('#header-ml-dots .hml-dot');
+    const headerCount = document.getElementById('header-ml-count');
+    const footerDots  = document.querySelectorAll('#footer-ml-dots .fml-dot');
+    const footerScore = document.getElementById('footer-ml-score');
+
+    const modelKeys = ['phishing_detection', 'malware_detection', 'anomaly_detection', 'web_attack_detection'];
+    const dotAttrs  = ['phishing', 'malware', 'anomaly', 'webattack'];
+
+    // Set loading state
+    [...headerDots, ...footerDots].forEach(d => {
+      d.className = d.className.replace(/\b(online|offline|loading)\b/g, '').trim() + ' loading';
+    });
+
+    try {
+      const t0  = performance.now();
+      const res = await fetch(`${backendUrl}/api/cyberforge-ml/health`, {
+        signal: AbortSignal.timeout(18000)
+      });
+      const data   = res.ok ? await res.json() : null;
+      const models = data?.models_available || [];
+      const onlineCount = models.length;
+
+      dotAttrs.forEach((attr, i) => {
+        const key     = modelKeys[i];
+        const isOnline = models.includes(key);
+        const state   = isOnline ? 'online' : 'offline';
+
+        headerDots.forEach(d => {
+          if (d.dataset.model === attr) {
+            d.className = state;
+          }
+        });
+        footerDots.forEach(d => {
+          if (d.dataset.model === attr) {
+            d.className = `fml-dot ${state}`;
+          }
+        });
+      });
+
+      if (headerCount) headerCount.textContent = `${onlineCount}/4`;
+      if (footerScore) footerScore.textContent  = `${onlineCount}/4`;
+
+    } catch (_e) {
+      [...headerDots, ...footerDots].forEach(d => {
+        d.className = d.className.replace(/\b(online|loading)\b/g, '').trim() + ' offline';
+      });
+      if (headerCount) headerCount.textContent = '?/4';
+      if (footerScore) footerScore.textContent  = '?/4';
+    }
+  }
+
+  async function updateFooterAgentCount() {
+    try {
+      const backendUrl = (window.CF_API?.BACKEND) || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+      const token = localStorage.getItem('authToken') || '';
+      const res = await fetch(`${backendUrl}/api/agent/list`, {
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!res.ok) return;
+      const data   = await res.json();
+      const agents = data?.data?.agents || data?.agents || [];
+      const count  = agents.length;
+
+      const footerCount  = document.getElementById('footer-agent-count');
+      const headerCount  = document.getElementById('header-agent-count');
+      if (footerCount)  footerCount.textContent  = String(count);
+      if (headerCount)  headerCount.textContent  = String(count);
+    } catch (_e) { /* stay silent */ }
+  }
+
+  async function updateFooterBrowserCount() {
+    try {
+      const backendUrl = (window.CF_API?.BACKEND) || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+      const token = localStorage.getItem('authToken') || '';
+      const res = await fetch(`${backendUrl}/api/agent/browser-intelligence`, {
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!res.ok) return;
+      const data     = await res.json();
+      const browsers = data?.data?.browsers || data?.browsers || [];
+      const active   = browsers.filter(b => b.is_active || b.isActive || b.status === 'active').length;
+      const total    = browsers.length;
+      const display  = active > 0 ? active : total;
+
+      const countEl = document.getElementById('footer-browser-count');
+      const chip    = document.getElementById('footer-browsers-chip');
+      if (countEl) countEl.textContent = String(display);
+      if (chip)    chip.classList.toggle('active', display > 0);
+    } catch (_e) { /* stay silent */ }
+  }
+
+  async function measureAndDisplayLatency() {
+    if (!state.backendConnected) return;
+    const backendUrl = (window.CF_API?.BACKEND) || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    try {
+      const t0  = performance.now();
+      const res = await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(10000) });
+      const ms  = Math.round(performance.now() - t0);
+      if (res.ok) {
+        updateConnectionStatus(true, { checkedAt: new Date(), latencyMs: ms });
+      }
+    } catch (_e) { /* non-blocking */ }
+  }
+
+  function initHeaderUserName() {
+    const el = document.getElementById('header-user-name');
+    if (!el) return;
+    const email = localStorage.getItem('userEmail') || localStorage.getItem('cf-user-email') || '';
+    const name  = localStorage.getItem('userName')  || localStorage.getItem('cf-user-name')  || '';
+    if (name) {
+      el.textContent = name.split(' ')[0];
+    } else if (email) {
+      el.textContent = email.split('@')[0];
     }
   }
 

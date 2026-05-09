@@ -12,7 +12,7 @@ class APIClient {
         this.backendUrl = API_CONFIG?.backend?.base || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
         this.apiUrl = API_CONFIG?.backend?.api || (this.backendUrl + '/api');
         this.wsUrl = API_CONFIG?.backend?.websocket || (this.backendUrl.replace(/^https?/, m => m === 'https' ? 'wss' : 'ws') + '://' + this.backendUrl.replace(/^https?:\/\//, '') + '/ws');
-        this.mlUrl = API_CONFIG?.ml?.base || 'https://che237-cyberforge-models.hf.space';
+        this.mlUrl = API_CONFIG?.ml?.base || window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
         
         this.authToken = localStorage.getItem('authToken');
         this.refreshToken = localStorage.getItem('refreshToken');

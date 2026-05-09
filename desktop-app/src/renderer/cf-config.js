@@ -6,7 +6,7 @@
 
 (function () {
     const HEROKU    = 'https://cyberforge-ddd97655464f.herokuapp.com';
-    const HF_SPACE  = 'https://che237-cyberforge-models.hf.space';
+    const ML_PROXY  = HEROKU + '/api/cyberforge-ml';
 
     // Allow runtime override via settings (stored in localStorage by settings.js)
     const savedBackend = localStorage.getItem('cf-backend-url');
@@ -14,7 +14,7 @@
 
     window.CF_API = {
         BACKEND: (savedBackend || HEROKU).replace(/\/$/, ''),
-        ML:      (savedML || HF_SPACE).replace(/\/$/, ''),
+        ML:      (savedML || ML_PROXY).replace(/\/$/, ''),
         get API()     { return this.BACKEND + '/api'; },
         get WS()      {
             const b = this.BACKEND;
@@ -32,7 +32,7 @@
     // Listen for settings changes at runtime
     window.addEventListener('cf-theme-change', () => {
         window.CF_API.BACKEND = (localStorage.getItem('cf-backend-url') || HEROKU).replace(/\/$/, '');
-        window.CF_API.ML      = (localStorage.getItem('cf-ml-url') || HF_SPACE).replace(/\/$/, '');
+        window.CF_API.ML      = (localStorage.getItem('cf-ml-url') || ML_PROXY).replace(/\/$/, '');
     });
 
     console.log('[CF] API config loaded — Backend:', window.CF_API.BACKEND, '| ML:', window.CF_API.ML);

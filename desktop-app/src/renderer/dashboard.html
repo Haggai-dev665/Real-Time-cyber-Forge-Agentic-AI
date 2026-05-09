@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="css/agent-core.css">
     <!-- TODO 4: Distributed Intelligence -->
     <link rel="stylesheet" href="css/distributed-intelligence.css">
+    <!-- Agent UI: floating panel + sidebar + micro-interactions (must load LAST to override shell) -->
+    <link rel="stylesheet" href="css/agent-ui-redesign.css">
 
     <style>
         html { color-scheme: light dark; }
@@ -47,11 +49,10 @@
         <!-- Top Header Bar -->
         <header class="cf-header">
             <div class="cf-header-left">
-                <!-- Mobile Menu Toggle -->
                 <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Toggle Menu">
                     <i class="fas fa-bars"></i>
                 </button>
-                
+
                 <div class="cf-logo">
                     <div class="cf-logo-mark">
                         <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image"
@@ -64,69 +65,94 @@
                 </div>
 
                 <div class="header-divider"></div>
-                
-                <!-- AI Agent Status in Header -->
+
+                <!-- Agent Status Chip -->
                 <div class="header-agent-status" id="header-agent-status" title="AI Agents Status">
                     <span class="agent-status-ring">
                         <span class="agent-status-indicator-mini"></span>
                     </span>
-                    <span class="agent-status-label">Agents Online</span>
-                </div>
-                
-                <!-- Quick Scan Button -->
-                <button class="header-btn primary" id="quick-scan-btn" title="Quick Threat Scan">
-                    <i class="fas fa-bolt"></i>
-                    <span>Scan</span>
-                </button>
-            </div>
-            
-            <div class="cf-header-center">
-                <div class="header-search" id="header-search">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" placeholder="Search threats, assets, events…" id="global-search">
-                    <kbd class="search-kbd"><span class="kbd-symbol">⌘</span>K</kbd>
-                </div>
-            </div>
-            
-            <div class="cf-header-right">
-                <!-- Backend Status Badge -->
-                <span class="cf-badge" id="backend-status" title="Backend Connection"><i class="fas fa-circle-notch fa-spin"></i> Connecting</span>
-
-                <!-- Device Identity -->
-                <div class="header-device-id" id="header-device-id" title="Device Identity">
-                    <i class="fas fa-desktop"></i>
-                    <span id="device-name">Local</span>
-                </div>
-                
-                <!-- Active Alert Count -->
-                <div class="header-alert-count" id="header-alert-widget" title="Active Alerts">
-                    <i class="fas fa-shield-alt"></i>
-                    <span id="header-alert-number">0</span>
-                </div>
-                
-                <!-- Privacy Mode Indicator -->
-                <div class="header-privacy-mode" id="header-privacy-mode" title="Privacy Mode">
-                    <i class="fas fa-user-secret"></i>
+                    <span class="agent-status-label" id="header-agent-label">Connecting</span>
+                    <span class="header-agent-count" id="header-agent-count"></span>
                 </div>
 
                 <div class="header-divider"></div>
-                
+
+                <!-- Live Threat Level -->
+                <div class="header-threat-level" id="header-threat-level" title="Current system threat level — derived from active alerts">
+                    <span class="threat-level-dot" id="threat-level-dot"></span>
+                    <span class="threat-level-text" id="threat-level-text">—</span>
+                </div>
+
+                <!-- ML Models Status -->
+                <div class="header-ml-badge" id="header-ml-badge" title="ML model health from backend">
+                    <i class="fas fa-brain"></i>
+                    <div class="header-ml-dots" id="header-ml-dots">
+                        <span class="hml-dot" data-model="phishing" title="Phishing Detection"></span>
+                        <span class="hml-dot" data-model="malware" title="Malware Detection"></span>
+                        <span class="hml-dot" data-model="anomaly" title="Anomaly Detection"></span>
+                        <span class="hml-dot" data-model="webattack" title="Web Attack Detection"></span>
+                    </div>
+                    <span class="header-ml-count" id="header-ml-count">—/4</span>
+                </div>
+            </div>
+
+            <div class="cf-header-center">
+                <div class="header-search" id="header-search">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" placeholder="Search threats, IPs, domains, assets…" id="global-search" autocomplete="off" spellcheck="false">
+                    <kbd class="search-kbd"><span class="kbd-symbol">⌘</span>K</kbd>
+                </div>
+            </div>
+
+            <div class="cf-header-right">
+                <!-- Backend Connection + Latency -->
+                <div class="header-conn-group" title="Backend connection and response time">
+                    <span class="cf-badge" id="backend-status"><i class="fas fa-circle-notch fa-spin"></i> Connecting</span>
+                    <span class="header-latency" id="backend-latency"></span>
+                </div>
+
+                <!-- Active Scan Indicator (shown only when scanning) -->
+                <div class="header-scan-indicator" id="header-scan-indicator" style="display:none">
+                    <span class="scan-pulse-ring"></span>
+                    <span class="scan-indicator-label" id="scan-indicator-label">Scanning…</span>
+                    <button class="scan-stop-btn" id="header-scan-stop" title="Stop scan">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+
+                <!-- Active Threats -->
+                <div class="header-alert-count" id="header-alert-widget" title="Active high/critical threats from backend">
+                    <i class="fas fa-shield-halved"></i>
+                    <span id="header-alert-number">—</span>
+                    <span class="header-alert-label">threats</span>
+                </div>
+
+                <!-- Quick Scan -->
+                <button class="header-btn primary" id="quick-scan-btn" title="Run a quick threat scan on the current session">
+                    <i class="fas fa-bolt"></i>
+                    <span>Quick Scan</span>
+                </button>
+
+                <div class="header-divider"></div>
+
                 <button class="header-btn header-btn-icon" id="notifications-btn" title="Notifications">
                     <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notification-count">0</span>
+                    <span class="notification-badge" id="notification-count" style="display:none">0</span>
                 </button>
-                
-                <button class="header-btn header-btn-icon" id="theme-toggle" title="Toggle Theme">
+
+                <button class="header-btn header-btn-icon" id="theme-toggle" title="Toggle light / dark theme">
                     <i class="fas fa-moon"></i>
                 </button>
-                
+
                 <button class="header-btn header-btn-icon" id="settings-btn" title="Settings">
-                    <i class="fas fa-cog"></i>
+                    <i class="fas fa-gear"></i>
                 </button>
-                
-                <div class="user-avatar" id="user-avatar" title="User Menu">
-                    <i class="fas fa-user"></i>
-                    <span class="avatar-online-dot"></span>
+
+                <!-- User Avatar -->
+                <div class="user-avatar" id="user-avatar" title="Signed-in user">
+                    <i class="fas fa-user" id="avatar-icon"></i>
+                    <span class="user-display-name" id="header-user-name"></span>
+                    <span class="avatar-online-dot" id="avatar-online-dot"></span>
                 </div>
             </div>
         </header>
@@ -470,124 +496,98 @@
 
             <!-- Main Content Panel -->
             <div class="cf-content">
-                <!-- Tab Bar -->
-                <div class="cf-tabs">
-                    <button class="cf-tab active" data-tab="requests">
-                        <i class="fas fa-arrow-right"></i>
-                        <span>Requests</span>
-                    </button>
-                    <button class="cf-tab" data-tab="responses">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>Responses</span>
-                    </button>
-                    <button class="cf-tab" data-tab="websockets">
-                        <i class="fas fa-plug"></i>
-                        <span>Websockets</span>
-                    </button>
-                </div>
-                
-                <!-- Query Bar -->
-                <div class="query-bar">
-                    <input type="text" class="query-input" id="query-input" placeholder="Enter an HTTPQL query...">
-                </div>
-                
                 <!-- Screen Container -->
-                <div id="screen-container" class="cf-split-view">
-                    <!-- HTTP History Screen (Default) -->
-                    <div class="cf-split-horizontal" id="http-history-screen">
-                        <!-- Requests Table Panel -->
-                        <div class="cf-panel" style="flex: 1;">
-                            <div class="cf-table-container">
-                                <table class="cf-table" id="requests-table">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Host</th>
-                                            <th>Method</th>
-                                            <th>Path</th>
-                                            <th>Query</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="requests-tbody">
-                                        <!-- Requests will be populated dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Resizer -->
-                        <div class="cf-resizer" id="main-resizer"></div>
-                        
-                        <!-- Request Detail Panel -->
-                        <div class="cf-panel" id="detail-panel" style="width: 50%;">
-                            <div class="cf-panel-header">
-                                <div class="cf-panel-title">Request Details</div>
-                                <div class="cf-panel-actions">
-                                    <button class="panel-action-btn" title="Copy">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="panel-action-btn" title="Download">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="cf-panel-content" id="request-detail-content">
-                                <div class="empty-state">
-                                    <i class="fas fa-mouse-pointer empty-state-icon"></i>
-                                    <div class="empty-state-title">Select a request</div>
-                                    <div class="empty-state-description">Click on a request in the table to view its details</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="screen-container" class="cf-split-view"></div>
                 
                 <!-- Application Footer -->
                 <footer class="cf-footer" id="app-footer">
+
+                    <!-- LEFT: Agent state + uptime + session agents -->
                     <div class="footer-left">
                         <div class="footer-agent-status">
                             <span class="footer-status-dot" id="footer-agent-dot"></span>
-                            <span class="footer-status-text" id="footer-agent-text">AI Agent: Monitoring</span>
+                            <span class="footer-status-text" id="footer-agent-text">Agent</span>
                         </div>
                         <div class="footer-divider"></div>
-                        <div class="footer-stat">
+                        <div class="footer-stat" title="Session uptime since app launch">
                             <i class="fas fa-clock"></i>
-                            <span id="footer-uptime">Uptime: 0:00:00</span>
+                            <span id="footer-uptime">0:00:00</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-stat footer-agents-chip" id="footer-agents-chip" title="Active agents from /api/agent/list">
+                            <i class="fas fa-robot"></i>
+                            <span id="footer-agent-count">—</span>
+                            <span class="footer-stat-sub">agents</span>
                         </div>
                     </div>
-                    
+
+                    <!-- CENTER: System resources + ML health + threat/browser counts -->
                     <div class="footer-center">
-                        <div class="footer-system-stats">
-                            <div class="footer-stat" title="CPU Usage">
+                        <div class="footer-resource-group">
+                            <div class="footer-resource" title="CPU Usage from desktop API">
                                 <i class="fas fa-microchip"></i>
-                                <span id="footer-cpu">CPU: 0%</span>
+                                <span id="footer-cpu-val">0%</span>
+                                <div class="footer-mini-bar">
+                                    <div class="footer-mini-fill footer-mini-fill--cpu" id="footer-cpu-bar"></div>
+                                </div>
                             </div>
-                            <div class="footer-stat" title="Memory Usage">
+                            <div class="footer-resource" title="Memory Usage from desktop API">
                                 <i class="fas fa-memory"></i>
-                                <span id="footer-memory">MEM: 0%</span>
+                                <span id="footer-mem-val">0%</span>
+                                <div class="footer-mini-bar">
+                                    <div class="footer-mini-fill footer-mini-fill--mem" id="footer-mem-bar"></div>
+                                </div>
                             </div>
-                            <div class="footer-stat" title="Network Activity">
+                            <div class="footer-resource" title="Network activity from desktop API">
                                 <i class="fas fa-network-wired"></i>
-                                <span id="footer-network">NET: 0 KB/s</span>
+                                <span id="footer-net-val">— KB/s</span>
                             </div>
+                        </div>
+
+                        <div class="footer-divider footer-divider--tall"></div>
+
+                        <!-- ML Health: 4 model dots -->
+                        <div class="footer-ml-health" id="footer-ml-health" title="ML model health — loaded from /api/cyberforge-ml/health">
+                            <i class="fas fa-brain"></i>
+                            <div class="footer-ml-dots" id="footer-ml-dots">
+                                <span class="fml-dot" data-model="phishing" title="Phishing Detection"></span>
+                                <span class="fml-dot" data-model="malware" title="Malware Detection"></span>
+                                <span class="fml-dot" data-model="anomaly" title="Anomaly Detection"></span>
+                                <span class="fml-dot" data-model="webattack" title="Web Attack Detection"></span>
+                            </div>
+                            <span class="footer-ml-score" id="footer-ml-score">—/4</span>
+                        </div>
+
+                        <div class="footer-divider footer-divider--tall"></div>
+
+                        <!-- Active Threats -->
+                        <div class="footer-threats-chip" id="footer-threats-chip" title="Active high/critical threats from /api/agent/alerts">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            <span id="footer-threat-count">—</span>
+                            <span class="footer-stat-sub">threats</span>
+                        </div>
+
+                        <!-- Browsers Monitored -->
+                        <div class="footer-browsers-chip" id="footer-browsers-chip" title="Browsers under monitoring from /api/agent/browser-intelligence">
+                            <i class="fas fa-globe"></i>
+                            <span id="footer-browser-count">—</span>
+                            <span class="footer-stat-sub">browsers</span>
                         </div>
                     </div>
-                    
+
+                    <!-- RIGHT: Ping + last sync + version -->
                     <div class="footer-right">
-                        <div class="footer-stat" title="Active Sessions">
-                            <i class="fas fa-users"></i>
-                            <span id="footer-sessions">1 Session</span>
+                        <div class="footer-ping-chip" id="footer-ping-chip" title="Backend response latency">
+                            <span class="footer-ping-dot" id="footer-ping-dot"></span>
+                            <span id="footer-ping-val">— ms</span>
                         </div>
                         <div class="footer-divider"></div>
-                        <div class="footer-stat" title="Last Sync">
-                            <i class="fas fa-sync-alt"></i>
-                            <span id="footer-sync">Synced</span>
+                        <div class="footer-stat" title="Last successful backend sync">
+                            <i class="fas fa-rotate"></i>
+                            <span id="footer-sync">Syncing…</span>
                         </div>
                         <div class="footer-divider"></div>
-                        <div class="footer-version">
-                            <span>v2.0.0</span>
-                        </div>
+                        <div class="footer-version">v2.0.0</div>
                     </div>
                 </footer>
             </div>
@@ -601,42 +601,45 @@
         <span class="agent-mini-pulse"></span>
     </button>
 
-    <!-- Floating Agent Control Panel v2 -->
+    <!-- Floating Agent Control Panel v3 — Rich UI -->
     <div class="agent-control-panel floating-agent-panel" id="agent-control-panel">
+
+        <!-- ── Panel Header ──────────────────────────────────── -->
         <div class="agent-panel-header">
-            <div class="agent-panel-title">
+            <div class="agent-panel-title" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
                 <div class="agent-avatar">
                     <div class="agent-avatar-inner"><i class="fas fa-robot"></i></div>
                     <span class="agent-pulse" id="agent-pulse-indicator"></span>
                 </div>
                 <div class="agent-title-info">
                     <span class="agent-name">CyberForge Agent</span>
-                    <span class="agent-version">v2.1 · agentic</span>
+                    <span class="agent-version">v2.1 &middot; agentic mode</span>
                 </div>
             </div>
             <div class="agent-panel-status">
                 <span class="agent-status-dot" id="agent-main-status"></span>
-                <span class="agent-status-text" id="agent-status-text">Initializing...</span>
+                <span class="agent-status-text" id="agent-status-text">Initializing…</span>
             </div>
             <div class="agent-panel-controls">
                 <button class="agent-panel-minimize" id="agent-panel-minimize" title="Minimize">
-                    <i class="fas fa-window-minimize"></i>
+                    <i class="fas fa-minus"></i>
                 </button>
-                <button class="agent-panel-toggle" id="agent-panel-toggle" title="Collapse">
+                <button class="agent-panel-toggle" id="agent-panel-toggle" title="Collapse body">
                     <i class="fas fa-chevron-up"></i>
                 </button>
-                <button class="agent-panel-hide" id="agent-panel-hide" title="Hide">
+                <button class="agent-panel-hide" id="agent-panel-hide" title="Close panel">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
 
+        <!-- ── Panel Body ────────────────────────────────────── -->
         <div class="agent-panel-body" id="agent-panel-body">
 
             <!-- Live System Stats -->
             <div class="agent-section">
                 <div class="agent-section-label">
-                    <i class="fas fa-microchip"></i> System Stats
+                    <i class="fas fa-microchip"></i> System
                 </div>
                 <div class="agent-live-stats">
                     <div class="agent-live-stat">
@@ -647,7 +650,7 @@
                     <div class="agent-live-stat">
                         <i class="fas fa-memory"></i>
                         <span id="fp-mem-pct">--</span>
-                        <label>Memory</label>
+                        <label>RAM</label>
                     </div>
                     <div class="agent-live-stat">
                         <i class="fas fa-clock"></i>
@@ -655,44 +658,45 @@
                         <label>Uptime</label>
                     </div>
                     <div class="agent-live-stat">
-                        <i class="fas fa-display"></i>
+                        <i class="fas fa-window-restore"></i>
                         <span id="fp-browser-count">--</span>
                         <label>Browsers</label>
                     </div>
                 </div>
             </div>
 
-            <!-- Backend Status — rich chips -->
+            <!-- Services Status -->
             <div class="agent-section">
                 <div class="agent-section-label">
                     <i class="fas fa-tower-broadcast"></i> Services
                 </div>
                 <div class="agent-status-row">
                     <span class="agent-status-row-label"><i class="fas fa-server"></i> Backend</span>
-                    <span id="fp-backend-status" class="agent-conn-chip offline">Checking</span>
+                    <span id="fp-backend-status" class="agent-conn-chip checking">Checking</span>
                 </div>
                 <div class="agent-status-row">
-                    <span class="agent-status-row-label"><i class="fas fa-brain"></i> ML Service</span>
-                    <span id="fp-ml-status" class="agent-conn-chip offline">Checking</span>
+                    <span class="agent-status-row-label"><i class="fas fa-brain"></i> ML Engine</span>
+                    <span id="fp-ml-status" class="agent-conn-chip checking">Checking</span>
                 </div>
                 <div class="agent-status-row">
-                    <span class="agent-status-row-label"><i class="fas fa-robot"></i> Agents</span>
+                    <span class="agent-status-row-label"><i class="fas fa-robot"></i> Active Agents</span>
                     <span class="agent-status-row-value" id="fp-agent-count">0</span>
                 </div>
             </div>
 
-            <!-- Detected Browsers — with orbit loader -->
+            <!-- Detected Browsers -->
             <div class="agent-section">
-                <div class="agent-section-label" style="justify-content:space-between">
-                    <span><i class="fas fa-window-restore"></i> Browsers</span>
-                    <button class="fp-btn" id="fp-refresh-browsers" style="width:auto;padding:2px 7px;font-size:9px">
+                <div class="agent-section-label">
+                    <span style="display:flex;align-items:center;gap:5px">
+                        <i class="fas fa-window-restore"></i> Browsers
+                    </span>
+                    <button class="fp-btn" id="fp-refresh-browsers" style="margin-left:auto">
                         <i class="fas fa-rotate"></i>
                     </button>
                 </div>
                 <div class="fp-browsers-list" id="fp-browsers-list">
                     <div class="fp-loading">
-                        <span class="agent-loader-orbit"></span>
-                        Scanning browsers...
+                        <span class="agent-loader-orbit"></span> Scanning…
                     </div>
                 </div>
             </div>
@@ -700,19 +704,18 @@
             <!-- Quick Controls -->
             <div class="agent-section">
                 <div class="agent-section-label">
-                    <i class="fas fa-bolt"></i>
-                    CONTROLS
+                    <i class="fas fa-bolt"></i> Controls
                 </div>
                 <div class="agent-quick-controls">
                     <button class="agent-control-btn" id="agent-resync-btn" title="Resync All Data">
-                        <i class="fas fa-sync"></i>
+                        <i class="fas fa-arrows-rotate"></i>
                         <span>Resync</span>
                     </button>
                     <button class="agent-control-btn" id="fp-open-agent-center" title="Open Agent Center">
-                        <i class="fas fa-external-link-alt"></i>
+                        <i class="fas fa-up-right-from-square"></i>
                         <span>Center</span>
                     </button>
-                    <button class="agent-action-btn primary" id="agent-add-browser" title="Add Browser Manually">
+                    <button class="agent-control-btn agent-action-btn primary" id="agent-add-browser" title="Add Browser">
                         <i class="fas fa-plus"></i>
                         <span>Add</span>
                     </button>
@@ -722,37 +725,35 @@
             <!-- Activity Log -->
             <div class="agent-section">
                 <div class="agent-section-label">
-                    <i class="fas fa-history"></i>
-                    ACTIVITY LOG
+                    <i class="fas fa-timeline"></i> Activity
                 </div>
                 <div class="agent-actions-log" id="agent-actions-log">
-                    <!-- Populated by JS from real data -->
+                    <!-- populated dynamically -->
                 </div>
             </div>
 
             <!-- URL Scanning Feed -->
             <div class="agent-section">
                 <div class="agent-section-label">
-                    <i class="fas fa-shield-alt"></i>
-                    URL SCANNING
+                    <i class="fas fa-shield-halved"></i> URL Scanning
                     <span class="fp-url-status-dot" id="fp-url-scan-dot"></span>
                 </div>
                 <div class="fp-url-feed" id="fp-url-feed">
-                    <div class="fp-url-empty">Open a browser to start scanning</div>
+                    <div class="fp-url-empty">Open a browser to begin scanning</div>
                 </div>
             </div>
 
             <!-- Behavioral Intelligence Alerts -->
             <div class="agent-section">
                 <div class="agent-section-label">
-                    <i class="fas fa-brain"></i>
-                    BEHAVIORAL ALERTS
+                    <i class="fas fa-brain"></i> Behavioral Alerts
                     <span class="fp-behavioral-badge" id="fp-behavioral-count">0</span>
                 </div>
                 <div class="fp-behavioral-alerts" id="fp-behavioral-alerts">
-                    <div class="fp-empty">No behavioral alerts</div>
+                    <div class="fp-empty">No alerts detected</div>
                 </div>
             </div>
+
         </div>
     </div>
 

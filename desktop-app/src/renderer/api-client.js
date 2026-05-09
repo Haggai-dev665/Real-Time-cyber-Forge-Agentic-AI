@@ -89,7 +89,8 @@ class CyberForgeAPI {
     const url = `${this.baseUrl}${endpoint}`;
     const options = {
       method,
-      headers: this.getHeaders()
+      headers: this.getHeaders(),
+      signal: AbortSignal.timeout(18000)
     };
 
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {

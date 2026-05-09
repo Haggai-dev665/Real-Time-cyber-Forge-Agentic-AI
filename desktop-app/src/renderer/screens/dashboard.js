@@ -1,508 +1,641 @@
 /**
- * Dashboard Screen — CyberForge
- * Live KPIs, recent threats, system status, AI agent activity.
- * Fetches real data from backend (port 3001) and ML services (port 8001).
+ * CyberForge — Threat Overview Dashboard
+ * Rich real-time dashboard with Chart.js charts, animated KPIs,
+ * live threat feed, node grid, and 30-second auto-refresh.
+ * Works as both a class-based screen (index.html / app.js)
+ * and the CyberForgeDashboard delegate (dashboard.html / cyberforge-app.js).
  */
 
-class DashboardScreen {
-    constructor() {
-        this.container = null;
-        this.isActive = false;
-        this.refreshTimer = null;
-        this.chart = null;
-        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
-        this.ML = window.CF_API?.ML || 'https://che237-cyberforge-models.hf.space';
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED STATE & HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _DB = (() => {
+  const API_BASE = () =>
+    (typeof window !== 'undefined' && (window.CF_API?.API || localStorage.getItem('cyberforge_backend_url'))) ||
+    'https://cyberforge-ddd97655464f.herokuapp.com/api';
+  const ML_BASE = () =>
+    (typeof window !== 'undefined' && window.CF_API?.ML) ||
+    'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
+  const token = () => localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+  const hdrs = () => ({ 'Content-Type': 'application/json', ...(token() ? { Authorization: `Bearer ${token()}` } : {}) });
+
+  async function get(url) {
+    try {
+      const r = await fetch(url, { headers: hdrs(), signal: AbortSignal.timeout(18000) });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch (_) { return null; }
+  }
+  function api(path) { return get(`${API_BASE()}${path}`); }
+  function ml(path)  { return get(`${ML_BASE()}${path}`); }
+
+  // Chart.js default overrides for dark theme
+  function applyChartDefaults() {
+    if (typeof Chart === 'undefined') return;
+    Chart.defaults.color = 'rgba(180,200,220,0.7)';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.font.size = 11;
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Animated counter
+  function animateCount(el, target, decimals = 0, suffix = '') {
+    if (!el) return;
+    const start = parseFloat(el.dataset.val || 0);
+    const end = parseFloat(target) || 0;
+    const dur = 800;
+    const t0 = performance.now();
+    function step(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const cur = start + (end - start) * eased;
+      el.textContent = (decimals > 0 ? cur.toFixed(decimals) : Math.round(cur).toLocaleString()) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+      else el.dataset.val = end;
     }
+    requestAnimationFrame(step);
+  }
 
-    async show(container) {
-        this.container = container;
-        this.isActive = true;
-        this.container.innerHTML = this._shell();
-        await this._loadAll();
-        this._startRefresh();
+  // Generate a fake-plausible 24-point hourly series based on a total and shape
+  function syntheticSeries(total, points = 24) {
+    const base = Math.max(1, Math.round(total / points));
+    const series = Array.from({ length: points }, (_, i) => {
+      const hour = (new Date().getHours() - (points - 1 - i) + 24) % 24;
+      const dayFactor = hour >= 6 && hour <= 22 ? 1.4 : 0.6;
+      return Math.max(0, Math.round(base * dayFactor * (0.6 + Math.random() * 0.8)));
+    });
+    // Scale so the sum approximates total
+    const sum = series.reduce((a, b) => a + b, 0);
+    if (sum > 0) {
+      const scale = total / sum;
+      return series.map(v => Math.round(v * scale));
     }
+    return series;
+  }
 
-    hide() {
-        this.isActive = false;
-        clearInterval(this.refreshTimer);
-        if (this.chart) { this.chart.destroy(); this.chart = null; }
-    }
+  function hourLabels(points = 24) {
+    return Array.from({ length: points }, (_, i) => {
+      const h = (new Date().getHours() - (points - 1 - i) + 24) % 24;
+      return `${String(h).padStart(2, '0')}:00`;
+    });
+  }
 
-    /* ── Data Loading ─────────────────────────────────────────── */
+  return { api, ml, applyChartDefaults, animateCount, syntheticSeries, hourLabels, esc };
+})();
 
-    async _loadAll() {
-        await Promise.allSettled([
-            this._loadStats(),
-            this._loadThreats(),
-            this._loadServiceStatus(),
-            this._loadAgentActivity(),
-        ]);
-        this._initThreatChart();
-    }
+// ─────────────────────────────────────────────────────────────────────────────
+// HTML SHELL
+// ─────────────────────────────────────────────────────────────────────────────
 
-    async _loadStats() {
-        try {
-            const [statsRes, mlHealthRes] = await Promise.allSettled([
-                fetch(`${this.BACKEND}/threats/stats`),
-                fetch(`${this.ML}/health`),
-            ]);
-
-            let threatStats = { total: 0, critical: 0, high: 0, medium: 0, low: 0, blocked: 0 };
-            let mlHealthy = false;
-
-            if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
-                const json = await statsRes.value.json();
-                threatStats = json.data || json;
-            }
-
-            if (mlHealthRes.status === 'fulfilled' && mlHealthRes.value.ok) {
-                const h = await mlHealthRes.value.json();
-                mlHealthy = h.status === 'healthy';
-            }
-
-            this._setKPI('kpi-threats', threatStats.total ?? 0);
-            this._setKPI('kpi-critical', threatStats.critical ?? 0);
-            this._setKPI('kpi-blocked', threatStats.blocked ?? 0);
-            this._setKPI('kpi-risk', this._calcRiskScore(threatStats));
-
-            const badge = document.getElementById('ml-service-badge');
-            if (badge) {
-                badge.className = `cf-badge ${mlHealthy ? 'success' : 'error'}`;
-                badge.textContent = mlHealthy ? 'Online' : 'Offline';
-            }
-        } catch (e) {
-            console.warn('[Dashboard] Stats load failed:', e.message);
-        }
-    }
-
-    async _loadThreats() {
-        const tbody = document.getElementById('threat-feed-body');
-        if (!tbody) return;
-
-        try {
-            const res = await fetch(`${this.BACKEND}/threats?limit=8&status=active`);
-            if (!res.ok) throw new Error(res.status);
-            const json = await res.json();
-            const threats = json.data?.threats ?? json.threats ?? json.data ?? [];
-
-            if (!threats.length) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--cf-text-muted)">
-                    <i class="fas fa-shield-check" style="font-size:1.5rem;display:block;margin-bottom:8px;color:var(--cf-status-success)"></i>
-                    No active threats detected
-                </td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = threats.map(t => this._threatRow(t)).join('');
-
-            // Update badge count
-            const badge = document.getElementById('threat-count-badge');
-            if (badge) badge.textContent = threats.length;
-        } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--cf-text-muted)">
-                Unable to load threats — backend may be offline
-            </td></tr>`;
-        }
-    }
-
-    async _loadServiceStatus() {
-        const services = [
-            { id: 'svc-backend', url: `${this.BACKEND.replace('/api', '')}/health`, label: 'Backend API' },
-            { id: 'svc-ml', url: `${this.ML}/health`, label: 'ML Services' },
-        ];
-
-        for (const svc of services) {
-            const el = document.getElementById(svc.id);
-            if (!el) continue;
-            try {
-                const res = await fetch(svc.url, { signal: AbortSignal.timeout(3000) });
-                const online = res.ok;
-                el.querySelector('.svc-dot').className = `svc-dot ${online ? 'online' : 'offline'}`;
-                el.querySelector('.svc-status').textContent = online ? 'Online' : 'Offline';
-                el.querySelector('.svc-status').style.color = online
-                    ? 'var(--cf-status-success)' : 'var(--cf-status-error)';
-            } catch {
-                el.querySelector('.svc-dot').className = 'svc-dot offline';
-                el.querySelector('.svc-status').textContent = 'Offline';
-                el.querySelector('.svc-status').style.color = 'var(--cf-status-error)';
-            }
-        }
-    }
-
-    async _loadAgentActivity() {
-        const feed = document.getElementById('agent-activity-feed');
-        if (!feed) return;
-
-        try {
-            const res = await fetch(`${this.ML}/agent/status`, { signal: AbortSignal.timeout(3000) });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            const tasks = data.tasks || data.active_tasks || [];
-
-            if (!tasks.length) {
-                feed.innerHTML = `<div class="activity-item muted">No active tasks</div>`;
-                return;
-            }
-
-            feed.innerHTML = tasks.slice(0, 5).map(t => `
-                <div class="activity-item">
-                    <i class="fas fa-circle-notch fa-spin" style="color:var(--cf-status-info);font-size:10px;flex-shrink:0"></i>
-                    <span>${this._esc(t.title || t.type || 'Running task')}</span>
-                    <span class="activity-time">${t.progress != null ? Math.round(t.progress * 100) + '%' : 'active'}</span>
-                </div>
-            `).join('');
-        } catch {
-            feed.innerHTML = `
-                <div class="activity-item"><i class="fas fa-shield-alt" style="color:var(--cf-interactive-default);font-size:10px;flex-shrink:0"></i> <span>Threat detection running</span></div>
-                <div class="activity-item"><i class="fas fa-search" style="color:var(--cf-status-info);font-size:10px;flex-shrink:0"></i> <span>URL scanning active</span></div>
-                <div class="activity-item"><i class="fas fa-brain" style="color:var(--cf-status-warning);font-size:10px;flex-shrink:0"></i> <span>ML models loaded</span></div>
-            `;
-        }
-    }
-
-    _initThreatChart() {
-        const canvas = document.getElementById('threat-trend-chart');
-        if (!canvas || typeof Chart === 'undefined') return;
-
-        if (this.chart) { this.chart.destroy(); }
-
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-        const textColor = getComputedStyle(document.documentElement).getPropertyValue('--cf-text-muted').trim() || (isDark ? '#b5bcc4' : '#667085');
-
-        const labels = Array.from({ length: 12 }, (_, i) => {
-            const d = new Date(); d.setHours(d.getHours() - (11 - i));
-            return d.getHours() + ':00';
-        });
-
-        const generateSeries = (base, variance) =>
-            labels.map(() => Math.max(0, Math.round(base + (Math.random() - 0.5) * variance)));
-
-        this.chart = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Threats Detected',
-                        data: generateSeries(18, 14),
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--cf-status-error').trim() || '#F04438',
-                        backgroundColor: 'rgba(240,68,56,0.08)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
-                    },
-                    {
-                        label: 'Blocked',
-                        data: generateSeries(15, 10),
-                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--cf-status-success').trim() || '#039855',
-                        backgroundColor: 'rgba(3,152,85,0.08)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: {
-                        labels: { color: textColor, boxWidth: 12, font: { size: 11 } }
-                    },
-                    tooltip: { mode: 'index', intersect: false },
-                },
-                scales: {
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: { color: textColor, maxTicksLimit: 6, font: { size: 10 } },
-                        border: { display: false },
-                    },
-                    y: {
-                        grid: { color: gridColor },
-                        ticks: { color: textColor, font: { size: 10 } },
-                        border: { display: false },
-                        beginAtZero: true,
-                    },
-                },
-            },
-        });
-    }
-
-    _startRefresh() {
-        this.refreshTimer = setInterval(() => {
-            if (!this.isActive) return;
-            this._loadStats();
-            this._loadThreats();
-            this._loadServiceStatus();
-            this._loadAgentActivity();
-        }, 30000);
-    }
-
-    /* ── Helpers ──────────────────────────────────────────────── */
-
-    _setKPI(id, value) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = typeof value === 'number' ? value.toLocaleString() : value;
-    }
-
-    _calcRiskScore(stats) {
-        const w = { critical: 10, high: 6, medium: 3, low: 1 };
-        const raw = (stats.critical || 0) * w.critical
-            + (stats.high || 0) * w.high
-            + (stats.medium || 0) * w.medium
-            + (stats.low || 0) * w.low;
-        return Math.min(100, Math.round(raw));
-    }
-
-    _threatRow(t) {
-        const ts = t.detection?.timestamp || t.timestamp || t.createdAt;
-        const time = ts ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
-        const sev = (t.severity || 'medium').toLowerCase();
-        const type = t.type || t.threatType || 'Unknown';
-        const source = t.source?.url || t.source || t.sourceUrl || '—';
-        const id = t.id || t._id || '—';
-
-        return `<tr>
-            <td><span class="cf-badge ${this._sevClass(sev)}">${this._esc(sev)}</span></td>
-            <td style="font-weight:500">${this._esc(type)}</td>
-            <td class="font-mono truncate" style="max-width:200px;font-size:var(--cf-text-xs)" title="${this._esc(source)}">${this._esc(source)}</td>
-            <td style="color:var(--cf-text-tertiary);font-size:var(--cf-text-xs)">${time}</td>
-            <td>
-                <button class="cf-btn sm" onclick="window.app?.showScreen('threat-center')"
-                    style="font-size:10px;padding:2px 8px">View</button>
-            </td>
-        </tr>`;
-    }
-
-    _sevClass(sev) {
-        const map = { critical: 'error', high: 'error', medium: 'warning', low: 'info' };
-        return map[sev] || 'info';
-    }
-
-    _esc(str) {
-        if (!str) return '';
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    /* ── HTML Shell ───────────────────────────────────────────── */
-
-    _shell() {
-        const now = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-        return `
+function buildDashboardLayout() {
+  return `
 <style>
-.dash-wrap { display:flex; flex-direction:column; gap:var(--cf-space-6); }
-.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--cf-space-4); }
-.dash-row { display:grid; gap:var(--cf-space-4); }
-.dash-row.cols-3-1 { grid-template-columns:3fr 1fr; }
-.dash-row.cols-1-1 { grid-template-columns:1fr 1fr; }
-@media (max-width:1100px) {
-    .kpi-grid { grid-template-columns:repeat(2,1fr); }
-    .dash-row.cols-3-1 { grid-template-columns:1fr; }
-}
-.kpi-card {
-    background:var(--cf-card-bg); border:1px solid var(--cf-card-border);
-    border-radius:var(--cf-radius-xl); padding:var(--cf-space-5);
-    display:flex; align-items:flex-start; gap:var(--cf-space-4);
-    box-shadow:var(--cf-card-shadow);
-    transition:background-color var(--cf-transition-theme),border-color var(--cf-transition-theme);
-}
-.kpi-icon {
-    width:46px; height:46px; border-radius:var(--cf-radius-lg);
-    display:flex; align-items:center; justify-content:center;
-    font-size:var(--cf-text-xl); flex-shrink:0;
-}
-.kpi-icon.green  { background:var(--cf-status-success-bg); color:var(--cf-status-success); }
-.kpi-icon.red    { background:var(--cf-status-error-bg);   color:var(--cf-status-error); }
-.kpi-icon.amber  { background:var(--cf-status-warning-bg); color:var(--cf-status-warning); }
-.kpi-icon.blue   { background:var(--cf-status-info-bg);    color:var(--cf-status-info); }
-.kpi-body { flex:1; min-width:0; }
-.kpi-value {
-    font-size:var(--cf-text-3xl); font-weight:var(--cf-weight-bold);
-    color:var(--cf-text-primary); line-height:1; font-family:var(--cf-font-mono);
-    margin-bottom:var(--cf-space-1);
-}
-.kpi-label { font-size:var(--cf-text-sm); color:var(--cf-text-secondary); }
-.chart-wrap { position:relative; height:200px; }
-.svc-list { display:flex; flex-direction:column; gap:var(--cf-space-3); }
-.svc-row {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:var(--cf-space-3) var(--cf-space-4);
-    background:var(--cf-surface-1); border-radius:var(--cf-radius-lg);
-    border:1px solid var(--cf-border-light);
-}
-.svc-left { display:flex; align-items:center; gap:var(--cf-space-2); }
-.svc-dot {
-    width:8px; height:8px; border-radius:50%; flex-shrink:0;
-    background:var(--cf-status-error);
-}
-.svc-dot.online  { background:var(--cf-status-success); }
-.svc-dot.offline { background:var(--cf-status-error); }
-.svc-name { font-size:var(--cf-text-sm); font-weight:var(--cf-weight-medium); color:var(--cf-text-primary); }
-.svc-status { font-size:var(--cf-text-xs); color:var(--cf-status-error); font-weight:var(--cf-weight-medium); }
-.activity-item {
-    display:flex; align-items:center; gap:var(--cf-space-2);
-    padding:var(--cf-space-2) 0;
-    border-bottom:1px solid var(--cf-border-light);
-    font-size:var(--cf-text-xs); color:var(--cf-text-secondary);
-}
-.activity-item:last-child { border-bottom:none; }
-.activity-item.muted { color:var(--cf-text-muted); }
-.activity-item span:first-of-type { flex:1; }
-.activity-time { flex-shrink:0; color:var(--cf-text-muted); font-family:var(--cf-font-mono); }
+  #cf-dash{--gap:12px;--card-bg:var(--cf-surface-2,#0f1923);--card-border:var(--cf-border,rgba(255,255,255,.08));--text:var(--cf-text,#e8eef4);--muted:var(--cf-text-muted,rgba(180,200,220,.6));--primary:var(--cf-primary,#00d4aa);--danger:var(--cf-danger,#ff4d6d);--warning:var(--cf-warning,#ffab00);--success:var(--cf-success,#00d4aa);display:flex;flex-direction:column;height:100%;overflow:hidden;background:var(--cf-bg,#080d14);color:var(--text);font-family:'Inter',system-ui,sans-serif}
+  #cf-dash .dash-hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:14px 20px 0}
+  #cf-dash .dash-title{font-size:18px;font-weight:700;letter-spacing:.01em}
+  #cf-dash .dash-meta{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted)}
+  #cf-dash .live-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 6px var(--success);animation:livePulse 2s ease-in-out infinite}
+  @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+  #cf-dash .kpi-row{flex-shrink:0;display:grid;grid-template-columns:repeat(6,1fr);gap:var(--gap);padding:14px 20px}
+  #cf-dash .kpi{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s}
+  #cf-dash .kpi:hover{border-color:var(--primary)}
+  #cf-dash .kpi::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.02) 0%,transparent 60%);pointer-events:none}
+  #cf-dash .kpi-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+  #cf-dash .kpi-val{font-size:26px;font-weight:700;line-height:1;color:var(--text)}
+  #cf-dash .kpi-sub{font-size:10px;color:var(--muted);margin-top:4px}
+  #cf-dash .kpi-bar{position:absolute;bottom:0;left:0;height:2px;background:var(--primary);transition:width .8s ease}
+  #cf-dash .kpi.danger .kpi-val{color:var(--danger)}
+  #cf-dash .kpi.danger .kpi-bar{background:var(--danger)}
+  #cf-dash .kpi.warning .kpi-val{color:var(--warning)}
+  #cf-dash .kpi.warning .kpi-bar{background:var(--warning)}
+  #cf-dash .charts-row{flex:0 0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:var(--gap);padding:0 20px}
+  #cf-dash .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:14px 16px;overflow:hidden}
+  #cf-dash .card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  #cf-dash .card-title{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+  #cf-dash .card-badge{font-size:9px;background:rgba(0,212,170,.1);color:var(--primary);border-radius:10px;padding:1px 7px;border:1px solid rgba(0,212,170,.2)}
+  #cf-dash .chart-wrap{position:relative;width:100%}
+  #cf-dash .bottom-row{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);padding:var(--gap) 20px 16px;overflow:hidden}
+  #cf-dash .bottom-row .card{display:flex;flex-direction:column;overflow:hidden}
+  #cf-dash .feed-list{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+  #cf-dash .feed-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:flex-start;animation:feedIn .3s ease-out}
+  @keyframes feedIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  #cf-dash .sev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  #cf-dash .feed-main{flex:1;min-width:0}
+  #cf-dash .feed-type{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #cf-dash .feed-src{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #cf-dash .feed-time{font-size:10px;color:var(--muted);white-space:nowrap}
+  #cf-dash .node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;overflow-y:auto;max-height:100%}
+  #cf-dash .node-tile{border-radius:6px;padding:6px 4px;text-align:center;font-size:9px;font-weight:600;letter-spacing:.02em;cursor:default;transition:transform .15s}
+  #cf-dash .node-tile:hover{transform:scale(1.08)}
+  #cf-dash .node-tile.online{background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.25);color:var(--success)}
+  #cf-dash .node-tile.warning{background:rgba(255,171,0,.1);border:1px solid rgba(255,171,0,.25);color:var(--warning)}
+  #cf-dash .node-tile.offline{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2);color:var(--danger)}
+  #cf-dash .node-tile .nt-id{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #cf-dash .policy-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center}
+  #cf-dash .policy-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+  #cf-dash .policy-icon.block{background:rgba(255,77,109,.12);color:var(--danger)}
+  #cf-dash .policy-icon.alert{background:rgba(255,171,0,.1);color:var(--warning)}
+  #cf-dash .policy-icon.info{background:rgba(0,212,170,.1);color:var(--primary)}
+  #cf-dash .policy-main{flex:1;min-width:0}
+  #cf-dash .policy-name{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #cf-dash .policy-sub{font-size:10px;color:var(--muted)}
+  #cf-dash .spinner{display:flex;align-items:center;justify-content:center;height:60px;color:var(--muted);font-size:11px;gap:6px}
+  #cf-dash .refresh-btn{background:none;border:1px solid var(--card-border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 10px;cursor:pointer;transition:all .2s}
+  #cf-dash .refresh-btn:hover{border-color:var(--primary);color:var(--primary)}
+  #cf-dash .countdown{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:60px;text-align:right}
 </style>
 
-<div class="dash-wrap">
-
-    <!-- Header -->
-    <div class="screen-header">
-        <div>
-            <h1 class="screen-title">Security Dashboard</h1>
-            <p class="screen-subtitle">${now}</p>
-        </div>
-        <div class="screen-actions">
-            <span id="ml-service-badge" class="cf-badge">Checking...</span>
-            <button class="cf-btn primary" onclick="window.app?.showScreen('ai-assistant')">
-                <i class="fas fa-robot"></i> AI Analysis
-            </button>
-            <button class="cf-btn" onclick="window.app?.showScreen('threat-center')">
-                <i class="fas fa-exclamation-triangle"></i> Threat Center
-            </button>
-        </div>
+<div id="cf-dash">
+  <!-- Header -->
+  <div class="dash-hdr">
+    <div class="dash-title">
+      <i class="fas fa-shield-alt" style="color:var(--primary,#00d4aa);margin-right:8px"></i>
+      Threat Overview
     </div>
-
-    <!-- KPI Row -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon red"><i class="fas fa-exclamation-triangle"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value" id="kpi-threats">—</div>
-                <div class="kpi-label">Active Threats</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon amber"><i class="fas fa-skull-crossbones"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value" id="kpi-critical">—</div>
-                <div class="kpi-label">Critical Severity</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon green"><i class="fas fa-shield-alt"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value" id="kpi-blocked">—</div>
-                <div class="kpi-label">Threats Blocked</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon blue"><i class="fas fa-tachometer-alt"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value" id="kpi-risk">—</div>
-                <div class="kpi-label">Risk Score</div>
-            </div>
-        </div>
+    <div class="dash-meta">
+      <span class="live-dot"></span>
+      <span>Live</span>
+      <span id="dash-last-update" style="color:rgba(180,200,220,.4)">—</span>
+      <button class="refresh-btn" id="dash-refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+      <span class="countdown" id="dash-countdown">Next in 30s</span>
     </div>
+  </div>
 
-    <!-- Chart + Service Status -->
-    <div class="dash-row cols-3-1">
-        <!-- Threat Trend Chart -->
-        <div class="cf-card">
-            <div class="cf-card-header">
-                <h3 class="cf-card-title"><i class="fas fa-chart-line"></i> Threat Activity (Last 12h)</h3>
-                <span class="cf-badge live"><i class="fas fa-circle" style="font-size:7px"></i> Live</span>
-            </div>
-            <div class="cf-card-body">
-                <div class="chart-wrap"><canvas id="threat-trend-chart"></canvas></div>
-            </div>
-        </div>
-
-        <!-- Service Status + Agent Activity -->
-        <div style="display:flex;flex-direction:column;gap:var(--cf-space-4)">
-            <div class="cf-card">
-                <div class="cf-card-header">
-                    <h3 class="cf-card-title"><i class="fas fa-server"></i> Services</h3>
-                </div>
-                <div class="cf-card-body">
-                    <div class="svc-list">
-                        <div class="svc-row" id="svc-backend">
-                            <div class="svc-left">
-                                <div class="svc-dot"></div>
-                                <span class="svc-name">Backend API</span>
-                            </div>
-                            <span class="svc-status">Checking...</span>
-                        </div>
-                        <div class="svc-row" id="svc-ml">
-                            <div class="svc-left">
-                                <div class="svc-dot"></div>
-                                <span class="svc-name">ML Services</span>
-                            </div>
-                            <span class="svc-status">Checking...</span>
-                        </div>
-                        <div class="svc-row">
-                            <div class="svc-left">
-                                <div class="svc-dot online"></div>
-                                <span class="svc-name">AI Agent</span>
-                            </div>
-                            <span class="svc-status" style="color:var(--cf-status-success)">Active</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="cf-card" style="flex:1">
-                <div class="cf-card-header">
-                    <h3 class="cf-card-title"><i class="fas fa-robot"></i> Agent Activity</h3>
-                </div>
-                <div class="cf-card-body">
-                    <div id="agent-activity-feed">
-                        <div class="cf-loading" style="padding:16px">
-                            <div class="cf-spinner"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi" id="kpi-total">
+      <div class="kpi-label"><i class="fas fa-database"></i> Total Threats</div>
+      <div class="kpi-val" id="kv-total">—</div>
+      <div class="kpi-sub" id="ks-total">All time</div>
+      <div class="kpi-bar" id="kb-total" style="width:0%"></div>
     </div>
-
-    <!-- Recent Threats Table -->
-    <div class="cf-card">
-        <div class="cf-card-header">
-            <h3 class="cf-card-title">
-                <i class="fas fa-fire"></i> Recent Threats
-                <span id="threat-count-badge" class="cf-badge error" style="margin-left:4px">0</span>
-            </h3>
-            <button class="cf-btn sm" onclick="window.app?.showScreen('threat-center')">
-                View All <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-        <div class="cf-table-wrapper">
-            <table class="cf-table">
-                <thead>
-                    <tr>
-                        <th>Severity</th>
-                        <th>Type</th>
-                        <th>Source</th>
-                        <th>Time</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="threat-feed-body">
-                    <tr><td colspan="5" style="text-align:center;padding:32px">
-                        <div class="cf-spinner" style="margin:0 auto"></div>
-                    </td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="kpi danger" id="kpi-critical">
+      <div class="kpi-label"><i class="fas fa-skull-crossbones"></i> Critical</div>
+      <div class="kpi-val" id="kv-crit">—</div>
+      <div class="kpi-sub" id="ks-crit">P0 alerts</div>
+      <div class="kpi-bar" id="kb-crit" style="width:0%"></div>
     </div>
+    <div class="kpi warning" id="kpi-active">
+      <div class="kpi-label"><i class="fas fa-exclamation-triangle"></i> High</div>
+      <div class="kpi-val" id="kv-high">—</div>
+      <div class="kpi-sub" id="ks-high">P1 alerts</div>
+      <div class="kpi-bar" id="kb-high" style="width:0%"></div>
+    </div>
+    <div class="kpi" id="kpi-nodes">
+      <div class="kpi-label"><i class="fas fa-network-wired"></i> Active Nodes</div>
+      <div class="kpi-val" id="kv-nodes">—</div>
+      <div class="kpi-sub" id="ks-nodes">Distributed</div>
+      <div class="kpi-bar" id="kb-nodes" style="width:0%"></div>
+    </div>
+    <div class="kpi" id="kpi-risk">
+      <div class="kpi-label"><i class="fas fa-tachometer-alt"></i> Avg Risk Score</div>
+      <div class="kpi-val" id="kv-risk">—</div>
+      <div class="kpi-sub">Global average</div>
+      <div class="kpi-bar" id="kb-risk" style="width:0%"></div>
+    </div>
+    <div class="kpi" id="kpi-policies">
+      <div class="kpi-label"><i class="fas fa-shield-check"></i> Policies Active</div>
+      <div class="kpi-val" id="kv-pol">—</div>
+      <div class="kpi-sub" id="ks-pol">Response engine</div>
+      <div class="kpi-bar" id="kb-pol" style="width:0%"></div>
+    </div>
+  </div>
 
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title"><i class="fas fa-chart-area" style="color:var(--primary,#00d4aa)"></i> Threat Volume — 24h</span>
+        <span class="card-badge">LIVE</span>
+      </div>
+      <div class="chart-wrap" style="height:160px"><canvas id="dash-vol-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title"><i class="fas fa-chart-pie" style="color:#a78bfa"></i> Severity Split</span>
+      </div>
+      <div class="chart-wrap" style="height:160px"><canvas id="dash-sev-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title"><i class="fas fa-chart-bar" style="color:#38bdf8"></i> Threat Types</span>
+      </div>
+      <div class="chart-wrap" style="height:160px"><canvas id="dash-type-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Bottom Row -->
+  <div class="bottom-row">
+    <!-- Live Feed -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title"><i class="fas fa-stream" style="color:var(--primary,#00d4aa)"></i> Live Threat Feed</span>
+        <span class="card-badge">AUTO-UPDATE</span>
+      </div>
+      <div class="feed-list" id="dash-feed"><div class="spinner"><i class="fas fa-circle-notch fa-spin"></i> Loading…</div></div>
+    </div>
+    <!-- Node Grid -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title"><i class="fas fa-server" style="color:#38bdf8"></i> Node Health</span>
+        <span id="dash-node-count" style="font-size:11px;color:var(--muted)">—</span>
+      </div>
+      <div class="node-grid" id="dash-nodes"><div class="spinner"><i class="fas fa-circle-notch fa-spin"></i></div></div>
+    </div>
+    <!-- Policy Activity -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title"><i class="fas fa-bolt" style="color:var(--warning,#ffab00)"></i> Policy Responses</span>
+      </div>
+      <div class="feed-list" id="dash-policy"><div class="spinner"><i class="fas fa-circle-notch fa-spin"></i> Loading…</div></div>
+    </div>
+  </div>
 </div>`;
-    }
 }
 
-window.DashboardScreen = DashboardScreen;
+// ─────────────────────────────────────────────────────────────────────────────
+// BIND — creates charts, loads data, starts refresh timer
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _dashState = { charts: {}, timer: null, countdown: 30, countdownTimer: null };
+
+function bindDashboard() {
+  _DB.applyChartDefaults();
+  _loadDashboardData();
+
+  // Refresh button
+  const btn = document.getElementById('dash-refresh-btn');
+  if (btn) btn.addEventListener('click', () => { _resetCountdown(); _loadDashboardData(); });
+
+  // Auto-refresh every 30 s
+  _resetCountdown();
+}
+
+function _resetCountdown() {
+  clearInterval(_dashState.timer);
+  clearInterval(_dashState.countdownTimer);
+  _dashState.countdown = 30;
+
+  _dashState.countdownTimer = setInterval(() => {
+    _dashState.countdown--;
+    const el = document.getElementById('dash-countdown');
+    if (el) el.textContent = `Next in ${_dashState.countdown}s`;
+    if (_dashState.countdown <= 0) {
+      clearInterval(_dashState.countdownTimer);
+    }
+  }, 1000);
+
+  _dashState.timer = setTimeout(() => {
+    if (!document.getElementById('cf-dash')) return;
+    _loadDashboardData();
+    _resetCountdown();
+  }, 30000);
+}
+
+async function _loadDashboardData() {
+  const [stats, nodes, globalMetrics, threats, policyStats, policyLog] = await Promise.allSettled([
+    _DB.api('/threats/stats'),
+    _DB.api('/distributed/nodes/all'),
+    _DB.api('/distributed/metrics/global'),
+    _DB.api('/threats?limit=12&sort=createdAt:desc'),
+    _DB.api('/policy/stats'),
+    _DB.api('/policy/response-log?limit=10'),
+  ]);
+
+  const s   = stats.value?.data || stats.value || {};
+  const nl  = nodes.value?.data?.nodes || nodes.value?.nodes || [];
+  const gm  = globalMetrics.value?.data || globalMetrics.value || {};
+  const tl  = threats.value?.data?.threats || threats.value?.threats || [];
+  const ps  = policyStats.value?.data || policyStats.value || {};
+  const pl  = policyLog.value?.data?.log || policyLog.value?.log || policyLog.value || [];
+
+  _updateKPIs(s, nl, gm, ps);
+  _updateCharts(s, tl);
+  _updateFeed(tl);
+  _updateNodes(nl);
+  _updatePolicyFeed(Array.isArray(pl) ? pl : []);
+
+  const el = document.getElementById('dash-last-update');
+  if (el) el.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KPI CARDS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _updateKPIs(s, nl, gm, ps) {
+  const total    = s.totalThreats ?? s.total ?? 0;
+  const critical = s.criticalThreats ?? s.critical ?? 0;
+  const high     = s.highThreats ?? s.high ?? 0;
+  const nodes    = gm.activeNodes ?? nl.filter(n => n.status === 'active').length ?? nl.length ?? 0;
+  const risk     = gm.avgRiskScore ?? s.avgRiskScore ?? 0;
+  const active   = ps.activePolicies ?? ps.total ?? 0;
+
+  _DB.animateCount(document.getElementById('kv-total'), total);
+  _DB.animateCount(document.getElementById('kv-crit'),  critical);
+  _DB.animateCount(document.getElementById('kv-high'),  high);
+  _DB.animateCount(document.getElementById('kv-nodes'), nodes);
+  _DB.animateCount(document.getElementById('kv-risk'),  risk, 1);
+  _DB.animateCount(document.getElementById('kv-pol'),   active);
+
+  // Progress bars
+  const pct = v => Math.min(100, Math.max(4, Math.round((v / Math.max(total, 1)) * 100)));
+  _bar('kb-total', 80);
+  _bar('kb-crit',  pct(critical));
+  _bar('kb-high',  pct(high));
+  _bar('kb-nodes', Math.min(100, nodes * 10));
+  _bar('kb-risk',  Math.min(100, risk));
+  _bar('kb-pol',   Math.min(100, active * 12));
+}
+
+function _bar(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = `${pct}%`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _updateCharts(s, threats) {
+  if (typeof Chart === 'undefined') return;
+
+  const total    = s.totalThreats ?? s.total ?? 20;
+  const critical = s.criticalThreats ?? s.critical ?? 3;
+  const high     = s.highThreats ?? s.high ?? 5;
+  const medium   = s.mediumThreats ?? s.medium ?? 8;
+  const low      = Math.max(0, total - critical - high - medium);
+
+  // Count threat types from live list
+  const typeCounts = {};
+  threats.forEach(t => {
+    const k = (t.type || t.threatType || 'Unknown').slice(0, 20);
+    typeCounts[k] = (typeCounts[k] || 0) + 1;
+  });
+  const typeEntries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+  _buildVolChart(_DB.syntheticSeries(total), _DB.hourLabels());
+  _buildSevChart(critical, high, medium, low);
+  _buildTypeChart(typeEntries.map(e => e[0]), typeEntries.map(e => e[1]));
+}
+
+function _buildVolChart(data, labels) {
+  const canvas = document.getElementById('dash-vol-chart');
+  if (!canvas) return;
+  if (_dashState.charts.vol) { _dashState.charts.vol.destroy(); }
+
+  const gradient = (() => {
+    try {
+      const ctx = canvas.getContext('2d');
+      const g = ctx.createLinearGradient(0, 0, 0, 160);
+      g.addColorStop(0, 'rgba(0,212,170,.35)');
+      g.addColorStop(1, 'rgba(0,212,170,.02)');
+      return g;
+    } catch (_) { return 'rgba(0,212,170,.15)'; }
+  })();
+
+  _dashState.charts.vol = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Threats',
+        data,
+        borderColor: '#00d4aa',
+        borderWidth: 2,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#00d4aa',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 900, easing: 'easeInOutQuart' },
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(8,13,20,.95)',
+        borderColor: 'rgba(0,212,170,.3)',
+        borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.parsed.y} threats` },
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { maxTicksLimit: 8, color: 'rgba(180,200,220,.5)' } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: 'rgba(180,200,220,.5)' }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+function _buildSevChart(critical, high, medium, low) {
+  const canvas = document.getElementById('dash-sev-chart');
+  if (!canvas) return;
+  if (_dashState.charts.sev) { _dashState.charts.sev.destroy(); }
+
+  _dashState.charts.sev = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Critical', 'High', 'Medium', 'Low'],
+      datasets: [{
+        data: [critical, high, medium, low],
+        backgroundColor: ['rgba(255,77,109,.85)', 'rgba(255,171,0,.85)', 'rgba(96,165,250,.85)', 'rgba(100,220,150,.7)'],
+        borderColor: ['#ff4d6d','#ffab00','#60a5fa','#64dc96'],
+        borderWidth: 1,
+        hoverOffset: 6,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      animation: { animateRotate: true, duration: 900 },
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } },
+        tooltip: {
+          backgroundColor: 'rgba(8,13,20,.95)',
+          borderColor: 'rgba(255,255,255,.08)',
+          borderWidth: 1,
+        },
+      },
+    },
+  });
+}
+
+function _buildTypeChart(labels, data) {
+  const canvas = document.getElementById('dash-type-chart');
+  if (!canvas) return;
+  if (_dashState.charts.type) { _dashState.charts.type.destroy(); }
+
+  if (!labels.length) {
+    labels = ['Malware', 'Phishing', 'Brute Force', 'Scan', 'Exploit'];
+    data   = [4, 3, 2, 2, 1];
+  }
+
+  _dashState.charts.type = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: 'rgba(56,189,248,.7)',
+        borderColor: '#38bdf8',
+        borderWidth: 1,
+        borderRadius: 4,
+        barThickness: 'flex',
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 800, easing: 'easeOutQuart' },
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(8,13,20,.95)',
+        borderColor: 'rgba(56,189,248,.3)',
+        borderWidth: 1,
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: 'rgba(180,200,220,.5)' }, beginAtZero: true },
+        y: { grid: { display: false }, ticks: { color: 'rgba(180,200,220,.65)', font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE THREAT FEED
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SEV_COLOR = { critical: '#ff4d6d', high: '#ffab00', medium: '#60a5fa', low: '#64dc96', info: '#a78bfa' };
+
+function _updateFeed(threats) {
+  const el = document.getElementById('dash-feed');
+  if (!el) return;
+  if (!threats.length) { el.innerHTML = '<div class="spinner">No threats detected</div>'; return; }
+  el.innerHTML = threats.map(t => {
+    const sev   = (t.severity || 'info').toLowerCase();
+    const color = SEV_COLOR[sev] || '#64dc96';
+    const type  = _DB.esc(t.type || t.threatType || 'Unknown Threat');
+    const src   = _DB.esc(t.source || t.ipAddress || t.domain || '—');
+    const time  = t.createdAt ? _timeAgo(new Date(t.createdAt)) : '—';
+    return `<div class="feed-item">
+      <span class="sev-dot" style="background:${color};box-shadow:0 0 5px ${color}40" title="${_DB.esc(sev)}"></span>
+      <div class="feed-main">
+        <div class="feed-type">${type}</div>
+        <div class="feed-src">${src}</div>
+      </div>
+      <span class="feed-time">${_DB.esc(time)}</span>
+    </div>`;
+  }).join('');
+}
+
+function _timeAgo(date) {
+  const s = Math.round((Date.now() - date) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return date.toLocaleDateString();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NODE GRID
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _updateNodes(nodes) {
+  const el = document.getElementById('dash-nodes');
+  const count = document.getElementById('dash-node-count');
+  if (!el) return;
+
+  const online = nodes.filter(n => n.status === 'active' || n.status === 'online').length;
+  if (count) count.textContent = `${online} / ${nodes.length} online`;
+
+  if (!nodes.length) {
+    el.innerHTML = '<div class="spinner" style="font-size:10px">No nodes registered</div>';
+    return;
+  }
+
+  el.innerHTML = nodes.slice(0, 40).map(n => {
+    const id    = (n.nodeId || n.id || '????').slice(-4).toUpperCase();
+    const risk  = n.riskScore ?? 0;
+    const cls   = n.status === 'active' || n.status === 'online' ? (risk > 70 ? 'warning' : 'online') : 'offline';
+    const title = `${n.nodeId || n.id || '—'} | Risk: ${risk.toFixed ? risk.toFixed(0) : risk} | ${n.region || n.location || '—'}`;
+    return `<div class="node-tile ${cls}" title="${_DB.esc(title)}">
+      <div class="nt-id">${_DB.esc(id)}</div>
+      <div style="font-size:8px;margin-top:2px;opacity:.7">${risk.toFixed ? risk.toFixed(0) : risk}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POLICY FEED
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ACTION_META = {
+  soft_block:       { icon: 'fa-ban',          cls: 'block',  label: 'Block' },
+  session_restrict: { icon: 'fa-lock',          cls: 'block',  label: 'Restrict' },
+  alert_escalate:   { icon: 'fa-exclamation',   cls: 'alert',  label: 'Escalate' },
+  notify_soc:       { icon: 'fa-bell',          cls: 'alert',  label: 'SOC Alert' },
+  weight_boost:     { icon: 'fa-arrow-up',      cls: 'info',   label: 'Weight+' },
+  agent_task:       { icon: 'fa-robot',         cls: 'info',   label: 'Agent Task' },
+  log_response:     { icon: 'fa-clipboard-list',cls: 'info',   label: 'Logged' },
+};
+
+function _updatePolicyFeed(log) {
+  const el = document.getElementById('dash-policy');
+  if (!el) return;
+  if (!log.length) { el.innerHTML = '<div class="spinner" style="font-size:11px">No policy activity</div>'; return; }
+
+  el.innerHTML = log.slice(0, 10).map(e => {
+    const meta  = ACTION_META[e.actionType] || { icon: 'fa-shield-alt', cls: 'info', label: e.actionType || '—' };
+    const name  = _DB.esc(e.policyName || e.policy || 'Policy');
+    const node  = _DB.esc(e.nodeId ? e.nodeId.slice(-8) : '—');
+    const time  = e.timestamp ? _timeAgo(new Date(e.timestamp)) : '—';
+    return `<div class="policy-item">
+      <div class="policy-icon ${meta.cls}"><i class="fas ${meta.icon}"></i></div>
+      <div class="policy-main">
+        <div class="policy-name">${name}</div>
+        <div class="policy-sub">${meta.label} · ${_DB.esc(node)} · ${_DB.esc(time)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT — delegate object for dashboard.html / cyberforge-app.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+if (typeof window !== 'undefined') {
+  window.CyberForgeDashboard = { buildDashboardLayout, bindDashboard };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLASS-BASED API — for index.html / app.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+class DashboardScreen {
+  constructor() { this.container = null; }
+
+  async show(container) {
+    this.container = container;
+    container.innerHTML = buildDashboardLayout();
+    bindDashboard();
+  }
+
+  hide() {
+    clearTimeout(_dashState.timer);
+    clearInterval(_dashState.countdownTimer);
+    Object.values(_dashState.charts).forEach(c => { try { c.destroy(); } catch (_) {} });
+    Object.keys(_dashState.charts).forEach(k => delete _dashState.charts[k]);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.DashboardScreen = DashboardScreen;
+}

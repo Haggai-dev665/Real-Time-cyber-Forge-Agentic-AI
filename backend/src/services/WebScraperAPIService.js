@@ -7,8 +7,11 @@ const axios = require('axios');
 
 class WebScraperAPIService {
     constructor() {
-        this.apiUrl = 'http://webscrapper.live/api/scrape';
-        this.apiKey = 'sk-fd14eaa7bceb478db7afc7256e514d2b';
+        this.apiUrl = process.env.WEBSCRAPER_API_URL || 'http://webscrapper.live/api/scrape';
+        this.apiKey = process.env.WEBSCRAPER_API_KEY || '';
+        if (!this.apiKey) {
+            console.warn('⚠️ WEBSCRAPER_API_KEY not set — web scraper will fail. Set it as an env var.');
+        }
         this.timeout = 60000; // 60 seconds - scraping can take time
         
         this.axiosInstance = axios.create({

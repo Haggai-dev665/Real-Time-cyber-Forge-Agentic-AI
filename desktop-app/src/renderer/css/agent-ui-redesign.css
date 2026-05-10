@@ -64,21 +64,60 @@
 .agent-badge { background: #3b82f6; color: #fff; font-size: 0.62rem; padding: 2px 6px; border-radius: 10px; font-weight: 700; animation: fp-chip-pulse 3s ease-in-out infinite; }
 
 /* ================================================================
-   MINIMIZED SIDE TAB
+   MINIMIZED FAB — circular icon at bottom-right
    ================================================================ */
-.agent-minimized-btn {
-  position: fixed; right: 0; bottom: 120px; z-index: 9998;
-  background: linear-gradient(180deg, #059669, #10b981);
-  color: #fff; border: none; border-radius: 10px 0 0 10px;
-  padding: 10px 8px; display: flex; flex-direction: column;
-  align-items: center; gap: 5px; cursor: pointer;
-  box-shadow: -3px 0 16px rgba(16,185,129,0.3);
-  transition: all 0.2s ease; writing-mode: vertical-lr;
+@keyframes fp-fab-pop-in {
+  0%   { transform: scale(0.4) translateY(20px); opacity: 0; }
+  70%  { transform: scale(1.1) translateY(-3px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
-.agent-minimized-btn:hover { padding-right: 14px; box-shadow: -6px 0 24px rgba(16,185,129,0.45); }
-.agent-minimized-btn i  { font-size: 15px; writing-mode: horizontal-tb; }
-.agent-mini-label       { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; }
-.agent-mini-pulse       { width: 7px; height: 7px; border-radius: 50%; background: #fff; opacity: 0.85; animation: badge-pulse 1.8s ease-in-out infinite; writing-mode: horizontal-tb; }
+@keyframes fp-fab-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(16,185,129,0.45), 0 0 0 0 rgba(16,185,129,0.4); }
+  50%       { box-shadow: 0 4px 28px rgba(16,185,129,0.55), 0 0 0 8px rgba(16,185,129,0); }
+}
+
+.agent-minimized-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 10000;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 4px 20px rgba(16,185,129,0.45), 0 0 0 3px rgba(16,185,129,0.15);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.2s ease;
+  animation: fp-fab-pulse 2.5s ease-in-out infinite;
+  /* hide by default */
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.5);
+}
+/* Visible state (added by JS) */
+.agent-minimized-btn.visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: scale(1);
+  animation: fp-fab-pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards,
+             fp-fab-pulse 2.5s 0.35s ease-in-out infinite;
+}
+.agent-minimized-btn:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 6px 28px rgba(16,185,129,0.6), 0 0 0 5px rgba(16,185,129,0.2) !important;
+}
+.agent-minimized-btn:active { transform: scale(0.95) !important; }
+.agent-minimized-btn i       { font-size: 20px; line-height: 1; }
+.agent-mini-label            { font-size: 7.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
+.agent-mini-pulse            { display: none; } /* no longer used */
 
 /* ================================================================
    FLOATING AGENT PANEL — MAIN CONTAINER
@@ -130,10 +169,19 @@
   border-color: rgba(16,185,129,0.15) !important;
 }
 
-/* States */
-.floating-agent-panel.minimized { height: auto !important; }
-.floating-agent-panel.minimized .agent-panel-body { display: none; }
-.floating-agent-panel.hidden { transform: translateY(calc(100% + 50px)) !important; opacity: 0 !important; pointer-events: none !important; }
+/* ── Panel states ────────────────────────────────────────────── */
+/* hidden = panel slides off to the right and fades out */
+.floating-agent-panel.hidden {
+  transform: translateX(calc(100% + 30px)) scale(0.92) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+/* minimized = same as hidden — full panel gone, FAB takes over */
+.floating-agent-panel.minimized {
+  transform: translateX(calc(100% + 30px)) scale(0.92) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 
 /* ================================================================
    PANEL HEADER — animated gradient, overrides enterprise-shell

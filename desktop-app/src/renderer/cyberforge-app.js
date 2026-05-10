@@ -1263,37 +1263,44 @@
     _urlScanHistory.unshift(entry);
     if (_urlScanHistory.length > MAX_SCAN_HISTORY) _urlScanHistory.pop();
 
+    // Activate scan beam + badge on first entry
+    const beam = document.getElementById('ac-scan-beam');
+    if (beam) beam.style.display = '';
+    const monitorBadge = document.getElementById('url-monitor-status');
+    if (monitorBadge) { monitorBadge.textContent = 'Active'; monitorBadge.className = 'url-feed-badge active'; }
+
     // Render into the UI if the element exists
     const feedContainer = document.getElementById('agent-url-feed');
     if (!feedContainer) return;
 
-    feedContainer.innerHTML = _urlScanHistory.slice(0, 20).map(e => {
-      const statusBadge = {
-        detected: '<span class="url-status detected">Detected</span>',
-        scanning: '<span class="url-status scanning">Medium Risk</span>',
-        queued: '<span class="url-status queued">Queued</span>',
-        completed: '<span class="url-status completed">Safe</span>',
-        threat: '<span class="url-status threat">Threat</span>'
-      };
+    // Remove empty state placeholder
+    const placeholder = feedContainer.querySelector('.ac-url-empty-state, .detecting-state');
+    if (placeholder) placeholder.remove();
 
-      // If we have a risk score, show it instead of generic badge
-      let badge = statusBadge[e.status] || '';
+    const statusLabels = { detected: 'Detected', scanning: 'Scanning', queued: 'Queued', completed: '✓ Safe', threat: '⚠ Threat' };
+
+    feedContainer.innerHTML = _urlScanHistory.slice(0, 20).map((e, idx) => {
+      let resolvedStatus = e.status || 'detected';
       if (e.riskScore != null && e.status !== 'detected') {
-        const scoreClass = e.riskScore >= 70 ? 'threat' : e.riskScore >= 30 ? 'scanning' : 'completed';
-        badge = `<span class="url-status ${scoreClass}">${e.riskScore}/100</span>`;
+        resolvedStatus = e.riskScore >= 70 ? 'threat' : e.riskScore >= 30 ? 'scanning' : 'completed';
       }
+      const isThreat = resolvedStatus === 'threat';
+      const badgeText = e.riskScore != null && e.status !== 'detected'
+        ? `${e.riskScore}/100`
+        : (statusLabels[resolvedStatus] || resolvedStatus);
 
-      const displayLabel = e.label?.length > 40 ? e.label.substring(0, 37) + '...' : (e.label || '');
+      const displayLabel = (e.label || e.url || '').length > 50
+        ? (e.label || e.url).substring(0, 48) + '…'
+        : (e.label || e.url || '');
       const categoryTag = e.category ? `<span class="url-feed-category">${e.category}</span>` : '';
 
-      return `
-        <div class="url-feed-item" title="${e.summary || e.url || ''}">
-          <span class="url-feed-time">${e.time}</span>
-          <span class="url-feed-browser">${e.browser}</span>
-          <span class="url-feed-label">${displayLabel}</span>
-          ${categoryTag}
-          ${badge}
-        </div>`;
+      return `<div class="url-feed-item status-${resolvedStatus}" title="${e.summary || e.url || ''}" style="animation-delay:${idx * 25}ms">
+        <span class="url-feed-time">${e.time}</span>
+        <span class="url-feed-browser"><i class="fas fa-${isThreat ? 'skull-crossbones' : 'satellite-dish'}" style="color:${isThreat ? '#ef4444' : '#10b981'};font-size:12px"></i></span>
+        <span class="url-feed-label">${displayLabel}</span>
+        ${categoryTag}
+        <span class="url-status ${resolvedStatus}">${badgeText}</span>
+      </div>`;
     }).join('');
 
     // Also update the floating panel URL feed
@@ -4173,7 +4180,11 @@
     // ========================================
     else if (screen === 'agent-control') {
       container.innerHTML = ChildPages.buildAgentControlLayout();
-      initAgentCenter();
+      if (window.CyberForgeAgent?.initAgentCenter) {
+        window.CyberForgeAgent.initAgentCenter();
+      } else {
+        initAgentCenter();
+      }
     } else if (screen === 'agent-tasks') {
       container.innerHTML = ChildPages.buildAgentTasksLayout();
       loadAgentTasksData();
@@ -4237,7 +4248,24 @@
         container.innerHTML = '<div class="screen-placeholder"><h2>Distributed Intelligence</h2><p>Screen loading error. Check console.</p></div>';
       }
     }
-    
+
+    // ========================================
+    // SANDBOX SCANNER — static analysis pipeline + IOC + MITRE + locker
+    // ========================================
+    else if (screen === 'sandbox-scanner' || screen === 'sandbox') {
+      try {
+        if (!window.SandboxScannerScreen) {
+          container.innerHTML = '<div class="screen-placeholder"><h2>Sandbox</h2><p>SandboxScannerScreen not loaded.</p></div>';
+        } else {
+          const sandbox = new window.SandboxScannerScreen();
+          sandbox.show(container);
+        }
+      } catch (err) {
+        console.error('[CyberForge] Sandbox screen error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>Sandbox</h2><p>Screen loading error. Check console.</p></div>';
+      }
+    }
+
     else {
       container.innerHTML = buildOperationalPage(screen);
       bindOperationalPage(screen);
@@ -4523,7 +4551,10 @@
     resolveCurrentUserId: typeof resolveCurrentUserId === 'function' ? resolveCurrentUserId : () => null,
     buildOperationalPage,
     bindOperationalPage,
-    getSidebarScreenMeta
+    getSidebarScreenMeta,
+    startUrlMonitoring,
+    stopUrlMonitoring,
+    loadAgentTasksData: typeof loadAgentTasksData === 'function' ? loadAgentTasksData : () => {}
   };
 
   document.addEventListener('DOMContentLoaded', init);

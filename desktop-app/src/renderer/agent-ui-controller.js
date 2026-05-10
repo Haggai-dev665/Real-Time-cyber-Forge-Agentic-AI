@@ -53,22 +53,58 @@
         makePanelDraggable(panel);
         initFloatingPanelVisualMode(panel);
         
+        const fab = document.getElementById('agent-minimized-btn');
+
+        function _showFAB() {
+            if (!fab) return;
+            fab.style.display = 'flex';
+            // Force reflow so animation replays from start
+            fab.classList.remove('visible');
+            fab.offsetWidth;
+            fab.classList.add('visible');
+        }
+        function _hideFAB() {
+            if (!fab) return;
+            fab.classList.remove('visible');
+            // After transition ends, actually hide so it doesn't intercept clicks
+            setTimeout(() => {
+                if (!fab.classList.contains('visible')) fab.style.display = 'none';
+            }, 300);
+        }
+
+        // Collapse = entire panel off-screen + FAB appears
+        function _collapse() {
+            panel.classList.add('minimized');
+            panel.classList.remove('hidden');
+            _showFAB();
+            localStorage.setItem('agent-panel-minimized', 'true');
+        }
+        // Expand = FAB gone + panel slides back in
+        function _expand() {
+            panel.classList.remove('minimized');
+            panel.classList.remove('hidden');
+            _hideFAB();
+            localStorage.setItem('agent-panel-minimized', 'false');
+        }
+
         if (minimizeBtn) {
             minimizeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                panel.classList.toggle('minimized');
-                const icon = minimizeBtn.querySelector('i');
-                icon.className = panel.classList.contains('minimized') ? 'fas fa-window-maximize' : 'fas fa-window-minimize';
-                localStorage.setItem('agent-panel-minimized', panel.classList.contains('minimized'));
+                panel.classList.contains('minimized') ? _expand() : _collapse();
             });
         }
-        
+
+        // × also collapses to FAB (same as minimize)
         if (hideBtn) {
             hideBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                panel.classList.add('hidden');
-                localStorage.setItem('agent-panel-hidden', 'true');
+                _collapse();
             });
+        }
+
+        // FAB click restores full panel
+        if (fab) {
+            fab.addEventListener('click', () => _expand());
         }
         
         if (toggleBtn) {
@@ -117,15 +153,15 @@
             });
         }
         
-        // Restore saved panel state
-        // Do not auto-hide on startup to avoid visible flicker (appears then disappears).
-        panel.classList.remove('hidden');
-        if (localStorage.getItem('agent-panel-hidden') === 'true') {
-            localStorage.setItem('agent-panel-hidden', 'false');
-        }
+        // Restore saved state
+        _hideFAB();
         if (localStorage.getItem('agent-panel-minimized') === 'true') {
+            // Start minimized — panel hidden, FAB visible
             panel.classList.add('minimized');
-            if (minimizeBtn) minimizeBtn.querySelector('i').className = 'fas fa-window-maximize';
+            _showFAB();
+        } else {
+            panel.classList.remove('minimized');
+            panel.classList.remove('hidden');
         }
         
         // Load REAL data immediately

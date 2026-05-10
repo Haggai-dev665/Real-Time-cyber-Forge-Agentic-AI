@@ -505,6 +505,182 @@ def extract_url_features(url: str) -> Dict:
 
 
 # ============================================================================
+# TRANSFORMER MODEL LOADER  (Phase 3 — real HF transformer models)
+# ============================================================================
+#
+# Loads pretrained BERT-based classifiers from the Hugging Face Hub.
+# Models are loaded lazily on first request to keep cold-start fast.
+# A 7B Security LLM is NOT loaded locally (too big for free tier) —
+# it's accessed via the HF Inference API on demand.
+
+class TransformerModelLoader:
+    """Loads pretrained Transformer classifiers from the HF Hub on demand."""
+
+    # Model registry — name → HF repo + task description
+    REGISTRY = {
+        "url_phishing_bert": {
+            "repo":  "elftsdmr/malware-url-detect",
+            "task":  "text-classification",
+            "labels": ["benign", "malicious"],
+            "desc":  "BERT-based URL phishing/malware classifier",
+        },
+        "dga_detector": {
+            "repo":  "YangYang-Research/dga-detection",
+            "task":  "text-classification",
+            "labels": ["legit", "dga"],
+            "desc":  "Domain Generation Algorithm detector (45-char domain input)",
+        },
+    }
+    SECURITY_LLM_REPO = "ZySec-AI/SecurityLLM"  # Used via HF Inference API only
+
+    def __init__(self):
+        self.pipelines = {}     # name → transformers.Pipeline (lazy-loaded)
+        self.load_errors = {}   # name → last error message
+        self.transformers_available = False
+        try:
+            import transformers  # noqa: F401
+            import torch         # noqa: F401
+            self.transformers_available = True
+            logger.info("✅ transformers + torch available")
+        except ImportError as e:
+            logger.warning(f"⚠️ transformers/torch not installed: {e}")
+
+    def _ensure(self, name: str):
+        """Load a pipeline on first use. Returns the pipeline or None on failure."""
+        if name in self.pipelines:
+            return self.pipelines[name]
+        if not self.transformers_available:
+            self.load_errors[name] = "transformers/torch not installed"
+            return None
+        if name not in self.REGISTRY:
+            self.load_errors[name] = f"Unknown model: {name}"
+            return None
+        spec = self.REGISTRY[name]
+        try:
+            from transformers import pipeline
+            logger.info(f"⏳ Loading {name} from {spec['repo']}...")
+            pipe = pipeline(spec["task"], model=spec["repo"], device=-1, top_k=None)
+            self.pipelines[name] = pipe
+            logger.info(f"✅ Loaded {name}")
+            return pipe
+        except Exception as e:
+            err = f"{type(e).__name__}: {str(e)[:200]}"
+            self.load_errors[name] = err
+            logger.error(f"❌ Failed to load {name}: {err}")
+            return None
+
+    def predict_url_phishing(self, url: str) -> Dict:
+        """Classify a URL as benign or malicious using elftsdmr/malware-url-detect."""
+        pipe = self._ensure("url_phishing_bert")
+        if pipe is None:
+            return self._unavailable("url_phishing_bert")
+        try:
+            # Strip the protocol — model was trained on bare URLs
+            text = url.replace("https://", "").replace("http://", "")[:512]
+            result = pipe(text)
+            scores = result[0] if isinstance(result[0], list) else result
+            return self._format_classification(scores, "url_phishing_bert")
+        except Exception as e:
+            return self._error("url_phishing_bert", e)
+
+    def predict_dga(self, domain: str) -> Dict:
+        """Classify a domain as legitimate or DGA-generated."""
+        pipe = self._ensure("dga_detector")
+        if pipe is None:
+            return self._unavailable("dga_detector")
+        try:
+            # Model expects bare domain, optimized for ≤45 chars
+            d = domain.lower().strip()[:45]
+            result = pipe(d)
+            scores = result[0] if isinstance(result[0], list) else result
+            return self._format_classification(scores, "dga_detector")
+        except Exception as e:
+            return self._error("dga_detector", e)
+
+    def security_chat(self, query: str, max_tokens: int = 512) -> Dict:
+        """Cybersecurity Q&A via ZySec-AI/SecurityLLM hosted on HF Inference API.
+        Falls back to Gemini when the LLM is rate-limited or HF token is missing."""
+        if not HF_TOKEN:
+            return {
+                "model": "security-llm",
+                "response": None,
+                "error": "HF_TOKEN env var required to call ZySec-AI/SecurityLLM via Inference API",
+                "fallback_available": gemini_service.ready,
+            }
+        try:
+            import requests
+            url = f"https://api-inference.huggingface.co/models/{self.SECURITY_LLM_REPO}"
+            headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
+            payload = {
+                "inputs": query[:2000],
+                "parameters": {"max_new_tokens": max_tokens, "temperature": 0.3, "return_full_text": False},
+                "options": {"wait_for_model": True},
+            }
+            r = requests.post(url, headers=headers, json=payload, timeout=45)
+            if r.status_code == 200:
+                data = r.json()
+                text = data[0].get("generated_text") if isinstance(data, list) and data else (data.get("generated_text") if isinstance(data, dict) else str(data))
+                return {
+                    "model":    "security-llm",
+                    "source":   "huggingface_inference_api",
+                    "response": text,
+                    "model_id": self.SECURITY_LLM_REPO,
+                }
+            return {
+                "model":  "security-llm",
+                "error":  f"HF Inference API HTTP {r.status_code}: {r.text[:200]}",
+                "fallback_available": gemini_service.ready,
+            }
+        except Exception as e:
+            return {
+                "model":  "security-llm",
+                "error":  f"{type(e).__name__}: {str(e)[:200]}",
+                "fallback_available": gemini_service.ready,
+            }
+
+    def status(self) -> Dict:
+        return {
+            "transformers_available": self.transformers_available,
+            "loaded": list(self.pipelines.keys()),
+            "available": list(self.REGISTRY.keys()) + ["security_llm (via HF Inference API)"],
+            "load_errors": self.load_errors,
+        }
+
+    @staticmethod
+    def _format_classification(scores, model_name) -> Dict:
+        """Normalize HF text-classification output to the cyberforge schema."""
+        if not scores:
+            return {"model": model_name, "error": "Empty scores"}
+        # scores is a list of {label, score} dicts. Find the threat label.
+        threat_labels = {"malicious", "phishing", "malware", "dga", "label_1", "1"}
+        # Top prediction
+        top = max(scores, key=lambda s: s["score"]) if isinstance(scores, list) else scores
+        is_threat = str(top["label"]).lower() in threat_labels
+        # Threat score: probability of the threat class (not just the top class)
+        threat_score = top["score"] if is_threat else 1.0 - top["score"]
+        return {
+            "model":           model_name,
+            "prediction":      top["label"],
+            "is_threat":       is_threat,
+            "confidence":      round(top["score"] * 100, 2),
+            "threat_score":    round(threat_score, 4),
+            "all_scores":      scores,
+            "inference_source": "huggingface_transformer",
+        }
+
+    @staticmethod
+    def _unavailable(model_name) -> Dict:
+        return {"model": model_name, "error": "Model unavailable — see /api/v2/status"}
+
+    @staticmethod
+    def _error(model_name, e: Exception) -> Dict:
+        return {"model": model_name, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+
+
+transformer_loader = TransformerModelLoader()
+
+
+# ============================================================================
 # NOTEBOOK EXECUTION  (existing Gradio functionality)
 # ============================================================================
 
@@ -851,6 +1027,57 @@ async def api_list_models():
             "source": "ml_model" if name in ml_loader.models else "heuristic",
         })
     return {"models": result, "total": len(ml_loader.MODEL_NAMES), "loaded": len(ml_loader.models)}
+
+
+# ============================================================================
+# PHASE-3 ENDPOINTS — Real HF Transformer models
+# ============================================================================
+
+@api.post("/api/v2/url-classify")
+async def api_v2_url_classify(request: Request):
+    """URL phishing/malware classification using elftsdmr/malware-url-detect (BERT).
+    Body: { "url": "https://..." }"""
+    body = await request.json()
+    url = body.get("url", "").strip()
+    if not url:
+        return JSONResponse(status_code=400, content={"detail": "url required"})
+    return transformer_loader.predict_url_phishing(url)
+
+
+@api.post("/api/v2/dga-detect")
+async def api_v2_dga_detect(request: Request):
+    """DGA-generated domain detection using YangYang-Research/dga-detection.
+    Body: { "domain": "abc123xyz.com" }"""
+    body = await request.json()
+    domain = body.get("domain", "").strip()
+    if not domain:
+        return JSONResponse(status_code=400, content={"detail": "domain required"})
+    return transformer_loader.predict_dga(domain)
+
+
+@api.post("/api/v2/security-chat")
+async def api_v2_security_chat(request: Request):
+    """Cybersecurity Q&A via ZySec-AI/SecurityLLM (HF Inference API).
+    Body: { "query": "...", "max_tokens": 512 }"""
+    body = await request.json()
+    query = body.get("query", "").strip()
+    if not query:
+        return JSONResponse(status_code=400, content={"detail": "query required"})
+    max_tokens = int(body.get("max_tokens", 512))
+    result = transformer_loader.security_chat(query, max_tokens=max_tokens)
+    # Auto-fallback to Gemini when LLM unavailable
+    if result.get("error") and gemini_service.ready:
+        gemini_result = gemini_service.analyze(query)
+        gemini_result["source"] = "gemini-fallback"
+        gemini_result["llm_error"] = result["error"]
+        return gemini_result
+    return result
+
+
+@api.get("/api/v2/status")
+async def api_v2_status():
+    """Status of phase-3 transformer models — what's loaded, what failed, what's available."""
+    return transformer_loader.status()
 
 
 @api.post("/api/analysis/network")

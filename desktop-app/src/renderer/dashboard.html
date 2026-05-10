@@ -183,6 +183,13 @@
                             </a>
                         </li>
                         <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="#" data-screen="sandbox-scanner">
+                                <i class="fas fa-flask"></i>
+                                <span>Sandbox</span>
+                                <span class="sidebar-nav-badge agent-badge">NEW</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
                             <a class="sidebar-nav-link"   href="#" data-screen="signal-pipeline">
                                 <i class="fas fa-diagram-project"></i>
                                 <span>Signal Pipeline</span>
@@ -594,11 +601,10 @@
         </div>
     </div>
 
-    <!-- Agent Panel Minimized Button (Side tab - Shows when panel is hidden) -->
-    <button class="agent-minimized-btn" id="agent-minimized-btn" title="Show Agent Panel" style="display: none;">
+    <!-- Agent Panel FAB — appears when panel is minimized -->
+    <button class="agent-minimized-btn" id="agent-minimized-btn" title="Open Agent Panel" style="display: none;">
         <i class="fas fa-robot"></i>
-        <span class="agent-mini-label">Agent</span>
-        <span class="agent-mini-pulse"></span>
+        <span class="agent-mini-label">AI</span>
     </button>
 
     <!-- Floating Agent Control Panel v3 — Rich UI -->
@@ -914,11 +920,13 @@
     <script src="child-page-layouts.js"></script>
     <script src="components/ai-assistant-v2.js"></script>
     <script src="agent-ui-controller.js"></script>
+    <script src="utils/agent-manager.js"></script>
     <script src="utils/data-loaders.js"></script>
 
     <!-- Extracted Screen Modules (loaded BEFORE cyberforge-app.js) -->
     <script src="screens/dashboard.js"></script>
     <script src="screens/distributed-intelligence.js"></script>
+    <script src="screens/sandbox-scanner.js"></script>
 
     <!-- Operational Page Layouts (sidebar fallback screens) -->
     <script src="operational-page.js"></script>

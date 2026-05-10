@@ -42,7 +42,24 @@
     const map = { chrome: 'fab fa-chrome', firefox: 'fab fa-firefox-browser', edge: 'fab fa-edge', brave: 'fas fa-shield-halved', opera: 'fab fa-opera', chromium: 'fab fa-chrome', arc: 'fas fa-globe' };
     return map[key] || 'fas fa-globe';
   }
-  function startUrlMonitoring() { if (window.CyberForgeApp?.startUrlMonitoring) window.CyberForgeApp.startUrlMonitoring(); }
+  function startUrlMonitoring() {
+    const spinner = document.getElementById('ac-url-spinner');
+    const badge   = document.getElementById('url-monitor-status');
+    const beam    = document.getElementById('ac-scan-beam');
+    if (spinner) spinner.style.display = '';
+    if (badge)  { badge.textContent = 'Starting…'; badge.className = 'url-feed-badge'; }
+
+    if (window.CyberForgeApp?.startUrlMonitoring) {
+      window.CyberForgeApp.startUrlMonitoring();
+      if (beam)  beam.style.display = '';
+      if (badge) { badge.textContent = 'Active'; badge.className = 'url-feed-badge active'; }
+    } else {
+      // No Electron bridge — manual-only mode
+      if (badge) { badge.textContent = 'Manual mode'; badge.className = 'url-feed-badge'; }
+      appendAgentConsole('URL auto-monitoring not available (desktop bridge required). Use scan field.', 'warning');
+    }
+    if (spinner) setTimeout(() => { if (spinner) spinner.style.display = 'none'; }, 2000);
+  }
   function stopUrlMonitoring() { if (window.CyberForgeApp?.stopUrlMonitoring) window.CyberForgeApp.stopUrlMonitoring(); }
   function loadAgentTasksData() { if (window.CyberForgeApp?.loadAgentTasksData) window.CyberForgeApp.loadAgentTasksData(); }
 
@@ -63,26 +80,40 @@
   // =========================================
 
   let _agentCenterStatsInterval = null;
+  let _agentCenterSyncInterval = null;
+  let _agentCenterMLInterval = null;
+  let _sessionScanCount = 0;
+
+  function _updateKPI(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = parseInt(el.textContent, 10) || 0;
+    if (prev === value) return;
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = '';
+    el.textContent = String(value);
+    el.style.animation = 'ac-count-pop 0.35s cubic-bezier(0.34,1.56,0.64,1) backwards';
+  }
 
   function initAgentCenter() {
-    console.log('[AgentCenter] Initializing agent control center...');
+    console.log('[AgentCenter] Initializing agent control center v3...');
+    _sessionScanCount = 0;
 
-    // Bind button actions
     bindAgentControlActions();
-
-    // Ensure default agent is running whenever Agent Center opens
     autoStartDefaultAgent();
-
-    // Load real data from backend + Tauri
     syncAgentCenterWithBackend();
     refreshAgentOpenBrowsers();
     loadAgentCenterSystemStats();
     loadAgentActivityLog();
+    loadMLModelsStatus();
+    animateKPICounters();
 
-    // Auto-refresh system stats every 5 seconds
+    // Start URL monitoring immediately — don't wait for agent confirmation
+    startUrlMonitoring();
+
     if (_agentCenterStatsInterval) clearInterval(_agentCenterStatsInterval);
     _agentCenterStatsInterval = setInterval(() => {
-      // Only continue if agent-control-page is still in DOM
       if (!document.getElementById('agent-control-page')) {
         clearInterval(_agentCenterStatsInterval);
         _agentCenterStatsInterval = null;
@@ -91,8 +122,28 @@
       loadAgentCenterSystemStats();
     }, 5000);
 
-    appendAgentConsole('Agent Center initialized. Type "status" or "scan <url>".', 'info');
-    console.log('[AgentCenter] Init complete.');
+    if (_agentCenterSyncInterval) clearInterval(_agentCenterSyncInterval);
+    _agentCenterSyncInterval = setInterval(() => {
+      if (!document.getElementById('agent-control-page')) {
+        clearInterval(_agentCenterSyncInterval);
+        _agentCenterSyncInterval = null;
+        return;
+      }
+      syncAgentCenterWithBackend();
+    }, 20000);
+
+    if (_agentCenterMLInterval) clearInterval(_agentCenterMLInterval);
+    _agentCenterMLInterval = setInterval(() => {
+      if (!document.getElementById('agent-control-page')) {
+        clearInterval(_agentCenterMLInterval);
+        _agentCenterMLInterval = null;
+        return;
+      }
+      loadMLModelsStatus();
+    }, 30000);
+
+    appendAgentConsole('Agent Center v3 initialized. Type "help" for commands.', 'info');
+    console.log('[AgentCenter] Agent Center v3 initialized.');
   }
 
   async function safeGetAgentAlerts({ userId, limit = 20 } = {}) {
@@ -282,53 +333,93 @@
     }
   }
 
+  function _applyStatBar(barId, pctId, value) {
+    const bar = document.getElementById(barId);
+    const pct = document.getElementById(pctId);
+    if (bar) {
+      bar.style.width = value + '%';
+      // Keep gradient colors set in CSS; override only on high usage
+      if (value > 80) bar.style.background = 'linear-gradient(90deg,#ef4444,#f87171)';
+      else if (value > 60) bar.style.background = 'linear-gradient(90deg,#f59e0b,#fbbf24)';
+      else bar.style.background = '';
+    }
+    if (pct) pct.textContent = value + '%';
+  }
+
   async function loadAgentCenterSystemStats() {
+    const resSpinner = document.getElementById('ac-res-spinner');
+    if (resSpinner) resSpinner.style.display = '';
+
     try {
+      // Try Electron bridge first
+      let data = null;
       const result = await window.electronAPI?.getSystemStats?.();
       if (result?.success && result.data) {
-        const cpu = Math.round(result.data.cpu || 0);
-        const mem = Math.round(result.data.memory || 0);
-        const disk = Math.round(result.data.disk || 0);
+        data = result.data;
+      }
 
-        const cpuBar = document.getElementById('ac-cpu-bar');
-        const cpuPct = document.getElementById('ac-cpu-pct');
-        const memBar = document.getElementById('ac-mem-bar');
-        const memPct = document.getElementById('ac-mem-pct');
-        const diskBar = document.getElementById('ac-disk-bar');
-        const diskPct = document.getElementById('ac-disk-pct');
+      // Fallback: derive memory from performance API
+      if (!data && performance?.memory) {
+        const usedMB = Math.round(performance.memory.usedJSHeapSize / 1048576);
+        const totalMB = Math.round(performance.memory.jsHeapSizeLimit / 1048576);
+        data = { cpu: 0, memory: Math.round((usedMB / totalMB) * 100), disk: 0, uptime: performance.now() / 1000 };
+      }
 
-        if (cpuBar) cpuBar.style.width = cpu + '%';
-        if (cpuPct) cpuPct.textContent = cpu + '%';
-        if (memBar) memBar.style.width = mem + '%';
-        if (memPct) memPct.textContent = mem + '%';
-        if (diskBar) diskBar.style.width = disk + '%';
-        if (diskPct) diskPct.textContent = disk + '%';
+      if (data) {
+        const cpu  = Math.min(100, Math.round(data.cpu    || 0));
+        const mem  = Math.min(100, Math.round(data.memory || 0));
+        const disk = Math.min(100, Math.round(data.disk   || 0));
 
-        // Color bars based on usage
-        [cpuBar, memBar, diskBar].forEach((bar, i) => {
-          if (!bar) return;
-          const val = [cpu, mem, disk][i];
-          bar.style.background = val > 80 ? '#C0392B' : val > 50 ? '#E67E22' : '#27AE60';
-        });
+        _applyStatBar('ac-cpu-bar',  'ac-cpu-pct',  cpu);
+        _applyStatBar('ac-mem-bar',  'ac-mem-pct',  mem);
+        _applyStatBar('ac-disk-bar', 'ac-disk-pct', disk);
 
-        // System uptime from Tauri (uptime in seconds)
         const uptimeEl = document.getElementById('ac-uptime');
-        if (uptimeEl && result.data.uptime) {
-          const s = result.data.uptime;
-          const d = Math.floor(s / 86400);
-          const h = Math.floor((s % 86400) / 3600);
-          const m = Math.floor((s % 3600) / 60);
-          uptimeEl.textContent = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`;
+        if (uptimeEl) {
+          if (data.uptime) {
+            const s = Math.round(data.uptime);
+            const d = Math.floor(s / 86400);
+            const h = Math.floor((s % 86400) / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            uptimeEl.textContent = d > 0 ? `${d}d ${h}h ${m}m` : h > 0 ? `${h}h ${m}m` : `${m}m`;
+          } else {
+            uptimeEl.textContent = 'Active';
+          }
         }
+      } else {
+        // No stats available — show placeholder percentages
+        ['ac-cpu-pct','ac-mem-pct','ac-disk-pct'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && el.textContent === '—') el.textContent = 'N/A';
+        });
+        const uptimeEl = document.getElementById('ac-uptime');
+        if (uptimeEl && uptimeEl.textContent === '—') uptimeEl.textContent = 'Active';
       }
     } catch (e) {
       console.warn('[AgentCenter] System stats fetch failed:', e.message);
+    } finally {
+      if (resSpinner) resSpinner.style.display = 'none';
     }
+  }
+
+  const _severityIcon = {
+    critical: '<i class="fas fa-circle-exclamation" style="color:#ef4444;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    error:    '<i class="fas fa-circle-exclamation" style="color:#ef4444;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    warning:  '<i class="fas fa-triangle-exclamation" style="color:#f59e0b;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    success:  '<i class="fas fa-circle-check" style="color:#10b981;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    info:     '<i class="fas fa-circle-info" style="color:#3b82f6;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+  };
+
+  function _activityItemHtml(time, severity, msg) {
+    const icon = _severityIcon[severity] || _severityIcon.info;
+    return `<div class="activity-item ${severity}">${icon}<span class="activity-time">${time}</span><span class="activity-msg">${msg}</span></div>`;
   }
 
   async function loadAgentActivityLog() {
     const log = document.getElementById('agent-activity-log');
+    const activitySpinner = document.getElementById('ac-activity-spinner');
     if (!log) return;
+    if (activitySpinner) activitySpinner.style.display = '';
 
     try {
       const userId = resolveCurrentUserId();
@@ -336,37 +427,86 @@
       const alerts = alertsResult?.data?.data?.alerts || alertsResult?.data?.alerts || [];
 
       if (alerts.length === 0) {
-        // Show backend connection events instead
         const healthResult = await safeHealthCheck();
-        const items = [];
-        items.push({
-          time: new Date().toLocaleTimeString(),
-          type: 'info',
-          msg: healthResult?.success ? 'Backend connected and healthy' : 'Backend health check failed'
-        });
-        items.push({
-          time: new Date().toLocaleTimeString(),
-          type: 'info',
-          msg: 'Agent Center session started'
-        });
-
-        log.innerHTML = items.map(i => `
-          <div class="activity-item ${i.type}">
-            <span class="activity-time">${i.time}</span>
-            <span class="activity-msg">${i.msg}</span>
-          </div>
-        `).join('');
+        const items = [
+          { time: new Date().toLocaleTimeString(), severity: healthResult?.success ? 'success' : 'error', msg: healthResult?.success ? 'Backend connected and healthy' : 'Backend health check failed' },
+          { time: new Date().toLocaleTimeString(), severity: 'info', msg: 'Agent Center session started' }
+        ];
+        log.innerHTML = items.map(i => _activityItemHtml(i.time, i.severity, i.msg)).join('');
+        _updateKPI('ac-kpi-threats', 0);
       } else {
-        log.innerHTML = alerts.slice(0, 20).map(a => `
-          <div class="activity-item ${a.severity || 'info'}">
-            <span class="activity-time">${a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '--'}</span>
-            <span class="activity-msg">${a.message || a.title || 'Alert'}</span>
-          </div>
-        `).join('');
+        log.innerHTML = alerts.slice(0, 20).map(a => _activityItemHtml(
+          a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '--',
+          a.severity || 'info',
+          a.message || a.title || 'Alert'
+        )).join('');
+
+        const threatCount = alerts.filter(a => a.severity === 'critical' || a.severity === 'error' || a.severity === 'warning').length;
+        _updateKPI('ac-kpi-threats', threatCount);
       }
     } catch (e) {
-      log.innerHTML = `<div class="activity-item error"><span class="activity-time">${new Date().toLocaleTimeString()}</span><span class="activity-msg">Failed to load activity: ${e.message}</span></div>`;
+      log.innerHTML = _activityItemHtml(new Date().toLocaleTimeString(), 'error', `Failed to load activity: ${e.message}`);
+    } finally {
+      if (activitySpinner) activitySpinner.style.display = 'none';
     }
+  }
+
+  function prependActivityItem(severity, msg) {
+    const log = document.getElementById('agent-activity-log');
+    if (!log) return;
+    const item = document.createElement('div');
+    item.innerHTML = _activityItemHtml(new Date().toLocaleTimeString(), severity, msg);
+    log.insertBefore(item.firstElementChild, log.firstChild);
+    while (log.children.length > 30) log.removeChild(log.lastChild);
+  }
+
+  function _pushUrlFeedItem(url, status, category) {
+    const feed = document.getElementById('agent-url-feed');
+    if (!feed) return;
+
+    // Remove empty placeholder on first real entry
+    const placeholder = feed.querySelector('.ac-url-empty-state, .detecting-state, .url-feed-empty');
+    if (placeholder) placeholder.remove();
+
+    // Activate scan beam + status badge
+    const beam = document.getElementById('ac-scan-beam');
+    if (beam) beam.style.display = '';
+    const monitor = document.getElementById('url-monitor-status');
+    if (monitor) { monitor.textContent = 'Active'; monitor.className = 'url-feed-badge active'; }
+
+    // Update scan count pill
+    const countEl = document.getElementById('ac-url-count-val');
+    if (countEl) countEl.textContent = String((parseInt(countEl.textContent, 10) || 0) + 1);
+
+    // Update threat pill if this is a threat
+    if (status === 'threat') {
+      const threatPill = document.getElementById('ac-url-threat-count');
+      const threatVal = document.getElementById('ac-url-threat-val');
+      if (threatPill) threatPill.style.display = 'inline-flex';
+      if (threatVal) threatVal.textContent = String((parseInt(threatVal.textContent, 10) || 0) + 1);
+    }
+
+    const isThreat = status === 'threat';
+    const shortUrl = url.length > 52 ? url.slice(0, 50) + '…' : url;
+    const time = new Date().toLocaleTimeString('en', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const statusLabel = { threat: '⚠ Threat', completed: '✓ Safe', scanning: 'Scanning', detected: 'Detected', error: 'Error' }[status] || status;
+
+    const item = document.createElement('div');
+    item.className = `url-feed-item status-${status}`;
+    item.title = url;
+    item.innerHTML =
+      `<span class="url-feed-time">${time}</span>` +
+      `<span class="url-feed-browser"><i class="fas fa-${isThreat ? 'skull-crossbones' : 'satellite-dish'}" style="color:${isThreat ? '#ef4444' : '#10b981'}"></i></span>` +
+      `<span class="url-feed-label">${shortUrl}</span>` +
+      (category ? `<span class="url-feed-category">${category}</span>` : '') +
+      `<span class="url-status ${status}">${statusLabel}</span>`;
+
+    feed.insertBefore(item, feed.firstChild);
+    // Stagger animation delays for visual cascade
+    Array.from(feed.children).forEach((child, i) => {
+      child.style.animationDelay = (i === 0 ? '0ms' : `${i * 20}ms`);
+    });
+    while (feed.children.length > 30) feed.removeChild(feed.lastChild);
   }
 
   async function refreshAgentOpenBrowsers() {
@@ -442,6 +582,7 @@
         </div>
       `);
 
+      _updateKPI('ac-kpi-browsers', installedBrowsers.length);
       console.log(`[AgentCenter] Rendered ${installedBrowsers.length} browsers (${runningCount} running)`);
 
       // Persist this snapshot to the backend
@@ -568,10 +709,34 @@
   function appendAgentConsole(message, level = 'info') {
     const consoleOutput = document.getElementById('agent-console-output');
     if (!consoleOutput) return;
+
     const line = document.createElement('div');
-    line.className = `console-line ${level}`;
-    line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-    consoleOutput.prepend(line);
+    line.className = `console-line ${level} console-line-new`;
+
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'console-time';
+    timeSpan.textContent = new Date().toLocaleTimeString();
+
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+
+    line.appendChild(timeSpan);
+    line.appendChild(msgSpan);
+    consoleOutput.appendChild(line);
+
+    // Prune to 200 lines
+    while (consoleOutput.children.length > 200) {
+      consoleOutput.removeChild(consoleOutput.firstChild);
+    }
+
+    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+  }
+
+  function withButtonSpinner(btn, asyncFn) {
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+    return asyncFn().finally(() => { btn.innerHTML = orig; btn.disabled = false; });
   }
 
   function bindAgentControlActions() {
@@ -580,6 +745,13 @@
     const refreshBrowsersBtn = document.getElementById('refresh-agent-browsers');
     const sendBtn = document.getElementById('send-agent-command');
     const commandInput = document.getElementById('agent-command');
+    const consoleClearBtn = document.getElementById('ac-console-clear');
+    const healthBtn = document.getElementById('ac-action-health');
+    const mlStatusBtn = document.getElementById('ac-action-mlstatus');
+    const analyzeBtn = document.getElementById('ac-action-analyze');
+    const scanSubmitBtn = document.getElementById('ac-scan-submit');
+    const statsRefreshBtn = document.getElementById('ac-stats-refresh');
+    const resyncHeroBtn = document.getElementById('ac-resync-hero');
 
     browserRegistrationBtn?.addEventListener('click', () => {
       state.activeScreen = 'browser-registration';
@@ -591,7 +763,6 @@
       refreshAgentOpenBrowsers();
     });
 
-    // No Start button — agent auto-starts. Only Stop is available.
     stopBtn?.addEventListener('click', async () => {
       const result = await safeStopAgent('default');
       if (result?.success) {
@@ -607,18 +778,140 @@
       }
     });
 
+    consoleClearBtn?.addEventListener('click', () => {
+      const out = document.getElementById('agent-console-output');
+      if (out) out.innerHTML = '';
+    });
+
+    healthBtn?.addEventListener('click', () => {
+      withButtonSpinner(healthBtn, async () => {
+        const t0 = Date.now();
+        try {
+          const result = await safeHealthCheck();
+          const latency = Date.now() - t0;
+          if (result?.success) {
+            appendAgentConsole(`Health OK — ${latency}ms — status: ${result.data?.status || 'healthy'}`, 'success');
+            healthBtn.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)';
+            setTimeout(() => { if (healthBtn) healthBtn.style.boxShadow = ''; }, 1500);
+          } else {
+            appendAgentConsole(`Health check failed — ${latency}ms`, 'error');
+            healthBtn.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.3)';
+            setTimeout(() => { if (healthBtn) healthBtn.style.boxShadow = ''; }, 1500);
+          }
+        } catch (e) {
+          appendAgentConsole(`Health check error: ${e.message}`, 'error');
+        }
+      });
+    });
+
+    mlStatusBtn?.addEventListener('click', () => {
+      withButtonSpinner(mlStatusBtn, async () => {
+        await loadMLModelsStatus();
+      });
+    });
+
+    const runAnalyzeUrl = async () => {
+      const scanInput = document.getElementById('ac-scan-url');
+      const url = scanInput?.value?.trim();
+      if (!url) {
+        appendAgentConsole('Enter a URL in the scan field first.', 'warning');
+        return;
+      }
+      const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+      try {
+        appendAgentConsole(`Analyzing: ${url}`, 'cmd');
+        const response = await fetch(`${backendUrl}/api/cyberforge-ml/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: url }),
+          signal: AbortSignal.timeout(20000)
+        });
+        const data = await response.json().catch(() => ({}));
+        const risk = (data?.risk_level || data?.data?.risk_level || 'unknown').toLowerCase();
+        const score = data?.risk_score ?? data?.data?.risk_score ?? '--';
+        const preview = (data?.response || data?.data?.response || '').slice(0, 120);
+        const isThreat = risk === 'high' || risk === 'critical';
+        appendAgentConsole(`Risk: ${risk} (score: ${score}) — ${preview}`, isThreat ? 'error' : 'result');
+
+        // Push to URL monitor feed
+        _pushUrlFeedItem(url, isThreat ? 'threat' : 'completed', risk);
+
+        // Update session counters
+        _sessionScanCount++;
+        _updateKPI('ac-kpi-scans', _sessionScanCount);
+        if (isThreat) {
+          const curThreats = parseInt(document.getElementById('ac-kpi-threats')?.textContent, 10) || 0;
+          _updateKPI('ac-kpi-threats', curThreats + 1);
+          prependActivityItem('warning', `Threat detected: ${url} — ${risk} risk`);
+        } else {
+          prependActivityItem('success', `Scan clean: ${url} — ${risk} risk`);
+        }
+      } catch (e) {
+        appendAgentConsole(`Analyze failed: ${e.message}`, 'error');
+        _pushUrlFeedItem(url, 'detected', 'error');
+      }
+    };
+
+    analyzeBtn?.addEventListener('click', () => {
+      withButtonSpinner(analyzeBtn, runAnalyzeUrl);
+    });
+
+    scanSubmitBtn?.addEventListener('click', () => {
+      withButtonSpinner(scanSubmitBtn, runAnalyzeUrl);
+    });
+
+    statsRefreshBtn?.addEventListener('click', () => {
+      loadAgentCenterSystemStats();
+    });
+
+    resyncHeroBtn?.addEventListener('click', () => {
+      withButtonSpinner(resyncHeroBtn, async () => {
+        await syncAgentCenterWithBackend();
+        await loadMLModelsStatus();
+      });
+    });
+
     const sendCommand = async () => {
       const command = commandInput?.value?.trim();
       if (!command) return;
-      appendAgentConsole(`Command> ${command}`, 'info');
+      appendAgentConsole(command, 'cmd');
       commandInput.value = '';
 
-      if (command.toLowerCase() === 'status') {
+      const lower = command.toLowerCase();
+
+      if (lower === 'help') {
+        appendAgentConsole('Commands: help | ping | status | scan <url> | analyze <url> | models | clear', 'info');
+        return;
+      }
+
+      if (lower === 'clear') {
+        const out = document.getElementById('agent-console-output');
+        if (out) out.innerHTML = '';
+        return;
+      }
+
+      if (lower === 'ping') {
+        const t0 = Date.now();
+        try {
+          await safeHealthCheck();
+          appendAgentConsole(`pong — ${Date.now() - t0}ms`, 'success');
+        } catch (e) {
+          appendAgentConsole(`ping failed — ${e.message}`, 'error');
+        }
+        return;
+      }
+
+      if (lower === 'status') {
         await syncAgentCenterWithBackend();
         return;
       }
 
-      if (command.toLowerCase().startsWith('scan ')) {
+      if (lower === 'models') {
+        await loadMLModelsStatus();
+        return;
+      }
+
+      if (lower.startsWith('scan ')) {
         const targetUrl = command.slice(5).trim();
         const userId = resolveCurrentUserId();
         const createTaskResult = await safeCreateAgentTask({
@@ -629,9 +922,8 @@
           priority: 'normal',
           parameters: { source: 'agent-console' }
         });
-
         if (createTaskResult?.success) {
-          appendAgentConsole(`Task created: ${createTaskResult?.data?.data?.taskId || 'pending-id'}`, 'success');
+          appendAgentConsole(`Task created: ${createTaskResult?.data?.data?.taskId || 'pending'}`, 'success');
           showToast('success', 'Task Created', 'Agent task submitted to backend.');
           loadAgentTasksData();
         } else {
@@ -641,7 +933,38 @@
         return;
       }
 
-      appendAgentConsole('Unsupported command. Use "status" or "scan <target-url>".', 'warning');
+      if (lower.startsWith('analyze ')) {
+        const targetUrl = command.slice(8).trim();
+        const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+        try {
+          appendAgentConsole(`Analyzing: ${targetUrl}`, 'info');
+          const response = await fetch(`${backendUrl}/api/cyberforge-ml/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: targetUrl }),
+            signal: AbortSignal.timeout(20000)
+          });
+          const data = await response.json().catch(() => ({}));
+          const risk = (data?.risk_level || data?.data?.risk_level || 'unknown').toLowerCase();
+          const score = data?.risk_score ?? data?.data?.risk_score ?? '--';
+          const preview = (data?.response || data?.data?.response || '').slice(0, 150);
+          const isThreat = risk === 'high' || risk === 'critical';
+          appendAgentConsole(`Risk: ${risk} (score: ${score}) — ${preview}`, isThreat ? 'error' : 'result');
+          _pushUrlFeedItem(targetUrl, isThreat ? 'threat' : 'completed', risk);
+          _sessionScanCount++;
+          _updateKPI('ac-kpi-scans', _sessionScanCount);
+          if (isThreat) {
+            const cur = parseInt(document.getElementById('ac-kpi-threats')?.textContent, 10) || 0;
+            _updateKPI('ac-kpi-threats', cur + 1);
+            prependActivityItem('warning', `Threat detected: ${targetUrl} — ${risk} risk`);
+          }
+        } catch (e) {
+          appendAgentConsole(`Analyze failed: ${e.message}`, 'error');
+        }
+        return;
+      }
+
+      appendAgentConsole("Unknown command. Type 'help'.", 'warning');
     };
 
     sendBtn?.addEventListener('click', sendCommand);
@@ -655,9 +978,18 @@
 
   async function syncAgentCenterWithBackend() {
     console.log('[AgentCenter] syncing with backend...');
+
     const backendEl = document.getElementById('ac-backend');
     const mlEl = document.getElementById('ac-ml');
     const agentCountEl = document.getElementById('ac-agent-count');
+    const statusSpinner = document.getElementById('ac-status-spinner');
+    const stripBackend = document.getElementById('ac-strip-backend');
+    const stripML = document.getElementById('ac-strip-ml');
+    const stripAgents = document.getElementById('ac-strip-agents-val');
+    const stripSynced = document.getElementById('ac-strip-synced');
+    const lastSyncEl = document.getElementById('ac-last-sync');
+
+    if (statusSpinner) statusSpinner.style.display = '';
 
     const safeListAgents = async () => {
       if (typeof cyberforgeAPI?.listAgents === 'function') {
@@ -674,9 +1006,7 @@
         signal: AbortSignal.timeout(7000)
       });
 
-      if (!response.ok) {
-        throw new Error(`Agent list request failed: HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Agent list request failed: HTTP ${response.status}`);
 
       const payload = await response.json();
       return {
@@ -698,40 +1028,124 @@
         safeHealthCheck()
       ]);
 
-      // Backend health
       const backendOk = !!(healthResult?.success);
-      if (backendEl) backendEl.textContent = backendOk ? 'Connected' : 'Offline';
-      if (backendEl) backendEl.style.color = backendOk ? '#27AE60' : '#C0392B';
 
-      // Agent status — check if default agent is actually running
-      const defaultStatus = statusResult?.data?.data || statusResult?.data || {};
-      const isOnline = !!defaultStatus?.isRunning || !!defaultStatus?.running || !!defaultStatus?.exists;
-      const statusLabel = isOnline ? 'Agent Online' : 'Agent Offline';
-      setAgentControlStatus(isOnline, statusLabel);
+      // Meta card values
+      if (backendEl) { backendEl.textContent = backendOk ? 'Connected' : 'Offline'; backendEl.style.color = backendOk ? '#27AE60' : '#C0392B'; }
 
-      // Agent count — use list count, but ensure at least 1 if agent is running
-      let agentCount = listResult?.data?.data?.count || 0;
-      if (isOnline && agentCount < 1) agentCount = 1;
-      if (backendOk && agentCount < 1 && isOnline) agentCount = 1;
-      if (agentCountEl) {
-        agentCountEl.textContent = agentCount;
-        agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B';
+      // Status strip chips
+      if (stripBackend) {
+        stripBackend.className = `ac-chip ${backendOk ? 'ac-chip-online' : 'ac-chip-offline'}`;
+        stripBackend.innerHTML = `Backend: ${backendOk ? 'Online' : 'Offline'}`;
       }
 
-      // ML health
-      const mlHealthy = !!(mlResult?.success && (mlResult?.data?.success || mlResult?.data?.status === 'healthy'));
-      if (mlEl) mlEl.textContent = mlHealthy ? 'Healthy' : 'Degraded';
-      if (mlEl) mlEl.style.color = mlHealthy ? '#27AE60' : '#E67E22';
+      const defaultStatus = statusResult?.data?.data || statusResult?.data || {};
+      const isOnline = !!defaultStatus?.isRunning || !!defaultStatus?.running || !!defaultStatus?.exists;
+      setAgentControlStatus(isOnline, isOnline ? 'Agent Online' : 'Agent Offline');
 
-      appendAgentConsole(`Backend sync: agents=${agentCount}, ml=${mlHealthy ? 'healthy' : 'degraded'}, backend=${backendOk ? 'ok' : 'failed'}`, backendOk ? 'success' : 'warning');
+      let agentCount = listResult?.data?.data?.count || 0;
+      // Desktop app itself is always at least 1 agent when backend is reachable
+      if (backendOk && agentCount < 1) agentCount = 1;
+      if (agentCountEl) { agentCountEl.textContent = agentCount; agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B'; }
+      if (stripAgents) stripAgents.textContent = agentCount;
+
+      _updateKPI('ac-kpi-agents', agentCount);
+      const taskCount = listResult?.data?.data?.taskCount ?? listResult?.data?.taskCount ?? 0;
+      if (taskCount > 0) _updateKPI('ac-kpi-tasks', taskCount);
+
+      const mlHealthy = !!(mlResult?.success && (mlResult?.data?.success || mlResult?.data?.status === 'healthy'));
+      if (mlEl) { mlEl.textContent = mlHealthy ? 'Healthy' : 'Degraded'; mlEl.style.color = mlHealthy ? '#27AE60' : '#E67E22'; }
+      if (stripML) {
+        stripML.className = `ac-chip ${mlHealthy ? 'ac-chip-online' : 'ac-chip-offline'}`;
+        stripML.innerHTML = `ML: ${mlHealthy ? 'Healthy' : 'Degraded'}`;
+      }
+
+      const syncTime = new Date().toLocaleTimeString();
+      if (stripSynced) stripSynced.textContent = `Synced ${syncTime}`;
+      if (lastSyncEl) lastSyncEl.textContent = syncTime;
+
+      appendAgentConsole(`Sync: agents=${agentCount}, ml=${mlHealthy ? 'healthy' : 'degraded'}, backend=${backendOk ? 'ok' : 'failed'}`, backendOk ? 'success' : 'warning');
       console.log('[AgentCenter] Backend sync complete');
     } catch (error) {
       setAgentControlStatus(false, 'Backend Unreachable');
       if (backendEl) { backendEl.textContent = 'Unreachable'; backendEl.style.color = '#C0392B'; }
       if (mlEl) { mlEl.textContent = 'Unknown'; mlEl.style.color = '#C0392B'; }
+      if (stripBackend) { stripBackend.className = 'ac-chip ac-chip-offline'; stripBackend.textContent = 'Backend: Offline'; }
+      if (stripML) { stripML.className = 'ac-chip ac-chip-offline'; stripML.textContent = 'ML: Unknown'; }
       appendAgentConsole(`Backend sync failed: ${error.message}`, 'error');
       console.error('[AgentCenter] Backend sync error:', error);
+    } finally {
+      if (statusSpinner) statusSpinner.style.display = 'none';
     }
+  }
+
+  async function loadMLModelsStatus() {
+    const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const modelCountEl = document.getElementById('ac-ml-model-count');
+    const stripModels = document.getElementById('ac-strip-models-val');
+
+    // Map dot data-model → key in ML health response
+    const modelKeyMap = {
+      phishing: 'phishing_detection',
+      malware: 'malware_detection',
+      anomaly: 'anomaly_detection',
+      webattack: 'web_attack_detection'
+    };
+
+    try {
+      const response = await fetch(`${backendUrl}/api/cyberforge-ml/health`, { signal: AbortSignal.timeout(18000) });
+      const data = await response.json().catch(() => ({}));
+      const modelsLoaded = data?.ml_models_loaded || data?.data?.ml_models_loaded || [];
+      const modelsAvailable = data?.models_available || data?.data?.models_available || [];
+
+      document.querySelectorAll('#agent-control-page .ac-ml-dot').forEach(dot => {
+        const key = dot.dataset.model;
+        const backendKey = modelKeyMap[key] || key;
+        const isLoaded = modelsLoaded.includes(backendKey) || modelsAvailable.includes(backendKey);
+        dot.className = `ac-ml-dot ${isLoaded ? 'online' : 'offline'}`;
+      });
+
+      const count = modelsLoaded.length || modelsAvailable.length;
+      if (modelCountEl) modelCountEl.textContent = `${count} model${count !== 1 ? 's' : ''}`;
+      if (stripModels) stripModels.textContent = count;
+
+      if (count > 0) {
+        appendAgentConsole(`ML models: ${count} loaded — ${modelsLoaded.join(', ') || modelsAvailable.join(', ')}`, 'success');
+      }
+    } catch (e) {
+      document.querySelectorAll('#agent-control-page .ac-ml-dot').forEach(dot => {
+        dot.className = 'ac-ml-dot offline';
+      });
+      if (modelCountEl) modelCountEl.textContent = '-- models';
+      console.warn('[AgentCenter] ML model status fetch failed:', e.message);
+    }
+  }
+
+  function animateKPICounters() {
+    const targets = [
+      { id: 'ac-kpi-agents', target: parseInt(document.getElementById('ac-kpi-agents')?.textContent, 10) || 0 },
+      { id: 'ac-kpi-threats', target: parseInt(document.getElementById('ac-kpi-threats')?.textContent, 10) || 0 },
+      { id: 'ac-kpi-browsers', target: parseInt(document.getElementById('ac-kpi-browsers')?.textContent, 10) || 0 },
+      { id: 'ac-kpi-scans', target: parseInt(document.getElementById('ac-kpi-scans')?.textContent, 10) || 0 },
+      { id: 'ac-kpi-tasks', target: parseInt(document.getElementById('ac-kpi-tasks')?.textContent, 10) || 0 }
+    ];
+
+    targets.forEach(({ id, target }) => {
+      if (!target || target === 0) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const duration = 600;
+      const start = performance.now();
+      const step = (now) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        el.textContent = Math.round(progress * target);
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      el.textContent = '0';
+      requestAnimationFrame(step);
+    });
   }
 
   window.CyberForgeAgent = {
@@ -754,7 +1168,12 @@
     resolveCurrentUserId,
     setAgentControlStatus,
     appendAgentConsole,
+    prependActivityItem,
     bindAgentControlActions,
-    syncAgentCenterWithBackend
+    syncAgentCenterWithBackend,
+    loadMLModelsStatus,
+    animateKPICounters,
+    withButtonSpinner,
+    pushUrlFeedItem: _pushUrlFeedItem
   };
 })();

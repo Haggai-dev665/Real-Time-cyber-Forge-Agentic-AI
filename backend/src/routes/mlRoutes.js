@@ -217,4 +217,66 @@ router.post('/scan', async (req, res) => {
     }
 });
 
+/**
+ * @route   POST /api/cyberforge-ml/v2/url-classify
+ * @desc    BERT URL phishing classifier (Phase 3 — elftsdmr/malware-url-detect)
+ * @body    { url: string }
+ */
+router.post('/v2/url-classify', async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: 'url required' });
+        const result = await cyberforgeML.classifyUrlPhishing(url);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @route   POST /api/cyberforge-ml/v2/dga-detect
+ * @desc    DGA-generated domain detector (Phase 3 — YangYang-Research/dga-detection)
+ * @body    { domain: string }
+ */
+router.post('/v2/dga-detect', async (req, res) => {
+    try {
+        const { domain } = req.body;
+        if (!domain) return res.status(400).json({ error: 'domain required' });
+        const result = await cyberforgeML.detectDga(domain);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @route   POST /api/cyberforge-ml/v2/security-chat
+ * @desc    Cybersecurity Q&A LLM (Phase 3 — ZySec-AI/SecurityLLM via HF Inference API)
+ *          Auto-falls back to Gemini when LLM is unavailable.
+ * @body    { query: string, max_tokens?: number }
+ */
+router.post('/v2/security-chat', async (req, res) => {
+    try {
+        const { query, max_tokens } = req.body;
+        if (!query) return res.status(400).json({ error: 'query required' });
+        const result = await cyberforgeML.securityChat(query, max_tokens);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @route   GET /api/cyberforge-ml/v2/status
+ * @desc    Status of phase-3 transformer models on HF Space (loaded / errors / available)
+ */
+router.get('/v2/status', async (req, res) => {
+    try {
+        const result = await cyberforgeML.transformerStatus();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

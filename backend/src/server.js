@@ -36,6 +36,7 @@ const browserIntelligenceRoutes = require('./routes/browser-intelligence');
 const distributedRoutes = require('./routes/distributed');
 const policyRoutes = require('./routes/policy');
 const auditRoutes = require('./routes/audit');
+const sandboxRoutes = require('./routes/sandbox');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
@@ -151,6 +152,7 @@ class CyberForgeServer {
     this.app.use('/api/distributed', distributedRoutes); // TODO 4: Distributed Intelligence
     this.app.use('/api/policy', policyRoutes);           // TODO 5: Policy Engine
     this.app.use('/api/audit', auditRoutes);             // TODO 6: Audit Trail
+    this.app.use('/api/sandbox', sandboxRoutes);         // Sandbox: IOC + MITRE + evidence locker
 
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);

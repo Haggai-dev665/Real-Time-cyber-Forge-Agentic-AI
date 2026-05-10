@@ -7,6 +7,11 @@ pandas>=2.2.0
 numpy>=2.0.0
 joblib>=1.4.0
 
+# Transformers (for phase-3 BERT URL classifier + DGA detector)
+torch>=2.2.0
+transformers>=4.40.0
+tokenizers>=0.19.0
+
 # Gradio UI
 gradio>=5.20.0
 

@@ -4266,6 +4266,66 @@
       }
     }
 
+    // ========================================
+    // SECURITY OPS — alerts / investigations / incident-timeline
+    // ========================================
+    else if (screen === 'alerts' || screen === 'alerts-critical' || screen === 'alerts-high' || screen === 'alerts-evidence') {
+      try {
+        const Alerts = window.CyberForgeSecOps?.AlertsScreen;
+        if (!Alerts) { container.innerHTML = '<div class="screen-placeholder"><h2>Alerts</h2><p>SecOps module not loaded.</p></div>'; }
+        else { new Alerts().show(container, screen); }
+      } catch (err) {
+        console.error('[CyberForge] Alerts screen error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>Alerts</h2><p>Screen loading error. Check console.</p></div>';
+      }
+    }
+    else if (screen === 'investigations' || screen === 'investigations-active' || screen === 'investigations-closed') {
+      try {
+        const Inv = window.CyberForgeSecOps?.InvestigationsScreen;
+        if (!Inv) { container.innerHTML = '<div class="screen-placeholder"><h2>Investigations</h2><p>SecOps module not loaded.</p></div>'; }
+        else { new Inv().show(container, screen); }
+      } catch (err) {
+        console.error('[CyberForge] Investigations screen error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>Investigations</h2><p>Screen loading error. Check console.</p></div>';
+      }
+    }
+    else if (screen === 'incident-timeline' || screen === 'timeline-today' || screen === 'timeline-week' || screen === 'timeline-all') {
+      try {
+        const TL = window.CyberForgeSecOps?.IncidentTimelineScreen;
+        if (!TL) { container.innerHTML = '<div class="screen-placeholder"><h2>Incident Timeline</h2><p>SecOps module not loaded.</p></div>'; }
+        else { new TL().show(container, screen); }
+      } catch (err) {
+        console.error('[CyberForge] Timeline screen error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>Incident Timeline</h2><p>Screen loading error. Check console.</p></div>';
+      }
+    }
+
+    // ========================================
+    // SYSTEM LOGS — console capture + agent activity + backend health
+    // ========================================
+    else if (screen === 'system-logs' || screen === 'logs-agent' || screen === 'logs-system' || screen === 'logs-export') {
+      try {
+        const SL = window.CyberForgeSystemLogs;
+        if (!SL) { container.innerHTML = '<div class="screen-placeholder"><h2>System Logs</h2><p>System logs module not loaded.</p></div>'; }
+        else { new SL().show(container, screen); }
+      } catch (err) {
+        console.error('[CyberForge] System logs screen error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>System Logs</h2><p>Screen loading error. Check console.</p></div>';
+      }
+    }
+
+    // ========================================
+    // AGENT CENTER — alias to agent-control (sidebar entry sends here)
+    // ========================================
+    else if (screen === 'agent-center') {
+      container.innerHTML = ChildPages.buildAgentControlLayout();
+      if (window.CyberForgeAgent?.initAgentCenter) {
+        window.CyberForgeAgent.initAgentCenter();
+      } else {
+        initAgentCenter();
+      }
+    }
+
     else {
       container.innerHTML = buildOperationalPage(screen);
       bindOperationalPage(screen);

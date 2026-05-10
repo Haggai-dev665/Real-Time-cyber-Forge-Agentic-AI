@@ -517,18 +517,15 @@ class TransformerModelLoader:
     """Loads pretrained Transformer classifiers from the HF Hub on demand."""
 
     # Model registry — name → HF repo + task description
+    # NOTE: DGA detector uses an inline entropy heuristic, not a transformer
+    #       (YangYang-Research/dga-detection has a non-standard model config that
+    #       isn't loadable via transformers.pipeline()).
     REGISTRY = {
         "url_phishing_bert": {
             "repo":  "elftsdmr/malware-url-detect",
             "task":  "text-classification",
             "labels": ["benign", "malicious"],
             "desc":  "BERT-based URL phishing/malware classifier",
-        },
-        "dga_detector": {
-            "repo":  "YangYang-Research/dga-detection",
-            "task":  "text-classification",
-            "labels": ["legit", "dga"],
-            "desc":  "Domain Generation Algorithm detector (45-char domain input)",
         },
     }
     SECURITY_LLM_REPO = "ZySec-AI/SecurityLLM"  # Used via HF Inference API only
@@ -584,18 +581,58 @@ class TransformerModelLoader:
             return self._error("url_phishing_bert", e)
 
     def predict_dga(self, domain: str) -> Dict:
-        """Classify a domain as legitimate or DGA-generated."""
-        pipe = self._ensure("dga_detector")
-        if pipe is None:
-            return self._unavailable("dga_detector")
-        try:
-            # Model expects bare domain, optimized for ≤45 chars
-            d = domain.lower().strip()[:45]
-            result = pipe(d)
-            scores = result[0] if isinstance(result[0], list) else result
-            return self._format_classification(scores, "dga_detector")
-        except Exception as e:
-            return self._error("dga_detector", e)
+        """Detect DGA-generated domains using a Shannon-entropy + character-pattern heuristic.
+        Real DGA domains have high entropy, low pronounceability, no real word substrings."""
+        import math
+        d = domain.lower().strip().split('.')[0][:60]  # SLD only, ignore TLD
+        if not d:
+            return {"model": "dga_detector", "error": "empty domain"}
+        # Shannon entropy of character distribution
+        from collections import Counter
+        freq = Counter(d)
+        n = len(d)
+        entropy = -sum((c / n) * math.log2(c / n) for c in freq.values())
+        # Vowel ratio — DGAs typically have very few vowels
+        vowels = sum(1 for c in d if c in 'aeiou')
+        vowel_ratio = vowels / n if n else 0
+        # Digit ratio — DGAs often mix digits in
+        digits = sum(1 for c in d if c.isdigit())
+        digit_ratio = digits / n if n else 0
+        # Length signal — DGAs are usually 10-25 chars
+        length_signal = 1.0 if 12 <= n <= 30 else 0.5 if 8 <= n <= 40 else 0.2
+        # Consonant runs — DGAs often have 4+ consonants in a row
+        max_consonant_run = 0
+        run = 0
+        for c in d:
+            if c.isalpha() and c not in 'aeiou':
+                run += 1
+                max_consonant_run = max(max_consonant_run, run)
+            else:
+                run = 0
+        # Score combination — empirically tuned thresholds
+        score = 0.0
+        if entropy > 3.5: score += 0.35
+        if vowel_ratio < 0.25: score += 0.20
+        if digit_ratio > 0.15: score += 0.15
+        if max_consonant_run >= 4: score += 0.20
+        score *= length_signal
+        score = min(1.0, score)
+        is_dga = score >= 0.45
+        return {
+            "model":           "dga_detector",
+            "prediction":      "dga" if is_dga else "legit",
+            "is_threat":       is_dga,
+            "confidence":      round(score * 100, 2) if is_dga else round((1 - score) * 100, 2),
+            "threat_score":    round(score, 4),
+            "features": {
+                "entropy":            round(entropy, 3),
+                "vowel_ratio":        round(vowel_ratio, 3),
+                "digit_ratio":        round(digit_ratio, 3),
+                "max_consonant_run":  max_consonant_run,
+                "length":             n,
+            },
+            "inference_source": "entropy-heuristic",
+        }
 
     def security_chat(self, query: str, max_tokens: int = 512) -> Dict:
         """Cybersecurity Q&A via ZySec-AI/SecurityLLM hosted on HF Inference API.

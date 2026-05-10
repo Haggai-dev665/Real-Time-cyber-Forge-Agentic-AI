@@ -528,7 +528,10 @@ class TransformerModelLoader:
             "desc":  "BERT-based URL phishing/malware classifier",
         },
     }
-    SECURITY_LLM_REPO = "ZySec-AI/SecurityLLM"  # Used via HF Inference API only
+    # Model used via HF Inference API. ZySec-AI/SecurityLLM isn't served on the
+    # free Inference API tier (404). Mistral-7B-Instruct-v0.3 is widely available
+    # and works well for cyber Q&A. Override via SECURITY_LLM_MODEL env var.
+    SECURITY_LLM_REPO = os.environ.get("SECURITY_LLM_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
 
     def __init__(self):
         self.pipelines = {}     # name → transformers.Pipeline (lazy-loaded)

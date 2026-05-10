@@ -297,16 +297,17 @@ class ReportAgent extends AgentBase {
         if (dga?.verdict === 'dga')         signals.push((dga.score || 0) * 100 * 0.10);
         if (scraper) {
             let s = 0;
-            if (!scraper.isHttps)      s += 8;
-            if (scraper.mixedContent)  s += 5;
+            // Only flag HTTP if scraper EXPLICITLY reported isHttps:false (not just undefined)
+            if (scraper.isHttps === false) s += 8;
+            if (scraper.mixedContent)      s += 5;
             if ((scraper.missingHeaders?.length || 0) > 3) s += 4;
             signals.push(s);
         }
         if (behavioral) {
             let s = 0;
-            if (behavioral.passwordFields && !scraper?.isHttps) s += 12;
-            if (behavioral.suspiciousApis?.length > 1)          s += 8;
-            if (behavioral.findings?.length > 2)                s += 5;
+            if (behavioral.passwordFields && scraper?.isHttps === false) s += 12;
+            if (behavioral.suspiciousApis?.length > 1) s += 8;
+            if (behavioral.findings?.length > 2)       s += 5;
             signals.push(s);
         }
         if (threatIntel?.verdict === 'known-bad') signals.push(40);   // strong signal
@@ -327,7 +328,7 @@ class ReportAgent extends AgentBase {
         const findings = [];
         if (urlClass?.verdict === 'malicious') findings.push(`URL classifier: malicious (${urlClass.confidence}% confidence)`);
         if (dga?.verdict === 'dga')             findings.push(`DGA detector: looks generated (${dga.confidence}% confidence)`);
-        if (!scraper?.isHttps)                  findings.push('Site does not use HTTPS');
+        if (scraper?.isHttps === false)        findings.push('Site does not use HTTPS');
         if (scraper?.mixedContent)              findings.push('Mixed HTTP/HTTPS content');
         if (behavioral?.findings?.length)       findings.push(...behavioral.findings);
         if (threatIntel?.flagged > 0)           findings.push(`${threatIntel.flagged} IOCs known to OTX threat intel`);

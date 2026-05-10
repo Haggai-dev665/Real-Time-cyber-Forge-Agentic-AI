@@ -1137,32 +1137,31 @@
     }
   }
 
+  // Per-session ID for orchestrator memory continuity (generated once per page load)
+  if (!window.__cfSessionId) {
+    window.__cfSessionId = 'sess-' + Math.random().toString(36).slice(2, 12) + '-' + Date.now().toString(36);
+  }
+
   async function _autoCreateScanTask(tab) {
     const userId = resolveCurrentUserId();
     const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
-    const token = localStorage.getItem('authToken') || '';
-    let agentId = localStorage.getItem('cyberforge_agent_id') || 'default';
+    const sessionId = window.__cfSessionId;
 
-    // ── Call the real-time scan endpoint ──────────────────────────────
-    // This runs: webscrapper → analysis → ML classification → Gemini → results
-    const payload = {
-      url: tab.url,
-      browser: tab.browserKey || tab.browser,
-      pageTitle: tab.title || '',
-      userId,
-      agentId
-    };
+    // ── Call the 8-AGENT ORCHESTRATOR ─────────────────────────────────
+    // Fans out URL → 8 specialists in DAG (URL classifier + DGA + scraper +
+    // memory + IOC + behavioral + MITRE + threat-intel) → Reporter aggregates.
+    appendAgentConsole(`⏳ Dispatching 8 agents to analyze ${tab.url.substring(0, 50)}...`, 'info');
 
-    appendAgentConsole(`⏳ Scanning ${tab.url.substring(0, 60)}...`, 'info');
+    // Notify floating panel that 8 agents are spinning up (UI hook)
+    if (window.CyberForgeAgentUI?.notifyOrchestratorStart) {
+      window.CyberForgeAgentUI.notifyOrchestratorStart(tab.url);
+    }
 
-    const response = await fetch(`${backendUrl}/api/agent/scan-url`, {
+    const response = await fetch(`${backendUrl}/api/orchestrator/analyze`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(90000) // 90s — scraping can be slow
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: tab.url, sessionId, userId }),
+      signal: AbortSignal.timeout(90000),
     });
 
     if (!response.ok) {
@@ -1171,11 +1170,37 @@
     }
 
     const result = await response.json();
-    const scanData = result?.data;
+    const report = result?.report;
 
-    if (!scanData) {
-      appendAgentConsole(`⚠️ No scan data returned for ${tab.url.substring(0, 50)}`, 'warning');
+    if (!report) {
+      appendAgentConsole(`⚠️ Orchestrator returned no report for ${tab.url.substring(0, 50)}`, 'warning');
       return result;
+    }
+
+    // ── Map orchestrator report → legacy scanData shape (so downstream UI keeps working) ─
+    const scanData = {
+      url:           report.url || tab.url,
+      browser:       tab.browserKey || tab.browser || 'unknown',
+      riskScore:     report.riskScore || 0,
+      riskLevel:     report.verdict === 'malicious' ? 'high'
+                    : report.verdict === 'suspicious' ? 'medium'
+                    : report.verdict === 'low-risk' ? 'low' : 'minimal',
+      category:      report.verdict || 'unknown',
+      confidence:    report.riskScore != null ? report.riskScore / 100 : null,
+      summary:       report.summary || '',
+      recommendations: (report.findings || []).slice(0, 4),
+      iocs:          report.iocs || [],
+      mitre:         report.mitre || [],
+      attackChain:   report.attackChain || [],
+      llmSource:     report.llmSource,
+      agentSummary:  report.agentSummary || {},
+      durationMs:    report.durationMs,
+      alertCreated:  !!report.persistedAlert,
+    };
+
+    // Notify floating panel of completion
+    if (window.CyberForgeAgentUI?.notifyOrchestratorComplete) {
+      window.CyberForgeAgentUI.notifyOrchestratorComplete(scanData);
     }
 
     // ── Process scan results ─────────────────────────────────────────
@@ -4263,6 +4288,20 @@
       } catch (err) {
         console.error('[CyberForge] Sandbox screen error:', err);
         container.innerHTML = '<div class="screen-placeholder"><h2>Sandbox</h2><p>Screen loading error. Check console.</p></div>';
+      }
+    }
+
+    // ========================================
+    // ORCHESTRATOR DASHBOARD — 8-agent live view
+    // ========================================
+    else if (screen === 'orchestrator-dashboard' || screen === 'orchestrator') {
+      try {
+        const OD = window.CyberForgeOrchestratorDashboard;
+        if (!OD) { container.innerHTML = '<div class="screen-placeholder"><h2>Orchestrator</h2><p>Dashboard module not loaded.</p></div>'; }
+        else { new OD().show(container); }
+      } catch (err) {
+        console.error('[CyberForge] Orchestrator dashboard error:', err);
+        container.innerHTML = '<div class="screen-placeholder"><h2>Orchestrator</h2><p>Screen loading error. Check console.</p></div>';
       }
     }
 

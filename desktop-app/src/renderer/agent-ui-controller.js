@@ -385,6 +385,116 @@
         log.insertBefore(entry, log.firstChild);
         while (log.children.length > 15) log.removeChild(log.lastChild);
     }
+
+    // =========================================
+    // 8-AGENT ORCHESTRATOR — visualization in floating panel
+    // =========================================
+
+    var AGENT_ROSTER = [
+        { name: 'url_classifier', icon: 'fa-shield-virus',     label: 'URL Classifier' },
+        { name: 'dga_detector',   icon: 'fa-fingerprint',      label: 'DGA Detector' },
+        { name: 'web_scraper',    icon: 'fa-spider',           label: 'Web Scraper' },
+        { name: 'memory',         icon: 'fa-brain',            label: 'Memory' },
+        { name: 'ioc_extractor',  icon: 'fa-magnifying-glass', label: 'IOC Extractor' },
+        { name: 'behavioral',     icon: 'fa-eye',              label: 'Behavioral' },
+        { name: 'mitre_mapper',   icon: 'fa-crosshairs',       label: 'MITRE Mapper' },
+        { name: 'threat_intel',   icon: 'fa-globe',            label: 'Threat Intel' }
+    ];
+
+    function _ensureOrchestratorPanel() {
+        var existing = document.getElementById('fp-orchestrator-panel');
+        if (existing) return existing;
+        var host = document.getElementById('agent-panel-body');
+        if (!host) return null;
+        var section = document.createElement('div');
+        section.className = 'agent-section';
+        section.id = 'fp-orchestrator-panel';
+        section.innerHTML = '\
+            <div class="agent-section-label" style="display:flex;align-items:center;justify-content:space-between">\
+                <span><i class="fas fa-network-wired"></i> 8-Agent Orchestrator</span>\
+                <span class="agent-status-row-value" id="fp-orch-status">Idle</span>\
+            </div>\
+            <div id="fp-orch-target" style="font-size:10px;color:#94a3b8;font-family:JetBrains Mono,monospace;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>\
+            <div id="fp-orch-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px"></div>\
+            <div id="fp-orch-result" style="margin-top:8px;font-size:10.5px;color:#94a3b8;display:none">\
+                <div id="fp-orch-verdict" style="font-weight:700;margin-bottom:3px"></div>\
+                <div id="fp-orch-summary" style="line-height:1.45;color:#cbd5e1"></div>\
+            </div>';
+        // Insert at top of body
+        host.insertBefore(section, host.firstChild);
+        // Initial cells
+        var grid = section.querySelector('#fp-orch-grid');
+        AGENT_ROSTER.forEach(function (a) {
+            var cell = document.createElement('div');
+            cell.className = 'fp-agent-cell';
+            cell.id = 'fp-agent-' + a.name;
+            cell.title = a.label;
+            cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);transition:all 0.2s ease;font-size:9px;text-align:center;min-height:42px';
+            cell.innerHTML = '<i class="fas ' + a.icon + '" style="font-size:13px;color:#64748b;margin-bottom:3px"></i><span style="color:#94a3b8;font-weight:600">' + a.label.split(' ')[0] + '</span>';
+            grid.appendChild(cell);
+        });
+        return section;
+    }
+
+    function _setAgentCellState(agentName, state) {
+        var cell = document.getElementById('fp-agent-' + agentName);
+        if (!cell) return;
+        var icon = cell.querySelector('i');
+        var colors = {
+            idle:    { border: 'rgba(255,255,255,0.06)', icon: '#64748b', bg: 'rgba(255,255,255,0.04)' },
+            running: { border: 'rgba(245,158,11,0.4)',   icon: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
+            ok:      { border: 'rgba(16,185,129,0.4)',   icon: '#10b981', bg: 'rgba(16,185,129,0.08)' },
+            failed:  { border: 'rgba(239,68,68,0.4)',    icon: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
+        };
+        var c = colors[state] || colors.idle;
+        cell.style.borderColor = c.border;
+        cell.style.background  = c.bg;
+        if (icon) icon.style.color = c.icon;
+        if (state === 'running' && icon && !icon.classList.contains('fa-spin')) {
+            icon.dataset.origClass = icon.className;
+            icon.className = 'fas fa-circle-notch fa-spin';
+            icon.style.fontSize = '13px';
+        } else if (state !== 'running' && icon && icon.dataset.origClass) {
+            icon.className = icon.dataset.origClass;
+            delete icon.dataset.origClass;
+        }
+    }
+
+    function notifyOrchestratorStart(url) {
+        var panel = _ensureOrchestratorPanel();
+        if (!panel) return;
+        panel.querySelector('#fp-orch-status').textContent = 'Analyzing';
+        panel.querySelector('#fp-orch-status').style.color = '#f59e0b';
+        panel.querySelector('#fp-orch-target').textContent = (url || '').slice(0, 60);
+        panel.querySelector('#fp-orch-result').style.display = 'none';
+        AGENT_ROSTER.forEach(function (a) { _setAgentCellState(a.name, 'running'); });
+        fpLog('🛰 8-agent dispatch: ' + (url || '').slice(0, 50));
+    }
+
+    function notifyOrchestratorComplete(scanData) {
+        var panel = _ensureOrchestratorPanel();
+        if (!panel) return;
+        var summary = scanData.agentSummary || {};
+        AGENT_ROSTER.forEach(function (a) {
+            var s = summary[a.name];
+            _setAgentCellState(a.name, s?.status === 'ok' ? 'ok' : (s?.status === 'failed' ? 'failed' : 'idle'));
+        });
+        var verdict = scanData.category || scanData.verdict || 'unknown';
+        var risk    = scanData.riskScore || 0;
+        var verdictColor = risk >= 65 ? '#ef4444' : risk >= 35 ? '#f59e0b' : risk >= 15 ? '#3b82f6' : '#10b981';
+        panel.querySelector('#fp-orch-status').textContent = 'Done · ' + (scanData.durationMs || 0) + 'ms';
+        panel.querySelector('#fp-orch-status').style.color = verdictColor;
+        var resBox = panel.querySelector('#fp-orch-result');
+        resBox.style.display = 'block';
+        panel.querySelector('#fp-orch-verdict').innerHTML =
+            '<span style="color:' + verdictColor + '">' + verdict.toUpperCase() + '</span>' +
+            ' · risk ' + risk + '/100 · ' +
+            (scanData.iocs?.length || 0) + ' IOCs · ' +
+            (scanData.mitre?.length || 0) + ' MITRE · ' +
+            'LLM: ' + (scanData.llmSource || '?');
+        panel.querySelector('#fp-orch-summary').textContent =
+            (scanData.summary || '').slice(0, 220) + ((scanData.summary || '').length > 220 ? '…' : '');
+    }
     
     // =========================================
     // HELPERS
@@ -594,7 +704,10 @@
             refreshStats: loadFloatingPanelSystemStats,
             refreshBackend: loadFloatingPanelBackendStatus,
             resyncAll: loadFloatingPanelData,
-            fpLog: fpLog
+            fpLog: fpLog,
+            // 8-agent orchestrator UI hooks
+            notifyOrchestratorStart,
+            notifyOrchestratorComplete,
         };
         
         console.log('[AgentUI] Initialization complete');

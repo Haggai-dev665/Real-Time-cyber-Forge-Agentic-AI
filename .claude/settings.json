@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(perl -pi -e \"s|'http://localhost:3001/api'|window.CF_API?.API \\\\|\\\\| 'https://cyberforge-ddd97655464f.herokuapp.com/api'|g; s|'http://localhost:3001'|window.CF_API?.BACKEND \\\\|\\\\| 'https://cyberforge-ddd97655464f.herokuapp.com'|g; s|'http://localhost:8001'|window.CF_API?.ML \\\\|\\\\| 'https://che237-cyberforge-models.hf.space'|g\" *.js)",
-      "Bash(grep -E \"\\\\.js$\")"
+      "Bash(grep -E \"\\\\.js$\")",
+      "Bash(perl -i -pe 's/AbortSignal\\\\.timeout\\\\\\(3000\\\\\\)/AbortSignal.timeout\\(18000\\)/g' /Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/desktop-app/src/renderer/screens/ai-assistant.js /Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/desktop-app/src/renderer/screens/real-time-monitor.js)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -X POST https://cyberforge-ddd97655464f.herokuapp.com/api/orchestrator/analyze -H 'Content-Type: application/json' -d '{\"url\":\"https://example.com/\",\"sessionId\":\"sess-final\",\"userId\":\"desktop-user\"}' -m 90)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

@@ -9,6 +9,7 @@ mod websocket;
 mod system;
 mod state;
 mod distributed;
+mod telemetry_loop;
 
 use state::AppState;
 use std::sync::Arc;
@@ -73,6 +74,11 @@ fn main() {
             commands::get_node_statuses,
             commands::get_correlations,
             commands::apply_risk_adjustment,
+            // Telemetry loop control
+            commands::start_telemetry_loop,
+            commands::stop_telemetry_loop,
+            commands::get_telemetry_loop_status,
+            commands::get_system_telemetry,
         ])
         .setup(|app| {
             log::info!("🚀 CyberForge Tauri app starting...");
@@ -88,6 +94,14 @@ fn main() {
             tauri::async_runtime::spawn(async move {
                 websocket::connect_to_backend(app_handle).await;
             });
+
+            // Start real-time telemetry background loops (URL-poll + system telemetry)
+            let tele_app = app.handle().clone();
+            let started = telemetry_loop::start_background_loops(
+                tele_app,
+                telemetry_loop::TelemetryLoopConfig::default(),
+            );
+            log::info!("🔄 Telemetry background loops started: {}", started);
 
             Ok(())
         })

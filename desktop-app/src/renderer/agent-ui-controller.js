@@ -709,7 +709,34 @@
             notifyOrchestratorStart,
             notifyOrchestratorComplete,
         };
-        
+
+        // Expose orchestrator notify for Quick Scan modal
+        window._cfOrchestratorNotify = function(event, data) {
+            if (event === 'start' && data) notifyOrchestratorStart(data);
+            else if (event === 'complete' && data) notifyOrchestratorComplete(data);
+        };
+
+        // Screen enter animation — apply cf-screen-enter class each time
+        // a new screen is injected into #screen-container
+        (function() {
+            var sc = document.getElementById('screen-container');
+            if (!sc || typeof MutationObserver === 'undefined') return;
+            var obs = new MutationObserver(function(muts) {
+                muts.forEach(function(m) {
+                    m.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            node.classList.add('cf-screen-enter');
+                            // Re-trigger AOS if loaded
+                            if (typeof AOS !== 'undefined') {
+                                setTimeout(function() { AOS.refresh(); }, 50);
+                            }
+                        }
+                    });
+                });
+            });
+            obs.observe(sc, { childList: true });
+        })();
+
         console.log('[AgentUI] Initialization complete');
     }
     

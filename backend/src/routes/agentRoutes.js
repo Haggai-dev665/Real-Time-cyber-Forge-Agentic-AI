@@ -342,7 +342,7 @@ router.get('/browser-intelligence', async (req, res) => {
  */
 router.post('/scan-url', async (req, res) => {
   try {
-    const { url, browser, pageTitle, userId, agentId } = req.body;
+    const { url, browser, pageTitle, userId, agentId, sessionId } = req.body;
 
     if (!url) {
       return res.status(400).json({ success: false, error: 'url is required' });
@@ -424,6 +424,7 @@ router.post('/scan-url', async (req, res) => {
         url,
         browser: browser || 'unknown',
         pageTitle: pageTitle || '',
+        sessionId: sessionId || null,
 
         // Scraper results
         scraperSuccess: true,
@@ -470,6 +471,96 @@ router.post('/scan-url', async (req, res) => {
       success: false,
       error: error.message
     });
+  }
+});
+
+/**
+ * Batch URL scan — run /scan-url logic for multiple URLs concurrently.
+ * POST /api/agent/scan-url/batch
+ * Body: { urls: string[], browser?: string, userId?: string, sessionId?: string, concurrency?: number }
+ * Returns: { success: true, results: Array<{ url, success, data?, error? }>, completedAt }
+ *
+ * Concurrency is capped at 5 to avoid flooding the HF Space.
+ */
+router.post('/scan-url/batch', async (req, res) => {
+  try {
+    const { urls, browser, userId, sessionId, concurrency = 3 } = req.body;
+
+    if (!Array.isArray(urls) || urls.length === 0) {
+      return res.status(400).json({ success: false, error: 'urls array is required and must not be empty' });
+    }
+    if (urls.length > 20) {
+      return res.status(400).json({ success: false, error: 'Maximum 20 URLs per batch' });
+    }
+
+    const cap = Math.max(1, Math.min(5, concurrency));
+    logger.info(`📦 Batch URL scan: ${urls.length} URLs, concurrency=${cap}, userId=${userId || 'anon'}`);
+
+    // Process URLs in chunks to respect concurrency cap
+    const results = [];
+    for (let i = 0; i < urls.length; i += cap) {
+      const chunk = urls.slice(i, i + cap);
+      const chunkResults = await Promise.all(chunk.map(async (url) => {
+        try {
+          const scrapedData = await webScraperAPIService.scrapeWebsite(url);
+          if (!scrapedData.success) {
+            return { url, success: false, error: scrapedData.error };
+          }
+          const analysisData = webScraperAPIService.formatForAIAnalysis(scrapedData);
+          const mlOutput = await mlServiceClient.classifyThreat(analysisData);
+          const geminiExplanation = await mlServiceClient.getExplanation(mlOutput, analysisData);
+
+          let alertCreated = false;
+          try {
+            if (mlOutput.riskScore >= 30 && userId) {
+              await appwriteService.createAlert({
+                userId,
+                deviceId: 'desktop',
+                severity: mlOutput.riskScore >= 70 ? 'critical' : mlOutput.riskScore >= 50 ? 'high' : 'medium',
+                source: 'batch-scan',
+                description: `[${mlOutput.category}] ${geminiExplanation.summary || ''} — ${url}`.substring(0, 4096),
+                evidence: [`URL: ${url}`, `Category: ${mlOutput.category}`, ...(geminiExplanation.recommendations || []).slice(0, 2)],
+                confidence: mlOutput.confidence || 0.5,
+                riskScore: mlOutput.riskScore
+              });
+              alertCreated = true;
+            }
+          } catch (_) { /* non-fatal */ }
+
+          return {
+            url,
+            success: true,
+            data: {
+              riskScore: mlOutput.riskScore,
+              riskLevel: analysisData.risk_level,
+              category: mlOutput.category,
+              confidence: mlOutput.confidence,
+              summary: geminiExplanation.summary,
+              recommendations: geminiExplanation.recommendations,
+              modelPredictions: mlOutput.modelPredictions,
+              alertCreated,
+              sessionId: sessionId || null,
+              scannedAt: new Date().toISOString()
+            }
+          };
+        } catch (err) {
+          logger.warn(`⚠️ Batch scan failed for ${url}: ${err.message}`);
+          return { url, success: false, error: err.message };
+        }
+      }));
+      results.push(...chunkResults);
+    }
+
+    res.json({
+      success: true,
+      count: results.length,
+      results,
+      completedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('❌ Batch URL scan failed:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

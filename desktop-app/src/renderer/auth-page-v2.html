@@ -8,21 +8,24 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
     <!-- Enterprise Auth Stylesheet -->
     <link rel="stylesheet" href="css/enterprise-auth.css">
+    <!-- Auth enrichment styles -->
+    <link rel="stylesheet" href="css/cf-auth-enrich.css">
 </head>
 <body>
 
     <div class="auth-container">
 
-        <!-- ═══════════════════════════════════════════════════════════
-             LEFT PANEL — Visual Identity / Brand
-             ═══════════════════════════════════════════════════════════ -->
+        <!-- LEFT PANEL — Visual Identity / Brand -->
         <div class="auth-visual">
 
             <!-- Background layers -->
@@ -47,13 +50,11 @@
                 <!-- Animated network mesh illustration -->
                 <div class="auth-illustration">
                     <svg viewBox="0 0 400 400" class="auth-illustration-svg" aria-hidden="true">
-
                         <!-- Security perimeter rings -->
                         <circle class="ill-ring" cx="200" cy="200" r="180" style="--ill-dur:90s"/>
                         <circle class="ill-ring ill-ring-dashed" cx="200" cy="200" r="148" style="--ill-dur:70s;--ill-dir:reverse"/>
                         <circle class="ill-ring" cx="200" cy="200" r="112" style="--ill-dur:80s"/>
                         <circle class="ill-ring ill-ring-dashed" cx="200" cy="200" r="78" style="--ill-dur:60s"/>
-
                         <!-- Node connection lines -->
                         <g class="ill-lines">
                             <line x1="200" y1="200" x2="200" y2="25"/>
@@ -65,8 +66,7 @@
                             <line x1="200" y1="200" x2="25" y2="215"/>
                             <line x1="200" y1="200" x2="55" y2="85"/>
                         </g>
-
-                        <!-- Cross-connections between outer nodes -->
+                        <!-- Cross-connections -->
                         <g class="ill-lines ill-lines-cross">
                             <line x1="200" y1="25" x2="345" y2="85"/>
                             <line x1="345" y1="85" x2="375" y2="215"/>
@@ -77,8 +77,7 @@
                             <line x1="25" y1="215" x2="55" y2="85"/>
                             <line x1="55" y1="85" x2="200" y2="25"/>
                         </g>
-
-                        <!-- Outer network nodes -->
+                        <!-- Outer nodes -->
                         <g class="ill-nodes">
                             <circle cx="200" cy="25" r="5" style="--d:0s"/>
                             <circle cx="345" cy="85" r="4.5" style="--d:0.8s"/>
@@ -89,7 +88,6 @@
                             <circle cx="25" cy="215" r="5" style="--d:2s"/>
                             <circle cx="55" cy="85" r="4.5" style="--d:2.8s"/>
                         </g>
-
                         <!-- Inner satellite nodes -->
                         <g class="ill-sats">
                             <circle cx="258" cy="128" r="2.5" style="--d:3s"/>
@@ -101,17 +99,14 @@
                             <circle cx="200" cy="280" r="2" style="--d:6.4s"/>
                             <circle cx="120" cy="200" r="2" style="--d:7s"/>
                         </g>
-
                         <!-- Central shield -->
                         <g class="ill-shield">
                             <path class="ill-shield-fill" d="M200 138 L235 154 L235 195 Q235 218 200 232 Q165 218 165 195 L165 154 Z"/>
                             <path class="ill-shield-stroke" d="M200 138 L235 154 L235 195 Q235 218 200 232 Q165 218 165 195 L165 154 Z"/>
                             <path class="ill-check" d="M186 185 L196 195 L216 172"/>
                         </g>
-
                         <!-- Scanning sweep -->
                         <line class="ill-scan" x1="0" y1="200" x2="400" y2="200"/>
-
                     </svg>
                 </div>
 
@@ -133,13 +128,65 @@
                         Real-Time Intel
                     </span>
                 </div>
+
+                <!-- Capability List -->
+                <ul class="auth-capability-list">
+                    <li class="auth-cap-item">
+                        <span class="auth-cap-icon"><i class="fas fa-shield-virus"></i></span>
+                        <div class="auth-cap-body">
+                            <strong>8-Agent Orchestrator</strong>
+                            <span>URL Classifier, DGA Detector, IOC Extractor, MITRE Mapper + 4 more agents</span>
+                        </div>
+                    </li>
+                    <li class="auth-cap-item">
+                        <span class="auth-cap-icon"><i class="fas fa-wand-magic-sparkles"></i></span>
+                        <div class="auth-cap-body">
+                            <strong>Gemini 2.5 Flash</strong>
+                            <span>Deep threat reasoning, risk scoring 0-100, and actionable recommendations</span>
+                        </div>
+                    </li>
+                    <li class="auth-cap-item">
+                        <span class="auth-cap-icon"><i class="fas fa-eye"></i></span>
+                        <div class="auth-cap-body">
+                            <strong>Real-Time Browser Monitoring</strong>
+                            <span>Every URL visited scanned instantly via osascript + WebScraper API</span>
+                        </div>
+                    </li>
+                    <li class="auth-cap-item">
+                        <span class="auth-cap-icon"><i class="fas fa-chart-mixed"></i></span>
+                        <div class="auth-cap-body">
+                            <strong>30+ Security Screens</strong>
+                            <span>Threat center, behavioral analysis, digital forensics, YARA, compliance</span>
+                        </div>
+                    </li>
+                </ul>
+
+                <!-- Live stat pills -->
+                <div class="auth-stat-row">
+                    <div class="auth-stat-pill">
+                        <span class="auth-stat-val" id="auth-stat-threats">1,200+</span>
+                        <span class="auth-stat-lbl">Threats Analyzed</span>
+                    </div>
+                    <div class="auth-stat-pill">
+                        <span class="auth-stat-val">4</span>
+                        <span class="auth-stat-lbl">ML Models</span>
+                    </div>
+                    <div class="auth-stat-pill">
+                        <span class="auth-stat-val">8</span>
+                        <span class="auth-stat-lbl">AI Agents</span>
+                    </div>
+                </div>
+
+                <!-- Research badge -->
+                <div class="auth-research-badge">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>MSc Cybersecurity Research Thesis &mdash; Agentic AI Platform</span>
+                </div>
             </div>
         </div>
 
 
-        <!-- ═══════════════════════════════════════════════════════════
-             RIGHT PANEL — Authentication Forms
-             ═══════════════════════════════════════════════════════════ -->
+        <!-- RIGHT PANEL — Authentication Forms -->
         <div class="auth-panel">
             <div class="auth-panel-scroll">
 
@@ -155,7 +202,7 @@
                 </div>
 
 
-                <!-- ═══ LOGIN FORM ═══ -->
+                <!-- LOGIN FORM -->
                 <div class="auth-form-card" id="login-form">
                     <div class="form-header">
                         <h2>Welcome Back</h2>
@@ -224,7 +271,7 @@
                 </div>
 
 
-                <!-- ═══ REGISTER FORM ═══ -->
+                <!-- REGISTER FORM -->
                 <div class="auth-form-card hidden" id="register-form">
                     <div class="form-header">
                         <h2>Create Account</h2>
@@ -346,7 +393,7 @@
                 </div>
 
 
-                <!-- ═══ RESET PASSWORD FORM ═══ -->
+                <!-- RESET PASSWORD FORM -->
                 <div class="auth-form-card hidden" id="reset-form">
                     <div class="form-header form-header--reset">
                         <button class="back-btn" type="button" onclick="showLoginForm()" aria-label="Back to login">
@@ -380,7 +427,7 @@
                 </div>
 
 
-                <!-- ═══ Trust Signals ═══ -->
+                <!-- Trust Signals -->
                 <div class="auth-trust">
                     <div class="auth-trust-item">
                         <i class="fas fa-lock"></i>
@@ -398,7 +445,7 @@
 
                 <!-- Footer -->
                 <div class="auth-footer">
-                    <p>&copy; 2025 CyberForge AI. All rights reserved.</p>
+                    <p>&copy; 2026 CyberForge AI. All rights reserved.</p>
                     <div class="footer-links">
                         <a href="#">Privacy</a>
                         <a href="#">Terms</a>
@@ -414,9 +461,12 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
 
-    <!-- Runtime Scripts (no heavy animation libs) -->
+    <!-- GSAP for micro-interactions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <!-- Runtime Scripts -->
     <script src="../tauri-bridge.js"></script>
     <script src="utils/theme-provider.js"></script>
     <script src="auth-page-v2.js"></script>
+    <script src="utils/auth-enrich.js"></script>
 </body>
 </html>

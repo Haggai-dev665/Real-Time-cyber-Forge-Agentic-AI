@@ -17,12 +17,13 @@ const API_CONFIG = {
     local: LOCAL_URL
   },
   
-  // ML Services (already on HuggingFace)
+  // ML Services — routed via Heroku proxy /api/cyberforge-ml (preferred)
+  // Direct HF Space: https://che237-cyberforge.hf.space
   ml: {
-    base: 'https://che237-cyberforge-models.hf.space',
-    predict: 'https://che237-cyberforge-models.hf.space/predict',
-    health: 'https://che237-cyberforge-models.hf.space/health',
-    models: 'https://che237-cyberforge-models.hf.space/models'
+    base: 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml',
+    predict: 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml/predict',
+    health: 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml/health',
+    models: 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml/models'
   },
   
   // External services

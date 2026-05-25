@@ -894,3 +894,86 @@ pub async fn apply_risk_adjustment(
         "adjustedScore": adjusted
     }))
 }
+
+// ──────────────────────────────────────────────
+// TELEMETRY LOOP COMMANDS
+// New commands that control the real-time background loops.
+// All are additive — no existing command is changed.
+// ──────────────────────────────────────────────
+
+/// Start the real-time background telemetry loops (URL-poll + system telemetry).
+///
+/// Accepts an optional config object:
+///   { urlIntervalMs?: number, sysIntervalMs?: number, urlDedup?: boolean }
+///
+/// Returns: { started: bool, running: bool, config: TelemetryLoopConfig }
+#[tauri::command]
+pub async fn start_telemetry_loop(
+    app: tauri::AppHandle,
+    config: Option<Value>,
+) -> Result<Value, String> {
+    let mut loop_config = crate::telemetry_loop::TelemetryLoopConfig::default();
+
+    if let Some(cfg) = config {
+        if let Some(v) = cfg.get("urlIntervalMs").and_then(|v| v.as_u64()) {
+            loop_config.url_interval_ms = v.max(500); // floor 500 ms
+        }
+        if let Some(v) = cfg.get("sysIntervalMs").and_then(|v| v.as_u64()) {
+            loop_config.sys_interval_ms = v.max(1000); // floor 1 s
+        }
+        if let Some(v) = cfg.get("urlDedup").and_then(|v| v.as_bool()) {
+            loop_config.url_dedup = v;
+        }
+    }
+
+    let cfg_clone = loop_config.clone();
+    let started = crate::telemetry_loop::start_background_loops(app, loop_config);
+
+    Ok(serde_json::json!({
+        "started": started,
+        "running": crate::telemetry_loop::is_running(),
+        "config": serde_json::to_value(&cfg_clone).unwrap_or_default()
+    }))
+}
+
+/// Stop the real-time background telemetry loops.
+///
+/// Returns: { stopped: bool }
+#[tauri::command]
+pub async fn stop_telemetry_loop() -> Result<Value, String> {
+    let was_running = crate::telemetry_loop::is_running();
+    crate::telemetry_loop::stop_background_loops();
+    Ok(serde_json::json!({
+        "stopped": was_running,
+        "running": crate::telemetry_loop::is_running()
+    }))
+}
+
+/// Query whether the background loops are currently running and their config.
+///
+/// Returns: { running: bool, config: TelemetryLoopConfig }
+#[tauri::command]
+pub async fn get_telemetry_loop_status() -> Result<Value, String> {
+    let status = crate::telemetry_loop::LoopStatus {
+        running: crate::telemetry_loop::is_running(),
+        config: crate::telemetry_loop::TelemetryLoopConfig::default(),
+    };
+    serde_json::to_value(&status).map_err(|e| e.to_string())
+}
+
+/// Synchronous one-shot system telemetry snapshot.
+///
+/// The renderer can call this on demand; the background loop also pushes
+/// snapshots automatically via the `cf:system-telemetry` event.
+///
+/// Returns: SystemTelemetry (see telemetry.rs for full shape)
+#[tauri::command]
+pub async fn get_system_telemetry() -> Result<Value, String> {
+    let telemetry = tokio::task::spawn_blocking(|| {
+        crate::system::collect_system_telemetry()
+    })
+    .await
+    .map_err(|e| format!("Telemetry collection failed: {}", e))?;
+
+    serde_json::to_value(&telemetry).map_err(|e| e.to_string())
+}

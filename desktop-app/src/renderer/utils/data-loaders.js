@@ -478,7 +478,7 @@
       </div>
       <div class="env-var-item">
         <span class="var-name">ML_SERVICE_URL</span>
-        <span class="var-value">https://che237-cyberforge-models.hf.space</span>
+        <span class="var-value">https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml</span>
       </div>
     `;
   }

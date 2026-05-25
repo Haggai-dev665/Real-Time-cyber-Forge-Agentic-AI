@@ -1383,6 +1383,180 @@ router.post('/scrape-website',
   }
 );
 
+// =======================================================
+// CHAT-CONTEXT BRIDGE  (Wave 2 — Security Chatbot)
+// =======================================================
+
+/**
+ * Assemble live system context from backend data sources.
+ * Returns a context object shaped for the HF /api/v2/chat endpoint.
+ *
+ * Sources assembled (best-effort — silently skips unavailable data):
+ *   • Recent threat alerts from the in-memory threat store / Appwrite
+ *   • Recent orchestrator scan reports (via agentOrchestrator if mounted)
+ *   • System telemetry (passed in from Tauri renderer)
+ *   • Behavioral alerts (passed in from Tauri cf:behavioral-alert events)
+ *
+ * NOTE: We do NOT call external services here — assembly must be fast (<100 ms)
+ * so the chatbot turn latency is dominated by the HF round-trip, not context building.
+ */
+async function assembleLiveContext(req) {
+  const ctx = {
+    telemetry:         req.body.telemetry         || {},
+    recent_scans:      [],
+    active_threats:    [],
+    behavioral_alerts: req.body.behavioral_alerts || [],
+    translate:         req.body.translate         || false,
+    raw_data:          req.body.raw_data          || '',
+  };
+
+  // Pull recent threats from threatService (in-memory, safe)
+  try {
+    const { threatService } = require('../services/threatService');
+    const threats = await threatService.getRecentThreats({ limit: 10 });
+    const list = Array.isArray(threats) ? threats : (threats?.threats || threats?.data || []);
+    ctx.active_threats = list.slice(0, 8).map(t => ({
+      type:     t.type || t.threat_type || 'unknown',
+      severity: t.severity || t.risk_level || 'unknown',
+      source:   t.source || t.url || t.domain || 'unknown',
+      score:    t.riskScore || t.risk_score || 0,
+    }));
+  } catch (_) { /* service unavailable — skip */ }
+
+  // Pull recent scan reports from orchestrator (in-memory ring buffer)
+  try {
+    const { agentOrchestrator } = require('../services/agentOrchestrator');
+    const reports = agentOrchestrator.getRecentReports(15);
+    ctx.recent_scans = reports.map(r => ({
+      url:        r.url  || r.target || '',
+      risk_score: r.riskScore || r.risk_score || r.score || 0,
+      category:   r.verdict || r.category || 'unknown',
+      timestamp:  r.timestamp || r.scannedAt || '',
+    }));
+  } catch (_) { /* orchestrator unavailable — skip */ }
+
+  return ctx;
+}
+
+/**
+ * @route   POST /api/ai/chat-context
+ * @desc    Context-grounded security chatbot bridge.
+ *          Assembles live context (threats + scans + telemetry) and forwards
+ *          to the HF Space POST /api/v2/chat with the context blob.
+ *          The chatbot's answer is grounded in the live system state every turn.
+ * @access  Public (rate-limited)
+ *
+ * Body:
+ *   {
+ *     "message":              "string — user's question",
+ *     "session_id":           "optional string",
+ *     "conversation_history": [ {role, content}, ... ],
+ *     "telemetry":            { cpu, ram, net_in_kbps, ... },   // from Tauri cf:system-telemetry
+ *     "behavioral_alerts":    [ { pattern, score }, ... ],       // from Tauri cf:behavioral-alert
+ *     "translate":            false,                             // true → translate raw data
+ *     "raw_data":             "optional raw IOC/signal string"   // for translation mode
+ *   }
+ */
+router.post('/chat-context',
+  aiAnalysisLimiter,
+  [
+    body('message').notEmpty().withMessage('message is required'),
+    body('session_id').optional().isString(),
+    body('conversation_history').optional().isArray(),
+    body('telemetry').optional().isObject(),
+    body('behavioral_alerts').optional().isArray(),
+    body('translate').optional().isBoolean(),
+  ],
+  async (req, res) => {
+    const startMs = Date.now();
+    try {
+      const {
+        message,
+        session_id      = '',
+        conversation_history = [],
+      } = req.body;
+
+      console.log(`[chat-context] turn — session=${session_id || 'anon'} msg="${message.slice(0, 80)}"`);
+
+      // 1. Assemble live context
+      const liveContext = await assembleLiveContext(req);
+
+      // 2. Forward to HF Space /api/v2/chat
+      const HF_BASE = process.env.AI_SERVICE_URL || 'https://che237-cyberforge.hf.space';
+      const hfPayload = {
+        message,
+        session_id,
+        conversation_history,
+        context: liveContext,
+      };
+
+      let hfResult;
+      try {
+        const axios = require('axios');
+        const hfRes = await axios.post(`${HF_BASE}/api/v2/chat`, hfPayload, {
+          timeout: 45000,
+          headers: { 'Content-Type': 'application/json' },
+        });
+        hfResult = hfRes.data;
+      } catch (hfErr) {
+        console.error('[chat-context] HF call failed:', hfErr.message);
+        // Fallback: call legacy /analyze endpoint
+        try {
+          const axios = require('axios');
+          const fallbackRes = await axios.post(`${HF_BASE}/analyze`, {
+            query: message,
+            conversation_history,
+            context: liveContext,
+          }, { timeout: 30000, headers: { 'Content-Type': 'application/json' } });
+          hfResult = {
+            ...fallbackRes.data,
+            session_id,
+            sources: [],
+            model_used: fallbackRes.data.model_used || 'cyberforge-ml-fallback',
+          };
+        } catch (fallbackErr) {
+          return res.status(503).json({
+            success: false,
+            message: 'AI service temporarily unavailable',
+            error: fallbackErr.message,
+          });
+        }
+      }
+
+      const elapsed = Date.now() - startMs;
+      console.log(`[chat-context] ok — risk=${hfResult.risk_level} score=${hfResult.risk_score} model=${hfResult.model_used} ${elapsed}ms`);
+
+      // 3. Return to renderer — preserve HF contract + add backend metadata
+      return res.json({
+        success:     true,
+        response:    hfResult.response,
+        confidence:  hfResult.confidence,
+        risk_level:  hfResult.risk_level,
+        risk_score:  hfResult.risk_score,
+        model_used:  hfResult.model_used,
+        session_id:  hfResult.session_id  || session_id,
+        sources:     hfResult.sources     || [],
+        timestamp:   hfResult.timestamp   || new Date().toISOString(),
+        context_assembled: {
+          threats_found:    liveContext.active_threats.length,
+          scans_found:      liveContext.recent_scans.length,
+          has_telemetry:    Object.keys(liveContext.telemetry).length > 0,
+          has_behavioral:   liveContext.behavioral_alerts.length > 0,
+          elapsed_ms:       elapsed,
+        },
+      });
+
+    } catch (error) {
+      console.error('[chat-context] unhandled error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to process chat request',
+        error:   error.message,
+      });
+    }
+  }
+);
+
 // Export the threat monitoring service for WebSocket integration
 router.threatMonitoringService = threatMonitoringService;
 

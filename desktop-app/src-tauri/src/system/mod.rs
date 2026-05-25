@@ -7,6 +7,7 @@ pub mod browser_detector;
 pub mod process_checker;
 pub mod url_monitor;
 pub mod browser_intelligence;
+pub mod telemetry;
 
 pub use browser_detector::detect_all_browsers;
 pub use os_info::get_os_name;
@@ -15,3 +16,4 @@ pub use browser_intelligence::{
     process_url_observation, feed_ml_risk_score, get_intelligence_snapshot,
     get_intelligence_config, update_intelligence_config, prune_expired_sessions,
 };
+pub use telemetry::collect_system_telemetry;

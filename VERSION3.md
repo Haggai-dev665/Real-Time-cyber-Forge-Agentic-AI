@@ -90,16 +90,22 @@ Note: the BERT transformer (`url_phishing_bert`) lazy-loads on first `/api/v2/ur
 
 ---
 
-## ⚠️ Outstanding User Actions (code is local-only until you run these)
+## Deployment Status
 
-1. **Deploy backend to Heroku** — the new backend routes (`scan-url/batch`, orchestrator `/health/deep` `/reports/filter` `/session/:sid/summary`, and `POST /api/ai/chat-context`) exist locally but are NOT live on Heroku yet:
-   ```bash
-   git push heroku request-response-life-cycle:main
-   ```
-2. **HF Space is already live** (pushed by ML + AI engineers) — no action needed.
-3. **Rotate the HF token** you pasted in chat (huggingface.co/settings/tokens) — it was used only as an in-memory env var, never committed.
-4. **Optional**: set `GEMINI_API_KEY` as an HF Space secret to upgrade the chatbot's primary LLM (cascade falls through automatically when present).
-5. **Build/run the Tauri app** to exercise the new telemetry loops + chat UI end-to-end (`cd desktop-app && npm run tauri dev`).
+- ✅ **Heroku backend DEPLOYED — release `v84` (2026-05-26), verified live.** `/health` healthy; new routes confirmed responding: `GET /api/orchestrator/health/deep`, `POST /api/ai/chat-context`. Rollback anchor: `heroku rollback v83`.
+  - **Deploy method (important):** Heroku's `main` is the **`backend/` subtree pushed as root** (unrelated history from the GitHub monorepo). Deploy with:
+    ```bash
+    git subtree split --prefix backend -b _deploy && git push heroku _deploy:main --force && git branch -D _deploy
+    ```
+    A plain `git push heroku <branch>:main` will be rejected (non-fast-forward / wrong tree).
+- ✅ **HF Space live** at v2.0.0 + Wave 2 chatbot (`Che237/cyberforge`).
+- ✅ **`GEMINI_API_KEY` secret set on HF Space** (attached + verified via API).
+  - ⚠️ Gemini still reports `ready=false`: the key returns **PERMISSION_DENIED ("project denied access")** from Google's `generateContent` API. The project behind the key is blocked Google-side — needs a key from a project in good standing. Chatbot falls back to ML models meanwhile (working).
+
+### Outstanding user actions
+1. **Rotate the HF token** pasted in chat (used only in-memory, never committed).
+2. **Rotate the Gemini key too** — `heroku.env` (with a placeholder) and `backend/.env.example` (with a REAL key) are committed to the GitHub repo; the real key is also a Heroku config var. To enable the chatbot's premium LLM, supply a working Gemini key (project in good standing) and re-set the HF secret.
+3. **Build/run the Tauri app** to exercise telemetry loops + chat UI end-to-end: `cd desktop-app && npm run tauri dev`.
 
 ---
 

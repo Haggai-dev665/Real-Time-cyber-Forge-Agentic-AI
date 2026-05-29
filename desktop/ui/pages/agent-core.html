@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Agent Core</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.ac-grid{display:grid;grid-template-columns:300px 1fr 320px;gap:14px;height:calc(100% - 56px)}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+
+/* agent identity */
+.identity{padding:16px 15px;text-align:center;position:relative;overflow:hidden}
+.id-core{position:relative;width:104px;height:104px;margin:4px auto 12px;display:grid;place-items:center}
+.id-core .ring{position:absolute;border-radius:50%;border:2px solid transparent}
+.id-core .r1{inset:0;border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 3s linear infinite}
+.id-core .r2{inset:14px;border-bottom-color:var(--cyan);border-left-color:rgba(43,212,238,.3);animation:spin 4.4s linear infinite reverse}
+.id-core .orb{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;color:var(--amber-2);
+  background:radial-gradient(circle at 50% 38%,#4a3414,#140d04);border:1px solid rgba(245,166,35,.4)}
+.id-core .orb svg{width:28px;height:28px;animation:bob 3.4s ease-in-out infinite}
+.id-name{font-size:16px;font-weight:600}
+.id-sub{font-family:var(--mono);font-size:10px;color:var(--amber-2);opacity:.85;margin-top:2px}
+.id-state{display:inline-flex;align-items:center;gap:7px;margin-top:11px;font-family:var(--mono);font-size:10px;font-weight:600;
+  color:var(--green);background:rgba(67,224,138,.12);border:1px solid rgba(67,224,138,.3);padding:5px 11px;border-radius:7px}
+.id-state .dot{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 1.6s infinite}
+
+/* resource gauges */
+.res{display:flex;align-items:center;gap:12px;padding:11px 14px}
+.res .rg{position:relative;width:46px;height:46px;flex:none}
+.res .rg .val{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:600}
+.res .info{flex:1}
+.res .info .rl{font-size:12px;font-weight:500}
+.res .info .rs{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:2px}
+.res .spark{width:54px;height:20px}
+
+/* capabilities */
+.cap-row{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:12.5px}
+.cap-row .ci{width:15px;height:15px;color:var(--cyan)}
+.cap-row .toggle{margin-left:auto;width:30px;height:17px;border-radius:9px;background:rgba(67,224,138,.25);position:relative;cursor:pointer;transition:.2s}
+.cap-row .toggle::after{content:"";position:absolute;width:13px;height:13px;border-radius:50%;background:var(--green);top:2px;left:15px;transition:.2s;box-shadow:0 0 6px var(--green)}
+.cap-row .toggle.off{background:rgba(130,160,200,.18)}
+.cap-row .toggle.off::after{left:2px;background:var(--faint);box-shadow:none}
+
+/* console */
+.console-card{flex:1;display:flex;flex-direction:column;min-height:0}
+.console{flex:1;overflow-y:auto;padding:10px 14px;font-family:var(--mono);font-size:12px;line-height:1.85}
+.cl{display:flex;gap:10px;opacity:0;animation:clin .35s ease forwards}
+@keyframes clin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.cl .ts{color:var(--faint);flex:none}
+.cl .tag{flex:none;font-weight:600;width:54px}
+.cl .msg{color:var(--dim);flex:1}
+.cl .msg b{color:var(--text);font-weight:600}
+.cl.think .tag{color:var(--cyan)} .cl.act .tag{color:var(--amber-2)} .cl.obs .tag{color:var(--green)} .cl.warn .tag{color:#ff7185}
+.cl.think .msg::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cyan);margin-right:7px;box-shadow:0 0 5px var(--cyan)}
+.console-foot{border-top:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.console-foot .cursor{width:7px;height:14px;background:var(--cyan);display:inline-block;animation:blink 1s step-end infinite}
+.console-foot .ops{margin-left:auto;color:var(--faint)}
+
+/* reasoning chain */
+.chain{display:flex;align-items:center;gap:0;padding:13px 12px;overflow-x:auto}
+.cstep{display:flex;flex-direction:column;align-items:center;gap:7px;flex:none;width:74px;text-align:center}
+.cstep .cn{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;position:relative;
+  border:1px solid var(--border-2);background:var(--surface-solid);color:var(--faint);transition:.3s}
+.cstep .cn svg{width:16px;height:16px}
+.cstep .cl2{font-family:var(--mono);font-size:8.5px;letter-spacing:.5px;color:var(--faint);text-transform:uppercase;transition:.3s}
+.cstep.done .cn{color:var(--green);border-color:rgba(67,224,138,.4);background:rgba(67,224,138,.08)}
+.cstep.done .cl2{color:var(--dim)}
+.cstep.active .cn{color:var(--amber-2);border-color:rgba(245,166,35,.5);background:var(--amber-dim);box-shadow:0 0 16px -3px rgba(245,166,35,.6)}
+.cstep.active .cl2{color:var(--amber-2)}
+.cstep.active .cn::after{content:"";position:absolute;inset:-4px;border-radius:13px;border:1.5px solid transparent;border-top-color:var(--amber);animation:spin 1s linear infinite}
+.cconn{height:2px;flex:1;min-width:18px;background:var(--border);position:relative;margin-top:-18px;border-radius:2px}
+.cconn.fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--green),var(--amber));border-radius:2px;animation:grow .5s ease forwards}
+@keyframes grow{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
+
+/* quick actions */
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:13px 14px}
+.qa{display:flex;align-items:center;gap:10px;padding:12px 12px;border-radius:9px;cursor:pointer;position:relative;overflow:hidden;
+  border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);transition:.18s}
+.qa:hover{border-color:var(--border-3);color:var(--text);background:rgba(245,166,35,.05);transform:translateY(-2px)}
+.qa:active{transform:scale(.96)}
+.qa svg{width:16px;height:16px;color:var(--amber-2);flex:none}
+.qa span{font-size:11.5px;font-weight:500}
+.qa.busy svg{animation:spin .8s linear infinite}
+
+/* task queue */
+.tq{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:12px;position:relative;transition:background .2s}
+.tq:hover{background:rgba(130,160,200,.05)}
+.tq .tqi{width:8px;height:8px;border-radius:50%;flex:none}
+.tq-prog{height:4px;border-radius:3px;background:rgba(130,160,200,.12);margin:0 14px 9px;overflow:hidden;position:relative}
+.tq-prog i{display:block;height:100%;border-radius:3px;width:0;background:linear-gradient(90deg,var(--amber),var(--amber-2));transition:width .6s ease}
+.tq-prog i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:shimmer 1.4s linear infinite}
+/* data pulse on active chain connector */
+.cconn.fill::before{content:"";position:absolute;top:50%;left:0;width:5px;height:5px;border-radius:50%;
+  background:var(--amber);box-shadow:0 0 7px var(--amber);transform:translateY(-50%);animation:flow 1.1s linear infinite}
+@keyframes flow{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:100%;opacity:0}}
+.tq.run .tqi{background:var(--amber);box-shadow:0 0 7px var(--amber);animation:pulse 1.4s infinite}
+.tq.queue .tqi{background:var(--faint)} .tq.done .tqi{background:var(--green);box-shadow:0 0 6px var(--green)}
+.tq .tqn{flex:1}
+.tq .tqt{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.row-div{border-top:1px solid var(--border)}
+.mini-bars{display:flex;align-items:flex-end;gap:2px;height:18px}
+.mini-bars i{width:3px;background:var(--cyan);border-radius:1px;display:block;animation:eq 1s ease-in-out infinite}
+.mini-bars i:nth-child(2){animation-delay:.16s}.mini-bars i:nth-child(3){animation-delay:.33s}.mini-bars i:nth-child(4){animation-delay:.1s}.mini-bars i:nth-child(5){animation-delay:.26s}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Agent Core" id="win">
+    <!-- TOP BAR -->
+    <div class="topbar" id="topbar"></div>
+
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg></div>
+          <h1>Agent Core</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Reasoning</span>
+            <span id="model">claude-sentinel · 200k ctx</span>
+            <button class="btn-refresh" id="btnPause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause</button>
+          </div>
+        </div>
+
+        <div class="ac-grid">
+          <!-- LEFT: identity + resources + capabilities -->
+          <div class="col">
+            <div class="card identity">
+              <div class="id-core">
+                <span class="ring r1"></span><span class="ring r2"></span>
+                <span class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></span>
+              </div>
+              <div class="id-name">CyberForge Agent</div>
+              <div class="id-sub">v2.1 · autonomous mode</div>
+              <div class="id-state"><span class="dot"></span>ONLINE · 1h 12m</div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>Resources</div>
+              <div class="res">
+                <div class="rg"><svg width="46" height="46" viewBox="0 0 46 46" data-rg="82" data-color="var(--amber)"></svg><span class="val" id="cpuV">82%</span></div>
+                <div class="info"><div class="rl">CPU Load</div><div class="rs">8 cores · 3.6 GHz</div></div>
+                <span class="mini-bars"><i></i><i></i><i></i><i></i><i></i></span>
+              </div>
+              <div class="res row-div">
+                <div class="rg"><svg width="46" height="46" viewBox="0 0 46 46" data-rg="57" data-color="var(--cyan)"></svg><span class="val" id="ramV">57%</span></div>
+                <div class="info"><div class="rl">Memory</div><div class="rs">9.1 / 16 GB</div></div>
+                <svg class="spark" id="ramSpark" viewBox="0 0 54 20" preserveAspectRatio="none"></svg>
+              </div>
+              <div class="res row-div">
+                <div class="rg"><svg width="46" height="46" viewBox="0 0 46 46" data-rg="34" data-color="var(--green)"></svg><span class="val" id="ctxV">34%</span></div>
+                <div class="info"><div class="rl">Context</div><div class="rs">68k / 200k tokens</div></div>
+                <svg class="spark" id="ctxSpark" viewBox="0 0 54 20" preserveAspectRatio="none"></svg>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Capabilities</div>
+              <div class="cap-row"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Web Recon<div class="toggle"></div></div>
+              <div class="cap-row row-div"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/></svg>Sandbox Detonation<div class="toggle"></div></div>
+              <div class="cap-row row-div"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Auto-Remediation<div class="toggle off"></div></div>
+              <div class="cap-row row-div"><svg class="ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>Long-term Memory<div class="toggle"></div></div>
+            </div>
+          </div>
+
+          <!-- CENTER: reasoning chain + live console -->
+          <div class="col">
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>Reasoning Chain<span class="right" id="chainPhase">running</span></div>
+              <div class="chain" id="chain"></div>
+            </div>
+
+            <div class="card console-card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>Live Reasoning Console<span class="right"><span class="badge-live"><span class="dot"></span>STREAMING</span></span></div>
+              <div class="console" id="console"></div>
+              <div class="console-foot"><span class="mini-bars" style="height:13px"><i></i><i></i><i></i><i></i><i></i></span>agent is reasoning<span class="cursor"></span><span class="ops" id="ops">1,204 tok/s</span></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: quick actions + task queue -->
+          <div class="col">
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Quick Actions</div>
+              <div class="qa-grid">
+                <div class="qa" data-act="Threat sweep dispatched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Run Sweep</span></div>
+                <div class="qa" data-act="Isolating endpoint…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg><span>Isolate</span></div>
+                <div class="qa" data-act="Generating incident report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg><span>Report</span></div>
+                <div class="qa" data-act="Snapshot saved to memory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg><span>Snapshot</span></div>
+              </div>
+            </div>
+
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Task Queue<span class="right" id="qcount">3 active</span></div>
+              <div id="queue" style="overflow-y:auto"></div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V5M14 18v-8M19 18v-4"/></svg>Session<span class="right">live</span></div>
+              <div class="mini-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:13px 14px">
+                <div class="ms" style="text-align:center;padding:11px 6px;border-radius:8px;border:1px solid var(--border);background:var(--tile)"><b style="font-family:var(--mono);font-size:18px;display:block" id="sActions">142</b><span style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--faint)">ACTIONS</span></div>
+                <div class="ms" style="text-align:center;padding:11px 6px;border-radius:8px;border:1px solid var(--border);background:var(--tile)"><b style="font-family:var(--mono);font-size:18px;display:block;color:var(--green)" id="sResolved">38</b><span style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--faint)">RESOLVED</span></div>
+                <div class="ms" style="text-align:center;padding:11px 6px;border-radius:8px;border:1px solid var(--border);background:var(--tile)"><b style="font-family:var(--mono);font-size:18px;display:block;color:var(--cyan)" id="sTools">9</b><span style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--faint)">TOOLS</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'THINKING',search:'Ask the agent or search actions…',cta:'New Task',chips:'<div class="tb-chip"><span class="dot" style="background:var(--green)"></span>AGENTIC</div><div class="tb-chip"><div class="spinner sm" style="width:9px;height:9px"></div>REASONING</div>'});
+buildSidebar('agentcore');
+buildFooter({items:[{txt:'CPU 82%',cls:'sb-amber',id:'sbCpu'},{txt:'MEM 57%',cls:'sb-cyan',id:'sbMem'},{txt:'ctx 68k/200k'},{txt:'Reasoning…',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+/* ring gauges */
+function rg(svg,pct,color){
+  const cx=23,cy=23,r=18,sw=4.5,C=2*Math.PI*r;
+  svg.innerHTML='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.16)" stroke-width="'+sw+'"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-linecap="round" '+
+    'stroke-dasharray="'+(C*pct/100).toFixed(1)+' '+C+'" transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dasharray .9s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 4px '+color+')"/>';
+}
+const gauges=[...document.querySelectorAll('[data-rg]')].map(s=>({svg:s,color:s.dataset.color,target:+s.dataset.rg}));
+gauges.forEach(g=>rg(g.svg,0,g.color));
+setTimeout(()=>gauges.forEach(g=>rg(g.svg,g.target,g.color)),80);
+const cpuV=document.getElementById('cpuV'),ramV=document.getElementById('ramV'),ctxV=document.getElementById('ctxV'),
+      sbCpu=document.getElementById('sbCpu'),sbMem=document.getElementById('sbMem');
+setInterval(()=>{
+  gauges.forEach((g,i)=>{ let p=g.target+(Math.random()*14-7); p=Math.max(10,Math.min(98,p)); g.target=p; rg(g.svg,p,g.color);
+    if(i===0){cpuV.textContent=Math.round(p)+'%';sbCpu.textContent='CPU '+Math.round(p)+'%';}
+    if(i===1){ramV.textContent=Math.round(p)+'%';sbMem.textContent='MEM '+Math.round(p)+'%';}
+    if(i===2)ctxV.textContent=Math.round(p)+'%';
+  });
+},2400);
+
+/* sparklines */
+function spark(id){
+  const el=document.getElementById(id); let h=Array.from({length:16},()=>Math.random());
+  function draw(){ const W=54,H=20; const pts=h.map((v,i)=>(i*(W/(h.length-1)))+','+(H-2-v*(H-4))).join(' ');
+    el.innerHTML='<polyline points="'+pts+'" fill="none" stroke="var(--cyan)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>'; }
+  draw(); setInterval(()=>{h.push(Math.random());h.shift();draw();},1400);
+}
+spark('ramSpark'); spark('ctxSpark');
+
+/* capability toggles */
+document.querySelectorAll('.cap-row .toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('off')));
+
+/* ============ REASONING CHAIN ============ */
+const STEPS=[['Perceive','globe'],['Retrieve','box'],['Reason','brain'],['Plan','branch'],['Act','bolt'],['Verify','check']];
+const ICO={
+  globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>',
+  box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4Z"/><path d="M3 7v10l9 4 9-4V7"/></svg>',
+  brain:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>',
+  branch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5 11 16M16.5 7.5 13 16"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>'
+};
+const chain=document.getElementById('chain');
+let chainHtml='';
+STEPS.forEach((s,i)=>{
+  chainHtml+='<div class="cstep" data-i="'+i+'"><div class="cn">'+ICO[s[1]]+'</div><div class="cl2">'+s[0]+'</div></div>';
+  if(i<STEPS.length-1) chainHtml+='<div class="cconn" data-c="'+i+'"></div>';
+});
+chain.innerHTML=chainHtml;
+const steps=[...chain.querySelectorAll('.cstep')], conns=[...chain.querySelectorAll('.cconn')];
+let ci=0;
+function advanceChain(){
+  steps.forEach((s,i)=>s.classList.toggle('active',i===ci&&true===false)); // reset handled below
+  steps.forEach((s,i)=>{ s.classList.remove('active'); if(i<ci)s.classList.add('done'); });
+  if(ci<steps.length){ steps[ci].classList.add('active'); if(ci>0)conns[ci-1].classList.add('fill'); }
+  document.getElementById('chainPhase').textContent=ci<steps.length?STEPS[ci][0].toLowerCase():'cycle complete';
+  ci++;
+  if(ci>steps.length){ ci=0; steps.forEach(s=>s.classList.remove('done')); conns.forEach(c=>c.classList.remove('fill')); }
+}
+advanceChain(); setInterval(advanceChain,1700);
+
+/* ============ LIVE CONSOLE ============ */
+const con=document.getElementById('console');
+const lines=[
+  ['think','THINK','New telemetry batch received — <b>1,204 endpoint signals</b> to evaluate.'],
+  ['act','ACTION','Querying threat-intel graph for matching <b>IOC signatures</b>…'],
+  ['obs','OBSERVE','3 endpoints show <b>anomalous outbound traffic</b> to unclassified hosts.'],
+  ['think','THINK','Pattern resembles <b>RedLine stealer</b> beaconing cadence (60s interval).'],
+  ['act','ACTION','Dispatching <b>sandbox detonation</b> for suspicious payload svc_update.dll.'],
+  ['obs','OBSERVE','Sandbox verdict: <b>MALICIOUS</b> · risk 87/100 · credential access confirmed.'],
+  ['warn','ALERT','Recommending <b>endpoint isolation</b> for WS-4471 pending operator approval.'],
+  ['act','ACTION','Updating behavioral model with 6 new <b>malicious indicators</b>.'],
+  ['obs','OBSERVE','Posture re-scored — <b>no lateral movement</b> detected across fleet.'],
+  ['think','THINK','Monitoring window extended; <b>confidence 99.2%</b>. Awaiting next batch.']
+];
+let li=0;
+function pushLine(){
+  const [c,tag,msg]=lines[li%lines.length];
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  const el=document.createElement('div'); el.className='cl '+c;
+  el.innerHTML='<span class="ts">'+ts+'</span><span class="tag">'+tag+'</span><span class="msg">'+msg+'</span>';
+  con.appendChild(el); con.scrollTop=con.scrollHeight;
+  while(con.children.length>40) con.firstChild.remove();
+  li++;
+}
+for(let i=0;i<6;i++) setTimeout(pushLine,i*220);
+let conTimer=setInterval(pushLine,1700);
+
+/* ops + session counters */
+const ops=document.getElementById('ops');
+setInterval(()=>ops.textContent=(900+Math.floor(Math.random()*700)).toLocaleString()+' tok/s',850);
+const sActions=document.getElementById('sActions');
+setInterval(()=>sActions.textContent=+sActions.textContent+Math.floor(Math.random()*3),2000);
+
+/* ============ TASK QUEUE ============ */
+const queue=document.getElementById('queue');
+const qdata=[
+  ['run','Correlate endpoint telemetry','62%',62],
+  ['run','Sandbox: svc_update.dll','94%',94],
+  ['queue','Generate incident report #2207','queued',null],
+  ['queue','Update IOC signatures','queued',null],
+  ['done','Sweep fleet · 1,204 hosts','done',100]
+];
+queue.innerHTML=qdata.map((q,i)=>
+  '<div class="tq '+q[0]+(i?' row-div':'')+'"><span class="tqi"></span><span class="tqn">'+q[1]+'</span><span class="tqt">'+q[2]+'</span></div>'+
+  (q[0]==='run'?'<div class="tq-prog"><i data-p="'+q[3]+'"></i></div>':'')
+).join('');
+const qbars=[...queue.querySelectorAll('.tq-prog i')];
+setTimeout(()=>qbars.forEach(b=>b.style.width=b.dataset.p+'%'),200);
+// climb running task progress
+setInterval(()=>{
+  qbars.forEach((b,idx)=>{
+    let p=+b.dataset.p + (Math.random()*5);
+    if(p>=100){ p=8+Math.random()*20; }
+    b.dataset.p=p.toFixed(0); b.style.width=p+'%';
+    const tqt=b.closest('.tq-prog').previousElementSibling.querySelector('.tqt');
+    if(tqt) tqt.textContent=Math.round(p)+'%';
+  });
+},2200);
+
+/* quick actions: ripple + console line + queue add */
+document.querySelectorAll('.qa').forEach(qa=>{
+  attachRipple(qa);
+  qa.addEventListener('click',()=>{
+    qa.classList.add('busy'); setTimeout(()=>qa.classList.remove('busy'),900);
+    const el=document.createElement('div'); el.className='cl act';
+    const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+    el.innerHTML='<span class="ts">'+ts+'</span><span class="tag">OPERATOR</span><span class="msg"><b>'+qa.dataset.act+'</b></span>';
+    con.appendChild(el); con.scrollTop=con.scrollHeight;
+  });
+});
+
+/* pause toggle */
+const btnPause=document.getElementById('btnPause'); let paused=false;
+btnPause.addEventListener('click',()=>{
+  paused=!paused;
+  if(paused){ clearInterval(conTimer); btnPause.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 14 8-14 8Z"/></svg>Resume'; }
+  else{ conTimer=setInterval(pushLine,1700); btnPause.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause'; }
+});
+</script>
+</body>
+</html>

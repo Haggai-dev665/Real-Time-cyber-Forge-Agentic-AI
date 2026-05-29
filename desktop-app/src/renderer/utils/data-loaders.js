@@ -1353,9 +1353,9 @@
   }
 
   const THREAT_SEVERITY_COLORS = {
-    high: '#ef4444',
-    medium: '#f59e0b',
-    low: '#22d3ee'
+    high: '#E5573E',
+    medium: '#D8B65A',
+    low: '#F69D39'
   };
 
   // User-requested frontend key path for Threat Globe direct OTX access.

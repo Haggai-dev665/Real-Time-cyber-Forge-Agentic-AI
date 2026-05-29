@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<link rel="stylesheet" href="cf-auth.css" />
+</head>
+<body>
+<div class="stage">
+  <div class="window" id="win">
+    <div class="split">
+      <!-- BRAND -->
+      <div class="brand-panel">
+        <div class="bg-grid"></div>
+        <div class="bg-scan"></div>
+        <div id="forge"></div>
+        <div class="wordmark" id="word" style="margin-top:-6px"></div>
+        <div class="tagline">
+          <h2>Autonomous defense, <span class="fg">forged</span> in real time.</h2>
+          <p>AI agents that detect, detonate, and contain threats across your fleet — before they spread.</p>
+        </div>
+        <div class="feat">
+          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>SOC-grade</div>
+          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 16h6"/></svg>8 AI agents</div>
+          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>Live telemetry</div>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div class="form-panel">
+        <div class="fp-head">
+          <div class="step">Welcome back</div>
+          <h1>Sign in to CyberForge</h1>
+          <p>Enter your credentials to access the security console.</p>
+        </div>
+        <form id="form" onsubmit="return false">
+          <div class="field">
+            <label>Work email</label>
+            <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input type="email" value="analyst@acme-corp.io" autocomplete="username" /></div>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input id="pw" type="password" value="forgepass" autocomplete="current-password" /><svg class="eye" id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          </div>
+          <div class="row-between">
+            <span class="rm" id="remember"><span class="cb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>Remember this device</span>
+            <a href="#">Forgot password?</a>
+          </div>
+          <button class="btn-primary" id="signin">Sign In<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <div class="divider">OR CONTINUE WITH</div>
+        <div class="sso">
+          <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>SSO</div>
+          <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg>Microsoft</div>
+          <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Okta</div>
+        </div>
+        <div class="fp-foot">New to CyberForge? <a href="Register.html">Create an account</a></div>
+        <div class="secure-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Protected by hardware-key MFA · SOC 2 Type II</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="cf-forge.js"></script>
+<script>
+fitWindow('win');
+forgeIllustration(document.getElementById('forge'),236);
+cfWordmark(document.getElementById('word'));
+
+document.getElementById('eye').addEventListener('click',function(){const pw=document.getElementById('pw');pw.type=pw.type==='password'?'text':'password';this.style.color=pw.type==='text'?'var(--amber-2)':'';});
+document.getElementById('remember').addEventListener('click',function(){this.querySelector('.cb').classList.toggle('on');});
+const btn=document.getElementById('signin');
+btn.addEventListener('click',()=>{
+  btn.disabled=true;const o=btn.innerHTML;
+  btn.innerHTML='<span class="spinner sm" style="border-top-color:#1a1206;border-color:rgba(26,18,6,.3)"></span>Authenticating…';
+  setTimeout(()=>{window.location.href='Onboarding.html';},1100);
+});
+</script>
+</body>
+</html>

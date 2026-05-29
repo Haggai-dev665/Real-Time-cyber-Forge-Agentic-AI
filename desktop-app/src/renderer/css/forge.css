@@ -1,0 +1,212 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   FORGE — CyberForge brand identity layer
+   Loaded LAST so it wins. Mirrors updates/ (Cyber Forge.html + forge-app.jsx
+   + tweaks-panel.jsx): Space Grotesk / DM Sans / JetBrains Mono, the warm
+   raisin·dusty·orange·sage palette, the anvil logo mark, the forge motion set,
+   and the glassmorphic draggable floating-agent panel.
+   Colors are driven by --cf-* / --forge-* tokens from design-tokens.css.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── Type system ─────────────────────────────────────────────────────── */
+body {
+    font-family: var(--cf-font-primary);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Display = Space Grotesk, tight + dense. Opt-in utility for hero text. */
+.display, .forge-display {
+    font-family: var(--cf-font-display);
+    letter-spacing: -0.035em;
+    line-height: 0.92;
+    font-weight: 600;
+}
+/* Mono utility (JetBrains Mono) for tickers, codes, data labels. */
+.mono, .forge-mono {
+    font-family: var(--cf-font-mono);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Headings use the display family with a safe, non-clipping line-height. */
+h1, h2, h3, .screen-title, .page-title, .card-title {
+    font-family: var(--cf-font-headings);
+    letter-spacing: -0.025em;
+}
+
+/* Forge selection — orange on black, exactly like updates. */
+::selection { background: var(--forge-orange); color: var(--forge-black); }
+[data-theme="dark"] ::selection { background: var(--forge-orange); color: var(--forge-black); }
+
+/* ─── Forge motion set (from forge-app.jsx <style>) ───────────────────── */
+@keyframes forgePulse { from { transform: scale(1); opacity: 0.5; } to { transform: scale(2.4); opacity: 0; } }
+@keyframes forgeMarquee { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
+@keyframes forgeRowIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes forgeBlink { 50% { opacity: 0; } }
+@keyframes forgeFadeUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Screen entrance — every screen body fades up as the SPA swaps it in. */
+#screen-container > * {
+    animation: forgeFadeUp 560ms cubic-bezier(.2,.7,.2,1) both;
+}
+
+/* ─── Logo — user-provided SVG mark+wordmark (src/assets/) ────────────── */
+.logo { gap: 12px; align-items: center; }
+
+/* Wordmark wrapper — wraps both theme variants; CSS picks the right one. */
+.cf-logo-wordmark {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 32px;
+    line-height: 0;
+    text-decoration: none;
+    transition: transform 280ms cubic-bezier(.2,.7,.2,1);
+}
+.cf-logo-wordmark:hover { transform: scale(1.02); }
+
+/* Both <img> variants ship; the wrong one stays display:none. */
+.cf-logo-img {
+    display: none;
+    height: 32px;
+    width: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+[data-theme="dark"] .cf-logo-img--dark { display: block; }
+:root:not([data-theme="dark"]) .cf-logo-img--light { display: block; }
+
+/* AI Platform edition tag — mono micro-label, hairline divider. */
+.cf-logo-edition {
+    font-family: var(--cf-font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cf-text-tertiary);
+    opacity: 0.72;
+    line-height: 1;
+    padding-left: 10px;
+    margin-left: 2px;
+    border-left: 1px solid var(--cf-border-light);
+    align-self: center;
+}
+
+/* Loader mark — inlined SVG matching src/assets/cyber-forge-mark.svg paths. */
+.cf-loader-logo .cf-loader-mark {
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 0 12px rgba(246, 157, 57, 0.36));
+}
+
+/* ─── Header — hairline + glass, like the updates sticky header ───────── */
+.header.cf-header-enhanced, .header {
+    background: color-mix(in oklab, var(--cf-header-bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    border-bottom: 1px solid var(--cf-header-border);
+}
+
+/* Mono uppercase micro-labels — the "ticker" texture from updates. */
+.cf-logo-edition, .status-label, .stat-label, .nav-section-title span,
+.cf-footer-version, .agent-version, .cf-search-shortcut {
+    font-family: var(--cf-font-mono);
+    letter-spacing: 0.04em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FLOATING AGENT — glassmorphic draggable panel (the "floating panel"
+   animation/feel from tweaks-panel.jsx, warmed to the forge palette).
+   Loaded after agent-ui-redesign.css → these win.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Panel shell — raisin glass, hairline border, inset highlight + deep shadow. */
+.floating-agent-panel.agent-control-panel,
+.agent-control-panel.floating-agent-panel,
+.floating-agent-panel {
+    background: color-mix(in oklab, #F7F3EB 88%, transparent) !important;
+    border: 1px solid var(--forge-line-ink-strong) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 1px 0 rgba(255,255,255,0.5) inset,
+        0 24px 60px -20px rgba(0,0,0,0.34),
+        0 0 0 1px rgba(246,157,57,0.05) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    transition: transform 0.35s cubic-bezier(0.2,0.7,0.2,1), opacity 0.3s ease !important;
+}
+[data-theme="dark"] .floating-agent-panel.agent-control-panel,
+[data-theme="dark"] .agent-control-panel.floating-agent-panel,
+[data-theme="dark"] .floating-agent-panel {
+    background: color-mix(in oklab, var(--forge-raisin) 90%, transparent) !important;
+    border: 1px solid var(--forge-line-strong) !important;
+    box-shadow:
+        0 1px 0 rgba(239,233,221,0.06) inset,
+        0 24px 60px -20px rgba(0,0,0,0.72),
+        0 0 0 1px rgba(246,157,57,0.06) !important;
+}
+
+/* Slide off-screen when minimized → FAB takes over (preserves controller logic). */
+.floating-agent-panel.minimized { transform: translateX(calc(100% + 28px)) !important; opacity: 0 !important; pointer-events: none; }
+.floating-agent-panel.hidden { transform: translateY(calc(100% + 28px)) !important; opacity: 0 !important; pointer-events: none; }
+
+/* Panel header — dark raisin bar with dusty text + orange avatar. */
+.floating-agent-panel .agent-panel-header {
+    background: var(--cf-panel-header-bg) !important;
+    border-bottom: 1px solid var(--cf-border-light) !important;
+    color: var(--forge-dusty) !important;
+    cursor: move;
+}
+.floating-agent-panel .agent-name { font-family: var(--cf-font-display); letter-spacing: -0.02em; color: var(--forge-dusty); }
+.floating-agent-panel .agent-version { font-family: var(--cf-font-mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cf-text-tertiary); }
+.floating-agent-panel .agent-avatar-inner { background: var(--forge-orange) !important; color: var(--forge-black) !important; }
+.floating-agent-panel .agent-pulse,
+.floating-agent-panel #agent-pulse-indicator { background: var(--forge-orange); }
+
+/* Section labels — mono micro-headers. */
+.floating-agent-panel .agent-section-label {
+    font-family: var(--cf-font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cf-text-tertiary);
+}
+.floating-agent-panel .agent-section { border-top: 1px solid var(--cf-border-light); }
+
+/* Live-stat numbers in display font. */
+.floating-agent-panel .agent-live-stat span { font-family: var(--cf-font-display); color: var(--cf-text-primary); }
+.floating-agent-panel .agent-live-stat label { font-family: var(--cf-font-mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--cf-text-muted); }
+
+/* Connection chips — orange = online/checking (primary), rust = offline. */
+.floating-agent-panel .agent-conn-chip.online,
+.floating-agent-panel .agent-conn-chip.connected { background: rgba(246,157,57,0.18) !important; color: var(--forge-orange-3) !important; border-color: rgba(246,157,57,0.45) !important; }
+.floating-agent-panel .agent-conn-chip.checking { background: rgba(216,182,90,0.18) !important; color: var(--forge-gold) !important; border-color: rgba(216,182,90,0.4) !important; }
+.floating-agent-panel .agent-conn-chip.offline,
+.floating-agent-panel .agent-conn-chip.error { background: rgba(229,87,62,0.16) !important; color: #EE6A50 !important; border-color: rgba(229,87,62,0.4) !important; }
+
+/* Quick-control buttons — hairline, orange on hover; primary = solid orange. */
+.floating-agent-panel .agent-control-btn {
+    background: transparent !important;
+    border: 1px solid var(--cf-border-medium) !important;
+    color: var(--cf-text-secondary) !important;
+    border-radius: 9px !important;
+    transition: all 180ms ease;
+}
+.floating-agent-panel .agent-control-btn:hover { border-color: var(--forge-orange) !important; color: var(--forge-orange) !important; }
+.floating-agent-panel .agent-control-btn.primary,
+.floating-agent-panel .agent-action-btn.primary { background: var(--forge-orange) !important; border-color: var(--forge-orange) !important; color: var(--forge-black) !important; }
+
+/* ─── FAB — primary action: solid orange, forge pulse ─────────────────── */
+@keyframes forgeFabPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(246,157,57,0.45), 0 0 0 0 rgba(246,157,57,0.40); }
+    50%       { box-shadow: 0 4px 28px rgba(246,157,57,0.55), 0 0 0 8px rgba(246,157,57,0); }
+}
+.agent-minimized-btn {
+    background-image: linear-gradient(135deg, var(--forge-orange-2) 0%, var(--forge-orange) 100%) !important;
+    background-color: var(--forge-orange) !important;
+    color: var(--forge-black) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 20px rgba(246,157,57,0.45), 0 0 0 3px rgba(246,157,57,0.15) !important;
+    animation: forgeFabPulse 2.6s ease-in-out infinite !important;
+}
+.agent-minimized-btn.visible { animation: fp-fab-pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards, forgeFabPulse 2.6s 0.35s ease-in-out infinite !important; }
+.agent-minimized-btn:hover { box-shadow: 0 6px 28px rgba(246,157,57,0.6), 0 0 0 5px rgba(246,157,57,0.2) !important; }
+.agent-mini-label { font-family: var(--cf-font-mono); }

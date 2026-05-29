@@ -57,7 +57,7 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-    box-shadow: var(--shadow-md), 0 0 20px rgba(239, 68, 68, 0.3);
+    box-shadow: var(--shadow-md), 0 0 20px rgba(229,87,62, 0.3);
     transform: translateY(-1px);
 }
 
@@ -67,7 +67,7 @@
 }
 
 .btn-success:hover:not(:disabled) {
-    box-shadow: var(--shadow-md), 0 0 20px rgba(16, 185, 129, 0.3);
+    box-shadow: var(--shadow-md), 0 0 20px rgba(246,157,57, 0.3);
     transform: translateY(-1px);
 }
 
@@ -321,21 +321,21 @@
 }
 
 .badge-danger {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(229,87,62, 0.1);
     color: var(--error);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    border: 1px solid rgba(229,87,62, 0.3);
 }
 
 .badge-success {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(246,157,57, 0.1);
     color: var(--success);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(246,157,57, 0.3);
 }
 
 .badge-warning {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(216,182,90, 0.1);
     color: var(--warning);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(216,182,90, 0.3);
 }
 
 .badge-secondary {
@@ -389,7 +389,7 @@
 }
 
 .progress-warning .progress-bar {
-    background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+    background: linear-gradient(135deg, var(--warning) 0%, #B8862A 100%);
 }
 
 /* ===========================
@@ -426,26 +426,26 @@
 }
 
 .alert-info {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(94,122,136, 0.1);
+    border-color: rgba(94,122,136, 0.3);
     color: var(--info);
 }
 
 .alert-success {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(246,157,57, 0.1);
+    border-color: rgba(246,157,57, 0.3);
     color: var(--success);
 }
 
 .alert-warning {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(216,182,90, 0.1);
+    border-color: rgba(216,182,90, 0.3);
     color: var(--warning);
 }
 
 .alert-danger {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(229,87,62, 0.1);
+    border-color: rgba(229,87,62, 0.3);
     color: var(--error);
 }
 

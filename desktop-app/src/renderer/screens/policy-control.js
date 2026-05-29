@@ -102,11 +102,11 @@ class PolicyControlScreen {
 .pc-table tr:hover td { background:var(--cf-bg-elevated); }
 
 .pc-badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:10.5px; font-weight:600; }
-.pc-badge-green { background:rgba(34,197,94,.15); color:var(--cf-status-success); }
-.pc-badge-gray  { background:rgba(148,163,184,.12); color:var(--cf-text-muted); }
-.pc-badge-amber { background:rgba(245,158,11,.15); color:var(--cf-status-warning); }
-.pc-badge-red   { background:rgba(239,68,68,.15); color:var(--cf-status-error); }
-.pc-badge-blue  { background:rgba(59,130,246,.15); color:var(--cf-status-info); }
+.pc-badge-green { background:rgba(246,157,57,.15); color:var(--cf-status-success); }
+.pc-badge-gray  { background:rgba(154,145,130,.12); color:var(--cf-text-muted); }
+.pc-badge-amber { background:rgba(216,182,90,.15); color:var(--cf-status-warning); }
+.pc-badge-red   { background:rgba(229,87,62,.15); color:var(--cf-status-error); }
+.pc-badge-blue  { background:rgba(94,122,136,.15); color:var(--cf-status-info); }
 
 .pc-toggle { position:relative; display:inline-block; width:34px; height:18px; }
 .pc-toggle input { opacity:0; width:0; height:0; }
@@ -147,11 +147,11 @@ class PolicyControlScreen {
                 border-bottom:1px solid var(--cf-border-subtle); }
 .pc-log-entry:last-child { border-bottom:none; }
 .pc-log-icon { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.pc-log-icon.escalate { background:rgba(239,68,68,.15); color:var(--cf-status-error); }
-.pc-log-icon.notify   { background:rgba(59,130,246,.15); color:var(--cf-status-info); }
-.pc-log-icon.block    { background:rgba(245,158,11,.15); color:var(--cf-status-warning); }
-.pc-log-icon.agent    { background:rgba(34,197,94,.15); color:var(--cf-status-success); }
-.pc-log-icon.default  { background:rgba(148,163,184,.1); color:var(--cf-text-muted); }
+.pc-log-icon.escalate { background:rgba(229,87,62,.15); color:var(--cf-status-error); }
+.pc-log-icon.notify   { background:rgba(94,122,136,.15); color:var(--cf-status-info); }
+.pc-log-icon.block    { background:rgba(216,182,90,.15); color:var(--cf-status-warning); }
+.pc-log-icon.agent    { background:rgba(246,157,57,.15); color:var(--cf-status-success); }
+.pc-log-icon.default  { background:rgba(154,145,130,.1); color:var(--cf-text-muted); }
 .pc-log-body { flex:1; min-width:0; }
 .pc-log-name { font-weight:600; font-size:13px; color:var(--cf-text-primary); }
 .pc-log-meta { font-size:11px; color:var(--cf-text-muted); margin-top:3px; }

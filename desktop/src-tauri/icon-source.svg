@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <!-- Full-bleed CyberForge mark for the app/dock icon.
+       Solid brand-dark squircle background; the mark is scaled to nearly fill
+       the canvas so it reads large in the dock/taskbar. -->
+  <rect x="0" y="0" width="1024" height="1024" rx="180" fill="#0b1220"/>
+  <g transform="translate(64 64) scale(14.933)">
+    <rect x="1" y="1" width="58" height="58" fill="none" stroke="#efe9dd" stroke-width="2.4"/>
+    <path d="M15 45 L30 13 L45 45 Z" fill="#F69D39"/>
+    <path d="M23 45 L30 29 L37 45 Z" fill="#0b1220"/>
+    <circle cx="30" cy="45" r="3.4" fill="#869B7E"/>
+  </g>
+</svg>

@@ -515,7 +515,7 @@ async function handleRegister(event) {
         const termsCheckbox = document.getElementById('terms-agree');
         const termsLabel = termsCheckbox?.parentElement;
         if (termsLabel) {
-            termsLabel.style.border = '1px solid #D92D20';
+            termsLabel.style.border = '1px solid #E5573E';
             termsLabel.style.borderRadius = '8px';
             termsLabel.style.padding = '8px';
             setTimeout(() => {

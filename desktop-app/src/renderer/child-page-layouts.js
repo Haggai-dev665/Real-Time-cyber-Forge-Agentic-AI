@@ -1639,14 +1639,14 @@ window.ChildPageLayouts = (() => {
         .bi-system-strip {
           display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
           padding: 12px 20px;
-          background: var(--cf-bg-medium, #f0f4f8);
-          border-bottom: 1px solid var(--cf-border, #e2eaf4);
-          font-size: 13px; color: var(--cf-text-secondary, #6b7280);
+          background: var(--cf-bg-medium, #EFE9DD);
+          border-bottom: 1px solid var(--cf-border, #E2DBCD);
+          font-size: 13px; color: var(--cf-text-secondary, #756E66);
         }
         .bi-sys-item { display: flex; align-items: center; gap: 6px; }
-        .bi-sys-item i { font-size: 14px; color: var(--cf-accent, #4364f7); }
+        .bi-sys-item i { font-size: 14px; color: var(--cf-accent, #5E7A88); }
         .bi-privacy { margin-left: auto; font-size: 11px; opacity: 0.85; }
-        .bi-privacy i { color: #039855; }
+        .bi-privacy i { color: #E58A2B; }
 
         /* Summary cards */
         .bi-summary-row {
@@ -1655,20 +1655,20 @@ window.ChildPageLayouts = (() => {
         .bi-summary-card {
           flex: 1; text-align: center; padding: 14px;
           background: var(--cf-bg-card, #fff);
-          border: 1px solid var(--cf-border, #e2eaf4);
+          border: 1px solid var(--cf-border, #E2DBCD);
           border-radius: 8px;
         }
         .bi-summary-value {
-          font-size: 28px; font-weight: 700; color: var(--cf-text-primary, #1f2937);
+          font-size: 28px; font-weight: 700; color: var(--cf-text-primary, #251F20);
         }
-        .bi-summary-value.bi-running { color: #039855; }
-        .bi-summary-label { font-size: 11px; text-transform: uppercase; color: var(--cf-text-secondary, #6b7280); margin-top: 4px; }
+        .bi-summary-value.bi-running { color: #E58A2B; }
+        .bi-summary-label { font-size: 11px; text-transform: uppercase; color: var(--cf-text-secondary, #756E66); margin-top: 4px; }
 
         /* Section */
         .bi-section { padding: 0 20px 20px; }
         .bi-section-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
-        .bi-section-title i { margin-right: 6px; color: var(--cf-accent, #4364f7); }
-        .bi-section-desc { font-size: 12px; color: var(--cf-text-secondary, #6b7280); margin-bottom: 12px; }
+        .bi-section-title i { margin-right: 6px; color: var(--cf-accent, #5E7A88); }
+        .bi-section-desc { font-size: 12px; color: var(--cf-text-secondary, #756E66); margin-bottom: 12px; }
 
         /* Browser card grid */
         .bi-browser-grid {
@@ -1681,27 +1681,27 @@ window.ChildPageLayouts = (() => {
           display: flex; align-items: flex-start; gap: 14px;
           padding: 16px;
           background: var(--cf-bg-card, #fff);
-          border: 1px solid var(--cf-border, #e2eaf4);
+          border: 1px solid var(--cf-border, #E2DBCD);
           border-radius: 10px;
           transition: border-color 0.2s, box-shadow 0.2s;
           position: relative;
         }
         .bi-browser-card:hover {
-          border-color: var(--cf-accent, #4364f7);
-          box-shadow: 0 2px 10px rgba(67,100,247,0.1);
+          border-color: var(--cf-accent, #5E7A88);
+          box-shadow: 0 2px 10px rgba(94,122,136,0.1);
         }
         .bi-browser-card.bi-not-installed {
-          opacity: 0.5; background: var(--cf-bg-medium, #f0f4f8);
+          opacity: 0.5; background: var(--cf-bg-medium, #EFE9DD);
         }
 
         .bi-browser-icon {
           width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
           font-size: 26px; border-radius: 10px;
-          background: var(--cf-bg-medium, #f0f4f8);
+          background: var(--cf-bg-medium, #EFE9DD);
           flex-shrink: 0;
         }
-        .bi-browser-icon.chrome { color: #4285f4; }
-        .bi-browser-icon.firefox { color: #ff7139; }
+        .bi-browser-icon.chrome { color: #5E7A88; }
+        .bi-browser-icon.firefox { color: #F69D39; }
         .bi-browser-icon.edge { color: #0078d7; }
         .bi-browser-icon.brave { color: #fb542b; }
         .bi-browser-icon.opera { color: #ff1b2d; }
@@ -1717,13 +1717,13 @@ window.ChildPageLayouts = (() => {
           font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600;
           text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .bi-badge-default { background: rgba(67,100,247,0.12); color: #4364f7; }
-        .bi-badge-running { background: rgba(3,152,85,0.12); color: #039855; }
-        .bi-badge-notfound { background: rgba(156,163,175,0.2); color: #9ca3af; }
+        .bi-badge-default { background: rgba(94,122,136,0.12); color: #5E7A88; }
+        .bi-badge-running { background: rgba(246,157,57,0.12); color: #E58A2B; }
+        .bi-badge-notfound { background: rgba(154,145,130,0.2); color: #9A9182; }
 
-        .bi-browser-version { font-size: 13px; color: var(--cf-text-secondary, #6b7280); margin-bottom: 6px; }
+        .bi-browser-version { font-size: 13px; color: var(--cf-text-secondary, #756E66); margin-bottom: 6px; }
         .bi-browser-path {
-          font-size: 11px; color: var(--cf-text-muted, #9ca3af);
+          font-size: 11px; color: var(--cf-text-muted, #9A9182);
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
           max-width: 100%;
         }
@@ -1733,20 +1733,20 @@ window.ChildPageLayouts = (() => {
         .bi-status-dot {
           width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
         }
-        .bi-status-dot.running { background: #039855; box-shadow: 0 0 6px #039855; animation: bi-pulse 1.5s infinite; }
-        .bi-status-dot.stopped { background: #9ca3af; }
+        .bi-status-dot.running { background: #E58A2B; box-shadow: 0 0 6px #E58A2B; animation: bi-pulse 1.5s infinite; }
+        .bi-status-dot.stopped { background: #9A9182; }
 
         @keyframes bi-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
         }
 
-        .bi-status-text { font-size: 11px; color: var(--cf-text-secondary, #6b7280); flex: 1; }
+        .bi-status-text { font-size: 11px; color: var(--cf-text-secondary, #756E66); flex: 1; }
 
         .bi-launch-btn {
           padding: 6px 14px; border: none; border-radius: 6px; font-size: 12px;
           font-weight: 600; cursor: pointer; transition: all 0.2s;
-          background: var(--cf-accent, #4364f7); color: #fff;
+          background: var(--cf-accent, #5E7A88); color: #fff;
         }
         .bi-launch-btn:hover { filter: brightness(1.1); }
         .bi-launch-btn:disabled { opacity: 0.5; cursor: default; }
@@ -1754,7 +1754,7 @@ window.ChildPageLayouts = (() => {
         /* Empty / loading */
         .bi-loading, .bi-empty {
           grid-column: 1 / -1; padding: 40px; text-align: center;
-          color: var(--cf-text-secondary, #6b7280); font-size: 13px;
+          color: var(--cf-text-secondary, #756E66); font-size: 13px;
         }
         .bi-loading i, .bi-empty i { font-size: 22px; margin-bottom: 8px; display: block; }
 
@@ -1762,12 +1762,12 @@ window.ChildPageLayouts = (() => {
         .bi-connected { min-height: 60px; }
 
         /* Steps */
-        .bi-how-works { border-top: 1px solid var(--cf-border, #e2eaf4); padding-top: 16px; margin-top: 8px; }
+        .bi-how-works { border-top: 1px solid var(--cf-border, #E2DBCD); padding-top: 16px; margin-top: 8px; }
         .bi-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        .bi-step { display: flex; gap: 10px; padding: 14px; background: var(--cf-bg-card, #fff); border: 1px solid var(--cf-border, #e2eaf4); border-radius: 8px; }
-        .bi-step-num { width: 26px; height: 26px; background: var(--cf-accent, #4364f7); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+        .bi-step { display: flex; gap: 10px; padding: 14px; background: var(--cf-bg-card, #fff); border: 1px solid var(--cf-border, #E2DBCD); border-radius: 8px; }
+        .bi-step-num { width: 26px; height: 26px; background: var(--cf-accent, #5E7A88); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
         .bi-step strong { font-size: 13px; display: block; margin-bottom: 4px; }
-        .bi-step p { font-size: 11px; color: var(--cf-text-secondary, #6b7280); line-height: 1.5; margin: 0; }
+        .bi-step p { font-size: 11px; color: var(--cf-text-secondary, #756E66); line-height: 1.5; margin: 0; }
       </style>
     `;
   }
@@ -2112,9 +2112,9 @@ window.ChildPageLayouts = (() => {
                 <div class="map-overlay-tr">
                   <div class="map-legend">
                     <div class="legend-title">Severity</div>
-                    <div class="legend-row"><span class="legend-dot" style="background:#ef4444;"></span> Critical / High</div>
-                    <div class="legend-row"><span class="legend-dot" style="background:#f59e0b;"></span> Medium</div>
-                    <div class="legend-row"><span class="legend-dot" style="background:#22d3ee;"></span> Low</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#E5573E;"></span> Critical / High</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#D8B65A;"></span> Medium</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#F69D39;"></span> Low</div>
                   </div>
                 </div>
                 <div class="map-overlay-bl tg-map-controls">
@@ -2727,21 +2727,21 @@ window.ChildPageLayouts = (() => {
               </div>
               <div class="agent-stat-row">
                 <div class="ac-stat-label-row">
-                  <span class="stat-label"><i class="fas fa-cpu" style="margin-right:4px;color:#10b981"></i>CPU</span>
+                  <span class="stat-label"><i class="fas fa-cpu" style="margin-right:4px;color:#F69D39"></i>CPU</span>
                   <span class="stat-pct" id="ac-cpu-pct">—</span>
                 </div>
                 <div class="stat-bar"><div class="stat-bar-fill" id="ac-cpu-bar" style="width:0%"></div></div>
               </div>
               <div class="agent-stat-row">
                 <div class="ac-stat-label-row">
-                  <span class="stat-label"><i class="fas fa-memory" style="margin-right:4px;color:#3b82f6"></i>Memory</span>
+                  <span class="stat-label"><i class="fas fa-memory" style="margin-right:4px;color:#5E7A88"></i>Memory</span>
                   <span class="stat-pct" id="ac-mem-pct">—</span>
                 </div>
                 <div class="stat-bar"><div class="stat-bar-fill" id="ac-mem-bar" style="width:0%"></div></div>
               </div>
               <div class="agent-stat-row">
                 <div class="ac-stat-label-row">
-                  <span class="stat-label"><i class="fas fa-hard-drive" style="margin-right:4px;color:#f59e0b"></i>Disk</span>
+                  <span class="stat-label"><i class="fas fa-hard-drive" style="margin-right:4px;color:#D8B65A"></i>Disk</span>
                   <span class="stat-pct" id="ac-disk-pct">—</span>
                 </div>
                 <div class="stat-bar"><div class="stat-bar-fill" id="ac-disk-bar" style="width:0%"></div></div>
@@ -2860,7 +2860,7 @@ window.ChildPageLayouts = (() => {
             <div class="agent-card-body" style="padding:0">
               <!-- Live feed header strip -->
               <div class="ac-feed-topbar">
-                <span class="ac-feed-topbar-label"><i class="fas fa-circle-dot" style="color:#10b981;font-size:8px;animation:ac-dot-online 2s infinite"></i> Live feed</span>
+                <span class="ac-feed-topbar-label"><i class="fas fa-circle-dot" style="color:#F69D39;font-size:8px;animation:ac-dot-online 2s infinite"></i> Live feed</span>
                 <span class="ac-feed-topbar-hint">Latest URLs detected &amp; scanned</span>
               </div>
               <div class="agent-url-feed" id="agent-url-feed">

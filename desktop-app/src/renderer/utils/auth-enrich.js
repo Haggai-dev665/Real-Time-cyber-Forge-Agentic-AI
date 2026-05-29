@@ -59,12 +59,12 @@
             inp.addEventListener('focus', function () {
                 var lbl = inp.closest('.form-group') &&
                           inp.closest('.form-group').querySelector('.form-label');
-                if (lbl) gsap.to(lbl, { color: 'var(--auth-accent, #2DD4BF)', duration: 0.15 });
+                if (lbl) gsap.to(lbl, { color: 'var(--auth-accent, #F69D39)', duration: 0.15 });
             });
             inp.addEventListener('blur', function () {
                 var lbl = inp.closest('.form-group') &&
                           inp.closest('.form-group').querySelector('.form-label');
-                if (lbl) gsap.to(lbl, { color: 'var(--auth-text-secondary, #CBD5E1)', duration: 0.15 });
+                if (lbl) gsap.to(lbl, { color: 'var(--auth-text-secondary, #C9C1B2)', duration: 0.15 });
             });
         });
 

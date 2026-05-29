@@ -857,7 +857,7 @@ html, body {
 }
 
 /* Severity badges */
-.severity-critical { background-color: #7A271A; color: #FEF3F2; }
+.severity-critical { background-color: #5A1D14; color: #FAEAE0; }
 .severity-high     { background-color: var(--cf-status-error-bg); color: var(--cf-status-error); }
 .severity-medium   { background-color: var(--cf-status-warning-bg); color: var(--cf-status-warning); }
 .severity-low      { background-color: var(--cf-status-info-bg); color: var(--cf-status-info); }
@@ -1314,7 +1314,7 @@ textarea:focus {
 .risk-score.low    .risk-score-value { color: var(--cf-status-success); }
 .risk-score.medium .risk-score-value { color: var(--cf-status-warning); }
 .risk-score.high   .risk-score-value { color: var(--cf-status-error); }
-.risk-score.critical .risk-score-value { color: #7A271A; }
+.risk-score.critical .risk-score-value { color: #5A1D14; }
 
 /* ═══════════════════════════════════════════════════════════════════
    UTILITIES

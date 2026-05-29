@@ -51,7 +51,7 @@ class DigitalForensicsScreen {
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:var(--space-md);">
                     ${[
                         { id:'df-cases', label:'Active Cases', icon:'folder-open', color:'var(--primary)' },
-                        { id:'df-evidence', label:'Evidence Items', icon:'database', color:'#ff9500' },
+                        { id:'df-evidence', label:'Evidence Items', icon:'database', color:'#F69D39' },
                         { id:'df-artifacts', label:'Artifacts Found', icon:'fingerprint', color:'var(--warning)' },
                         { id:'df-analyzed', label:'Files Analyzed', icon:'file-search', color:'var(--success)' },
                     ].map(s => `
@@ -168,7 +168,7 @@ class DigitalForensicsScreen {
         const container = document.getElementById('df-case-list');
         if (!container) return;
 
-        const priorityColor = { critical:'var(--error)', high:'#ff9500', medium:'var(--warning)', low:'var(--info)' };
+        const priorityColor = { critical:'var(--error)', high:'#F69D39', medium:'var(--warning)', low:'var(--info)' };
         const statusColor = { active:'var(--success)', in_review:'var(--warning)', closed:'var(--text-muted)' };
 
         container.innerHTML = this.cases.map((c, idx) => `
@@ -192,7 +192,7 @@ class DigitalForensicsScreen {
         const container = document.getElementById('df-timeline');
         if (!container) return;
 
-        const typeColors = { file:'var(--primary)', network:'var(--error)', process:'var(--warning)', registry:'#ff9500', default:'var(--info)' };
+        const typeColors = { file:'var(--primary)', network:'var(--error)', process:'var(--warning)', registry:'#F69D39', default:'var(--info)' };
         const typeIcons = { file:'file-alt', network:'network-wired', process:'microchip', registry:'edit', default:'circle' };
 
         container.innerHTML = `<div style="position:absolute; left:12px; top:0; bottom:0; width:2px; background:var(--border-color);"></div>` +

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Sandbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<style>
+.sb-grid{display:grid;grid-template-columns:1fr 360px;gap:14px;height:calc(100% - 56px)}
+.left-col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.right-col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
+
+/* submit bar */
+.submit{display:flex;align-items:center;gap:10px;padding:13px 14px}
+.submit .field{flex:1;display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-radius:9px;
+  border:1px solid var(--border-2);background:rgba(8,12,20,.7);transition:border-color .2s,box-shadow .2s}
+.submit .field:focus-within{border-color:rgba(245,166,35,.5);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+.submit .field svg{width:16px;height:16px;color:var(--faint)}
+.submit input{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--mono);font-size:13px}
+.submit input::placeholder{color:var(--faint)}
+.chip-row{display:flex;gap:6px}
+.tchip{font-family:var(--mono);font-size:10px;padding:6px 10px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);transition:.15s}
+.tchip:hover{color:var(--text);border-color:var(--border-3)}
+.tchip.on{color:var(--amber-2);border-color:rgba(245,166,35,.4);background:var(--amber-dim)}
+.btn-detonate{height:42px;display:flex;align-items:center;gap:9px;padding:0 18px;border-radius:9px;cursor:pointer;
+  font-weight:600;font-size:13px;color:#1a1206;border:1px solid rgba(245,166,35,.5);position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#ffc15a,#f5a623);box-shadow:0 4px 16px -4px rgba(245,166,35,.6);transition:transform .15s}
+.btn-detonate:hover{transform:translateY(-1px)} .btn-detonate:active{transform:scale(.97)}
+.btn-detonate svg{width:16px;height:16px}
+.btn-detonate.busy{pointer-events:none;color:transparent}
+.btn-detonate.busy::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;
+  border:2.4px solid rgba(26,18,6,.4);border-top-color:#1a1206;animation:spin .7s linear infinite;left:50%;top:50%;margin:-9px}
+
+/* VM viewport */
+.vm-card{flex:1;display:flex;flex-direction:column;min-height:0}
+.vm-screen{flex:1;margin:12px;border-radius:9px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#0a0f1a,#070a12);border:1px solid var(--border-2)}
+.vm-scan{position:absolute;left:0;right:0;height:90px;top:-90px;pointer-events:none;z-index:4;opacity:0;
+  background:linear-gradient(180deg,transparent,rgba(43,212,238,.12) 70%,rgba(43,212,238,.45));
+  border-bottom:1.5px solid rgba(43,212,238,.8);box-shadow:0 0 24px rgba(43,212,238,.45)}
+.vm-card.running .vm-scan{opacity:1;animation:vmscan 2s linear infinite}
+@keyframes vmscan{0%{top:-90px}100%{top:100%}}
+.vm-grid{position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(rgba(120,150,190,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,150,190,.05) 1px,transparent 1px);
+  background-size:26px 26px}
+.vm-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.vm-core{position:relative;width:128px;height:128px;display:grid;place-items:center}
+.vm-core .ring{position:absolute;border-radius:50%;border:2px solid transparent}
+.vm-core .r1{inset:0;border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 2.4s linear infinite}
+.vm-core .r2{inset:16px;border-bottom-color:var(--cyan);border-left-color:rgba(43,212,238,.3);animation:spin 3.4s linear infinite reverse}
+.vm-core .r3{inset:32px;border-top-color:rgba(245,166,35,.5);animation:spin 1.8s linear infinite}
+.vm-core .glyph{width:42px;height:42px;color:var(--amber-2)}
+.vm-core.idle .ring{animation-play-state:paused;opacity:.35}
+.vm-status{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:1px}
+.vm-status b{color:var(--amber-2)}
+.vm-osmeta{position:absolute;left:12px;top:10px;font-family:var(--mono);font-size:9.5px;color:var(--faint);display:flex;gap:14px;z-index:3}
+.vm-osmeta span{display:flex;align-items:center;gap:5px}
+.vm-net{position:absolute;right:12px;top:10px;font-family:var(--mono);font-size:9.5px;color:var(--cyan);z-index:3;display:flex;align-items:center;gap:6px}
+
+/* VM network packet viz (bottom strip) */
+.vm-netviz{position:absolute;left:14px;right:14px;bottom:12px;height:34px;z-index:3;display:flex;align-items:flex-start;gap:0;opacity:0;transition:opacity .4s}
+.vm-card.running .vm-netviz{opacity:1}
+.nv-node{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;width:54px}
+.nv-node .nd{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;border:1px solid var(--border-2);background:rgba(10,16,26,.9)}
+.nv-node .nd svg{width:13px;height:13px}
+.nv-node .nl{font-family:var(--mono);font-size:7.5px;letter-spacing:.5px;color:var(--faint)}
+.nv-node.host .nd{color:var(--cyan)} .nv-node.c2 .nd{color:#ff7185;border-color:rgba(244,73,94,.4)}
+.nv-wire{flex:1;height:2px;background:rgba(126,148,184,.16);position:relative;border-radius:2px;margin-top:11px}
+.pkt{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 7px currentColor}
+
+/* MITRE ATT&CK tactic map */
+.attack{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:11px 13px}
+.tac{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;border:1px solid var(--border);
+  background:var(--tile);transition:.3s;position:relative;overflow:hidden}
+.tac .tcode{font-family:var(--mono);font-size:7.5px;color:var(--faint);position:absolute;top:4px;right:6px}
+.tac .ti{width:13px;height:13px;color:var(--faint);flex:none;transition:.3s}
+.tac .tn{font-size:10px;color:var(--dim);transition:.3s;line-height:1.2}
+.tac.hit{border-color:rgba(244,73,94,.4);background:rgba(244,73,94,.08)}
+.tac.hit .ti{color:#ff7185} .tac.hit .tn{color:var(--text);font-weight:500}
+.tac.hit::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:#ff7185;
+  animation:tacflash .5s ease}
+@keyframes tacflash{0%{box-shadow:0 0 18px 2px rgba(244,73,94,.6)}100%{box-shadow:none}}
+.ioc.copied{background:rgba(43,212,238,.08)} .ioc.copied .copy{color:var(--green)}
+.bev{transition:background .2s} .bev:hover{background:rgba(130,160,200,.05)}
+
+/* behavior timeline */
+.behave{padding:4px 6px 8px;overflow-y:auto}
+.bev{display:flex;align-items:flex-start;gap:11px;padding:8px 10px;position:relative}
+.bev::before{content:"";position:absolute;left:16px;top:24px;bottom:-2px;width:1.5px;background:var(--border)}
+.bev:last-child::before{display:none}
+.bev .bnode{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;z-index:2;
+  border:1px solid var(--border-2);background:var(--surface-solid)}
+.bev .bnode svg{width:12px;height:12px}
+.bev.ok .bnode{color:var(--green);border-color:rgba(67,224,138,.4)}
+.bev.warn .bnode{color:var(--amber-2);border-color:rgba(245,166,35,.4)}
+.bev.bad .bnode{color:#ff7185;border-color:rgba(244,73,94,.45)}
+.bev .btxt{flex:1;font-size:12px;line-height:1.5}
+.bev .btxt .bt{font-family:var(--mono);font-size:9px;color:var(--faint);margin-right:7px}
+.bev .btxt b{font-weight:600}
+.bev .bdesc{color:var(--dim);font-size:11px;margin-top:1px}
+
+/* verdict gauge */
+.verdict-card{text-align:center;padding:14px 14px 16px}
+.vg-stage{position:relative;width:140px;height:140px;margin:4px auto 11px}
+.vg-stage svg{width:100%;height:100%;display:block}
+.vg-stage .vlabel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.vg-stage .score{font-family:var(--mono);font-size:34px;font-weight:600;line-height:1}
+.vg-stage .of{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:2px}
+.vbadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:600;
+  padding:7px 14px;border-radius:8px;letter-spacing:.5px}
+.vbadge.safe{color:var(--green);background:rgba(67,224,138,.12);border:1px solid rgba(67,224,138,.3)}
+.vbadge.sus{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
+.vbadge.mal{color:#ff7185;background:rgba(244,73,94,.12);border:1px solid rgba(244,73,94,.35)}
+.vbadge svg{width:15px;height:15px}
+
+/* IOC / evidence */
+.ioc{display:flex;align-items:center;gap:10px;padding:9px 13px;font-family:var(--mono);font-size:11px}
+.ioc .k{color:var(--faint);width:64px;flex:none}
+.ioc .v{color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ioc .copy{color:var(--faint);cursor:pointer;width:13px;height:13px}
+.ioc .copy:hover{color:var(--cyan)}
+.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:13px 14px}
+.ms{text-align:center;padding:11px 6px;border-radius:8px;border:1px solid var(--border);background:var(--tile)}
+.ms b{font-family:var(--mono);font-size:20px;font-weight:600;display:block}
+.ms span{font-family:var(--mono);font-size:8.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.row-div{border-top:1px solid var(--border)}
+.placeholder{color:var(--faint);font-family:var(--mono);font-size:11px;text-align:center;padding:24px 16px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Sandbox" id="win">
+    <!-- TOP BAR -->
+    <div class="topbar" id="topbar"></div>
+
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></div>
+          <h1>Sandbox</h1>
+          <div class="head-right">
+            <span class="badge-cyan"><span class="dot"></span>ISOLATED VM</span>
+            <span id="elapsed">Idle</span>
+          </div>
+        </div>
+
+        <div class="sb-grid">
+          <!-- LEFT -->
+          <div class="left-col">
+            <div class="card">
+              <div class="submit">
+                <div class="chip-row">
+                  <div class="tchip on" data-mode="url">URL</div>
+                  <div class="tchip" data-mode="file">FILE</div>
+                  <div class="tchip" data-mode="hash">HASH</div>
+                </div>
+                <div class="field">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>
+                  <input id="subInput" value="http://free-prizes-login.xyz/account/verify" spellcheck="false" />
+                </div>
+                <button class="btn-detonate" id="detonate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 7 4v6c0 5-3 7-7 10-4-3-7-5-7-10V6l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>Detonate</button>
+              </div>
+            </div>
+
+            <div class="card vm-card" id="vmCard">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Detonation Chamber<span class="right" id="vmRight"><span class="badge-cyan"><span class="dot"></span>SNAPSHOT v04</span></span></div>
+              <div class="vm-screen">
+                <div class="vm-grid"></div>
+                <div class="vm-scan"></div>
+                <div class="vm-osmeta">
+                  <span><span class="dot" style="background:var(--cyan)"></span>Win11 x64</span>
+                  <span>4 vCPU · 8 GB</span>
+                  <span id="vmpid">PID —</span>
+                </div>
+                <div class="vm-net"><div class="spinner sm" style="width:9px;height:9px;border-color:rgba(43,212,238,.25);border-top-color:var(--cyan)"></div><span id="vmNet">net: idle</span></div>
+                <div class="vm-netviz">
+                  <div class="nv-node host"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg></div><span class="nl">SAMPLE</span></div>
+                  <div class="nv-wire" id="wireA"></div>
+                  <div class="nv-node"><div class="nd" style="color:var(--amber-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg></div><span class="nl">GATEWAY</span></div>
+                  <div class="nv-wire" id="wireB"></div>
+                  <div class="nv-node c2"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><span class="nl">C2 HOST</span></div>
+                </div>
+                <div class="vm-center">
+                  <div class="vm-core idle" id="vmCore">
+                    <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
+                    <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>
+                  </div>
+                  <div class="vm-status" id="vmStatus">Awaiting submission — press <b>Detonate</b></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Behavior Timeline<span class="right" id="bevCount">0 events</span></div>
+              <div class="behave" id="behave"><div class="placeholder">Behavioral events will stream here during analysis.</div></div>
+            </div>
+          </div>
+
+          <!-- RIGHT -->
+          <div class="right-col">
+            <div class="card verdict-card">
+              <div class="panel-head" style="text-align:left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Threat Verdict</div>
+              <div class="vg-stage">
+                <svg width="170" height="170" viewBox="0 0 170 170" id="vgauge"></svg>
+                <div class="vlabel"><span class="score" id="vscore">—</span><span class="of">/ 100 risk</span></div>
+              </div>
+              <div class="vbadge sus" id="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>AWAITING</div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 7h16M4 7l1 12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2l1-12"/></svg>Indicators (IOCs)</div>
+              <div id="iocs">
+                <div class="ioc"><span class="k">SHA-256</span><span class="v" id="iocHash">—</span><svg class="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></div>
+                <div class="ioc row-div"><span class="k">Host</span><span class="v" id="iocHost">—</span></div>
+                <div class="ioc row-div"><span class="k">C2</span><span class="v" id="iocC2">—</span></div>
+                <div class="ioc row-div"><span class="k">Family</span><span class="v" id="iocFam">—</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>MITRE ATT&amp;CK<span class="right" id="tacCount">0 mapped</span></div>
+              <div class="attack" id="attack">
+                <div class="tac" data-tac="exec"><span class="tcode">T1059</span><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 17 6-6-6-6M12 19h8"/></svg><span class="tn">Execution</span></div>
+                <div class="tac" data-tac="persist"><span class="tcode">T1547</span><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg><span class="tn">Persistence</span></div>
+                <div class="tac" data-tac="evade"><span class="tcode">T1055</span><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><path d="m4 4 16 16"/></svg><span class="tn">Defense Evasion</span></div>
+                <div class="tac" data-tac="cred"><span class="tcode">T1555</span><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="tn">Credential Access</span></div>
+                <div class="tac" data-tac="disc"><span class="tcode">T1046</span><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tn">Discovery</span></div>
+                <div class="tac" data-tac="c2"><span class="tcode">T1071</span><svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg><span class="tn">Command &amp; Control</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V5M14 18v-8M19 18v-4"/></svg>Telemetry</div>
+              <div class="mini-stats">
+                <div class="ms"><b class="sev-crit" id="tFiles">0</b><span>Files</span></div>
+                <div class="ms"><b style="color:var(--amber-2)" id="tProc">0</b><span>Processes</span></div>
+                <div class="ms"><b style="color:var(--cyan)" id="tNet">0</b><span>Net calls</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="cyberforge-shared.js"></script>
+<script src="cf-header.js"></script>
+<script src="cf-sidebar.js"></script>
+<script src="cf-footer.js"></script>
+<script>
+buildHeader({status:'READY',search:'Search submissions, hashes, verdicts…',chips:'<div class="tb-chip"><span class="dot" style="background:var(--cyan)"></span>VM-04</div><div class="tb-chip"><span class="dot" style="background:var(--green)"></span>ISOLATED</div>'});
+buildSidebar('sandbox');
+buildFooter({items:[{txt:'VM-04 · isolated',cls:'sb-cyan'},{txt:'state: idle',id:'sbState'},{txt:'Sandbox ready',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+/* verdict gauge ring */
+function drawGauge(score,color){
+  const d=document.getElementById('vgauge');
+  const cx=85,cy=85,r=62,sw=16,C=2*Math.PI*r;
+  const frac=score==null?0:score/100;
+  d.innerHTML=
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.12)" stroke-width="'+sw+'"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+(color||'var(--amber)')+'" stroke-width="'+sw+'" stroke-linecap="round" '+
+      'stroke-dasharray="'+(C*frac).toFixed(1)+' '+C+'" transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dasharray 1s cubic-bezier(.3,.8,.3,1);filter:drop-shadow(0 0 6px '+(color||'var(--amber)')+')"/>';
+}
+drawGauge(null);
+
+/* mode chips */
+const samples={
+  url:'http://free-prizes-login.xyz/account/verify',
+  file:'invoice_2026_Q1.xlsm',
+  hash:'9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+};
+document.querySelectorAll('.tchip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.tchip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); document.getElementById('subInput').value=samples[c.dataset.mode];
+}));
+
+/* ============ DETONATION SEQUENCE ============ */
+const EV={
+  proc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>',
+  net:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>',
+  reg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
+  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>'
+};
+const script=[
+  {t:'+0.4s',k:'proc',c:'ok',title:'Process spawned',d:'chrome.exe → child renderer initialised',tac:'exec'},
+  {t:'+1.1s',k:'net',c:'warn',title:'Outbound connection',d:'TLS to 193.43.18.* (unclassified)',tac:'disc',pkt:'var(--cyan)'},
+  {t:'+2.0s',k:'file',c:'warn',title:'File dropped',d:'%TEMP%\\svc_update.dll written (212 KB)',tac:'evade'},
+  {t:'+2.8s',k:'reg',c:'warn',title:'Registry persistence',d:'HKCU\\...\\Run → svc_update added',tac:'persist'},
+  {t:'+3.6s',k:'proc',c:'bad',title:'Process injection',d:'svc_update.dll injected into explorer.exe',tac:'evade'},
+  {t:'+4.3s',k:'net',c:'bad',title:'C2 beacon',d:'POST cdn-sync.duckdns.org /gate.php · 60s interval',tac:'c2',pkt:'#ff7185'},
+  {t:'+5.0s',k:'alert',c:'bad',title:'Credential access',d:'reads from Chrome Login Data store',tac:'cred'}
+];
+const det=document.getElementById('detonate'), vmCard=document.getElementById('vmCard'),
+      vmCore=document.getElementById('vmCore'), vmStatus=document.getElementById('vmStatus'),
+      behave=document.getElementById('behave'), bevCount=document.getElementById('bevCount'),
+      vmNet=document.getElementById('vmNet'), vmpid=document.getElementById('vmpid'),
+      elapsed=document.getElementById('elapsed'), sbState=document.getElementById('sbState'),
+      vmRight=document.getElementById('vmRight');
+let running=false;
+function detonate(){
+  if(running)return; running=true;
+  det.classList.add('busy'); vmCard.classList.add('running');
+  vmCore.classList.remove('idle');
+  behave.innerHTML=''; bevCount.textContent='0 events';
+  document.getElementById('vscore').textContent='—'; drawGauge(null);
+  document.querySelectorAll('.tac').forEach(t=>t.classList.remove('hit'));
+  document.getElementById('tacCount').textContent='0 mapped';
+  const vb=document.getElementById('vbadge'); vb.className='vbadge sus'; vb.innerHTML='<div class="spinner sm" style="width:13px;height:13px;border-color:rgba(245,166,35,.3);border-top-color:var(--amber)"></div>ANALYZING';
+  ['tFiles','tProc','tNet'].forEach(id=>document.getElementById(id).textContent='0');
+  document.getElementById('iocHash').textContent='computing…';
+  ['iocHost','iocC2','iocFam'].forEach(id=>document.getElementById(id).textContent='—');
+  vmpid.textContent='PID '+(4000+Math.floor(Math.random()*900));
+  vmRight.innerHTML='<span class="badge-live"><span class="dot"></span>LIVE</span>';
+  sbState.textContent='state: detonating';
+  const stages=['Booting snapshot…','Injecting sample…','Executing payload…','Capturing behavior…','Scoring verdict…'];
+  let si=0; const sint=setInterval(()=>{ vmStatus.innerHTML='<b>'+stages[Math.min(si,stages.length-1)]+'</b>'; si++; },900);
+
+  let files=0,proc=1,net=0,t0=performance.now();
+  const eint=setInterval(()=>{ elapsed.textContent=((performance.now()-t0)/1000).toFixed(1)+'s elapsed'; },100);
+
+  script.forEach((e,i)=>setTimeout(()=>{
+    const row=document.createElement('div'); row.className='bev '+e.c;
+    row.innerHTML='<span class="bnode">'+EV[e.k]+'</span><div class="btxt"><span class="bt">'+e.t+'</span><b>'+e.title+'</b><div class="bdesc">'+e.d+'</div></div>';
+    behave.appendChild(row); behave.scrollTop=behave.scrollHeight;
+    bevCount.textContent=(i+1)+' events';
+    if(e.k==='file')files++; if(e.k==='proc')proc++; if(e.k==='net'){net++;vmNet.textContent='net: '+net+' conn';}
+    document.getElementById('tFiles').textContent=files;
+    document.getElementById('tProc').textContent=proc;
+    document.getElementById('tNet').textContent=net;
+    // light matching ATT&CK tactic
+    if(e.tac){const tc=document.querySelector('.tac[data-tac="'+e.tac+'"]');
+      if(tc&&!tc.classList.contains('hit')){tc.classList.add('hit');
+        document.getElementById('tacCount').textContent=document.querySelectorAll('.tac.hit').length+' mapped';}}
+    // fire packets on network events
+    if(e.pkt) burstPackets(e.pkt, e.c==='bad');
+  }, 700+e.t.replace(/[+s]/g,'')*1000*0.9));
+
+  setTimeout(()=>{
+    clearInterval(sint); clearInterval(eint);
+    det.classList.remove('busy'); vmCard.classList.remove('running');
+    vmStatus.innerHTML='Analysis complete — <b>verdict ready</b>';
+    sbState.textContent='state: complete';
+    // animate score
+    const target=87; let s=0; const a=setInterval(()=>{ s+=3; if(s>=target){s=target;clearInterval(a);}
+      document.getElementById('vscore').textContent=s; drawGauge(s,'#ff7185'); },22);
+    const vb=document.getElementById('vbadge'); vb.className='vbadge mal';
+    vb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>MALICIOUS';
+    document.getElementById('iocHash').textContent='9f86…0a08';
+    document.getElementById('iocHost').textContent='free-prizes-login.xyz';
+    document.getElementById('iocC2').textContent='cdn-sync.duckdns.org';
+    document.getElementById('iocFam').textContent='RedLine Stealer';
+    vmRight.innerHTML='<span class="pill crit">FLAGGED</span>';
+    running=false;
+  }, 700+5.6*1000);
+}
+det.addEventListener('click',detonate);
+attachRipple(det);
+
+/* ---- network packet animation along the wires ---- */
+function burstPackets(color, viaC2){
+  const wires=[document.getElementById('wireA')];
+  if(viaC2) wires.push(document.getElementById('wireB'));
+  let n=0; const iv=setInterval(()=>{
+    wires.forEach(w=>{
+      const p=document.createElement('span'); p.className='pkt'; p.style.color=color; p.style.background=color;
+      w.appendChild(p); const rev=Math.random()<0.35;
+      let t0=performance.now(); const dur=620+Math.random()*260;
+      (function step(now){const t=(now-t0)/dur; if(t>=1){p.remove();return;}
+        p.style.left=((rev?1-t:t)*100)+'%'; p.style.opacity=(1-Math.abs(t-0.5)).toFixed(2);
+        requestAnimationFrame(step);})(t0);
+    });
+    if(++n>=5) clearInterval(iv);
+  },150);
+}
+
+/* ---- IOC copy feedback ---- */
+document.querySelectorAll('.ioc').forEach(row=>{
+  const c=row.querySelector('.copy'); if(!c)return;
+  c.addEventListener('click',()=>{
+    const v=row.querySelector('.v').textContent;
+    if(navigator.clipboard) navigator.clipboard.writeText(v).catch(()=>{});
+    row.classList.add('copied'); setTimeout(()=>row.classList.remove('copied'),900);
+  });
+});
+
+// auto-run once on load for the wow factor
+setTimeout(detonate,900);
+</script>
+</body>
+</html>

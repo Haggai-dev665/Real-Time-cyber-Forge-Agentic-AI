@@ -172,7 +172,7 @@ class HybridEarthGlobe {
         this.mapCtx = this.mapCanvas.getContext('2d', { willReadFrequently: true });
 
         // Fill with beautiful ocean blue initially
-        this.mapCtx.fillStyle = this.options.isDarkTheme ? '#081932' : '#1450a0';
+        this.mapCtx.fillStyle = this.options.isDarkTheme ? '#1C2B33' : '#33485A';
         this.mapCtx.fillRect(0, 0, this.textureWidth, this.textureHeight);
 
         // Create Three.js texture from canvas
@@ -202,7 +202,7 @@ class HybridEarthGlobe {
         if (!tilePane) return;
 
         // Clear canvas with beautiful ocean blue
-        this.mapCtx.fillStyle = this.options.isDarkTheme ? '#081932' : '#1450a0';
+        this.mapCtx.fillStyle = this.options.isDarkTheme ? '#1C2B33' : '#33485A';
         this.mapCtx.fillRect(0, 0, this.textureWidth, this.textureHeight);
 
         // Get all loaded tiles

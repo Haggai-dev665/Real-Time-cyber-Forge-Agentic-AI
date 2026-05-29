@@ -11,11 +11,11 @@
   <style>
     /* ── Tokens (teal/cyan brand) ── */
     :root {
-        --bg: #080d14; --surface: #0d1520;
-        --accent: #2dd4bf; --accent2: #0d9488;
-        --info: #1570EF;
-        --text: #e8eef4; --text2: #7a8fa0; --text3: #3a4a5a;
-        --glow: rgba(45,212,191,.28);
+        --bg: #0B0908; --surface: #1A1516;
+        --accent: #F69D39; --accent2: #E58A2B;
+        --info: #5E7A88;
+        --text: #E2DBCD; --text2: #9A9182; --text3: #3a4a5a;
+        --glow: rgba(246,157,57,.28);
     }
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;overflow:hidden;font-family:'Roboto',system-ui,sans-serif;background:var(--bg);color:var(--text)}
@@ -24,14 +24,14 @@
     /* Grid */
     .bg-grid{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
     .bg-grid::before{content:'';position:absolute;inset:-50%;width:200%;height:200%;
-        background:repeating-linear-gradient(0deg,transparent 0,transparent 59px,rgba(45,212,191,.025) 59px,rgba(45,212,191,.025) 60px),
-                   repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(45,212,191,.025) 59px,rgba(45,212,191,.025) 60px);
+        background:repeating-linear-gradient(0deg,transparent 0,transparent 59px,rgba(246,157,57,.025) 59px,rgba(246,157,57,.025) 60px),
+                   repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(246,157,57,.025) 59px,rgba(246,157,57,.025) 60px);
         animation:gridDrift 40s linear infinite}
     @keyframes gridDrift{to{transform:translate(60px,60px)}}
 
     /* Radial glow */
     .bg-glow{position:fixed;inset:0;
-        background:radial-gradient(600px circle at 50% 45%,rgba(45,212,191,.08),transparent 65%),
+        background:radial-gradient(600px circle at 50% 45%,rgba(246,157,57,.08),transparent 65%),
                    radial-gradient(400px circle at 52% 48%,rgba(13,148,136,.06),transparent 55%);
         pointer-events:none;z-index:1}
 
@@ -52,7 +52,7 @@
 
     /* Scan line */
     .scan-line{position:fixed;left:0;right:0;height:1px;z-index:2;pointer-events:none;
-        background:linear-gradient(90deg,transparent 0%,rgba(45,212,191,.18) 50%,transparent 100%);
+        background:linear-gradient(90deg,transparent 0%,rgba(246,157,57,.18) 50%,transparent 100%);
         animation:scanDown 4.5s ease-in-out infinite}
     .scan-line:nth-child(2){animation-delay:2.25s;opacity:.45}
     @keyframes scanDown{0%{top:-2px;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}
@@ -66,23 +66,23 @@
     .logo-wrap{position:relative;width:128px;height:128px;margin-bottom:24px}
     .logo-ring{position:absolute;inset:-8px;border-radius:50%;
         border:1.5px solid transparent;
-        border-top-color:var(--accent);border-right-color:rgba(45,212,191,.2);
+        border-top-color:var(--accent);border-right-color:rgba(246,157,57,.2);
         animation:ringSpin 2.4s linear infinite;opacity:.55}
     .logo-ring-outer{position:absolute;inset:-18px;border-radius:50%;
         border:1px solid transparent;
-        border-bottom-color:var(--info);border-left-color:rgba(21,112,239,.15);
+        border-bottom-color:var(--info);border-left-color:rgba(94,122,136,.15);
         animation:ringSpinRev 3.5s linear infinite;opacity:.35}
     @keyframes ringSpin   {to{transform:rotate(360deg)}}
     @keyframes ringSpinRev{to{transform:rotate(-360deg)}}
 
     .logo-inner{
         width:128px;height:128px;border-radius:22px;
-        background:var(--surface);border:1px solid rgba(45,212,191,.18);
+        background:var(--surface);border:1px solid rgba(246,157,57,.18);
         display:flex;align-items:center;justify-content:center;
         box-shadow:0 0 40px var(--glow);
         animation:logoPulse 3s ease-in-out infinite}
-    @keyframes logoPulse{0%,100%{box-shadow:0 0 30px var(--glow)}50%{box-shadow:0 0 55px rgba(45,212,191,.35)}}
-    .logo-inner i{font-size:2.8rem;color:var(--accent);filter:drop-shadow(0 0 8px rgba(45,212,191,.5))}
+    @keyframes logoPulse{0%,100%{box-shadow:0 0 30px var(--glow)}50%{box-shadow:0 0 55px rgba(246,157,57,.35)}}
+    .logo-inner i{font-size:2.8rem;color:var(--accent);filter:drop-shadow(0 0 8px rgba(246,157,57,.5))}
     .logo-inner img{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 0 8px var(--glow))}
 
     /* Brand */
@@ -95,10 +95,10 @@
     /* Version chip */
     .version-chip{
         display:inline-flex;align-items:center;gap:5px;
-        border:1px solid rgba(45,212,191,.18);border-radius:99px;
+        border:1px solid rgba(246,157,57,.18);border-radius:99px;
         padding:3px 10px;font-size:.65rem;color:var(--text2);
         font-family:'Roboto Mono',monospace;margin-bottom:36px;
-        background:rgba(45,212,191,.04);
+        background:rgba(246,157,57,.04);
     }
     .version-chip i{color:var(--accent);font-size:.6rem}
 
@@ -124,7 +124,7 @@
     .feature-chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
     .chip{display:flex;align-items:center;gap:5px;
         padding:4px 10px;border-radius:99px;
-        border:1px solid rgba(45,212,191,.14);background:rgba(45,212,191,.04);
+        border:1px solid rgba(246,157,57,.14);background:rgba(246,157,57,.04);
         font-size:.66rem;color:var(--text2);font-family:'Roboto',sans-serif;
         animation:fadeInUp .6s ease-out both}
     .chip:nth-child(1){animation-delay:.3s}

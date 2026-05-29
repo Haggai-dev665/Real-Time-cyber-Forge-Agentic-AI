@@ -106,7 +106,7 @@
                         }
                     },
                     color: {
-                        value: ['#656D3F', '#F2F4F7', '#EAEFEF']
+                        value: ['#A66416', '#EFE9DD', '#E2DBCD']
                     },
                     shape: {
                         type: 'circle',
@@ -138,7 +138,7 @@
                     line_linked: {
                         enable: true,
                         distance: 150,
-                        color: '#656D3F',
+                        color: '#A66416',
                         opacity: 0.4,
                         width: 1
                     },

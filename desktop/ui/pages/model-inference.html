@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Model Inference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.mi-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;height:calc(100% - 56px);min-height:0}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kpi{padding:13px 15px}
+.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.kpi .kv{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:6px}
+.kpi .kd{font-size:10.5px;color:var(--faint);margin-top:2px}
+
+.models{overflow-y:auto;min-height:0}
+.model{display:flex;align-items:center;gap:13px;padding:14px 15px;border-bottom:1px solid var(--border);transition:background .2s;cursor:default}
+.model:hover{background:rgba(130,160,200,.05)}
+.model .mav{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none;position:relative;
+  border:1px solid var(--border-2);background:radial-gradient(circle at 50% 35%,#13202f,#0a121d);color:var(--amber-2)}
+.model.run .mav::after{content:"";position:absolute;inset:-3px;border-radius:14px;border:1.5px solid transparent;
+  border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 2.2s linear infinite}
+.model .mav svg{width:19px;height:19px}
+.model .minfo{flex:1;min-width:0}
+.model .minfo .mn{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.model .minfo .mv{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:2px}
+.model .mstats{display:flex;gap:20px;flex:none}
+.model .mstat{text-align:right}
+.model .mstat b{font-family:var(--mono);font-size:14px;font-weight:600;display:block}
+.model .mstat span{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.model .spark{width:70px;height:26px}
+.mstatus{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:4px 9px;border-radius:5px;font-weight:600}
+.mstatus.serving{color:var(--green);background:rgba(67,224,138,.12);border:1px solid rgba(67,224,138,.3)}
+.mstatus.training{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
+.mstatus.idle{color:var(--faint);background:rgba(130,160,200,.1)}
+
+.gpu{display:flex;align-items:center;gap:13px;padding:13px 15px;border-bottom:1px solid var(--border)}
+.gpu .gg{position:relative;width:52px;height:52px;flex:none}
+.gpu .gg .val{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:600}
+.gpu .gi{flex:1}
+.gpu .gi .gl{font-size:12.5px;font-weight:500}
+.gpu .gi .gs{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:2px}
+.gpu .gtemp{font-family:var(--mono);font-size:11px;color:var(--amber-2)}
+
+.chart-wrap{padding:8px 14px 14px}
+.chart-svg{width:100%;height:160px;display:block}
+.axis-x{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--faint);padding:5px 2px 0}
+.ds{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid var(--border);font-size:12px}
+.ds .di{width:14px;height:14px;color:var(--cyan)}
+.ds .dn{flex:1}
+.ds .dsz{font-family:var(--mono);font-size:10px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Model Inference" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg></div>
+          <h1>Model Inference</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Serving</span>
+            <span id="ips">4,820 inferences/s</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Deploy</button>
+          </div>
+        </div>
+
+        <div class="kpi-row" style="margin-bottom:14px">
+          <div class="card kpi"><div class="kl">Inferences / s</div><div class="kv" style="color:var(--amber-2)" id="kIps">4.8k</div><div class="kd">across 4 served models</div></div>
+          <div class="card kpi"><div class="kl">Avg Latency</div><div class="kv" style="color:var(--cyan)" id="kLat">36<span style="font-size:13px;color:var(--faint)">ms</span></div><div class="kd">p95 · GPU batch=32</div></div>
+          <div class="card kpi"><div class="kl">Mean Accuracy</div><div class="kv" style="color:var(--green)" id="kAcc">98.6%</div><div class="kd">rolling 24h</div></div>
+        </div>
+
+        <div class="mi-grid">
+          <div class="col">
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9z"/></svg>Active Models<span class="right">4 serving · 1 training</span></div>
+              <div class="models" id="models"></div>
+            </div>
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m6 15 4-5 3 3 5-7"/></svg>Inference Throughput — 60s<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="chart-wrap">
+                <svg class="chart-svg" id="thrChart" viewBox="0 0 640 160" preserveAspectRatio="none"></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>GPU Cluster</div>
+              <div id="gpus"></div>
+            </div>
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6M4 12c0 1.6 3.6 3 8 3s8-1.4 8-3"/></svg>Datasets<span class="right">6 · 4.2 TB</span></div>
+              <div style="overflow-y:auto" id="datasets"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'SERVING'});
+buildSidebar('models');
+buildFooter({items:[{txt:'4 models serving',cls:'sb-amber'},{txt:'GPU 71%',cls:'sb-cyan'},{txt:'4.8k inf/s',cls:'sb-green'},{txt:'Healthy',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+const brain='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>';
+function sparkline(vals,color){
+  const W=70,H=26; const max=Math.max(...vals),min=Math.min(...vals),rng=(max-min)||1;
+  const pts=vals.map((v,i)=>(i*(W/(vals.length-1)))+','+(H-2-((v-min)/rng)*(H-4))).join(' ');
+  return '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>';
+}
+const models=[
+  {n:'sentinel-threat-v4',v:'classifier · 1.4B params',st:'serving',ips:'2.1k',acc:'99.2%',lat:'18ms',c:'var(--amber-2)',run:true},
+  {n:'anomaly-detector-v2',v:'autoencoder · 320M',st:'serving',ips:'1.6k',acc:'97.8%',lat:'24ms',c:'var(--cyan)',run:true},
+  {n:'malware-vision-v3',v:'CNN · 88M params',st:'serving',ips:'820',acc:'98.9%',lat:'41ms',c:'var(--green)',run:true},
+  {n:'reason-agent-llm',v:'transformer · 8B',st:'serving',ips:'318',acc:'—',lat:'89ms',c:'var(--blue)',run:true},
+  {n:'phish-bert-finetune',v:'BERT · 110M · epoch 7/10',st:'training',ips:'—',acc:'96.1%',lat:'—',c:'var(--amber-2)',run:false}
+];
+document.getElementById('models').innerHTML=models.map(m=>{
+  const sp=Array.from({length:14},()=>Math.random());
+  return '<div class="model '+(m.run?'run':'')+'"><span class="mav">'+brain+'</span>'+
+    '<div class="minfo"><div class="mn">'+m.n+' <span class="mstatus '+m.st+'">'+m.st.toUpperCase()+'</span></div><div class="mv">'+m.v+'</div></div>'+
+    '<svg class="spark" viewBox="0 0 70 26" preserveAspectRatio="none">'+sparkline(sp,m.c)+'</svg>'+
+    '<div class="mstats"><div class="mstat"><b style="color:'+m.c+'">'+m.ips+'</b><span>inf/s</span></div>'+
+    '<div class="mstat"><b>'+m.acc+'</b><span>acc</span></div><div class="mstat"><b>'+m.lat+'</b><span>p95</span></div></div></div>';
+}).join('');
+
+// GPU gauges
+function gauge(svg,pct,color){
+  const cx=26,cy=26,r=20,sw=5,C=2*Math.PI*r;
+  svg.innerHTML='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.16)" stroke-width="'+sw+'"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-linecap="round" '+
+    'stroke-dasharray="'+(C*pct/100).toFixed(1)+' '+C+'" transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dasharray .9s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 4px '+color+')"/>';
+}
+const gpus=[['GPU 0 · A100',76,'62°','var(--amber)'],['GPU 1 · A100',71,'59°','var(--cyan)'],['GPU 2 · A100',68,'57°','var(--green)']];
+document.getElementById('gpus').innerHTML=gpus.map((g,i)=>
+  '<div class="gpu"><div class="gg"><svg width="52" height="52" viewBox="0 0 52 52" data-g="'+g[1]+'" data-c="'+g[3]+'"></svg><span class="val">'+g[1]+'%</span></div>'+
+  '<div class="gi"><div class="gl">'+g[0]+'</div><div class="gs">40 GB · batch 32</div></div><span class="gtemp">'+g[2]+'</span></div>').join('');
+const ggs=[...document.querySelectorAll('[data-g]')].map(s=>({svg:s,c:s.dataset.c,t:+s.dataset.g,val:s.parentElement.querySelector('.val')}));
+ggs.forEach(g=>gauge(g.svg,0,g.c)); setTimeout(()=>ggs.forEach(g=>gauge(g.svg,g.t,g.c)),100);
+setInterval(()=>ggs.forEach(g=>{let p=g.t+(Math.random()*12-6);p=Math.max(40,Math.min(96,p));g.t=p;gauge(g.svg,p,g.c);g.val.textContent=Math.round(p)+'%';}),2400);
+
+// datasets
+const ds=[['Threat Intel Corpus','1.8 TB','var(--amber-2)'],['Network Flows 2026','920 GB','var(--cyan)'],['Malware Samples','640 GB','var(--green)'],['Phishing URLs','210 GB','var(--blue)'],['Endpoint Telemetry','480 GB','var(--amber-2)'],['Auth Events','180 GB','var(--cyan)']];
+document.getElementById('datasets').innerHTML=ds.map(d=>
+  '<div class="ds"><svg class="di" viewBox="0 0 24 24" fill="none" stroke="'+d[2]+'" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6"/></svg>'+
+  '<span class="dn">'+d[0]+'</span><span class="dsz">'+d[1]+'</span></div>').join('');
+
+// throughput chart (rolling)
+(function(){
+  const svg=document.getElementById('thrChart'); const W=640,H=160,pad=8,N=40;
+  let data=Array.from({length:N},()=>0.5+Math.random()*0.35);
+  function draw(){
+    const x=i=>pad+i*(W-pad*2)/(N-1), y=v=>H-pad-v*(H-pad*2);
+    let line='M'+x(0)+' '+y(data[0]), area=line;
+    for(let i=1;i<N;i++){const cx=(x(i-1)+x(i))/2;line+=' C'+cx+' '+y(data[i-1])+' '+cx+' '+y(data[i])+' '+x(i)+' '+y(data[i]);area=line;}
+    area+=' L'+x(N-1)+' '+H+' L'+x(0)+' '+H+' Z';
+    let grid=''; for(let g=0;g<=3;g++){const gy=pad+g*(H-pad*2)/3;grid+='<line x1="0" y1="'+gy+'" x2="'+W+'" y2="'+gy+'" stroke="rgba(126,148,184,.08)"/>';}
+    svg.innerHTML='<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(245,166,35,.32)"/><stop offset="1" stop-color="rgba(245,166,35,0)"/></linearGradient></defs>'+
+      grid+'<path d="'+area+'" fill="url(#tg)"/><path d="'+line+'" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"/>'+
+      '<circle cx="'+x(N-1)+'" cy="'+y(data[N-1])+'" r="3.5" fill="var(--amber-2)" class="live-dot-anim" style="color:var(--amber)"/>';
+  }
+  draw(); setInterval(()=>{data.push(0.45+Math.random()*0.45);data.shift();draw();},700);
+})();
+
+// KPI jitter
+setInterval(()=>{
+  const v=4.5+Math.random()*0.8; document.getElementById('ips').textContent=(v*1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')+' inferences/s';
+  document.getElementById('kIps').textContent=v.toFixed(1)+'k';
+  document.getElementById('kLat').innerHTML=(30+Math.floor(Math.random()*14))+'<span style="font-size:13px;color:var(--faint)">ms</span>';
+  document.getElementById('kAcc').textContent=(98.2+Math.random()*0.7).toFixed(1)+'%';
+},1500);
+</script>
+</body>
+</html>

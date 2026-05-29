@@ -11,8 +11,8 @@
      Layer 3  →  Dark mode overrides via [data-theme="dark"]
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── Google Fonts ─── */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600&display=swap');
+/* ─── Google Fonts — Forge type system ─── */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════
    LAYER 0 — PRIMITIVE PALETTE
@@ -100,6 +100,37 @@
     /* ─── Pure ─── */
     --raw-white:  #FFFFFF;
     --raw-black:  #000000;
+
+    /* ═══════════════════════════════════════════════════════════
+       FORGE PALETTE — the canonical CyberForge brand colors.
+       Warm raisin surfaces · dusty cream ink · forge-orange accent
+       · sage secondary. Mirrors updates/ design system 1:1.
+       ═══════════════════════════════════════════════════════════ */
+    --forge-black:      #000000;
+    --forge-ink:        #0B0908;  /* deepest surface */
+    --forge-raisin:     #1F1A1B;  /* primary dark surface */
+    --forge-raisin-2:   #2A2425;  /* elevated dark surface */
+    --forge-raisin-3:   #352E2F;  /* hover / inset */
+    --forge-dusty:      #EFE9DD;  /* primary ink (cream) */
+    --forge-dusty-2:    #E2DBCD;  /* secondary ink */
+    --forge-dusty-3:    #C9C1B2;  /* tertiary ink */
+    --forge-orange:     #F69D39;  /* primary accent */
+    --forge-orange-2:   #E58A2B;  /* accent hover/active */
+    --forge-orange-3:   #FFB45C;  /* accent bright */
+    --forge-sage:       #869B7E;  /* secondary / operational green */
+    --forge-sage-2:     #9DB295;  /* sage bright */
+    --forge-sage-3:     #6E8466;  /* sage deep */
+    --forge-gold:       #D8B65A;  /* warning / medium severity */
+    --forge-rust:       #E5573E;  /* error / critical (warm red) */
+    --forge-rust-2:     #C8452F;  /* error deep */
+    --forge-slate:      #5E7A88;  /* info (muted slate-blue) */
+
+    /* Hairlines — dusty over dark (mirrors updates --line/--line-strong) */
+    --forge-line:        rgba(239,233,221,0.14);
+    --forge-line-strong: rgba(239,233,221,0.32);
+    /* Hairlines — ink over cream (light/dusty mode) */
+    --forge-line-ink:        rgba(31,26,27,0.16);
+    --forge-line-ink-strong: rgba(31,26,27,0.34);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -107,50 +138,50 @@
    These are what components reference.
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
-    /* ─── Background System ─── */
-    --cf-bg-app:        var(--raw-gray-50);
-    --cf-bg-primary:    var(--raw-gray-50);
-    --cf-bg-secondary:  var(--raw-gray-100);
-    --cf-bg-elevated:   var(--raw-white);
-    --cf-bg-accent:     var(--raw-forest-600);
-    --cf-bg-accent-subtle: rgba(46, 125, 50, 0.06);
+    /* ─── Background System — Dusty cream (forge light mode) ─── */
+    --cf-bg-app:        var(--forge-dusty);
+    --cf-bg-primary:    var(--forge-dusty);
+    --cf-bg-secondary:  var(--forge-dusty-2);
+    --cf-bg-elevated:   #F7F3EB;
+    --cf-bg-accent:     var(--forge-orange);
+    --cf-bg-accent-subtle: rgba(246, 157, 57, 0.10);
 
     /* ─── Surface System (Cards, Panels, Containers) ─── */
-    --cf-surface-0:     var(--raw-white);
-    --cf-surface-1:     var(--raw-gray-50);
-    --cf-surface-2:     var(--raw-gray-100);
-    --cf-surface-3:     var(--raw-gray-200);
+    --cf-surface-0:     #F7F3EB;
+    --cf-surface-1:     var(--forge-dusty);
+    --cf-surface-2:     var(--forge-dusty-2);
+    --cf-surface-3:     #D6CDBC;
 
     /* ─── Text System ─── */
-    --cf-text-primary:   var(--raw-gray-900);
-    --cf-text-secondary: var(--raw-gray-600);
-    --cf-text-tertiary:  var(--raw-gray-500);
-    --cf-text-muted:     var(--raw-gray-400);
-    --cf-text-inverse:   var(--raw-white);
-    --cf-text-on-accent: var(--raw-white);
+    --cf-text-primary:   var(--forge-raisin);
+    --cf-text-secondary: #4A4142;
+    --cf-text-tertiary:  #6B6263;
+    --cf-text-muted:     #8A8281;
+    --cf-text-inverse:   var(--forge-dusty);
+    --cf-text-on-accent: var(--forge-black);
 
     /* ─── Interactive System ─── */
-    --cf-interactive-default: var(--raw-forest-600);
-    --cf-interactive-hover:   var(--raw-forest-700);
-    --cf-interactive-active:  var(--raw-forest-800);
-    --cf-interactive-subtle:  rgba(46, 125, 50, 0.08);
-    --cf-interactive-focus:   rgba(46, 125, 50, 0.20);
+    --cf-interactive-default: var(--forge-orange);
+    --cf-interactive-hover:   var(--forge-orange-2);
+    --cf-interactive-active:  #CE7A1F;
+    --cf-interactive-subtle:  rgba(246, 157, 57, 0.10);
+    --cf-interactive-focus:   rgba(246, 157, 57, 0.24);
 
     /* ─── Border System ─── */
-    --cf-border-light:   var(--raw-gray-200);
-    --cf-border-medium:  var(--raw-gray-300);
-    --cf-border-strong:  var(--raw-gray-400);
-    --cf-border-accent:  var(--raw-forest-500);
+    --cf-border-light:   var(--forge-line-ink);
+    --cf-border-medium:  rgba(31, 26, 27, 0.22);
+    --cf-border-strong:  var(--forge-line-ink-strong);
+    --cf-border-accent:  var(--forge-orange);
 
-    /* ─── Status Colors ─── */
-    --cf-status-success:     var(--raw-success-600);
-    --cf-status-success-bg:  var(--raw-success-bg);
-    --cf-status-warning:     var(--raw-amber-600);
-    --cf-status-warning-bg:  var(--raw-amber-bg);
-    --cf-status-error:       var(--raw-red-600);
-    --cf-status-error-bg:    var(--raw-red-bg);
-    --cf-status-info:        var(--raw-blue-600);
-    --cf-status-info-bg:     var(--raw-blue-bg);
+    /* ─── Status Colors (forge family) ─── */
+    --cf-status-success:     var(--forge-sage-3);
+    --cf-status-success-bg:  rgba(134, 155, 126, 0.16);
+    --cf-status-warning:     #B8862A;
+    --cf-status-warning-bg:  rgba(216, 182, 90, 0.18);
+    --cf-status-error:       var(--forge-rust-2);
+    --cf-status-error-bg:    rgba(229, 87, 62, 0.12);
+    --cf-status-info:        var(--forge-slate);
+    --cf-status-info-bg:     rgba(94, 122, 136, 0.12);
 
     /* ─── Shadows — Clean, subtle ─── */
     --cf-shadow-xs:  0 1px 2px rgba(16, 24, 40, 0.05);
@@ -162,10 +193,11 @@
     --cf-shadow-inner: inset 0 2px 4px rgba(16, 24, 40, 0.04);
     --cf-shadow-focus: 0 0 0 3px var(--cf-interactive-focus);
 
-    /* ─── Typography ─── */
-    --cf-font-primary:  'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --cf-font-headings: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --cf-font-mono:     'Roboto Mono', 'Cascadia Code', 'Consolas', monospace;
+    /* ─── Typography — Forge type system ─── */
+    --cf-font-primary:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --cf-font-headings: 'Space Grotesk', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --cf-font-display:  'Space Grotesk', 'DM Sans', sans-serif;
+    --cf-font-mono:     'JetBrains Mono', 'Roboto Mono', 'Cascadia Code', 'Consolas', monospace;
 
     /* Font Sizes — Modular Scale (1.200) */
     --cf-text-2xs:  0.625rem;  /* 10px */
@@ -296,83 +328,87 @@
    Derived from semantic tokens. Used by specific components.
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
+    /* All component tokens reference forge semantic tokens so they follow
+       the active theme (dusty light / raisin dark) automatically. */
     /* ─── Header ─── */
-    --cf-header-bg:         var(--raw-white);
-    --cf-header-text:       var(--raw-gray-900);
-    --cf-header-text-muted: var(--raw-gray-500);
-    --cf-header-border:     var(--raw-gray-200);
-    --cf-header-btn-bg:     var(--raw-gray-50);
-    --cf-header-btn-hover:  var(--raw-gray-100);
+    --cf-header-bg:         var(--cf-surface-0);
+    --cf-header-text:       var(--cf-text-primary);
+    --cf-header-text-muted: var(--cf-text-tertiary);
+    --cf-header-border:     var(--cf-border-light);
+    --cf-header-btn-bg:     rgba(31, 26, 27, 0.05);
+    --cf-header-btn-hover:  rgba(31, 26, 27, 0.10);
 
     /* ─── Sidebar ─── */
-    --cf-sidebar-bg:         var(--raw-white);
-    --cf-sidebar-border:     var(--raw-gray-200);
-    --cf-sidebar-section:    var(--raw-gray-400);
-    --cf-sidebar-link:       var(--raw-gray-600);
-    --cf-sidebar-link-hover: var(--raw-gray-50);
-    --cf-sidebar-link-active-bg:   rgba(46, 125, 50, 0.08);
-    --cf-sidebar-link-active-text: var(--raw-forest-600);
-    --cf-sidebar-link-active-bar:  var(--raw-forest-600);
-    --cf-sidebar-icon:       var(--raw-gray-400);
-    --cf-sidebar-icon-active: var(--raw-forest-600);
+    --cf-sidebar-bg:         var(--cf-surface-0);
+    --cf-sidebar-border:     var(--cf-border-light);
+    --cf-sidebar-section:    var(--cf-text-muted);
+    --cf-sidebar-link:       var(--cf-text-secondary);
+    --cf-sidebar-link-hover: rgba(31, 26, 27, 0.05);
+    --cf-sidebar-link-active-bg:   rgba(246, 157, 57, 0.10);
+    --cf-sidebar-link-active-text: var(--forge-orange-2);
+    --cf-sidebar-link-active-bar:  var(--forge-orange);
+    --cf-sidebar-icon:       var(--cf-text-muted);
+    --cf-sidebar-icon-active: var(--forge-orange-2);
 
     /* ─── Floating Agent Panel ─── */
-    --cf-panel-bg:           var(--raw-white);
-    --cf-panel-header-bg:    var(--raw-forest-700);
-    --cf-panel-header-text:  var(--raw-white);
-    --cf-panel-border:       var(--raw-gray-200);
-    --cf-panel-section-bg:   var(--raw-gray-50);
-    --cf-panel-section-title: var(--raw-gray-500);
+    --cf-panel-bg:           var(--cf-surface-0);
+    --cf-panel-header-bg:    var(--forge-raisin);
+    --cf-panel-header-text:  var(--forge-dusty);
+    --cf-panel-border:       var(--cf-border-strong);
+    --cf-panel-section-bg:   var(--cf-surface-1);
+    --cf-panel-section-title: var(--cf-text-tertiary);
 
     /* ─── Footer ─── */
-    --cf-footer-bg:          var(--raw-white);
-    --cf-footer-text:        var(--raw-gray-500);
-    --cf-footer-border:      var(--raw-gray-200);
+    --cf-footer-bg:          var(--cf-surface-0);
+    --cf-footer-text:        var(--cf-text-tertiary);
+    --cf-footer-border:      var(--cf-border-light);
 
     /* ─── Cards ─── */
-    --cf-card-bg:            var(--raw-white);
-    --cf-card-border:        var(--raw-gray-200);
-    --cf-card-header-bg:     var(--raw-gray-50);
+    --cf-card-bg:            var(--cf-surface-0);
+    --cf-card-border:        var(--cf-border-light);
+    --cf-card-header-bg:     var(--cf-surface-2);
     --cf-card-shadow:        var(--cf-shadow-sm);
 
     /* ─── Console / Code ─── */
-    --cf-console-bg:         var(--raw-gray-900);
-    --cf-console-text:       var(--raw-gray-200);
-    --cf-console-border:     var(--raw-gray-700);
+    --cf-console-bg:         var(--forge-ink);
+    --cf-console-text:       var(--forge-dusty-2);
+    --cf-console-border:     var(--cf-border-light);
 
     /* ─── Badges ─── */
-    --cf-badge-live-bg:      var(--raw-success-bg);
-    --cf-badge-live-text:    var(--raw-success-600);
-    --cf-badge-live-border:  var(--raw-success-500);
-    --cf-badge-agent-bg:     rgba(46, 125, 50, 0.08);
-    --cf-badge-agent-text:   var(--raw-forest-600);
-    --cf-badge-agent-border: var(--raw-forest-500);
-    --cf-badge-alert-bg:     var(--raw-red-bg);
-    --cf-badge-alert-text:   var(--raw-red-600);
-    --cf-badge-alert-border: var(--raw-red-500);
+    /* "Live" = active data stream (orange, per updates ThreatPanel live dot).
+       True success (toasts etc.) goes through --cf-status-success → sage. */
+    --cf-badge-live-bg:      rgba(246, 157, 57, 0.14);
+    --cf-badge-live-text:    var(--forge-orange-2);
+    --cf-badge-live-border:  rgba(246, 157, 57, 0.5);
+    --cf-badge-agent-bg:     rgba(246, 157, 57, 0.12);
+    --cf-badge-agent-text:   var(--forge-orange-2);
+    --cf-badge-agent-border: rgba(246, 157, 57, 0.5);
+    --cf-badge-alert-bg:     var(--cf-status-error-bg);
+    --cf-badge-alert-text:   var(--cf-status-error);
+    --cf-badge-alert-border: rgba(229, 87, 62, 0.5);
 
     /* ─── Scrollbar ─── */
     --cf-scrollbar-track:  transparent;
-    --cf-scrollbar-thumb:  var(--raw-gray-300);
-    --cf-scrollbar-hover:  var(--raw-gray-400);
+    --cf-scrollbar-thumb:  rgba(31, 26, 27, 0.20);
+    --cf-scrollbar-hover:  rgba(31, 26, 27, 0.34);
 
     /* ─── Tab Bar ─── */
-    --cf-tab-bg:           var(--raw-white);
-    --cf-tab-text:         var(--raw-gray-500);
-    --cf-tab-active-text:  var(--raw-forest-600);
-    --cf-tab-active-bar:   var(--raw-forest-600);
+    --cf-tab-bg:           var(--cf-surface-0);
+    --cf-tab-text:         var(--cf-text-tertiary);
+    --cf-tab-active-text:  var(--forge-orange-2);
+    --cf-tab-active-bar:   var(--forge-orange);
     --cf-tab-hover-bg:     var(--cf-bg-accent-subtle);
 
     /* ─── Input / Forms ─── */
-    --cf-input-bg:         var(--raw-white);
-    --cf-input-border:     var(--raw-gray-300);
-    --cf-input-focus:      var(--raw-forest-500);
+    --cf-input-bg:         var(--cf-surface-0);
+    --cf-input-border:     var(--cf-border-medium);
+    --cf-input-focus:      var(--forge-orange);
     --cf-input-focus-ring: var(--cf-interactive-focus);
 
     /* ─── Tables ─── */
-    --cf-table-header-bg:  var(--raw-gray-50);
-    --cf-table-row-hover:  var(--raw-gray-50);
-    --cf-table-border:     var(--raw-gray-200);
+    --cf-table-header-bg:  var(--cf-surface-2);
+    --cf-table-row-hover:  rgba(31, 26, 27, 0.04);
+    --cf-table-border:     var(--cf-border-light);
 }
 
 
@@ -381,119 +417,120 @@
    [data-theme="dark"] overrides all semantic + component tokens.
    ═══════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
+    /* ═══ FORGE DARK — the hero look. Warm raisin · dusty · orange · sage ═══ */
     /* ─── Background ─── */
-    --cf-bg-app:        #111213;
-    --cf-bg-primary:    #111213;
-    --cf-bg-secondary:  #1a1c1e;
-    --cf-bg-elevated:   #23262a;
-    --cf-bg-accent:     #9a9fa6;
-    --cf-bg-accent-subtle: rgba(154, 159, 166, 0.10);
+    --cf-bg-app:        var(--forge-raisin);
+    --cf-bg-primary:    var(--forge-raisin);
+    --cf-bg-secondary:  #181314;
+    --cf-bg-elevated:   var(--forge-raisin-2);
+    --cf-bg-accent:     var(--forge-orange);
+    --cf-bg-accent-subtle: rgba(246, 157, 57, 0.12);
 
     /* ─── Surfaces ─── */
-    --cf-surface-0:     #1a1c1e;
-    --cf-surface-1:     #23262a;
-    --cf-surface-2:     #2b2f35;
-    --cf-surface-3:     #383c42;
+    --cf-surface-0:     var(--forge-raisin-2);
+    --cf-surface-1:     var(--forge-raisin);
+    --cf-surface-2:     var(--forge-raisin-2);
+    --cf-surface-3:     var(--forge-raisin-3);
 
     /* ─── Text ─── */
-    --cf-text-primary:   #e6e8ea;
-    --cf-text-secondary: #b5bcc4;
-    --cf-text-tertiary:  #9a9fa6;
-    --cf-text-muted:     #7f8791;
-    --cf-text-inverse:   #111213;
+    --cf-text-primary:   var(--forge-dusty);
+    --cf-text-secondary: #BDB5A6;
+    --cf-text-tertiary:  #9A9182;
+    --cf-text-muted:     #756E66;
+    --cf-text-inverse:   var(--forge-raisin);
 
     /* ─── Interactive ─── */
-    --cf-interactive-default: #9a9fa6;
-    --cf-interactive-hover:   #b0b5bb;
-    --cf-interactive-active:  #7f8791;
-    --cf-interactive-subtle:  rgba(154, 159, 166, 0.12);
-    --cf-interactive-focus:   rgba(154, 159, 166, 0.24);
+    --cf-interactive-default: var(--forge-orange);
+    --cf-interactive-hover:   var(--forge-orange-3);
+    --cf-interactive-active:  var(--forge-orange-2);
+    --cf-interactive-subtle:  rgba(246, 157, 57, 0.14);
+    --cf-interactive-focus:   rgba(246, 157, 57, 0.28);
 
-    /* ─── Borders ─── */
-    --cf-border-light:   #2b2f35;
-    --cf-border-medium:  #383c42;
-    --cf-border-strong:  #454a51;
-    --cf-border-accent:  #9a9fa6;
+    /* ─── Borders (dusty hairlines, mirrors updates --line) ─── */
+    --cf-border-light:   var(--forge-line);
+    --cf-border-medium:  rgba(239, 233, 221, 0.22);
+    --cf-border-strong:  var(--forge-line-strong);
+    --cf-border-accent:  var(--forge-orange);
 
-    /* ─── Status ─── */
-    --cf-status-success:     #59d98b;
-    --cf-status-success-bg:  rgba(89, 217, 139, 0.12);
-    --cf-status-warning:     #ffcc66;
-    --cf-status-warning-bg:  rgba(255, 204, 102, 0.12);
-    --cf-status-error:       #ff5d6c;
-    --cf-status-error-bg:    rgba(255, 93, 108, 0.12);
-    --cf-status-info:        #8f969e;
-    --cf-status-info-bg:     rgba(143, 150, 158, 0.12);
+    /* ─── Status (forge family) ─── */
+    --cf-status-success:     var(--forge-sage-2);
+    --cf-status-success-bg:  rgba(134, 155, 126, 0.16);
+    --cf-status-warning:     var(--forge-gold);
+    --cf-status-warning-bg:  rgba(216, 182, 90, 0.14);
+    --cf-status-error:       #EE6A50;
+    --cf-status-error-bg:    rgba(229, 87, 62, 0.16);
+    --cf-status-info:        #7E97A6;
+    --cf-status-info-bg:     rgba(94, 122, 136, 0.16);
 
     /* ─── Shadows (deeper for dark) ─── */
-    --cf-shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.20);
-    --cf-shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.16);
-    --cf-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.28), 0 2px 4px rgba(0, 0, 0, 0.16);
-    --cf-shadow-lg:  0 10px 15px rgba(0, 0, 0, 0.28), 0 4px 6px rgba(0, 0, 0, 0.16);
-    --cf-shadow-xl:  0 20px 25px rgba(0, 0, 0, 0.32), 0 8px 10px rgba(0, 0, 0, 0.16);
-    --cf-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.44);
+    --cf-shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.30);
+    --cf-shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.34), 0 1px 2px rgba(0, 0, 0, 0.24);
+    --cf-shadow-md:  0 4px 8px rgba(0, 0, 0, 0.40), 0 2px 4px rgba(0, 0, 0, 0.24);
+    --cf-shadow-lg:  0 12px 20px rgba(0, 0, 0, 0.44), 0 4px 6px rgba(0, 0, 0, 0.24);
+    --cf-shadow-xl:  0 24px 40px rgba(0, 0, 0, 0.50), 0 8px 12px rgba(0, 0, 0, 0.28);
+    --cf-shadow-2xl: 0 24px 60px -20px rgba(0, 0, 0, 0.66);
 
     /* ─── Component: Header ─── */
-    --cf-header-bg:         #171a1d;
-    --cf-header-text:       #e6e8ea;
-    --cf-header-text-muted: #9a9fa6;
-    --cf-header-border:     #383c42;
-    --cf-header-btn-bg:     rgba(154, 159, 166, 0.12);
-    --cf-header-btn-hover:  rgba(154, 159, 166, 0.22);
+    --cf-header-bg:         #1A1516;
+    --cf-header-text:       var(--forge-dusty);
+    --cf-header-text-muted: #9A9182;
+    --cf-header-border:     var(--forge-line);
+    --cf-header-btn-bg:     rgba(239, 233, 221, 0.06);
+    --cf-header-btn-hover:  rgba(239, 233, 221, 0.12);
 
     /* ─── Component: Sidebar ─── */
-    --cf-sidebar-bg:        #1a1c1e;
-    --cf-sidebar-border:    #383c42;
-    --cf-sidebar-link-hover: rgba(154, 159, 166, 0.12);
-    --cf-sidebar-link-active-bg: rgba(89, 217, 139, 0.14);
-    --cf-sidebar-link-active-text: #59d98b;
-    --cf-sidebar-link-active-bar:  #59d98b;
-    --cf-sidebar-icon-active: #59d98b;
+    --cf-sidebar-bg:        #1A1516;
+    --cf-sidebar-border:    var(--forge-line);
+    --cf-sidebar-link-hover: rgba(239, 233, 221, 0.06);
+    --cf-sidebar-link-active-bg: rgba(246, 157, 57, 0.14);
+    --cf-sidebar-link-active-text: var(--forge-orange);
+    --cf-sidebar-link-active-bar:  var(--forge-orange);
+    --cf-sidebar-icon-active: var(--forge-orange);
 
     /* ─── Component: Panel ─── */
-    --cf-panel-bg:          #1a1c1e;
-    --cf-panel-header-bg:   #171a1d;
-    --cf-panel-section-bg:  #23262a;
+    --cf-panel-bg:          var(--forge-raisin-2);
+    --cf-panel-header-bg:   #1A1516;
+    --cf-panel-section-bg:  var(--forge-raisin-2);
 
     /* ─── Component: Footer ─── */
-    --cf-footer-bg:         #171a1d;
-    --cf-footer-text:       #9a9fa6;
-    --cf-footer-border:     #383c42;
+    --cf-footer-bg:         #1A1516;
+    --cf-footer-text:       #9A9182;
+    --cf-footer-border:     var(--forge-line);
 
     /* ─── Cards ─── */
-    --cf-card-bg:           #1a1c1e;
-    --cf-card-border:       #2b2f35;
-    --cf-card-header-bg:    #23262a;
+    --cf-card-bg:           var(--forge-raisin-2);
+    --cf-card-border:       var(--forge-line);
+    --cf-card-header-bg:    var(--forge-raisin-3);
 
     /* ─── Console ─── */
-    --cf-console-bg:        #111213;
-    --cf-console-border:    #2b2f35;
+    --cf-console-bg:        var(--forge-ink);
+    --cf-console-border:    var(--forge-line);
 
-    /* ─── Badges ─── */
-    --cf-badge-live-bg:     rgba(89, 217, 139, 0.16);
-    --cf-badge-live-text:   #59d98b;
-    --cf-badge-live-border: rgba(89, 217, 139, 0.4);
-    --cf-badge-agent-bg:    rgba(89, 217, 139, 0.16);
-    --cf-badge-agent-text:  #59d98b;
-    --cf-badge-agent-border: rgba(89, 217, 139, 0.4);
+    /* ─── Badges (dark) — LIVE = orange (active data), success = sage via token ─── */
+    --cf-badge-live-bg:     rgba(246, 157, 57, 0.16);
+    --cf-badge-live-text:   var(--forge-orange-3);
+    --cf-badge-live-border: rgba(246, 157, 57, 0.4);
+    --cf-badge-agent-bg:    rgba(246, 157, 57, 0.16);
+    --cf-badge-agent-text:  var(--forge-orange);
+    --cf-badge-agent-border: rgba(246, 157, 57, 0.4);
 
     /* ─── Scrollbar ─── */
     --cf-scrollbar-track:   transparent;
-    --cf-scrollbar-thumb:   #383c42;
-    --cf-scrollbar-hover:   #454a51;
+    --cf-scrollbar-thumb:   rgba(239, 233, 221, 0.18);
+    --cf-scrollbar-hover:   rgba(239, 233, 221, 0.30);
 
     /* ─── Tabs ─── */
-    --cf-tab-bg:            #171a1d;
-    --cf-tab-active-text:   #59d98b;
-    --cf-tab-active-bar:    #59d98b;
+    --cf-tab-bg:            #1A1516;
+    --cf-tab-active-text:   var(--forge-orange);
+    --cf-tab-active-bar:    var(--forge-orange);
 
     /* ─── Input ─── */
-    --cf-input-bg:          #23262a;
-    --cf-input-border:      #383c42;
+    --cf-input-bg:          #181314;
+    --cf-input-border:      rgba(239, 233, 221, 0.18);
 
     /* ─── Table ─── */
-    --cf-table-header-bg:   #23262a;
-    --cf-table-row-hover:   rgba(154, 159, 166, 0.08);
+    --cf-table-header-bg:   var(--forge-raisin-2);
+    --cf-table-row-hover:   rgba(239, 233, 221, 0.05);
 }
 
 

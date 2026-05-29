@@ -214,9 +214,9 @@ class SandboxScannerScreen {
         return `
         <div class="sb-kpi-grid">
             <div class="sb-kpi"><i class="fas fa-fingerprint" style="color:var(--cf-interactive-default)"></i><div><div class="sb-kpi-val">${scan.iocs?.length || 0}</div><div class="sb-kpi-lbl">IOCs Extracted</div></div></div>
-            <div class="sb-kpi"><i class="fas fa-crosshairs" style="color:#dc2626"></i><div><div class="sb-kpi-val">${scan.mitre?.techniques?.length || 0}</div><div class="sb-kpi-lbl">MITRE Techniques</div></div></div>
-            <div class="sb-kpi"><i class="fas fa-layer-group" style="color:#f59e0b"></i><div><div class="sb-kpi-val">${tactics}</div><div class="sb-kpi-lbl">ATT&amp;CK Tactics</div></div></div>
-            <div class="sb-kpi"><i class="fas fa-gauge-high" style="color:#8b5cf6"></i><div><div class="sb-kpi-val">${blended != null ? (blended * 100).toFixed(0) : '—'}</div><div class="sb-kpi-lbl">Threat Score</div></div></div>
+            <div class="sb-kpi"><i class="fas fa-crosshairs" style="color:#C8452F"></i><div><div class="sb-kpi-val">${scan.mitre?.techniques?.length || 0}</div><div class="sb-kpi-lbl">MITRE Techniques</div></div></div>
+            <div class="sb-kpi"><i class="fas fa-layer-group" style="color:#D8B65A"></i><div><div class="sb-kpi-val">${tactics}</div><div class="sb-kpi-lbl">ATT&amp;CK Tactics</div></div></div>
+            <div class="sb-kpi"><i class="fas fa-gauge-high" style="color:#5E7A88"></i><div><div class="sb-kpi-val">${blended != null ? (blended * 100).toFixed(0) : '—'}</div><div class="sb-kpi-lbl">Threat Score</div></div></div>
         </div>`;
     }
 
@@ -233,9 +233,9 @@ class SandboxScannerScreen {
             </div>`;
         }
         const tacticColor = {
-            'Initial Access': '#3b82f6', 'Execution': '#f59e0b', 'Persistence': '#8b5cf6',
-            'Defense Evasion': '#06b6d4', 'Credential Access': '#dc2626', 'Discovery': '#10b981',
-            'Command and Control': '#ef4444', 'Exfiltration': '#a855f7', 'Impact': '#b91c1c',
+            'Initial Access': '#5E7A88', 'Execution': '#D8B65A', 'Persistence': '#5E7A88',
+            'Defense Evasion': '#F69D39', 'Credential Access': '#C8452F', 'Discovery': '#F69D39',
+            'Command and Control': '#E5573E', 'Exfiltration': '#5E7A88', 'Impact': '#A03A29',
         };
         return `
         <div class="cf-card">
@@ -246,7 +246,7 @@ class SandboxScannerScreen {
             <div class="cf-card-body">
                 <div class="sb-mitre-chain">
                     ${chain.map((t, i) => {
-                        const color = tacticColor[t.tactic] || '#6b7280';
+                        const color = tacticColor[t.tactic] || '#756E66';
                         return `
                         <div class="sb-mitre-node" style="border-color:${color}">
                             <div class="sb-mitre-tactic" style="color:${color}">${this._esc(t.tactic)}</div>
@@ -270,7 +270,7 @@ class SandboxScannerScreen {
         if (!iocs.length) return '';
         const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
         const sorted = [...iocs].sort((a, b) => (sevOrder[a.severity] ?? 9) - (sevOrder[b.severity] ?? 9));
-        const sevColor = { critical: '#dc2626', high: '#ef4444', medium: '#f59e0b', low: '#6b7280' };
+        const sevColor = { critical: '#C8452F', high: '#E5573E', medium: '#D8B65A', low: '#756E66' };
         const typeIcon = { ip: 'fa-network-wired', domain: 'fa-globe', url: 'fa-link', email: 'fa-envelope', hash: 'fa-fingerprint', cve: 'fa-bug', 'crypto-address': 'fa-coins' };
         return `
         <div class="cf-card">
@@ -281,8 +281,8 @@ class SandboxScannerScreen {
             <div class="cf-card-body" style="padding:0">
                 <div class="sb-ioc-table">
                     ${sorted.map(ioc => `
-                        <div class="sb-ioc-row" style="border-left:3px solid ${sevColor[ioc.severity] || '#6b7280'}">
-                            <i class="fas ${typeIcon[ioc.type] || 'fa-circle-dot'}" style="color:${sevColor[ioc.severity] || '#6b7280'};width:16px;text-align:center"></i>
+                        <div class="sb-ioc-row" style="border-left:3px solid ${sevColor[ioc.severity] || '#756E66'}">
+                            <i class="fas ${typeIcon[ioc.type] || 'fa-circle-dot'}" style="color:${sevColor[ioc.severity] || '#756E66'};width:16px;text-align:center"></i>
                             <span class="sb-ioc-type">${this._esc(ioc.type)}</span>
                             <span class="sb-ioc-value" title="${this._esc(ioc.value)}">${this._esc(ioc.value.length > 64 ? ioc.value.slice(0, 62) + '…' : ioc.value)}</span>
                             <span class="sb-ioc-sev sev-${ioc.severity}">${this._esc(ioc.severity || 'unknown')}</span>
@@ -442,7 +442,7 @@ class SandboxScannerScreen {
 .sb-timeline-card .cf-card-body { padding:18px 20px; }
 .sb-timeline { display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap; }
 .sb-timeline-step { flex:1;min-width:100px;display:flex;flex-direction:column;align-items:center;position:relative;text-align:center; }
-.sb-timeline-step:not(.last)::after { content:'';position:absolute;top:11px;left:55%;width:90%;height:2px;background:linear-gradient(90deg,var(--cf-status-success),rgba(16,185,129,0.2)); }
+.sb-timeline-step:not(.last)::after { content:'';position:absolute;top:11px;left:55%;width:90%;height:2px;background:linear-gradient(90deg,var(--cf-status-success),rgba(246,157,57,0.2)); }
 .sb-timeline-dot { width:24px;height:24px;border-radius:50%;background:var(--cf-status-success);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;position:relative;z-index:1; }
 .sb-timeline-content { margin-top:6px; }
 .sb-timeline-label { font-size:11px;font-weight:600;color:var(--cf-text-primary);line-height:1.3; }
@@ -475,10 +475,10 @@ class SandboxScannerScreen {
 .sb-ioc-type { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--cf-text-muted); }
 .sb-ioc-value { font-family:var(--cf-font-mono);color:var(--cf-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .sb-ioc-sev { font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:99px;text-align:center; }
-.sb-ioc-sev.sev-critical { background:rgba(220,38,38,0.15);color:#dc2626; }
-.sb-ioc-sev.sev-high     { background:rgba(239,68,68,0.12);color:#ef4444; }
-.sb-ioc-sev.sev-medium   { background:rgba(245,158,11,0.12);color:#d97706; }
-.sb-ioc-sev.sev-low      { background:rgba(107,114,128,0.12);color:#6b7280; }
+.sb-ioc-sev.sev-critical { background:rgba(200,69,47,0.15);color:#C8452F; }
+.sb-ioc-sev.sev-high     { background:rgba(229,87,62,0.12);color:#E5573E; }
+.sb-ioc-sev.sev-medium   { background:rgba(216,182,90,0.12);color:#B8862A; }
+.sb-ioc-sev.sev-low      { background:rgba(117,110,102,0.12);color:#756E66; }
 .sb-ioc-source { font-size:10px;color:var(--cf-text-muted);font-family:var(--cf-font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 @media (max-width: 800px) { .sb-ioc-row { grid-template-columns:24px 60px 1fr 60px;} .sb-ioc-source { display:none; } }
 

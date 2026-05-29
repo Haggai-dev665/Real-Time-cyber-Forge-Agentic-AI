@@ -250,7 +250,7 @@
     }
 
     if (current) {
-      current.innerHTML = '<i class="fas fa-check-circle" style="color:#5E9B6E;"></i> <span>Installation complete</span>';
+      current.innerHTML = '<i class="fas fa-check-circle" style="color:#F69D39;"></i> <span>Installation complete</span>';
     }
   }
 
@@ -574,10 +574,10 @@
       if (scanning) {
         scanning.innerHTML =
           '<div style="text-align:center;padding:16px;">' +
-            '<i class="fas fa-exclamation-triangle" style="font-size:28px;color:#C7923E;margin-bottom:10px;"></i>' +
-            '<p style="color:#6B7A85;font-size:13px;">Browser detection unavailable</p>' +
-            '<p style="color:#94A3B8;font-size:12px;margin-top:4px;">' + err.message + '</p>' +
-            '<p style="color:#94A3B8;font-size:11px;margin-top:6px;">Browser monitoring can be configured later in Settings.</p>' +
+            '<i class="fas fa-exclamation-triangle" style="font-size:28px;color:#B8862A;margin-bottom:10px;"></i>' +
+            '<p style="color:#756E66;font-size:13px;">Browser detection unavailable</p>' +
+            '<p style="color:#9A9182;font-size:12px;margin-top:4px;">' + err.message + '</p>' +
+            '<p style="color:#9A9182;font-size:11px;margin-top:6px;">Browser monitoring can be configured later in Settings.</p>' +
           '</div>';
       }
     }
@@ -784,7 +784,7 @@
   function launchConfetti() {
     var container = $('#confetti-container');
     if (!container) return;
-    var colors = ['#4A7C59', '#5E9B6E', '#C7923E', '#1570EF', '#FFFFFF', '#25343F', '#6941C6'];
+    var colors = ['#CE7A1F', '#F69D39', '#B8862A', '#5E7A88', '#FFFFFF', '#251F20', '#5E7A88'];
     for (var i = 0; i < 50; i++) {
       var piece = document.createElement('div');
       piece.className = 'confetti-piece';

@@ -351,7 +351,7 @@
             if (agentCountEl) agentCountEl.textContent = String(agentCount);
 
             // Desktop app IS the agent — show Active whenever backend is reachable.
-            var dotColor = backendOk ? 'var(--cf-status-success,#22c55e)' : 'var(--cf-status-error,#ef4444)';
+            var dotColor = backendOk ? 'var(--cf-status-success,#F69D39)' : 'var(--cf-status-error,#E5573E)';
             if (statusDot) statusDot.style.background = dotColor;
             if (statusText) statusText.textContent = backendOk ? 'Active' : 'Offline';
 
@@ -414,11 +414,11 @@
                 <span><i class="fas fa-network-wired"></i> 8-Agent Orchestrator</span>\
                 <span class="agent-status-row-value" id="fp-orch-status">Idle</span>\
             </div>\
-            <div id="fp-orch-target" style="font-size:10px;color:#94a3b8;font-family:JetBrains Mono,monospace;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>\
+            <div id="fp-orch-target" style="font-size:10px;color:#9A9182;font-family:JetBrains Mono,monospace;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>\
             <div id="fp-orch-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px"></div>\
-            <div id="fp-orch-result" style="margin-top:8px;font-size:10.5px;color:#94a3b8;display:none">\
+            <div id="fp-orch-result" style="margin-top:8px;font-size:10.5px;color:#9A9182;display:none">\
                 <div id="fp-orch-verdict" style="font-weight:700;margin-bottom:3px"></div>\
-                <div id="fp-orch-summary" style="line-height:1.45;color:#cbd5e1"></div>\
+                <div id="fp-orch-summary" style="line-height:1.45;color:#C9C1B2"></div>\
             </div>';
         // Insert at top of body
         host.insertBefore(section, host.firstChild);
@@ -430,7 +430,7 @@
             cell.id = 'fp-agent-' + a.name;
             cell.title = a.label;
             cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);transition:all 0.2s ease;font-size:9px;text-align:center;min-height:42px';
-            cell.innerHTML = '<i class="fas ' + a.icon + '" style="font-size:13px;color:#64748b;margin-bottom:3px"></i><span style="color:#94a3b8;font-weight:600">' + a.label.split(' ')[0] + '</span>';
+            cell.innerHTML = '<i class="fas ' + a.icon + '" style="font-size:13px;color:#756E66;margin-bottom:3px"></i><span style="color:#9A9182;font-weight:600">' + a.label.split(' ')[0] + '</span>';
             grid.appendChild(cell);
         });
         return section;
@@ -441,10 +441,10 @@
         if (!cell) return;
         var icon = cell.querySelector('i');
         var colors = {
-            idle:    { border: 'rgba(255,255,255,0.06)', icon: '#64748b', bg: 'rgba(255,255,255,0.04)' },
-            running: { border: 'rgba(245,158,11,0.4)',   icon: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
-            ok:      { border: 'rgba(16,185,129,0.4)',   icon: '#10b981', bg: 'rgba(16,185,129,0.08)' },
-            failed:  { border: 'rgba(239,68,68,0.4)',    icon: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
+            idle:    { border: 'rgba(255,255,255,0.06)', icon: '#756E66', bg: 'rgba(255,255,255,0.04)' },
+            running: { border: 'rgba(216,182,90,0.4)',   icon: '#D8B65A', bg: 'rgba(216,182,90,0.08)' },
+            ok:      { border: 'rgba(246,157,57,0.4)',   icon: '#F69D39', bg: 'rgba(246,157,57,0.08)' },
+            failed:  { border: 'rgba(229,87,62,0.4)',    icon: '#E5573E', bg: 'rgba(229,87,62,0.08)' },
         };
         var c = colors[state] || colors.idle;
         cell.style.borderColor = c.border;
@@ -464,7 +464,7 @@
         var panel = _ensureOrchestratorPanel();
         if (!panel) return;
         panel.querySelector('#fp-orch-status').textContent = 'Analyzing';
-        panel.querySelector('#fp-orch-status').style.color = '#f59e0b';
+        panel.querySelector('#fp-orch-status').style.color = '#D8B65A';
         panel.querySelector('#fp-orch-target').textContent = (url || '').slice(0, 60);
         panel.querySelector('#fp-orch-result').style.display = 'none';
         AGENT_ROSTER.forEach(function (a) { _setAgentCellState(a.name, 'running'); });
@@ -481,7 +481,7 @@
         });
         var verdict = scanData.category || scanData.verdict || 'unknown';
         var risk    = scanData.riskScore || 0;
-        var verdictColor = risk >= 65 ? '#ef4444' : risk >= 35 ? '#f59e0b' : risk >= 15 ? '#3b82f6' : '#10b981';
+        var verdictColor = risk >= 65 ? '#E5573E' : risk >= 35 ? '#D8B65A' : risk >= 15 ? '#5E7A88' : '#F69D39';
         panel.querySelector('#fp-orch-status').textContent = 'Done · ' + (scanData.durationMs || 0) + 'ms';
         panel.querySelector('#fp-orch-status').style.color = verdictColor;
         var resBox = panel.querySelector('#fp-orch-result');

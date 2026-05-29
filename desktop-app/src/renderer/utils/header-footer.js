@@ -338,16 +338,16 @@
       }
       
       const colors = {
-        idle: '#6b7280',
-        monitoring: '#039855',
-        analyzing: '#1570EF',
-        investigating: '#DC6803',
-        waiting: '#6941C6',
-        blocked: '#D92D20'
+        idle: '#756E66',
+        monitoring: '#E58A2B',
+        analyzing: '#5E7A88',
+        investigating: '#D8B65A',
+        waiting: '#5E7A88',
+        blocked: '#E5573E'
       };
       
       if (indicator) {
-        indicator.style.background = colors[effectiveStatus] || '#039855';
+        indicator.style.background = colors[effectiveStatus] || '#E58A2B';
       }
       if (label) {
         const statusLabel = state.backendConnected

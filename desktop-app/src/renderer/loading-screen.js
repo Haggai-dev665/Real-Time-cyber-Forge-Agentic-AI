@@ -1,7 +1,7 @@
 /**
  * CyberForge — Advanced Loading Screen v3
  * Uses --cf-* design tokens. No hardcoded colors.
- * Teal/cyan brand (#2dd4bf). No purple/neon.
+ * Teal/cyan brand (#F69D39). No purple/neon.
  */
 class LoadingScreen {
     constructor() {
@@ -89,7 +89,7 @@ class LoadingScreen {
             /* Background */
             .cfls-backdrop {
                 position: absolute; inset: 0;
-                background: var(--cf-bg-app, #080d14);
+                background: var(--cf-bg-app, #0B0908);
             }
 
             /* Grid overlay */
@@ -98,8 +98,8 @@ class LoadingScreen {
                 position: absolute; inset: -100%;
                 width: 300%; height: 300%;
                 background:
-                    repeating-linear-gradient(0deg,   transparent 0, transparent 59px, rgba(45,212,191,.025) 59px, rgba(45,212,191,.025) 60px),
-                    repeating-linear-gradient(90deg,  transparent 0, transparent 59px, rgba(45,212,191,.025) 59px, rgba(45,212,191,.025) 60px);
+                    repeating-linear-gradient(0deg,   transparent 0, transparent 59px, rgba(246,157,57,.025) 59px, rgba(246,157,57,.025) 60px),
+                    repeating-linear-gradient(90deg,  transparent 0, transparent 59px, rgba(246,157,57,.025) 59px, rgba(246,157,57,.025) 60px);
                 animation: cflsGridDrift 40s linear infinite;
             }
             @keyframes cflsGridDrift { to { transform: translate(60px,60px); } }
@@ -108,13 +108,13 @@ class LoadingScreen {
             .cfls-backdrop::before {
                 content: '';
                 position: absolute; inset: 0;
-                background: radial-gradient(600px circle at 50% 45%, rgba(45,212,191,.07), transparent 65%);
+                background: radial-gradient(600px circle at 50% 45%, rgba(246,157,57,.07), transparent 65%);
             }
 
             /* Scanning bar */
             .cfls-scan-bar {
                 position: absolute; left:0; right:0; height:1px;
-                background: linear-gradient(90deg, transparent, rgba(45,212,191,.3), transparent);
+                background: linear-gradient(90deg, transparent, rgba(246,157,57,.3), transparent);
                 z-index: 2; pointer-events: none;
                 animation: cflsScanDown 4s ease-in-out infinite;
                 opacity: .7;
@@ -125,7 +125,7 @@ class LoadingScreen {
             .cfls-particles { position:absolute; inset:0; z-index:1; pointer-events:none; }
             .cfls-particle {
                 position: absolute; width:2px; height:2px;
-                background: var(--cf-interactive-default, #2dd4bf);
+                background: var(--cf-interactive-default, #F69D39);
                 border-radius: 50%; opacity:0;
                 animation: cflsParticle 5s ease-in-out infinite;
             }
@@ -166,15 +166,15 @@ class LoadingScreen {
             }
             .cfls-ring-outer {
                 inset:-14px;
-                border-top-color: var(--cf-interactive-default, #2dd4bf);
-                border-right-color: rgba(45,212,191,.2);
+                border-top-color: var(--cf-interactive-default, #F69D39);
+                border-right-color: rgba(246,157,57,.2);
                 opacity:.5;
                 animation: cflsSpin 3s linear infinite;
             }
             .cfls-ring-inner {
                 inset:-5px;
-                border-bottom-color: var(--cf-status-info, #1570EF);
-                border-left-color: rgba(21,112,239,.15);
+                border-bottom-color: var(--cf-status-info, #5E7A88);
+                border-left-color: rgba(94,122,136,.15);
                 opacity:.5;
                 animation: cflsSpin 2s linear infinite reverse;
             }
@@ -182,20 +182,20 @@ class LoadingScreen {
 
             .cfls-shield-icon {
                 width:110px; height:110px; border-radius:24px;
-                background: var(--cf-surface-1, #0d1520);
-                border: 1px solid rgba(45,212,191,.15);
+                background: var(--cf-surface-1, #1A1516);
+                border: 1px solid rgba(246,157,57,.15);
                 display:flex; align-items:center; justify-content:center;
-                box-shadow: 0 0 40px rgba(45,212,191,.12);
+                box-shadow: 0 0 40px rgba(246,157,57,.12);
                 animation: cflsLogoPulse 3s ease-in-out infinite;
             }
             @keyframes cflsLogoPulse {
-                0%,100%{ box-shadow:0 0 30px rgba(45,212,191,.1); }
-                50%    { box-shadow:0 0 55px rgba(45,212,191,.22); }
+                0%,100%{ box-shadow:0 0 30px rgba(246,157,57,.1); }
+                50%    { box-shadow:0 0 55px rgba(246,157,57,.22); }
             }
             .cfls-shield-icon i {
                 font-size:2.5rem;
-                color: var(--cf-interactive-default, #2dd4bf);
-                filter: drop-shadow(0 0 8px rgba(45,212,191,.5));
+                color: var(--cf-interactive-default, #F69D39);
+                filter: drop-shadow(0 0 8px rgba(246,157,57,.5));
             }
 
             /* Brand text */
@@ -204,12 +204,12 @@ class LoadingScreen {
                 font-size:1.9rem; font-weight:700;
                 letter-spacing:.06em; margin-bottom:4px;
             }
-            .cfls-brand-cyber { color: var(--cf-text-primary, #e8eef4); }
-            .cfls-brand-forge { color: var(--cf-interactive-default, #2dd4bf); }
+            .cfls-brand-cyber { color: var(--cf-text-primary, #E2DBCD); }
+            .cfls-brand-forge { color: var(--cf-interactive-default, #F69D39); }
 
             .cfls-tagline {
                 font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:400;
-                color: var(--cf-text-muted, #5a6a7a);
+                color: var(--cf-text-muted, #756E66);
                 margin-bottom:36px;
                 font-family:'Roboto Mono',monospace;
             }
@@ -226,7 +226,7 @@ class LoadingScreen {
             }
             .cfls-progress-fill {
                 height:100%; width:0%;
-                background: var(--cf-interactive-default, #2dd4bf);
+                background: var(--cf-interactive-default, #F69D39);
                 border-radius:3px; transition:width .35s ease-out;
                 position:relative;
             }
@@ -234,12 +234,12 @@ class LoadingScreen {
                 content:''; position:absolute;
                 right:0; top:50%; transform:translateY(-50%);
                 width:8px; height:8px; border-radius:50%;
-                background: var(--cf-interactive-default, #2dd4bf);
-                box-shadow: 0 0 8px var(--cf-interactive-default, #2dd4bf);
+                background: var(--cf-interactive-default, #F69D39);
+                box-shadow: 0 0 8px var(--cf-interactive-default, #F69D39);
             }
             .cfls-progress-pct {
                 font-size:.7rem; font-family:'Roboto Mono',monospace; font-weight:500;
-                color: var(--cf-interactive-default, #2dd4bf);
+                color: var(--cf-interactive-default, #F69D39);
             }
 
             /* Status */
@@ -249,7 +249,7 @@ class LoadingScreen {
             }
             .cfls-status-dot {
                 width:6px; height:6px; border-radius:50%;
-                background: var(--cf-interactive-default, #2dd4bf);
+                background: var(--cf-interactive-default, #F69D39);
                 animation: cflsDotPulse 1.8s ease-in-out infinite;
             }
             @keyframes cflsDotPulse {
@@ -258,7 +258,7 @@ class LoadingScreen {
             }
             .cfls-status-text {
                 font-size:.72rem; font-family:'Roboto Mono',monospace;
-                color: var(--cf-text-secondary, #8a9ab0); letter-spacing:.05em;
+                color: var(--cf-text-secondary, #9A9182); letter-spacing:.05em;
                 min-width:240px; text-align:center;
             }
 
@@ -269,16 +269,16 @@ class LoadingScreen {
             .cfls-badge {
                 display:flex; align-items:center; gap:5px;
                 padding:4px 10px; border-radius:99px;
-                border:1px solid rgba(45,212,191,.15);
-                background: rgba(45,212,191,.04);
-                font-size:.68rem; color: var(--cf-text-secondary, #8a9ab0);
+                border:1px solid rgba(246,157,57,.15);
+                background: rgba(246,157,57,.04);
+                font-size:.68rem; color: var(--cf-text-secondary, #9A9182);
                 font-family:'Roboto',sans-serif;
                 animation: cflsFadeIn .7s ease-out both;
             }
             .cfls-badge:nth-child(1){ animation-delay:.3s; }
             .cfls-badge:nth-child(2){ animation-delay:.5s; }
             .cfls-badge:nth-child(3){ animation-delay:.7s; }
-            .cfls-badge i { color: var(--cf-interactive-default, #2dd4bf); font-size:.65rem; }
+            .cfls-badge i { color: var(--cf-interactive-default, #F69D39); font-size:.65rem; }
         `;
 
         document.head.appendChild(style);

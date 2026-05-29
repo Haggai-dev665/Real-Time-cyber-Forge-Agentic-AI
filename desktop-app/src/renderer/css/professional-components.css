@@ -24,12 +24,12 @@
 
 .cf-alert-card.critical {
     border-left-color: var(--cf-status-error);
-    background-color: #FFF5F5;
+    background-color: #FAEAE0;
 }
 
 .cf-alert-card.high {
     border-left-color: var(--cf-status-warning);
-    background-color: #FFFBF0;
+    background-color: #F7F3EB;
 }
 
 .cf-alert-card.medium {
@@ -607,7 +607,7 @@
 
 .cf-code-body pre {
     margin: 0;
-    color: #EAEFEF;
+    color: #E2DBCD;
 }
 
 /* =====================================================

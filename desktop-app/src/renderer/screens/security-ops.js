@@ -49,10 +49,10 @@
       .secops-chip { padding:5px 12px;border-radius:99px;font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid var(--cf-border-light);background:var(--cf-surface-1);color:var(--cf-text-secondary);transition:all 0.12s; }
       .secops-chip:hover { border-color:var(--cf-interactive-default); }
       .secops-chip.active { background:var(--cf-interactive-default);color:var(--cf-text-inverse);border-color:var(--cf-interactive-default); }
-      .secops-chip.sev-critical.active { background:#dc2626;border-color:#dc2626; }
-      .secops-chip.sev-high.active     { background:#ef4444;border-color:#ef4444; }
-      .secops-chip.sev-medium.active   { background:#f59e0b;border-color:#f59e0b; }
-      .secops-chip.sev-low.active      { background:#3b82f6;border-color:#3b82f6; }
+      .secops-chip.sev-critical.active { background:#C8452F;border-color:#C8452F; }
+      .secops-chip.sev-high.active     { background:#E5573E;border-color:#E5573E; }
+      .secops-chip.sev-medium.active   { background:#D8B65A;border-color:#D8B65A; }
+      .secops-chip.sev-low.active      { background:#5E7A88;border-color:#5E7A88; }
       .secops-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:10px; }
       @media (max-width:700px) { .secops-stats { grid-template-columns:repeat(2,1fr); } }
       .secops-stat { padding:14px;border-radius:12px;background:var(--cf-surface-1);border:1px solid var(--cf-border-light);display:flex;align-items:center;gap:12px; }
@@ -65,20 +65,20 @@
       .secops-row { display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-left:3px solid var(--cf-text-muted);border-radius:9px;cursor:pointer;transition:all 0.15s; }
       .secops-row:hover { background:var(--cf-interactive-subtle);border-color:var(--cf-interactive-default);transform:translateX(2px); }
       .secops-row.selected { background:var(--cf-interactive-subtle);border-left-color:var(--cf-interactive-default); }
-      .secops-row.sev-critical { border-left-color:#dc2626; }
-      .secops-row.sev-high     { border-left-color:#ef4444; }
-      .secops-row.sev-medium   { border-left-color:#f59e0b; }
-      .secops-row.sev-low      { border-left-color:#3b82f6; }
+      .secops-row.sev-critical { border-left-color:#C8452F; }
+      .secops-row.sev-high     { border-left-color:#E5573E; }
+      .secops-row.sev-medium   { border-left-color:#D8B65A; }
+      .secops-row.sev-low      { border-left-color:#5E7A88; }
       .secops-row-icon { font-size:14px;margin-top:2px;flex-shrink:0; }
       .secops-row-body { flex:1;min-width:0; }
       .secops-row-title { font-size:13px;font-weight:600;color:var(--cf-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
       .secops-row-meta { font-size:10.5px;color:var(--cf-text-muted);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap; }
       .secops-row-meta span { display:inline-flex;align-items:center;gap:3px; }
       .secops-sev-badge { font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:99px;letter-spacing:0.04em; }
-      .secops-sev-badge.critical { background:rgba(220,38,38,0.15);color:#dc2626; }
-      .secops-sev-badge.high     { background:rgba(239,68,68,0.12);color:#ef4444; }
-      .secops-sev-badge.medium   { background:rgba(245,158,11,0.12);color:#d97706; }
-      .secops-sev-badge.low      { background:rgba(59,130,246,0.12);color:#2563eb; }
+      .secops-sev-badge.critical { background:rgba(200,69,47,0.15);color:#C8452F; }
+      .secops-sev-badge.high     { background:rgba(229,87,62,0.12);color:#E5573E; }
+      .secops-sev-badge.medium   { background:rgba(216,182,90,0.12);color:#B8862A; }
+      .secops-sev-badge.low      { background:rgba(94,122,136,0.12);color:#4C6470; }
       .secops-detail { padding:18px;background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:12px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0; }
       .secops-detail-empty { color:var(--cf-text-muted);font-size:13px;text-align:center;padding:32px 16px; }
       .secops-detail h4 { margin:0;font-size:14px;color:var(--cf-text-primary); }
@@ -96,9 +96,9 @@
       .secops-tl-item { position:relative;padding:10px 14px;margin-bottom:8px;background:var(--cf-surface-1);border:1px solid var(--cf-border-light);border-radius:9px;cursor:pointer;transition:all 0.15s; }
       .secops-tl-item:hover { border-color:var(--cf-interactive-default);transform:translateX(2px); }
       .secops-tl-item::before { content:'';position:absolute;left:-19px;top:14px;width:10px;height:10px;border-radius:50%;background:var(--cf-interactive-default);border:2px solid var(--cf-bg-primary); }
-      .secops-tl-item.sev-critical::before { background:#dc2626; }
-      .secops-tl-item.sev-high::before     { background:#ef4444; }
-      .secops-tl-item.sev-medium::before   { background:#f59e0b; }
+      .secops-tl-item.sev-critical::before { background:#C8452F; }
+      .secops-tl-item.sev-high::before     { background:#E5573E; }
+      .secops-tl-item.sev-medium::before   { background:#D8B65A; }
       .secops-tl-time { font-size:10px;font-family:var(--cf-font-mono);color:var(--cf-text-muted);margin-bottom:4px; }
       .secops-tl-title { font-size:12.5px;font-weight:600;color:var(--cf-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
       .secops-tl-meta { font-size:10px;color:var(--cf-text-muted);margin-top:3px; }
@@ -126,9 +126,9 @@
     return `
       <div class="secops-stats">
         <div class="secops-stat"><i class="fas fa-bell" style="color:var(--cf-interactive-default)"></i><div><div class="secops-stat-val">${total}</div><div class="secops-stat-lbl">Total Alerts</div></div></div>
-        <div class="secops-stat"><i class="fas fa-skull-crossbones" style="color:#dc2626"></i><div><div class="secops-stat-val">${crit}</div><div class="secops-stat-lbl">Critical</div></div></div>
-        <div class="secops-stat"><i class="fas fa-triangle-exclamation" style="color:#ef4444"></i><div><div class="secops-stat-val">${high}</div><div class="secops-stat-lbl">High</div></div></div>
-        <div class="secops-stat"><i class="fas fa-circle-exclamation" style="color:#f59e0b"></i><div><div class="secops-stat-val">${med}</div><div class="secops-stat-lbl">Medium</div></div></div>
+        <div class="secops-stat"><i class="fas fa-skull-crossbones" style="color:#C8452F"></i><div><div class="secops-stat-val">${crit}</div><div class="secops-stat-lbl">Critical</div></div></div>
+        <div class="secops-stat"><i class="fas fa-triangle-exclamation" style="color:#E5573E"></i><div><div class="secops-stat-val">${high}</div><div class="secops-stat-lbl">High</div></div></div>
+        <div class="secops-stat"><i class="fas fa-circle-exclamation" style="color:#D8B65A"></i><div><div class="secops-stat-val">${med}</div><div class="secops-stat-lbl">Medium</div></div></div>
       </div>`;
   }
 
@@ -137,7 +137,7 @@
     const title = (alert.description || alert.title || alert.alert_id || '').split('\n')[0].slice(0, 120);
     return `
       <div class="secops-row sev-${_esc(sev)}" data-id="${_esc(alert.alert_id || alert.$id)}">
-        <i class="fas fa-${sev === 'critical' ? 'skull-crossbones' : sev === 'high' ? 'triangle-exclamation' : 'circle-exclamation'} secops-row-icon" style="color:${sev === 'critical' ? '#dc2626' : sev === 'high' ? '#ef4444' : sev === 'medium' ? '#f59e0b' : '#3b82f6'}"></i>
+        <i class="fas fa-${sev === 'critical' ? 'skull-crossbones' : sev === 'high' ? 'triangle-exclamation' : 'circle-exclamation'} secops-row-icon" style="color:${sev === 'critical' ? '#C8452F' : sev === 'high' ? '#E5573E' : sev === 'medium' ? '#D8B65A' : '#5E7A88'}"></i>
         <div class="secops-row-body">
           <div class="secops-row-title">${_esc(title)}</div>
           <div class="secops-row-meta">

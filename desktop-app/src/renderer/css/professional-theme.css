@@ -7,58 +7,58 @@
 :root {
     /* === Professional Color Palette === */
     /* Primary Colors - Light backgrounds */
-    --cf-bg-primary: #EAEFEF;        /* Main background - light neutral */
-    --cf-bg-secondary: #F2F4F7;       /* Secondary background - soft gray-blue */
-    --cf-bg-dark: #25343F;            /* Dark accents - deep slate */
-    --cf-bg-accent: #656D3F;          /* Accent background - muted olive */
+    --cf-bg-primary: #E2DBCD;        /* Main background - light neutral */
+    --cf-bg-secondary: #EFE9DD;       /* Secondary background - soft gray-blue */
+    --cf-bg-dark: #251F20;            /* Dark accents - deep slate */
+    --cf-bg-accent: #A66416;          /* Accent background - muted olive */
     
     /* Surface Colors */
     --cf-surface-0: #FFFFFF;          /* Elevated surfaces */
-    --cf-surface-1: #F5F8F8;          /* Level 1 cards */
-    --cf-surface-2: #EAEFEF;          /* Level 2 panels */
-    --cf-surface-3: #D9E1E4;          /* Level 3 sections */
+    --cf-surface-1: #F7F3EB;          /* Level 1 cards */
+    --cf-surface-2: #E2DBCD;          /* Level 2 panels */
+    --cf-surface-3: #C9C1B2;          /* Level 3 sections */
     
     /* Dark Surface Colors (for dark mode) */
-    --cf-surface-dark-0: #1A2329;     /* Base dark */
-    --cf-surface-dark-1: #25343F;     /* Level 1 dark */
-    --cf-surface-dark-2: #2D3E4C;     /* Level 2 dark */
-    --cf-surface-dark-3: #354756;     /* Level 3 dark */
+    --cf-surface-dark-0: #1A1516;     /* Base dark */
+    --cf-surface-dark-1: #251F20;     /* Level 1 dark */
+    --cf-surface-dark-2: #352E2F;     /* Level 2 dark */
+    --cf-surface-dark-3: #352E2F;     /* Level 3 dark */
     
     /* Text Colors */
-    --cf-text-primary: #25343F;       /* Primary text - dark slate */
-    --cf-text-secondary: #4A5C6B;     /* Secondary text */
-    --cf-text-tertiary: #6B7D8C;      /* Tertiary text */
-    --cf-text-muted: #8A9BA8;         /* Muted text */
+    --cf-text-primary: #251F20;       /* Primary text - dark slate */
+    --cf-text-secondary: #5C5454;     /* Secondary text */
+    --cf-text-tertiary: #756E66;      /* Tertiary text */
+    --cf-text-muted: #9A9182;         /* Muted text */
     --cf-text-inverse: #FFFFFF;       /* Text on dark backgrounds */
     
     /* Interactive Colors */
-    --cf-interactive-default: #656D3F;     /* Default interactive state */
-    --cf-interactive-hover: #7A8349;       /* Hover state */
-    --cf-interactive-active: #535B33;      /* Active/pressed state */
-    --cf-interactive-disabled: #B0B8B0;    /* Disabled state */
+    --cf-interactive-default: #A66416;     /* Default interactive state */
+    --cf-interactive-hover: #B8862A;       /* Hover state */
+    --cf-interactive-active: #A66416;      /* Active/pressed state */
+    --cf-interactive-disabled: #BDB5A6;    /* Disabled state */
     
     /* Border Colors */
-    --cf-border-light: #D9E1E4;
-    --cf-border-medium: #F2F4F7;
-    --cf-border-strong: #8A9BA8;
-    --cf-border-dark: #25343F;
+    --cf-border-light: #C9C1B2;
+    --cf-border-medium: #EFE9DD;
+    --cf-border-strong: #9A9182;
+    --cf-border-dark: #251F20;
     
     /* Status Colors - Professional */
-    --cf-status-success: #4CAF50;
-    --cf-status-success-bg: #E8F5E9;
-    --cf-status-warning: #FF9800;
+    --cf-status-success: #F69D39;
+    --cf-status-success-bg: #F4E8C7;
+    --cf-status-warning: #F69D39;
     --cf-status-warning-bg: #FFF3E0;
-    --cf-status-error: #F44336;
-    --cf-status-error-bg: #FFEBEE;
+    --cf-status-error: #E5573E;
+    --cf-status-error-bg: #FAEAE0;
     --cf-status-info: #2196F3;
-    --cf-status-info-bg: #E3F2FD;
+    --cf-status-info-bg: #E2DBCD;
     
     /* Shadows - Subtle and Professional */
-    --cf-shadow-xs: 0 1px 2px rgba(37, 52, 63, 0.04);
-    --cf-shadow-sm: 0 2px 4px rgba(37, 52, 63, 0.06);
-    --cf-shadow-md: 0 4px 8px rgba(37, 52, 63, 0.08);
-    --cf-shadow-lg: 0 8px 16px rgba(37, 52, 63, 0.1);
-    --cf-shadow-xl: 0 12px 24px rgba(37, 52, 63, 0.12);
+    --cf-shadow-xs: 0 1px 2px rgba(37,31,32, 0.04);
+    --cf-shadow-sm: 0 2px 4px rgba(37,31,32, 0.06);
+    --cf-shadow-md: 0 4px 8px rgba(37,31,32, 0.08);
+    --cf-shadow-lg: 0 8px 16px rgba(37,31,32, 0.1);
+    --cf-shadow-xl: 0 12px 24px rgba(37,31,32, 0.12);
     
     /* === Typography - Professional Desktop App === */
     /* Font Families - System fonts for performance */
@@ -132,25 +132,25 @@
 
 /* === Dark Mode Overrides === */
 [data-theme="dark"] {
-    --cf-bg-primary: #1A2329;
-    --cf-bg-secondary: #25343F;
-    --cf-bg-dark: #EAEFEF;
-    --cf-bg-accent: #7A8349;
+    --cf-bg-primary: #1A1516;
+    --cf-bg-secondary: #251F20;
+    --cf-bg-dark: #E2DBCD;
+    --cf-bg-accent: #B8862A;
     
     --cf-surface-0: var(--cf-surface-dark-0);
     --cf-surface-1: var(--cf-surface-dark-1);
     --cf-surface-2: var(--cf-surface-dark-2);
     --cf-surface-3: var(--cf-surface-dark-3);
     
-    --cf-text-primary: #EAEFEF;
-    --cf-text-secondary: #F2F4F7;
-    --cf-text-tertiary: #8A9BA8;
-    --cf-text-muted: #6B7D8C;
-    --cf-text-inverse: #25343F;
+    --cf-text-primary: #E2DBCD;
+    --cf-text-secondary: #EFE9DD;
+    --cf-text-tertiary: #9A9182;
+    --cf-text-muted: #756E66;
+    --cf-text-inverse: #251F20;
     
-    --cf-border-light: #2D3E4C;
-    --cf-border-medium: #354756;
-    --cf-border-strong: #4A5C6B;
+    --cf-border-light: #352E2F;
+    --cf-border-medium: #352E2F;
+    --cf-border-strong: #5C5454;
     
     --cf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.1);
     --cf-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);

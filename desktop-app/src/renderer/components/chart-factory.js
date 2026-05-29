@@ -56,11 +56,11 @@ class ChartFactory {
         
         this.colors = {
             primary: '#00d4ff',
-            secondary: '#7c3aed',
-            success: '#039855',
-            warning: '#DC6803',
-            error: '#D92D20',
-            info: '#1570EF'
+            secondary: '#4C6470',
+            success: '#E58A2B',
+            warning: '#D8B65A',
+            error: '#E5573E',
+            info: '#5E7A88'
         };
         
         this.init();

@@ -17,8 +17,8 @@ html {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    background: #EAEFEF;
-    color: #25343F;
+    background: #E2DBCD;
+    color: #251F20;
     min-height: 100vh;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
@@ -41,7 +41,7 @@ body {
 
 .auth-visual {
     position: relative;
-    background: linear-gradient(135deg, #25343F 0%, #354756 100%);
+    background: linear-gradient(135deg, #251F20 0%, #352E2F 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -95,7 +95,7 @@ body {
     display: block;
     width: 120px;
     height: 120px;
-    background: #656D3F;
+    background: #A66416;
     border-radius: 24px;
     position: relative;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
@@ -106,7 +106,7 @@ body {
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     font-size: 64px;
-    color: #EAEFEF;
+    color: #E2DBCD;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -143,26 +143,26 @@ body {
 .feature-icon {
     width: 40px;
     height: 40px;
-    background: #656D3F;
+    background: #A66416;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.125rem;
-    color: #EAEFEF;
+    color: #E2DBCD;
     flex-shrink: 0;
 }
 
 .feature-content h3 {
     font-size: 1rem;
     font-weight: 600;
-    color: #EAEFEF;
+    color: #E2DBCD;
     margin-bottom: 0.25rem;
 }
 
 .feature-content p {
     font-size: 0.875rem;
-    color: #98A2B3;
+    color: #9A9182;
     line-height: 1.5;
 }
 
@@ -170,21 +170,21 @@ body {
 .visual-brand h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #EAEFEF;
+    color: #E2DBCD;
     margin-bottom: 1rem;
     letter-spacing: -0.025em;
 }
 
 .visual-tagline {
     font-size: 1.125rem;
-    color: #98A2B3;
+    color: #9A9182;
     margin-bottom: 1rem;
     line-height: 1.6;
 }
 
 .visual-description {
     font-size: 0.9375rem;
-    color: #8A9BA8;
+    color: #9A9182;
     line-height: 1.7;
 }
 
@@ -216,7 +216,7 @@ body {
 .auth-logo {
     width: 48px;
     height: 48px;
-    background: #656D3F;
+    background: #A66416;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -229,14 +229,14 @@ body {
 .auth-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #25343F;
+    color: #251F20;
     margin-bottom: 0.5rem;
     letter-spacing: -0.025em;
 }
 
 .auth-subtitle {
     font-size: 0.9375rem;
-    color: #6B7D8C;
+    color: #756E66;
 }
 
 /* Tabs */
@@ -244,7 +244,7 @@ body {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 2rem;
-    background: #F5F8F8;
+    background: #F7F3EB;
     padding: 0.25rem;
     border-radius: 8px;
 }
@@ -254,7 +254,7 @@ body {
     padding: 0.625rem 1rem;
     font-size: 0.9375rem;
     font-weight: 500;
-    color: #6B7D8C;
+    color: #756E66;
     background: none;
     border: none;
     border-radius: 6px;
@@ -263,14 +263,14 @@ body {
 }
 
 .auth-tab:hover {
-    color: #25343F;
+    color: #251F20;
 }
 
 .auth-tab.active {
     background: #FFFFFF;
-    color: #25343F;
+    color: #251F20;
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(37, 52, 63, 0.06);
+    box-shadow: 0 2px 4px rgba(37,31,32, 0.06);
 }
 
 /* Form */
@@ -289,7 +289,7 @@ body {
 .auth-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #25343F;
+    color: #251F20;
 }
 
 .auth-input-wrapper {
@@ -301,21 +301,21 @@ body {
     padding: 0.75rem 1rem;
     font-size: 0.9375rem;
     font-family: inherit;
-    color: #25343F;
+    color: #251F20;
     background: #FFFFFF;
-    border: 1px solid #D9E1E4;
+    border: 1px solid #C9C1B2;
     border-radius: 8px;
     transition: all 0.15s;
 }
 
 .auth-input:focus {
     outline: none;
-    border-color: #656D3F;
+    border-color: #A66416;
     box-shadow: 0 0 0 3px rgba(101, 109, 63, 0.1);
 }
 
 .auth-input::placeholder {
-    color: #8A9BA8;
+    color: #9A9182;
 }
 
 /* Password Toggle */
@@ -326,14 +326,14 @@ body {
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #8A9BA8;
+    color: #9A9182;
     cursor: pointer;
     padding: 0.5rem;
     transition: color 0.15s;
 }
 
 .password-toggle:hover {
-    color: #25343F;
+    color: #251F20;
 }
 
 /* Remember Me & Forgot Password */
@@ -354,26 +354,26 @@ body {
 .auth-checkbox {
     width: 16px;
     height: 16px;
-    border: 1px solid #D9E1E4;
+    border: 1px solid #C9C1B2;
     border-radius: 4px;
     cursor: pointer;
-    accent-color: #656D3F;
+    accent-color: #A66416;
 }
 
 .auth-checkbox-label {
-    color: #4A5C6B;
+    color: #5C5454;
     cursor: pointer;
 }
 
 .auth-link {
-    color: #656D3F;
+    color: #A66416;
     text-decoration: none;
     font-weight: 500;
     transition: color 0.15s;
 }
 
 .auth-link:hover {
-    color: #535B33;
+    color: #A66416;
     text-decoration: underline;
 }
 
@@ -394,12 +394,12 @@ body {
 }
 
 .auth-btn-primary {
-    background: #656D3F;
+    background: #A66416;
     color: #FFFFFF;
 }
 
 .auth-btn-primary:hover {
-    background: #7A8349;
+    background: #B8862A;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(101, 109, 63, 0.25);
 }
@@ -409,7 +409,7 @@ body {
 }
 
 .auth-btn-primary:disabled {
-    background: #B0B8B0;
+    background: #BDB5A6;
     cursor: not-allowed;
     transform: none;
 }
@@ -427,12 +427,12 @@ body {
     content: '';
     flex: 1;
     height: 1px;
-    background: #D9E1E4;
+    background: #C9C1B2;
 }
 
 .auth-divider-text {
     font-size: 0.875rem;
-    color: #8A9BA8;
+    color: #9A9182;
 }
 
 /* Social Auth */
@@ -445,11 +445,11 @@ body {
     flex: 1;
     padding: 0.75rem;
     background: #FFFFFF;
-    border: 1px solid #D9E1E4;
+    border: 1px solid #C9C1B2;
     border-radius: 8px;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #25343F;
+    color: #251F20;
     cursor: pointer;
     transition: all 0.15s;
     display: flex;
@@ -459,8 +459,8 @@ body {
 }
 
 .auth-social-btn:hover {
-    background: #F5F8F8;
-    border-color: #98A2B3;
+    background: #F7F3EB;
+    border-color: #9A9182;
 }
 
 /* Footer */
@@ -468,7 +468,7 @@ body {
     margin-top: 2rem;
     text-align: center;
     font-size: 0.875rem;
-    color: #6B7D8C;
+    color: #756E66;
 }
 
 /* Alerts */
@@ -487,19 +487,19 @@ body {
 }
 
 .auth-alert.success {
-    background: #E8F5E9;
-    color: #2E7D32;
+    background: #F4E8C7;
+    color: #E58A2B;
     border: 1px solid #81C784;
 }
 
 .auth-alert.error {
-    background: #FFEBEE;
+    background: #FAEAE0;
     color: #C62828;
     border: 1px solid #E57373;
 }
 
 .auth-alert.info {
-    background: #E3F2FD;
+    background: #E2DBCD;
     color: #1565C0;
     border: 1px solid #64B5F6;
 }
@@ -560,48 +560,48 @@ body {
    ===================================================== */
 
 [data-theme="dark"] .auth-form-section {
-    background: #1A2329;
+    background: #1A1516;
 }
 
 [data-theme="dark"] .auth-title {
-    color: #EAEFEF;
+    color: #E2DBCD;
 }
 
 [data-theme="dark"] .auth-subtitle {
-    color: #98A2B3;
+    color: #9A9182;
 }
 
 [data-theme="dark"] .auth-tabs {
-    background: #25343F;
+    background: #251F20;
 }
 
 [data-theme="dark"] .auth-tab {
-    color: #8A9BA8;
+    color: #9A9182;
 }
 
 [data-theme="dark"] .auth-tab.active {
-    background: #2D3E4C;
-    color: #EAEFEF;
+    background: #352E2F;
+    color: #E2DBCD;
 }
 
 [data-theme="dark"] .auth-input {
-    background: #25343F;
-    border-color: #354756;
-    color: #EAEFEF;
+    background: #251F20;
+    border-color: #352E2F;
+    color: #E2DBCD;
 }
 
 [data-theme="dark"] .auth-input:focus {
-    border-color: #7A8349;
+    border-color: #B8862A;
 }
 
 [data-theme="dark"] .auth-social-btn {
-    background: #25343F;
-    border-color: #354756;
-    color: #EAEFEF;
+    background: #251F20;
+    border-color: #352E2F;
+    color: #E2DBCD;
 }
 
 [data-theme="dark"] .auth-social-btn:hover {
-    background: #2D3E4C;
+    background: #352E2F;
 }
 
 /* =====================================================

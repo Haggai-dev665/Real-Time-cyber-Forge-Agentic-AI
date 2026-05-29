@@ -755,7 +755,7 @@
         [cpuBar, memBar, diskBar].forEach((bar, i) => {
           if (!bar) return;
           const val = [cpu, mem, disk][i];
-          bar.style.background = val > 80 ? '#C0392B' : val > 50 ? '#E67E22' : '#27AE60';
+          bar.style.background = val > 80 ? '#C8452F' : val > 50 ? '#F69D39' : '#F69D39';
         });
 
         // System uptime from Tauri (uptime in seconds)
@@ -1321,7 +1321,7 @@
 
       return `<div class="url-feed-item status-${resolvedStatus}" title="${e.summary || e.url || ''}" style="animation-delay:${idx * 25}ms">
         <span class="url-feed-time">${e.time}</span>
-        <span class="url-feed-browser"><i class="fas fa-${isThreat ? 'skull-crossbones' : 'satellite-dish'}" style="color:${isThreat ? '#ef4444' : '#10b981'};font-size:12px"></i></span>
+        <span class="url-feed-browser"><i class="fas fa-${isThreat ? 'skull-crossbones' : 'satellite-dish'}" style="color:${isThreat ? '#E5573E' : '#F69D39'};font-size:12px"></i></span>
         <span class="url-feed-label">${displayLabel}</span>
         ${categoryTag}
         <span class="url-status ${resolvedStatus}">${badgeText}</span>
@@ -1508,7 +1508,7 @@
       // Backend health
       const backendOk = !!(healthResult?.success);
       if (backendEl) backendEl.textContent = backendOk ? 'Connected' : 'Offline';
-      if (backendEl) backendEl.style.color = backendOk ? '#27AE60' : '#C0392B';
+      if (backendEl) backendEl.style.color = backendOk ? '#F69D39' : '#C8452F';
 
       // Agent status — check if default agent is actually running
       const defaultStatus = statusResult?.data?.data || statusResult?.data || {};
@@ -1522,20 +1522,20 @@
       if (backendOk && agentCount < 1 && isOnline) agentCount = 1;
       if (agentCountEl) {
         agentCountEl.textContent = agentCount;
-        agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B';
+        agentCountEl.style.color = agentCount > 0 ? '#F69D39' : '#C8452F';
       }
 
       // ML health
       const mlHealthy = !!(mlResult?.success && (mlResult?.data?.success || mlResult?.data?.status === 'healthy'));
       if (mlEl) mlEl.textContent = mlHealthy ? 'Healthy' : 'Degraded';
-      if (mlEl) mlEl.style.color = mlHealthy ? '#27AE60' : '#E67E22';
+      if (mlEl) mlEl.style.color = mlHealthy ? '#F69D39' : '#F69D39';
 
       appendAgentConsole(`Backend sync: agents=${agentCount}, ml=${mlHealthy ? 'healthy' : 'degraded'}, backend=${backendOk ? 'ok' : 'failed'}`, backendOk ? 'success' : 'warning');
       console.log('[AgentCenter] Backend sync complete');
     } catch (error) {
       setAgentControlStatus(false, 'Backend Unreachable');
-      if (backendEl) { backendEl.textContent = 'Unreachable'; backendEl.style.color = '#C0392B'; }
-      if (mlEl) { mlEl.textContent = 'Unknown'; mlEl.style.color = '#C0392B'; }
+      if (backendEl) { backendEl.textContent = 'Unreachable'; backendEl.style.color = '#C8452F'; }
+      if (mlEl) { mlEl.textContent = 'Unknown'; mlEl.style.color = '#C8452F'; }
       appendAgentConsole(`Backend sync failed: ${error.message}`, 'error');
       console.error('[AgentCenter] Backend sync error:', error);
     }
@@ -2892,15 +2892,15 @@
       if (state.backendConnected && effectiveStatus === 'idle') effectiveStatus = 'monitoring';
 
       const colors = {
-        idle:         '#6b7280',
-        monitoring:   '#039855',
-        analyzing:    '#1570EF',
-        investigating:'#DC6803',
-        waiting:      '#6941C6',
-        blocked:      '#D92D20'
+        idle:         '#756E66',
+        monitoring:   '#E58A2B',
+        analyzing:    '#5E7A88',
+        investigating:'#D8B65A',
+        waiting:      '#5E7A88',
+        blocked:      '#E5573E'
       };
 
-      if (indicator) indicator.style.background = colors[effectiveStatus] || '#039855';
+      if (indicator) indicator.style.background = colors[effectiveStatus] || '#E58A2B';
       if (label) {
         label.textContent = state.backendConnected
           ? `Agent ${effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}`

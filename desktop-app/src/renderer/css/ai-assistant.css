@@ -716,7 +716,7 @@
     background: var(--cf-accent-purple) !important;
     color: white !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(94,122,136, 0.3);
 }
 
 /* Suggestion Chips */
@@ -753,10 +753,10 @@
 
 @keyframes glowPulse {
     0%, 100% {
-        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        box-shadow: 0 0 20px rgba(94,122,136, 0.3);
     }
     50% {
-        box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 40px rgba(94,122,136, 0.5);
     }
 }
 
@@ -773,7 +773,7 @@
 /* Input focus styling */
 #assistant-input:focus {
     border-color: var(--cf-accent-purple);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(94,122,136, 0.1);
 }
 
 /* Code block styling in AI responses */

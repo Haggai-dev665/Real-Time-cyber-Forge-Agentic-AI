@@ -229,7 +229,7 @@ class RealTimeMonitorScreen {
 .rtm-status-row:last-child { border-bottom:none; }
 .rtm-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; background:var(--cf-status-error); }
 .rtm-status-dot.online { background:var(--cf-status-success); animation:rtmPulse 2s ease infinite; }
-@keyframes rtmPulse { 0%,100%{box-shadow:0 0 0 0 rgba(3,152,85,.4)} 50%{box-shadow:0 0 0 4px transparent} }
+@keyframes rtmPulse { 0%,100%{box-shadow:0 0 0 0 rgba(246,157,57,.4)} 50%{box-shadow:0 0 0 4px transparent} }
 @media(max-width:1000px) { .rtm-layout { grid-template-columns:1fr; } }
 </style>
 

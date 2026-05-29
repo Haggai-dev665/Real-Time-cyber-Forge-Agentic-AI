@@ -651,13 +651,13 @@
 
 .glitch::before {
     animation: glitch 0.3s infinite;
-    color: #ff0000;
+    color: #E5573E;
     z-index: -1;
 }
 
 .glitch::after {
     animation: glitch 0.3s infinite reverse;
-    color: #00ffff;
+    color: #F69D39;
     z-index: -2;
 }
 

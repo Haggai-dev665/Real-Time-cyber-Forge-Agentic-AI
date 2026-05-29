@@ -466,11 +466,11 @@ class ThreatCenterScreen {
                 datasets: [{
                     data: hasData ? dataValues : [1], // fallback slice if no data
                     backgroundColor: [
-                        'rgba(239, 68, 68, 0.8)',   // Red
-                        'rgba(245, 158, 11, 0.8)',  // Orange
-                        'rgba(59, 130, 246, 0.8)',  // Blue
-                        'rgba(16, 185, 129, 0.8)',  // Green
-                        'rgba(139, 92, 246, 0.8)',  // Purple
+                        'rgba(229,87,62, 0.8)',   // Red
+                        'rgba(216,182,90, 0.8)',  // Orange
+                        'rgba(94,122,136, 0.8)',  // Blue
+                        'rgba(246,157,57, 0.8)',  // Green
+                        'rgba(94,122,136, 0.8)',  // Purple
                         'rgba(236, 72, 153, 0.8)'   // Pink
                     ],
                     borderWidth: 0,
@@ -548,12 +548,12 @@ class ThreatCenterScreen {
                 datasets: [{
                     label: 'Threats Detected',
                     data: dataValues,
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    borderColor: 'rgba(239, 68, 68, 0.8)',
+                    backgroundColor: 'rgba(229,87,62, 0.1)',
+                    borderColor: 'rgba(229,87,62, 0.8)',
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true,
-                    pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                    pointBackgroundColor: 'rgba(229,87,62, 1)',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 1,
                     pointRadius: 4,
@@ -567,11 +567,11 @@ class ThreatCenterScreen {
                     y: { 
                         beginAtZero: true, 
                         grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
-                        ticks: { color: '#888', stepSize: 1 } 
+                        ticks: { color: '#8A8281', stepSize: 1 } 
                     },
                     x: { 
                         grid: { display: false }, 
-                        ticks: { color: '#888' } 
+                        ticks: { color: '#8A8281' } 
                     }
                 },
                 plugins: { 
@@ -601,11 +601,11 @@ class ThreatCenterScreen {
             <rect width="100%" height="100%" fill="url(#grid)" />
             
             <!-- Abstract Map Outlines (North America, Europe, Asia, Africa, South America) -->
-            <path d="M120,80 Q200,50 280,120 T320,200 Q250,280 180,220 T120,80 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
-            <path d="M180,230 Q220,220 250,280 T260,350 Q200,400 160,320 T180,230 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
-            <path d="M400,60 Q480,40 550,100 T600,180 Q520,220 450,150 T400,60 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
-            <path d="M600,100 Q700,80 750,150 T780,230 Q700,280 650,200 T600,100 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
-            <path d="M430,220 Q500,200 550,280 T560,360 Q480,420 420,320 T430,220 Z" fill="rgba(59, 130, 246, 0.05)" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1.5"/>
+            <path d="M120,80 Q200,50 280,120 T320,200 Q250,280 180,220 T120,80 Z" fill="rgba(94,122,136, 0.05)" stroke="rgba(94,122,136, 0.2)" stroke-width="1.5"/>
+            <path d="M180,230 Q220,220 250,280 T260,350 Q200,400 160,320 T180,230 Z" fill="rgba(94,122,136, 0.05)" stroke="rgba(94,122,136, 0.2)" stroke-width="1.5"/>
+            <path d="M400,60 Q480,40 550,100 T600,180 Q520,220 450,150 T400,60 Z" fill="rgba(94,122,136, 0.05)" stroke="rgba(94,122,136, 0.2)" stroke-width="1.5"/>
+            <path d="M600,100 Q700,80 750,150 T780,230 Q700,280 650,200 T600,100 Z" fill="rgba(94,122,136, 0.05)" stroke="rgba(94,122,136, 0.2)" stroke-width="1.5"/>
+            <path d="M430,220 Q500,200 550,280 T560,360 Q480,420 420,320 T430,220 Z" fill="rgba(94,122,136, 0.05)" stroke="rgba(94,122,136, 0.2)" stroke-width="1.5"/>
             
             <g id="map-nodes"></g>
         </svg>
@@ -629,7 +629,7 @@ class ThreatCenterScreen {
             const x = Math.abs(hash) % 760 + 20;
             const y = Math.abs(hash * 3) % 360 + 20;
             const r = t.severity === 'critical' ? 6 : (t.severity === 'high' ? 4 : 3);
-            const color = t.severity === 'critical' ? '#ef4444' : (t.severity === 'high' ? '#f59e0b' : '#3b82f6');
+            const color = t.severity === 'critical' ? '#E5573E' : (t.severity === 'high' ? '#D8B65A' : '#5E7A88');
             
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', x);

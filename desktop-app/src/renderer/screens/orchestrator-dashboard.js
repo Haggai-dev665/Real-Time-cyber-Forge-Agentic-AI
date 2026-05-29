@@ -45,17 +45,17 @@
       .od-recent { display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto; }
       .od-row { display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--cf-bg-primary);border:1px solid var(--cf-border-light);border-left:3px solid var(--cf-text-muted);border-radius:9px;cursor:pointer;transition:all 0.15s; }
       .od-row:hover { transform:translateX(2px);border-color:var(--cf-interactive-default); }
-      .od-row.v-malicious  { border-left-color:#ef4444; }
-      .od-row.v-suspicious { border-left-color:#f59e0b; }
-      .od-row.v-low-risk   { border-left-color:#3b82f6; }
-      .od-row.v-clean      { border-left-color:#10b981; }
+      .od-row.v-malicious  { border-left-color:#E5573E; }
+      .od-row.v-suspicious { border-left-color:#D8B65A; }
+      .od-row.v-low-risk   { border-left-color:#5E7A88; }
+      .od-row.v-clean      { border-left-color:#F69D39; }
       .od-row-target { flex:1;min-width:0;font-family:var(--cf-font-mono);font-size:11.5px;color:var(--cf-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
       .od-row-meta { display:flex;gap:8px;font-size:10px;color:var(--cf-text-muted);flex-shrink:0; }
       .od-vbadge { font-size:9px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:99px;letter-spacing:0.04em; }
-      .od-vbadge.malicious  { background:rgba(239,68,68,0.12);color:#ef4444; }
-      .od-vbadge.suspicious { background:rgba(245,158,11,0.12);color:#d97706; }
-      .od-vbadge.low-risk   { background:rgba(59,130,246,0.12);color:#2563eb; }
-      .od-vbadge.clean      { background:rgba(16,185,129,0.12);color:#10b981; }
+      .od-vbadge.malicious  { background:rgba(229,87,62,0.12);color:#E5573E; }
+      .od-vbadge.suspicious { background:rgba(216,182,90,0.12);color:#B8862A; }
+      .od-vbadge.low-risk   { background:rgba(94,122,136,0.12);color:#4C6470; }
+      .od-vbadge.clean      { background:rgba(246,157,57,0.12);color:#F69D39; }
       .od-empty { text-align:center;padding:32px 16px;color:var(--cf-text-muted);font-size:13px; }
       .od-mem-stat { display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--cf-border-light);font-size:12px; }
       .od-mem-stat:last-child { border-bottom:none; }
@@ -111,14 +111,14 @@
       const agentCount = (stats.agents || []).length;
       this.container.querySelector('#od-stats').innerHTML = `
         <div class="od-stat"><i class="fas fa-radar" style="color:var(--cf-interactive-default)"></i><div><div class="od-stat-val">${total}</div><div class="od-stat-lbl">Reports (session)</div></div></div>
-        <div class="od-stat"><i class="fas fa-bolt" style="color:#f59e0b"></i><div><div class="od-stat-val">${avg}<span style="font-size:13px">ms</span></div><div class="od-stat-lbl">Avg Pipeline</div></div></div>
-        <div class="od-stat"><i class="fas fa-brain" style="color:#8b5cf6"></i><div><div class="od-stat-val">${memDomains}</div><div class="od-stat-lbl">Domains in Memory</div></div></div>
-        <div class="od-stat"><i class="fas fa-network-wired" style="color:#10b981"></i><div><div class="od-stat-val">${agentCount}</div><div class="od-stat-lbl">Agents Online</div></div></div>
+        <div class="od-stat"><i class="fas fa-bolt" style="color:#D8B65A"></i><div><div class="od-stat-val">${avg}<span style="font-size:13px">ms</span></div><div class="od-stat-lbl">Avg Pipeline</div></div></div>
+        <div class="od-stat"><i class="fas fa-brain" style="color:#5E7A88"></i><div><div class="od-stat-val">${memDomains}</div><div class="od-stat-lbl">Domains in Memory</div></div></div>
+        <div class="od-stat"><i class="fas fa-network-wired" style="color:#F69D39"></i><div><div class="od-stat-val">${agentCount}</div><div class="od-stat-lbl">Agents Online</div></div></div>
       `;
       // Verdict breakdown bars
       const breakdown = stats.verdictBreakdown || {};
       const sum = Object.values(breakdown).reduce((a, b) => a + b, 0) || 1;
-      const colors = { malicious: '#ef4444', suspicious: '#f59e0b', 'low-risk': '#3b82f6', clean: '#10b981', unknown: '#6b7280' };
+      const colors = { malicious: '#E5573E', suspicious: '#D8B65A', 'low-risk': '#5E7A88', clean: '#F69D39', unknown: '#756E66' };
       this.container.querySelector('#od-verdicts').innerHTML = ['malicious', 'suspicious', 'low-risk', 'clean'].map(k => {
         const n = breakdown[k] || 0;
         const pct = ((n / sum) * 100).toFixed(0);
@@ -130,14 +130,14 @@
         <div class="od-mem-stat"><span>Domain history</span><span>${mem.domains || 0}</span></div>
         <div class="od-mem-stat"><span>Active sessions</span><span>${mem.sessions || 0}</span></div>
         <div class="od-mem-stat"><span>LLM contexts</span><span>${mem.llmContexts || 0}</span></div>
-        <div class="od-mem-stat"><span>Redis</span><span style="color:${mem.redisReady ? '#10b981' : '#ef4444'}">${mem.redisReady ? 'connected' : 'offline'}</span></div>
+        <div class="od-mem-stat"><span>Redis</span><span style="color:${mem.redisReady ? '#F69D39' : '#E5573E'}">${mem.redisReady ? 'connected' : 'offline'}</span></div>
       `;
     }
 
     _renderRecent(reports) {
       const c = this.container.querySelector('#od-recent');
       if (!reports.length) {
-        c.innerHTML = `<div class="od-empty"><i class="fas fa-shield-check" style="font-size:32px;color:#10b981;display:block;margin-bottom:8px"></i>No reports yet — the orchestrator will populate as you browse</div>`;
+        c.innerHTML = `<div class="od-empty"><i class="fas fa-shield-check" style="font-size:32px;color:#F69D39;display:block;margin-bottom:8px"></i>No reports yet — the orchestrator will populate as you browse</div>`;
         return;
       }
       c.innerHTML = reports.map(r => `

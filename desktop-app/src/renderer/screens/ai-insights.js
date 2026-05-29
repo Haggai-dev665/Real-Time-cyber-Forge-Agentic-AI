@@ -99,7 +99,7 @@ class AIInsightsScreen {
                         ${[
                             { name:'Threat Classifier', events:8247, lastUpdate:'2 min ago', accuracy:'94.2%', color:'var(--primary)' },
                             { name:'Anomaly Detector', events:12891, lastUpdate:'1 min ago', accuracy:'91.7%', color:'var(--success)' },
-                            { name:'Pattern Analyzer', events:5632, lastUpdate:'5 min ago', accuracy:'89.1%', color:'#ff9500' },
+                            { name:'Pattern Analyzer', events:5632, lastUpdate:'5 min ago', accuracy:'89.1%', color:'#F69D39' },
                             { name:'Behavior Engine', events:3421, lastUpdate:'3 min ago', accuracy:'87.5%', color:'var(--warning)' },
                         ].map(m => `
                             <div style="background:var(--bg-secondary); border-radius:var(--radius-md); padding:var(--space-md);">
@@ -161,7 +161,7 @@ class AIInsightsScreen {
         const container = document.getElementById('insights-featured');
         if (!container || !insight) return;
 
-        const colors = { critical:'var(--error)', high:'#ff9500', medium:'var(--warning)', low:'var(--info)' };
+        const colors = { critical:'var(--error)', high:'#F69D39', medium:'var(--warning)', low:'var(--info)' };
         const color = colors[insight.severity] || 'var(--primary)';
 
         container.style.borderColor = color + '44';
@@ -190,7 +190,7 @@ class AIInsightsScreen {
         const container = document.getElementById('insights-grid');
         if (!container) return;
 
-        const colors = { critical:'var(--error)', high:'#ff9500', medium:'var(--warning)', low:'var(--info)' };
+        const colors = { critical:'var(--error)', high:'#F69D39', medium:'var(--warning)', low:'var(--info)' };
         const categoryIcons = { threat:'shield-alt', behavior:'user-check', recommendation:'lightbulb', prediction:'chart-line' };
 
         container.innerHTML = insights.map(insight => {

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Alerts & Evidence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.ae-grid{display:grid;grid-template-columns:1fr 360px;gap:14px;height:calc(100% - 56px);min-height:0}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.kpi{padding:13px 15px}
+.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}
+.kpi .kd{font-size:10px;color:var(--faint);margin-top:2px}
+
+.qfilters{display:flex;gap:6px}
+.qf{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:3px 9px;border-radius:5px;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--faint);transition:.15s}
+.qf:hover{color:var(--text)} .qf.on{color:var(--amber-2);border-color:rgba(245,166,35,.4);background:var(--amber-dim)}
+
+.alerts{overflow-y:auto;min-height:0}
+.al{display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid var(--border);cursor:pointer;position:relative;transition:background .18s;animation:alin .4s ease}
+@keyframes alin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.al:hover{background:rgba(130,160,200,.05)}
+.al.sel{background:linear-gradient(90deg,rgba(245,166,35,.1),transparent)}
+.al.sel::after{content:"";position:absolute;right:0;top:0;bottom:0;width:2px;background:var(--amber)}
+.al .edge{position:absolute;left:0;top:0;bottom:0;width:3px}
+.al.crit .edge{background:var(--red)} .al.high .edge{background:var(--amber)} .al.med .edge{background:var(--yellow)} .al.low .edge{background:var(--cyan)}
+.al .sev{width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;border:1px solid var(--border-2)}
+.al .sev svg{width:16px;height:16px}
+.al.crit .sev{color:#ff7185;background:rgba(244,73,94,.1)} .al.high .sev{color:var(--amber-2);background:var(--amber-dim)} .al.med .sev{color:var(--yellow);background:rgba(236,201,75,.1)} .al.low .sev{color:var(--cyan);background:var(--cyan-dim)}
+.al .ainfo{flex:1;min-width:0}
+.al .at{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al .am{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:3px;display:flex;gap:8px}
+.al .astat{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:3px 8px;border-radius:5px;flex:none;font-weight:600}
+.astat.new{color:#ff7185;background:rgba(244,73,94,.12);border:1px solid rgba(244,73,94,.3)}
+.astat.ack{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
+.astat.esc{color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(43,212,238,.3)}
+
+/* detail */
+.adet{padding:15px;display:flex;flex-direction:column;gap:14px}
+.adet .dh{display:flex;align-items:flex-start;gap:12px}
+.adet .dh .di{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none;color:#ff7185;background:rgba(244,73,94,.1);border:1px solid rgba(244,73,94,.3)}
+.adet .dh .di svg{width:19px;height:19px}
+.adet .dh .dt{font-size:14px;font-weight:600;line-height:1.3}
+.adet .dh .dm{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:4px}
+.adet .drow{display:flex;justify-content:space-between;font-size:11.5px;padding:7px 0;border-bottom:1px solid var(--border)}
+.adet .drow .k{color:var(--faint);font-family:var(--mono);font-size:10px}
+.adet .drow .v{font-family:var(--mono);font-size:11px}
+.adet .dactions{display:flex;gap:9px;margin-top:4px}
+.abtn{flex:1;height:34px;border-radius:8px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim)}
+.abtn svg{width:14px;height:14px}
+.abtn.ack{color:var(--amber-2);border-color:rgba(245,166,35,.3);background:var(--amber-dim)}
+.abtn.esc{color:var(--cyan);border-color:rgba(43,212,238,.3);background:var(--cyan-dim)}
+.abtn:hover{filter:brightness(1.25);transform:translateY(-1px)} .abtn:active{transform:scale(.96)}
+
+/* evidence */
+.evid{overflow-y:auto;min-height:0}
+.ev{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid var(--border);transition:background .18s}
+.ev:hover{background:rgba(130,160,200,.05)}
+.ev .ei{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;border:1px solid var(--border-2);background:var(--tile);color:var(--cyan)}
+.ev .ei svg{width:14px;height:14px}
+.ev .einfo{flex:1;min-width:0}
+.ev .en{font-size:12px;font-weight:500}
+.ev .em{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:2px}
+.ev .ehash{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.ev .dl{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;cursor:pointer;color:var(--faint);border:1px solid var(--border-2)}
+.ev .dl:hover{color:var(--cyan);border-color:rgba(43,212,238,.3)} .ev .dl svg{width:13px;height:13px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Alerts & Evidence" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></div>
+          <h1>Alerts &amp; Evidence</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Triage</span>
+            <span id="openc">11 open</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Ack All</button>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="card kpi"><div class="kl">Open Alerts</div><div class="kv" style="color:var(--amber-2)" id="kOpen">11</div><div class="kd">last 24h</div></div>
+          <div class="card kpi"><div class="kl">Critical</div><div class="kv" style="color:#ff7185" id="kCrit">2</div><div class="kd">P0 · needs action</div></div>
+          <div class="card kpi"><div class="kl">Mean Triage</div><div class="kv" style="color:var(--cyan)">38<span style="font-size:13px;color:var(--faint)">s</span></div><div class="kd">AI-assisted</div></div>
+          <div class="card kpi"><div class="kl">Evidence Items</div><div class="kv" style="color:var(--green)">48</div><div class="kd">chain-of-custody</div></div>
+        </div>
+
+        <div class="ae-grid">
+          <div class="card" style="display:flex;flex-direction:column;min-height:0">
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Alert Queue<span class="right qfilters" id="qfilters"><span class="qf on" data-f="all">ALL</span><span class="qf" data-f="crit">CRIT</span><span class="qf" data-f="high">HIGH</span><span class="qf" data-f="new">NEW</span></span></div>
+            <div class="alerts" id="alerts"></div>
+          </div>
+
+          <div class="col">
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>Alert Detail</div>
+              <div class="adet" id="adet"></div>
+            </div>
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14l-1 14H6Z"/><path d="M9 7V4h6v3"/></svg>Evidence Locker<span class="right" id="evCount">5 items</span></div>
+              <div class="evid" id="evid"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'TRIAGE',threats:'11'});
+buildSidebar('alerts');
+buildFooter({items:[{txt:'11 open alerts',cls:'sb-amber'},{txt:'2 critical',cls:'sb-amber'},{txt:'48 evidence',cls:'sb-cyan'},{txt:'Triaging…',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+const sevIco={crit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>',
+  high:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  med:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
+  low:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>'};
+let alerts=[
+  {id:'ALT-9241',sev:'crit',t:'RedLine Stealer — credential exfiltration',host:'WS-4471',rule:'EDR.CredAccess',st:'new',mitre:'T1555',src:'193.43.18.22',conf:'99%'},
+  {id:'ALT-9240',sev:'crit',t:'C2 beacon to known-bad domain',host:'WS-4471',rule:'NET.C2Beacon',st:'new',mitre:'T1071',src:'cdn-sync.duckdns.org',conf:'97%'},
+  {id:'ALT-9238',sev:'high',t:'Brute-force authentication burst',host:'sso.nimbus',rule:'IDP.BruteForce',st:'ack',mitre:'T1110',src:'193.43.18.0/24',conf:'94%'},
+  {id:'ALT-9237',sev:'high',t:'Suspicious PowerShell — encoded payload',host:'WS-2210',rule:'EDR.PSEncoded',st:'new',mitre:'T1059',src:'local',conf:'91%'},
+  {id:'ALT-9235',sev:'med',t:'Anomalous data egress volume',host:'db-prod-3',rule:'DLP.Egress',st:'ack',mitre:'T1030',src:'10.2.4.9',conf:'82%'},
+  {id:'ALT-9233',sev:'high',t:'Registry Run-key persistence',host:'WS-4471',rule:'EDR.Persist',st:'esc',mitre:'T1547',src:'local',conf:'96%'},
+  {id:'ALT-9230',sev:'med',t:'Outbound to unclassified host',host:'mkt-laptop-7',rule:'NET.Unclassified',st:'new',mitre:'T1071',src:'cdn.unknown-host.ru',conf:'74%'},
+  {id:'ALT-9228',sev:'low',t:'Port scan detected (internal)',host:'10.0.0.0/24',rule:'NET.PortScan',st:'ack',mitre:'T1046',src:'10.0.4.18',conf:'68%'},
+  {id:'ALT-9225',sev:'med',t:'New admin account created off-hours',host:'dc-01',rule:'IDP.AdminCreate',st:'new',mitre:'T1136',src:'svc_deploy',conf:'80%'},
+  {id:'ALT-9222',sev:'low',t:'Expired TLS certificate served',host:'legacy.acme.io',rule:'TLS.Expired',st:'ack',mitre:'—',src:'edge',conf:'60%'},
+  {id:'ALT-9219',sev:'high',t:'Phishing link clicked by user',host:'WS-4471',rule:'MAIL.PhishClick',st:'esc',mitre:'T1566',src:'free-prizes-login.xyz',conf:'95%'}
+];
+const evidence={
+  'ALT-9241':[['memory_dump_WS4471.raw','2.1 GB · acquired 09:42','9f86…0a08','mem'],['chrome_login_data.sqlite','212 KB · extracted','a31c…7f02','db'],['process_tree.json','18 KB · svc_update.dll','c0ffee…','json'],['screenshot_0941.png','840 KB · desktop capture','ee21…','img'],['netflow_capture.pcap','44 MB · 60s C2 window','b00b…','pcap']],
+  'ALT-9240':[['gate_php_beacon.pcap','12 MB · POST capture','d4d4…','pcap'],['dns_resolution.log','4 KB · duckdns chain','77aa…','json'],['c2_payload.bin','38 KB · decoded','feed…','mem']]
+};
+const evIco={mem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6V3M16 6V3M9 18v3M15 18v3"/></svg>',
+  db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6"/></svg>',
+  json:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H6a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h2M16 3h2a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-2"/></svg>',
+  img:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5L5 20"/></svg>',
+  pcap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>'};
+
+let filter='all', selected=0;
+const alertsEl=document.getElementById('alerts');
+function visible(){return filter==='all'?alerts:alerts.filter(a=>filter==='new'?a.st==='new':a.sev===filter);}
+function renderAlerts(){
+  const list=visible();
+  alertsEl.innerHTML=list.map((a)=>{
+    const gi=alerts.indexOf(a);
+    return '<div class="al '+a.sev+(gi===selected?' sel':'')+'" data-i="'+gi+'"><span class="edge"></span>'+
+    '<span class="sev">'+sevIco[a.sev]+'</span><div class="ainfo"><div class="at">'+a.t+'</div>'+
+    '<div class="am"><span>'+a.id+'</span><span>'+a.host+'</span><span>'+a.rule+'</span></div></div>'+
+    '<span class="astat '+a.st+'">'+a.st.toUpperCase()+'</span></div>';
+  }).join('') || '<div style="padding:30px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No alerts match this filter</div>';
+  alertsEl.querySelectorAll('.al').forEach(el=>el.addEventListener('click',()=>{selected=+el.dataset.i;renderAlerts();renderDetail();}));
+}
+function renderDetail(){
+  const a=alerts[selected]; if(!a){document.getElementById('adet').innerHTML='';return;}
+  document.getElementById('adet').innerHTML=
+    '<div class="dh"><span class="di">'+sevIco[a.sev]+'</span><div><div class="dt">'+a.t+'</div><div class="dm">'+a.id+' · '+a.rule+'</div></div></div>'+
+    '<div><div class="drow"><span class="k">Severity</span><span class="v pill '+(a.sev==='crit'?'crit':a.sev==='low'?'low':'med')+'">'+a.sev.toUpperCase()+'</span></div>'+
+    '<div class="drow"><span class="k">Host</span><span class="v">'+a.host+'</span></div>'+
+    '<div class="drow"><span class="k">Source</span><span class="v">'+a.src+'</span></div>'+
+    '<div class="drow"><span class="k">MITRE</span><span class="v" style="color:var(--amber-2)">'+a.mitre+'</span></div>'+
+    '<div class="drow"><span class="k">Confidence</span><span class="v" style="color:var(--cyan)">'+a.conf+'</span></div>'+
+    '<div class="drow"><span class="k">Status</span><span class="v"><span class="astat '+a.st+'">'+a.st.toUpperCase()+'</span></span></div></div>'+
+    '<div class="dactions"><div class="abtn ack" data-act="ack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Acknowledge</div>'+
+    '<div class="abtn esc" data-act="esc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Escalate</div></div>';
+  document.querySelectorAll('#adet .abtn').forEach(b=>b.addEventListener('click',()=>{
+    alerts[selected].st=b.dataset.act==='ack'?'ack':'esc'; renderAlerts(); renderDetail();
+  }));
+  renderEvidence(a.id);
+}
+function renderEvidence(id){
+  const items=evidence[id]||[['triage_summary.md','auto-generated by Agent','—','json'],['alert_context.json','enrichment bundle','—','json']];
+  document.getElementById('evCount').textContent=items.length+' items';
+  document.getElementById('evid').innerHTML=items.map(e=>
+    '<div class="ev"><span class="ei">'+evIco[e[3]]+'</span><div class="einfo"><div class="en">'+e[0]+'</div><div class="em">'+e[1]+' · sha '+e[2]+'</div></div>'+
+    '<span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>').join('');
+}
+renderAlerts(); renderDetail();
+document.querySelectorAll('#qfilters .qf').forEach(q=>q.addEventListener('click',()=>{
+  document.querySelectorAll('#qfilters .qf').forEach(x=>x.classList.remove('on'));q.classList.add('on');filter=q.dataset.f;renderAlerts();
+}));
+
+// new alerts stream in occasionally
+const incoming=[
+  {sev:'med',t:'Geo-improbable login detected',host:'sso.nimbus',rule:'IDP.GeoVelocity',mitre:'T1078',src:'GB→SG 4m',conf:'78%'},
+  {sev:'low',t:'Outdated TLS cipher negotiated',host:'api.legacy',rule:'TLS.WeakCipher',mitre:'—',src:'edge',conf:'55%'},
+  {sev:'high',t:'LSASS memory access attempt',host:'WS-2210',rule:'EDR.LSASS',mitre:'T1003',src:'local',conf:'93%'}
+];
+let aid=9242;
+setInterval(()=>{
+  if(Math.random()<0.5){const t=incoming[Math.floor(Math.random()*incoming.length)];
+    alerts.unshift(Object.assign({id:'ALT-'+(aid++),st:'new'},t)); if(selected>=0)selected++;
+    renderAlerts();
+    const ko=document.getElementById('kOpen');ko.textContent=alerts.filter(a=>a.st==='new').length;
+    document.getElementById('openc').textContent=alerts.length+' open';
+    document.getElementById('kCrit').textContent=alerts.filter(a=>a.sev==='crit'&&a.st==='new').length;
+  }
+},4200);
+
+// Ack All
+document.querySelector('.btn-refresh').addEventListener('click',()=>{alerts.forEach(a=>{if(a.st==='new')a.st='ack';});renderAlerts();renderDetail();document.getElementById('kCrit').textContent='0';});
+</script>
+</body>
+</html>

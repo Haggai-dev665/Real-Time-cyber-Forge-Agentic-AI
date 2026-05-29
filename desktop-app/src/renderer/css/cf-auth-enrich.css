@@ -49,8 +49,8 @@ svg *,
     width: 26px;
     height: 26px;
     border-radius: 6px;
-    background: var(--auth-accent-subtle, rgba(45, 212, 191, 0.08));
-    border: 1px solid rgba(45, 212, 191, 0.18);
+    background: var(--auth-accent-subtle, rgba(246,157,57, 0.08));
+    border: 1px solid rgba(246,157,57, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -58,7 +58,7 @@ svg *,
 }
 .auth-cap-icon i {
     font-size: 11px;
-    color: var(--auth-accent, #2DD4BF);
+    color: var(--auth-accent, #F69D39);
 }
 
 .auth-cap-body {
@@ -69,12 +69,12 @@ svg *,
 .auth-cap-body strong {
     font-size: 11.5px;
     font-weight: 600;
-    color: var(--auth-brand-text, #E2E8F0);
+    color: var(--auth-brand-text, #E2DBCD);
     font-family: var(--auth-font, 'Inter', sans-serif);
 }
 .auth-cap-body span {
     font-size: 10.5px;
-    color: var(--auth-brand-muted, #475569);
+    color: var(--auth-brand-muted, #5C5454);
     line-height: 1.4;
     font-family: var(--auth-font, 'Inter', sans-serif);
 }
@@ -98,8 +98,8 @@ svg *,
     gap: 2px;
     padding: 8px 14px;
     border-radius: var(--auth-radius, 8px);
-    border: 1px solid rgba(45, 212, 191, 0.14);
-    background: rgba(45, 212, 191, 0.04);
+    border: 1px solid rgba(246,157,57, 0.14);
+    background: rgba(246,157,57, 0.04);
     min-width: 72px;
     animation: capSlideIn 0.45s ease-out 0.6s both;
 }
@@ -107,14 +107,14 @@ svg *,
 .auth-stat-val {
     font-size: 15px;
     font-weight: 700;
-    color: var(--auth-accent, #2DD4BF);
+    color: var(--auth-accent, #F69D39);
     font-family: var(--auth-font-heading, 'Space Grotesk', sans-serif);
     letter-spacing: -0.01em;
 }
 
 .auth-stat-lbl {
     font-size: 9.5px;
-    color: var(--auth-brand-muted, #475569);
+    color: var(--auth-brand-muted, #5C5454);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-family: var(--auth-font-mono, 'JetBrains Mono', monospace);
@@ -136,12 +136,12 @@ svg *,
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
     font-size: 10px;
-    color: var(--auth-brand-muted, #475569);
+    color: var(--auth-brand-muted, #5C5454);
     font-family: var(--auth-font, 'Inter', sans-serif);
     animation: capSlideIn 0.45s ease-out 0.75s both;
 }
 .auth-research-badge i {
-    color: var(--auth-accent, #2DD4BF);
+    color: var(--auth-accent, #F69D39);
     font-size: 11px;
 }
 
@@ -163,27 +163,27 @@ svg *,
 
 .form-input:focus {
     outline: none;
-    border-color: var(--auth-accent, #2DD4BF);
-    box-shadow: 0 0 0 3px var(--auth-accent-focus, rgba(45, 212, 191, 0.2));
+    border-color: var(--auth-accent, #F69D39);
+    box-shadow: 0 0 0 3px var(--auth-accent-focus, rgba(246,157,57, 0.2));
     transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 /* Label lift on focus */
 .form-group:focus-within .form-label {
-    color: var(--auth-accent, #2DD4BF);
+    color: var(--auth-accent, #F69D39);
     transition: color 150ms ease;
 }
 
 /* Submit button — teal brand */
 .btn-primary {
-    background: var(--auth-accent, #2DD4BF) !important;
-    color: #0a0e13 !important;
+    background: var(--auth-accent, #F69D39) !important;
+    color: #1F1A1B !important;
     font-weight: 600 !important;
     transition: background 150ms ease, transform 100ms ease, box-shadow 150ms ease !important;
 }
 .btn-primary:hover {
-    background: var(--auth-accent-hover, #14B8A6) !important;
-    box-shadow: 0 4px 16px rgba(45, 212, 191, 0.25) !important;
+    background: var(--auth-accent-hover, #E58A2B) !important;
+    box-shadow: 0 4px 16px rgba(246,157,57, 0.25) !important;
     transform: translateY(-1px) !important;
 }
 .btn-primary:active {
@@ -195,7 +195,7 @@ svg *,
     width: 14px;
     height: 14px;
     border: 2px solid rgba(10, 14, 19, 0.3);
-    border-top-color: #0a0e13;
+    border-top-color: #1F1A1B;
     border-radius: 50%;
     animation: spinnerAnim 0.7s linear infinite;
     display: inline-block;
@@ -222,7 +222,7 @@ svg *,
    ───────────────────────────────────────────────────────────────────── */
 
 .auth-trust-item i {
-    color: var(--auth-accent, #2DD4BF);
+    color: var(--auth-accent, #F69D39);
 }
 
 /* ─────────────────────────────────────────────────────────────────────

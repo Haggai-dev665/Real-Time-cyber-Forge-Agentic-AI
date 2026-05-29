@@ -28,42 +28,42 @@
 
 :root {
     /* ─── Background ─── */
-    --auth-bg:              #F1F5F9;
+    --auth-bg:              #EFE9DD;
     --auth-surface:         #FFFFFF;
     --auth-surface-raised:  #FFFFFF;
-    --auth-border:          #E2E8F0;
-    --auth-border-hover:    #CBD5E1;
+    --auth-border:          #E2DBCD;
+    --auth-border-hover:    #C9C1B2;
 
     /* ─── Text ─── */
-    --auth-text:            #0F172A;
-    --auth-text-secondary:  #475569;
-    --auth-text-muted:      #94A3B8;
+    --auth-text:            #1F1A1B;
+    --auth-text-secondary:  #5C5454;
+    --auth-text-muted:      #9A9182;
 
     /* ─── Accent (Teal) ─── */
-    --auth-accent:          #0D9488;
-    --auth-accent-hover:    #0F766E;
-    --auth-accent-active:   #115E59;
-    --auth-accent-focus:    rgba(20, 184, 166, 0.24);
-    --auth-accent-subtle:   rgba(20, 184, 166, 0.08);
+    --auth-accent:          #E58A2B;
+    --auth-accent-hover:    #CE7A1F;
+    --auth-accent-active:   #A66416;
+    --auth-accent-focus:    rgba(229,138,43, 0.24);
+    --auth-accent-subtle:   rgba(229,138,43, 0.08);
 
     /* ─── Status ─── */
-    --auth-error:           #DC2626;
-    --auth-error-bg:        rgba(220, 38, 38, 0.06);
-    --auth-error-border:    rgba(220, 38, 38, 0.25);
-    --auth-success:         #16A34A;
-    --auth-success-bg:      rgba(22, 163, 74, 0.06);
-    --auth-warning:         #D97706;
-    --auth-warning-bg:      rgba(217, 119, 6, 0.06);
-    --auth-info:            #0284C7;
-    --auth-info-bg:         rgba(2, 132, 199, 0.06);
+    --auth-error:           #C8452F;
+    --auth-error-bg:        rgba(200,69,47, 0.06);
+    --auth-error-border:    rgba(200,69,47, 0.25);
+    --auth-success:         #E58A2B;
+    --auth-success-bg:      rgba(229,138,43, 0.06);
+    --auth-warning:         #B8862A;
+    --auth-warning-bg:      rgba(184,134,42, 0.06);
+    --auth-info:            #4C6470;
+    --auth-info-bg:         rgba(76,100,112, 0.06);
 
     /* ─── Brand Panel ─── */
-    --auth-brand-bg:        #0F172A;
-    --auth-brand-surface:   #1E293B;
-    --auth-brand-text:      #F1F5F9;
-    --auth-brand-muted:     #64748B;
-    --auth-brand-accent:    #14B8A6;
-    --auth-brand-accent-dim: rgba(20, 184, 166, 0.12);
+    --auth-brand-bg:        #1F1A1B;
+    --auth-brand-surface:   #251F20;
+    --auth-brand-text:      #EFE9DD;
+    --auth-brand-muted:     #756E66;
+    --auth-brand-accent:    #E58A2B;
+    --auth-brand-accent-dim: rgba(229,138,43, 0.12);
 
     /* ─── Typography ─── */
     --auth-font:            'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -77,10 +77,10 @@
     --auth-radius-full:     9999px;
 
     /* ─── Shadows (flat enterprise — no color tint) ─── */
-    --auth-shadow-sm:  0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --auth-shadow-md:  0 4px 6px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04);
-    --auth-shadow-lg:  0 10px 15px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.04);
-    --auth-shadow-xl:  0 20px 25px rgba(15, 23, 42, 0.1), 0 8px 10px rgba(15, 23, 42, 0.04);
+    --auth-shadow-sm:  0 1px 3px rgba(31,26,27, 0.06), 0 1px 2px rgba(31,26,27, 0.04);
+    --auth-shadow-md:  0 4px 6px rgba(31,26,27, 0.07), 0 2px 4px rgba(31,26,27, 0.04);
+    --auth-shadow-lg:  0 10px 15px rgba(31,26,27, 0.08), 0 4px 6px rgba(31,26,27, 0.04);
+    --auth-shadow-xl:  0 20px 25px rgba(31,26,27, 0.1), 0 8px 10px rgba(31,26,27, 0.04);
     --auth-shadow-focus: 0 0 0 3px var(--auth-accent-focus);
 
     /* ─── Motion (150–250ms, GPU-only) ─── */
@@ -99,38 +99,38 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] {
-    --auth-bg:              #020617;
-    --auth-surface:         #0F172A;
-    --auth-surface-raised:  #1E293B;
-    --auth-border:          #1E293B;
-    --auth-border-hover:    #334155;
+    --auth-bg:              #0B0908;
+    --auth-surface:         #1F1A1B;
+    --auth-surface-raised:  #251F20;
+    --auth-border:          #251F20;
+    --auth-border-hover:    #352E2F;
 
-    --auth-text:            #F1F5F9;
-    --auth-text-secondary:  #CBD5E1;
-    --auth-text-muted:      #64748B;
+    --auth-text:            #EFE9DD;
+    --auth-text-secondary:  #C9C1B2;
+    --auth-text-muted:      #756E66;
 
-    --auth-accent:          #2DD4BF;
-    --auth-accent-hover:    #14B8A6;
-    --auth-accent-active:   #0D9488;
-    --auth-accent-focus:    rgba(45, 212, 191, 0.24);
-    --auth-accent-subtle:   rgba(45, 212, 191, 0.08);
+    --auth-accent:          #F69D39;
+    --auth-accent-hover:    #E58A2B;
+    --auth-accent-active:   #E58A2B;
+    --auth-accent-focus:    rgba(246,157,57, 0.24);
+    --auth-accent-subtle:   rgba(246,157,57, 0.08);
 
-    --auth-error:           #F87171;
-    --auth-error-bg:        rgba(248, 113, 113, 0.08);
-    --auth-error-border:    rgba(248, 113, 113, 0.2);
-    --auth-success:         #4ADE80;
-    --auth-success-bg:      rgba(74, 222, 128, 0.06);
-    --auth-warning:         #FBBF24;
-    --auth-warning-bg:      rgba(251, 191, 36, 0.06);
-    --auth-info:            #38BDF8;
-    --auth-info-bg:         rgba(56, 189, 248, 0.06);
+    --auth-error:           #EE6A50;
+    --auth-error-bg:        rgba(238,106,80, 0.08);
+    --auth-error-border:    rgba(238,106,80, 0.2);
+    --auth-success:         #F69D39;
+    --auth-success-bg:      rgba(246,157,57, 0.06);
+    --auth-warning:         #D8B65A;
+    --auth-warning-bg:      rgba(216,182,90, 0.06);
+    --auth-info:            #7E97A6;
+    --auth-info-bg:         rgba(126,151,166, 0.06);
 
-    --auth-brand-bg:        #020617;
-    --auth-brand-surface:   #0F172A;
-    --auth-brand-text:      #E2E8F0;
-    --auth-brand-muted:     #475569;
-    --auth-brand-accent:    #2DD4BF;
-    --auth-brand-accent-dim: rgba(45, 212, 191, 0.10);
+    --auth-brand-bg:        #0B0908;
+    --auth-brand-surface:   #1F1A1B;
+    --auth-brand-text:      #E2DBCD;
+    --auth-brand-muted:     #5C5454;
+    --auth-brand-accent:    #F69D39;
+    --auth-brand-accent-dim: rgba(246,157,57, 0.10);
 
     --auth-shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.25);
     --auth-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.3);
@@ -227,8 +227,8 @@ body,
     opacity: 0.035;
     background-size: 48px 48px !important;
     background-image:
-        linear-gradient(rgba(148, 163, 184, 0.5) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148, 163, 184, 0.5) 1px, transparent 1px) !important;
+        linear-gradient(rgba(154,145,130, 0.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(154,145,130, 0.5) 1px, transparent 1px) !important;
     background-position: center center !important;
 }
 
@@ -257,7 +257,7 @@ body,
 .auth-vignette {
     position: absolute;
     inset: 0;
-    box-shadow: inset 0 0 160px 60px rgba(2, 6, 23, 0.45);
+    box-shadow: inset 0 0 160px 60px rgba(11,9,8, 0.45);
     pointer-events: none;
     z-index: 1;
 }
@@ -340,7 +340,7 @@ body,
     gap: 0.375rem;
     padding: 0.375rem 0.75rem;
     background: var(--auth-brand-accent-dim);
-    border: 1px solid rgba(20, 184, 166, 0.18);
+    border: 1px solid rgba(229,138,43, 0.18);
     border-radius: var(--auth-radius-full);
     font-size: 0.6875rem;
     font-weight: 500;
@@ -1425,7 +1425,7 @@ body,
     gap: 0.5rem;
     padding: 0.75rem;
     background: var(--auth-success-bg);
-    border: 1px solid rgba(22, 163, 74, 0.2);
+    border: 1px solid rgba(229,138,43, 0.2);
     border-radius: var(--auth-radius);
     color: var(--auth-success);
     font-size: 0.8125rem;

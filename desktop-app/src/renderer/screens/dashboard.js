@@ -95,7 +95,7 @@ const _DB = (() => {
 function buildDashboardLayout() {
   return `
 <style>
-  #cf-dash{--gap:12px;--card-bg:var(--cf-surface-2,#0f1923);--card-border:var(--cf-border,rgba(255,255,255,.08));--text:var(--cf-text,#e8eef4);--muted:var(--cf-text-muted,rgba(180,200,220,.6));--primary:var(--cf-primary,#00d4aa);--danger:var(--cf-danger,#ff4d6d);--warning:var(--cf-warning,#ffab00);--success:var(--cf-success,#00d4aa);display:flex;flex-direction:column;height:100%;overflow:hidden;background:var(--cf-bg,#080d14);color:var(--text);font-family:'Inter',system-ui,sans-serif}
+  #cf-dash{--gap:12px;--card-bg:var(--cf-surface-2,#1A1516);--card-border:var(--cf-border,rgba(255,255,255,.08));--text:var(--cf-text,#E2DBCD);--muted:var(--cf-text-muted,rgba(180,200,220,.6));--primary:var(--cf-primary,#F69D39);--danger:var(--cf-danger,#E5573E);--warning:var(--cf-warning,#D8B65A);--success:var(--cf-success,#F69D39);display:flex;flex-direction:column;height:100%;overflow:hidden;background:var(--cf-bg,#0B0908);color:var(--text);font-family:'Inter',system-ui,sans-serif}
   #cf-dash .dash-hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:14px 20px 0}
   #cf-dash .dash-title{font-size:18px;font-weight:700;letter-spacing:.01em}
   #cf-dash .dash-meta{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted)}
@@ -117,7 +117,7 @@ function buildDashboardLayout() {
   #cf-dash .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:14px 16px;overflow:hidden}
   #cf-dash .card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   #cf-dash .card-title{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
-  #cf-dash .card-badge{font-size:9px;background:rgba(0,212,170,.1);color:var(--primary);border-radius:10px;padding:1px 7px;border:1px solid rgba(0,212,170,.2)}
+  #cf-dash .card-badge{font-size:9px;background:rgba(246,157,57,.1);color:var(--primary);border-radius:10px;padding:1px 7px;border:1px solid rgba(246,157,57,.2)}
   #cf-dash .chart-wrap{position:relative;width:100%}
   #cf-dash .bottom-row{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);padding:var(--gap) 20px 16px;overflow:hidden}
   #cf-dash .bottom-row .card{display:flex;flex-direction:column;overflow:hidden}
@@ -132,15 +132,15 @@ function buildDashboardLayout() {
   #cf-dash .node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;overflow-y:auto;max-height:100%}
   #cf-dash .node-tile{border-radius:6px;padding:6px 4px;text-align:center;font-size:9px;font-weight:600;letter-spacing:.02em;cursor:default;transition:transform .15s}
   #cf-dash .node-tile:hover{transform:scale(1.08)}
-  #cf-dash .node-tile.online{background:rgba(0,212,170,.12);border:1px solid rgba(0,212,170,.25);color:var(--success)}
-  #cf-dash .node-tile.warning{background:rgba(255,171,0,.1);border:1px solid rgba(255,171,0,.25);color:var(--warning)}
-  #cf-dash .node-tile.offline{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2);color:var(--danger)}
+  #cf-dash .node-tile.online{background:rgba(246,157,57,.12);border:1px solid rgba(246,157,57,.25);color:var(--success)}
+  #cf-dash .node-tile.warning{background:rgba(216,182,90,.1);border:1px solid rgba(216,182,90,.25);color:var(--warning)}
+  #cf-dash .node-tile.offline{background:rgba(229,87,62,.08);border:1px solid rgba(229,87,62,.2);color:var(--danger)}
   #cf-dash .node-tile .nt-id{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #cf-dash .policy-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center}
   #cf-dash .policy-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
-  #cf-dash .policy-icon.block{background:rgba(255,77,109,.12);color:var(--danger)}
-  #cf-dash .policy-icon.alert{background:rgba(255,171,0,.1);color:var(--warning)}
-  #cf-dash .policy-icon.info{background:rgba(0,212,170,.1);color:var(--primary)}
+  #cf-dash .policy-icon.block{background:rgba(229,87,62,.12);color:var(--danger)}
+  #cf-dash .policy-icon.alert{background:rgba(216,182,90,.1);color:var(--warning)}
+  #cf-dash .policy-icon.info{background:rgba(246,157,57,.1);color:var(--primary)}
   #cf-dash .policy-main{flex:1;min-width:0}
   #cf-dash .policy-name{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #cf-dash .policy-sub{font-size:10px;color:var(--muted)}
@@ -154,7 +154,7 @@ function buildDashboardLayout() {
   <!-- Header -->
   <div class="dash-hdr">
     <div class="dash-title">
-      <i class="fas fa-shield-alt" style="color:var(--primary,#00d4aa);margin-right:8px"></i>
+      <i class="fas fa-shield-alt" style="color:var(--primary,#F69D39);margin-right:8px"></i>
       Threat Overview
     </div>
     <div class="dash-meta">
@@ -210,20 +210,20 @@ function buildDashboardLayout() {
   <div class="charts-row">
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title"><i class="fas fa-chart-area" style="color:var(--primary,#00d4aa)"></i> Threat Volume — 24h</span>
+        <span class="card-title"><i class="fas fa-chart-area" style="color:var(--primary,#F69D39)"></i> Threat Volume — 24h</span>
         <span class="card-badge">LIVE</span>
       </div>
       <div class="chart-wrap" style="height:160px"><canvas id="dash-vol-chart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title"><i class="fas fa-chart-pie" style="color:#a78bfa"></i> Severity Split</span>
+        <span class="card-title"><i class="fas fa-chart-pie" style="color:#7E97A6"></i> Severity Split</span>
       </div>
       <div class="chart-wrap" style="height:160px"><canvas id="dash-sev-chart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title"><i class="fas fa-chart-bar" style="color:#38bdf8"></i> Threat Types</span>
+        <span class="card-title"><i class="fas fa-chart-bar" style="color:#7E97A6"></i> Threat Types</span>
       </div>
       <div class="chart-wrap" style="height:160px"><canvas id="dash-type-chart"></canvas></div>
     </div>
@@ -234,7 +234,7 @@ function buildDashboardLayout() {
     <!-- Live Feed -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title"><i class="fas fa-stream" style="color:var(--primary,#00d4aa)"></i> Live Threat Feed</span>
+        <span class="card-title"><i class="fas fa-stream" style="color:var(--primary,#F69D39)"></i> Live Threat Feed</span>
         <span class="card-badge">AUTO-UPDATE</span>
       </div>
       <div class="feed-list" id="dash-feed"><div class="spinner"><i class="fas fa-circle-notch fa-spin"></i> Loading…</div></div>
@@ -242,7 +242,7 @@ function buildDashboardLayout() {
     <!-- Node Grid -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title"><i class="fas fa-server" style="color:#38bdf8"></i> Node Health</span>
+        <span class="card-title"><i class="fas fa-server" style="color:#7E97A6"></i> Node Health</span>
         <span id="dash-node-count" style="font-size:11px;color:var(--muted)">—</span>
       </div>
       <div class="node-grid" id="dash-nodes"><div class="spinner"><i class="fas fa-circle-notch fa-spin"></i></div></div>
@@ -250,7 +250,7 @@ function buildDashboardLayout() {
     <!-- Policy Activity -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title"><i class="fas fa-bolt" style="color:var(--warning,#ffab00)"></i> Policy Responses</span>
+        <span class="card-title"><i class="fas fa-bolt" style="color:var(--warning,#D8B65A)"></i> Policy Responses</span>
       </div>
       <div class="feed-list" id="dash-policy"><div class="spinner"><i class="fas fa-circle-notch fa-spin"></i> Loading…</div></div>
     </div>
@@ -393,10 +393,10 @@ function _buildVolChart(data, labels) {
     try {
       const ctx = canvas.getContext('2d');
       const g = ctx.createLinearGradient(0, 0, 0, 160);
-      g.addColorStop(0, 'rgba(0,212,170,.35)');
-      g.addColorStop(1, 'rgba(0,212,170,.02)');
+      g.addColorStop(0, 'rgba(246,157,57,.35)');
+      g.addColorStop(1, 'rgba(246,157,57,.02)');
       return g;
-    } catch (_) { return 'rgba(0,212,170,.15)'; }
+    } catch (_) { return 'rgba(246,157,57,.15)'; }
   })();
 
   _dashState.charts.vol = new Chart(canvas, {
@@ -406,14 +406,14 @@ function _buildVolChart(data, labels) {
       datasets: [{
         label: 'Threats',
         data,
-        borderColor: '#00d4aa',
+        borderColor: '#F69D39',
         borderWidth: 2,
         backgroundColor: gradient,
         fill: true,
         tension: 0.4,
         pointRadius: 0,
         pointHoverRadius: 4,
-        pointHoverBackgroundColor: '#00d4aa',
+        pointHoverBackgroundColor: '#F69D39',
       }],
     },
     options: {
@@ -422,7 +422,7 @@ function _buildVolChart(data, labels) {
       animation: { duration: 900, easing: 'easeInOutQuart' },
       plugins: { legend: { display: false }, tooltip: {
         backgroundColor: 'rgba(8,13,20,.95)',
-        borderColor: 'rgba(0,212,170,.3)',
+        borderColor: 'rgba(246,157,57,.3)',
         borderWidth: 1,
         callbacks: { label: ctx => ` ${ctx.parsed.y} threats` },
       }},
@@ -445,8 +445,8 @@ function _buildSevChart(critical, high, medium, low) {
       labels: ['Critical', 'High', 'Medium', 'Low'],
       datasets: [{
         data: [critical, high, medium, low],
-        backgroundColor: ['rgba(255,77,109,.85)', 'rgba(255,171,0,.85)', 'rgba(96,165,250,.85)', 'rgba(100,220,150,.7)'],
-        borderColor: ['#ff4d6d','#ffab00','#60a5fa','#64dc96'],
+        backgroundColor: ['rgba(229,87,62,.85)', 'rgba(216,182,90,.85)', 'rgba(126,151,166,.85)', 'rgba(246,157,57,.7)'],
+        borderColor: ['#E5573E','#D8B65A','#7E97A6','#F69D39'],
         borderWidth: 1,
         hoverOffset: 6,
       }],
@@ -484,8 +484,8 @@ function _buildTypeChart(labels, data) {
       labels,
       datasets: [{
         data,
-        backgroundColor: 'rgba(56,189,248,.7)',
-        borderColor: '#38bdf8',
+        backgroundColor: 'rgba(126,151,166,.7)',
+        borderColor: '#7E97A6',
         borderWidth: 1,
         borderRadius: 4,
         barThickness: 'flex',
@@ -498,7 +498,7 @@ function _buildTypeChart(labels, data) {
       animation: { duration: 800, easing: 'easeOutQuart' },
       plugins: { legend: { display: false }, tooltip: {
         backgroundColor: 'rgba(8,13,20,.95)',
-        borderColor: 'rgba(56,189,248,.3)',
+        borderColor: 'rgba(126,151,166,.3)',
         borderWidth: 1,
       }},
       scales: {
@@ -513,7 +513,7 @@ function _buildTypeChart(labels, data) {
 // LIVE THREAT FEED
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SEV_COLOR = { critical: '#ff4d6d', high: '#ffab00', medium: '#60a5fa', low: '#64dc96', info: '#a78bfa' };
+const SEV_COLOR = { critical: '#E5573E', high: '#D8B65A', medium: '#7E97A6', low: '#F69D39', info: '#7E97A6' };
 
 function _updateFeed(threats) {
   const el = document.getElementById('dash-feed');
@@ -521,7 +521,7 @@ function _updateFeed(threats) {
   if (!threats.length) { el.innerHTML = '<div class="spinner">No threats detected</div>'; return; }
   el.innerHTML = threats.map(t => {
     const sev   = (t.severity || 'info').toLowerCase();
-    const color = SEV_COLOR[sev] || '#64dc96';
+    const color = SEV_COLOR[sev] || '#F69D39';
     const type  = _DB.esc(t.type || t.threatType || 'Unknown Threat');
     const src   = _DB.esc(t.source || t.ipAddress || t.domain || '—');
     const time  = t.createdAt ? _timeAgo(new Date(t.createdAt)) : '—';

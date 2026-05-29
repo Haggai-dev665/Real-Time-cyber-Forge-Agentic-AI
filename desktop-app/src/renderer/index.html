@@ -10,7 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Animation CDNs -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
@@ -25,6 +25,12 @@
     <!-- CyberForge Animation & Toast Layer (load after design system) -->
     <link rel="stylesheet" href="css/cf-animations.css">
 
+    <!-- Floating Agent Panel — base structure -->
+    <link rel="stylesheet" href="css/agent-ui-redesign.css">
+
+    <!-- FORGE — brand identity layer (loads LAST so it wins) -->
+    <link rel="stylesheet" href="css/forge.css">
+
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -36,7 +42,7 @@
     /* ── CyberForge Custom Loader ────────────────────────────── */
     #cf-loader {
         position:fixed;inset:0;z-index:99999;
-        background:var(--cf-bg-app,#0a0e13);
+        background:var(--cf-bg-app,#1F1A1B);
         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
         transition:opacity 0.5s ease,visibility 0.5s ease;
     }
@@ -46,38 +52,38 @@
         display:flex;align-items:center;justify-content:center;
     }
     .cf-loader-logo i {
-        font-size:2.6rem;color:var(--cf-interactive-default,#2dd4bf);
+        font-size:2.6rem;color:var(--cf-interactive-default,#F69D39);
         position:relative;z-index:2;
-        filter:drop-shadow(0 0 8px rgba(45,212,191,.45));
+        filter:drop-shadow(0 0 8px rgba(246,157,57,.45));
     }
     .cf-loader-ring {
         position:absolute;inset:0;border-radius:50%;
         border:2px solid transparent;
-        border-top-color:var(--cf-interactive-default,#2dd4bf);
+        border-top-color:var(--cf-interactive-default,#F69D39);
         animation:cfLoaderSpin 1s linear infinite;
     }
     .cf-loader-ring:nth-child(2) {
         inset:8px;border-top-color:transparent;
-        border-right-color:var(--cf-status-info,#1570EF);
+        border-right-color:var(--cf-status-info,#5E7A88);
         animation:cfLoaderSpin 1.4s linear infinite reverse;
     }
     @keyframes cfLoaderSpin { to { transform:rotate(360deg); } }
     .cf-loader-brand {
         font-family:'Space Grotesk','Roboto',sans-serif;font-size:1.5rem;font-weight:700;
-        color:var(--cf-text-primary,#f0f2f5);letter-spacing:0.04em;
+        color:var(--cf-text-primary,#EFE9DD);letter-spacing:0.04em;
     }
-    .cf-loader-brand span { color:var(--cf-interactive-default,#2dd4bf); }
+    .cf-loader-brand span { color:var(--cf-interactive-default,#F69D39); }
     .cf-loader-bar-wrap {
         width:280px;background:rgba(255,255,255,0.07);border-radius:99px;height:3px;overflow:hidden;
     }
     .cf-loader-bar {
-        height:100%;background:var(--cf-interactive-default,#2dd4bf);
+        height:100%;background:var(--cf-interactive-default,#F69D39);
         border-radius:99px;width:0%;transition:width 0.4s ease;
-        box-shadow:0 0 8px rgba(45,212,191,.4);
+        box-shadow:0 0 8px rgba(246,157,57,.4);
     }
     .cf-loader-step {
         font-family:'Roboto Mono',monospace;font-size:11px;
-        color:var(--cf-text-muted,#5a6a7a);letter-spacing:0.05em;
+        color:var(--cf-text-muted,#756E66);letter-spacing:0.05em;
         min-height:16px;text-align:center;
     }
     .cf-loader-scan {
@@ -85,8 +91,8 @@
         animation:cfScanPulse 2s ease-in-out infinite;
     }
     @keyframes cfScanPulse {
-        0%,100%{box-shadow:0 0 0 0 rgba(45,212,191,0.25)}
-        50%{box-shadow:0 0 0 18px rgba(45,212,191,0)}
+        0%,100%{box-shadow:0 0 0 0 rgba(246,157,57,0.25)}
+        50%{box-shadow:0 0 0 18px rgba(246,157,57,0)}
     }
     </style>
 </head>
@@ -97,10 +103,18 @@
             <div class="cf-loader-scan"></div>
             <div class="cf-loader-ring"></div>
             <div class="cf-loader-ring"></div>
-            <i class="fas fa-shield-halved"></i>
+            <!-- Matches src/assets/cyber-forge-mark.svg paths verbatim; rect stroke uses var(--cf-text-primary) for raisin/dusty contrast. -->
+            <svg class="cf-loader-mark" width="80" height="80" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+                <g transform="translate(30, 30)">
+                    <rect x="1" y="1" width="58" height="58" fill="none" stroke="var(--cf-text-primary,#EFE9DD)" stroke-width="2"/>
+                    <path d="M15 45 L30 13 L45 45 Z" fill="var(--forge-orange,#F69D39)"/>
+                    <path d="M23 45 L30 29 L37 45 Z" fill="var(--cf-bg-app,#1F1A1B)"/>
+                    <circle cx="30" cy="45" r="3.2" fill="var(--forge-sage,#869B7E)"/>
+                </g>
+            </svg>
         </div>
         <div class="cf-loader-brand">Cyber<span>Forge</span></div>
-        <div class="cf-loader-sublabel" style="font-size:9.5px;color:var(--cf-text-muted,#5a6a7a);letter-spacing:0.1em;text-transform:uppercase;font-family:'Roboto Mono',monospace;margin-top:-18px;margin-bottom:8px">Agentic AI Security Platform</div>
+        <div class="cf-loader-sublabel" style="font-size:9.5px;color:var(--cf-text-muted,#756E66);letter-spacing:0.1em;text-transform:uppercase;font-family:'Roboto Mono',monospace;margin-top:-18px;margin-bottom:8px">Agentic AI Security Platform</div>
         <div class="cf-loader-bar-wrap"><div class="cf-loader-bar" id="cf-loader-bar"></div></div>
         <div class="cf-loader-step" id="cf-loader-step">Initializing security engine...</div>
     </div>
@@ -135,14 +149,12 @@
             <div class="header-content">
                 <div class="logo-section">
                     <div class="logo cf-logo-glow">
-                        <div class="cf-logo-icon-wrap">
-                            <i class="fas fa-shield-halved cf-logo-icon-main"></i>
-                            <div class="cf-logo-pulse-ring"></div>
-                        </div>
-                        <div class="cf-logo-text-group">
-                            <span class="logo-text">CyberForge</span>
-                            <span class="cf-logo-edition">AI Platform</span>
-                        </div>
+                        <a href="#" class="cf-logo-wordmark" aria-label="CyberForge — AI Platform">
+                            <!-- User-provided assets at src/assets/. Both variants are mark+wordmark composed; CSS shows one per theme. -->
+                            <img class="cf-logo-img cf-logo-img--dark" src="../assets/cyber-forge-logo-dark.svg" alt="CyberForge" />
+                            <img class="cf-logo-img cf-logo-img--light" src="../assets/cyber-forge-logo.svg" alt="CyberForge" />
+                        </a>
+                        <span class="cf-logo-edition">AI Platform</span>
                     </div>
                 </div>
 
@@ -209,7 +221,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button class="control-btn cf-btn-ripple" id="theme-toggle" title="Toggle Theme (⌘D)">
+                        <button class="control-btn cf-btn-ripple" id="theme-toggle" title="Toggle Theme (⌘D)" data-theme-managed="true">
                             <i class="fas fa-moon"></i>
                         </button>
                         <button class="control-btn cf-btn-ripple" id="ai-chat-btn" title="AI Assistant">
@@ -577,6 +589,169 @@
         </footer>
     </div>
 
+    <!-- ══ Floating Agent Panel (mounted into SPA) ══ -->
+    <!-- Agent Panel FAB — appears when panel is minimized -->
+    <button class="agent-minimized-btn" id="agent-minimized-btn" title="Open Agent Panel" style="display: none;">
+        <i class="fas fa-robot"></i>
+        <span class="agent-mini-label">AI</span>
+    </button>
+
+    <!-- Floating Agent Control Panel v3 — Rich UI -->
+    <div class="agent-control-panel floating-agent-panel" id="agent-control-panel">
+
+        <!-- ── Panel Header ──────────────────────────────────── -->
+        <div class="agent-panel-header">
+            <div class="agent-panel-title" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+                <div class="agent-avatar">
+                    <div class="agent-avatar-inner"><i class="fas fa-robot"></i></div>
+                    <span class="agent-pulse" id="agent-pulse-indicator"></span>
+                </div>
+                <div class="agent-title-info">
+                    <span class="agent-name">CyberForge Agent</span>
+                    <span class="agent-version">v2.1 &middot; agentic mode</span>
+                </div>
+            </div>
+            <div class="agent-panel-status">
+                <span class="agent-status-dot" id="agent-main-status"></span>
+                <span class="agent-status-text" id="agent-status-text">Initializing…</span>
+            </div>
+            <div class="agent-panel-controls">
+                <button class="agent-panel-minimize" id="agent-panel-minimize" title="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="agent-panel-toggle" id="agent-panel-toggle" title="Collapse body">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+                <button class="agent-panel-hide" id="agent-panel-hide" title="Close panel">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Panel Body ────────────────────────────────────── -->
+        <div class="agent-panel-body" id="agent-panel-body">
+
+            <!-- Live System Stats -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-microchip"></i> System
+                </div>
+                <div class="agent-live-stats">
+                    <div class="agent-live-stat">
+                        <i class="fas fa-microchip"></i>
+                        <span id="fp-cpu-pct">--</span>
+                        <label>CPU</label>
+                    </div>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-memory"></i>
+                        <span id="fp-mem-pct">--</span>
+                        <label>RAM</label>
+                    </div>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-clock"></i>
+                        <span id="fp-uptime">--</span>
+                        <label>Uptime</label>
+                    </div>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-window-restore"></i>
+                        <span id="fp-browser-count">--</span>
+                        <label>Browsers</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Status -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-tower-broadcast"></i> Services
+                </div>
+                <div class="agent-status-row">
+                    <span class="agent-status-row-label"><i class="fas fa-server"></i> Backend</span>
+                    <span id="fp-backend-status" class="agent-conn-chip checking">Checking</span>
+                </div>
+                <div class="agent-status-row">
+                    <span class="agent-status-row-label"><i class="fas fa-brain"></i> ML Engine</span>
+                    <span id="fp-ml-status" class="agent-conn-chip checking">Checking</span>
+                </div>
+                <div class="agent-status-row">
+                    <span class="agent-status-row-label"><i class="fas fa-robot"></i> Active Agents</span>
+                    <span class="agent-status-row-value" id="fp-agent-count">0</span>
+                </div>
+            </div>
+
+            <!-- Detected Browsers -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <span style="display:flex;align-items:center;gap:5px">
+                        <i class="fas fa-window-restore"></i> Browsers
+                    </span>
+                    <button class="fp-btn" id="fp-refresh-browsers" style="margin-left:auto">
+                        <i class="fas fa-rotate"></i>
+                    </button>
+                </div>
+                <div class="fp-browsers-list" id="fp-browsers-list">
+                    <div class="fp-loading">
+                        <span class="agent-loader-orbit"></span> Scanning…
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Controls -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-bolt"></i> Controls
+                </div>
+                <div class="agent-quick-controls">
+                    <button class="agent-control-btn" id="agent-resync-btn" title="Resync All Data">
+                        <i class="fas fa-arrows-rotate"></i>
+                        <span>Resync</span>
+                    </button>
+                    <button class="agent-control-btn" id="fp-open-agent-center" title="Open Agent Center">
+                        <i class="fas fa-up-right-from-square"></i>
+                        <span>Center</span>
+                    </button>
+                    <button class="agent-control-btn agent-action-btn primary" id="agent-add-browser" title="Add Browser">
+                        <i class="fas fa-plus"></i>
+                        <span>Add</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-timeline"></i> Activity
+                </div>
+                <div class="agent-actions-log" id="agent-actions-log">
+                    <!-- populated dynamically -->
+                </div>
+            </div>
+
+            <!-- URL Scanning Feed -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-shield-halved"></i> URL Scanning
+                    <span class="fp-url-status-dot" id="fp-url-scan-dot"></span>
+                </div>
+                <div class="fp-url-feed" id="fp-url-feed">
+                    <div class="fp-url-empty">Open a browser to begin scanning</div>
+                </div>
+            </div>
+
+            <!-- Behavioral Intelligence Alerts -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-brain"></i> Behavioral Alerts
+                    <span class="fp-behavioral-badge" id="fp-behavioral-count">0</span>
+                </div>
+                <div class="fp-behavioral-alerts" id="fp-behavioral-alerts">
+                    <div class="fp-empty">No alerts detected</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Global Toast Container -->
     <div id="cf-toast-container" class="cf-toast-container" role="region" aria-live="polite" aria-label="Notifications"></div>
 
@@ -657,6 +832,9 @@
 
     <!-- Main Application Controller -->
     <script src="app.js"></script>
+
+    <!-- Floating Agent Panel Controller — real-data, draggable (inits on DOMContentLoaded; no-ops if panel markup absent) -->
+    <script src="agent-ui-controller.js"></script>
 
     <!-- CyberForge Toast + Animation System (runs after app init) -->
     <script src="utils/cf-toast.js"></script>

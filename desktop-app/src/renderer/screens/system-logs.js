@@ -44,22 +44,22 @@
       .syslogs-toolbar { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
       .syslogs-chip { padding:5px 12px;border-radius:99px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--cf-border-light);background:var(--cf-surface-1);color:var(--cf-text-secondary); }
       .syslogs-chip.active { background:var(--cf-interactive-default);color:var(--cf-text-inverse);border-color:var(--cf-interactive-default); }
-      .syslogs-chip.lvl-error.active { background:#dc2626;border-color:#dc2626; }
-      .syslogs-chip.lvl-warn.active  { background:#f59e0b;border-color:#f59e0b; }
-      .syslogs-chip.lvl-info.active  { background:#3b82f6;border-color:#3b82f6; }
+      .syslogs-chip.lvl-error.active { background:#C8452F;border-color:#C8452F; }
+      .syslogs-chip.lvl-warn.active  { background:#D8B65A;border-color:#D8B65A; }
+      .syslogs-chip.lvl-info.active  { background:#5E7A88;border-color:#5E7A88; }
       .syslogs-input { padding:6px 12px;background:var(--cf-input-bg);border:1px solid var(--cf-input-border);border-radius:8px;font-size:12px;color:var(--cf-text-primary);font-family:var(--cf-font-mono);min-width:240px; }
-      .syslogs-stream { background:#0d1117;color:#c9d1d9;border-radius:10px;padding:14px;font-family:'JetBrains Mono','Consolas',monospace;font-size:11.5px;max-height:560px;overflow-y:auto;border:1px solid #30363d;line-height:1.7; }
+      .syslogs-stream { background:#1A1516;color:#C9C1B2;border-radius:10px;padding:14px;font-family:'JetBrains Mono','Consolas',monospace;font-size:11.5px;max-height:560px;overflow-y:auto;border:1px solid #352E2F;line-height:1.7; }
       .syslogs-row { display:flex;gap:8px;padding:1px 0; }
       .syslogs-row .ts { color:#7d8590;flex-shrink:0;width:78px; }
       .syslogs-row .lvl { font-weight:700;flex-shrink:0;width:48px;text-transform:uppercase;font-size:9.5px;text-align:center;border-radius:3px;padding:1px 0; }
-      .syslogs-row.error .lvl { background:rgba(239,68,68,0.18);color:#f85149; }
-      .syslogs-row.warn  .lvl { background:rgba(245,158,11,0.18);color:#d29922; }
-      .syslogs-row.info  .lvl { background:rgba(59,130,246,0.18);color:#58a6ff; }
-      .syslogs-row.log   .lvl { color:#7ee787; }
-      .syslogs-row.debug .lvl { color:#9ca3af; }
-      .syslogs-row .msg { flex:1;word-break:break-word;color:#c9d1d9; }
-      .syslogs-row.error .msg { color:#f85149; }
-      .syslogs-row.warn  .msg { color:#d29922; }
+      .syslogs-row.error .lvl { background:rgba(229,87,62,0.18);color:#E5573E; }
+      .syslogs-row.warn  .lvl { background:rgba(216,182,90,0.18);color:#B8862A; }
+      .syslogs-row.info  .lvl { background:rgba(94,122,136,0.18);color:#7E97A6; }
+      .syslogs-row.log   .lvl { color:#F69D39; }
+      .syslogs-row.debug .lvl { color:#9A9182; }
+      .syslogs-row .msg { flex:1;word-break:break-word;color:#C9C1B2; }
+      .syslogs-row.error .msg { color:#E5573E; }
+      .syslogs-row.warn  .msg { color:#B8862A; }
       .syslogs-empty { text-align:center;color:var(--cf-text-muted);padding:32px 16px;font-size:13px; }
     `;
     const style = document.createElement('style');

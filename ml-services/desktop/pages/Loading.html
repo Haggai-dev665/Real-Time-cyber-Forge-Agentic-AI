@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Loading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<link rel="stylesheet" href="cf-auth.css" />
+<style>
+.load-wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;position:relative;z-index:2}
+.load-word{margin-top:4px}
+.load-bar{width:420px;max-width:70vw}
+.load-bar .lb-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:9px}
+.load-bar .lb-top b{color:var(--amber-2)}
+.load-bar .track{height:6px;border-radius:4px;background:rgba(130,160,200,.12);overflow:hidden;position:relative}
+.load-bar .track i{display:block;height:100%;border-radius:4px;width:0;background:linear-gradient(90deg,var(--brand-orange),var(--amber-2));transition:width .4s ease;position:relative}
+.load-bar .track i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.3s linear infinite}
+.boot{width:420px;max-width:70vw;height:96px;font-family:var(--mono);font-size:11px;color:var(--faint);overflow:hidden;display:flex;flex-direction:column;gap:5px}
+.boot .bl{display:flex;gap:9px;opacity:0;animation:blin .3s ease forwards}
+@keyframes blin{to{opacity:1}}
+.boot .bl .ok{color:var(--sage)} .boot .bl .t{color:var(--cyan);opacity:.7}
+.enter{opacity:0;pointer-events:none;transition:opacity .5s;height:50px;display:flex;align-items:center;gap:10px;padding:0 30px;border-radius:11px;cursor:pointer;font-weight:600;font-size:14.5px;color:#1a1206;border:1px solid rgba(246,157,57,.5);background:linear-gradient(180deg,#ffc15a,#f69d39);box-shadow:0 8px 22px -8px rgba(246,157,57,.6);text-decoration:none}
+.enter.show{opacity:1;pointer-events:auto;animation:epop .5s cubic-bezier(.2,.9,.25,1)}
+@keyframes epop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.enter svg{width:17px;height:17px}
+.enter:hover{transform:translateY(-1px)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" id="win">
+    <div class="bg-grid"></div>
+    <div class="bg-scan"></div>
+    <div class="load-wrap">
+      <div id="forge"></div>
+      <div class="wordmark load-word" id="word"></div>
+      <div class="load-bar">
+        <div class="lb-top"><span id="phase">Initializing secure runtime…</span><b id="pct">0%</b></div>
+        <div class="track"><i id="fill"></i></div>
+      </div>
+      <div class="boot" id="boot"></div>
+      <a class="enter" id="enter" href="Login.html">Enter Console<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</div>
+
+<script src="cf-forge.js"></script>
+<script>
+fitWindow('win');
+forgeIllustration(document.getElementById('forge'),240);
+cfWordmark(document.getElementById('word'));
+
+const steps=[
+  ['Mounting encrypted volumes','vault:ok'],
+  ['Connecting to 7 sensor nodes','7/7 online'],
+  ['Loading threat-intel corpus','48k IOCs'],
+  ['Warming inference models','4 served'],
+  ['Calibrating anomaly baselines','done'],
+  ['Spinning up Agent Core','agentic'],
+  ['Establishing secure channel','TLS 1.3']
+];
+const boot=document.getElementById('boot'),fill=document.getElementById('fill'),pct=document.getElementById('pct'),phase=document.getElementById('phase');
+let p=0,si=0;
+function line(txt,ok){
+  const now=new Date();const ts=String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  const el=document.createElement('div');el.className='bl';
+  el.innerHTML='<span class="t">'+ts+'</span><span style="flex:1">'+txt+'</span><span class="ok">'+ok+'</span>';
+  boot.appendChild(el);while(boot.children.length>6)boot.firstChild.remove();
+}
+const iv=setInterval(()=>{
+  p+=Math.random()*9+5; if(p>100)p=100;
+  fill.style.width=p+'%'; pct.textContent=Math.round(p)+'%';
+  const idx=Math.min(steps.length-1,Math.floor(p/100*steps.length));
+  if(idx!==si||p>=100){ if(steps[si]){phase.textContent=steps[si][0]+'…'; line(steps[si][0],steps[si][1]);} si=idx; }
+  if(p>=100){clearInterval(iv); phase.textContent='Ready'; line('System ready','enter');
+    setTimeout(()=>document.getElementById('enter').classList.add('show'),400);}
+},520);
+</script>
+</body>
+</html>

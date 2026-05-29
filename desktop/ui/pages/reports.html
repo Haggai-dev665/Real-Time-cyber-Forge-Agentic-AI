@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Reports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.rp-grid{display:grid;grid-template-columns:330px 1fr;gap:14px;height:calc(100% - 56px);min-height:0}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.gen-bar{display:flex;align-items:center;gap:12px;padding:13px 15px}
+.gen-bar .gtitle{flex:1}
+.gen-bar .gtitle b{font-size:13px}
+.gen-bar .gtitle span{font-family:var(--mono);font-size:10px;color:var(--faint);display:block;margin-top:2px}
+.btn-gen{height:36px;display:flex;align-items:center;gap:8px;padding:0 16px;border-radius:8px;cursor:pointer;position:relative;overflow:hidden;
+  font-weight:600;font-size:12.5px;color:#1a1206;border:1px solid rgba(245,166,35,.5);background:linear-gradient(180deg,#ffc15a,#f5a623);box-shadow:0 4px 14px -4px rgba(245,166,35,.6);transition:transform .15s}
+.btn-gen:hover{transform:translateY(-1px)} .btn-gen:active{transform:scale(.97)}
+.btn-gen svg{width:15px;height:15px}
+.btn-gen.busy{pointer-events:none;color:transparent}
+.btn-gen.busy::after{content:"";position:absolute;width:17px;height:17px;border-radius:50%;border:2.2px solid rgba(26,18,6,.4);border-top-color:#1a1206;animation:spin .7s linear infinite;left:50%;top:50%;margin:-8.5px}
+
+.rlist{overflow-y:auto;min-height:0}
+.ritem{display:flex;gap:12px;padding:13px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s;position:relative}
+.ritem:hover{background:rgba(130,160,200,.05)}
+.ritem.sel{background:linear-gradient(90deg,rgba(245,166,35,.1),transparent)}
+.ritem.sel::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--amber);border-radius:0 3px 3px 0}
+.ritem .ri{width:34px;height:40px;border-radius:6px;flex:none;display:grid;place-items:center;border:1px solid var(--border-2);background:var(--tile);position:relative}
+.ritem .ri svg{width:16px;height:16px;color:var(--amber-2)}
+.ritem .rinfo{flex:1;min-width:0}
+.ritem .rt{font-size:12.5px;font-weight:600;line-height:1.3}
+.ritem .rm{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:4px;display:flex;gap:8px;align-items:center}
+.rsev{font-family:var(--mono);font-size:8px;letter-spacing:.5px;padding:2px 6px;border-radius:4px;font-weight:600}
+.rsev.crit{color:#ff7185;background:rgba(244,73,94,.12)} .rsev.high{color:var(--amber-2);background:var(--amber-dim)} .rsev.info{color:var(--cyan);background:var(--cyan-dim)}
+.rstatus{margin-left:auto;font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:4px}
+.rstatus.ready{color:var(--green);background:rgba(67,224,138,.1)} .rstatus.gen{color:var(--amber-2);background:var(--amber-dim)}
+
+/* preview document */
+.doc-wrap{flex:1;overflow-y:auto;min-height:0;padding:0}
+.doc{margin:18px 22px;background:#0b1019;border:1px solid var(--border-2);border-radius:8px;padding:30px 34px;min-height:calc(100% - 36px);position:relative}
+.doc .dscan{position:absolute;left:0;right:0;height:60px;top:0;pointer-events:none;opacity:0;
+  background:linear-gradient(180deg,transparent,rgba(245,166,35,.12) 70%,rgba(245,166,35,.4));border-bottom:1.5px solid rgba(245,166,35,.7)}
+.doc.gen .dscan{opacity:1;animation:dscan 1.6s linear infinite}
+@keyframes dscan{0%{top:-60px}100%{top:100%}}
+.doc-head{display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid var(--border);padding-bottom:18px;margin-bottom:20px}
+.doc-logo{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;color:var(--amber-2);border:1px solid rgba(245,166,35,.4);background:radial-gradient(circle at 50% 35%,#3a2a12,#140d04);flex:none}
+.doc-logo svg{width:22px;height:22px}
+.doc-title{flex:1}
+.doc-title h2{font-size:19px;font-weight:600}
+.doc-title .dmeta{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:5px}
+.doc-id{font-family:var(--mono);font-size:10px;color:var(--amber-2);text-align:right}
+.dsec{margin-bottom:22px;opacity:0;transform:translateY(8px);transition:.5s}
+.dsec.in{opacity:1;transform:none}
+.dsec h3{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber-2);font-family:var(--mono);margin-bottom:11px;display:flex;align-items:center;gap:8px}
+.dsec h3::after{content:"";flex:1;height:1px;background:var(--border)}
+.dsec p{font-size:12.5px;line-height:1.7;color:var(--dim);text-wrap:pretty}
+.dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dstat{padding:13px;border-radius:8px;border:1px solid var(--border);background:var(--tile);text-align:center}
+.dstat b{font-family:var(--mono);font-size:22px;font-weight:600;display:block}
+.dstat span{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.dfind{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)}
+.dfind .fb{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.dfind .ft{flex:1}
+.dfind .ft b{font-size:12.5px}
+.dfind .ft p{font-size:11px;margin-top:2px}
+.dfind .fp{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:5px;height:fit-content;font-weight:600}
+.doc-tools{display:flex;gap:9px;padding:12px 18px;border-top:1px solid var(--border)}
+.dtool{height:32px;display:flex;align-items:center;gap:7px;padding:0 13px;border-radius:7px;cursor:pointer;font-family:var(--mono);font-size:10.5px;
+  border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);transition:.15s}
+.dtool:hover{color:var(--text);border-color:var(--border-3)} .dtool svg{width:13px;height:13px}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.kpi{padding:13px 15px}.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}.kpi .kd{font-size:10px;color:var(--faint);margin-top:2px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Reports" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div>
+          <h1>Reports</h1>
+          <div class="head-right">
+            <span id="rcount">12 reports</span>
+            <button class="btn-gen" id="genBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Generate Report</button>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="card kpi"><div class="kl">Generated This Week</div><div class="kv" style="color:var(--amber-2)">12</div><div class="kd">3 scheduled</div></div>
+          <div class="card kpi"><div class="kl">Open Findings</div><div class="kv" style="color:#ff7185">7</div><div class="kd">2 critical</div></div>
+          <div class="card kpi"><div class="kl">Mean Time to Report</div><div class="kv" style="color:var(--green)">4.2<span style="font-size:13px;color:var(--faint)">s</span></div><div class="kd">AI-generated</div></div>
+        </div>
+
+        <div class="rp-grid">
+          <div class="card" style="display:flex;flex-direction:column;min-height:0">
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Report Library<span class="right" id="libCount">12</span></div>
+            <div class="rlist" id="rlist"></div>
+          </div>
+
+          <div class="card" style="display:flex;flex-direction:column;min-height:0">
+            <div class="gen-bar" style="border-bottom:1px solid var(--border)">
+              <div class="gtitle"><b id="pvTitle">Incident Report — RedLine Stealer Containment</b><span id="pvMeta">INC-2207 · generated by CyberForge Agent · just now</span></div>
+              <div class="dtool" id="dtCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</div>
+            </div>
+            <div class="doc-wrap">
+              <div class="doc" id="doc">
+                <div class="dscan"></div>
+                <div class="doc-head">
+                  <div class="doc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg></div>
+                  <div class="doc-title"><h2 id="docH2">Incident Report — RedLine Stealer Containment</h2><div class="dmeta">CyberForge AI Security · Confidential · TLP:AMBER</div></div>
+                  <div class="doc-id">INC-2207<br/>2026-05-29</div>
+                </div>
+                <div id="docBody"></div>
+              </div>
+            </div>
+            <div class="doc-tools">
+              <div class="dtool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export PDF</div>
+              <div class="dtool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM4 9h16"/></svg>Export CSV</div>
+              <div class="dtool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5 15.4 17.5M15.4 6.5 8.6 10.5"/></svg>Share</div>
+              <div class="dtool" style="margin-left:auto;color:var(--amber-2);border-color:rgba(245,166,35,.3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>Ask Agent</div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'REPORTING',cta:'New Report'});
+buildSidebar('reports');
+buildFooter({items:[{txt:'12 reports',cls:'sb-amber'},{txt:'7 open findings',cls:'sb-cyan'},{txt:'3 scheduled',cls:'sb-green'},{txt:'Ready',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+const reports=[
+  ['Incident Report — RedLine Stealer Containment','INC-2207','crit','ready','2m ago'],
+  ['Weekly Threat Posture Summary','RPT-0912','info','ready','4h ago'],
+  ['Phishing Campaign Analysis — Q2','RPT-0911','high','ready','1d ago'],
+  ['Vulnerability Assessment — Fleet','RPT-0908','high','ready','2d ago'],
+  ['Compliance Audit — SOC 2','RPT-0904','info','ready','3d ago'],
+  ['DDoS Event Postmortem','INC-2188','crit','ready','4d ago'],
+  ['Endpoint Hygiene Report','RPT-0899','info','ready','5d ago'],
+  ['Threat Intel Feed Digest','RPT-0897','info','ready','6d ago']
+];
+const docI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>';
+const rlist=document.getElementById('rlist');
+function renderList(sel){
+  rlist.innerHTML=reports.map((r,i)=>
+    '<div class="ritem'+(i===sel?' sel':'')+'" data-i="'+i+'"><div class="ri">'+docI+'</div>'+
+    '<div class="rinfo"><div class="rt">'+r[0]+'</div><div class="rm"><span class="rsev '+r[2]+'">'+r[2].toUpperCase()+'</span><span>'+r[1]+'</span><span>'+r[4]+'</span><span class="rstatus '+r[3]+'">'+r[3].toUpperCase()+'</span></div></div></div>').join('');
+  rlist.querySelectorAll('.ritem').forEach(it=>it.addEventListener('click',()=>{renderList(+it.dataset.i);}));
+}
+renderList(0);
+
+/* report document content (streams in section by section) */
+const sections=[
+  {h:'Executive Summary',type:'p',body:'On 2026-05-29 at 09:41 UTC, CyberForge detected a RedLine Stealer infection on endpoint WS-4471 originating from a phishing link (free-prizes-login.xyz). The agent autonomously detonated the payload in sandbox, confirmed credential-theft behavior, and recommended endpoint isolation. No lateral movement was observed. Containment completed in 4m 12s.'},
+  {h:'Key Metrics',type:'stats',body:[['87','Risk Score','#ff7185'],['4m12s','Time to Contain','var(--cyan)'],['1','Endpoints','var(--amber-2)'],['0','Spread','var(--green)']]},
+  {h:'Findings',type:'finds',body:[
+    ['crit','Credential access confirmed','svc_update.dll read Chrome Login Data store; tokens exfiltrated to C2.'],
+    ['high','C2 beacon established','POST to cdn-sync.duckdns.org /gate.php at 60s interval.'],
+    ['high','Registry persistence','HKCU\\...\\Run entry added for svc_update.'],
+    ['info','No lateral movement','Fleet sweep of 1,204 hosts found no secondary infections.']
+  ]},
+  {h:'Recommended Actions',type:'p',body:'1) Maintain isolation of WS-4471 pending reimage. 2) Force-rotate credentials for the affected user. 3) Add cdn-sync.duckdns.org and free-prizes-login.xyz to the blocklist. 4) Deploy updated YARA signature to the fleet (auto-pushed by Agent Core).'}
+];
+const sevColor={crit:'#ff7185',high:'var(--amber-2)',info:'var(--cyan)'};
+const sevBg={crit:'rgba(244,73,94,.12)',high:'var(--amber-dim)',info:'var(--cyan-dim)'};
+function buildSection(s){
+  let inner='<h3>'+s.h+'</h3>';
+  if(s.type==='p') inner+='<p>'+s.body+'</p>';
+  if(s.type==='stats'){inner+='<div class="dstats">'+s.body.map(d=>'<div class="dstat"><b style="color:'+d[2]+'">'+d[0]+'</b><span>'+d[1]+'</span></div>').join('')+'</div>';}
+  if(s.type==='finds'){inner+=s.body.map(f=>'<div class="dfind"><span class="fb" style="background:'+sevColor[f[0]]+'"></span><div class="ft"><b>'+f[1]+'</b><p>'+f[2]+'</p></div><span class="fp" style="color:'+sevColor[f[0]]+';background:'+sevBg[f[0]]+'">'+f[0].toUpperCase()+'</span></div>').join('');}
+  return '<div class="dsec">'+inner+'</div>';
+}
+function renderDoc(animated){
+  const body=document.getElementById('docBody');
+  body.innerHTML=sections.map(buildSection).join('');
+  const secs=[...body.querySelectorAll('.dsec')];
+  if(animated){ document.getElementById('doc').classList.add('gen');
+    secs.forEach((s,i)=>setTimeout(()=>{s.classList.add('in'); if(i===secs.length-1)setTimeout(()=>document.getElementById('doc').classList.remove('gen'),500);}, 500+i*650));
+  } else secs.forEach(s=>s.classList.add('in'));
+}
+renderDoc(true);
+
+/* generate button → re-run animation */
+const genBtn=document.getElementById('genBtn');
+attachRipple(genBtn);
+genBtn.addEventListener('click',()=>{
+  genBtn.classList.add('busy');
+  document.getElementById('docBody').innerHTML='';
+  setTimeout(()=>{renderDoc(true);genBtn.classList.remove('busy');},400);
+});
+document.getElementById('dtCopy').addEventListener('click',function(){const o=this.innerHTML;this.style.color='var(--green)';setTimeout(()=>this.style.color='',900);});
+</script>
+</body>
+</html>

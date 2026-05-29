@@ -8,36 +8,36 @@
     /* Background Colors - Professional Palette with Light Cream Background */
     --auth-bg-primary: #F1F3E0;      /* Light cream background */
     --auth-bg-secondary: #FFFFFF;    /* Beige secondary */
-    --auth-bg-card: rgba(37, 52, 63, 0.05);
-    --auth-bg-input: rgba(37, 52, 63, 0.03);
-    --auth-bg-hover: rgba(37, 52, 63, 0.08);
+    --auth-bg-card: rgba(37,31,32, 0.05);
+    --auth-bg-input: rgba(37,31,32, 0.03);
+    --auth-bg-hover: rgba(37,31,32, 0.08);
     
     /* Glassmorphism - Adjusted for light background */
     --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(37, 52, 63, 0.15);
+    --glass-border: rgba(37,31,32, 0.15);
     --glass-blur: blur(20px);
     
     /* Text Colors - Dark text for light background */
-    --auth-text-primary: #25343F;    /* Dark blue-gray */
+    --auth-text-primary: #251F20;    /* Dark blue-gray */
     --auth-text-secondary: #213C51;  /* Darker blue */
     --auth-text-muted: #6a757e;
     --auth-text-placeholder: #8a959e;
     
     /* Accent Colors - Olive green (NO gradients) */
-    --accent-primary: #656D3F;       /* Olive green */
-    --accent-secondary: #7a8349;     /* Lighter olive */
-    --accent-tertiary: #F2F4F7;      /* Light blue-gray */
+    --accent-primary: #A66416;       /* Olive green */
+    --accent-secondary: #B8862A;     /* Lighter olive */
+    --accent-tertiary: #EFE9DD;      /* Light blue-gray */
     --accent-glow: 0 0 30px rgba(101, 109, 63, 0.3);
     
     /* Borders */
-    --auth-border-color: rgba(37, 52, 63, 0.15);
-    --auth-border-hover: rgba(37, 52, 63, 0.25);
+    --auth-border-color: rgba(37,31,32, 0.15);
+    --auth-border-hover: rgba(37,31,32, 0.25);
     --auth-border-focus: rgba(101, 109, 63, 0.5);
     
     /* Status Colors */
-    --auth-success: #4caf50;
-    --auth-error: #f44336;
-    --auth-warning: #ff9800;
+    --auth-success: #F69D39;
+    --auth-error: #E5573E;
+    --auth-warning: #F69D39;
     
     /* Shadows - Adjusted for light background */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -368,8 +368,8 @@ body {
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: rgba(3, 152, 85, 0.1);
-    border: 1px solid rgba(3, 152, 85, 0.2);
+    background: rgba(246,157,57, 0.1);
+    border: 1px solid rgba(246,157,57, 0.2);
     border-radius: 100px;
     font-size: 0.8rem;
     color: var(--auth-success);
@@ -378,14 +378,14 @@ body {
 }
 
 .connection-badge.disconnected {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(229,87,62, 0.1);
+    border-color: rgba(229,87,62, 0.2);
     color: var(--auth-error);
 }
 
 .connection-badge.connecting {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.2);
+    background: rgba(216,182,90, 0.1);
+    border-color: rgba(216,182,90, 0.2);
     color: var(--auth-warning);
 }
 
@@ -574,7 +574,7 @@ body {
 
 .strength-fill.weak { width: 25%; background: var(--auth-error); }
 .strength-fill.fair { width: 50%; background: var(--auth-warning); }
-.strength-fill.good { width: 75%; background: #60a5fa; }
+.strength-fill.good { width: 75%; background: #7E97A6; }
 .strength-fill.strong { width: 100%; background: var(--auth-success); }
 
 .strength-text {

@@ -1414,14 +1414,14 @@ class AIAssistantV2 {
     
     if (badge && text) {
       if (online) {
-        badge.style.background = 'rgba(34, 197, 94, 0.1)';
-        badge.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+        badge.style.background = 'rgba(246,157,57, 0.1)';
+        badge.style.borderColor = 'rgba(246,157,57, 0.2)';
         badge.style.color = 'var(--ai-accent-green)';
         badge.querySelector('.ai-status-dot').style.background = 'var(--ai-accent-green)';
         text.textContent = statusText || 'Online';
       } else {
-        badge.style.background = 'rgba(239, 68, 68, 0.1)';
-        badge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+        badge.style.background = 'rgba(229,87,62, 0.1)';
+        badge.style.borderColor = 'rgba(229,87,62, 0.2)';
         badge.style.color = 'var(--ai-accent-red)';
         const dot = badge.querySelector('.ai-status-dot');
         if (dot) dot.style.background = 'var(--ai-accent-red)';

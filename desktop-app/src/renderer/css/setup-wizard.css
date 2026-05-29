@@ -7,15 +7,15 @@
   --wiz-bg: #F5F1EB;
   --wiz-sidebar: #EAE7E0;
   --wiz-card: #FFFFFF;
-  --wiz-text: #25343F;
-  --wiz-muted: #6B7A85;
+  --wiz-text: #251F20;
+  --wiz-muted: #756E66;
   --wiz-border: #D5D0C8;
-  --wiz-accent: #4A7C59;
+  --wiz-accent: #CE7A1F;
   --wiz-accent-hover: #3D6B4B;
-  --wiz-success: #4A7C59;
-  --wiz-warning: #C7923E;
+  --wiz-success: #CE7A1F;
+  --wiz-warning: #B8862A;
   --wiz-danger: #DC3545;
-  --wiz-progress-bg: #F2F4F7;
+  --wiz-progress-bg: #EFE9DD;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -107,7 +107,7 @@ html, body {
   transition: all 0.25s ease;
 }
 
-.sidebar-step.active { color: var(--wiz-text); font-weight: 600; background: rgba(74,124,89,0.06); }
+.sidebar-step.active { color: var(--wiz-text); font-weight: 600; background: rgba(206,122,31,0.06); }
 .sidebar-step.active::before { background: var(--wiz-accent); height: 60%; }
 .sidebar-step.completed { color: var(--wiz-accent); }
 
@@ -217,26 +217,26 @@ html, body {
 .btn-next {
   background: var(--wiz-accent);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(74,124,89,0.2);
+  box-shadow: 0 2px 8px rgba(206,122,31,0.2);
 }
 
 .btn-next:hover:not(:disabled) {
   background: var(--wiz-accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(74,124,89,0.35);
+  box-shadow: 0 4px 16px rgba(206,122,31,0.35);
 }
 
 .btn-next:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .btn-launch {
-  background: linear-gradient(135deg, #4A7C59, #5E9B6E);
+  background: linear-gradient(135deg, #CE7A1F, #F69D39);
   color: #fff;
   padding: 12px 36px;
   font-size: 14px;
-  box-shadow: 0 4px 20px rgba(74,124,89,0.35);
+  box-shadow: 0 4px 20px rgba(206,122,31,0.35);
 }
 
-.btn-launch:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(74,124,89,0.45); }
+.btn-launch:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(206,122,31,0.45); }
 
 /* ════════════════════════════════════════════
    PostgreSQL-style Progressive Install Bar
@@ -248,8 +248,8 @@ html, body {
   padding: 16px 18px;
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
   font-size: 11px;
-  color: #CBD5E1;
-  border: 1px solid #2D3B4E;
+  color: #C9C1B2;
+  border: 1px solid #352E2F;
 }
 
 .install-header {
@@ -258,12 +258,12 @@ html, body {
   margin-bottom: 8px;
 }
 
-.install-label { color: #94A3B8; }
-.install-pct { color: #5E9B6E; font-weight: 600; }
+.install-label { color: #9A9182; }
+.install-pct { color: #F69D39; font-weight: 600; }
 
 .install-track {
   height: 6px;
-  background: #2D3B4E;
+  background: #352E2F;
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 10px;
@@ -272,7 +272,7 @@ html, body {
 .install-fill {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #4A7C59, #5E9B6E);
+  background: linear-gradient(90deg, #CE7A1F, #F69D39);
   border-radius: 3px;
   transition: width 0.35s ease;
 }
@@ -281,7 +281,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #5E9B6E;
+  color: #F69D39;
   margin-bottom: 8px;
   min-height: 18px;
   font-size: 11px;
@@ -303,12 +303,12 @@ html, body {
   align-items: center;
   gap: 8px;
   padding: 2px 0;
-  color: #64748B;
+  color: #756E66;
   font-size: 10px;
   animation: entryIn 0.2s ease;
 }
 
-.install-entry i { color: #4A7C59; font-size: 8px; }
+.install-entry i { color: #CE7A1F; font-size: 8px; }
 
 .install-entry .fpath {
   flex: 1;
@@ -318,7 +318,7 @@ html, body {
   white-space: nowrap;
 }
 
-.install-entry .fsize { flex-shrink: 0; color: #475569; }
+.install-entry .fsize { flex-shrink: 0; color: #5C5454; }
 
 @keyframes entryIn {
   from { opacity: 0; transform: translateX(-6px); }
@@ -353,7 +353,7 @@ html, body {
   top: 50%; left: 50%;
   width: 80px; height: 80px;
   margin: -40px 0 0 -40px;
-  border: 2px solid rgba(74,124,89,0.3);
+  border: 2px solid rgba(206,122,31,0.3);
   border-radius: 50%;
   animation: pulse 2.5s ease-out infinite;
 }
@@ -370,7 +370,7 @@ html, body {
   font-size: 28px;
   font-weight: 800;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #25343F, #4A7C59);
+  background: linear-gradient(135deg, #251F20, #CE7A1F);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -395,7 +395,7 @@ html, body {
   transition: all 0.2s ease;
 }
 
-.welcome-feat:hover { border-color: rgba(74,124,89,0.3); transform: translateX(3px); }
+.welcome-feat:hover { border-color: rgba(206,122,31,0.3); transform: translateX(3px); }
 
 .feat-icon {
   width: 38px; height: 38px;
@@ -443,7 +443,7 @@ html, body {
   padding: 24px;
   font-size: 13px;
   line-height: 1.7;
-  color: #4B5563;
+  color: #5C5454;
 }
 
 .license-scroll h3 { color: var(--wiz-text); font-size: 16px; margin-bottom: 12px; font-weight: 700; }
@@ -531,7 +531,7 @@ html, body {
 }
 
 .scan-item.visible { opacity: 1; transform: translateX(0); }
-.scan-item.done { border-color: rgba(74,124,89,0.3); }
+.scan-item.done { border-color: rgba(206,122,31,0.3); }
 
 .scan-icon {
   width: 36px; height: 36px;
@@ -614,7 +614,7 @@ html, body {
 }
 
 .browser-card.visible { opacity: 1; transform: translateY(0); }
-.browser-card.running { border-color: rgba(74,124,89,0.4); }
+.browser-card.running { border-color: rgba(206,122,31,0.4); }
 
 .browser-card-icon {
   width: 40px; height: 40px;
@@ -624,13 +624,13 @@ html, body {
   flex-shrink: 0;
 }
 
-.browser-card-icon.chrome  { background: #FEE2E2; color: #DC2626; }
-.browser-card-icon.firefox { background: #FFEDD5; color: #EA580C; }
-.browser-card-icon.safari  { background: #DBEAFE; color: #2563EB; }
-.browser-card-icon.edge    { background: #E0E7FF; color: #4F46E5; }
+.browser-card-icon.chrome  { background: #FAEAE0; color: #C8452F; }
+.browser-card-icon.firefox { background: #FFEDD5; color: #E58A2B; }
+.browser-card-icon.safari  { background: #DBEAFE; color: #4C6470; }
+.browser-card-icon.edge    { background: #E0E7FF; color: #4C6470; }
 .browser-card-icon.brave   { background: #FCE7F3; color: #DB2777; }
-.browser-card-icon.opera   { background: #FEE2E2; color: #DC2626; }
-.browser-card-icon.arc     { background: #F3E8FF; color: #9333EA; }
+.browser-card-icon.opera   { background: #FAEAE0; color: #C8452F; }
+.browser-card-icon.arc     { background: #F3E8FF; color: #4C6470; }
 .browser-card-icon.default { background: var(--wiz-sidebar); color: var(--wiz-muted); }
 
 .browser-card-info { flex: 1; min-width: 0; }
@@ -639,14 +639,14 @@ html, body {
 .default-badge {
   font-size: 10px; font-weight: 500;
   padding: 2px 7px;
-  background: rgba(74,124,89,0.1);
+  background: rgba(206,122,31,0.1);
   color: var(--wiz-accent);
   border-radius: 4px;
   margin-left: 6px;
 }
 
 .browser-card-version { font-size: 12px; color: var(--wiz-muted); }
-.browser-card-path { font-size: 10px; color: #94A3B8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.browser-card-path { font-size: 10px; color: #9A9182; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
 
 .browser-card-state {
   padding: 4px 10px;
@@ -656,7 +656,7 @@ html, body {
   flex-shrink: 0;
 }
 
-.browser-card-state.running  { background: rgba(74,124,89,0.1); color: var(--wiz-success); }
+.browser-card-state.running  { background: rgba(206,122,31,0.1); color: var(--wiz-success); }
 .browser-card-state.installed { background: var(--wiz-sidebar); color: var(--wiz-muted); }
 
 .browser-card-monitor {
@@ -698,7 +698,7 @@ html, body {
   transition: all 0.3s ease;
 }
 
-.conn-item.success { border-color: rgba(74,124,89,0.4); }
+.conn-item.success { border-color: rgba(206,122,31,0.4); }
 .conn-item.failed  { border-color: rgba(220,53,69,0.3); }
 
 .conn-icon {
@@ -758,7 +758,7 @@ html, body {
   font-weight: 600;
 }
 
-.result-badge.success { background: rgba(74,124,89,0.1); color: var(--wiz-success); }
+.result-badge.success { background: rgba(206,122,31,0.1); color: var(--wiz-success); }
 .result-badge.warning { background: rgba(199,146,62,0.1); color: var(--wiz-warning); }
 .result-badge.failed  { background: rgba(220,53,69,0.1); color: var(--wiz-danger); }
 

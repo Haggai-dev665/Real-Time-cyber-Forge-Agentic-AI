@@ -76,10 +76,10 @@ class LottieAnimationManager {
 
             @keyframes alert-pulse {
                 0%, 100% { 
-                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); 
+                    box-shadow: 0 0 0 0 rgba(229,87,62, 0.7); 
                 }
                 50% { 
-                    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); 
+                    box-shadow: 0 0 0 10px rgba(229,87,62, 0); 
                 }
             }
 

@@ -47,7 +47,7 @@ class ReportsScreen {
                         { id:'r-threat', title:'Threat Summary', icon:'shield-alt', color:'var(--error)', desc:'Overview of all detected threats and their status', count:'14 reports' },
                         { id:'r-vulns', title:'Vulnerability Report', icon:'bug', color:'var(--warning)', desc:'CVE findings and remediation status', count:'8 reports' },
                         { id:'r-compliance', title:'Compliance Report', icon:'clipboard-check', color:'var(--success)', desc:'Regulatory compliance status across frameworks', count:'6 reports' },
-                        { id:'r-incident', title:'Incident Report', icon:'fire-extinguisher', color:'#ff9500', desc:'Security incident timeline and response', count:'3 reports' },
+                        { id:'r-incident', title:'Incident Report', icon:'fire-extinguisher', color:'#F69D39', desc:'Security incident timeline and response', count:'3 reports' },
                         { id:'r-executive', title:'Executive Summary', icon:'chart-pie', color:'var(--primary)', desc:'High-level security posture overview', count:'12 reports' },
                         { id:'r-forensics', title:'Forensics Report', icon:'search-plus', color:'var(--info)', desc:'Digital forensics investigation findings', count:'5 reports' },
                     ].map(r => `
@@ -188,7 +188,7 @@ class ReportsScreen {
 
         // Store reports by index for safe onclick references
         this._renderedReports = reports;
-        const typeColors = { threat:'var(--error)', vulnerability:'var(--warning)', compliance:'var(--success)', incident:'#ff9500', executive:'var(--primary)', forensics:'var(--info)' };
+        const typeColors = { threat:'var(--error)', vulnerability:'var(--warning)', compliance:'var(--success)', incident:'#F69D39', executive:'var(--primary)', forensics:'var(--info)' };
 
         tbody.innerHTML = reports.map((r, idx) => `
             <tr style="border-bottom:1px solid var(--border-color);"

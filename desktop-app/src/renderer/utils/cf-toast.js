@@ -265,7 +265,7 @@
         // Loading state
         result.removeAttribute('hidden');
         result.innerHTML =
-            '<div style="display:flex;align-items:center;gap:8px;color:var(--cf-text-muted,#5a6a7a)">' +
+            '<div style="display:flex;align-items:center;gap:8px;color:var(--cf-text-muted,#756E66)">' +
             '<i class="fas fa-circle-notch fa-spin"></i> Dispatching to 8-agent orchestrator…' +
             '</div>';
 

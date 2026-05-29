@@ -339,8 +339,8 @@
     if (bar) {
       bar.style.width = value + '%';
       // Keep gradient colors set in CSS; override only on high usage
-      if (value > 80) bar.style.background = 'linear-gradient(90deg,#ef4444,#f87171)';
-      else if (value > 60) bar.style.background = 'linear-gradient(90deg,#f59e0b,#fbbf24)';
+      if (value > 80) bar.style.background = 'linear-gradient(90deg,#E5573E,#EE6A50)';
+      else if (value > 60) bar.style.background = 'linear-gradient(90deg,#D8B65A,#D8B65A)';
       else bar.style.background = '';
     }
     if (pct) pct.textContent = value + '%';
@@ -403,11 +403,11 @@
   }
 
   const _severityIcon = {
-    critical: '<i class="fas fa-circle-exclamation" style="color:#ef4444;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
-    error:    '<i class="fas fa-circle-exclamation" style="color:#ef4444;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
-    warning:  '<i class="fas fa-triangle-exclamation" style="color:#f59e0b;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
-    success:  '<i class="fas fa-circle-check" style="color:#10b981;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
-    info:     '<i class="fas fa-circle-info" style="color:#3b82f6;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    critical: '<i class="fas fa-circle-exclamation" style="color:#E5573E;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    error:    '<i class="fas fa-circle-exclamation" style="color:#E5573E;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    warning:  '<i class="fas fa-triangle-exclamation" style="color:#D8B65A;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    success:  '<i class="fas fa-circle-check" style="color:#F69D39;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
+    info:     '<i class="fas fa-circle-info" style="color:#5E7A88;font-size:11px;flex-shrink:0;margin-top:1px"></i>',
   };
 
   function _activityItemHtml(time, severity, msg) {
@@ -496,7 +496,7 @@
     item.title = url;
     item.innerHTML =
       `<span class="url-feed-time">${time}</span>` +
-      `<span class="url-feed-browser"><i class="fas fa-${isThreat ? 'skull-crossbones' : 'satellite-dish'}" style="color:${isThreat ? '#ef4444' : '#10b981'}"></i></span>` +
+      `<span class="url-feed-browser"><i class="fas fa-${isThreat ? 'skull-crossbones' : 'satellite-dish'}" style="color:${isThreat ? '#E5573E' : '#F69D39'}"></i></span>` +
       `<span class="url-feed-label">${shortUrl}</span>` +
       (category ? `<span class="url-feed-category">${category}</span>` : '') +
       `<span class="url-status ${status}">${statusLabel}</span>`;
@@ -791,11 +791,11 @@
           const latency = Date.now() - t0;
           if (result?.success) {
             appendAgentConsole(`Health OK — ${latency}ms — status: ${result.data?.status || 'healthy'}`, 'success');
-            healthBtn.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.3)';
+            healthBtn.style.boxShadow = '0 0 0 3px rgba(246,157,57,0.3)';
             setTimeout(() => { if (healthBtn) healthBtn.style.boxShadow = ''; }, 1500);
           } else {
             appendAgentConsole(`Health check failed — ${latency}ms`, 'error');
-            healthBtn.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.3)';
+            healthBtn.style.boxShadow = '0 0 0 3px rgba(229,87,62,0.3)';
             setTimeout(() => { if (healthBtn) healthBtn.style.boxShadow = ''; }, 1500);
           }
         } catch (e) {
@@ -1031,7 +1031,7 @@
       const backendOk = !!(healthResult?.success);
 
       // Meta card values
-      if (backendEl) { backendEl.textContent = backendOk ? 'Connected' : 'Offline'; backendEl.style.color = backendOk ? '#27AE60' : '#C0392B'; }
+      if (backendEl) { backendEl.textContent = backendOk ? 'Connected' : 'Offline'; backendEl.style.color = backendOk ? '#F69D39' : '#C8452F'; }
 
       // Status strip chips
       if (stripBackend) {
@@ -1046,7 +1046,7 @@
       let agentCount = listResult?.data?.data?.count || 0;
       // Desktop app itself is always at least 1 agent when backend is reachable
       if (backendOk && agentCount < 1) agentCount = 1;
-      if (agentCountEl) { agentCountEl.textContent = agentCount; agentCountEl.style.color = agentCount > 0 ? '#27AE60' : '#C0392B'; }
+      if (agentCountEl) { agentCountEl.textContent = agentCount; agentCountEl.style.color = agentCount > 0 ? '#F69D39' : '#C8452F'; }
       if (stripAgents) stripAgents.textContent = agentCount;
 
       _updateKPI('ac-kpi-agents', agentCount);
@@ -1054,7 +1054,7 @@
       if (taskCount > 0) _updateKPI('ac-kpi-tasks', taskCount);
 
       const mlHealthy = !!(mlResult?.success && (mlResult?.data?.success || mlResult?.data?.status === 'healthy'));
-      if (mlEl) { mlEl.textContent = mlHealthy ? 'Healthy' : 'Degraded'; mlEl.style.color = mlHealthy ? '#27AE60' : '#E67E22'; }
+      if (mlEl) { mlEl.textContent = mlHealthy ? 'Healthy' : 'Degraded'; mlEl.style.color = mlHealthy ? '#F69D39' : '#F69D39'; }
       if (stripML) {
         stripML.className = `ac-chip ${mlHealthy ? 'ac-chip-online' : 'ac-chip-offline'}`;
         stripML.innerHTML = `ML: ${mlHealthy ? 'Healthy' : 'Degraded'}`;
@@ -1068,8 +1068,8 @@
       console.log('[AgentCenter] Backend sync complete');
     } catch (error) {
       setAgentControlStatus(false, 'Backend Unreachable');
-      if (backendEl) { backendEl.textContent = 'Unreachable'; backendEl.style.color = '#C0392B'; }
-      if (mlEl) { mlEl.textContent = 'Unknown'; mlEl.style.color = '#C0392B'; }
+      if (backendEl) { backendEl.textContent = 'Unreachable'; backendEl.style.color = '#C8452F'; }
+      if (mlEl) { mlEl.textContent = 'Unknown'; mlEl.style.color = '#C8452F'; }
       if (stripBackend) { stripBackend.className = 'ac-chip ac-chip-offline'; stripBackend.textContent = 'Backend: Offline'; }
       if (stripML) { stripML.className = 'ac-chip ac-chip-offline'; stripML.textContent = 'ML: Unknown'; }
       appendAgentConsole(`Backend sync failed: ${error.message}`, 'error');

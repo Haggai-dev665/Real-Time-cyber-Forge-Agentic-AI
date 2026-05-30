@@ -251,8 +251,8 @@ router.post('/v2/dga-detect', async (req, res) => {
 
 /**
  * @route   POST /api/cyberforge-ml/v2/security-chat
- * @desc    Cybersecurity Q&A LLM (Phase 3 — ZySec-AI/SecurityLLM via HF Inference API)
- *          Auto-falls back to Gemini when LLM is unavailable.
+ * @desc    Cybersecurity Q&A LLM — DeepSeek via HF Inference Providers, Mistral-7B
+ *          fallback, ML heuristic as last resort.
  * @body    { query: string, max_tokens?: number }
  */
 router.post('/v2/security-chat', async (req, res) => {
@@ -260,6 +260,41 @@ router.post('/v2/security-chat', async (req, res) => {
         const { query, max_tokens } = req.body;
         if (!query) return res.status(400).json({ error: 'query required' });
         const result = await cyberforgeML.securityChat(query, max_tokens);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @route   POST /api/cyberforge-ml/v2/ioc-scan
+ * @desc    Multi-IOC scan (URL/domain/IP/hash) across all ML models + DGA + BERT,
+ *          with a DeepSeek narrative when the Space has HF_TOKEN.
+ * @body    { url?: string, domain?: string, ip?: string, hash?: string, context?: object }
+ */
+router.post('/v2/ioc-scan', async (req, res) => {
+    try {
+        const { url, domain, ip, hash, context } = req.body || {};
+        if (!url && !domain && !ip && !hash) {
+            return res.status(400).json({ error: 'at least one of url, domain, ip, hash required' });
+        }
+        const result = await cyberforgeML.iocScan({ url, domain, ip, hash, context });
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * @route   POST /api/cyberforge-ml/v2/url-enrich
+ * @desc    AI Deep Scan — ML predictions + BERT + DGA + feature importances in one scored result.
+ * @body    { url: string }
+ */
+router.post('/v2/url-enrich', async (req, res) => {
+    try {
+        const { url } = req.body || {};
+        if (!url) return res.status(400).json({ error: 'url required' });
+        const result = await cyberforgeML.urlEnrich(url);
         res.json(result);
     } catch (error) {
         res.status(500).json({ error: error.message });

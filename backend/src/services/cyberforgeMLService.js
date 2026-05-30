@@ -72,7 +72,7 @@ class CyberForgeMLService {
             security_llm: {
                 endpoint: '/api/v2/security-chat',
                 input:    'query',
-                desc:     'Cybersecurity Q&A LLM (ZySec-AI/SecurityLLM via HF Inference API)',
+                desc:     'Cybersecurity Q&A LLM (DeepSeek via HF Inference Providers, Mistral-7B fallback)',
             },
         };
 
@@ -111,6 +111,17 @@ class CyberForgeMLService {
 
     async securityChat(query, maxTokens = 512) {
         return this._callTransformerEndpoint('/api/v2/security-chat', { query, max_tokens: maxTokens });
+    }
+
+    async iocScan(indicators = {}) {
+        // indicators: { url?, domain?, ip?, hash?, context? } — runs all ML models +
+        // DGA + BERT against multiple IOC types, with DeepSeek narrative when HF_TOKEN is set.
+        return this._callTransformerEndpoint('/api/v2/ioc-scan', indicators);
+    }
+
+    async urlEnrich(url) {
+        // Richer "AI Deep Scan": ML predictions + BERT + DGA + feature importances, single scored result.
+        return this._callTransformerEndpoint('/api/v2/url-enrich', { url });
     }
 
     async transformerStatus() {

@@ -38,6 +38,7 @@ const policyRoutes = require('./routes/policy');
 const auditRoutes = require('./routes/audit');
 const sandboxRoutes = require('./routes/sandbox');
 const orchestratorRoutes = require('./routes/orchestrator');
+const memoryRoutes = require('./routes/memory');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
@@ -155,6 +156,7 @@ class CyberForgeServer {
     this.app.use('/api/audit', auditRoutes);             // TODO 6: Audit Trail
     this.app.use('/api/sandbox', sandboxRoutes);         // Sandbox: IOC + MITRE + evidence locker
     this.app.use('/api/orchestrator', orchestratorRoutes); // 8-agent orchestrator
+    this.app.use('/api/memory', memoryRoutes);           // Vector memory (local-first RAG sync)
 
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);

@@ -233,6 +233,68 @@ router.get('/alerts', async (req, res) => {
   }
 });
 
+/**
+ * Unified agent activity feed for the desktop Agent Core screen.
+ * GET /api/agent/activity?userId=...
+ *
+ * Aggregates the agent roster + recent alerts into the shape the new desktop
+ * app's Agent Core needs in one call: session counters (actions / resolved /
+ * critical / tools / agents) and a reasoning-console-style activity list.
+ */
+router.get('/activity', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    let agents = [];
+    try { agents = agentManager.listAgents() || []; } catch (e) { agents = []; }
+
+    let alerts = [];
+    if (userId) {
+      try { alerts = await appwriteService.listAlerts(userId, { limit: 25 }); } catch (e) { alerts = []; }
+    }
+
+    const norm = (s) => String(s || '').toLowerCase();
+    const resolved = alerts.filter(a => ['resolved', 'dismissed'].includes(norm(a.status))).length;
+    const critical = alerts.filter(a => norm(a.severity) === 'critical').length;
+
+    // Map alerts -> reasoning-console lines (THINK/ACTION/OBSERVE/ALERT).
+    const activity = alerts.slice(0, 20).map(a => {
+      const sev = norm(a.severity) || 'info';
+      const isResolved = ['resolved', 'dismissed'].includes(norm(a.status));
+      const kind = (sev === 'critical' || sev === 'high') ? 'warn' : (isResolved ? 'obs' : 'act');
+      return {
+        type: kind,
+        tag: sev === 'critical' ? 'ALERT' : (kind === 'obs' ? 'OBSERVE' : 'ACTION'),
+        message: a.description || a.source || 'agent event',
+        severity: sev,
+        riskScore: a.riskScore || 0,
+        ts: a.createdAt || a.$createdAt || new Date().toISOString()
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        session: {
+          actions: alerts.length,
+          resolved,
+          critical,
+          tools: 6,
+          agents: (agents.length || 0) + 1
+        },
+        activity,
+        agents: agents.map(a => ({
+          name: a.name || a.agentName || 'agent',
+          status: a.status || (a.isRunning ? 'running' : 'idle')
+        }))
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to build agent activity:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ==================== BROWSER INTELLIGENCE ====================
 
 /**

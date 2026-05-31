@@ -1,0 +1,34 @@
+/* ============================================================
+   CyberForge — floating Agent panel (shared component)
+   The panel lives in an isolated iframe (components/agent-panel.html) so its
+   styles never collide with a host page. This file only positions that iframe
+   inside the content area and styles the fallback restore icon.
+   ============================================================ */
+
+/* the panel iframe — docked top-right of the content area (same spot as the
+   native Threat-Overview panel), spanning the full height between the top bar
+   and the status bar so the whole panel is visible (body scrolls internally) */
+.cf-agent-frame{
+  position:absolute; top:8px; right:12px; width:404px; height:calc(100% - 16px);
+  border:0; background:transparent; z-index:46; color-scheme:dark;
+}
+
+/* fallback floating icon for pages that don't ship cyberforge.css's .agent-fab
+   (e.g. Threat Overview, which uses fully inline styles) */
+.cf-fab{
+  position:absolute; right:20px; bottom:44px; width:54px; height:54px; border-radius:14px;
+  z-index:50; cursor:pointer; display:grid; place-items:center; color:var(--amber-2);
+  border:1px solid rgba(245,166,35,.4);
+  background:radial-gradient(circle at 50% 38%,#4a3414,#140d04);
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.7),0 0 40px -16px rgba(245,166,35,.7);
+  transition:transform .25s;
+}
+.cf-fab:hover{transform:translateY(-3px) scale(1.04)}
+.cf-fab svg{width:24px;height:24px;position:relative;z-index:2;animation:bob 3.4s ease-in-out infinite}
+.cf-fab::after{content:"";position:absolute;inset:-3px;border-radius:16px;border:1.5px solid transparent;
+  border-top-color:rgba(245,166,35,.8);border-right-color:rgba(245,166,35,.3);animation:spin 2.4s linear infinite}
+.cf-fab .fab-ping{position:absolute;inset:0;border-radius:14px;border:1.5px solid rgba(245,166,35,.6);
+  animation:ping 2.6s cubic-bezier(0,0,.2,1) infinite}
+
+/* collapsed state (used for both the iframe and the restore icon) */
+.cf-hidden{display:none !important}

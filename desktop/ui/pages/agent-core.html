@@ -218,6 +218,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -240,7 +242,8 @@ setTimeout(()=>gauges.forEach(g=>rg(g.svg,g.target,g.color)),80);
 const cpuV=document.getElementById('cpuV'),ramV=document.getElementById('ramV'),ctxV=document.getElementById('ctxV'),
       sbCpu=document.getElementById('sbCpu'),sbMem=document.getElementById('sbMem');
 setInterval(()=>{
-  gauges.forEach((g,i)=>{ let p=g.target+(Math.random()*14-7); p=Math.max(10,Math.min(98,p)); g.target=p; rg(g.svg,p,g.color);
+  var d=window.CFA||{}; var vals=[d.cpu||0, d.mem||0, (d.ctx!=null?d.ctx:0)];
+  gauges.forEach((g,i)=>{ var p=Math.max(0,Math.min(100, vals[i])); g.target=p; rg(g.svg,p,g.color);
     if(i===0){cpuV.textContent=Math.round(p)+'%';sbCpu.textContent='CPU '+Math.round(p)+'%';}
     if(i===1){ramV.textContent=Math.round(p)+'%';sbMem.textContent='MEM '+Math.round(p)+'%';}
     if(i===2)ctxV.textContent=Math.round(p)+'%';
@@ -288,39 +291,23 @@ function advanceChain(){
 }
 advanceChain(); setInterval(advanceChain,1700);
 
-/* ============ LIVE CONSOLE ============ */
+/* ============ LIVE CONSOLE — real agent activity ============ */
 const con=document.getElementById('console');
-const lines=[
-  ['think','THINK','New telemetry batch received — <b>1,204 endpoint signals</b> to evaluate.'],
-  ['act','ACTION','Querying threat-intel graph for matching <b>IOC signatures</b>…'],
-  ['obs','OBSERVE','3 endpoints show <b>anomalous outbound traffic</b> to unclassified hosts.'],
-  ['think','THINK','Pattern resembles <b>RedLine stealer</b> beaconing cadence (60s interval).'],
-  ['act','ACTION','Dispatching <b>sandbox detonation</b> for suspicious payload svc_update.dll.'],
-  ['obs','OBSERVE','Sandbox verdict: <b>MALICIOUS</b> · risk 87/100 · credential access confirmed.'],
-  ['warn','ALERT','Recommending <b>endpoint isolation</b> for WS-4471 pending operator approval.'],
-  ['act','ACTION','Updating behavioral model with 6 new <b>malicious indicators</b>.'],
-  ['obs','OBSERVE','Posture re-scored — <b>no lateral movement</b> detected across fleet.'],
-  ['think','THINK','Monitoring window extended; <b>confidence 99.2%</b>. Awaiting next batch.']
-];
-let li=0;
-function pushLine(){
-  const [c,tag,msg]=lines[li%lines.length];
+let paused=false;
+function pushLine(c,tag,msg){
+  if(paused) return;
   const now=new Date();
   const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
   const el=document.createElement('div'); el.className='cl '+c;
   el.innerHTML='<span class="ts">'+ts+'</span><span class="tag">'+tag+'</span><span class="msg">'+msg+'</span>';
   con.appendChild(el); con.scrollTop=con.scrollHeight;
   while(con.children.length>40) con.firstChild.remove();
-  li++;
 }
-for(let i=0;i<6;i++) setTimeout(pushLine,i*220);
-let conTimer=setInterval(pushLine,1700);
+pushLine('think','THINK','Agent core online — connecting to backend…');
 
-/* ops + session counters */
+/* ops counter — real backend latency */
 const ops=document.getElementById('ops');
-setInterval(()=>ops.textContent=(900+Math.floor(Math.random()*700)).toLocaleString()+' tok/s',850);
-const sActions=document.getElementById('sActions');
-setInterval(()=>sActions.textContent=+sActions.textContent+Math.floor(Math.random()*3),2000);
+setInterval(()=>{ var d=window.CFA||{}; ops.textContent=(d.backendOk?('live · '+(d.latency||0)+'ms'):'offline'); },1000);
 
 /* ============ TASK QUEUE ============ */
 const queue=document.getElementById('queue');
@@ -353,20 +340,90 @@ document.querySelectorAll('.qa').forEach(qa=>{
   attachRipple(qa);
   qa.addEventListener('click',()=>{
     qa.classList.add('busy'); setTimeout(()=>qa.classList.remove('busy'),900);
-    const el=document.createElement('div'); el.className='cl act';
-    const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-    el.innerHTML='<span class="ts">'+ts+'</span><span class="tag">OPERATOR</span><span class="msg"><b>'+qa.dataset.act+'</b></span>';
-    con.appendChild(el); con.scrollTop=con.scrollHeight;
+    var label=((qa.querySelector('span')||{}).textContent||'').trim();
+    if(label==='Run Sweep' && typeof window.runSweep==='function'){ window.runSweep(); return; }
+    pushLine('act','OPERATOR','<b>'+qa.dataset.act+'</b>');
   });
 });
 
 /* pause toggle */
-const btnPause=document.getElementById('btnPause'); let paused=false;
+const btnPause=document.getElementById('btnPause');
 btnPause.addEventListener('click',()=>{
   paused=!paused;
-  if(paused){ clearInterval(conTimer); btnPause.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 14 8-14 8Z"/></svg>Resume'; }
-  else{ conTimer=setInterval(pushLine,1700); btnPause.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause'; }
+  btnPause.innerHTML=paused
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 14 8-14 8Z"/></svg>Resume'
+    :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause';
 });
+
+/* ===========================================================
+   REAL DATA LAYER — Agent Core wired to Tauri + backend, kept
+   in sync with the floating agent via shared scan state.
+   =========================================================== */
+window.CFA={cpu:0,mem:0,ctx:0,latency:0,backendOk:false,agents:1,threats:0};
+(function(){
+  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function pollSystem(){ cfInvoke('get_system_stats').then(function(r){ var d=(r&&r.data)||{}; window.CFA.cpu=+d.cpu||0; window.CFA.mem=+d.memory||0; }).catch(function(){}); }
+  function pollStatus(){
+    cfInvoke('agent_status').then(function(r){ var d=(r&&r.data)||{};
+      window.CFA.latency=d.latencyMs||0; window.CFA.backendOk=!!d.backendOk; window.CFA.agents=d.agentCount||1; window.CFA.threats=d.threatCount||0;
+      window.CFA.ctx=Math.min(100,(d.threatCount||0)*8+(d.agentCount||1)*4);
+      var st=document.querySelector('.id-state');
+      if(st){ st.innerHTML='<span class="dot"></span>'+(d.backendOk?'ONLINE':'OFFLINE')+' · '+window.CFA.agents+' agents';
+        st.style.color=d.backendOk?'var(--green)':'var(--red)'; }
+    }).catch(function(){});
+  }
+  function pollActivity(){
+    cfInvoke('agent_alerts').then(function(r){ var d=(r&&r.data)||{}; var arr=d.alerts||[];
+      var sA=document.getElementById('sActions'),sR=document.getElementById('sResolved'),qc=document.getElementById('qcount');
+      if(sA) sA.textContent=String(d.count||arr.length||0);
+      var resolved=arr.filter(function(a){var s=(a.status||'').toLowerCase();return s==='resolved'||s==='dismissed';}).length;
+      if(sR) sR.textContent=String(resolved);
+      if(qc) qc.textContent=(window.CFA.agents||1)+' agents';
+    }).catch(function(){});
+  }
+  var lastScanId=null;
+  function showScan(d){
+    if(!d) return; var id=(d.url||'')+'|'+(d.scannedAt||'');
+    if(id===lastScanId) return; lastScanId=id;
+    pushLine('think','THINK','Analyzing <b>'+esc((d.url||'').replace(/^https?:\/\//,'').slice(0,40))+'</b> — scraping + ML classification.');
+    setTimeout(function(){ pushLine('act','ACTION','ML models scored risk <b>'+(d.riskScore||0)+'/100</b> · category <b>'+esc(d.category||'unknown')+'</b>.'); },500);
+    setTimeout(function(){ var risk=+d.riskScore||0;
+      if(risk>=50) pushLine('warn','ALERT','<b>'+esc((d.category||'threat').toUpperCase())+'</b> — '+esc((d.summary||'').slice(0,90)));
+      else pushLine('obs','OBSERVE','Clean — '+esc((d.summary||'no threats detected').slice(0,90))); },1000);
+  }
+  function pollScan(){ cfInvoke('get_last_scan').then(function(s){ if(s&&s.data) showScan(s.data); }).catch(function(){}); }
+  window.runSweep=function(){
+    pushLine('act','ACTION','Dispatching threat sweep — scanning active browser tab…');
+    cfInvoke('get_active_urls').then(function(r){ var list=(r&&r.data&&r.data.urls)||[]; var url=(list[0]&&list[0].url)||'https://example.com';
+      return cfInvoke('scan_url',{url:url}); }).then(function(){ pollScan(); }).catch(function(){ pushLine('warn','ALERT','Sweep failed — backend unreachable or not signed in.'); });
+  };
+
+  // REAL-TIME PUSH: one shared cf-telemetry event drives the screen + keeps it
+  // in sync with the floating agent; the pollers below are a slow fallback.
+  function applyTelemetry(p){
+    if(!p) return;
+    var sys=(p.sys&&p.sys.data)||null;
+    if(sys){ window.CFA.cpu=+sys.cpu||0; window.CFA.mem=+sys.memory||0; }
+    var st=(p.status&&p.status.data)||null;
+    if(st){ window.CFA.latency=st.latencyMs||0; window.CFA.backendOk=!!st.backendOk; window.CFA.agents=st.agentCount||1; window.CFA.threats=st.threatCount||0;
+      window.CFA.ctx=Math.min(100,(st.threatCount||0)*8+(st.agentCount||1)*4);
+      var s2=document.querySelector('.id-state');
+      if(s2){ s2.innerHTML='<span class="dot"></span>'+(st.backendOk?'ONLINE':'OFFLINE')+' · '+window.CFA.agents+' agents'; s2.style.color=st.backendOk?'var(--green)':'var(--red)'; }
+    }
+    if(p.lastScan&&p.lastScan.data) showScan(p.lastScan.data);
+  }
+  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
+    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyTelemetry(e.payload); });
+  }catch(e){}
+
+  pollSystem(); pollStatus(); pollActivity(); pollScan();
+  setInterval(pollSystem,20000); setInterval(pollStatus,25000); setInterval(pollActivity,15000); setInterval(pollScan,8000);
+  // Real-time: refresh activity / last-scan the instant a live SSE event arrives.
+  window.addEventListener('cf:agent', function(){ try{ pollActivity(); }catch(e){} });
+  window.addEventListener('cf:scan', function(){ try{ pollScan(); pollActivity(); }catch(e){} });
+})();
 </script>
 </body>
 </html>

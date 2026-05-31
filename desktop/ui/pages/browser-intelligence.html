@@ -133,7 +133,8 @@ fitWindow('win');
     cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
   resize();window.addEventListener('resize',resize);
   // center = browser, ring of domains
-  const domains=[['acme-corp.io','#43e08a'],['google.com','#2bd4ee'],['cdn.cloudflare','#2bd4ee'],['okta.com','#2bd4ee'],['duckdns.org','#f4495e'],['fonts.gstatic','#5aa9e6'],['analytics.x','#5aa9e6'],['free-prizes.xyz','#f4495e']];
+  let domains=[['scanning…','#5d6c84']];
+  window.__setDomains=function(a){ domains=(a&&a.length)?a:[['no active tabs','#5d6c84']]; };
   let pulses=[];
   function frame(t){
     if(W<2){requestAnimationFrame(frame);return;}
@@ -188,37 +189,97 @@ fitWindow('win');
     http.prepend(det); http.prepend(el);
     while(http.children.length>90){http.lastChild.remove();}
   }
-  for(let i=0;i<16;i++)add();
-  setInterval(add,360);
+  window.__httpAdd=add;            // exposed; real navigation events feed it
+  window.__httpEl=http;
 })();
 
-/* sessions */
-const user='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
-document.getElementById('sess').innerHTML=[
-  ['Chrome · Tab 1','acme-corp.io · 14 req/s'],
-  ['Chrome · Tab 2','mail.o365.com · 3 req/s'],
-  ['Chrome · Tab 3','okta SSO · idle']
-].map(s=>'<div class="sr"><span class="sav">'+user+'</span><div class="sinfo"><div class="su">'+s[0]+'</div><div class="sm">'+s[1]+'</div></div><span class="sdot"></span></div>').join('');
+/* ===========================================================
+   BROWSER INTELLIGENCE — real data via Rust (browser_intel:
+   running browsers + active tabs + visited domains) + cf-telemetry
+   (behavioral alerts = backend threats). Reports to the backend
+   via browser_intel_report.
+   =========================================================== */
+(function(){
+  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function hostOf(u){ try{ return new URL(u).hostname; }catch(e){ return String(u||''); } }
+  const USER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
+  const kv=document.querySelectorAll('.kpi .kv'), kd=document.querySelectorAll('.kpi .kd');
+  const sessEl=document.getElementById('sess'), httpEl=document.getElementById('http'),
+        intcEl=document.getElementById('intercept');
+  let lastUrls={};
 
-/* intercept queue */
-const intc=[
-  ['POST','duckdns.org/gate.php'],['GET','free-prizes-login.xyz/verify'],['POST','acme-corp.io/api/export'],
-  ['PUT','okta.com/sessions/refresh'],['GET','cdn.unknown-host.ru/p.js']
-];
-const intcEl=document.getElementById('intercept');
-function renderIntc(){
-  intcEl.innerHTML=intc.map((it,i)=>
-    '<div class="intc" data-i="'+i+'"><div class="ih"><span class="hm '+(it[0]==='GET'?'get':it[0]==='POST'?'post':'put')+'">'+it[0]+'</span><span class="iurl">'+it[1]+'</span></div>'+
-    '<div class="iact"><button class="ibtn fwd" data-act="fwd" data-i="'+i+'">FORWARD</button><button class="ibtn drop" data-act="drop" data-i="'+i+'">DROP</button></div></div>').join('')
-    || '<div style="padding:24px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">Queue empty — all requests forwarded</div>';
-  document.getElementById('intcCount').textContent=intc.length+' held';
-  document.getElementById('kIntc').textContent=intc.length;
-  intcEl.querySelectorAll('.ibtn').forEach(b=>b.addEventListener('click',()=>{intc.splice(+b.dataset.i,1);renderIntc();}));
-}
-renderIntc();
+  function httpEntry(method,url,host,https){
+    if(!httpEl) return;
+    const el=document.createElement('div'); el.className='hr'; el.title=url;
+    const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+    const st=https?['200','ok']:['—','warn'];
+    el.innerHTML='<span class="hm get">'+method+'</span><span class="hu" style="'+(!https?'color:var(--amber-2)':'')+'">'+esc(host)+'</span>'+
+      '<span class="hs '+st[1]+'">'+st[0]+'</span><span class="hsz">page</span><span class="ht">'+ts+'</span>';
+    httpEl.prepend(el); while(httpEl.children.length>90) httpEl.lastChild.remove();
+  }
+  function renderSessions(sessions,browsers){
+    if(!sessions||!sessions.length){ sessEl.innerHTML='<div style="padding:20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No active browser tabs detected<br><span style="font-size:9px">(grant Automation permission, open a browser)</span></div>'; }
+    else sessEl.innerHTML=sessions.map(function(s){
+      return '<div class="sr"><span class="sav">'+USER+'</span><div class="sinfo"><div class="su">'+esc(s.browser)+'</div><div class="sm">'+esc(s.host||hostOf(s.url))+'</div></div><span class="sdot" style="'+(s.https?'':'background:var(--amber-2);box-shadow:0 0 5px var(--amber-2)')+'"></span></div>';
+    }).join('');
+    const running=(browsers||[]).filter(function(b){return b.isRunning;}).length;
+    if(kv[0]) kv[0].textContent=(sessions||[]).length;
+    if(kd[0]) kd[0].textContent=(running||0)+' browser'+(running===1?'':'s');
+  }
+  var dgaCache={};          // domain -> {flagged,score} | null (in-flight)
+  var lastDomainArr=[];
+  function pushDomains(){
+    var out=lastDomainArr.slice(0,10).map(function(x){
+      var c=dgaCache[x[0]];
+      return (c&&c.flagged) ? [x[0]+' ⚠dga', '#f4495e'] : x;
+    });
+    if(window.__setDomains) window.__setDomains(out.length?out:[['no active tabs','#5d6c84']]);
+  }
+  function renderDomains(domains,sessions){
+    const arr=[];
+    (sessions||[]).forEach(function(s){ var h=s.host||hostOf(s.url); if(h&&!arr.some(function(x){return x[0]===h;})) arr.push([h, s.https?'#43e08a':'#f4495e']); });
+    (domains||[]).forEach(function(d){ if(d&&!arr.some(function(x){return x[0]===d;})) arr.push([d,'#2bd4ee']); });
+    lastDomainArr=arr; pushDomains();
+    if(kv[1]) kv[1].textContent=arr.length;
+    // DGA detection on real visited domains (cached, best-effort) — recolors flagged nodes live
+    arr.slice(0,10).forEach(function(x){
+      var dom=x[0]; if(dom in dgaCache) return; if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(dom)) return;
+      dgaCache[dom]=null;
+      cfInvoke('ml_detect_dga',{domain:dom}).then(function(r){
+        dgaCache[dom]={flagged:!!(r&&(r.is_threat||r.prediction==='dga')), score:(r&&r.threat_score)||0};
+        if(dgaCache[dom].flagged) pushDomains();
+      }).catch(function(){ dgaCache[dom]={flagged:false}; });
+    });
+  }
+  function renderIntercept(sessions){
+    const flagged=(sessions||[]).filter(function(s){ return !s.https; });
+    intcEl.innerHTML = flagged.length ? flagged.map(function(s){
+      return '<div class="intc"><div class="ih"><span class="hm get">HTTP</span><span class="iurl">'+esc(s.host||hostOf(s.url))+'</span></div>'+
+        '<div class="iact"><button class="ibtn fwd" data-u="'+esc(s.url)+'">SCAN</button><button class="ibtn drop">DISMISS</button></div></div>';
+    }).join('') : '<div style="padding:24px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No insecure tabs — all sessions HTTPS</div>';
+    document.getElementById('intcCount').textContent=flagged.length+' flagged';
+    document.getElementById('kIntc').textContent=flagged.length;
+    intcEl.querySelectorAll('.ibtn.drop').forEach(function(b){ b.addEventListener('click',function(){ b.closest('.intc').remove(); }); });
+    intcEl.querySelectorAll('.ibtn.fwd').forEach(function(b){ b.addEventListener('click',function(){ var u=b.getAttribute('data-u'); b.textContent='SCANNING…'; cfInvoke('scan_url',{url:u}).then(function(r){ var d=(r&&r.data)||{}; b.textContent='RISK '+(d.riskScore||0); }).catch(function(){ b.textContent='ERR'; }); }); });
+  }
+  function poll(){
+    cfInvoke('browser_intel').then(function(r){
+      const d=(r&&r.data)||{}; const sessions=d.sessions||[];
+      renderSessions(sessions,d.browsers); renderDomains(d.domains,sessions); renderIntercept(sessions);
+      sessions.forEach(function(s){ if(lastUrls[s.browser]!==s.url){ lastUrls[s.browser]=s.url; httpEntry('GET',s.url,s.host||hostOf(s.url),!!s.https); } });
+    }).catch(function(){});
+  }
+  function applyTel(p){ if(!p) return; var st=(p.status&&p.status.data)||null;
+    if(st){ if(kv[2]) kv[2].textContent=st.threatCount||0; if(document.getElementById('rpm')) document.getElementById('rpm').textContent=(st.threatCount||0)+' threats'; } }
+  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
+    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyTel(e.payload); });
+  }catch(e){}
 
-setInterval(()=>{document.getElementById('rpm').textContent=(1100+Math.floor(Math.random()*300))+' req/min';
-  document.getElementById('kReq').textContent=(1.1+Math.random()*0.4).toFixed(1)+'k';},1500);
+  poll(); setInterval(poll,6000);
+  cfInvoke('browser_intel_report').catch(function(){});
+  setInterval(function(){ cfInvoke('browser_intel_report').catch(function(){}); },60000);
+})();
 </script>
 </body>
 </html>

@@ -157,7 +157,8 @@ Always be precise, professional, and actionable."""
 
     def analyze(self, query: str, context: Dict = None, history: List = None) -> Dict:
         if not self.ready:
-            return self._fallback(query)
+            # Primary engine is DeepSeek (HF Inference Providers) now; Gemini retired.
+            return self._reasoning_analyze(query, context)
         try:
             knowledge_str = json.dumps(self.custom_knowledge, indent=1)[:2000] if self.custom_knowledge else "None"
             examples_str = "\n".join(
@@ -207,7 +208,42 @@ Provide a comprehensive cybersecurity analysis:"""
             }
         except Exception as e:
             logger.error(f"Gemini analysis error: {e}")
+            return self._reasoning_analyze(query, context)
+
+    def _reasoning_analyze(self, query: str, context: Dict = None) -> Dict:
+        """DeepSeek-backed structured analysis — the primary reasoning path now that
+        Gemini is retired. Delegates to TransformerLoader.security_chat (DeepSeek via
+        HF Inference Providers, Mistral fallback) and wraps the text into the
+        structured shape the REST endpoints expect. Falls back to the ML heuristic
+        (_fallback) only if the LLM is entirely unavailable."""
+        tl = globals().get("transformer_loader")
+        if tl is None:
             return self._fallback(query)
+        ctx = f"\n\nCONTEXT:\n{json.dumps(context, indent=1)[:2000]}" if context else ""
+        llm = tl.security_chat(f"{query}{ctx}", max_tokens=700)
+        text = llm.get("response")
+        if not text or llm.get("error"):
+            return self._fallback(query)
+        tlow = text.lower()
+        if "critical" in tlow:
+            risk_level, risk_score = "Critical", 9.0
+        elif "high" in tlow:
+            risk_level, risk_score = "High", 7.0
+        elif "medium" in tlow:
+            risk_level, risk_score = "Medium", 5.0
+        else:
+            risk_level, risk_score = "Low", 3.0
+        model_id = llm.get("model_id", "deepseek")
+        return {
+            "response": text,
+            "confidence": 0.82,
+            "risk_level": risk_level,
+            "risk_score": risk_score,
+            "insights": [f"Analysis by {model_id} via {llm.get('source', 'hf_inference_providers')}"],
+            "recommendations": [],
+            "model_used": model_id,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
     def _fallback(self, query: str) -> Dict:
         """ML-powered analysis when Gemini is unavailable"""
@@ -585,9 +621,12 @@ class TransformerModelLoader:
             "desc":  "BERT-based URL phishing/malware classifier",
         },
     }
-    # Model used via HF Inference API. ZySec-AI/SecurityLLM isn't served on the
-    # free Inference API tier (404). Mistral-7B-Instruct-v0.3 is widely available
-    # and works well for cyber Q&A. Override via SECURITY_LLM_MODEL env var.
+    # Primary reasoning engine: DeepSeek via HF Inference Providers (OpenAI-compatible
+    # router at router.huggingface.co/v1). Replaces Gemini. Override via REASONING_LLM_MODEL.
+    # Use DeepSeek-R1 for deep reasoning; DeepSeek-V3 for fast assist.
+    REASONING_LLM_REPO = os.environ.get("REASONING_LLM_MODEL", "deepseek-ai/DeepSeek-V3-0324")
+    # Fallback LLM via the free HF Inference API. Mistral-7B-Instruct-v0.3 is widely
+    # available and works well for cyber Q&A. Override via SECURITY_LLM_MODEL env var.
     SECURITY_LLM_REPO = os.environ.get("SECURITY_LLM_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
 
     def __init__(self):
@@ -694,22 +733,62 @@ class TransformerModelLoader:
             "inference_source": "entropy-heuristic",
         }
 
+    SYSTEM_PROMPT = (
+        "You are CyberForge AI, a precise, professional cybersecurity analyst. "
+        "Give concise, technical, actionable answers. State a Risk Level "
+        "(Critical/High/Medium/Low) when assessing a threat, and cite CVE / MITRE "
+        "ATT&CK IDs where relevant."
+    )
+
     def security_chat(self, query: str, max_tokens: int = 512) -> Dict:
-        """Cybersecurity Q&A via ZySec-AI/SecurityLLM hosted on HF Inference API.
-        Falls back to Gemini when the LLM is rate-limited or HF token is missing."""
+        """Cybersecurity Q&A. Primary: DeepSeek via HF Inference Providers
+        (OpenAI-compatible router). Fallback: Mistral-7B via the free HF
+        Inference API. Both require HF_TOKEN."""
         if not HF_TOKEN:
             return {
                 "model": "security-llm",
                 "response": None,
-                "error": "HF_TOKEN env var required to call ZySec-AI/SecurityLLM via Inference API",
-                "fallback_available": gemini_service.ready,
+                "error": "HF_TOKEN env var required to call the reasoning LLM",
             }
+        import requests
+
+        # ── Path 1: DeepSeek via HF Inference Providers (OpenAI-compatible) ──
         try:
-            import requests
+            r = requests.post(
+                "https://router.huggingface.co/v1/chat/completions",
+                headers={"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"},
+                json={
+                    "model": self.REASONING_LLM_REPO,
+                    "messages": [
+                        {"role": "system", "content": self.SYSTEM_PROMPT},
+                        {"role": "user", "content": query[:6000]},
+                    ],
+                    "max_tokens": max_tokens,
+                    "temperature": 0.3,
+                },
+                timeout=60,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                text = data["choices"][0]["message"]["content"]
+                return {
+                    "model":    "deepseek",
+                    "source":   "hf_inference_providers",
+                    "response": text,
+                    "model_id": self.REASONING_LLM_REPO,
+                }
+            logger.warning(
+                f"DeepSeek provider HTTP {r.status_code}: {r.text[:160]} — falling back to Mistral"
+            )
+        except Exception as e:
+            logger.warning(f"DeepSeek provider error: {type(e).__name__}: {str(e)[:160]} — falling back to Mistral")
+
+        # ── Path 2 (fallback): Mistral-7B via the free HF Inference API ──
+        try:
             url = f"https://api-inference.huggingface.co/models/{self.SECURITY_LLM_REPO}"
             headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
             payload = {
-                "inputs": query[:2000],
+                "inputs": f"{self.SYSTEM_PROMPT}\n\n{query[:2000]}",
                 "parameters": {"max_new_tokens": max_tokens, "temperature": 0.3, "return_full_text": False},
                 "options": {"wait_for_model": True},
             }
@@ -726,13 +805,11 @@ class TransformerModelLoader:
             return {
                 "model":  "security-llm",
                 "error":  f"HF Inference API HTTP {r.status_code}: {r.text[:200]}",
-                "fallback_available": gemini_service.ready,
             }
         except Exception as e:
             return {
                 "model":  "security-llm",
                 "error":  f"{type(e).__name__}: {str(e)[:200]}",
-                "fallback_available": gemini_service.ready,
             }
 
     def status(self) -> Dict:
@@ -1027,7 +1104,10 @@ async def api_health():
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "services": {
-            "gemini": gemini_service.ready,
+            "reasoning_llm": "deepseek" if HF_TOKEN else None,
+            "reasoning_model": transformer_loader.REASONING_LLM_REPO if HF_TOKEN else None,
+            "fallback_llm": transformer_loader.SECURITY_LLM_REPO if HF_TOKEN else None,
+            "gemini": gemini_service.ready,  # retired — DeepSeek is the engine now (kept for backward-compat)
             "ml_models": ml_loader.ready,
             "models_loaded": list(ml_loader.models.keys()),
             "transformers": transformer_loader.transformers_available,
@@ -1200,7 +1280,7 @@ async def api_v2_dga_detect(request: Request):
 
 @api.post("/api/v2/security-chat")
 async def api_v2_security_chat(request: Request):
-    """Cybersecurity Q&A via ZySec-AI/SecurityLLM (HF Inference API).
+    """Cybersecurity Q&A via DeepSeek (HF Inference Providers), Mistral fallback.
     Body: { "query": "...", "max_tokens": 512 }"""
     body = await request.json()
     query = body.get("query", "").strip()
@@ -1208,12 +1288,9 @@ async def api_v2_security_chat(request: Request):
         return JSONResponse(status_code=400, content={"detail": "query required"})
     max_tokens = int(body.get("max_tokens", 512))
     result = transformer_loader.security_chat(query, max_tokens=max_tokens)
-    # Auto-fallback to Gemini when LLM unavailable
-    if result.get("error") and gemini_service.ready:
-        gemini_result = gemini_service.analyze(query)
-        gemini_result["source"] = "gemini-fallback"
-        gemini_result["llm_error"] = result["error"]
-        return gemini_result
+    # Last-resort: ML heuristic if both DeepSeek and Mistral are unavailable
+    if result.get("error"):
+        return gemini_service._fallback(query)
     return result
 
 
@@ -1382,9 +1459,9 @@ async def api_v2_ioc_scan(request: Request):
     else:
         risk_level = "unknown"
 
-    # Optional Gemini enrichment when available
+    # Optional LLM enrichment (DeepSeek via HF Inference Providers) when HF_TOKEN is set
     ai_analysis = None
-    if gemini_service.ready and (url or domain):
+    if HF_TOKEN and (url or domain):
         target = url or domain
         ai_analysis = gemini_service.analyze(
             f"Scan these IOC indicators for threats: url={target}, domain={effective_domain}",
@@ -1674,21 +1751,10 @@ async def api_v2_chat(request: Request):
         n_models = len(ml_loader.models)
         sources.append({"type": "ml_models", "label": "ML Models", "value": f"{n_models}/4 loaded"})
 
-    # ── LLM cascade: Gemini → Security LLM → ML heuristic ────────────
-    # Path 1: Gemini (premium, requires GEMINI_API_KEY env var)
-    if gemini_service.ready:
-        result = gemini_service.analyze(enriched_message, context=context, history=history)
-        # Merge detected risk if ML gave a stronger signal
-        if detected_risk_score > 0 and detected_risk_level != "unknown":
-            ml_score_100 = round(detected_risk_score * 100, 1)
-            if ml_score_100 > result.get("risk_score", 0):
-                result["risk_score"] = ml_score_100
-                result["risk_level"] = detected_risk_level
-        result["session_id"] = session_id
-        result["sources"] = sources
-        return result
-
-    # Path 2: Security LLM via HF Inference API (Mistral-7B)
+    # ── LLM cascade: DeepSeek (HF Inference Providers) → Mistral → ML heuristic ──
+    # Path 1: DeepSeek is the primary reasoning engine. security_chat() calls
+    #         DeepSeek via the HF Inference Providers router, then transparently
+    #         falls back to Mistral-7B on the free HF Inference API. Gemini retired.
     llm_result = transformer_loader.security_chat(enriched_message, max_tokens=600)
     if llm_result.get("response") and not llm_result.get("error"):
         text = llm_result["response"]

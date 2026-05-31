@@ -111,6 +111,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -126,12 +128,15 @@ function sparkline(vals,color){
   const pts=vals.map((v,i)=>(i*(W/(vals.length-1)))+','+(H-2-((v-min)/rng)*(H-4))).join(' ');
   return '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>';
 }
+// The REAL models served by the CyberForge ML stack (exposed via the ml_* Rust
+// commands → backend /api/cyberforge-ml → HuggingFace Space). Live status is
+// applied by refreshStatus() below.
 const models=[
-  {n:'sentinel-threat-v4',v:'classifier · 1.4B params',st:'serving',ips:'2.1k',acc:'99.2%',lat:'18ms',c:'var(--amber-2)',run:true},
-  {n:'anomaly-detector-v2',v:'autoencoder · 320M',st:'serving',ips:'1.6k',acc:'97.8%',lat:'24ms',c:'var(--cyan)',run:true},
-  {n:'malware-vision-v3',v:'CNN · 88M params',st:'serving',ips:'820',acc:'98.9%',lat:'41ms',c:'var(--green)',run:true},
-  {n:'reason-agent-llm',v:'transformer · 8B',st:'serving',ips:'318',acc:'—',lat:'89ms',c:'var(--blue)',run:true},
-  {n:'phish-bert-finetune',v:'BERT · 110M · epoch 7/10',st:'training',ips:'—',acc:'96.1%',lat:'—',c:'var(--amber-2)',run:false}
+  {n:'malware-url-bert',v:'BERT · phishing / malware URL classifier',st:'serving',ips:'live',acc:'—',lat:'~40ms',c:'var(--amber-2)',run:true},
+  {n:'dga-detector',v:'entropy + char-pattern DGA model',st:'serving',ips:'live',acc:'—',lat:'~40ms',c:'var(--cyan)',run:true},
+  {n:'ioc-multiscan',v:'url / domain / ip / hash IOC analysis',st:'serving',ips:'live',acc:'—',lat:'~75ms',c:'var(--green)',run:true},
+  {n:'url-enrich-fusion',v:'ML + BERT + DGA fused deep scan',st:'serving',ips:'live',acc:'—',lat:'~60ms',c:'var(--blue)',run:true},
+  {n:'deepseek-security-chat',v:'DeepSeek → Mistral cyber Q&A',st:'serving',ips:'live',acc:'—',lat:'~2s',c:'var(--amber-2)',run:true}
 ];
 document.getElementById('models').innerHTML=models.map(m=>{
   const sp=Array.from({length:14},()=>Math.random());
@@ -180,13 +185,29 @@ document.getElementById('datasets').innerHTML=ds.map(d=>
   draw(); setInterval(()=>{data.push(0.45+Math.random()*0.45);data.shift();draw();},700);
 })();
 
-// KPI jitter
-setInterval(()=>{
-  const v=4.5+Math.random()*0.8; document.getElementById('ips').textContent=(v*1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')+' inferences/s';
-  document.getElementById('kIps').textContent=v.toFixed(1)+'k';
-  document.getElementById('kLat').innerHTML=(30+Math.floor(Math.random()*14))+'<span style="font-size:13px;color:var(--faint)">ms</span>';
-  document.getElementById('kAcc').textContent=(98.2+Math.random()*0.7).toFixed(1)+'%';
-},1500);
+// REAL ML status → drive the header, KPIs, and model badges from ml_status
+// (Rust → backend → HF Space). Replaces the previous synthetic KPI jitter.
+async function refreshStatus(){
+  try{
+    const st=await CF.invoke('ml_status');
+    const h=(st&&(st.health||(st.data&&st.data.health)))||st||{};
+    const tr=(st&&st.transformers)||{};
+    const ok = h.status==='healthy' || h.success===true || tr.success===true || tr.loaded || tr.available;
+    const ind=document.querySelector('.live-ind'); if(ind) ind.innerHTML='<span class="dot"></span>'+(ok?'Serving':'Degraded');
+    const ips=document.getElementById('ips'); if(ips) ips.textContent=ok?'ML service healthy':'ML service degraded';
+    const kIps=document.getElementById('kIps'); if(kIps) kIps.textContent=ok?'LIVE':'—';
+    const loaded=tr.models_loaded||tr.loaded||(Array.isArray(tr.models)?tr.models.length:null);
+    const kAcc=document.getElementById('kAcc'); if(kAcc) kAcc.textContent=(loaded!=null?loaded+' loaded':(ok?'5 served':'—'));
+    if(ok===false){ document.querySelectorAll('.mstatus').forEach(s=>{s.className='mstatus idle';s.textContent='IDLE';}); }
+  }catch(e){
+    const ips=document.getElementById('ips'); if(ips) ips.textContent='ML status unavailable';
+    const kIps=document.getElementById('kIps'); if(kIps) kIps.textContent='—';
+  }
+}
+refreshStatus(); setInterval(refreshStatus,30000);
+// Each real scan that streams in is a real inference — surface it on the KPI.
+let _inf=0;
+window.addEventListener('cf:scan',function(){ _inf++; var k=document.getElementById('kIps'); if(k) k.textContent=_inf+' run'+(_inf===1?'':'s'); });
 </script>
 </body>
 </html>

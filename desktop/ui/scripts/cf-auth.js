@@ -25,6 +25,9 @@
     logout: function () {
       return invoke('auth_logout');
     },
+    google: function () {
+      return invoke('auth_google');
+    },
     getUser: function () {
       return invoke('auth_get_user');
     },

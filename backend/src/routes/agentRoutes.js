@@ -9,6 +9,7 @@ const { agentManager } = require('../agent/AgentManager');
 const { appwriteService } = require('../services/appwriteService');
 const { webScraperAPIService } = require('../services/WebScraperAPIService');
 const { mlServiceClient } = require('../services/mlServiceClient');
+const realtimeBus = require('../services/realtimeBus');
 const logger = require('../utils/logger');
 
 /**
@@ -477,6 +478,40 @@ router.post('/scan-url', async (req, res) => {
       }
     } catch (alertErr) {
       logger.warn(`⚠️ Alert creation failed: ${alertErr.message}`);
+    }
+
+    // ── Push this scan to every live dashboard over SSE (real-time) ──
+    const verdict = mlOutput.riskScore >= 70 ? 'malicious'
+      : mlOutput.riskScore >= 40 ? 'suspicious' : 'safe';
+    realtimeBus.emit('scan:update', {
+      url,
+      browser: browser || 'unknown',
+      userId: userId || null,
+      riskScore: mlOutput.riskScore,
+      riskLevel: analysisData.risk_level,
+      category: mlOutput.category,
+      confidence: mlOutput.confidence,
+      verdict,
+      summary: geminiExplanation.summary,
+      scannedAt: new Date().toISOString()
+    });
+    realtimeBus.emit('agent:activity', {
+      type: 'scan', url, verdict, riskScore: mlOutput.riskScore,
+      userId: userId || null, ts: Date.now()
+    });
+    if (mlOutput.riskScore >= 40) {
+      realtimeBus.emit('alert:new', {
+        userId: userId || null, url, verdict,
+        severity: verdict === 'malicious' ? 'high' : 'medium',
+        riskScore: mlOutput.riskScore, category: mlOutput.category,
+        message: `${verdict.toUpperCase()} URL detected (${mlOutput.riskScore})`,
+        scannedAt: new Date().toISOString()
+      });
+      realtimeBus.emit('threat:new', {
+        userId: userId || null, indicator: url, type: 'url',
+        severity: verdict === 'malicious' ? 'high' : 'medium',
+        riskScore: mlOutput.riskScore, category: mlOutput.category, source: 'agent-scan'
+      });
     }
 
     // ── Return full results to desktop app ───────────────────────────

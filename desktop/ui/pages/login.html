@@ -41,11 +41,11 @@
         <form id="form" onsubmit="return false">
           <div class="field">
             <label>Work email</label>
-            <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="email" type="email" value="analyst@acme-corp.io" autocomplete="username" /></div>
+            <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="email" type="email" placeholder="you@company.com" autocomplete="username" /></div>
           </div>
           <div class="field">
             <label>Password</label>
-            <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input id="pw" type="password" value="forgepass" autocomplete="current-password" /><svg class="eye" id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input id="pw" type="password" placeholder="Enter your password" autocomplete="current-password" /><svg class="eye" id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
           </div>
           <div class="row-between">
             <span class="rm" id="remember"><span class="cb on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>Remember this device</span>
@@ -56,7 +56,7 @@
         </form>
         <div class="divider">OR CONTINUE WITH</div>
         <div class="sso">
-          <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>SSO</div>
+          <div class="s" id="googleBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11v2.85h3.95c-.16 1.02-1.18 3-3.95 3a4.36 4.36 0 0 1 0-8.7c1.32 0 2.21.56 2.72 1.05l1.85-1.78C15.3 6.27 13.82 5.6 12 5.6a6.6 6.6 0 1 0 0 13.2c3.81 0 6.33-2.68 6.33-6.45 0-.43-.05-.77-.11-1.1H12Z"/></svg>Google</div>
           <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg>Microsoft</div>
           <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Okta</div>
         </div>
@@ -99,6 +99,20 @@ async function signIn(){
 }
 btn.addEventListener('click',signIn);
 ['email','pw'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();signIn();}}));
+
+/* Google sign-in — opens the consent flow in the system browser, captures the
+   code on a loopback port, exchanges it via the backend. Needs GOOGLE_CLIENT_ID
+   configured on the server. */
+const gbtn=document.getElementById('googleBtn');
+if(gbtn) gbtn.addEventListener('click',async()=>{
+  clearErr(); gbtn.style.opacity='.6'; gbtn.style.pointerEvents='none';
+  try{
+    const res=await cfAuth.google();
+    if(res&&res.success&&res.token){window.location.href='threat-overview.html';return;}
+    showErr((res&&(res.message||res.error))||'Google sign-in is not available. Configure GOOGLE_CLIENT_ID on the server.');
+  }catch(e){showErr((e&&e.message)?e.message:'Google sign-in failed.');}
+  gbtn.style.opacity=''; gbtn.style.pointerEvents='';
+});
 </script>
 </body>
 </html>

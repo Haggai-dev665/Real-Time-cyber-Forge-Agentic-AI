@@ -16,7 +16,7 @@ type SharedState = Arc<Mutex<AppState>>;
 
 /// Normalize a backend `user` object into our `UserInfo` (handles both
 /// `firstName`/`lastName` and a single `name` field, and `id`/`_id`).
-fn build_user_info(user_val: &Value) -> UserInfo {
+pub fn build_user_info(user_val: &Value) -> UserInfo {
     let first_name = user_val
         .get("firstName")
         .and_then(|v| v.as_str())
@@ -82,17 +82,16 @@ async fn restore_session_from_storage(shared: &SharedState) -> Result<Option<Use
     };
 
     let profile_url = format!("{}/api/auth/profile", backend_url);
-    let client = reqwest::Client::new();
+    let client = crate::http::client();
     let response = client
         .get(&profile_url)
         .header("Authorization", format!("Bearer {}", tok))
-        .header("User-Agent", "cyberforge-console/1.0")
         .send()
         .await;
 
     match response {
         Ok(resp) => {
-            let body: Value = resp.json().await.map_err(|e| e.to_string())?;
+            let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
             if body.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
                 if let Some(user_val) = body.pointer("/data/user") {
                     let user = build_user_info(user_val);
@@ -148,19 +147,18 @@ pub async fn auth_login(
         format!("{}/api/auth/login", s.backend_url)
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::client();
     let resp = client
         .post(&url)
         .json(&serde_json::json!({
             "email": credentials.email,
             "password": credentials.password
         }))
-        .header("User-Agent", "cyberforge-console/1.0")
         .send()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(crate::http::error_chain)?;
 
-    let body: Value = resp.json().await.map_err(|e| e.to_string())?;
+    let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
     let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
 
     if success {
@@ -204,7 +202,7 @@ pub async fn auth_register(
         format!("{}/api/auth/register", s.backend_url)
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::client();
     let resp = client
         .post(&url)
         .json(&serde_json::json!({
@@ -212,12 +210,11 @@ pub async fn auth_register(
             "email": data.email,
             "password": data.password
         }))
-        .header("User-Agent", "cyberforge-console/1.0")
         .send()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(crate::http::error_chain)?;
 
-    let body: Value = resp.json().await.map_err(|e| e.to_string())?;
+    let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
     let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
 
     if success {
@@ -252,7 +249,7 @@ pub async fn auth_logout(state: State<'_, SharedState>) -> Result<CmdResult<()>,
         (url, headers)
     };
 
-    let client = reqwest::Client::new();
+    let client = crate::http::client();
     let mut req = client.post(&url);
     for (k, v) in headers {
         req = req.header(&k, &v);

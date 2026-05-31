@@ -120,6 +120,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -218,6 +220,49 @@ setInterval(()=>{
 
 // Ack All
 document.querySelector('.btn-refresh').addEventListener('click',()=>{alerts.forEach(a=>{if(a.st==='new')a.st='ack';});renderAlerts();renderDetail();document.getElementById('kCrit').textContent='0';});
+
+// ===== REAL alert queue — agent_alerts (backend, when signed in) =====
+function sevToCls(s){ s=String(s||'').toLowerCase();
+  return s==='critical'?'crit':(s==='high'?'high':(s==='low'?'low':'med')); }
+async function loadRealAlerts(){
+  try{
+    const r=await CF.invoke('agent_alerts'); const d=(r&&r.data)||{}; const list=d.alerts||[];
+    if(list.length){
+      const mapped=list.map((a,i)=>({
+        id:'ALT-'+String(a.id||a.$id||(9000+i)).slice(-4),
+        sev:sevToCls(a.severity),
+        t:a.description||a.source||'Alert',
+        host:a.deviceId||'desktop', rule:a.source||'agent',
+        st:['resolved','dismissed'].includes(String(a.status||'').toLowerCase())?'ack':'new',
+        mitre:'—', src:a.source||'agent',
+        conf:(a.confidence!=null?Math.round(a.confidence*100)+'%':(a.riskScore!=null?a.riskScore+'%':''))
+      }));
+      alerts.length=0; mapped.forEach(m=>alerts.push(m)); selected=0;
+      renderAlerts(); renderDetail();
+      const ko=document.getElementById('kOpen'); if(ko) ko.textContent=alerts.filter(a=>a.st==='new').length;
+      const oc=document.getElementById('openc'); if(oc) oc.textContent=alerts.length+' open';
+      const kc=document.getElementById('kCrit'); if(kc) kc.textContent=alerts.filter(a=>a.sev==='crit'&&a.st==='new').length;
+    }
+  }catch(e){ /* not signed in / preview → keep seed */ }
+}
+loadRealAlerts(); setInterval(loadRealAlerts,30000);
+
+// Real-time: prepend live ML alerts/threats straight from the SSE feed.
+function cfLiveAlert(d){
+  if(!d) return;
+  const sev=(d.severity==='high'||d.severity==='critical')?'crit':(d.severity==='low'?'low':'med');
+  alerts.unshift({ id:'ALT-'+String(Date.now()).slice(-5), st:'new', sev,
+    t:d.message||((d.verdict||'Threat')+' — '+(d.url||d.indicator||'')),
+    host:'desktop', rule:d.category||'ML.Scan', mitre:'—',
+    src:d.url||d.indicator||'agent', conf:(d.riskScore!=null?d.riskScore+'%':'') });
+  if(selected>=0) selected++;
+  renderAlerts();
+  const ko=document.getElementById('kOpen'); if(ko) ko.textContent=alerts.filter(a=>a.st==='new').length;
+  const oc=document.getElementById('openc'); if(oc) oc.textContent=alerts.length+' open';
+  const kc=document.getElementById('kCrit'); if(kc) kc.textContent=alerts.filter(a=>a.sev==='crit'&&a.st==='new').length;
+}
+window.addEventListener('cf:alert', e=>cfLiveAlert(e.detail));
+window.addEventListener('cf:threat', e=>cfLiveAlert(e.detail));
 </script>
 </body>
 </html>

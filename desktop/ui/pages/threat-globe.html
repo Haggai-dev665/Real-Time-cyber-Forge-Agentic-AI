@@ -130,6 +130,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -356,14 +358,20 @@ fitWindow('win');
   const types=['SQL Injection','DDoS Probe','Port Scan','Brute Force','XSS Attempt','Malware C2','Credential Stuffing','Ransomware'];
   const targets=['api.acme-corp.io','login.medsys.health','vpn.gov-grid.io','mail.zeta-bank.com','sso.nimbus-cloud.dev'];
   function rip(){return Math.floor(Math.random()*223+1)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255);}
+  function clean(s){ return String(s==null?'':s).replace(/[<>]/g,''); }
   function add(){
     const a=window.__fireArc(); if(!a)return;
+    const rl=window.__realThreats;
+    const rt=(rl&&rl.length)?rl[Math.floor(Math.random()*Math.min(rl.length,12))]:null;
+    const label=rt?clean(rt.type||rt.category||'Threat'):types[Math.floor(Math.random()*types.length)];
+    const sev=rt?((rt.severity==='critical')?'crit':(rt.severity==='high'||rt.severity==='medium')?'med':'low'):a.sev;
+    const src=rt?clean(String(rt.source||(rt.detection&&rt.detection.source)||rt.url||a.o.name).slice(0,38)):(a.o.name+' · '+rip());
+    const tgt=rt?clean(String(rt.target||rt.url||targets[Math.floor(Math.random()*targets.length)]).slice(0,28)):targets[Math.floor(Math.random()*targets.length)];
     const el=document.createElement('div');
-    el.className='atk '+a.sev;
+    el.className='atk '+sev;
     el.innerHTML='<span class="edge"></span><span class="flag">'+a.o.flag+'</span>'+
-      '<div class="who"><b>'+types[Math.floor(Math.random()*types.length)]+
-      ' <span class="pill '+a.sev+'">'+a.sev.toUpperCase()+'</span></b>'+
-      '<span class="ip">'+a.o.name+' · '+rip()+' → '+targets[Math.floor(Math.random()*targets.length)]+'</span></div>'+
+      '<div class="who"><b>'+label+' <span class="pill '+sev+'">'+sev.toUpperCase()+'</span></b>'+
+      '<span class="ip">'+src+' → '+tgt+'</span></div>'+
       '<span class="when">now</span>';
     stream.prepend(el);
     [...stream.children].forEach((c,i)=>{const w=c.querySelector('.when'); if(i>0&&w)w.textContent=i+'s';});
@@ -371,6 +379,19 @@ fitWindow('win');
   }
   for(let i=0;i<6;i++) setTimeout(add,i*180);
   setInterval(add,1500);
+
+  // Real-time: prepend live ML scan / threat / alert events to the attack stream.
+  function liveAtk(label, sub, sev){
+    var cls=(sev==='high'||sev==='critical')?'crit':(sev==='low'?'low':'med');
+    var el=document.createElement('div'); el.className='atk '+cls;
+    el.innerHTML='<span class="edge"></span><span class="flag">🛰️</span>'+
+      '<div class="who"><b>'+clean(label)+' <span class="pill '+cls+'">'+cls.toUpperCase()+'</span></b>'+
+      '<span class="ip">'+clean(sub||'')+'</span></div><span class="when">now</span>';
+    stream.prepend(el); while(stream.children.length>9) stream.lastChild.remove();
+  }
+  window.addEventListener('cf:scan', function(e){ var d=e.detail||{}; liveAtk((d.verdict||'scan').toUpperCase()+' '+(d.category||''), d.url, d.riskScore>=70?'high':d.riskScore>=40?'med':'low'); });
+  window.addEventListener('cf:threat', function(e){ var d=e.detail||{}; liveAtk('THREAT', d.indicator||d.url, d.severity); });
+  window.addEventListener('cf:alert', function(e){ var d=e.detail||{}; liveAtk('ALERT', d.message||d.url, d.severity||'high'); });
 })();
 
 /* ============ ORIGINS + VECTORS ============ */
@@ -388,19 +409,52 @@ fitWindow('win');
   setTimeout(()=>{document.querySelectorAll('[data-w]').forEach(i=>i.style.width=i.dataset.w+'%');},150);
 })();
 
-/* live counters */
+/* live counters — driven by real backend data (window.CFG via cf-telemetry) */
 (function(){
-  const t=document.getElementById('mTotal'),b=document.getElementById('mBlocked'),
+  const t=document.getElementById('mTotal'),b=document.getElementById('mBlocked'),n=document.getElementById('mNodes'),
         tb=document.getElementById('tbThreats'),sb=document.getElementById('sbThreats'),rate=document.getElementById('rate');
-  let total=318,blocked=2041;
-  setInterval(()=>{
-    if(Math.random()<.6){total+=Math.floor(Math.random()*3)-1; if(total<300)total=300;}
-    blocked+=Math.floor(Math.random()*4);
-    t.textContent=total; b.textContent=blocked.toLocaleString();
-    if(tb) tb.innerHTML=tb.innerHTML.replace(/\d[\d,]*\s*threats/,total+' threats');
-    if(sb) sb.textContent=total+' threats';
-    rate.textContent=(38+Math.floor(Math.random()*12))+' attacks/min';
-  },1600);
+  window.CFG=window.CFG||{total:0,blocked:0,nodes:0,rate:0};
+  function paint(){ var g=window.CFG;
+    if(t) t.textContent=g.total||0; if(b) b.textContent=(g.blocked||0).toLocaleString(); if(n) n.textContent=g.nodes||0;
+    if(rate) rate.textContent=(g.rate||0)+' attacks/min';
+    if(tb) tb.innerHTML=tb.innerHTML.replace(/\d[\d,]*\s*threats/,(g.total||0)+' threats');
+    if(sb) sb.textContent=(g.total||0)+' threats';
+  }
+  setInterval(paint,1500); paint();
+})();
+
+/* ===== Threat Globe — REAL data via the shared cf-telemetry event ===== */
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[<>]/g,''); }
+  function renderVectors(list){
+    var vec=document.getElementById('vectors'); if(!vec||!list||!list.length) return;
+    var counts={}; list.forEach(function(t){ var ty=(t.type||t.category||'other'); counts[ty]=(counts[ty]||0)+1; });
+    var entries=Object.keys(counts).map(function(k){return [k,counts[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,4);
+    var total=entries.reduce(function(s,e){return s+e[1];},0)||1;
+    var cols=['var(--red)','var(--amber)','var(--cyan)','var(--amber-2)'];
+    vec.innerHTML=entries.map(function(e,i){ var pc=Math.round(e[1]/total*100);
+      return '<div class="typ'+(i?' row-div':'')+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'+
+        '<span class="nm">'+esc(String(e[0]).slice(0,16))+'</span><span class="bar"><i style="width:'+pc+'%;background:'+cols[i%4]+'"></i></span><span class="pc">'+pc+'%</span></div>';
+    }).join('');
+  }
+  function apply(p){
+    if(!p) return;
+    var th=(p.threats&&p.threats.data)||null, st=(p.status&&p.status.data)||null;
+    window.CFG=window.CFG||{};
+    if(th){
+      window.CFG.total=th.total||0;
+      var stats=th.stats||{};
+      window.CFG.blocked=(stats.resolved_threats!=null?stats.resolved_threats:(stats.total_threats||th.total||0));
+      window.__realThreats=th.threats||[];
+      renderVectors(th.threats||[]);
+    }
+    if(st){ window.CFG.nodes=st.agentCount||0; window.CFG.rate=Math.max(0,st.threatCount||0); }
+  }
+  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
+    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ apply(e.payload); });
+    if(T&&T.core&&T.core.invoke){ T.core.invoke('get_threats').then(function(r){ apply({threats:r}); }).catch(function(){});
+      T.core.invoke('agent_status').then(function(r){ apply({status:r}); }).catch(function(){}); }
+  }catch(e){}
 })();
 </script>
 </body>

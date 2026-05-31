@@ -1,0 +1,9 @@
+=== security-chat refs ===
+src/routes/mlRoutes.js:253: * @route   POST /api/cyberforge-ml/v2/security-chat
+src/routes/mlRoutes.js:258:router.post('/v2/security-chat', async (req, res) => {
+src/routes/mlRoutes.js:262:        const result = await cyberforgeML.securityChat(query, max_tokens);
+src/services/cyberforgeMLService.js:73:                endpoint: '/api/v2/security-chat',
+src/services/cyberforgeMLService.js:112:    async securityChat(query, maxTokens = 512) {
+src/services/cyberforgeMLService.js:113:        return this._callTransformerEndpoint('/api/v2/security-chat', { query, max_tokens: maxTokens });
+src/services/llmFallbackChain.js:47:        // ── 2. ZySec-AI/SecurityLLM via HF Space's /api/v2/security-chat ──
+src/services/llmFallbackChain.js:108:        const r = await axios.post(`${HF_SPACE_URL}/api/v2/security-chat`,

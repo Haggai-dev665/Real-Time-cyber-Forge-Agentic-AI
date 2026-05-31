@@ -39,6 +39,8 @@ const auditRoutes = require('./routes/audit');
 const sandboxRoutes = require('./routes/sandbox');
 const orchestratorRoutes = require('./routes/orchestrator');
 const memoryRoutes = require('./routes/memory');
+const streamRoutes = require('./routes/stream');
+const realtimeMetrics = require('./services/realtimeMetrics');
 const { errorHandler } = require('./middleware/errorHandler');
 const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
@@ -157,6 +159,10 @@ class CyberForgeServer {
     this.app.use('/api/sandbox', sandboxRoutes);         // Sandbox: IOC + MITRE + evidence locker
     this.app.use('/api/orchestrator', orchestratorRoutes); // 8-agent orchestrator
     this.app.use('/api/memory', memoryRoutes);           // Vector memory (local-first RAG sync)
+
+    // Real-time SSE live feed — threats / scans / alerts / agent activity / metrics.
+    // One long-lived connection per UI surface; replaces dashboard polling.
+    this.app.use('/api/stream', streamRoutes);
 
     // Features routes (requests, intercepts, workflows, automations, findings, etc.)
     this.app.use('/api', featuresRoutes);
@@ -287,6 +293,9 @@ class CyberForgeServer {
         console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log(`✅ TODO 1: Control plane and agent system initialized`);
       });
+
+      // Begin emitting the live metrics heartbeat to all realtime subscribers.
+      realtimeMetrics.start();
 
       // Graceful shutdown
       process.on('SIGTERM', () => this.shutdown());

@@ -607,107 +607,6 @@ body{
         </div>
       </main>
 
-      <!-- ===== FLOATING AGENT PANEL ===== -->
-      <section class="agent" id="agent">
-        <div class="agent-spot"></div>
-        <div class="agent-head">
-          <div class="head-sweep"></div>
-          <div class="agent-av"><span class="ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
-          <div class="agent-meta"><b>CyberForge Agent</b><span>v2.1 · agentic mode</span></div>
-          <div class="agent-active"><span class="dot"></span>ACTIVE</div>
-          <div class="win-btns"><i>&minus;</i><i>⌃</i><i>×</i></div>
-        </div>
-        <div class="agent-body" id="agentBody">
-          <div class="scan-line"></div>
-          <!-- SYSTEM -->
-          <div class="sect">
-            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>SYSTEM</div>
-            <div class="sys-grid">
-              <div class="sys-tile">
-                <div class="gauge"><svg width="42" height="42" viewBox="0 0 42 42" data-gauge="82" data-color="var(--amber)"></svg><span class="val" data-cpu>82%</span></div>
-                <div class="cap">CPU</div>
-              </div>
-              <div class="sys-tile">
-                <div class="gauge"><svg width="42" height="42" viewBox="0 0 42 42" data-gauge="57" data-color="var(--cyan)"></svg><span class="val" data-ram>57%</span></div>
-                <div class="cap">RAM</div>
-              </div>
-              <div class="sys-tile">
-                <svg class="ico-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                <div class="big" id="uptime">1h 10m</div><div class="cap">Uptime</div>
-              </div>
-              <div class="sys-tile">
-                <svg class="ico-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>
-                <div class="big">1</div><div class="cap">Browsers</div>
-              </div>
-            </div>
-          </div>
-          <!-- SCANNING -->
-          <div class="sect">
-            <div class="sect-h has-id"><svg class="radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 19 8M12 12v9"/></svg>SCANNING<span class="scan-id" id="scanId">#1247</span></div>
-            <div class="scan-target">
-              <span class="globe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg></span>
-              <span class="turl" id="scanTarget">api.acme-corp.io</span>
-              <span class="pct" id="scanPct">0%</span>
-              <span class="scan-bar" id="scanBar"></span>
-            </div>
-            <div class="scan-tools" id="scanTools"></div>
-            <div class="scan-verdict" id="scanVerdict"></div>
-          </div>
-          <!-- AGENT VITALS -->
-          <div class="sect">
-            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V5M14 18v-8M19 18v-4"/></svg>AGENT VITALS</div>
-            <div class="svc">
-              <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>
-              <span class="sl">Throughput</span>
-              <span class="vright">
-                <span class="mbars"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-                <span class="vval"><span id="thru">12.4k</span><small>/min</small></span>
-              </span>
-            </div>
-            <div class="svc">
-              <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-              <span class="sl">Inference latency</span>
-              <span class="vright">
-                <svg class="spark-sm" id="latSpark" viewBox="0 0 52 16" preserveAspectRatio="none"></svg>
-                <span class="vval"><span id="lat">42</span><small> ms</small></span>
-              </span>
-            </div>
-            <div class="svc">
-              <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01"/></svg>
-              <span class="sl">Active agents</span>
-              <span class="vright">
-                <span class="adots" id="adots"></span>
-                <span class="vval">1<small>/8</small></span>
-              </span>
-            </div>
-          </div>
-          <!-- BROWSERS -->
-          <div class="sect">
-            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>BROWSERS<button class="refresh" id="browserRefresh" title="Resync"><div class="spinner sm" style="border-top-color:var(--amber);border-color:rgba(245,166,35,.25)"></div></button></div>
-            <div class="browser-row">
-              <div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/><path d="M12 9h9M12 9 7.5 4.2M12 15l-4.5 4.6"/></svg></div>
-              <div><div class="bname">Google Chrome</div><div class="bver">v148.0.7778.181</div></div>
-              <span class="running"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)"></span>RUNNING</span>
-            </div>
-            <div class="browser-foot">1 installed · 1 running</div>
-          </div>
-          <!-- CONTROLS -->
-          <div class="sect">
-            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>CONTROLS</div>
-            <div class="controls">
-              <div class="ctrl" id="btnResync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span>RESYNC</span></div>
-              <div class="ctrl" id="btnCenter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><span>CENTER</span></div>
-              <div class="ctrl" id="btnAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>ADD</span></div>
-            </div>
-          </div>
-          <!-- NEURAL ACTIVITY -->
-          <div class="agent-stream">
-            <div class="stream-head"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span>NEURAL ACTIVITY<span class="ops" id="ops">1,204 ops/s</span></div>
-            <div class="stream-line"><span class="cdot"></span><span id="streamText"></span><span class="cursor"></span></div>
-            <div class="stream-log" id="streamLog"></div>
-          </div>
-        </div>
-      </section>
     </div>
 
     <!-- ===================== STATUS BAR ===================== -->
@@ -716,6 +615,8 @@ body{
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -775,105 +676,6 @@ window.addEventListener('resize',fit); fit();
       'stroke-dasharray="'+(C*0.12)+' '+(C*0.88)+'" stroke-linecap="round" opacity=".55"/>';
 })();
 
-/* ---------- live ring gauges (CPU / RAM) ---------- */
-const GA=(function(){
-  const cx=21,cy=21,r=16,sw=4.5,C=2*Math.PI*r;
-  const gauges=[...document.querySelectorAll('[data-gauge]')].map(svg=>{
-    const color=svg.dataset.color, target=+svg.dataset.gauge;
-    svg.innerHTML=
-      '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.16)" stroke-width="'+sw+'"/>'+
-      '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-linecap="round" '+
-        'stroke-dasharray="0 '+C+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
-    const arc=svg.querySelector('circle:last-child');
-    const val=svg.parentElement.querySelector('.val');
-    return {arc,val,cur:0,target,C};
-  });
-  function set(g,pct){
-    g.cur=pct;
-    g.arc.setAttribute('stroke-dasharray',(g.C*pct/100).toFixed(1)+' '+g.C);
-    g.val.textContent=Math.round(pct)+'%';
-  }
-  function sweepIn(){ gauges.forEach(g=>{ g.arc.style.strokeDasharray='0 '+g.C; setTimeout(()=>set(g,g.target),60); }); }
-  // initial sweep from 0
-  sweepIn();
-  // live drift
-  setInterval(()=>gauges.forEach(g=>{
-    let p=g.target+(Math.random()*16-8); p=Math.max(8,Math.min(99,p)); g.target=p; set(g,p);
-  }),2600);
-  return {sweepIn,gauges};
-})();
-
-/* ---------- uptime ticker ---------- */
-(function(){
-  const el=document.getElementById('uptime'); if(!el)return;
-  let sec=70*60+12;
-  setInterval(()=>{ sec++; const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
-    el.textContent=h+'h '+m+'m '+String(s).padStart(2,'0')+'s'; },1000);
-})();
-
-/* ---------- cursor spotlight on agent panel ---------- */
-(function(){
-  const a=document.getElementById('agent'); if(!a)return;
-  a.addEventListener('mousemove',e=>{ const r=a.getBoundingClientRect();
-    a.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
-    a.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); });
-})();
-
-/* ---------- neural activity stream (typewriter) ---------- */
-(function(){
-  const txt=document.getElementById('streamText'), ops=document.getElementById('ops');
-  const msgs=['Scanning 1,204 endpoints for anomalies…','Correlating threat signals across nodes…',
-    'Updating behavioral risk model…','Monitoring 1 active browser session…',
-    'No critical threats — posture nominal.','Syncing telemetry with ML engine…',
-    'Indexing 84k IOC signatures…','Evaluating agent reasoning chain…'];
-  let mi=0,ci=0,del=false;
-  function type(){
-    const m=msgs[mi];
-    txt.textContent=del?m.slice(0,ci--):m.slice(0,ci++);
-    let d=del?26:42;
-    if(!del&&ci>m.length){d=1500;del=true;}
-    else if(del&&ci<0){del=false;ci=0;mi=(mi+1)%msgs.length;d=220;}
-    setTimeout(type,d);
-  }
-  type();
-  setInterval(()=>{ ops.textContent=(900+Math.floor(Math.random()*600)).toLocaleString()+' ops/s'; },900);
-})();
-
-/* ---------- ripple + control interactions ---------- */
-function ripple(el,e){
-  const r=el.getBoundingClientRect(), s=document.createElement('span'); s.className='ripple';
-  const size=Math.max(r.width,r.height); s.style.width=s.style.height=size+'px';
-  s.style.left=(e.clientX-r.left)+'px'; s.style.top=(e.clientY-r.top)+'px';
-  el.appendChild(s); setTimeout(()=>s.remove(),600);
-}
-function logLine(t){
-  const log=document.getElementById('streamLog'); if(!log)return;
-  const now=new Date(), ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-  const d=document.createElement('div'); d.className='ln'; d.innerHTML='<span class="t">'+ts+'</span>'+t;
-  log.prepend(d); while(log.children.length>3) log.lastChild.remove();
-}
-['btnCenter','btnAdd'].forEach(id=>{ const b=document.getElementById(id);
-  b&&b.addEventListener('click',e=>{ ripple(b,e); logLine(id==='btnAdd'?'New browser instance queued':'View re-centered'); }); });
-
-/* ---------- RESYNC sequence ---------- */
-(function(){
-  const btn=document.getElementById('btnResync'), body=document.getElementById('agentBody'),
-        rsvg=btn&&btn.querySelector('svg'), brefresh=document.getElementById('browserRefresh');
-  function resync(e){
-    if(e) ripple(btn,e);
-    rsvg.parentElement.classList.add('busy');
-    brefresh&&brefresh.classList.add('busy');
-    body.classList.remove('scanning'); void body.offsetWidth; body.classList.add('scanning');
-    GA.sweepIn();
-    logLine('Resync initiated…');
-    setTimeout(()=>logLine('Telemetry re-synced · all systems nominal'),900);
-    setTimeout(()=>{ rsvg.parentElement.classList.remove('busy'); brefresh&&brefresh.classList.remove('busy'); body.classList.remove('scanning'); },1200);
-  }
-  btn&&btn.addEventListener('click',resync);
-  brefresh&&brefresh.addEventListener('click',()=>resync());
-  logLine('Agent online · v2.1 agentic mode');
-})();
-
 /* ---------- live clock + countdown ---------- */
 (function(){
   const updated=document.getElementById('updated');
@@ -891,92 +693,74 @@ function logLine(t){
   }
   tick(); setInterval(tick,1000);
 })();
-
-/* ---------- agent vitals: live task / throughput / latency / agents ---------- */
+/* ===========================================================
+   THREAT OVERVIEW — real data via the shared cf-telemetry event
+   (stat cards, severity donut, live threat feed). Backend-backed,
+   cached, pushed once for all surfaces.
+   =========================================================== */
 (function(){
-  // capacity dots
-  const ad=document.getElementById('adots');
-  if(ad){ for(let i=0;i<8;i++){ const d=document.createElement('i'); if(i===0)d.className='on'; ad.appendChild(d); } }
-
-  // throughput
-  const thru=document.getElementById('thru');
-  setInterval(()=>{ const v=11000+Math.random()*3200; thru.textContent=(v/1000).toFixed(1)+'k'; },1100);
-
-  // latency + sparkline
-  const lat=document.getElementById('lat'),sp=document.getElementById('latSpark');
-  let hist=Array.from({length:13},()=>0.4+Math.random()*0.3);
-  function drawLat(){
-    const W=52,H=16, pts=hist.map((v,i)=>(i*(W/(hist.length-1)))+','+ (H-2-v*(H-4))).join(' ');
-    sp.innerHTML='<polyline points="'+pts+'" fill="none" stroke="var(--cyan)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'+
-      '<circle cx="'+W+'" cy="'+(H-2-hist[hist.length-1]*(H-4))+'" r="1.8" fill="var(--cyan)"/>';
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]; }); }
+  function drawDonut(c,h,m,l){
+    var svg=document.getElementById('donut'); if(!svg) return;
+    var total=c+h+m+l; var cx=85,cy=85,r=58,sw=20,C=2*Math.PI*r;
+    if(total<=0) return; // keep the empty-state scan ring
+    var segs=[[c,'var(--red)'],[h,'var(--amber)'],[m,'var(--yellow)'],[l,'var(--blue)']];
+    var html='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.12)" stroke-width="'+sw+'"/>';
+    var off=0;
+    segs.forEach(function(s){ if(s[0]<=0) return; var len=(s[0]/total)*C;
+      html+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+s[1]+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+      off+=len; });
+    svg.innerHTML=html;
   }
-  drawLat();
-  setInterval(()=>{ hist.push(0.25+Math.random()*0.55); hist.shift();
-    lat.textContent=Math.round(28+hist[hist.length-1]*45); drawLat(); },1300);
-})();
-
-/* ---------- SCANNING pipeline (live website scan) ---------- */
-(function(){
-  const I={
-    globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>',
-    ports:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="7" rx="1"/><rect x="3" y="13" width="18" height="7" rx="1"/><path d="M6 7.5h.01M6 16.5h.01"/></svg>',
-    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
-    shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>',
-    bug:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="8" width="10" height="11" rx="4"/><path d="M12 8V5M9 11H4M20 11h-5M9 16H4M20 16h-5M9 6 7.5 4.5M15 6l1.5-1.5"/></svg>',
-    eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
-  };
-  const VI={
-    ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
-    warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
-    bad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>'
-  };
-  const tools=[
-    {name:'DNS Resolve',icon:I.globe,ok:{label:'resolved',cls:'ok'},alt:[{label:'cname chain',cls:'info'}]},
-    {name:'Port Scan',icon:I.ports,ok:{label:'2 open',cls:'info'},alt:[{label:'5 open',cls:'warn'}]},
-    {name:'TLS Certificate',icon:I.lock,ok:{label:'valid · A+',cls:'ok'},alt:[{label:'expiring',cls:'warn'}]},
-    {name:'Security Headers',icon:I.shield,ok:{label:'pass',cls:'ok'},alt:[{label:'2 missing',cls:'warn'}]},
-    {name:'Malware Scan',icon:I.bug,ok:{label:'clean',cls:'ok'},alt:[{label:'payload flagged',cls:'bad'}]},
-    {name:'Threat Reputation',icon:I.eye,ok:{label:'trusted',cls:'ok'},alt:[{label:'blocklisted',cls:'bad'},{label:'neutral',cls:'info'}]}
-  ];
-  const targets=['api.acme-corp.io','cdn.fin-portal.net','login.medsys.health','vpn.gov-grid.io','mail.zeta-bank.com','assets.shopwave.co','sso.nimbus-cloud.dev'];
-  const elTools=document.getElementById('scanTools'),elTarget=document.getElementById('scanTarget'),
-        elPct=document.getElementById('scanPct'),elBar=document.getElementById('scanBar'),
-        elVerdict=document.getElementById('scanVerdict'),elId=document.getElementById('scanId');
-  if(!elTools)return;
-  let scanNo=1247;
-  const pick=a=>a[Math.floor(Math.random()*a.length)];
-  elTools.innerHTML=tools.map(t=>
-    '<div class="tool pending"><span class="t-node"><span class="led"></span><span class="t-spin"></span></span>'+
-    '<span class="t-ico">'+t.icon+'</span><span class="t-name">'+t.name+'</span><span class="t-res"></span></div>'
-  ).join('');
-  const rows=[...elTools.children];
-  function runScan(){
-    elTarget.textContent=pick(targets); elId.textContent='#'+(scanNo++);
-    elPct.textContent='0%'; elBar.style.width='0%'; elVerdict.className='scan-verdict';
-    rows.forEach(r=>{ r.className='tool pending'; const re=r.querySelector('.t-res'); re.className='t-res'; re.textContent=''; });
-    let worst='ok',warns=0; const total=rows.length, STEP=760, RUN=640;
-    rows.forEach((r,i)=>{
-      setTimeout(()=>{ r.className='tool running'; },i*STEP+300);
-      setTimeout(()=>{
-        const t=tools[i]; const res=(t.alt&&Math.random()<0.16)?pick(t.alt):t.ok;
-        r.className='tool done'+(res.cls==='bad'?' threat':'');
-        const re=r.querySelector('.t-res'); re.textContent=res.label; re.className='t-res show '+res.cls;
-        if(res.cls==='bad')worst='bad'; else if(res.cls==='warn'){warns++; if(worst!=='bad')worst='warn';}
-        const done=i+1; elPct.textContent=Math.round(done/total*100)+'%'; elBar.style.width=(done/total*100)+'%';
-        if(done===total) setTimeout(()=>verdict(worst,warns),420);
-      }, i*STEP+300+RUN);
-    });
+  function renderFeed(list){
+    var card=document.querySelector('.feeds .card'); if(!card) return;
+    var empty=card.querySelector('.empty');
+    if(!list||!list.length){ if(empty) empty.style.display=''; var f0=card.querySelector('.tfeed'); if(f0) f0.remove(); return; }
+    if(empty) empty.style.display='none';
+    var feed=card.querySelector('.tfeed');
+    if(!feed){ feed=document.createElement('div'); feed.className='tfeed'; feed.style.cssText='overflow-y:auto;max-height:calc(100% - 46px)'; card.appendChild(feed); }
+    feed.innerHTML=list.slice(0,14).map(function(t){
+      var sev=(t.severity||'low'); var col=sev==='critical'?'var(--red)':sev==='high'?'var(--amber-2)':sev==='medium'?'var(--yellow)':'var(--blue)';
+      var name=t.type||t.title||(t.detection&&t.detection.source)||t.url||'threat';
+      var risk=(t.riskScore!=null?t.riskScore:(t.detection&&t.detection.riskScore));
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--border);font-size:12.5px">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:'+col+';box-shadow:0 0 6px '+col+';flex:none"></span>'+
+        '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(String(name).slice(0,48))+'</span>'+
+        '<span class="pill '+(sev==='critical'||sev==='high'?'crit':'med')+'" style="font-size:9px">'+esc(sev)+((risk!=null&&risk!=='')?(' '+risk):'')+'</span></div>';
+    }).join('');
   }
-  function verdict(worst,warns){
-    let cls,txt;
-    if(worst==='bad'){cls='bad';txt='Threat blocked';}
-    else if(worst==='warn'){cls='warn';txt=warns+' issue'+(warns>1?'s':'')+' found';}
-    else{cls='ok';txt='No threats detected';}
-    elVerdict.innerHTML='<span class="vi">'+VI[cls]+'</span>'+txt+'<span class="meta">'+rows.length+' checks</span>';
-    elVerdict.className='scan-verdict show '+cls;
-    setTimeout(runScan,2800);
+  function applyThreats(p){
+    if(!p) return;
+    var th=(p.threats&&p.threats.data)||null;
+    var st=(p.status&&p.status.data)||null;
+    var nums=document.querySelectorAll('.stats .num'); // [total, critical, high, nodes]
+    if(th){
+      if(nums[0]) nums[0].textContent=th.total||0;
+      if(nums[1]) nums[1].textContent=th.critical||0;
+      if(nums[2]) nums[2].textContent=th.high||0;
+      var dc=document.querySelector('.donut-center b'); if(dc) dc.textContent=th.total||0;
+      var lv=document.querySelectorAll('.legend .row .lv'); // [crit, high, med, low]
+      if(lv[0]) lv[0].textContent=th.critical||0;
+      if(lv[1]) lv[1].textContent=th.high||0;
+      if(lv[2]) lv[2].textContent=th.medium||0;
+      if(lv[3]) lv[3].textContent=th.low||0;
+      drawDonut(th.critical||0,th.high||0,th.medium||0,th.low||0);
+      renderFeed(th.threats||[]);
+    }
+    if(st && nums[3]) nums[3].textContent=st.agentCount||0; // ACTIVE NODES
   }
-  runScan();
+  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
+    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyThreats(e.payload); });
+    if(T&&T.core&&T.core.invoke){
+      T.core.invoke('get_threats').then(function(r){ applyThreats({threats:r}); }).catch(function(){});
+      T.core.invoke('agent_status').then(function(r){ applyThreats({status:r}); }).catch(function(){});
+      // Real-time: re-pull threats the instant a live SSE event arrives.
+      var _lt; function cfLiveRefresh(){ clearTimeout(_lt); _lt=setTimeout(function(){
+        T.core.invoke('get_threats').then(function(r){ applyThreats({threats:r}); }).catch(function(){});
+      }, 300); }
+      ['cf:threat','cf:scan','cf:alert'].forEach(function(n){ window.addEventListener(n, cfLiveRefresh); });
+    }
+  }catch(e){}
 })();
 </script>
 </body>

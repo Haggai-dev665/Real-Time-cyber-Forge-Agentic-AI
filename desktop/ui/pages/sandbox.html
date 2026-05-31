@@ -162,7 +162,7 @@
                 </div>
                 <div class="field">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>
-                  <input id="subInput" value="http://free-prizes-login.xyz/account/verify" spellcheck="false" />
+                  <input id="subInput" placeholder="https://example.com — paste a URL to detonate" spellcheck="false" />
                 </div>
                 <button class="btn-detonate" id="detonate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 7 4v6c0 5-3 7-7 10-4-3-7-5-7-10V6l7-4Z"/><path d="m9 12 2 2 4-4"/></svg>Detonate</button>
               </div>
@@ -295,77 +295,109 @@ const EV={
   reg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
   alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>'
 };
-const script=[
-  {t:'+0.4s',k:'proc',c:'ok',title:'Process spawned',d:'chrome.exe → child renderer initialised',tac:'exec'},
-  {t:'+1.1s',k:'net',c:'warn',title:'Outbound connection',d:'TLS to 193.43.18.* (unclassified)',tac:'disc',pkt:'var(--cyan)'},
-  {t:'+2.0s',k:'file',c:'warn',title:'File dropped',d:'%TEMP%\\svc_update.dll written (212 KB)',tac:'evade'},
-  {t:'+2.8s',k:'reg',c:'warn',title:'Registry persistence',d:'HKCU\\...\\Run → svc_update added',tac:'persist'},
-  {t:'+3.6s',k:'proc',c:'bad',title:'Process injection',d:'svc_update.dll injected into explorer.exe',tac:'evade'},
-  {t:'+4.3s',k:'net',c:'bad',title:'C2 beacon',d:'POST cdn-sync.duckdns.org /gate.php · 60s interval',tac:'c2',pkt:'#ff7185'},
-  {t:'+5.0s',k:'alert',c:'bad',title:'Credential access',d:'reads from Chrome Login Data store',tac:'cred'}
-];
+function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('Desktop runtime unavailable')); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
 const det=document.getElementById('detonate'), vmCard=document.getElementById('vmCard'),
       vmCore=document.getElementById('vmCore'), vmStatus=document.getElementById('vmStatus'),
       behave=document.getElementById('behave'), bevCount=document.getElementById('bevCount'),
       vmNet=document.getElementById('vmNet'), vmpid=document.getElementById('vmpid'),
       elapsed=document.getElementById('elapsed'), sbState=document.getElementById('sbState'),
       vmRight=document.getElementById('vmRight');
-let running=false;
-function detonate(){
-  if(running)return; running=true;
-  det.classList.add('busy'); vmCard.classList.add('running');
-  vmCore.classList.remove('idle');
+let running=false, evN=0;
+function bev(c,k,t,title,d){
+  const row=document.createElement('div'); row.className='bev '+c;
+  row.innerHTML='<span class="bnode">'+EV[k]+'</span><div class="btxt"><span class="bt">'+t+'</span><b>'+esc(title)+'</b><div class="bdesc">'+esc(d)+'</div></div>';
+  behave.appendChild(row); behave.scrollTop=behave.scrollHeight; bevCount.textContent=(++evN)+' events';
+}
+function hitTac(t){ const tc=document.querySelector('.tac[data-tac="'+t+'"]'); if(tc&&!tc.classList.contains('hit')){ tc.classList.add('hit'); document.getElementById('tacCount').textContent=document.querySelectorAll('.tac.hit').length+' mapped'; } }
+
+async function detonate(){
+  if(running) return;
+  const mode=((document.querySelector('.tchip.on')||{}).dataset||{}).mode||'url';
+  const raw=document.getElementById('subInput').value.trim();
+  if(!raw){ vmStatus.innerHTML='Enter a URL to <b>detonate</b>'; return; }
+  running=true; evN=0;
+  det.classList.add('busy'); vmCard.classList.add('running'); vmCore.classList.remove('idle');
   behave.innerHTML=''; bevCount.textContent='0 events';
   document.getElementById('vscore').textContent='—'; drawGauge(null);
-  document.querySelectorAll('.tac').forEach(t=>t.classList.remove('hit'));
-  document.getElementById('tacCount').textContent='0 mapped';
+  document.querySelectorAll('.tac').forEach(t=>t.classList.remove('hit')); document.getElementById('tacCount').textContent='0 mapped';
   const vb=document.getElementById('vbadge'); vb.className='vbadge sus'; vb.innerHTML='<div class="spinner sm" style="width:13px;height:13px;border-color:rgba(245,166,35,.3);border-top-color:var(--amber)"></div>ANALYZING';
   ['tFiles','tProc','tNet'].forEach(id=>document.getElementById(id).textContent='0');
-  document.getElementById('iocHash').textContent='computing…';
+  document.getElementById('iocHash').textContent='—';
   ['iocHost','iocC2','iocFam'].forEach(id=>document.getElementById(id).textContent='—');
   vmpid.textContent='PID '+(4000+Math.floor(Math.random()*900));
   vmRight.innerHTML='<span class="badge-live"><span class="dot"></span>LIVE</span>';
   sbState.textContent='state: detonating';
-  const stages=['Booting snapshot…','Injecting sample…','Executing payload…','Capturing behavior…','Scoring verdict…'];
-  let si=0; const sint=setInterval(()=>{ vmStatus.innerHTML='<b>'+stages[Math.min(si,stages.length-1)]+'</b>'; si++; },900);
+  const stages=['Booting snapshot…','Submitting to backend…','Scraping + ML classification…','Scoring verdict…'];
+  let si=0; const sint=setInterval(()=>{ vmStatus.innerHTML='<b>'+stages[Math.min(si,stages.length-1)]+'</b>'; si++; },1200);
+  const t0=performance.now(); const eint=setInterval(()=>{ elapsed.textContent=((performance.now()-t0)/1000).toFixed(1)+'s elapsed'; },100);
 
-  let files=0,proc=1,net=0,t0=performance.now();
-  const eint=setInterval(()=>{ elapsed.textContent=((performance.now()-t0)/1000).toFixed(1)+'s elapsed'; },100);
+  if(mode!=='url'){ bev('warn','file','+0.1s','Mode: '+mode.toUpperCase(),'File/hash detonation needs upload — running URL analysis on the input string instead.'); }
+  bev('ok','proc','+0.2s','Sample submitted','Dispatched to isolated backend analysis');
+  const url=/^https?:/i.test(raw)?raw:('http://'+raw);
 
-  script.forEach((e,i)=>setTimeout(()=>{
-    const row=document.createElement('div'); row.className='bev '+e.c;
-    row.innerHTML='<span class="bnode">'+EV[e.k]+'</span><div class="btxt"><span class="bt">'+e.t+'</span><b>'+e.title+'</b><div class="bdesc">'+e.d+'</div></div>';
-    behave.appendChild(row); behave.scrollTop=behave.scrollHeight;
-    bevCount.textContent=(i+1)+' events';
-    if(e.k==='file')files++; if(e.k==='proc')proc++; if(e.k==='net'){net++;vmNet.textContent='net: '+net+' conn';}
-    document.getElementById('tFiles').textContent=files;
-    document.getElementById('tProc').textContent=proc;
-    document.getElementById('tNet').textContent=net;
-    // light matching ATT&CK tactic
-    if(e.tac){const tc=document.querySelector('.tac[data-tac="'+e.tac+'"]');
-      if(tc&&!tc.classList.contains('hit')){tc.classList.add('hit');
-        document.getElementById('tacCount').textContent=document.querySelectorAll('.tac.hit').length+' mapped';}}
-    // fire packets on network events
-    if(e.pkt) burstPackets(e.pkt, e.c==='bad');
-  }, 700+e.t.replace(/[+s]/g,'')*1000*0.9));
-
-  setTimeout(()=>{
+  try{
+    const res=await cfInvoke('scan_url',{url:url});
+    const d=(res&&res.data)||{};
     clearInterval(sint); clearInterval(eint);
     det.classList.remove('busy'); vmCard.classList.remove('running');
-    vmStatus.innerHTML='Analysis complete — <b>verdict ready</b>';
+    const risk=+d.riskScore||0, cat=(d.category||'unknown');
+    if(d.scraperSuccess===false){ bev('bad','net','scrape','Target unreachable',d.scraperError||'could not connect'); }
+    const ext=(d.externalDomains||[]); if(ext.length){ bev('warn','net','net','Outbound connections',ext.length+' external domain(s): '+ext.slice(0,3).join(', ')); vmNet.textContent='net: '+ext.length+' conn'; }
+    const miss=(d.missingHeaders||[]); if(miss.length){ bev('warn','reg','hdr','Missing security headers',miss.slice(0,4).join(', ')); }
+    const sus=(d.suspiciousRequests||[]); if(sus.length){ bev('bad','file','sus',sus.length+' suspicious request(s)',String(sus[0]).slice(0,60)); }
+    bev(risk>=50?'bad':(risk>=30?'warn':'ok'),'alert','ml','ML verdict: '+cat,(d.summary||('risk '+risk+'/100')).slice(0,100));
+    // telemetry
+    document.getElementById('tNet').textContent=ext.length;
+    document.getElementById('tFiles').textContent=miss.length;
+    document.getElementById('tProc').textContent=(d.modelPredictions?Object.keys(d.modelPredictions).length:1);
+    // IOCs
+    let host=raw; try{ host=new URL(url).hostname; }catch(e){}
+    document.getElementById('iocHost').textContent=host||'—';
+    document.getElementById('iocC2').textContent=ext.length?ext[0]:'none';
+    document.getElementById('iocFam').textContent=cat;
+    // MITRE heuristic from real findings
+    if(ext.length) hitTac('c2');
+    if(/phish|credential|login|steal/i.test(cat+' '+(d.summary||''))) hitTac('cred');
+    if(miss.length) hitTac('disc');
+    if(risk>=50){ hitTac('evade'); hitTac('exec'); }
+    // verdict gauge
+    const col=risk>=65?'#ff7185':risk>=35?'var(--amber-2)':'var(--green)';
+    let sc=0; const a=setInterval(()=>{ sc+=3; if(sc>=risk){sc=risk;clearInterval(a);} document.getElementById('vscore').textContent=sc; drawGauge(sc,col); },22);
+    if(risk===0){ document.getElementById('vscore').textContent='0'; drawGauge(0,col); }
+    const cls=risk>=65?'mal':risk>=35?'sus':'safe', label=risk>=65?'MALICIOUS':risk>=35?'SUSPICIOUS':'CLEAN';
+    vb.className='vbadge '+cls;
+    vb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>'+label;
+    vmStatus.innerHTML='Analysis complete — <b>'+label.toLowerCase()+'</b>';
     sbState.textContent='state: complete';
-    // animate score
-    const target=87; let s=0; const a=setInterval(()=>{ s+=3; if(s>=target){s=target;clearInterval(a);}
-      document.getElementById('vscore').textContent=s; drawGauge(s,'#ff7185'); },22);
-    const vb=document.getElementById('vbadge'); vb.className='vbadge mal';
-    vb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>MALICIOUS';
-    document.getElementById('iocHash').textContent='9f86…0a08';
-    document.getElementById('iocHost').textContent='free-prizes-login.xyz';
-    document.getElementById('iocC2').textContent='cdn-sync.duckdns.org';
-    document.getElementById('iocFam').textContent='RedLine Stealer';
-    vmRight.innerHTML='<span class="pill crit">FLAGGED</span>';
-    running=false;
-  }, 700+5.6*1000);
+    vmRight.innerHTML='<span class="pill '+(cls==='mal'?'crit':cls==='sus'?'med':'low')+'">'+(cls==='safe'?'CLEAN':'FLAGGED')+'</span>';
+
+    // ---- AI Deep Scan: BERT + DGA + ML ensemble (the new ML stack) ----
+    try{
+      const en=await cfInvoke('ml_url_enrich',{url:url});
+      const comp=(en&&en.components)||{};
+      const bert=comp.bert_threat_score, dga=comp.dga_threat_score, mlmax=comp.ml_max_threat_score;
+      if(bert!=null) bev(bert>=0.6?'bad':bert>=0.35?'warn':'ok','file','bert','BERT URL classifier',Math.round(bert*100)+'% malicious likelihood');
+      if(dga!=null) bev(dga>=0.6?'bad':dga>=0.35?'warn':'ok','net','dga','DGA domain check',Math.round(dga*100)+'% generated-domain score');
+      if(mlmax!=null) bev(mlmax>=0.6?'bad':mlmax>=0.35?'warn':'ok','reg','mlx','ML ensemble',Math.round(mlmax*100)+'% max across 4 models');
+      const fused=+en.risk_score;
+      if(!isNaN(fused) && fused>risk){
+        const col2=fused>=65?'#ff7185':fused>=35?'var(--amber-2)':'var(--green)';
+        document.getElementById('vscore').textContent=Math.round(fused); drawGauge(Math.round(fused),col2);
+        bev('warn','alert','fuse','Fused ML risk raised verdict',risk+' → '+Math.round(fused)+'/100');
+      }
+      if(en && en.risk_level) document.getElementById('iocFam').textContent=cat+' · '+en.risk_level;
+    }catch(_e){ /* deep scan is best-effort; the agent scan already rendered */ }
+  }catch(e){
+    clearInterval(sint); clearInterval(eint);
+    det.classList.remove('busy'); vmCard.classList.remove('running');
+    vmStatus.innerHTML='Analysis failed — <b>backend unreachable</b>';
+    sbState.textContent='state: error';
+    bev('bad','alert','err','Scan failed',(e&&e.message)||'backend unreachable or not signed in');
+    const vb2=document.getElementById('vbadge'); vb2.className='vbadge sus'; vb2.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>ERROR';
+  }
+  running=false;
 }
 det.addEventListener('click',detonate);
 attachRipple(det);
@@ -397,8 +429,7 @@ document.querySelectorAll('.ioc').forEach(row=>{
   });
 });
 
-// auto-run once on load for the wow factor
-setTimeout(detonate,900);
+/* No auto-run — the user enters a URL and presses Detonate for a real scan. */
 </script>
 </body>
 </html>

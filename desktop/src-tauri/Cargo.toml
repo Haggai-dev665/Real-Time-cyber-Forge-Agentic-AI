@@ -22,9 +22,16 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Backend authentication (login/register) — calls run from Rust to avoid browser
 # CORS, exactly like the existing desktop-app. Tokens are kept in the OS keychain.
-tokio = { version = "1", features = ["sync"] }
+# `tokio` must expose the IO/net + multi-thread reactor that `reqwest` polls on;
+# the proven desktop-app uses "full", so we match it. Narrowing this (e.g. to
+# just sync+time) starves reqwest of the IO driver and every request fails with
+# "error sending request for url (...)" even though the server is healthy.
+tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 keyring = "3"
+# Real local telemetry for the floating agent panel (CPU / memory / uptime,
+# running-browser detection) — same crate the desktop-app uses.
+sysinfo = "0.32"
 
 [features]
 # This feature is used for production builds where `devtools` is disabled.

@@ -116,6 +116,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -193,22 +195,39 @@ function render(){
 }
 render();
 
-// stream a new live event occasionally into Today
-const live=[
-  ['ok','Credentials rotated','j.okafor session tokens revoked','Eradication'],
-  ['info','Agent recommendation','Reimage WS-4471 from golden image','Containment'],
-  ['warn','C2 domain re-resolved','duckdns rotated IP — blocklist updated','Containment'],
-  ['ok','Persistence removed','Run-key svc_update deleted','Eradication']
-];
-setInterval(()=>{
-  if(Math.random()<0.5){
-    const e=live[Math.floor(Math.random()*live.length)];
-    const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    seed.unshift([ts,e[0],e[0],e[1],e[2],e[3]]);
-    if(seed.length>9)seed.pop();
-    render();
-  }
-},4500);
+// ===== REAL incident events — live threats/alerts from the backend =====
+function sevToClass(s){ s=String(s||'').toLowerCase();
+  return s==='critical'?'crit':(s==='high'?'warn':(s==='low'?'info':(s==='medium'?'warn':'info'))); }
+function pushEvent(ts,sev,title,desc,phase){
+  const c=sevToClass(sev);
+  seed.unshift([ts,c,c,String(title||'').slice(0,80),String(desc||'').slice(0,140),phase||'Detection']);
+  if(seed.length>14) seed.pop(); render();
+}
+async function loadIncidents(){
+  try{
+    const r=await CF.invoke('get_threats'); const d=(r&&r.data)||{}; const arr=d.threats||[];
+    if(arr.length){
+      seed.length=0;
+      arr.slice(0,14).forEach(x=>{
+        const det=x.detection||{}; const t=new Date(det.timestamp||x.createdAt||x.ts||Date.now());
+        const ts=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+        const c=sevToClass(x.severity);
+        seed.push([ts,c,c,(x.title||x.type||x.indicator||'Threat detected'),
+          (x.description||x.summary||('risk '+(x.riskScore!=null?x.riskScore:'—'))),(x.category||x.source||(det.source)||'Detection')]);
+      });
+      render();
+    }
+    // real KPI counts
+    const kv=document.querySelectorAll('.kpi .kv');
+    if(kv[0]) kv[0].textContent=(d.critical||0)+(d.high||0);
+    if(kv[3]) kv[3].textContent=(d.total||arr.length||0);
+  }catch(e){ /* keep seed */ }
+}
+loadIncidents(); setInterval(loadIncidents,30000);
+window.addEventListener('cf:threat', e=>{ const x=e.detail||{}; const ts=new Date().toTimeString().slice(0,5);
+  pushEvent(ts, x.severity, (x.indicator||x.url||'Threat detected'), (x.category||'')+' · risk '+(x.riskScore!=null?x.riskScore:'—'), x.source||'Detection'); });
+window.addEventListener('cf:alert', e=>{ const x=e.detail||{}; const ts=new Date().toTimeString().slice(0,5);
+  pushEvent(ts, x.severity, (x.message||x.url||'Alert raised'), x.url||'', 'Triage'); });
 </script>
 </body>
 </html>

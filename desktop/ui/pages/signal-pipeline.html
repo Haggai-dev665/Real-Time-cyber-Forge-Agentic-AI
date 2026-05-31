@@ -134,6 +134,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -174,39 +176,46 @@ setTimeout(()=>document.querySelectorAll('.util i').forEach(i=>i.style.width=i.d
   },130);
 })();
 
-// live event stream
+// REAL live event flow — every frame is a real SSE event (scan/threat/alert/
+// agent) re-broadcast by cf-realtime.js. Starts empty and fills as the agent works.
 (function(){
   const stream=document.getElementById('evstream');
-  const srcs=['edr.endpoint','fw.paloalto','dns.resolver','idp.okta','cloud.aws','proxy.zscaler','email.o365'];
-  const stagesK=['ingest','normalize','analyze','reason'];
-  const evs=['auth.login','net.flow','proc.exec','dns.query','file.write','api.call','threat.match','user.geo'];
-  let id=84021;
-  function add(){
-    const sk=stagesK[Math.floor(Math.random()*(Math.random()<0.7?3:4))];
+  let id=900000; const counts={ingest:0,analyze:0,reason:0};
+  const stamps=[];
+  function row(stageK,label){
+    if(!stream) return;
+    counts[stageK]=(counts[stageK]||0)+1; stamps.push(Date.now());
     const el=document.createElement('div'); el.className='evr';
     const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
     el.innerHTML='<span class="et">'+ts+'</span><span class="eid">#'+(id++)+'</span>'+
-      '<span class="es">'+srcs[Math.floor(Math.random()*srcs.length)]+' · '+evs[Math.floor(Math.random()*evs.length)]+'</span>'+
-      '<span class="estage '+sk+'">'+sk.toUpperCase()+'</span>';
+      '<span class="es">'+String(label).replace(/[<>]/g,'')+'</span>'+
+      '<span class="estage '+stageK+'">'+stageK.toUpperCase()+'</span>';
     stream.prepend(el); while(stream.children.length>40) stream.lastChild.remove();
   }
-  for(let i=0;i<14;i++) add();
-  setInterval(add,420);
-})();
+  window.addEventListener('cf:agent', e=>{ const d=e.detail||{}; row('ingest','agent · '+(d.type||'activity')+(d.url?' '+d.url:'')); });
+  window.addEventListener('cf:scan',  e=>{ const d=e.detail||{}; row('analyze','scored '+((d.verdict||'').toUpperCase())+' · '+(d.url||'')); });
+  window.addEventListener('cf:threat',e=>{ const d=e.detail||{}; row('reason','threat.match · '+(d.indicator||d.url||'')); });
+  window.addEventListener('cf:alert', e=>{ const d=e.detail||{}; row('reason','alert · '+(d.message||d.url||'')); });
 
-// live KPI jitter
-(function(){
+  // REAL pipeline KPIs from backend telemetry (agent_status) + live event rate.
   const thru=document.getElementById('thru'),kIngest=document.getElementById('kIngest'),
-        kLat=document.getElementById('kLat'),kBack=document.getElementById('kBack');
-  setInterval(()=>{
-    const v=11.8+Math.random()*1.4;
-    thru.textContent=(v*1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')+' events/s';
-    kIngest.innerHTML=v.toFixed(1)+'<span style="font-size:13px;color:var(--faint)">k/s</span>';
-    kLat.innerHTML=(120+Math.floor(Math.random()*60))+'<span style="font-size:13px;color:var(--faint)">ms</span>';
-    kBack.textContent=Math.random()<0.7?'0':Math.floor(Math.random()*40);
-    document.querySelectorAll('.scount').forEach(s=>{const base=+s.dataset.c;const n=base*(0.95+Math.random()*0.1);
-      s.textContent=n>=1000?(n/1000).toFixed(1)+'k/s':Math.round(n)+'/s';});
-  },1400);
+        kLat=document.getElementById('kLat'),kBack=document.getElementById('kBack'),kEnrich=document.getElementById('kEnrich');
+  function rate(){ const now=Date.now(); while(stamps.length && now-stamps[0]>10000) stamps.shift(); return (stamps.length/10); }
+  async function tele(){
+    try{ const s=await CF.invoke('agent_status'); const d=(s&&s.data)||{};
+      const r=rate();
+      if(thru) thru.textContent=r.toFixed(1)+' events/s';
+      if(kIngest) kIngest.innerHTML=r.toFixed(1)+'<span style="font-size:13px;color:var(--faint)">/s</span>';
+      if(kLat&&d.latencyMs!=null) kLat.innerHTML=d.latencyMs+'<span style="font-size:13px;color:var(--faint)">ms</span>';
+      if(kBack) kBack.textContent=d.backendOk?'0':'—';
+      if(kEnrich) kEnrich.textContent=(d.threatCount!=null?d.threatCount:counts.analyze);
+      // reflect live throughput on the hero stage counters
+      const sc=document.querySelectorAll('.scount');
+      if(sc[0]) sc[0].textContent=counts.ingest+'/s'; if(sc[2]) sc[2].textContent=counts.analyze+'/s'; if(sc[3]) sc[3].textContent=counts.reason+'/s';
+    }catch(e){}
+  }
+  tele(); setInterval(tele,5000);
+  window.addEventListener('cf:metrics', tele);
 })();
 </script>
 </body>

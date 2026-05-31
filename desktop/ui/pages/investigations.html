@@ -121,6 +121,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -194,6 +196,44 @@ setInterval(()=>{
   renderCases(); const cur=visibleCases()[selected];
   if(cur&&cur.st==='active'){const h=document.querySelector('#cdHead .cinfo');if(h){const pe=document.querySelector('#cdHead div[style*="text-align:right"] div');if(pe)pe.textContent=Math.round(cur.prog)+'%';}}
 },2600);
+
+// ===== REAL cases — built from live threats (get_threats) =====
+function threatToCase(x,i){
+  const det=x.detection||{}; const sev=String(x.severity||'medium').toLowerCase();
+  const sv=sev==='critical'?'crit':(sev==='high'?'high':(sev==='low'?'low':'med'));
+  const st=['resolved','dismissed','mitigated','false_positive','closed'].includes(String(x.status||'').toLowerCase())?'closed':'active';
+  const ind=x.indicator||x.url||'';
+  const etype=/^https?:/.test(ind)?'domain':(/^[0-9.]+$/.test(ind)?'ip':(/^[a-f0-9]{32,}$/i.test(ind)?'file':'domain'));
+  const risk=(x.riskScore!=null?x.riskScore:0);
+  return {
+    id:'CASE-'+String(x.id||x._id||(2000+i)).slice(-4),
+    n:(x.title||x.type||x.category||ind||'Threat Investigation'),
+    sev:sv, st:st, prog:st==='closed'?100:Math.max(20,Math.min(94,40+risk/2)),
+    assignee:'CyberForge Agent', alerts:(Array.isArray(x.indicators)?x.indicators.length:1), opened:'live', run:st!=='closed',
+    steps:[
+      ['done','Detection',((x.source||det.source||'agent'))+' detected '+(x.type||x.category||'threat'),''],
+      ['done','Triage','ML classified — risk '+(risk||'—'),''],
+      [st==='closed'?'done':'active', st==='closed'?'Resolved':'Containment', st==='closed'?'Case resolved':'Mitigation in progress','']
+    ],
+    ents: ind?[[etype, ind, (x.category||'indicator')]]:[],
+    iocs: [ind].filter(Boolean)
+  };
+}
+async function loadInvestigations(){
+  try{
+    const r=await CF.invoke('get_threats'); const d=(r&&r.data)||{}; const arr=d.threats||[];
+    if(arr.length){
+      cases.length=0; arr.map(threatToCase).forEach(c=>cases.push(c));
+      selected=0; renderCases(); renderCase();
+      const kv=document.querySelectorAll('.kpi .kv');
+      if(kv[0]) kv[0].textContent=cases.filter(c=>c.st==='active').length;
+      if(kv[3]) kv[3].textContent=(d.total||arr.length);
+    }
+  }catch(e){ /* keep seed cases */ }
+}
+loadInvestigations(); setInterval(loadInvestigations,30000);
+window.addEventListener('cf:threat', e=>{ const x=e.detail||{}; cases.unshift(threatToCase(x,cases.length));
+  if(cases.length>40)cases.pop(); renderCases(); });
 </script>
 </body>
 </html>

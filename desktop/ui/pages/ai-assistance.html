@@ -133,6 +133,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -196,11 +198,30 @@ const suggestions=[
 document.getElementById('suggest').innerHTML=suggestions.map(s=>'<div class="schip" data-q="'+s[0].replace(/"/g,'&quot;')+'">'+s[1]+s[0]+'</div>').join('');
 
 let busy=false;
-function ask(q){
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+async function ask(q){
   if(busy)return; busy=true;
-  addUser(q);
-  const resp=responses[q]||'Let me look into that.<div class="toolchip">⚡ querying telemetry</div>Based on current signals, I don\'t see anything anomalous matching that. I can run a deeper sweep or detonate a sample in the sandbox if you have one.';
-  setTimeout(()=>{ addBot(resp,true); setTimeout(()=>busy=false, resp.length*8+800); }, 250);
+  addUser(escHtml(q));
+  // Live bubble with typing indicator → real DeepSeek/Mistral answer via ML service.
+  const m=document.createElement('div');m.className='msg ai';
+  const b=document.createElement('div');b.className='bubble';
+  m.innerHTML=botAv;m.appendChild(b);
+  b.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';
+  chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
+  try{
+    const body=await CF.ml.chat(q,512);
+    const d=(body&&body.data)||body||{};
+    let txt=d.response||d.answer||d.text||d.output||d.reply||body.response||body.message||'';
+    if(!txt) txt='I couldn\'t generate a response just now — the ML service may be warming up on HuggingFace. Please try again in a moment.';
+    b.innerHTML=escHtml(txt).replace(/\n/g,'<br>');
+    const model=d.model||body.model; if(model){var mh=document.querySelector('.head-right > span:nth-of-type(1) + span'); if(mh) mh.textContent=model;}
+  }catch(e){
+    const offline=String((e&&e.message)||e).indexOf('tauri-unavailable')>=0;
+    b.innerHTML=offline
+      ? 'The AI service is only available inside the desktop app (Tauri bridge not found in this preview).'
+      : 'I hit an error reaching the ML service — it may be cold-starting on HuggingFace. Please retry shortly.';
+  }
+  chat.scrollTop=chat.scrollHeight; busy=false;
 }
 document.querySelectorAll('.schip').forEach(c=>c.addEventListener('click',()=>ask(c.dataset.q)));
 const input=document.getElementById('msgInput'),send=document.getElementById('sendBtn');

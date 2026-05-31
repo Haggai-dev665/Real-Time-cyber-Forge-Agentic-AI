@@ -49,6 +49,20 @@ class ThreatService {
         console.warn('ML threat detection unavailable:', mlError.message);
       }
 
+      // Push any detected threats to live dashboards over SSE (real-time).
+      try {
+        const realtimeBus = require('./realtimeBus');
+        const rs = this.calculateRiskScore(threats);
+        threats.forEach((t) => realtimeBus.emit('threat:new', {
+          indicator: t.url || data.url,
+          type: t.type,
+          severity: t.severity,
+          riskScore: rs,
+          confidence: t.confidence,
+          source: 'threat-scan'
+        }));
+      } catch (_) { /* realtime is best-effort */ }
+
       return {
         success: true,
         threats,

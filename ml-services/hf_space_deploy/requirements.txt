@@ -19,14 +19,14 @@ gradio>=5.20.0
 fastapi>=0.100.0
 uvicorn[standard]>=0.22.0
 
-# HF Hub
-huggingface_hub>=0.25.0
+# HF Hub (>=0.26 for Inference Providers / OpenAI-compatible router used by DeepSeek)
+huggingface_hub>=0.26.0
 
 # Feature Engineering
 tldextract>=5.1.0
 
-# Gemini AI (new SDK)
-google-genai>=1.0.0
+# Reasoning LLM: DeepSeek via HF Inference Providers (OpenAI-compatible router).
+# Called over plain HTTPS (requests) — no extra SDK needed. Gemini retired.
 
 # Notebook execution
 nbformat>=5.10.0

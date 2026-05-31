@@ -48,10 +48,16 @@
 </div>
 
 <script src="../scripts/cf-forge.js"></script>
+<script src="../scripts/cf-auth.js"></script>
 <script>
 fitWindow('win');
 forgeIllustration(document.getElementById('forge'),240);
 cfWordmark(document.getElementById('word'));
+
+/* persistent login: validate the keychain session while the loader runs */
+const authCheck = (window.cfAuth
+  ? cfAuth.isAuthenticated().then(r => !!(r && r.authenticated)).catch(() => false)
+  : Promise.resolve(false));
 
 const steps=[
   ['Mounting encrypted volumes','vault:ok'],
@@ -75,8 +81,14 @@ const iv=setInterval(()=>{
   fill.style.width=p+'%'; pct.textContent=Math.round(p)+'%';
   const idx=Math.min(steps.length-1,Math.floor(p/100*steps.length));
   if(idx!==si||p>=100){ if(steps[si]){phase.textContent=steps[si][0]+'…'; line(steps[si][0],steps[si][1]);} si=idx; }
-  if(p>=100){clearInterval(iv); phase.textContent='Ready'; line('System ready','enter');
-    setTimeout(()=>document.getElementById('enter').classList.add('show'),400);}
+  if(p>=100){clearInterval(iv); phase.textContent='Ready';
+    authCheck.then(function(authed){
+      if(authed){ line('Session restored','welcome back');
+        setTimeout(()=>{ window.location.href='threat-overview.html'; },650); }
+      else { line('System ready','enter');
+        setTimeout(()=>document.getElementById('enter').classList.add('show'),400); }
+    });
+  }
 },520);
 </script>
 </body>

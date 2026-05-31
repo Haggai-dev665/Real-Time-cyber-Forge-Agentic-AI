@@ -108,6 +108,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -169,17 +171,46 @@ function buildUpNext(){
 }
 buildUpNext();
 
-// recent runs log
+// recent runs log — fed by REAL scan history + live scan events
 const runlog=document.getElementById('runlog');
-const past=['Fleet Threat Sweep','IOC Feed Sync','Endpoint Telemetry Flush','Domain Reputation Refresh','Vulnerability Scan'];
-function flashRun(name){
+function safe(s){ return String(s==null?'':s).replace(/[<>]/g,''); }
+function flashRun(name, detail){
   const el=document.createElement('div'); el.className='rl';
   const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-  el.innerHTML='<span class="rok"></span><span class="rn">'+name+'</span><span class="rd">'+ts+' · '+(1+Math.random()*4).toFixed(1)+'s</span>';
+  el.innerHTML='<span class="rok"></span><span class="rn">'+safe(name)+'</span><span class="rd">'+ts+(detail?' · '+safe(detail):'')+'</span>';
   runlog.prepend(el); while(runlog.children.length>30) runlog.lastChild.remove();
-  const kr=document.getElementById('kRuns'); kr.textContent=+kr.textContent+1;
+  const kr=document.getElementById('kRuns'); if(kr) kr.textContent=+kr.textContent+1;
 }
-for(let i=0;i<6;i++) flashRun(past[Math.floor(Math.random()*past.length)]);
+
+// Load real scan history (each scan persists as a local episodic memory) and
+// turn it into the run-log + KPIs. This is the real "scheduler" activity.
+function relTime(sec){ const m=Math.floor((Date.now()-sec*1000)/60000);
+  if(m<1)return 'just now'; if(m<60)return m+'m ago'; const h=Math.floor(m/60); if(h<24)return h+'h ago'; return Math.floor(h/24)+'d ago'; }
+async function loadRuns(){
+  try{
+    const r=await CF.invoke('memory_list',{limit:30}); const d=(r&&r.data)||{}; const mems=d.memories||[];
+    if(mems.length){
+      runlog.innerHTML='';
+      mems.slice(0,20).forEach(m=>{
+        const host=(m.url||'').replace(/^https?:\/\//,'').split('/')[0]||m.category||'scan';
+        const el=document.createElement('div'); el.className='rl';
+        el.innerHTML='<span class="rok" style="background:'+((m.risk||0)>=40?'#f87171':'var(--green)')+';box-shadow:none"></span>'+
+          '<span class="rn">'+safe(m.category||'Scan')+' · '+safe(host)+'</span><span class="rd">'+relTime(m.ts||0)+' · risk '+(m.risk!=null?m.risk:0)+'</span>';
+        runlog.appendChild(el);
+      });
+      const kr=document.getElementById('kRuns'); if(kr) kr.textContent=(d.total!=null?d.total:mems.length);
+      // Active Jobs KPI = enabled schedules (real toggle state)
+      const kv=document.querySelectorAll('.kpi .kv'); if(kv[0]) kv[0].textContent=jobs.filter(j=>j.on).length;
+    } else {
+      runlog.innerHTML='<div style="color:var(--faint);padding:20px;text-align:center;font-size:11px;font-family:var(--mono)">No runs yet — scans appear here as the agent works.</div>';
+    }
+  }catch(e){ /* preview / not available → leave as-is */ }
+}
+loadRuns(); setInterval(loadRuns, 30000);
+// a real scan completing is a real scheduled-sweep run
+window.addEventListener('cf:scan', function(e){ const x=e.detail||{};
+  flashRun('Fleet Threat Sweep', (x.verdict||'scan')+' · '+((x.url||'').replace(/^https?:\/\//,'').split('/')[0]||'')); });
+window.addEventListener('cf:agent', function(e){ const x=e.detail||{}; if(x.type==='scan') flashRun('Agent scan', x.url||''); });
 
 // header countdown mirror
 setInterval(()=>{const soonest=Math.min(...jobs.filter(j=>j.on).map(j=>j.next));document.getElementById('nextrun').textContent='Next run in '+fmt(soonest);},1000);

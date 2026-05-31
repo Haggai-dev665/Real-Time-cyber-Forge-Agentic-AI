@@ -4,6 +4,8 @@
 //! piece of the app wired to the backend; everything else renders statically.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::time::Instant;
 
 /// Authenticated user profile, normalized from the backend response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,6 +25,15 @@ pub struct AppState {
     pub auth_token: Option<String>,
     pub current_user: Option<UserInfo>,
     pub is_authenticated: bool,
+    /// Last URL scan result — shared so the Agent Core screen and the floating
+    /// agent panel stay in sync (whichever runs a scan, both can read it).
+    pub last_scan: Option<Value>,
+    /// TTL caches — a single source of truth so many UI surfaces never each hit
+    /// the backend. (timestamp, payload).
+    pub status_cache: Option<(Instant, Value)>,
+    pub sys_cache: Option<(Instant, Value)>,
+    pub browsers_cache: Option<(Instant, Value)>,
+    pub threats_cache: Option<(Instant, Value)>,
 }
 
 impl AppState {
@@ -33,6 +44,11 @@ impl AppState {
             auth_token: None,
             current_user: None,
             is_authenticated: false,
+            last_scan: None,
+            status_cache: None,
+            sys_cache: None,
+            browsers_cache: None,
+            threats_cache: None,
         }
     }
 
@@ -50,7 +66,9 @@ impl AppState {
 
     /// Headers for authenticated backend calls (User-Agent + bearer token).
     pub fn auth_headers(&self) -> Vec<(String, String)> {
-        let mut headers = vec![("User-Agent".into(), "cyberforge-console/1.0".into())];
+        // Identify as a desktop app so the backend grants basic threat/stats
+        // access (it matches the "cyber-forge-desktop" User-Agent).
+        let mut headers = vec![("User-Agent".into(), "cyber-forge-desktop/1.0".into())];
         if let Some(ref token) = self.auth_token {
             headers.push(("Authorization".into(), format!("Bearer {}", token)));
         }

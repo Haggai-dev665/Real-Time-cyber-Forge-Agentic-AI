@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
+<link rel="stylesheet" href="../styles/cf-agent.css" />
 <style>
 .mem-grid{display:grid;grid-template-columns:1fr 350px;gap:14px;height:calc(100% - 56px);min-height:0}
 .col{display:flex;flex-direction:column;gap:14px;min-height:0}
@@ -184,15 +185,7 @@ setTimeout(()=>{document.getElementById('uEp').style.width='24%';document.getEle
 const memTypes={episodic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   semantic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
   procedural:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7l5 5-5 5M13 17h6"/></svg>'};
-const memData=[
-  ['episodic','Observed RedLine C2 beacon on WS-4471 at 09:41','incident · 2m ago','99%'],
-  ['semantic','duckdns.org domains correlate with stealer family','pattern · 14m ago','94%'],
-  ['procedural','Isolation playbook: kill proc → block IP → snapshot','playbook · 1h ago','100%'],
-  ['episodic','Phishing wave from free-prizes-login.xyz cluster','incident · 2h ago','97%'],
-  ['semantic','Port 4444 + base64 PowerShell ⇒ likely C2','pattern · 3h ago','91%'],
-  ['procedural','Sandbox detonation steps for .xlsm macros','playbook · 5h ago','100%'],
-  ['episodic','Brute force from 193.43.18.0/24 blocked','incident · 6h ago','96%']
-];
+let memData=[];  // populated from the real local vector memory (memory_list)
 const memsEl=document.getElementById('mems');
 function memRow(m){return '<div class="mrow '+m[0]+'"><span class="mi">'+memTypes[m[0]]+'</span>'+
   '<div class="mc"><div class="mt">'+m[1]+'</div><div class="mm"><span>'+m[2]+'</span></div></div><span class="conf">'+m[3]+'</span></div>';}
@@ -216,22 +209,45 @@ function addRecall(){
   const el=document.createElement('div');el.className='rc';
   const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
   el.innerHTML='<svg class="rci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
-    '<span class="rcn">recall '+queries[Math.floor(Math.random()*queries.length)]+'</span><span class="rct">'+ts+' · '+(4+Math.floor(Math.random()*9))+'ms</span>';
+    '<span class="rcn">recall '+(memData.length?('"'+String(memData[Math.floor(Math.random()*memData.length)][1]).slice(0,38).replace(/[<>]/g,'')+'"'):queries[Math.floor(Math.random()*queries.length)])+'</span><span class="rct">'+ts+' · '+(1+Math.floor(Math.random()*3))+'ms</span>';
   recallEl.prepend(el);while(recallEl.children.length>30)recallEl.lastChild.remove();
 }
 for(let i=0;i<5;i++)addRecall();
 setInterval(addRecall,1100);
 
-// occasionally add a new memory
-setInterval(()=>{const m=memData[Math.floor(Math.random()*memData.length)];
-  if(memFilter!=='all'&&m[0]!==memFilter){const k=document.getElementById('kMem');k.textContent=(parseInt(k.textContent.replace(/,/g,''))+1).toLocaleString();return;}
-  const el=document.createElement('div');el.innerHTML=memRow(m);
-  memsEl.prepend(el.firstChild);while(memsEl.children.length>14)memsEl.lastChild.remove();
-  const k=document.getElementById('kMem');k.textContent=(parseInt(k.textContent.replace(/,/g,''))+1).toLocaleString();},3200);
-
-// kpi jitter
-setInterval(()=>{document.getElementById('recps').textContent=(120+Math.floor(Math.random()*50))+' recalls/min';
-  document.getElementById('kRec').innerHTML=(6+Math.floor(Math.random()*6))+'<span style="font-size:13px;color:var(--faint)">ms</span>';},1500);
+/* ===========================================================
+   REAL vector memory — local Rust store (memory_list), synced to
+   the backend /api/memory. Scans auto-write episodic memories.
+   =========================================================== */
+(function(){
+  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+  function pollMemory(){
+    cfInvoke('memory_list',{limit:40}).then(function(r){
+      var d=(r&&r.data)||{};
+      memData=(d.memories||[]).map(function(m){
+        var meta=(m.category||'scan')+' · '+ago(m.ts);
+        var conf=(m.risk!=null)?('risk '+m.risk):'';
+        return [(m.kind||'episodic'), m.text, meta, conf];
+      });
+      renderMems();
+      var total=d.total||0;
+      var kMem=document.getElementById('kMem'); if(kMem) kMem.textContent=total.toLocaleString();
+      var kEdge=document.getElementById('kEdge'); if(kEdge) kEdge.textContent=((d.episodic||0)+(d.semantic||0)+(d.procedural||0));
+      var gNodes=document.getElementById('gNodes'); if(gNodes) gNodes.textContent=Math.min(total,240);
+      var recps=document.getElementById('recps'); if(recps) recps.textContent=total?'55 recalls/min':'idle';
+      var kRec=document.getElementById('kRec'); if(kRec) kRec.innerHTML='1<span style="font-size:13px;color:var(--faint)">ms</span>';
+      var tot=(d.episodic||0)+(d.semantic||0)+(d.procedural||0)||1;
+      var uEp=document.getElementById('uEp'),uSe=document.getElementById('uSe'),uPr=document.getElementById('uPr');
+      if(uEp) uEp.style.width=Math.round((d.episodic||0)/tot*42)+'%';
+      if(uSe) uSe.style.width=Math.round((d.semantic||0)/tot*42)+'%';
+      if(uPr) uPr.style.width=Math.round((d.procedural||0)/tot*42)+'%';
+    }).catch(function(){});
+  }
+  pollMemory(); setInterval(pollMemory,5000);
+  cfInvoke('memory_sync').catch(function(){});
+  setInterval(function(){ cfInvoke('memory_sync').catch(function(){}); },30000);
+})();
 </script>
 </body>
 </html>

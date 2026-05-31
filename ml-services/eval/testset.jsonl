@@ -1,0 +1,10 @@
+# CyberForge eval cases — one JSON object per line. Lines starting with # are ignored.
+# kinds: health | chat | url.  expect fields are all optional & loose to avoid flakiness.
+{"id": "health-engine", "kind": "health", "expect": {"reasoning_llm": "deepseek"}}
+{"id": "chat-sqli", "kind": "chat", "input": "What is a SQL injection attack and the single most effective way to prevent it?", "expect": {"engine_any": ["deepseek", "mistral"], "contains_any": ["parameter", "prepared", "input", "query", "sanitiz"]}}
+{"id": "chat-phish-domain", "kind": "chat", "input": "A user received a link to g00gle-login-verify.tk asking for their password. Assess the risk and classify it.", "expect": {"engine_any": ["deepseek", "mistral"], "contains_any": ["phish", "high", "critical", "malicious", "credential"]}}
+{"id": "chat-incident", "kind": "chat", "input": "Our SIEM flagged repeated failed SSH logins from one IP then a success. What are the first three response steps?", "expect": {"engine_any": ["deepseek", "mistral"], "contains_any": ["isolat", "block", "credential", "rotate", "investig", "contain"]}}
+{"id": "url-mal-paypal", "kind": "url", "input": "http://paypal-secure-login.confirm-account.ru/webscr?cmd=login", "expect": {"label": "malicious"}}
+{"id": "url-mal-apple", "kind": "url", "input": "http://secure-appleid.apple.com.verify-login.gq/signin", "expect": {"label": "malicious"}}
+{"id": "url-benign-wikipedia", "kind": "url", "input": "https://www.wikipedia.org", "expect": {"label": "benign"}}
+{"id": "url-benign-github", "kind": "url", "input": "https://github.com/features/actions", "expect": {"label": "benign"}}

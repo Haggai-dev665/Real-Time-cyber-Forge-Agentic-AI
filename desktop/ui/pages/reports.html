@@ -135,6 +135,8 @@
 </div>
 
 <script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
@@ -204,6 +206,40 @@ genBtn.addEventListener('click',()=>{
   setTimeout(()=>{renderDoc(true);genBtn.classList.remove('busy');},400);
 });
 document.getElementById('dtCopy').addEventListener('click',function(){const o=this.innerHTML;this.style.color='var(--green)';setTimeout(()=>this.style.color='',900);});
+
+// ===== REAL report generation from live threat data =====
+async function reportData(){ try{ const r=await CF.invoke('get_threats'); return (r&&r.data)||{}; }catch(e){ return {}; } }
+async function generateRealReport(){
+  const d=await reportData(); const arr=d.threats||[]; const now=new Date();
+  const payload={ generatedAt:now.toISOString(),
+    totals:{ total:d.total||0, critical:d.critical||0, high:d.high||0, medium:d.medium||0, low:d.low||0 },
+    threats:arr };
+  // download a real JSON artifact
+  try{ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='cyberforge-threat-report-'+Date.now()+'.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  }catch(e){}
+  // prepend to the library list (reports[] = [title,id,sev,status,when])
+  reports.unshift(['Threat Report — '+now.toLocaleDateString(undefined,{month:'short',day:'numeric'}),
+    'RPT-'+String(Date.now()).slice(-4), (d.critical>0?'crit':(d.high>0?'high':'info')), 'ready', 'just now']);
+  renderList(0);
+  // refresh the live doc-preview stats from real totals
+  const ds=document.querySelectorAll('#docBody .dstat b');
+  if(ds.length>=4){ ds[0].textContent=(d.total||0); ds[1].textContent=(d.critical||0); ds[2].textContent=(d.high||0); ds[3].textContent=((d.medium||0)+(d.low||0)); }
+  if(CF.toast) CF.toast('Report generated from live data','ok');
+}
+document.getElementById('genBtn').addEventListener('click',generateRealReport);
+
+// real KPI counts (Generated this week / Open findings / etc.)
+async function reportsKpis(){
+  const d=await reportData(); const kv=document.querySelectorAll('.kpi .kv');
+  if(kv[1]) kv[1].textContent=(d.critical||0)+(d.high||0);   // Open Findings
+  const rc=document.getElementById('rcount'); if(rc) rc.textContent=reports.length+' reports';
+  const lc=document.getElementById('libCount'); if(lc) lc.textContent=reports.length;
+}
+reportsKpis(); setInterval(reportsKpis,30000);
+['cf:threat','cf:alert'].forEach(n=>window.addEventListener(n,reportsKpis));
 </script>
 </body>
 </html>

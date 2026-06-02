@@ -1,24 +1,26 @@
 /* global React */
 const { useState, useEffect, useRef } = React;
 
-// ── curated CDN imagery (Unsplash) ─────────────────────────────────────────
-const IMG = {
-  // moody forge / sparks / hot steel
-  forge:     "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1400&q=80&auto=format&fit=crop",
-  sparks:    "https://images.unsplash.com/photo-1542228262-3d663b306a53?w=1400&q=80&auto=format&fit=crop",
-  anvil:     "https://images.unsplash.com/photo-1565128939078-c1a2dabbc92e?w=1400&q=80&auto=format&fit=crop",
-  // dark infra / server / data
-  datacenter:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80&auto=format&fit=crop",
-  cables:    "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&q=80&auto=format&fit=crop",
-  circuit:   "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80&auto=format&fit=crop",
-  // operators (avatars)
-  ines:      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&q=85&auto=format&fit=crop",
-  // architectural / Berlin
-  berlin:    "https://images.unsplash.com/photo-1587330979470-3595ac045ab0?w=1200&q=80&auto=format&fit=crop",
+// ── local illustrations (copied from the CyberForge desktop app) ────────────
+const ILLU = {
+  inspect: "ilu1.svg",   // otp-security — every request inspected
+  identity: "ilu2.svg",  // palm-recognition — learns YOUR device, on-device
 };
 
 // ───────────────────────────────────────────────────────── primitives ─────
 const cx = (...c) => c.filter(Boolean).join(" ");
+
+// viewport hook — drives every responsive layout decision
+function useIsMobile(bp = 820) {
+  const [m, setM] = useState(typeof window !== "undefined" ? window.innerWidth < bp : false);
+  useEffect(() => {
+    const on = () => setM(window.innerWidth < bp);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [bp]);
+  return m;
+}
 
 // scroll-reveal hook — adds .in when element enters viewport
 function useReveal() {
@@ -80,12 +82,12 @@ function detectOS() {
 }
 
 const OS_META = {
-  Windows: { label: "Windows", kind: "desktop", file: "CyberForge-Setup-4.12.exe", size: "84 MB", note: "Windows 10/11 · 64-bit" },
-  macOS:   { label: "macOS",   kind: "desktop", file: "CyberForge-4.12.dmg",       size: "92 MB", note: "Universal · Apple Silicon + Intel" },
-  Linux:   { label: "Linux",   kind: "desktop", file: "CyberForge-4.12.AppImage",  size: "88 MB", note: ".AppImage · .deb · .rpm" },
-  iOS:     { label: "iOS",     kind: "mobile",  file: "App Store",                 size: "",       note: "iOS 16+ · iPhone & iPad" },
-  Android: { label: "Android", kind: "mobile",  file: "Google Play",               size: "",       note: "Android 10+" },
-  Unknown: { label: "your device", kind: "desktop", file: "CyberForge",            size: "",       note: "Pick your platform below" },
+  Windows: { label: "Windows", kind: "desktop", file: "CyberForge-Setup-1.0.exe", size: "78 MB", note: "Windows 10/11 · 64-bit" },
+  macOS:   { label: "macOS",   kind: "desktop", file: "CyberForge-1.0.dmg",       size: "84 MB", note: "Apple Silicon + Intel" },
+  Linux:   { label: "Linux",   kind: "desktop", file: "CyberForge-1.0.AppImage",  size: "80 MB", note: ".AppImage · .deb" },
+  iOS:     { label: "iOS",     kind: "mobile",  file: "App Store",                size: "",      note: "iOS 16+ · iPhone & iPad" },
+  Android: { label: "Android", kind: "mobile",  file: "Google Play",              size: "",      note: "Android 10+" },
+  Unknown: { label: "your device", kind: "desktop", file: "CyberForge",           size: "",      note: "Pick your platform below" },
 };
 
 function OSIcon({ os, size = 16, color = "currentColor" }) {
@@ -124,74 +126,9 @@ function Dot({ color = "var(--sage)", pulse = true, size = 8 }) {
   );
 }
 
-// ───────────────────────────────────────────────────────── header ─────────
-function Header({ os }) {
-  const [open, setOpen] = useState(false);
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const time = now.toISOString().replace("T", " ").slice(0, 19) + " UTC";
-
+function LogoMark({ size = 30 }) {
   return (
-    <header style={{
-      position: "sticky", top: 0, zIndex: 50,
-      background: "color-mix(in oklab, var(--raisin) 86%, transparent)",
-      backdropFilter: "blur(14px) saturate(140%)",
-      borderBottom: "1px solid var(--line)"
-    }}>
-      {/* hairline status bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 28px", borderBottom: "1px solid var(--line)", fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--dusty)", opacity: 0.7 }}>
-        <div style={{ display: "flex", gap: 22, alignItems: "center" }}>
-          <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><Dot color="var(--sage)" /> SOC · operational</span>
-          <span style={{ opacity: 0.55 }}>uptime 99.998%</span>
-          <span style={{ opacity: 0.55 }}>threats neutralized · 2,481 today</span>
-        </div>
-        <div style={{ display: "flex", gap: 22 }}>
-          <span>{time}</span>
-          <span style={{ opacity: 0.55 }}>v4.12 · stable</span>
-        </div>
-      </div>
-
-      {/* primary nav */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 28px" }}>
-        <a href="#" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
-          <LogoMark />
-          <span className="display" style={{ fontSize: 20, letterSpacing: "-0.04em" }}>
-            Cyber<span style={{ color: "var(--orange)" }}>Forge</span>
-          </span>
-        </a>
-
-        <nav style={{ display: "flex", gap: 28 }}>
-          {["Platform", "Threat Intel", "Operators", "Docs"].map(item => (
-            <a key={item} href="#" style={{ position: "relative", color: "var(--dusty)", textDecoration: "none", fontSize: 14, opacity: 0.85, padding: "6px 0" }}
-              onMouseEnter={e => e.currentTarget.querySelector(".underline").style.transform = "scaleX(1)"}
-              onMouseLeave={e => e.currentTarget.querySelector(".underline").style.transform = "scaleX(0)"}
-            >
-              {item}
-              <span className="underline" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: "var(--orange)", transform: "scaleX(0)", transformOrigin: "left", transition: "transform 320ms cubic-bezier(.2,.7,.2,1)" }} />
-            </a>
-          ))}
-        </nav>
-
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <a href="#" style={{ fontSize: 14, color: "var(--dusty)", opacity: 0.8, textDecoration: "none" }}>Sign in</a>
-          <button onClick={() => setOpen(true)} style={btnPrimary}>
-            <OSIcon os={os} size={14} color="var(--black)" />
-            <span>{os && OS_META[os] && OS_META[os].kind === "desktop" ? "Download for " + OS_META[os].label : "Download"}</span>
-          </button>
-        </div>
-      </div>
-
-      {open && <DownloadModal os={os} onClose={() => setOpen(false)} />}
-    </header>
-  );
-}
-
-function LogoMark() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 30 30" aria-hidden>
       <rect x="1" y="1" width="28" height="28" fill="none" stroke="var(--dusty)" strokeWidth="1" />
       <path d="M7 22 L15 6 L23 22 Z" fill="var(--orange)" />
       <path d="M11 22 L15 14 L19 22 Z" fill="var(--raisin)" />
@@ -216,38 +153,147 @@ const btnPrimary = {
   cursor: "pointer", transition: "transform 160ms ease, background 160ms ease",
 };
 
+const NAV = [["Platform", "#platform"], ["Features", "#features"], ["Security", "#security"], ["FAQ", "#faq"]];
+
+// ───────────────────────────────────────────────────────── header ─────────
+function Header({ os }) {
+  const mob = useIsMobile();
+  const [dl, setDl] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+  const time = now.toISOString().replace("T", " ").slice(0, 19) + " UTC";
+  const meta = OS_META[os] || OS_META.Unknown;
+
+  return (
+    <header style={{
+      position: "sticky", top: 0, zIndex: 60,
+      background: "color-mix(in oklab, var(--raisin) 88%, transparent)",
+      backdropFilter: "blur(14px) saturate(140%)",
+      borderBottom: "1px solid var(--line)"
+    }}>
+      {!mob && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 28px", borderBottom: "1px solid var(--line)", fontFamily: "JetBrains Mono, monospace", fontSize: 11, letterSpacing: 0.4, textTransform: "uppercase", color: "var(--dusty)", opacity: 0.7 }}>
+          <div style={{ display: "flex", gap: 22, alignItems: "center" }}>
+            <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><Dot color="var(--sage)" /> agent · on-device &amp; active</span>
+            <span style={{ opacity: 0.55 }}>local-first · nothing leaves your machine</span>
+          </div>
+          <div style={{ display: "flex", gap: 22 }}>
+            <span>{time}</span>
+            <span style={{ opacity: 0.55 }}>v1.0 · stable</span>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: mob ? "13px 18px" : "18px 28px" }}>
+        <a href="#top" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "inherit" }}>
+          <LogoMark />
+          <span className="display" style={{ fontSize: 20, letterSpacing: "-0.04em" }}>
+            Cyber<span style={{ color: "var(--orange)" }}>Forge</span>
+          </span>
+        </a>
+
+        {!mob && (
+          <nav style={{ display: "flex", gap: 28 }}>
+            {NAV.map(([item, href]) => (
+              <a key={item} href={href} style={{ position: "relative", color: "var(--dusty)", textDecoration: "none", fontSize: 14, opacity: 0.85, padding: "6px 0" }}
+                onMouseEnter={e => e.currentTarget.querySelector(".underline").style.transform = "scaleX(1)"}
+                onMouseLeave={e => e.currentTarget.querySelector(".underline").style.transform = "scaleX(0)"}
+              >
+                {item}
+                <span className="underline" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 1, background: "var(--orange)", transform: "scaleX(0)", transformOrigin: "left", transition: "transform 320ms cubic-bezier(.2,.7,.2,1)" }} />
+              </a>
+            ))}
+          </nav>
+        )}
+
+        {!mob ? (
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <a href="#download" style={{ fontSize: 14, color: "var(--dusty)", opacity: 0.8, textDecoration: "none" }}>Sign in</a>
+            <button onClick={() => setDl(true)} style={btnPrimary}>
+              <OSIcon os={os} size={14} color="var(--black)" />
+              <span>{meta.kind === "desktop" ? "Download for " + meta.label : "Download"}</span>
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setMenu(true)} aria-label="Open menu" style={{ background: "transparent", border: "1px solid var(--line-strong)", color: "var(--dusty)", width: 42, height: 38, display: "grid", placeItems: "center", cursor: "pointer" }}>
+            <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M0 1h18M0 7h18M0 13h18" strokeLinecap="square" /></svg>
+          </button>
+        )}
+      </div>
+
+      {mob && menu && <MobileMenu os={os} onClose={() => setMenu(false)} onDownload={() => { setMenu(false); setDl(true); }} />}
+      {dl && <DownloadModal os={os} onClose={() => setDl(false)} />}
+    </header>
+  );
+}
+
+function MobileMenu({ os, onClose, onDownload }) {
+  const meta = OS_META[os] || OS_META.Unknown;
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 90, background: "var(--raisin)", display: "flex", flexDirection: "column", animation: "fadeUp 220ms ease both" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 18px", borderBottom: "1px solid var(--line)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LogoMark />
+          <span className="display" style={{ fontSize: 20 }}>Cyber<span style={{ color: "var(--orange)" }}>Forge</span></span>
+        </div>
+        <button onClick={onClose} aria-label="Close menu" style={{ background: "transparent", border: "1px solid var(--line-strong)", color: "var(--dusty)", width: 42, height: 38, display: "grid", placeItems: "center", cursor: "pointer" }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 2l12 12M14 2 2 14" strokeLinecap="square" /></svg>
+        </button>
+      </div>
+      <nav style={{ display: "flex", flexDirection: "column", padding: "10px 18px" }}>
+        {NAV.map(([item, href]) => (
+          <a key={item} href={href} onClick={onClose} className="display" style={{ fontSize: 34, color: "var(--dusty)", textDecoration: "none", padding: "16px 0", borderBottom: "1px solid var(--line)" }}>{item}</a>
+        ))}
+        <a href="#download" onClick={onClose} style={{ fontSize: 15, color: "var(--dusty)", opacity: 0.8, textDecoration: "none", padding: "20px 0" }}>Sign in</a>
+      </nav>
+      <div style={{ marginTop: "auto", padding: 18, borderTop: "1px solid var(--line)" }}>
+        <button onClick={onDownload} style={{ ...btnPrimary, width: "100%", justifyContent: "center", padding: "16px", fontSize: 13 }}>
+          <OSIcon os={os} size={15} color="var(--black)" />
+          <span>{meta.kind === "mobile" ? "Get the " + meta.label + " app" : "Download for " + meta.label}</span>
+        </button>
+        <div style={{ marginTop: 12, textAlign: "center" }}><Ticker>local-first · on-device · free to start</Ticker></div>
+      </div>
+    </div>
+  );
+}
+
 // ───────────────────────────────────────────────────────── hero ───────────
 function Hero({ os }) {
+  const mob = useIsMobile();
   const [hover, setHover] = useState(false);
   const [open, setOpen] = useState(false);
   const meta = OS_META[os] || OS_META.Unknown;
   const isMobile = meta.kind === "mobile";
   return (
-    <section style={{ position: "relative", padding: "72px 28px 40px", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
+    <section id="top" style={{ position: "relative", padding: mob ? "44px 18px 36px" : "72px 28px 40px", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
       <BackdropGrid />
-
-      <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 56, position: "relative" }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1.15fr 0.85fr", gap: mob ? 36 : 56, position: "relative" }}>
         <div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 10px", border: "1px solid var(--line-strong)", borderRadius: 999, marginBottom: 32 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 10px", border: "1px solid var(--line-strong)", borderRadius: 999, marginBottom: mob ? 22 : 32 }}>
             <Dot color="var(--orange)" />
-            <Ticker>v4.12 · forge runtime ships with quantum-safe key rotation</Ticker>
+            <Ticker>v1.0 · AI security console for your devices</Ticker>
           </div>
 
-          <h1 className="display" style={{ fontSize: "clamp(56px, 7.8vw, 116px)", margin: 0 }}>
-            Your fleet&rsquo;s<br />
-            <span style={{ display: "inline-flex", alignItems: "baseline", gap: 18 }}>
-              <em style={{ fontStyle: "normal", color: "var(--orange)" }}>perimeter</em>
-              <SparkLine />
-            </span><br />
-            in one<br />
-            download.
+          <h1 className="display" style={{ fontSize: mob ? "clamp(40px, 12vw, 58px)" : "clamp(52px, 6.6vw, 104px)", margin: 0 }}>
+            Security that{" "}
+            <span style={{ display: "inline-flex", alignItems: "baseline", gap: 16 }}>
+              <em style={{ fontStyle: "normal", color: "var(--orange)" }}>lives</em>
+              {!mob && <SparkLine />}
+            </span>{!mob && <br />}{" "}
+            on your device.
           </h1>
 
-          <p style={{ maxWidth: 540, marginTop: 28, fontSize: 18, lineHeight: 1.5, color: "var(--dusty)", opacity: 0.78 }}>
-            Cyber Forge is an autonomous defense fabric for your endpoints and fleets. Install the desktop agent or the mobile companion app — it learns your baseline in 48 hours and stops intrusions at machine speed, right from your device.
+          <p style={{ maxWidth: 540, marginTop: mob ? 20 : 28, fontSize: mob ? 16 : 18, lineHeight: 1.55, color: "var(--dusty)", opacity: 0.78 }}>
+            CyberForge is an AI security console for your computer and phone. It scans every link and download in real time, runs an autonomous agent that contains threats the instant they appear, and analyzes everything <strong style={{ color: "var(--dusty)", opacity: 1 }}>on-device</strong> — nothing is uploaded to a cloud you don&rsquo;t control.
           </p>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 36, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, marginTop: mob ? 26 : 36, flexWrap: "wrap" }}>
             <button
               onClick={() => setOpen(true)}
               onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
@@ -263,24 +309,24 @@ function Hero({ os }) {
           </div>
 
           <div style={{ marginTop: 16 }}>
-            <Ticker>{isMobile ? meta.note : "Detected " + meta.label + " · " + meta.note + (meta.size ? " · " + meta.size : "")} · free 48h trial</Ticker>
+            <Ticker>{isMobile ? meta.note : "Detected " + meta.label + " · " + meta.note + (meta.size ? " · " + meta.size : "")} · free to start</Ticker>
           </div>
 
-          <div style={{ display: "flex", gap: 40, marginTop: 44, paddingTop: 28, borderTop: "1px solid var(--line)" }}>
+          <div style={{ display: "flex", gap: mob ? 22 : 40, marginTop: mob ? 32 : 44, paddingTop: 28, borderTop: "1px solid var(--line)", flexWrap: "wrap" }}>
             {[
-              ["00:00:11", "median detect-to-contain"],
-              ["48hr", "to full baseline"],
-              ["73%", "fewer false positives"],
+              ["< 10s", "detect-to-contain"],
+              ["4", "ML detection models"],
+              ["100%", "runs on-device"],
             ].map(([num, label]) => (
               <div key={label}>
-                <div className="display" style={{ fontSize: 32, color: "var(--dusty)" }}>{num}</div>
+                <div className="display" style={{ fontSize: mob ? 26 : 32, color: "var(--dusty)" }}>{num}</div>
                 <Ticker>{label}</Ticker>
               </div>
             ))}
           </div>
         </div>
 
-        <ThreatPanel />
+        <ThreatPanel mob={mob} />
       </div>
       {open && <DownloadModal os={os} onClose={() => setOpen(false)} />}
     </section>
@@ -302,7 +348,7 @@ function BackdropGrid() {
 
 function SparkLine() {
   return (
-    <svg width="120" height="44" viewBox="0 0 120 44" style={{ overflow: "visible" }}>
+    <svg width="110" height="40" viewBox="0 0 120 44" style={{ overflow: "visible" }}>
       <path d="M2 32 L18 28 L34 30 L46 14 L62 18 L78 8 L94 22 L118 6" fill="none" stroke="var(--sage)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="118" cy="6" r="4" fill="var(--orange)" />
       <circle cx="118" cy="6" r="9" fill="none" stroke="var(--orange)" strokeWidth="1" opacity="0.5">
@@ -313,79 +359,64 @@ function SparkLine() {
   );
 }
 
-// live-ish threat panel
-function ThreatPanel() {
+// live-ish scan feed (generated locally — illustrates the real-time URL engine)
+function ThreatPanel({ mob }) {
   const seed = useRef([
-    { t: "—:—", ip: "104.196.22.71", region: "FRA·1", kind: "lateral", sev: "critical" },
-    { t: "—:—", ip: "52.30.181.4", region: "DUB·2", kind: "exfil", sev: "high" },
-    { t: "—:—", ip: "13.114.7.182", region: "TYO·3", kind: "brute", sev: "med" },
-    { t: "—:—", ip: "172.58.142.9", region: "SJC·1", kind: "scan", sev: "low" },
-    { t: "—:—", ip: "203.0.113.55", region: "SYD·2", kind: "phish", sev: "high" },
+    { t: "—:—", url: "secure-login-update.account-verify.co", kind: "phishing", sev: "critical" },
+    { t: "—:—", url: "cdn.fast-invoice.app/inv-2291.pdf", kind: "malware", sev: "high" },
+    { t: "—:—", url: "tracker.adsync-metrics.io/px", kind: "tracker", sev: "med" },
+    { t: "—:—", url: "github.com/login", kind: "clean", sev: "low" },
+    { t: "—:—", url: "api.weatherbit.io/v2/current", kind: "clean", sev: "low" },
   ]);
   const [rows, setRows] = useState(seed.current);
   const [tick, setTick] = useState(0);
-
+  useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 1900); return () => clearInterval(i); }, []);
   useEffect(() => {
-    const i = setInterval(() => setTick(t => t + 1), 1800);
-    return () => clearInterval(i);
-  }, []);
-
-  useEffect(() => {
-    const now = new Date();
-    const stamp = now.toTimeString().slice(0, 8);
-    const kinds = ["lateral", "exfil", "brute", "scan", "phish", "c2 beacon", "deserialize"];
-    const sevs = ["critical", "high", "med", "low"];
-    const regions = ["FRA·1","DUB·2","TYO·3","SJC·1","SYD·2","IAD·4","BOM·1"];
-    const ip = `${rand(1,223)}.${rand(0,255)}.${rand(0,255)}.${rand(0,255)}`;
-    const next = { t: stamp, ip, region: regions[rand(0,regions.length-1)], kind: kinds[rand(0,kinds.length-1)], sev: sevs[rand(0,sevs.length-1)] };
+    const stamp = new Date().toTimeString().slice(0, 8);
+    const pool = [
+      { url: "login.micros0ft-account.help/auth", kind: "phishing", sev: "critical" },
+      { url: "download.codec-pack-pro.net/setup.exe", kind: "malware", sev: "high" },
+      { url: "wp-content.payment-portal.cc/pay", kind: "phishing", sev: "high" },
+      { url: "static.cloudflare.com/cf.js", kind: "clean", sev: "low" },
+      { url: "beacon.analytics-edge.io/c2", kind: "c2 beacon", sev: "critical" },
+      { url: "mail.google.com/mail/u/0", kind: "clean", sev: "low" },
+      { url: "unpkg.com/react@18/umd/react.js", kind: "clean", sev: "low" },
+      { url: "files.drive-share.support/doc.scr", kind: "malware", sev: "high" },
+    ];
+    const next = { t: stamp, ...pool[rand(0, pool.length - 1)] };
     setRows(r => [next, ...r].slice(0, 6));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 
-  const sevColor = { critical: "var(--orange)", high: "var(--orange)", med: "var(--sage)", low: "var(--dusty)" };
+  const sevColor = { critical: "var(--orange)", high: "var(--orange)", med: "var(--sage)", low: "var(--sage)" };
   const sevOpacity = { critical: 1, high: 0.7, med: 1, low: 0.45 };
+  const cols = mob ? "1fr 64px 62px" : "62px 1fr 78px 70px";
 
   return (
-    <div style={{
-      position: "relative", background: "var(--black)", color: "var(--dusty)",
-      border: "1px solid var(--line-strong)",
-      padding: 0, overflow: "hidden",
-      boxShadow: "0 24px 60px -20px rgba(0,0,0,0.6)",
-    }}>
+    <div style={{ position: "relative", background: "var(--black)", color: "var(--dusty)", border: "1px solid var(--line-strong)", overflow: "hidden", boxShadow: "0 24px 60px -20px rgba(0,0,0,0.6)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid var(--line)" }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Dot color="var(--orange)" />
-          <Ticker>LIVE · global threat feed</Ticker>
-        </div>
-        <Ticker>forge://ops/feed</Ticker>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}><Dot color="var(--orange)" /><Ticker>LIVE · on-device scan feed</Ticker></div>
+        <Ticker>browser intelligence</Ticker>
       </div>
-
-      <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--line)", display: "grid", gridTemplateColumns: "70px 1fr 70px 90px 80px", gap: 10, fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--dusty)", opacity: 0.45, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        <span>time</span><span>source</span><span>region</span><span>kind</span><span>sev</span>
+      <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--line)", display: "grid", gridTemplateColumns: cols, gap: 10, fontFamily: "JetBrains Mono, monospace", fontSize: 10, color: "var(--dusty)", opacity: 0.45, textTransform: "uppercase", letterSpacing: 0.5 }}>
+        {!mob && <span>time</span>}<span>request</span><span>verdict</span><span>action</span>
       </div>
-
       <div style={{ maxHeight: 240, overflow: "hidden" }}>
-        {rows.map((r, i) => (
-          <div key={`${r.t}-${r.ip}-${i}`}
-            style={{
-              padding: "10px 16px", display: "grid", gridTemplateColumns: "70px 1fr 70px 90px 80px", gap: 10,
-              fontFamily: "JetBrains Mono, monospace", fontSize: 12,
-              borderBottom: "1px solid var(--line)",
-              animation: i === 0 ? "rowIn 420ms cubic-bezier(.2,.7,.2,1)" : "none",
-              background: i === 0 ? "color-mix(in oklab, var(--orange) 8%, transparent)" : "transparent",
-            }}>
-            <span style={{ opacity: 0.6 }}>{r.t}</span>
-            <span>{r.ip}</span>
-            <span style={{ opacity: 0.7 }}>{r.region}</span>
-            <span style={{ color: "var(--sage)" }}>{r.kind}</span>
-            <span style={{ color: sevColor[r.sev], opacity: sevOpacity[r.sev], textTransform: "uppercase", letterSpacing: 0.5 }}>● {r.sev}</span>
-          </div>
-        ))}
+        {rows.map((r, i) => {
+          const blocked = r.sev === "critical" || r.sev === "high";
+          return (
+            <div key={`${r.t}-${r.url}-${i}`} style={{ padding: "10px 16px", display: "grid", gridTemplateColumns: cols, gap: 10, fontFamily: "JetBrains Mono, monospace", fontSize: mob ? 10.5 : 12, borderBottom: "1px solid var(--line)", animation: i === 0 ? "rowIn 420ms cubic-bezier(.2,.7,.2,1)" : "none", background: i === 0 ? "color-mix(in oklab, var(--orange) 8%, transparent)" : "transparent" }}>
+              {!mob && <span style={{ opacity: 0.6 }}>{r.t}</span>}
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.url}</span>
+              <span style={{ color: sevColor[r.sev], opacity: sevOpacity[r.sev], textTransform: "uppercase", letterSpacing: 0.3 }}>● {r.kind}</span>
+              <span style={{ color: blocked ? "var(--orange)" : "var(--sage)", letterSpacing: 0.3 }}>{blocked ? "blocked" : "allowed"}</span>
+            </div>
+          );
+        })}
       </div>
-
       <div style={{ padding: "12px 16px", borderTop: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Ticker>auto-contain · enabled</Ticker>
-        <span className="mono" style={{ fontSize: 11, color: "var(--orange)" }}>+ {2481 + rows.length * 7} today</span>
+        <span className="mono" style={{ fontSize: 11, color: "var(--orange)" }}>{rows.filter(r => r.sev === "critical" || r.sev === "high").length} blocked now</span>
       </div>
     </div>
   );
@@ -395,27 +426,12 @@ function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + m
 
 // ───────────────────────────────────────────────────────── marquee ────────
 function Marquee() {
-  const items = [
-    "ZERO-TRUST FABRIC",
-    "★",
-    "RUNTIME ATTESTATION",
-    "★",
-    "POST-QUANTUM READY",
-    "★",
-    "AUTONOMOUS RESPONSE",
-    "★",
-    "SOC2 · ISO27001 · FEDRAMP HIGH",
-    "★",
-    "FORGED IN BERLIN",
-    "★",
-  ];
+  const items = ["REAL-TIME URL SCANNING", "★", "BROWSER INTELLIGENCE", "★", "ON-DEVICE AI", "★", "AUTONOMOUS RESPONSE", "★", "LOCAL-FIRST · NO CLOUD", "★", "DEEPSEEK ASSISTANT", "★", "DESKTOP + MOBILE", "★"];
   return (
     <div style={{ overflow: "hidden", background: "var(--orange)", color: "var(--black)", borderTop: "1px solid var(--black)", borderBottom: "1px solid var(--black)" }}>
-      <div style={{ display: "flex", whiteSpace: "nowrap", animation: "marquee 38s linear infinite", padding: "14px 0", fontFamily: "Space Grotesk, sans-serif", fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em" }}>
+      <div style={{ display: "flex", whiteSpace: "nowrap", animation: "marquee 38s linear infinite", padding: "13px 0", fontFamily: "Space Grotesk, sans-serif", fontWeight: 600, fontSize: 20, letterSpacing: "-0.02em" }}>
         {[...items, ...items, ...items].map((t, i) => (
-          <span key={i} style={{ paddingInline: 24, display: "inline-flex", alignItems: "center" }}>
-            {t === "★" ? <Star /> : t}
-          </span>
+          <span key={i} style={{ paddingInline: 22, display: "inline-flex", alignItems: "center" }}>{t === "★" ? <Star /> : t}</span>
         ))}
       </div>
     </div>
@@ -423,480 +439,19 @@ function Marquee() {
 }
 
 function Star() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" style={{ display: "inline-block" }}>
-      <path d="M7 0 L8.5 5.5 L14 7 L8.5 8.5 L7 14 L5.5 8.5 L0 7 L5.5 5.5 Z" fill="var(--black)" />
-    </svg>
-  );
-}
-
-// ───────────────────────────────────────────────────────── capabilities ───
-function Capabilities() {
-  const items = [
-    {
-      n: "01",
-      title: "Behavioral fingerprinting",
-      body: "Every process, syscall, and lateral hop is hashed into a behavioral signature. Drift from baseline triggers containment in under 11 seconds.",
-      stat: "1.2M events/sec/node",
-    },
-    {
-      n: "02",
-      title: "Autonomous response",
-      body: "The runtime decides, isolates, rolls back. Operators arrive to a contained incident with a timeline, blast-radius graph, and one button: confirm.",
-      stat: "0 SOC analyst clicks",
-    },
-    {
-      n: "03",
-      title: "Post-quantum keystore",
-      body: "ML-KEM and ML-DSA rotated every 8 hours across your fleet. Stockpiled adversary captures decrypt to noise.",
-      stat: "NIST FIPS 203 / 204",
-    },
-  ];
-  return (
-    <section style={{ padding: "96px 28px 80px", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 56, marginBottom: 56 }}>
-        <Ticker>§ 02 — capability surface</Ticker>
-        <h2 className="display" style={{ fontSize: "clamp(40px, 5vw, 72px)", margin: 0, maxWidth: 800 }}>
-          Three primitives. <span style={{ color: "var(--sage)" }}>One contract:</span> nothing crosses the perimeter without a fight.
-        </h2>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderTop: "1px solid var(--line-strong)" }}>
-        {items.map(it => (
-          <CapCard key={it.n} {...it} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CapCard({ n, title, body, stat }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{
-        padding: 32, borderRight: "1px solid var(--line)",
-        background: hov ? "color-mix(in oklab, var(--orange) 6%, transparent)" : "transparent",
-        transition: "background 240ms ease",
-        position: "relative",
-        minHeight: 340,
-        display: "flex", flexDirection: "column", gap: 24,
-      }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Ticker className="mono">{n}</Ticker>
-        <div style={{
-          width: 32, height: 32, border: "1px solid var(--line-strong)",
-          display: "grid", placeItems: "center",
-          transition: "transform 320ms cubic-bezier(.2,.7,.2,1), background 240ms ease",
-          transform: hov ? "rotate(45deg)" : "rotate(0)",
-          background: hov ? "var(--orange)" : "transparent",
-          color: hov ? "var(--black)" : "var(--dusty)",
-        }}>
-          <ArrowRight />
-        </div>
-      </div>
-
-      <h3 className="display" style={{ fontSize: 28, margin: 0, maxWidth: 260 }}>{title}</h3>
-      <p style={{ margin: 0, color: "var(--dusty)", opacity: 0.72, lineHeight: 1.55, fontSize: 15 }}>{body}</p>
-
-      <div style={{ marginTop: "auto", paddingTop: 18, borderTop: "1px dashed var(--line-strong)" }}>
-        <Ticker>{stat}</Ticker>
-      </div>
-    </div>
-  );
-}
-
-// ───────────────────────────────────────────────────────── runtime view ───
-function FieldStrip() {
-  const cards = [
-    { img: IMG.datacenter, eyebrow: "Region·eu-central-1", title: "Sovereign deploys",  meta: "Frankfurt · 7 racks · air-gapped" },
-    { img: IMG.cables,     eyebrow: "Region·us-east-4",   title: "Hot-metal mesh",     meta: "Ashburn · 12 racks · active" },
-    { img: IMG.circuit,    eyebrow: "Region·ap-south-1",  title: "Edge attestation",   meta: "Mumbai · 6 racks · active" },
-  ];
-  return (
-    <section style={{ padding: "96px 28px", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", marginBottom: 40, gap: 24 }}>
-        <div>
-          <Ticker>§ 02b — field</Ticker>
-          <h2 className="display" style={{ fontSize: "clamp(36px, 4.4vw, 64px)", margin: "14px 0 0", maxWidth: 720 }}>
-            Forged in seven regions. <span style={{ color: "var(--sage)" }}>Listening in all of them.</span>
-          </h2>
-        </div>
-        <a href="#" style={{ color: "var(--dusty)", textDecoration: "none", display: "inline-flex", gap: 10, alignItems: "center", paddingBottom: 6, borderBottom: "1px solid var(--line-strong)", fontSize: 13 }}>
-          <span>See coverage map</span><ArrowRight />
-        </a>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-        {cards.map(c => <FieldCard key={c.title} {...c} />)}
-      </div>
-    </section>
-  );
-}
-
-function FieldCard({ img, eyebrow, title, meta }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <article
-      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ position: "relative", overflow: "hidden", border: "1px solid var(--line)", background: "var(--black)", aspectRatio: "4/5" }}
-    >
-      <img src={img} alt="" style={{
-        position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-        filter: hov ? "grayscale(0) contrast(1.05) saturate(1.1)" : "grayscale(0.85) contrast(1.1)",
-        transform: hov ? "scale(1.04)" : "scale(1)",
-        transition: "transform 900ms cubic-bezier(.2,.7,.2,1), filter 600ms ease",
-      }} />
-      <div style={{ position: "absolute", inset: 0, background: hov
-        ? "linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.85) 100%)"
-        : "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.92) 100%)", transition: "background 320ms" }} />
-      <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: "absolute", top: 14, left: 14, color: "var(--orange)" }}>
-        <path d="M0 0 H10 M0 0 V10" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
-      <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: "absolute", top: 14, right: 14, color: "var(--orange)" }}>
-        <path d="M22 0 H12 M22 0 V10" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
-      <div style={{ position: "absolute", top: 18, right: 44 }}>
-        <Ticker>{eyebrow}</Ticker>
-      </div>
-      <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, color: "var(--dusty)" }}>
-        <Ticker>{meta}</Ticker>
-        <h3 className="display" style={{ margin: "8px 0 0", fontSize: 30, lineHeight: 1 }}>{title}</h3>
-        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 14, borderTop: "1px solid rgba(239,233,221,0.22)" }}>
-          <Ticker>online · attested</Ticker>
-          <span style={{ width: 28, height: 28, border: "1px solid rgba(239,233,221,0.3)", display: "grid", placeItems: "center", color: hov ? "var(--black)" : "var(--dusty)", background: hov ? "var(--orange)" : "transparent", transition: "all 280ms" }}>
-            <ArrowRight />
-          </span>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function RuntimeView() {
-  return (
-    <section style={{ padding: "96px 28px", background: "var(--black)", borderBottom: "1px solid var(--line)", color: "var(--dusty)", position: "relative", overflow: "hidden" }}>
-      <BackdropGrid />
-      <img src={IMG.sparks} alt="" aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.18, mixBlendMode: "screen", filter: "hue-rotate(-10deg) saturate(0.7)" }} />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, position: "relative" }}>
-        <div>
-          <Ticker>§ 03 — runtime</Ticker>
-          <h2 className="display" style={{ fontSize: "clamp(40px, 5vw, 72px)", margin: "16px 0 24px" }}>
-            One agent.<br />
-            <span style={{ color: "var(--orange)" }}>Six milliseconds.</span><br />
-            Every workload.
-          </h2>
-          <p style={{ maxWidth: 480, fontSize: 17, lineHeight: 1.55, opacity: 0.78 }}>
-            Drop the forge agent into your container image or daemonset. It self-attests against a hardware root of trust, joins the mesh, and starts shipping signals before the first probe finishes its first scan.
-          </p>
-
-          <ul style={{ listStyle: "none", padding: 0, margin: "32px 0 0", display: "grid", gap: 14 }}>
-            {[
-              "eBPF-based — zero kernel module install",
-              "6.4 MB binary, statically linked",
-              "Air-gapped mode for sovereign deployments",
-              "Works on x86, ARM64, RISC-V",
-            ].map(li => (
-              <li key={li} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <span style={{ width: 16, height: 1, background: "var(--orange)" }} />
-                <span style={{ fontSize: 15, opacity: 0.85 }}>{li}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <TerminalDemo />
-      </div>
-    </section>
-  );
-}
-
-function TerminalDemo() {
-  const lines = [
-    { p: "$", t: "forge init --cluster prod-eu-1", c: "var(--dusty)" },
-    { p: ">", t: "attesting hardware root of trust ........ ok", c: "var(--sage)" },
-    { p: ">", t: "negotiating ML-KEM-1024 session ......... ok", c: "var(--sage)" },
-    { p: ">", t: "loading baseline (847 workloads) ........ ok", c: "var(--sage)" },
-    { p: ">", t: "joining mesh forge://eu-central-1 ....... ok", c: "var(--sage)" },
-    { p: "$", t: "forge watch --severity high+", c: "var(--dusty)" },
-    { p: "!", t: "[14:22:07] lateral movement detected — pod=api-7f", c: "var(--orange)" },
-    { p: ">", t: "  └─ source: 10.42.7.118 → 10.42.3.4:5432", c: "var(--dusty)", o: 0.65 },
-    { p: ">", t: "  └─ action: isolated · rollback queued · ticket #4291", c: "var(--sage)" },
-    { p: "✓", t: "contained in 00:00:09.327", c: "var(--sage)" },
-  ];
-  const [shown, setShown] = useState(0);
-  useEffect(() => {
-    if (shown >= lines.length) {
-      const r = setTimeout(() => setShown(0), 4200);
-      return () => clearTimeout(r);
-    }
-    const t = setTimeout(() => setShown(s => s + 1), 480);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shown]);
-
-  return (
-    <div style={{ border: "1px solid var(--line-strong)", background: "var(--raisin)", fontFamily: "JetBrains Mono, monospace", fontSize: 13, lineHeight: 1.7, color: "var(--dusty)", overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--line)", background: "var(--black)" }}>
-        <div style={{ display: "flex", gap: 6 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--orange)" }} />
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--sage)" }} />
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--dusty)", opacity: 0.4 }} />
-        </div>
-        <Ticker>~/forge — zsh</Ticker>
-        <Ticker>120×32</Ticker>
-      </div>
-      <div style={{ padding: 18, minHeight: 320 }}>
-        {lines.slice(0, shown).map((l, i) => (
-          <div key={i} style={{ display: "flex", gap: 10, opacity: l.o ?? 1 }}>
-            <span style={{ color: l.c, opacity: 0.7, width: 12 }}>{l.p}</span>
-            <span style={{ color: l.c }}>{l.t}</span>
-          </div>
-        ))}
-        {shown < lines.length && shown > 0 && (
-          <span style={{ display: "inline-block", width: 8, height: 14, background: "var(--orange)", marginTop: 2, animation: "blink 0.9s steps(2) infinite" }} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ───────────────────────────────────────────────────────── trust / quote ──
-function TrustQuote() {
-  return (
-    <section style={{ padding: "96px 28px", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 56 }}>
-        <div>
-          <Ticker>§ 04 — operators</Ticker>
-          <h2 className="display" style={{ fontSize: 40, margin: "16px 0 0" }}>
-            Trusted by teams who can&rsquo;t afford a 3am incident.
-          </h2>
-          <div style={{ marginTop: 36, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, border: "1px solid var(--line)" }}>
-            {["northbank.fi", "rocketlab", "kestrel.gov", "axion.bio", "hexa.io", "PRIME·77"].map((name, i) => (
-              <div key={name} style={{ padding: "26px 18px", borderRight: i % 2 === 0 ? "1px solid var(--line)" : "none", borderTop: i > 1 ? "1px solid var(--line)" : "none", textAlign: "center", fontFamily: "Space Grotesk", fontSize: 16, fontWeight: 600, opacity: 0.78, letterSpacing: "-0.02em" }}>
-                {name}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <figure style={{ margin: 0 }}>
-          <Ticker>case · 003</Ticker>
-          <blockquote className="display" style={{ fontSize: "clamp(28px, 3vw, 44px)", margin: "18px 0 32px", lineHeight: 1.12 }}>
-            &ldquo;We replaced four SIEM contracts and two EDR vendors with one Forge deployment. Mean-time-to-contain went from <span style={{ color: "var(--orange)" }}>14 minutes</span> to <span style={{ color: "var(--sage)" }}>under 10 seconds</span>. The SOC sleeps now.&rdquo;
-          </blockquote>
-          <figcaption style={{ display: "flex", alignItems: "center", gap: 16, paddingTop: 20, borderTop: "1px solid var(--line)" }}>
-            <div style={{ width: 56, height: 56, border: "1px solid var(--line-strong)", overflow: "hidden", flex: "0 0 56px", position: "relative" }}>
-              <img src={IMG.ines} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "grayscale(0.4) contrast(1.05)" }} />
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, color-mix(in oklab, var(--orange) 25%, transparent))", mixBlendMode: "multiply" }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>Inés Castellanos</div>
-              <Ticker>CISO · Northbank · 12,400 engineers</Ticker>
-            </div>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-  );
-}
-
-// ───────────────────────────────────────────────────────── CTA ────────────
-function CTA({ os }) {
-  const [open, setOpen] = useState(false);
-  const meta = OS_META[os] || OS_META.Unknown;
-  return (
-    <section style={{ position: "relative", padding: "120px 28px", background: "var(--orange)", color: "var(--black)", overflow: "hidden", borderBottom: "1px solid var(--black)" }}>
-      <div aria-hidden style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px)", backgroundSize: "80px 100%", pointerEvents: "none" }} />
-      <img src={IMG.forge} alt="" aria-hidden style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.18, mixBlendMode: "multiply" }} />
-      <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 56, alignItems: "end" }}>
-        <h2 className="display" style={{ fontSize: "clamp(56px, 8vw, 132px)", margin: 0 }}>
-          Download it.<br />
-          Point it at the<br />
-          fleet. Forge the <em style={{ fontStyle: "normal", textDecoration: "underline", textUnderlineOffset: 12, textDecorationThickness: 4 }}>anvil</em>.
-        </h2>
-
-        <div>
-          <p style={{ fontSize: 17, lineHeight: 1.5, marginTop: 0 }}>
-            Free 48-hour trial. Read-only mode. The agent watches and learns before it ever acts — on desktop or mobile.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 24 }}>
-            <button onClick={() => setOpen(true)} style={{ ...btnPrimary, background: "var(--black)", color: "var(--dusty)", padding: "16px 22px", fontSize: 13, justifyContent: "space-between" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><OSIcon os={os} size={15} color="var(--dusty)" />{meta.kind === "mobile" ? "Get the " + meta.label + " app" : "Download for " + meta.label}</span><ArrowRight />
-            </button>
-            <button onClick={() => setOpen(true)} style={{ ...btnPrimary, background: "transparent", color: "var(--black)", border: "1px solid var(--black)", padding: "16px 22px", fontSize: 13, justifyContent: "space-between" }}>
-              <span>All platforms · desktop &amp; mobile</span><ArrowRight />
-            </button>
-          </div>
-        </div>
-      </div>
-      {open && <DownloadModal os={os} onClose={() => setOpen(false)} />}
-    </section>
-  );
-}
-
-// ───────────────────────────────────────────────────────── footer ─────────
-function Footer() {
-  const cols = [
-    ["Platform", ["Runtime", "Threat intel", "Forensics", "Policy engine", "Air-gap mode"]],
-    ["Solutions", ["Financial services", "Public sector", "Healthcare", "Critical infra", "Startups"]],
-    ["Company", ["About", "Careers · 14", "Press", "Security disclosures", "Trust center"]],
-    ["Resources", ["Docs", "Threat reports", "Changelog · 4.12", "Status", "Contact"]],
-  ];
-  return (
-    <footer style={{ background: "var(--raisin)", padding: "72px 28px 32px", borderTop: "1px solid var(--line)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1.4fr repeat(4, 1fr)", gap: 40, paddingBottom: 56, borderBottom: "1px solid var(--line)" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-            <LogoMark />
-            <span className="display" style={{ fontSize: 22 }}>Cyber<span style={{ color: "var(--orange)" }}>Forge</span></span>
-          </div>
-          <p style={{ fontSize: 14, lineHeight: 1.55, opacity: 0.7, maxWidth: 280 }}>
-            Forged in Berlin. Operating from 7 regions. SOC2 Type II · ISO 27001 · FedRAMP High authorized.
-          </p>
-          <div style={{ marginTop: 24, display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 12px", border: "1px solid var(--line-strong)" }}>
-            <Dot color="var(--sage)" /><Ticker>all systems operational</Ticker>
-          </div>
-        </div>
-
-        {cols.map(([h, items]) => (
-          <div key={h}>
-            <div style={{ marginBottom: 18 }}><Ticker>{h}</Ticker></div>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
-              {items.map(i => (
-                <li key={i}>
-                  <a href="#" style={{ color: "var(--dusty)", textDecoration: "none", fontSize: 14, opacity: 0.82 }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "var(--orange)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "var(--dusty)"; }}>
-                    {i}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      {/* big wordmark */}
-      <div style={{ padding: "48px 0 12px", textAlign: "center", lineHeight: 0.85, letterSpacing: "-0.05em" }}>
-        <div className="display" style={{ fontSize: "clamp(80px, 16vw, 240px)", color: "transparent", WebkitTextStroke: "1px var(--line-strong)" }}>
-          CYBER<span style={{ WebkitTextStroke: "1px var(--orange)" }}>·</span>FORGE
-        </div>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 28, borderTop: "1px solid var(--line)" }}>
-        <Ticker>© 2026 Cyber Forge GmbH — Schönhauser Allee 12, 10119 Berlin</Ticker>
-        <div style={{ display: "flex", gap: 22 }}>
-          <Ticker>privacy</Ticker><Ticker>terms</Ticker><Ticker>responsible disclosure</Ticker>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-// ───────────────────────────────────────────────────────── download modal ─
-function DownloadModal({ os, onClose }) {
-  const detected = OS_META[os] && os !== "Unknown" ? os : null;
-  const desktops = ["Windows", "macOS", "Linux"];
-  const mobiles = ["iOS", "Android"];
-  const [picked, setPicked] = useState(detected || "Windows");
-  const [downloading, setDownloading] = useState(false);
-  const meta = OS_META[picked];
-  const isMobile = meta.kind === "mobile";
-
-  const start = () => {
-    if (isMobile) return;
-    setDownloading(true);
-    setTimeout(() => setDownloading(false), 2400);
-  };
-
-  const PlatformBtn = ({ k }) => {
-    const m = OS_META[k];
-    const active = picked === k;
-    return (
-      <button onClick={() => { setPicked(k); setDownloading(false); }}
-        style={{
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-          padding: "16px 8px", cursor: "pointer", background: active ? "color-mix(in oklab, var(--orange) 12%, transparent)" : "transparent",
-          border: active ? "1px solid var(--orange)" : "1px solid var(--line-strong)",
-          color: "var(--dusty)", transition: "all 180ms ease", position: "relative",
-        }}>
-        {k === detected && (
-          <span className="mono" style={{ position: "absolute", top: -8, right: -1, fontSize: 8, background: "var(--sage)", color: "var(--black)", padding: "2px 5px", letterSpacing: 0.4, textTransform: "uppercase" }}>You</span>
-        )}
-        <OSIcon os={k} size={24} color={active ? "var(--orange)" : "var(--dusty)"} />
-        <span style={{ fontSize: 13, fontWeight: 600 }}>{m.label}</span>
-      </button>
-    );
-  };
-
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "grid", placeItems: "center", backdropFilter: "blur(6px)" }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 520, maxWidth: "92vw", background: "var(--raisin)", border: "1px solid var(--line-strong)", padding: 30, position: "relative" }}>
-        <Ticker>§ download.init</Ticker>
-        <h3 className="display" style={{ fontSize: 30, margin: "10px 0 6px" }}>Install Cyber<span style={{ color: "var(--orange)" }}>Forge</span>.</h3>
-        <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.5, margin: "0 0 22px" }}>
-          {detected ? `We detected ${OS_META[detected].label}. ` : ""}Choose your platform — desktop agent or mobile companion.
-        </p>
-
-        <div style={{ marginBottom: 8 }}><Ticker>Desktop</Ticker></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 18 }}>
-          {desktops.map(k => <PlatformBtn key={k} k={k} />)}
-        </div>
-        <div style={{ marginBottom: 8 }}><Ticker>Mobile</Ticker></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 24 }}>
-          {mobiles.map(k => <PlatformBtn key={k} k={k} />)}
-        </div>
-
-        <div style={{ border: "1px solid var(--line)", padding: 16, marginBottom: 18, display: "flex", alignItems: "center", gap: 14 }}>
-          <OSIcon os={picked} size={28} color="var(--orange)" />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>{isMobile ? `CyberForge for ${meta.label}` : meta.file}</div>
-            <Ticker>{meta.note}{meta.size ? " · " + meta.size : ""}</Ticker>
-          </div>
-        </div>
-
-        {isMobile ? (
-          <button style={{ ...btnPrimary, width: "100%", padding: "15px 18px", justifyContent: "center", gap: 10 }}>
-            <OSIcon os={picked} size={15} color="var(--black)" />
-            <span>Get it on {picked === "iOS" ? "the App Store" : "Google Play"}</span>
-          </button>
-        ) : (
-          <button onClick={start} disabled={downloading} style={{ ...btnPrimary, width: "100%", padding: "15px 18px", justifyContent: "center", gap: 10, opacity: downloading ? 0.8 : 1 }}>
-            {downloading ? (
-              <>
-                <span style={{ width: 13, height: 13, border: "2px solid rgba(0,0,0,0.3)", borderTopColor: "var(--black)", borderRadius: 999, animation: "spin 0.7s linear infinite" }} />
-                <span>Preparing {meta.label} build…</span>
-              </>
-            ) : (
-              <>
-                <OSIcon os={picked} size={15} color="var(--black)" />
-                <span>Download for {meta.label} · {meta.size}</span>
-              </>
-            )}
-          </button>
-        )}
-        <div style={{ marginTop: 12, textAlign: "center" }}>
-          <Ticker>SHA-256 signed · SOC2 · auto-updates</Ticker>
-        </div>
-
-        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "transparent", border: "1px solid var(--line)", color: "var(--dusty)", padding: "4px 10px", cursor: "pointer", fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>esc</button>
-      </div>
-    </div>
-  );
+  return (<svg width="14" height="14" viewBox="0 0 14 14" style={{ display: "inline-block" }}><path d="M7 0 L8.5 5.5 L14 7 L8.5 8.5 L7 14 L5.5 8.5 L0 7 L5.5 5.5 Z" fill="var(--black)" /></svg>);
 }
 
 // ───────────────────────────────────────────────────────── app showcase ──
 function AppShowcase({ os }) {
+  const mob = useIsMobile();
   const ref = useReveal();
   const meta = OS_META[os] || OS_META.Unknown;
   return (
-    <section ref={ref} style={{ padding: "100px 28px", borderBottom: "1px solid var(--line)", position: "relative", overflow: "hidden" }}>
+    <section id="platform" ref={ref} style={{ padding: mob ? "64px 18px" : "100px 28px", borderBottom: "1px solid var(--line)", position: "relative", overflow: "hidden" }}>
       <BackdropGrid />
-      <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }}>
-        {/* device mocks */}
-        <div className="reveal" style={{ position: "relative", minHeight: 440 }}>
-          {/* desktop window */}
+      <div style={{ position: "relative", display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: mob ? 44 : 56, alignItems: "center" }}>
+        <div className="reveal" style={{ position: "relative", minHeight: mob ? 360 : 440, order: mob ? 2 : 1 }}>
           <div className="float-y" style={{ position: "relative", border: "1px solid var(--line-strong)", background: "var(--black)", boxShadow: "0 30px 80px -30px rgba(0,0,0,0.8)", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 14px", borderBottom: "1px solid var(--line)", background: "var(--raisin)" }}>
               <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--orange)" }} />
@@ -905,66 +460,55 @@ function AppShowcase({ os }) {
               <span className="mono" style={{ marginLeft: 8, fontSize: 10, opacity: 0.55, textTransform: "uppercase", letterSpacing: 0.5 }}>CyberForge — Threat Overview</span>
             </div>
             <div style={{ position: "relative", padding: 16, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, minHeight: 230 }}>
-              {/* scan line */}
               <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 40, background: "linear-gradient(180deg, transparent, color-mix(in oklab, var(--sage) 22%, transparent))", borderBottom: "1px solid color-mix(in oklab, var(--sage) 60%, transparent)", animation: "scanDown 3.4s linear infinite", pointerEvents: "none" }} />
-              {[["00:00:09","contain"],["2,481","blocked"],["99.99%","uptime"]].map(([n,l]) => (
+              {[["< 10s", "contain"], ["4", "ML models"], ["100%", "on-device"]].map(([n, l]) => (
                 <div key={l} style={{ border: "1px solid var(--line)", padding: "12px 12px" }}>
                   <div className="display" style={{ fontSize: 22, color: "var(--orange)" }}>{n}</div>
                   <Ticker>{l}</Ticker>
                 </div>
               ))}
               <div style={{ gridColumn: "1 / -1", border: "1px solid var(--line)", padding: 12 }}>
-                <Ticker>live threat feed</Ticker>
+                <Ticker>live scan feed</Ticker>
                 <div style={{ marginTop: 10, display: "grid", gap: 7 }}>
-                  {[["104.196.22.71","lateral","var(--orange)"],["52.30.181.4","exfil","var(--orange)"],["13.114.7.182","scan","var(--sage)"]].map((r,i) => (
+                  {[["account-verify.co", "phishing", "var(--orange)"], ["invoice.app/inv.pdf", "malware", "var(--orange)"], ["github.com/login", "clean", "var(--sage)"]].map((r, i) => (
                     <div key={i} className="mono" style={{ display: "grid", gridTemplateColumns: "1fr 70px 16px", gap: 8, fontSize: 11, opacity: 0.85 }}>
-                      <span>{r[0]}</span><span style={{ color: "var(--sage)" }}>{r[1]}</span><span style={{ color: r[2] }}>●</span>
+                      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r[0]}</span><span style={{ color: "var(--sage)" }}>{r[1]}</span><span style={{ color: r[2] }}>●</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </div>
-          {/* phone */}
-          <div className="float-y-sm" style={{ position: "absolute", right: -6, bottom: -20, width: 150, border: "1px solid var(--line-strong)", borderRadius: 22, background: "var(--raisin)", boxShadow: "0 24px 50px -18px rgba(0,0,0,0.85)", overflow: "hidden" }}>
+          <div className="float-y-sm" style={{ position: "absolute", right: mob ? 2 : -6, bottom: -20, width: 150, border: "1px solid var(--line-strong)", borderRadius: 22, background: "var(--raisin)", boxShadow: "0 24px 50px -18px rgba(0,0,0,0.85)", overflow: "hidden" }}>
             <div style={{ height: 22, display: "grid", placeItems: "center" }}><span style={{ width: 42, height: 5, borderRadius: 999, background: "var(--line-strong)" }} /></div>
             <div style={{ padding: "0 12px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <LogoMark />
-                <span className="display" style={{ fontSize: 13 }}>Cyber<span style={{ color: "var(--orange)" }}>Forge</span></span>
-              </div>
-              <div style={{ border: "1px solid var(--line)", padding: 10, marginBottom: 8 }}>
-                <Ticker>device · secure</Ticker>
-                <div className="display" style={{ fontSize: 26, color: "var(--sage)", marginTop: 4 }}>OK</div>
-              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}><LogoMark size={18} /><span className="display" style={{ fontSize: 13 }}>Cyber<span style={{ color: "var(--orange)" }}>Forge</span></span></div>
+              <div style={{ border: "1px solid var(--line)", padding: 10, marginBottom: 8 }}><Ticker>device · secure</Ticker><div className="display" style={{ fontSize: 26, color: "var(--sage)", marginTop: 4 }}>OK</div></div>
               <div style={{ display: "grid", gap: 6 }}>
-                {["browser · clean","network · clean","2 alerts handled"].map((t,i) => (
-                  <div key={i} className="mono" style={{ fontSize: 9, display: "flex", gap: 7, alignItems: "center", opacity: 0.82 }}>
-                    <span style={{ width: 5, height: 5, borderRadius: 999, background: i === 2 ? "var(--orange)" : "var(--sage)" }} />{t}
-                  </div>
+                {["browser · clean", "network · clean", "2 alerts handled"].map((t, i) => (
+                  <div key={i} className="mono" style={{ fontSize: 9, display: "flex", gap: 7, alignItems: "center", opacity: 0.82 }}><span style={{ width: 5, height: 5, borderRadius: 999, background: i === 2 ? "var(--orange)" : "var(--sage)" }} />{t}</div>
                 ))}
               </div>
-              <div style={{ marginTop: 10, padding: "8px 0", textAlign: "center", background: "var(--orange)", color: "var(--black)", fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase", fontWeight: 600 }}>Forge active</div>
+              <div style={{ marginTop: 10, padding: "8px 0", textAlign: "center", background: "var(--orange)", color: "var(--black)", fontFamily: "JetBrains Mono, monospace", fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase", fontWeight: 600 }}>agent active</div>
             </div>
           </div>
         </div>
 
-        {/* copy */}
-        <div>
-          <div className="reveal"><Ticker>§ 01b — one platform</Ticker></div>
-          <h2 className="reveal reveal-d1 display" style={{ fontSize: "clamp(38px, 4.6vw, 66px)", margin: "14px 0 22px" }}>
-            Command center on desktop. <span style={{ color: "var(--sage)" }}>Sentinel in your pocket.</span>
+        <div style={{ order: mob ? 1 : 2 }}>
+          <div className="reveal"><Ticker>§ 01 — one platform</Ticker></div>
+          <h2 className="reveal reveal-d1 display" style={{ fontSize: mob ? "clamp(32px,8.5vw,42px)" : "clamp(38px, 4.6vw, 66px)", margin: "14px 0 22px" }}>
+            Full console on desktop. <span style={{ color: "var(--sage)" }}>Sentinel in your pocket.</span>
           </h2>
-          <p className="reveal reveal-d2" style={{ fontSize: 17, lineHeight: 1.55, opacity: 0.78, maxWidth: 520, margin: 0 }}>
-            The desktop app is your full operations console — live feeds, sandbox detonation, the 8-agent orchestrator. The mobile app keeps the same agent watching your device on the move, pushing a vulnerability alert the instant something tries the door.
+          <p className="reveal reveal-d2" style={{ fontSize: mob ? 16 : 17, lineHeight: 1.55, opacity: 0.78, maxWidth: 520, margin: 0 }}>
+            The desktop app is your full operations console — threat overview, browser intelligence, the URL sandbox, the AI assistant, and the Security-Functions policy engine. The mobile companion keeps the same agent watching your phone and pushes an alert the instant something tries the door.
           </p>
           <ul className="reveal reveal-d3" style={{ listStyle: "none", padding: 0, margin: "30px 0 0", display: "grid", gap: 14 }}>
             {[
-              ["Native desktop apps for Windows, macOS & Linux", "desktop"],
-              ["Companion apps for iOS & Android", "mobile"],
-              ["One account — state syncs across every device", "sync"],
-              ["Offline-first; no telemetry leaves your machine", "shield"],
-            ].map(([li, k]) => (
+              "Native desktop apps for Windows, macOS & Linux",
+              "Companion apps for iOS & Android",
+              "One account — posture syncs across your devices",
+              "Local-first: analysis runs on your machine",
+            ].map(li => (
               <li key={li} style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <span style={{ width: 26, height: 26, border: "1px solid var(--line-strong)", display: "grid", placeItems: "center", color: "var(--orange)", flex: "none" }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M20 6 9 17l-5-5" strokeLinecap="square" /></svg>
@@ -982,29 +526,120 @@ function AppShowcase({ os }) {
   );
 }
 
-// ───────────────────────────────────────────────────────── how it works ───
-function HowItWorks() {
-  const ref = useReveal();
-  const steps = [
-    { n: "01", t: "Download & install", b: "Grab the signed app for your OS or the mobile companion. Install in under a minute — no kernel modules, no config files.", tag: "≈ 60 seconds" },
-    { n: "02", t: "Learn your baseline", b: "The agent watches in read-only mode, mapping normal behavior across processes, browsers, and network for 48 hours.", tag: "48 hours, read-only" },
-    { n: "03", t: "Defend autonomously", b: "Flip to active. Drift from baseline is contained at machine speed — you confirm the timeline after the fact.", tag: "< 10s detect-to-contain" },
+// ───────────────────────────────────────────────────────── capabilities ───
+function Capabilities() {
+  const mob = useIsMobile();
+  const items = [
+    { n: "01", title: "Real-time detection", body: "Every link, download, and browser request is scored on-device against four ML models — phishing, malware, anomaly, and web-attack. Anything suspicious is detonated in the sandbox before it can touch your data.", stat: "4 ML models · on-device" },
+    { n: "02", title: "Autonomous response", body: "Security Functions decide what happens the instant a threat fires: block the request, alert you, or secure the system. You set the policy once; the agent enforces it without waiting on a click.", stat: "block · alert · secure" },
+    { n: "03", title: "Local-first privacy", body: "Your system, browser, and history are analyzed entirely on your machine. The model that protects you is yours — nothing is uploaded unless you explicitly choose to sync it.", stat: "0 data sent to the cloud" },
   ];
   return (
-    <section ref={ref} style={{ padding: "100px 28px", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 56, marginBottom: 56 }}>
+    <section id="security" style={{ padding: mob ? "64px 18px" : "96px 28px 80px", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 2fr", gap: mob ? 18 : 56, marginBottom: mob ? 36 : 56 }}>
+        <Ticker>§ 02 — capability surface</Ticker>
+        <h2 className="display" style={{ fontSize: mob ? "clamp(30px,8vw,40px)" : "clamp(40px, 5vw, 72px)", margin: 0, maxWidth: 800 }}>
+          Three jobs. <span style={{ color: "var(--sage)" }}>One contract:</span> nothing reaches you without a verdict.
+        </h2>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3, 1fr)", borderTop: "1px solid var(--line-strong)" }}>
+        {items.map((it, i) => <CapCard key={it.n} {...it} last={i === items.length - 1} mob={mob} />)}
+      </div>
+    </section>
+  );
+}
+
+function CapCard({ n, title, body, stat, last, mob }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ padding: mob ? 24 : 32, borderRight: !mob && !last ? "1px solid var(--line)" : "none", borderBottom: mob && !last ? "1px solid var(--line)" : "none", background: hov ? "color-mix(in oklab, var(--orange) 6%, transparent)" : "transparent", transition: "background 240ms ease", position: "relative", minHeight: mob ? "auto" : 340, display: "flex", flexDirection: "column", gap: mob ? 18 : 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <Ticker className="mono">{n}</Ticker>
+        <div style={{ width: 32, height: 32, border: "1px solid var(--line-strong)", display: "grid", placeItems: "center", transition: "transform 320ms cubic-bezier(.2,.7,.2,1), background 240ms ease", transform: hov ? "rotate(45deg)" : "rotate(0)", background: hov ? "var(--orange)" : "transparent", color: hov ? "var(--black)" : "var(--dusty)" }}>
+          <ArrowRight />
+        </div>
+      </div>
+      <h3 className="display" style={{ fontSize: 26, margin: 0, maxWidth: 260 }}>{title}</h3>
+      <p style={{ margin: 0, color: "var(--dusty)", opacity: 0.72, lineHeight: 1.55, fontSize: 15 }}>{body}</p>
+      <div style={{ marginTop: "auto", paddingTop: 18, borderTop: "1px dashed var(--line-strong)" }}><Ticker>{stat}</Ticker></div>
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────── illustrated features (ilu) ──
+function IlluFeatures() {
+  const mob = useIsMobile();
+  const ref = useReveal();
+  const blocks = [
+    { img: ILLU.inspect, eyebrow: "browser intelligence", title: "Every request, inspected.", body: "CyberForge watches the links you open and the requests your apps make, scoring each one in real time. Suspicious URLs are pulled into the sandbox and detonated before anything reaches your browser — no extension store, no cloud round-trip.", points: ["Real-time URL & download scanning", "Sandbox detonation of suspicious links", "Phishing, malware & web-attack models"], flip: false },
+    { img: ILLU.identity, eyebrow: "on-device intelligence", title: "It learns your machine — not the cloud.", body: "The agent maps your device's normal behavior across processes, network, and browsing, then treats drift from that baseline as the signal. The intelligence that protects you runs locally and stays with you.", points: ["48-hour baseline, fully on-device", "Behavioral drift = the trigger", "Your data never leaves unless you sync it"], flip: true },
+  ];
+  return (
+    <section id="features" ref={ref} style={{ padding: mob ? "64px 18px" : "96px 28px", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ marginBottom: mob ? 40 : 56 }}>
+        <div className="reveal"><Ticker>§ 02b — how it sees</Ticker></div>
+        <h2 className="reveal reveal-d1 display" style={{ fontSize: mob ? "clamp(30px,8vw,40px)" : "clamp(36px, 4.4vw, 64px)", margin: "14px 0 0", maxWidth: 820 }}>
+          Built to watch the things that <span style={{ color: "var(--orange)" }}>actually</span> attack you.
+        </h2>
+      </div>
+      <div style={{ display: "grid", gap: mob ? 48 : 72 }}>
+        {blocks.map((b) => (
+          <div key={b.title} className="reveal" style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : (b.flip ? "0.9fr 1.1fr" : "1.1fr 0.9fr"), gap: mob ? 28 : 56, alignItems: "center" }}>
+            <IlluFrame img={b.img} order={mob ? 1 : (b.flip ? 2 : 1)} />
+            <div style={{ order: mob ? 2 : (b.flip ? 1 : 2) }}>
+              <Ticker>{b.eyebrow}</Ticker>
+              <h3 className="display" style={{ fontSize: mob ? "clamp(26px,7vw,34px)" : "clamp(30px,3.4vw,48px)", margin: "12px 0 16px", maxWidth: 460 }}>{b.title}</h3>
+              <p style={{ margin: 0, fontSize: mob ? 15.5 : 17, lineHeight: 1.6, opacity: 0.78, maxWidth: 520 }}>{b.body}</p>
+              <ul style={{ listStyle: "none", padding: 0, margin: "26px 0 0", display: "grid", gap: 12 }}>
+                {b.points.map(p => (
+                  <li key={p} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <span style={{ width: 16, height: 1, background: "var(--orange)", flex: "none" }} />
+                    <span style={{ fontSize: 14.5, opacity: 0.86 }}>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function IlluFrame({ img, order }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ order, position: "relative", border: "1px solid var(--line-strong)", background: "radial-gradient(120% 120% at 30% 20%, var(--raisin-2), var(--black))", aspectRatio: "1 / 1", overflow: "hidden", display: "grid", placeItems: "center" }}>
+      <div aria-hidden style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)", backgroundSize: "44px 44px", opacity: 0.5, pointerEvents: "none" }} />
+      <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: "absolute", top: 14, left: 14, color: "var(--orange)" }}><path d="M0 0 H10 M0 0 V10" stroke="currentColor" strokeWidth="1.2" /></svg>
+      <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: "absolute", bottom: 14, right: 14, color: "var(--orange)" }}><path d="M22 22 H12 M22 22 V12" stroke="currentColor" strokeWidth="1.2" /></svg>
+      <img src={img} alt="" style={{ position: "relative", width: "76%", height: "76%", objectFit: "contain", transform: hov ? "scale(1.04)" : "scale(1)", transition: "transform 700ms cubic-bezier(.2,.7,.2,1)", filter: "drop-shadow(0 18px 40px rgba(0,0,0,0.5))" }} />
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────── how it works ───
+function HowItWorks() {
+  const mob = useIsMobile();
+  const ref = useReveal();
+  const steps = [
+    { n: "01", t: "Download & install", b: "Grab the signed app for your OS or the mobile companion. Install in under a minute — no config files, no browser extensions to wire up.", tag: "≈ 60 seconds" },
+    { n: "02", t: "Learn your baseline", b: "The agent watches in read-only mode, mapping normal behavior across processes, browsers, and network so it knows what 'you' looks like.", tag: "48 hours, read-only" },
+    { n: "03", t: "Defend autonomously", b: "Flip Security Functions to active. Drift from baseline is contained on-device — blocked, alerted, or quarantined — and you review the timeline after.", tag: "< 10s detect-to-contain" },
+  ];
+  return (
+    <section style={{ padding: mob ? "64px 18px" : "100px 28px", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 2fr", gap: mob ? 18 : 56, marginBottom: mob ? 36 : 56 }}>
         <div className="reveal"><Ticker>§ 03 — how it works</Ticker></div>
-        <h2 className="reveal reveal-d1 display" style={{ fontSize: "clamp(36px, 4.6vw, 64px)", margin: 0, maxWidth: 760 }}>
+        <h2 className="reveal reveal-d1 display" style={{ fontSize: mob ? "clamp(30px,8vw,40px)" : "clamp(36px, 4.6vw, 64px)", margin: 0, maxWidth: 760 }}>
           From download to <span style={{ color: "var(--orange)" }}>autonomous defense</span> in three moves.
         </h2>
       </div>
-      <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 0, borderTop: "1px solid var(--line-strong)" }}>
-        {/* animated connecting line */}
-        <svg aria-hidden style={{ position: "absolute", top: -1, left: 0, width: "100%", height: 2, overflow: "visible" }} preserveAspectRatio="none" viewBox="0 0 100 2">
-          <line x1="0" y1="1" x2="100" y2="1" stroke="var(--orange)" strokeWidth="2" pathLength="1" strokeDasharray="1" strokeDashoffset="1" style={{ animation: "drawLine 1.6s ease forwards" }} />
-        </svg>
+      <div style={{ position: "relative", display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3,1fr)", gap: 0, borderTop: "1px solid var(--line-strong)" }}>
         {steps.map((s, i) => (
-          <div key={s.n} className={cx("reveal", "hover-lift", `reveal-d${i+1}`)} style={{ padding: 30, borderRight: i < 2 ? "1px solid var(--line)" : "none", minHeight: 280, display: "flex", flexDirection: "column", gap: 18 }}>
+          <div key={s.n} className={cx("reveal", "hover-lift", `reveal-d${i + 1}`)} style={{ padding: mob ? 24 : 30, borderRight: !mob && i < 2 ? "1px solid var(--line)" : "none", borderBottom: mob && i < 2 ? "1px solid var(--line)" : "none", minHeight: mob ? "auto" : 280, display: "flex", flexDirection: "column", gap: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <span className="display" style={{ fontSize: 40, color: "var(--orange)" }}>{s.n}</span>
               <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
@@ -1029,20 +664,21 @@ function StepGlyph({ i }) {
 
 // ───────────────────────────────────────────────────────── metrics band ───
 function MetricsBand() {
+  const mob = useIsMobile();
   const ref = useReveal();
   const stats = [
-    { to: 2.1, suffix: "M", label: "endpoints forged", decimals: 1 },
-    { to: 9.3, suffix: "s", label: "median detect-to-contain", decimals: 1 },
-    { to: 73, suffix: "%", label: "fewer false positives" },
-    { to: 7, suffix: "", label: "regions, air-gapped" },
+    { to: 4, suffix: "", label: "ML detection models" },
+    { to: 10, prefix: "<", suffix: "s", label: "detect-to-contain" },
+    { to: 100, suffix: "%", label: "runs on-device" },
+    { to: 5, suffix: "", label: "platforms · desktop + mobile" },
   ];
   return (
-    <section ref={ref} style={{ padding: "72px 28px", background: "var(--black)", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0, border: "1px solid var(--line)" }}>
+    <section ref={ref} style={{ padding: mob ? "48px 18px" : "72px 28px", background: "var(--black)", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "repeat(4,1fr)", gap: 0, border: "1px solid var(--line)" }}>
         {stats.map((s, i) => (
-          <div key={s.label} className={cx("reveal", `reveal-d${i+1}`)} style={{ padding: "30px 24px", borderRight: i < 3 ? "1px solid var(--line)" : "none", textAlign: "center" }}>
-            <div className="display" style={{ fontSize: "clamp(38px,4vw,58px)", color: i % 2 ? "var(--sage)" : "var(--orange)" }}>
-              <CountUp to={s.to} suffix={s.suffix} decimals={s.decimals || 0} />
+          <div key={s.label} className={cx("reveal", `reveal-d${(i % 4) + 1}`)} style={{ padding: mob ? "24px 16px" : "30px 24px", borderRight: (!mob && i < 3) || (mob && i % 2 === 0) ? "1px solid var(--line)" : "none", borderBottom: mob && i < 2 ? "1px solid var(--line)" : "none", textAlign: "center" }}>
+            <div className="display" style={{ fontSize: mob ? "clamp(30px,9vw,40px)" : "clamp(38px,4vw,58px)", color: i % 2 ? "var(--sage)" : "var(--orange)" }}>
+              <CountUp to={s.to} prefix={s.prefix || ""} suffix={s.suffix} />
             </div>
             <div style={{ marginTop: 8 }}><Ticker>{s.label}</Ticker></div>
           </div>
@@ -1052,15 +688,85 @@ function MetricsBand() {
   );
 }
 
-// ───────────────────────────────────────────────────────── platform marquee
+// ───────────────────────────────────────────────────────── runtime view ───
+function RuntimeView() {
+  const mob = useIsMobile();
+  return (
+    <section style={{ padding: mob ? "64px 18px" : "96px 28px", background: "var(--black)", borderBottom: "1px solid var(--line)", color: "var(--dusty)", position: "relative", overflow: "hidden" }}>
+      <BackdropGrid />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(700px 380px at 78% 20%, color-mix(in oklab, var(--orange) 10%, transparent), transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: mob ? 36 : 56, position: "relative", alignItems: "center" }}>
+        <div>
+          <Ticker>§ 04 — the agent</Ticker>
+          <h2 className="display" style={{ fontSize: mob ? "clamp(30px,8vw,42px)" : "clamp(38px, 5vw, 70px)", margin: "16px 0 24px" }}>
+            One agent.<br /><span style={{ color: "var(--orange)" }}>On your device.</span><br />Always watching.
+          </h2>
+          <p style={{ maxWidth: 480, fontSize: mob ? 16 : 17, lineHeight: 1.55, opacity: 0.78 }}>
+            CyberForge runs the detection models, the URL sandbox, and the policy engine locally. When a request scores as a threat, the agent acts on your policy in milliseconds — no dashboard round-trip, no waiting on the cloud.
+          </p>
+          <ul style={{ listStyle: "none", padding: 0, margin: "32px 0 0", display: "grid", gap: 14 }}>
+            {["Four ML models loaded on-device", "Real-time URL & download scanning", "Policy engine: block · alert · secure", "DeepSeek-powered AI security assistant"].map(li => (
+              <li key={li} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ width: 16, height: 1, background: "var(--orange)" }} />
+                <span style={{ fontSize: 15, opacity: 0.85 }}>{li}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <TerminalDemo />
+      </div>
+    </section>
+  );
+}
+
+function TerminalDemo() {
+  const lines = [
+    { p: "$", t: "cyberforge watch --device this", c: "var(--dusty)" },
+    { p: ">", t: "loading models: phishing · malware · anomaly · web-attack  ok", c: "var(--sage)" },
+    { p: ">", t: "baseline ready — browser + network + process", c: "var(--sage)" },
+    { p: "$", t: "open https://secure-login-update.account-verify.co", c: "var(--dusty)" },
+    { p: "!", t: "[url scan] phishing score 0.94 — credential harvest", c: "var(--orange)" },
+    { p: ">", t: "  └─ sandbox: clone of accounts.google.com login", c: "var(--dusty)", o: 0.65 },
+    { p: ">", t: "  └─ policy: BLOCK request · alert raised · logged", c: "var(--sage)" },
+    { p: "✓", t: "blocked in 00:00:00.412 — nothing reached the browser", c: "var(--sage)" },
+  ];
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (shown >= lines.length) { const r = setTimeout(() => setShown(0), 4200); return () => clearTimeout(r); }
+    const t = setTimeout(() => setShown(s => s + 1), 520);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown]);
+  return (
+    <div style={{ border: "1px solid var(--line-strong)", background: "var(--raisin)", fontFamily: "JetBrains Mono, monospace", fontSize: 12.5, lineHeight: 1.7, color: "var(--dusty)", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--line)", background: "var(--black)" }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--orange)" }} />
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--sage)" }} />
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--dusty)", opacity: 0.4 }} />
+        </div>
+        <Ticker>cyberforge — agent</Ticker>
+      </div>
+      <div style={{ padding: 18, minHeight: 300 }}>
+        {lines.slice(0, shown).map((l, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, opacity: l.o ?? 1 }}>
+            <span style={{ color: l.c, opacity: 0.7, width: 12, flex: "none" }}>{l.p}</span>
+            <span style={{ color: l.c, wordBreak: "break-all" }}>{l.t}</span>
+          </div>
+        ))}
+        {shown < lines.length && shown > 0 && (<span style={{ display: "inline-block", width: 8, height: 14, background: "var(--orange)", marginTop: 2, animation: "blink 0.9s steps(2) infinite" }} />)}
+      </div>
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────── platform marquee ───
 function PlatformMarquee() {
-  const items = ["WINDOWS", "·", "macOS", "·", "LINUX", "·", "iOS", "·", "ANDROID", "·", "DOCKER", "·", "KUBERNETES", "·", "ARM64", "·", "RISC-V", "·"];
+  const items = ["WINDOWS", "·", "macOS", "·", "LINUX", "·", "iOS", "·", "ANDROID", "·"];
   return (
     <div style={{ overflow: "hidden", background: "var(--raisin-2)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "flex", whiteSpace: "nowrap", animation: "marqueeRev 32s linear infinite", padding: "16px 0", fontFamily: "JetBrains Mono, monospace", fontWeight: 500, fontSize: 14, letterSpacing: 1, color: "var(--dusty)", opacity: 0.62 }}>
-        {[...items, ...items, ...items].map((t, i) => (
-          <span key={i} style={{ paddingInline: 20, color: t === "·" ? "var(--orange)" : "inherit" }}>{t}</span>
-        ))}
+      <div style={{ display: "flex", whiteSpace: "nowrap", animation: "marqueeRev 30s linear infinite", padding: "16px 0", fontFamily: "JetBrains Mono, monospace", fontWeight: 500, fontSize: 14, letterSpacing: 1, color: "var(--dusty)", opacity: 0.62 }}>
+        {[...items, ...items, ...items, ...items].map((t, i) => (<span key={i} style={{ paddingInline: 20, color: t === "·" ? "var(--orange)" : "inherit" }}>{t}</span>))}
       </div>
     </div>
   );
@@ -1068,21 +774,22 @@ function PlatformMarquee() {
 
 // ───────────────────────────────────────────────────────── FAQ ────────────
 function FAQ() {
+  const mob = useIsMobile();
   const ref = useReveal();
   const qs = [
-    ["Is it really free to start?", "Yes — a full 48-hour trial in read-only mode, no card required. The agent learns your baseline before it ever takes an action, and you can uninstall cleanly at any time."],
-    ["What does the desktop app collect?", "System inventory, process and network telemetry, and (optionally) local browser history — analyzed entirely on-device. Nothing leaves your machine without an explicit sync you control."],
-    ["Do the desktop and mobile apps share state?", "One account ties them together. The desktop console is your full ops center; the mobile app mirrors device posture and pushes vulnerability alerts wherever you are."],
-    ["How fast is detection?", "Median detect-to-contain is under 10 seconds. Behavioral drift triggers isolation locally — no round-trip to a cloud dashboard required."],
-    ["Which platforms are supported?", "Windows 10/11, macOS (Apple Silicon + Intel), and major Linux distros on desktop; iOS 16+ and Android 10+ on mobile. x86, ARM64, and RISC-V are all supported."],
+    ["Is it really free to start?", "Yes — install and run the agent in read-only mode at no cost. It learns your baseline before it ever takes an action, and you can uninstall cleanly at any time."],
+    ["What does the desktop app collect?", "System inventory, process and network telemetry, and (optionally) local browser history — all analyzed on-device. Nothing leaves your machine without an explicit sync you control."],
+    ["Do the desktop and mobile apps share state?", "One account ties them together. The desktop console is your full ops center; the mobile app mirrors device posture and pushes alerts wherever you are."],
+    ["How fast is detection?", "Detect-to-contain is typically under 10 seconds. URL and behavioral scoring run locally, so there's no round-trip to a cloud dashboard before the agent acts."],
+    ["Which platforms are supported?", "Windows 10/11, macOS (Apple Silicon + Intel), and major Linux distros on desktop; iOS 16+ and Android 10+ on mobile."],
   ];
   const [open, setOpen] = useState(0);
   return (
-    <section ref={ref} style={{ padding: "100px 28px", borderBottom: "1px solid var(--line)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 56 }}>
+    <section id="faq" ref={ref} style={{ padding: mob ? "64px 18px" : "100px 28px", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 2fr", gap: mob ? 24 : 56 }}>
         <div>
           <div className="reveal"><Ticker>§ 06 — questions</Ticker></div>
-          <h2 className="reveal reveal-d1 display" style={{ fontSize: "clamp(34px,4vw,56px)", margin: "14px 0 0" }}>
+          <h2 className="reveal reveal-d1 display" style={{ fontSize: mob ? "clamp(28px,7.5vw,38px)" : "clamp(34px,4vw,56px)", margin: "14px 0 0" }}>
             Everything you&rsquo;d ask before you <span style={{ color: "var(--orange)" }}>install</span>.
           </h2>
         </div>
@@ -1091,14 +798,14 @@ function FAQ() {
             const isOpen = open === i;
             return (
               <div key={i} style={{ borderBottom: "1px solid var(--line)" }}>
-                <button onClick={() => setOpen(isOpen ? -1 : i)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "24px 4px", background: "transparent", border: "none", color: "var(--dusty)", cursor: "pointer", textAlign: "left", fontFamily: "Space Grotesk, sans-serif", fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em" }}>
+                <button onClick={() => setOpen(isOpen ? -1 : i)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "22px 4px", background: "transparent", border: "none", color: "var(--dusty)", cursor: "pointer", textAlign: "left", fontFamily: "Space Grotesk, sans-serif", fontSize: mob ? 17 : 20, fontWeight: 600, letterSpacing: "-0.02em" }}>
                   <span>{q}</span>
                   <span style={{ flex: "none", width: 28, height: 28, border: "1px solid var(--line-strong)", display: "grid", placeItems: "center", color: isOpen ? "var(--black)" : "var(--orange)", background: isOpen ? "var(--orange)" : "transparent", transition: "all 240ms ease", transform: isOpen ? "rotate(45deg)" : "none" }}>
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M7 1v12M1 7h12" strokeLinecap="square" /></svg>
                   </span>
                 </button>
-                <div style={{ overflow: "hidden", maxHeight: isOpen ? 200 : 0, transition: "max-height 360ms cubic-bezier(.2,.7,.2,1)" }}>
-                  <p style={{ margin: 0, padding: "0 4px 24px", maxWidth: 620, opacity: 0.74, lineHeight: 1.6, fontSize: 15 }}>{a}</p>
+                <div style={{ overflow: "hidden", maxHeight: isOpen ? 240 : 0, transition: "max-height 360ms cubic-bezier(.2,.7,.2,1)" }}>
+                  <p style={{ margin: 0, padding: "0 4px 22px", maxWidth: 620, opacity: 0.74, lineHeight: 1.6, fontSize: 15 }}>{a}</p>
                 </div>
               </div>
             );
@@ -1106,6 +813,186 @@ function FAQ() {
         </div>
       </div>
     </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────── trust strip ────
+function TrustStrip() {
+  const mob = useIsMobile();
+  const points = [
+    ["On-device by default", "Detection, scanning, and the AI assistant run locally. The cloud is opt-in, never the default."],
+    ["Honest about data", "You can see exactly what's collected and turn off browser-history access entirely. No silent telemetry."],
+    ["Yours to remove", "No agents buried in the kernel. Uninstall cleanly whenever you want and the device is exactly as it was."],
+  ];
+  return (
+    <section style={{ padding: mob ? "64px 18px" : "96px 28px", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ maxWidth: 820, marginBottom: mob ? 40 : 56 }}>
+        <Ticker>§ 05 — why people install it</Ticker>
+        <h2 className="display" style={{ fontSize: mob ? "clamp(28px,7.5vw,38px)" : "clamp(34px,4vw,58px)", margin: "14px 0 0" }}>
+          For people who&rsquo;d rather not hand their security to <span style={{ color: "var(--orange)" }}>someone else&rsquo;s cloud</span>.
+        </h2>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "repeat(3,1fr)", gap: 0, border: "1px solid var(--line)" }}>
+        {points.map(([t, b], i) => (
+          <div key={t} style={{ padding: mob ? 24 : 30, borderRight: !mob && i < 2 ? "1px solid var(--line)" : "none", borderBottom: mob && i < 2 ? "1px solid var(--line)" : "none", display: "flex", flexDirection: "column", gap: 12 }}>
+            <span style={{ width: 30, height: 30, border: "1px solid var(--line-strong)", display: "grid", placeItems: "center", color: "var(--sage)" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z" /><path d="m9 12 2 2 4-4" strokeLinecap="square" /></svg>
+            </span>
+            <h3 className="display" style={{ fontSize: 22, margin: "4px 0 0" }}>{t}</h3>
+            <p style={{ margin: 0, opacity: 0.74, lineHeight: 1.55, fontSize: 14.5 }}>{b}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────── CTA ────────────
+function CTA({ os }) {
+  const mob = useIsMobile();
+  const [open, setOpen] = useState(false);
+  const meta = OS_META[os] || OS_META.Unknown;
+  return (
+    <section id="download" style={{ position: "relative", padding: mob ? "72px 18px" : "120px 28px", background: "var(--orange)", color: "var(--black)", overflow: "hidden", borderBottom: "1px solid var(--black)" }}>
+      <div aria-hidden style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px)", backgroundSize: "80px 80px", pointerEvents: "none" }} />
+      <div style={{ position: "relative", display: "grid", gridTemplateColumns: mob ? "1fr" : "1.4fr 1fr", gap: mob ? 32 : 56, alignItems: "end" }}>
+        <h2 className="display" style={{ fontSize: mob ? "clamp(42px,12vw,60px)" : "clamp(52px, 7.5vw, 120px)", margin: 0 }}>
+          Download it.<br />Point it at your<br />device. <em style={{ fontStyle: "normal", textDecoration: "underline", textUnderlineOffset: 10, textDecorationThickness: 4 }}>Forge</em> it.
+        </h2>
+        <div>
+          <p style={{ fontSize: mob ? 16 : 17, lineHeight: 1.5, marginTop: 0 }}>
+            Free to start, read-only at first. The agent watches and learns before it ever acts — on desktop or mobile.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 24 }}>
+            <button onClick={() => setOpen(true)} style={{ ...btnPrimary, background: "var(--black)", color: "var(--dusty)", padding: "16px 22px", fontSize: 13, justifyContent: "space-between" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><OSIcon os={os} size={15} color="var(--dusty)" />{meta.kind === "mobile" ? "Get the " + meta.label + " app" : "Download for " + meta.label}</span><ArrowRight />
+            </button>
+            <button onClick={() => setOpen(true)} style={{ ...btnPrimary, background: "transparent", color: "var(--black)", border: "1px solid var(--black)", padding: "16px 22px", fontSize: 13, justifyContent: "space-between" }}>
+              <span>All platforms · desktop &amp; mobile</span><ArrowRight />
+            </button>
+          </div>
+        </div>
+      </div>
+      {open && <DownloadModal os={os} onClose={() => setOpen(false)} />}
+    </section>
+  );
+}
+
+// ───────────────────────────────────────────────────────── footer ─────────
+function Footer() {
+  const mob = useIsMobile();
+  const cols = [
+    ["Platform", ["Threat overview", "Browser intelligence", "URL sandbox", "Security functions", "Reports"]],
+    ["Apps", ["Windows", "macOS", "Linux", "iOS", "Android"]],
+    ["Company", ["About", "Privacy", "Security disclosures", "Contact"]],
+    ["Resources", ["Docs", "FAQ", "Changelog · 1.0", "Status"]],
+  ];
+  return (
+    <footer style={{ background: "var(--raisin)", padding: mob ? "48px 18px 28px" : "72px 28px 32px", borderTop: "1px solid var(--line)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr 1fr" : "1.4fr repeat(4, 1fr)", gap: mob ? 28 : 40, paddingBottom: mob ? 40 : 56, borderBottom: "1px solid var(--line)" }}>
+        <div style={{ gridColumn: mob ? "1 / -1" : "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
+            <LogoMark />
+            <span className="display" style={{ fontSize: 22 }}>Cyber<span style={{ color: "var(--orange)" }}>Forge</span></span>
+          </div>
+          <p style={{ fontSize: 14, lineHeight: 1.55, opacity: 0.7, maxWidth: 300 }}>
+            An AI security console for your devices. Local-first, on-device, cross-platform — desktop and mobile.
+          </p>
+          <div style={{ marginTop: 24, display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 12px", border: "1px solid var(--line-strong)" }}>
+            <Dot color="var(--sage)" /><Ticker>agent · on-device &amp; active</Ticker>
+          </div>
+        </div>
+        {cols.map(([h, items]) => (
+          <div key={h}>
+            <div style={{ marginBottom: 18 }}><Ticker>{h}</Ticker></div>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+              {items.map(i => (
+                <li key={i}>
+                  <a href="#" style={{ color: "var(--dusty)", textDecoration: "none", fontSize: 14, opacity: 0.82 }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--orange)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--dusty)"; }}>{i}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: mob ? "32px 0 12px" : "48px 0 12px", textAlign: "center", lineHeight: 0.85, letterSpacing: "-0.05em" }}>
+        <div className="display" style={{ fontSize: "clamp(56px, 16vw, 240px)", color: "transparent", WebkitTextStroke: "1px var(--line-strong)" }}>
+          CYBER<span style={{ WebkitTextStroke: "1px var(--orange)" }}>·</span>FORGE
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: mob ? "column" : "row", gap: mob ? 14 : 0, justifyContent: "space-between", paddingTop: 28, borderTop: "1px solid var(--line)" }}>
+        <Ticker>© 2026 CyberForge — local-first AI security</Ticker>
+        <div style={{ display: "flex", gap: 22 }}><Ticker>privacy</Ticker><Ticker>terms</Ticker><Ticker>responsible disclosure</Ticker></div>
+      </div>
+    </footer>
+  );
+}
+
+// ───────────────────────────────────────────────────────── download modal ─
+function DownloadModal({ os, onClose }) {
+  const detected = OS_META[os] && os !== "Unknown" ? os : null;
+  const desktops = ["Windows", "macOS", "Linux"];
+  const mobiles = ["iOS", "Android"];
+  const [picked, setPicked] = useState(detected || "Windows");
+  const [downloading, setDownloading] = useState(false);
+  const meta = OS_META[picked];
+  const isMobile = meta.kind === "mobile";
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const start = () => { if (isMobile) return; setDownloading(true); setTimeout(() => setDownloading(false), 2400); };
+
+  const PlatformBtn = ({ k }) => {
+    const m = OS_META[k];
+    const active = picked === k;
+    return (
+      <button onClick={() => { setPicked(k); setDownloading(false); }}
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 8px", cursor: "pointer", background: active ? "color-mix(in oklab, var(--orange) 12%, transparent)" : "transparent", border: active ? "1px solid var(--orange)" : "1px solid var(--line-strong)", color: "var(--dusty)", transition: "all 180ms ease", position: "relative" }}>
+        {k === detected && (<span className="mono" style={{ position: "absolute", top: -8, right: -1, fontSize: 8, background: "var(--sage)", color: "var(--black)", padding: "2px 5px", letterSpacing: 0.4, textTransform: "uppercase" }}>You</span>)}
+        <OSIcon os={k} size={24} color={active ? "var(--orange)" : "var(--dusty)"} />
+        <span style={{ fontSize: 13, fontWeight: 600 }}>{m.label}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "grid", placeItems: "center", backdropFilter: "blur(6px)", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 520, maxWidth: "100%", background: "var(--raisin)", border: "1px solid var(--line-strong)", padding: 28, position: "relative", maxHeight: "90vh", overflowY: "auto" }}>
+        <Ticker>§ download.init</Ticker>
+        <h3 className="display" style={{ fontSize: 28, margin: "10px 0 6px" }}>Install Cyber<span style={{ color: "var(--orange)" }}>Forge</span>.</h3>
+        <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.5, margin: "0 0 22px" }}>
+          {detected ? `We detected ${OS_META[detected].label}. ` : ""}Choose your platform — desktop agent or mobile companion.
+        </p>
+        <div style={{ marginBottom: 8 }}><Ticker>Desktop</Ticker></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 18 }}>{desktops.map(k => <PlatformBtn key={k} k={k} />)}</div>
+        <div style={{ marginBottom: 8 }}><Ticker>Mobile</Ticker></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 24 }}>{mobiles.map(k => <PlatformBtn key={k} k={k} />)}</div>
+        <div style={{ border: "1px solid var(--line)", padding: 16, marginBottom: 18, display: "flex", alignItems: "center", gap: 14 }}>
+          <OSIcon os={picked} size={28} color="var(--orange)" />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{isMobile ? `CyberForge for ${meta.label}` : meta.file}</div>
+            <Ticker>{meta.note}{meta.size ? " · " + meta.size : ""}</Ticker>
+          </div>
+        </div>
+        {isMobile ? (
+          <button style={{ ...btnPrimary, width: "100%", padding: "15px 18px", justifyContent: "center", gap: 10 }}>
+            <OSIcon os={picked} size={15} color="var(--black)" /><span>Get it on {picked === "iOS" ? "the App Store" : "Google Play"}</span>
+          </button>
+        ) : (
+          <button onClick={start} disabled={downloading} style={{ ...btnPrimary, width: "100%", padding: "15px 18px", justifyContent: "center", gap: 10, opacity: downloading ? 0.8 : 1 }}>
+            {downloading ? (<><span style={{ width: 13, height: 13, border: "2px solid rgba(0,0,0,0.3)", borderTopColor: "var(--black)", borderRadius: 999, animation: "spin 0.7s linear infinite" }} /><span>Preparing {meta.label} build…</span></>) : (<><OSIcon os={picked} size={15} color="var(--black)" /><span>Download for {meta.label}{meta.size ? " · " + meta.size : ""}</span></>)}
+          </button>
+        )}
+        <div style={{ marginTop: 12, textAlign: "center" }}><Ticker>signed · local-first · auto-updates</Ticker></div>
+        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "transparent", border: "1px solid var(--line)", color: "var(--dusty)", padding: "4px 10px", cursor: "pointer", fontFamily: "JetBrains Mono, monospace", fontSize: 11 }}>esc</button>
+      </div>
+    </div>
   );
 }
 
@@ -1120,15 +1007,15 @@ function ForgeApp() {
       <Marquee />
       <AppShowcase os={os} />
       <Capabilities />
+      <IlluFeatures />
       <HowItWorks />
       <MetricsBand />
-      <FieldStrip />
       <RuntimeView />
       <PlatformMarquee />
       <FAQ />
-      <TrustQuote />
+      <TrustStrip />
       <CTA os={os} />
-      <Footer os={os} />
+      <Footer />
     </div>
   );
 }

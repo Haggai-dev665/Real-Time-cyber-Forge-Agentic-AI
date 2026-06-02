@@ -15,6 +15,8 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: var(--raisin); color: var(--dusty); }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+img { max-width: 100%; }
 body {
   font-family: "DM Sans", system-ui, sans-serif;
   font-feature-settings: "ss01", "cv11";
@@ -71,3 +73,32 @@ button:hover { filter: brightness(1.05); }
 }
 .hover-lift { transition: transform 240ms cubic-bezier(.2,.7,.2,1), box-shadow 240ms ease, border-color 240ms ease; }
 .hover-lift:hover { transform: translateY(-4px); }
+
+/* ── mobile responsiveness ─────────────────────────────────── */
+@media (max-width: 860px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: block !important; }
+  .mobile-flex { display: flex !important; }
+  .status-bar-inner { display: none !important; }
+  .primary-nav { display: none !important; }
+  .header-actions { display: none !important; }
+  
+  .mobile-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--raisin);
+    border-bottom: 1px solid var(--line);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeUp 300ms ease forwards;
+  }
+}
+
+@media (min-width: 861px) {
+  .mobile-only { display: none !important; }
+  .hamburger { display: none !important; }
+}

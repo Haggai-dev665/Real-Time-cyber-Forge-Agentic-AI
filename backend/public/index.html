@@ -1,23 +1,53 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/logo-Cj_-870D.png" />
-    <link rel="apple-touch-icon" href="/assets/logo-Cj_-870D.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="CyberForge - Real-time agentic cybersecurity platform for web security, browser monitoring, and autonomous AI analysis." />
-    <meta name="keywords" content="cybersecurity, browser security, threat detection, AI security, web protection" />
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <title>CyberForge | Real-Time Agentic Cybersecurity</title>
-    <script type="module" crossorigin src="/assets/index-ScRx0Aub.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DognSDv9.css">
-  </head>
-  <body class="bg-cyber-950 text-cyber-100 antialiased">
-    <div id="root"></div>
-  </body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CyberForge — Autonomous threat defense for every device</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="CyberForge is an autonomous defense fabric for endpoints and fleets. Install the desktop agent or mobile companion — it learns your baseline in 48 hours and contains intrusions in under 10 seconds, all on-device." />
+<meta name="theme-color" content="#1F1A1B" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' fill='%231F1A1B'/%3E%3Cpath d='M7 22 L15 6 L23 22 Z' fill='%23F69D39'/%3E%3Cpath d='M11 22 L15 14 L19 22 Z' fill='%231F1A1B'/%3E%3Ccircle cx='15' cy='22' r='1.6' fill='%23869B7E'/%3E%3C/svg%3E" />
+
+<!-- Open Graph / social -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="CyberForge — Autonomous threat defense for every device" />
+<meta property="og:description" content="Install the agent. Point it at the fleet. It learns your baseline in 48 hours and contains intrusions at machine speed — on desktop and mobile." />
+<meta property="og:site_name" content="CyberForge" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
+<link rel="stylesheet" href="cyberforge.css" />
+
+<style>
+  /* boot screen — shown until React mounts (JSX is compiled in-browser by Babel) */
+  #cf-boot{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#1F1A1B}
+  #cf-boot svg{animation:cfBoot 1.6s ease-in-out infinite}
+  #cf-boot .t{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(239,233,221,0.5)}
+  @keyframes cfBoot{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.09)}}
+</style>
+
+<!-- React (production builds) + Babel standalone — keeps the no-build, single-file workflow -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+<div id="root">
+  <div id="cf-boot">
+    <svg width="46" height="46" viewBox="0 0 30 30" aria-hidden="true">
+      <rect x="1" y="1" width="28" height="28" fill="none" stroke="rgba(239,233,221,0.45)" stroke-width="1" />
+      <path d="M7 22 L15 6 L23 22 Z" fill="#F69D39" />
+      <path d="M11 22 L15 14 L19 22 Z" fill="#1F1A1B" />
+      <circle cx="15" cy="22" r="1.6" fill="#869B7E" />
+    </svg>
+    <div class="t">Forging interface…</div>
+  </div>
+</div>
+<script type="text/babel" src="cyberforge.js"></script>
+</body>
 </html>

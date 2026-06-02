@@ -124,14 +124,14 @@
 <script>
 buildHeader({status:'INCIDENT'});
 buildSidebar('incident');
-buildFooter({items:[{txt:'1 active incident',cls:'sb-amber'},{txt:'4 contained today',cls:'sb-green'},{txt:'MTTR 1.8h',cls:'sb-cyan'},{txt:'Tracking…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'incident tracking',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
-/* phase swimlane */
+/* phase swimlane — standard IR phases (a template; times fill from real incident data) */
 const phases=[
-  ['done','Detection','09:41','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'],
-  ['done','Triage','09:44','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>'],
-  ['active','Containment','10:05','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
+  ['todo','Detection','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'],
+  ['todo','Triage','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>'],
+  ['todo','Containment','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
   ['todo','Eradication','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>'],
   ['todo','Recovery','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>']
 ];
@@ -160,26 +160,15 @@ setInterval(()=>{
   let t0=performance.now();(function s(now){const t=(now-t0)/700;if(t>=0.5){p.remove();return;}p.style.left=(t*100)+'%';requestAnimationFrame(s);})(t0);
 },500);
 
-/* time since detection clock */
-(function(){
-  let sec=24*60+18;
-  setInterval(()=>{sec++;const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
-    document.getElementById('ck').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');},1000);
-})();
+/* time since detection — shown only when a real incident is active */
+(function(){ var ck=document.getElementById('ck'); if(ck) ck.textContent='—'; })();
 
 /* event feed */
 const evIco={crit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>',
   warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
   ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>',
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'};
-const seed=[
-  ['10:05','active','warn','Host isolation applied','WS-4471 quarantined; awaiting reimage approval','Containment'],
-  ['09:52','ok','Fleet sweep complete','1,204 hosts scanned — no lateral movement','Scoping'],
-  ['09:48','crit','Credential access confirmed','svc_update.dll read Chrome Login Data','Triage'],
-  ['09:44','warn','Sandbox verdict: MALICIOUS','Risk 87/100 · RedLine Stealer family','Triage'],
-  ['09:42','info','Evidence acquired','Memory dump + pcap captured (chain-of-custody)','Triage'],
-  ['09:41','crit','Incident declared','EDR flagged credential-access on WS-4471','Detection']
-];
+const seed=[];   // populated from REAL backend threats/alerts (loadIncidents)
 const feed=document.getElementById('feed');
 function evRow(e){
   const c=e[2]||e[1];
@@ -187,11 +176,8 @@ function evRow(e){
     '<div class="ttx"><b>'+(e[3]||e[2])+'</b><div class="td">'+(e[4]||e[3])+'</div><div class="tm">phase: '+(e[5]||e[4])+'</div></div></div>';
 }
 function render(){
-  feed.innerHTML='<div class="daygroup">Today</div>'+seed.map(evRow).join('')+
-    '<div class="daygroup">Earlier This Week</div>'+
-    [['Mon 14:20','contained','ok','DDoS event mitigated','Volumetric attack absorbed at edge','Recovery'],
-     ['Mon 09:10','ok','Phishing wave contained','Domains blocked, 3 creds reset','Eradication'],
-     ['Sun 22:40','warn','Brute-force burst blocked','Source /24 throttled','Containment']].map(evRow).join('');
+  if(!seed.length){ feed.innerHTML='<div style="padding:34px 20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No incidents recorded<br><span style="font-size:9px">events appear here as the agent confirms threats &amp; alerts</span></div>'; return; }
+  feed.innerHTML='<div class="daygroup">Today</div>'+seed.map(evRow).join('');
 }
 render();
 

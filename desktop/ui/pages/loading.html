@@ -10,8 +10,23 @@
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <link rel="stylesheet" href="../styles/cf-auth.css" />
 <style>
-.load-wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;position:relative;z-index:2}
-.load-word{margin-top:4px}
+.load-wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;position:relative;z-index:2}
+.load-word{margin-top:2px}
+/* ===== illustration stage: orbiting rings + crossfading ilu1/ilu2 graphics ===== */
+.load-illus{position:relative;width:232px;height:232px;display:grid;place-items:center}
+.load-illus .li-ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.li-img{position:absolute;width:72%;height:72%;object-fit:contain;opacity:0;transform:scale(.96);
+  transition:opacity 1s ease,transform 1s ease;
+  filter:drop-shadow(0 14px 38px rgba(0,0,0,.55)) drop-shadow(0 0 22px rgba(246,157,57,.14))}
+.li-img.show{opacity:1;transform:scale(1)}
+.li-core{position:absolute;width:118px;height:118px;border-radius:50%;
+  background:radial-gradient(circle,rgba(246,157,57,.10),transparent 70%);pointer-events:none}
+.spin-slow{transform-origin:center;animation:lspin 22s linear infinite}
+.spin-med{transform-origin:center;animation:lspin 12s linear infinite reverse}
+@keyframes lspin{to{transform:rotate(360deg)}}
+.li-pulse{transform-origin:center;animation:lpulse 2.6s ease-out infinite}
+@keyframes lpulse{0%{transform:scale(.55);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+
 .load-bar{width:420px;max-width:70vw}
 .load-bar .lb-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:9px}
 .load-bar .lb-top b{color:var(--amber-2)}
@@ -22,11 +37,6 @@
 .boot .bl{display:flex;gap:9px;opacity:0;animation:blin .3s ease forwards}
 @keyframes blin{to{opacity:1}}
 .boot .bl .ok{color:var(--sage)} .boot .bl .t{color:var(--cyan);opacity:.7}
-.enter{opacity:0;pointer-events:none;transition:opacity .5s;height:50px;display:flex;align-items:center;gap:10px;padding:0 30px;border-radius:11px;cursor:pointer;font-weight:600;font-size:14.5px;color:#1a1206;border:1px solid rgba(246,157,57,.5);background:linear-gradient(180deg,#ffc15a,#f69d39);box-shadow:0 8px 22px -8px rgba(246,157,57,.6);text-decoration:none}
-.enter.show{opacity:1;pointer-events:auto;animation:epop .5s cubic-bezier(.2,.9,.25,1)}
-@keyframes epop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-.enter svg{width:17px;height:17px}
-.enter:hover{transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -35,14 +45,20 @@
     <div class="bg-grid"></div>
     <div class="bg-scan"></div>
     <div class="load-wrap">
-      <div id="forge"></div>
+      <div class="load-illus" id="illus">
+        <div class="li-core"></div>
+        <svg class="li-ring spin-slow" viewBox="0 0 300 300"><circle cx="150" cy="150" r="142" fill="none" stroke="rgba(246,157,57,.18)" stroke-width="1" stroke-dasharray="4 9"/></svg>
+        <svg class="li-ring spin-med" viewBox="0 0 300 300"><circle cx="150" cy="150" r="118" fill="none" stroke="rgba(43,212,238,.20)" stroke-width="1.4" stroke-dasharray="28 16"/></svg>
+        <svg class="li-ring li-pulse" viewBox="0 0 300 300"><circle cx="150" cy="150" r="92" fill="none" stroke="rgba(246,157,57,.5)" stroke-width="1.5"/></svg>
+        <img class="li-img show" id="img1" src="../assets/ilu1.svg" alt="" draggable="false" />
+        <img class="li-img" id="img2" src="../assets/ilu2.svg" alt="" draggable="false" />
+      </div>
       <div class="wordmark load-word" id="word"></div>
       <div class="load-bar">
         <div class="lb-top"><span id="phase">Initializing secure runtime…</span><b id="pct">0%</b></div>
         <div class="track"><i id="fill"></i></div>
       </div>
       <div class="boot" id="boot"></div>
-      <a class="enter" id="enter" href="login.html">Enter Console<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </div>
 </div>
@@ -51,11 +67,15 @@
 <script src="../scripts/cf-auth.js"></script>
 <script>
 fitWindow('win');
-forgeIllustration(document.getElementById('forge'),240);
 cfWordmark(document.getElementById('word'));
 
+/* crossfade the two installation graphics while the loader runs */
+const imgs=[document.getElementById('img1'),document.getElementById('img2')];
+let ci=0;
+setInterval(()=>{ imgs[ci].classList.remove('show'); ci=(ci+1)%imgs.length; imgs[ci].classList.add('show'); },2600);
+
 /* persistent login: validate the keychain session while the loader runs */
-const authCheck = (window.cfAuth
+const authCheck = (window.cfAuth && cfAuth.available()
   ? cfAuth.isAuthenticated().then(r => !!(r && r.authenticated)).catch(() => false)
   : Promise.resolve(false));
 
@@ -69,7 +89,7 @@ const steps=[
   ['Establishing secure channel','TLS 1.3']
 ];
 const boot=document.getElementById('boot'),fill=document.getElementById('fill'),pct=document.getElementById('pct'),phase=document.getElementById('phase');
-let p=0,si=0;
+let p=0,si=0,navigated=false;
 function line(txt,ok){
   const now=new Date();const ts=String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
   const el=document.createElement('div');el.className='bl';
@@ -82,11 +102,13 @@ const iv=setInterval(()=>{
   const idx=Math.min(steps.length-1,Math.floor(p/100*steps.length));
   if(idx!==si||p>=100){ if(steps[si]){phase.textContent=steps[si][0]+'…'; line(steps[si][0],steps[si][1]);} si=idx; }
   if(p>=100){clearInterval(iv); phase.textContent='Ready';
+    /* No button — route automatically: signed in → app, otherwise → sign-in. */
     authCheck.then(function(authed){
+      if(navigated)return; navigated=true;
       if(authed){ line('Session restored','welcome back');
-        setTimeout(()=>{ window.location.href='threat-overview.html'; },650); }
-      else { line('System ready','enter');
-        setTimeout(()=>document.getElementById('enter').classList.add('show'),400); }
+        setTimeout(()=>{ window.location.replace('threat-overview.html'); },700); }
+      else { line('Opening sign-in','redirect');
+        setTimeout(()=>{ window.location.replace('login.html'); },700); }
     });
   }
 },520);

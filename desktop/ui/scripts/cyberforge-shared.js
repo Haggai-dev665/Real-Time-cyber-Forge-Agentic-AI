@@ -4,7 +4,14 @@
    ============================================================ */
 function fitWindow(id){
   const w=document.getElementById(id);
-  function fit(){ const s=Math.min(window.innerWidth/1440, window.innerHeight/824); w.style.transform='scale('+s+')'; }
+  if(!w) return;
+  function fit(){
+    const s=window.innerWidth/1440;                 // fill the full viewport width — no side bands
+    w.style.transformOrigin='top left';
+    w.style.transform='scale('+s+')';
+    const stage=w.parentElement;                    // give the page real height so it scrolls to the bottom
+    if(stage) stage.style.height=(824*s)+'px';
+  }
   window.addEventListener('resize',fit); fit();
 }
 

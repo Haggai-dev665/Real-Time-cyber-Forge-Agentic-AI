@@ -1,4 +1,9 @@
-# CHAPTER 3: MATERIALS AND METHODS
+import re
+import os
+
+file_path = r'thesis\chapter_3_materials_and_methods.md'
+
+new_content = """# CHAPTER 3: MATERIALS AND METHODS
 
 ## 3.1 Introduction
 
@@ -176,7 +181,7 @@ classDiagram
 
 ### Hardware and Software
 - **Operating System:** macOS for development, Heroku for the backend server, Hugging Face for the Python AI models.
-- **Languages:** Node.js, Electron (javascript/typescript) and Python.
+- **Languages:** JavaScript (Node.js, Electron) and Python.
 - **Key Services:** Appwrite (Database), Redis (Caching), AlienVault OTX (Threat intel), Google Gemini AI.
 
 ## 3.6 Methodology
@@ -204,3 +209,9 @@ The tasks are broken down into stages:
 - **Threat Intel:** Confirms findings with external security servers.
 
 Finally, the **Reporter Agent** aggregates all this data and writes the final risk summary.
+"""
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(new_content)
+
+print("Chapter 3 successfully rewritten in simpler English.")

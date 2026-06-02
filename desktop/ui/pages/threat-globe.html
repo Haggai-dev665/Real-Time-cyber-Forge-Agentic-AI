@@ -138,7 +138,7 @@
 <script>
 buildHeader({status:'TRACKING',threats:'318'});
 buildSidebar('globe');
-buildFooter({items:[{txt:'7 nodes online',cls:'sb-cyan'},{txt:'318 threats',cls:'sb-amber'},{txt:'tracking 42/min'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'threat globe',cls:'sb-cyan'},{txt:'live threats',cls:'sb-amber'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 /* ============ ANIMATED GLOBE + 2D MAP (canvas) ============ */
@@ -360,13 +360,14 @@ fitWindow('win');
   function rip(){return Math.floor(Math.random()*223+1)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255);}
   function clean(s){ return String(s==null?'':s).replace(/[<>]/g,''); }
   function add(){
-    const a=window.__fireArc(); if(!a)return;
+    const a=window.__fireArc(); if(!a)return;   // decorative globe arc
     const rl=window.__realThreats;
     const rt=(rl&&rl.length)?rl[Math.floor(Math.random()*Math.min(rl.length,12))]:null;
-    const label=rt?clean(rt.type||rt.category||'Threat'):types[Math.floor(Math.random()*types.length)];
-    const sev=rt?((rt.severity==='critical')?'crit':(rt.severity==='high'||rt.severity==='medium')?'med':'low'):a.sev;
-    const src=rt?clean(String(rt.source||(rt.detection&&rt.detection.source)||rt.url||a.o.name).slice(0,38)):(a.o.name+' · '+rip());
-    const tgt=rt?clean(String(rt.target||rt.url||targets[Math.floor(Math.random()*targets.length)]).slice(0,28)):targets[Math.floor(Math.random()*targets.length)];
+    if(!rt) return;   // no REAL threat → fire the arc only, no synthetic stream entry
+    const label=clean(rt.type||rt.category||'Threat');
+    const sev=(rt.severity==='critical')?'crit':((rt.severity==='high'||rt.severity==='medium')?'med':'low');
+    const src=clean(String(rt.source||(rt.detection&&rt.detection.source)||rt.url||a.o.name).slice(0,38));
+    const tgt=clean(String(rt.target||rt.url||'').slice(0,28));
     const el=document.createElement('div');
     el.className='atk '+sev;
     el.innerHTML='<span class="edge"></span><span class="flag">'+a.o.flag+'</span>'+

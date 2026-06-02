@@ -16,8 +16,9 @@ type SharedState = Arc<Mutex<AppState>>;
 const T: Duration = Duration::from_secs(12);
 /// How long a backend-status snapshot stays fresh. The single broadcaster (and
 /// any UI poll) reuses the cache within this window, so the backend is hit at
-/// most once per `STATUS_TTL` no matter how many surfaces ask.
-const STATUS_TTL: Duration = Duration::from_secs(12);
+/// most once per `STATUS_TTL` no matter how many surfaces ask. Kept generous so
+/// the panel's polling stays well under the backend's 100-req/15-min rate limit.
+const STATUS_TTL: Duration = Duration::from_secs(60);
 
 fn authed(
     mut req: reqwest::RequestBuilder,
@@ -41,10 +42,22 @@ pub async fn status_data(state: &SharedState) -> Value {
         }
     }
 
-    let (base, headers) = {
+    let (base, headers, is_auth) = {
         let s = state.lock().await;
-        (s.backend_url.clone(), s.auth_headers())
+        (s.backend_url.clone(), s.auth_headers(), s.is_authenticated)
     };
+
+    // Before sign-in, never touch the backend. The broadcaster runs from app
+    // launch (including the loading/login screens); polling /api/* there would
+    // burn the server's rate limit and make the login request itself 429.
+    // Not cached, so the panel switches to live status immediately after login.
+    if !is_auth {
+        return json!({ "success": true, "data": {
+            "backendOk": false, "mlOk": false, "agentCount": 0,
+            "agentRunning": false, "threatCount": 0, "latencyMs": 0
+        }});
+    }
+
     let client = reqwest::Client::new();
 
     // Backend health + live latency.

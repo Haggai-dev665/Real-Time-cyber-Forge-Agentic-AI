@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Security Functions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+@keyframes alin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.sf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.sf-kpi{padding:13px 15px}
+.sf-kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.sf-kpi .kl svg{width:13px;height:13px}
+.sf-kpi .kv{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:7px;line-height:1}
+.sf-kpi .kd{font-size:10px;color:var(--faint);margin-top:3px}
+
+.sf-grid{display:grid;grid-template-columns:1fr 372px;gap:14px;align-items:start}
+.sf-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ── policy (function) rows ── */
+.sf-add{margin-left:auto;height:27px;padding:0 12px;border-radius:6px;border:1px solid rgba(245,166,35,.4);background:var(--amber-dim);color:var(--amber-2);font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.sf-add:hover{filter:brightness(1.15)} .sf-add svg{width:13px;height:13px}
+.sf-fn{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;border-bottom:1px solid var(--border);transition:background .18s;animation:alin .35s ease}
+.sf-fn:hover{background:rgba(130,160,200,.04)}
+.sf-tog{width:38px;height:22px;border-radius:12px;border:1px solid var(--border-2);background:var(--surface-2);position:relative;cursor:pointer;flex:none;transition:.2s;padding:0;margin-top:1px}
+.sf-tog span{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--faint);transition:.2s}
+.sf-tog.on{background:rgba(67,224,138,.22);border-color:rgba(67,224,138,.5)}
+.sf-tog.on span{left:18px;background:var(--green);box-shadow:0 0 8px var(--green)}
+.sf-tog.busy{opacity:.45;pointer-events:none}
+.sf-fnbody{flex:1;min-width:0}
+.sf-fnname{font-size:13px;font-weight:600;display:flex;align-items:center;flex-wrap:wrap;gap:3px}
+.sf-cat{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:4px}
+.sf-cat.block{color:#ff7185;background:rgba(244,73,94,.12);border:1px solid rgba(244,73,94,.35)}
+.sf-cat.alert{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
+.sf-cat.secure{color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(43,212,238,.3)}
+.sf-cat.def{color:var(--faint);background:rgba(130,160,200,.1);border:1px solid var(--border-2)}
+.sf-fndesc{font-size:11px;color:var(--dim);margin-top:3px}
+.sf-fnrule{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:6px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf-fnrule b{color:var(--amber-2)}
+.sf-fnstat{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:5px}
+.sf-del{min-width:24px;height:24px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--faint);cursor:pointer;flex:none;font-size:15px;line-height:1;padding:0}
+.sf-del:hover{color:#ff7185;border-color:rgba(244,73,94,.4)}
+.sf-del.arm{color:#ff7185;background:rgba(244,73,94,.15);border-color:rgba(244,73,94,.5);padding:0 8px;font-size:9px;font-family:var(--mono);font-weight:700}
+.sf-empty{padding:34px 20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px}
+
+/* ── add form ── */
+.sf-form{display:none;flex-direction:column;gap:10px;padding:14px 15px;border-bottom:1px solid var(--border);background:rgba(245,166,35,.03)}
+.sf-form.open{display:flex}
+.sf-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sf-row3{display:grid;grid-template-columns:1.2fr .8fr .9fr;gap:10px}
+.sf-lab{font-family:var(--mono);font-size:9px;letter-spacing:.5px;color:var(--faint);text-transform:uppercase;margin-bottom:4px;display:block}
+.sf-inp,.sf-sel{width:100%;height:33px;border-radius:7px;border:1px solid var(--border-2);background:#0c1320;color:var(--text);font-family:var(--sans);font-size:12.5px;padding:0 10px}
+.sf-sel{font-family:var(--mono);font-size:11px}
+.sf-inp:focus,.sf-sel:focus{outline:none;border-color:var(--amber)}
+.sf-formbtns{display:flex;gap:9px}
+.sf-mkbtn{flex:1;height:35px;border-radius:8px;border:1px solid rgba(245,166,35,.5);background:linear-gradient(180deg,#ffc15a,#f5a623);color:#1a1206;font-weight:600;font-size:12.5px;cursor:pointer}
+.sf-mkbtn:hover{filter:brightness(1.06)} .sf-mkbtn:active{transform:scale(.98)}
+.sf-cancel{height:35px;padding:0 16px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);font-size:12px;cursor:pointer}
+
+/* ── simulator ── */
+.sf-sim{padding:14px 15px;display:flex;flex-direction:column;gap:12px}
+.sf-srow{display:flex;align-items:center;gap:11px}
+.sf-srow label{font-family:var(--mono);font-size:10px;color:var(--dim);width:104px;flex:none}
+.sf-srow input[type=range]{flex:1;accent-color:var(--amber);height:4px}
+.sf-srow .sv{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--amber-2);width:30px;text-align:right;flex:none}
+.sf-srow input[type=number]{flex:1;height:30px;border-radius:6px;border:1px solid var(--border-2);background:#0c1320;color:var(--text);font-family:var(--mono);font-size:11px;padding:0 9px}
+.sf-simbtn{height:37px;border-radius:8px;border:1px solid rgba(43,212,238,.5);background:var(--cyan-dim);color:var(--cyan);font-weight:600;font-size:12px;cursor:pointer;font-family:var(--mono);letter-spacing:.6px;display:flex;align-items:center;justify-content:center;gap:8px}
+.sf-simbtn:hover{filter:brightness(1.2)} .sf-simbtn:active{transform:scale(.98)} .sf-simbtn svg{width:15px;height:15px}
+.sf-simres{display:flex;flex-direction:column;gap:7px}
+.sf-fire{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);font-size:11.5px;animation:alin .3s ease}
+.sf-fire .fdot{width:8px;height:8px;border-radius:50%;flex:none}
+.sf-fire .fn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf-fire .fa{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;flex:none}
+.sf-noresult{font-family:var(--mono);font-size:10.5px;color:var(--green);padding:9px 11px;border:1px solid rgba(67,224,138,.3);background:rgba(67,224,138,.07);border-radius:8px}
+
+/* ── ml engines + response log ── */
+.sf-eng{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid var(--border)}
+.sf-eng .ed{width:8px;height:8px;border-radius:50%;flex:none}
+.sf-eng .ed.ok{background:var(--green);box-shadow:0 0 6px var(--green)} .sf-eng .ed.off{background:var(--faint)}
+.sf-eng .en{flex:1;font-size:12px}
+.sf-eng .es{font-family:var(--mono);font-size:9px;color:var(--cyan)}
+.sf-log{overflow-y:auto;max-height:236px}
+.sf-logrow{display:flex;align-items:center;gap:9px;padding:9px 15px;border-bottom:1px solid var(--border);font-size:11px;animation:alin .3s ease}
+.sf-logrow .ldot{width:7px;height:7px;border-radius:50%;flex:none}
+.sf-logrow .ln{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf-logrow .lt{font-family:var(--mono);font-size:9px;color:var(--faint);flex:none}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Security Functions" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h1>Security Functions</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Armed</span>
+            <span id="armedCount">0 active</span>
+            <button class="btn-refresh" id="sfRefresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Refresh</button>
+          </div>
+        </div>
+
+        <div class="sf-kpis">
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5Z"/></svg>Functions</div><div class="kv" id="kTotal">0</div><div class="kd">defined policies</div></div>
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Active</div><div class="kv" style="color:var(--green)" id="kActive">0</div><div class="kd">currently armed</div></div>
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7Z"/></svg>Responses</div><div class="kv" style="color:var(--amber-2)" id="kResp">0</div><div class="kd">actions taken</div></div>
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9z"/></svg>Detection ML</div><div class="kv" style="color:var(--cyan)" id="kModels">—</div><div class="kd">live engines</div></div>
+        </div>
+
+        <div class="sf-grid">
+          <div class="sf-col">
+            <!-- Security functions -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Security Functions<button class="sf-add" id="sfAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add Function</button></div>
+              <div class="sf-form" id="sfForm">
+                <div><span class="sf-lab">Function name</span><input class="sf-inp" id="fName" placeholder="e.g. Block on critical phishing score" /></div>
+                <div><span class="sf-lab">Description</span><input class="sf-inp" id="fDesc" placeholder="What this function does" /></div>
+                <div class="sf-row3">
+                  <div><span class="sf-lab">When (metric)</span><select class="sf-sel" id="fMetric"></select></div>
+                  <div><span class="sf-lab">Is</span><select class="sf-sel" id="fOp"></select></div>
+                  <div><span class="sf-lab">Threshold</span><input class="sf-inp" id="fThresh" type="number" value="75" /></div>
+                </div>
+                <div><span class="sf-lab">Then (response action)</span><select class="sf-sel" id="fAction"></select></div>
+                <div class="sf-formbtns">
+                  <button class="sf-mkbtn" id="fCreate">Create Security Function</button>
+                  <button class="sf-cancel" id="fCancel">Cancel</button>
+                </div>
+              </div>
+              <div id="fnList"><div class="sf-empty"><div class="spinner" style="margin:0 auto 10px"></div>Loading security functions…</div></div>
+            </div>
+
+            <!-- Response log -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 4-5"/></svg>Response Log<span class="right" id="logCount">0</span></div>
+              <div class="sf-log" id="logList"><div class="sf-empty">No response actions yet</div></div>
+            </div>
+          </div>
+
+          <div class="sf-col">
+            <!-- Threat simulator -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 7v5l3 3"/></svg>Threat Simulator</div>
+              <div class="sf-sim">
+                <div class="sf-srow"><label>Risk score</label><input type="range" id="mRisk" min="0" max="100" value="80" /><span class="sv" id="mRiskV">80</span></div>
+                <div class="sf-srow"><label>Threat severity</label><input type="range" id="mSev" min="1" max="4" value="3" /><span class="sv" id="mSevV">3</span></div>
+                <div class="sf-srow"><label>Alerts / 24h</label><input type="number" id="mAlerts" value="5" min="0" /></div>
+                <div class="sf-srow"><label>Correlations</label><input type="number" id="mCorr" value="1" min="0" /></div>
+                <div class="sf-srow"><label>Malicious domains</label><input type="number" id="mDom" value="0" min="0" /></div>
+                <button class="sf-simbtn" id="simBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-3 7h6l-3 7"/><circle cx="12" cy="12" r="9"/></svg>EVALUATE RESPONSE</button>
+                <div class="sf-simres" id="simRes"></div>
+              </div>
+            </div>
+
+            <!-- ML detection engines -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>ML Detection Engines<span class="right" id="mlStat">checking…</span></div>
+              <div id="mlList"><div class="sf-empty">Querying ML services…</div></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'ARMED'});
+buildSidebar('security');
+buildFooter({items:[{txt:'policy engine',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'ML sensors',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]; }); }
+  function set(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+  function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+  function timeAgo(iso){ try{ var s=Math.max(0,(Date.now()-new Date(iso).getTime())/1000);
+    if(s<60)return Math.round(s)+'s ago'; if(s<3600)return Math.round(s/60)+'m ago'; if(s<86400)return Math.round(s/3600)+'h ago'; return Math.round(s/86400)+'d ago'; }catch(e){ return ''; } }
+
+  // action type → response category (the three the operator cares about)
+  var CAT={ soft_block:'block', session_restrict:'block',
+            alert_escalate:'alert', notify_soc:'alert', log_response:'alert',
+            weight_boost:'secure', agent_task:'secure' };
+  function catOf(t){ return CAT[t]||'alert'; }
+  function catLabel(c){ return c==='block'?'BLOCK':c==='secure'?'SECURE':'ALERT'; }
+  function catColor(c){ return c==='block'?'#ff7185':c==='secure'?'var(--cyan)':'var(--amber-2)'; }
+  var METRIC_LABEL={ risk_score:'Risk Score', alert_count_24h:'Alerts / 24h', correlation_count:'Correlations', malicious_domains:'Malicious Domains', threat_severity:'Threat Severity' };
+
+  var META={ triggerMetrics:[], operators:[], actionTypes:{} };
+  var POLICIES=[];
+
+  /* ---- loaders (all real, via Rust → backend Policy Engine) ---- */
+  async function loadMeta(){
+    try{ var r=await CF.invoke('policy_meta'); if(r&&r.data){ META=r.data; buildForm(); } }catch(e){}
+  }
+  async function loadPolicies(){
+    try{ var r=await CF.invoke('policy_list'); POLICIES=(r&&r.policies)||[]; renderPolicies(r&&r.offline);
+      set('armedCount', POLICIES.filter(function(p){return p.enabled;}).length+' active');
+    }catch(e){ POLICIES=[]; renderPolicies(false); }
+  }
+  async function loadStats(){
+    try{ var r=await CF.invoke('policy_stats'); var d=(r&&r.data)||{};
+      set('kTotal', d.totalPolicies!=null?d.totalPolicies:POLICIES.length);
+      set('kActive', d.enabledPolicies!=null?d.enabledPolicies:POLICIES.filter(function(p){return p.enabled;}).length);
+      set('kResp', d.totalResponseActions||0);
+    }catch(e){}
+  }
+  async function loadLog(){
+    try{ var r=await CF.invoke('policy_response_log',{limit:40}); renderLog((r&&r.log)||[]); }catch(e){}
+  }
+  async function loadMl(){
+    try{ var r=await CF.invoke('ml_status'); renderMl(r); }
+    catch(e){ document.getElementById('mlList').innerHTML='<div class="sf-empty">ML services unreachable</div>'; set('mlStat','offline'); }
+  }
+
+  /* ---- render: functions list ---- */
+  function renderPolicies(offline){
+    var box=document.getElementById('fnList');
+    if(!POLICIES.length){
+      box.innerHTML='<div class="sf-empty">'+(offline?'Sign in to load and manage security functions.':'No security functions yet — click “Add Function”.')+'</div>';
+      return;
+    }
+    box.innerHTML=POLICIES.map(function(p){
+      var c=catOf(p.action&&p.action.type);
+      var act=((META.actionTypes[p.action.type]||{}).label)||(p.action&&p.action.type)||'action';
+      var rule=METRIC_LABEL[p.trigger.metric]||p.trigger.metric;
+      return '<div class="sf-fn'+(p.enabled?' on':'')+'" data-id="'+esc(p.id)+'">'+
+        '<button class="sf-tog'+(p.enabled?' on':'')+'" data-act="toggle" title="'+(p.enabled?'Disable':'Enable')+'"><span></span></button>'+
+        '<div class="sf-fnbody">'+
+          '<div class="sf-fnname">'+esc(p.name)+'<span class="sf-cat '+c+'">'+catLabel(c)+'</span>'+(p.isDefault?'<span class="sf-cat def">DEFAULT</span>':'')+'</div>'+
+          (p.description?'<div class="sf-fndesc">'+esc(p.description)+'</div>':'')+
+          '<div class="sf-fnrule"><b>IF</b> '+esc(rule)+' '+esc(p.trigger.operator)+' '+esc(p.trigger.threshold)+' &nbsp;<b>&rarr;</b>&nbsp; '+esc(act)+'</div>'+
+          '<div class="sf-fnstat">Triggered '+(p.triggerCount||0)+'×'+(p.lastTriggered?(' · last '+timeAgo(p.lastTriggered)):'')+'</div>'+
+        '</div>'+
+        (p.isDefault?'':'<button class="sf-del" data-act="del" title="Delete">×</button>')+
+      '</div>';
+    }).join('');
+    box.querySelectorAll('.sf-fn').forEach(function(el){
+      var id=el.dataset.id;
+      var tog=el.querySelector('[data-act=toggle]'); if(tog) tog.addEventListener('click',function(){ togglePolicy(id, el); });
+      var del=el.querySelector('[data-act=del]'); if(del) del.addEventListener('click',function(){ armDelete(id, del); });
+    });
+  }
+
+  async function togglePolicy(id, el){
+    var p=POLICIES.find(function(x){return x.id===id;}); if(!p) return;
+    var next=!p.enabled; var tog=el.querySelector('.sf-tog'); if(tog) tog.classList.add('busy');
+    try{
+      var r=await CF.invoke('policy_update',{ id:id, updates:{ enabled:next } });
+      if(r&&r.success){ p.enabled=next; if(CF.toast)CF.toast(p.name+' '+(next?'enabled':'disabled'), next?'ok':'warn'); renderPolicies(); loadStats();
+        set('armedCount', POLICIES.filter(function(x){return x.enabled;}).length+' active'); }
+      else { if(CF.toast)CF.toast((r&&r.error)||'Update failed','error'); if(tog) tog.classList.remove('busy'); }
+    }catch(e){ if(CF.toast)CF.toast('Update failed','error'); if(tog) tog.classList.remove('busy'); }
+  }
+
+  function armDelete(id, btn){
+    if(btn.dataset.armed){ doDelete(id); return; }
+    btn.dataset.armed='1'; btn.classList.add('arm'); btn.textContent='Delete?';
+    setTimeout(function(){ if(btn){ btn.removeAttribute('data-armed'); btn.classList.remove('arm'); btn.innerHTML='×'; } }, 3000);
+  }
+  async function doDelete(id){
+    try{
+      var r=await CF.invoke('policy_delete',{ id:id });
+      if(r&&r.success){ POLICIES=POLICIES.filter(function(x){return x.id!==id;}); if(CF.toast)CF.toast('Function deleted','ok'); renderPolicies(); loadStats(); }
+      else { if(CF.toast)CF.toast((r&&r.error)||'Delete failed','error'); }
+    }catch(e){ if(CF.toast)CF.toast('Delete failed','error'); }
+  }
+
+  /* ---- add form ---- */
+  function buildForm(){
+    var m=document.getElementById('fMetric'); if(m) m.innerHTML=(META.triggerMetrics||[]).map(function(x){return '<option value="'+x+'">'+(METRIC_LABEL[x]||x)+'</option>';}).join('');
+    var o=document.getElementById('fOp'); if(o) o.innerHTML=(META.operators||[]).map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('');
+    var a=document.getElementById('fAction'); if(a) a.innerHTML=Object.keys(META.actionTypes||{}).map(function(k){return '<option value="'+k+'">'+catLabel(catOf(k))+' · '+META.actionTypes[k].label+'</option>';}).join('');
+  }
+  function openForm(){ document.getElementById('sfForm').classList.add('open'); }
+  function closeForm(){ document.getElementById('sfForm').classList.remove('open'); }
+  document.getElementById('sfAdd').addEventListener('click',function(){ var f=document.getElementById('sfForm'); f.classList.toggle('open'); });
+  document.getElementById('fCancel').addEventListener('click',closeForm);
+  document.getElementById('fCreate').addEventListener('click',async function(){
+    var name=val('fName'); if(!name){ if(CF.toast)CF.toast('Give the function a name','warn'); return; }
+    var policy={ name:name, description:val('fDesc'),
+      trigger:{ metric:val('fMetric'), operator:val('fOp'), threshold:Number(val('fThresh')||0) },
+      action:{ type:val('fAction') }, enabled:true, scope:'global' };
+    var btn=this; btn.disabled=true; btn.textContent='Creating…';
+    try{
+      var r=await CF.invoke('policy_create',{ policy:policy });
+      if(r&&r.success){ if(CF.toast)CF.toast('Security function created','ok'); document.getElementById('fName').value=''; document.getElementById('fDesc').value=''; closeForm(); await loadPolicies(); loadStats(); }
+      else { if(CF.toast)CF.toast((r&&r.error)||'Create failed','error'); }
+    }catch(e){ if(CF.toast)CF.toast('Create failed','error'); }
+    btn.disabled=false; btn.textContent='Create Security Function';
+  });
+
+  /* ---- threat simulator (real /api/policy/evaluate) ---- */
+  function bindRange(id,vid){ var r=document.getElementById(id),v=document.getElementById(vid); if(r&&v){ r.addEventListener('input',function(){ v.textContent=r.value; }); } }
+  bindRange('mRisk','mRiskV'); bindRange('mSev','mSevV');
+  document.getElementById('simBtn').addEventListener('click',async function(){
+    var metrics={ risk_score:Number(val('mRisk')), threat_severity:Number(val('mSev')),
+      alert_count_24h:Number(val('mAlerts')), correlation_count:Number(val('mCorr')), malicious_domains:Number(val('mDom')) };
+    var res=document.getElementById('simRes'); res.innerHTML='<div class="sf-empty" style="padding:10px"><div class="spinner sm" style="display:inline-block;vertical-align:middle"></div> Evaluating…</div>';
+    var btn=this; btn.disabled=true;
+    try{
+      // fresh node id per run so the engine isn't in its per-node cooldown window
+      var r=await CF.invoke('policy_evaluate',{ payload:{ nodeId:'sim-'+Date.now(), metrics:metrics } });
+      var d=(r&&r.data)||{}; var trig=d.triggered||[];
+      if(!trig.length){ res.innerHTML='<div class="sf-noresult">✓ No security function triggered at these levels' + (d.suppressed?(' ('+d.suppressed+' suppressed by cooldown)'):'') + '</div>'; }
+      else{
+        res.innerHTML=trig.map(function(a){
+          var c=catOf(a.actionType); var lbl=((META.actionTypes[a.actionType]||{}).label)||a.actionType;
+          return '<div class="sf-fire"><span class="fdot" style="background:'+catColor(c)+';box-shadow:0 0 6px '+catColor(c)+'"></span>'+
+            '<span class="fn">'+esc(a.policyName)+'</span>'+
+            '<span class="fa sf-cat '+c+'">'+catLabel(c)+' · '+esc(lbl)+'</span></div>';
+        }).join('');
+      }
+      loadStats(); loadLog(); // a real evaluation appends to the response log
+    }catch(e){ res.innerHTML='<div class="sf-empty" style="padding:10px;color:#ff7185">Evaluation failed</div>'; }
+    btn.disabled=false;
+  });
+
+  /* ---- response log ---- */
+  function renderLog(list){
+    set('logCount', list.length);
+    var box=document.getElementById('logList');
+    if(!list.length){ box.innerHTML='<div class="sf-empty">No response actions yet — trigger one with the simulator.</div>'; return; }
+    box.innerHTML=list.slice(0,40).map(function(a){
+      var c=catOf(a.actionType); var lbl=((META.actionTypes[a.actionType]||{}).label)||a.actionType;
+      return '<div class="sf-logrow"><span class="ldot" style="background:'+catColor(c)+';box-shadow:0 0 6px '+catColor(c)+'"></span>'+
+        '<span class="ln">'+esc(a.policyName||'policy')+' — '+esc(lbl)+'</span>'+
+        '<span class="lt">'+timeAgo(a.timestamp)+'</span></div>';
+    }).join('');
+  }
+
+  /* ---- ML detection engines (real, via ml_status) ---- */
+  function prettyModel(n){ return String(n||'').replace(/_/g,' ').replace(/\b\w/g,function(m){return m.toUpperCase();}); }
+  function renderMl(r){
+    var health=(r&&r.health)||{}; var tf=(r&&r.transformers)||{};
+    var models = health.models_available || health.ml_models_loaded || tf.loaded || tf.available || [];
+    var ok = (health.status==='healthy') || (health.hf_space_status==='healthy') || (tf.transformers_available===true);
+    set('kModels', models.length||(ok?'live':'—'));
+    set('mlStat', ok?'healthy':'degraded');
+    var box=document.getElementById('mlList');
+    if(!models.length){ box.innerHTML='<div class="sf-empty">'+(ok?'ML service healthy':'No detection engines reported')+'</div>'; return; }
+    box.innerHTML=models.map(function(m){
+      return '<div class="sf-eng"><span class="ed '+(ok?'ok':'off')+'"></span><span class="en">'+esc(prettyModel(m))+'</span><span class="es">'+(ok?'READY':'—')+'</span></div>';
+    }).join('');
+  }
+
+  /* ---- refresh + real-time ---- */
+  function refreshAll(){ loadPolicies(); loadStats(); loadLog(); loadMl(); }
+  document.getElementById('sfRefresh').addEventListener('click',function(){ var b=this; b.classList.add('busy'); refreshAll(); setTimeout(function(){ b.classList.remove('busy'); },700); });
+
+  // initial load
+  loadMeta().then(function(){ refreshAll(); });
+  // a live threat/alert may trigger policies server-side → refresh the log + stats
+  var _lt; function bump(){ clearTimeout(_lt); _lt=setTimeout(function(){ loadLog(); loadStats(); },400); }
+  ['cf:threat','cf:alert','cf:scan'].forEach(function(n){ window.addEventListener(n, bump); });
+  setInterval(function(){ loadStats(); loadLog(); }, 30000);
+})();
+</script>
+</body>
+</html>

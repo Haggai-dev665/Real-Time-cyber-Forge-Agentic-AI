@@ -1,4 +1,5 @@
-# CHAPTER 3: MATERIALS AND METHODS
+const fs = require('fs');
+const content = `# CHAPTER 3: MATERIALS AND METHODS
 
 ## 3.1 Introduction
 
@@ -17,7 +18,7 @@ CyberForge has five main layers:
 
 ### 3.2.1 Architecture Diagram
 
-```mermaid
+\`\`\`mermaid
 flowchart TB
     subgraph "Layer 1 — User & Clients"
         BROWSER[Web Browser<br/>Chrome / Firefox / Edge]
@@ -87,7 +88,7 @@ flowchart TB
     AREP --> APPSVC
     APPSVC --> APPWRITE
     AREP -->|report| DESKTOP
-```
+\`\`\`
 
 ### 3.2.2 Component Description
 
@@ -101,7 +102,7 @@ flowchart TB
 
 ### 3.3.1 Use Case Diagram
 
-```mermaid
+\`\`\`mermaid
 graph LR
     USER((User))
     UC1([Open a URL in browser])
@@ -120,7 +121,7 @@ graph LR
     ORCH -.persists.-> APP
     UC2 --- DESKTOP
     UC3 --- DESKTOP
-```
+\`\`\`
 
 ### 3.3.2 Main Success Scenario
 
@@ -139,7 +140,7 @@ Below is the class diagram showing how the backend software is structured.
 
 ### 3.4.1 Class Structure
 
-```mermaid
+\`\`\`mermaid
 classDiagram
     class AgentOrchestrator {
         +analyze(url, sessionId, userId)
@@ -170,7 +171,7 @@ classDiagram
     BaseAgent <|-- MITREMapperAgent
     BaseAgent <|-- ThreatIntelAgent
     BaseAgent <|-- ReporterAgent
-```
+\`\`\`
 
 ## 3.5 Materials
 
@@ -204,3 +205,5 @@ The tasks are broken down into stages:
 - **Threat Intel:** Confirms findings with external security servers.
 
 Finally, the **Reporter Agent** aggregates all this data and writes the final risk summary.
+`;
+fs.writeFileSync('thesis/chapter_3_materials_and_methods.md', content);

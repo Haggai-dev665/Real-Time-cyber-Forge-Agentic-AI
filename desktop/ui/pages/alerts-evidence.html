@@ -126,32 +126,17 @@
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
 <script>
-buildHeader({status:'TRIAGE',threats:'11'});
+buildHeader({status:'TRIAGE'});
 buildSidebar('alerts');
-buildFooter({items:[{txt:'11 open alerts',cls:'sb-amber'},{txt:'2 critical',cls:'sb-amber'},{txt:'48 evidence',cls:'sb-cyan'},{txt:'Triaging…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'alert queue',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 const sevIco={crit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>',
   high:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
   med:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
   low:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>'};
-let alerts=[
-  {id:'ALT-9241',sev:'crit',t:'RedLine Stealer — credential exfiltration',host:'WS-4471',rule:'EDR.CredAccess',st:'new',mitre:'T1555',src:'193.43.18.22',conf:'99%'},
-  {id:'ALT-9240',sev:'crit',t:'C2 beacon to known-bad domain',host:'WS-4471',rule:'NET.C2Beacon',st:'new',mitre:'T1071',src:'cdn-sync.duckdns.org',conf:'97%'},
-  {id:'ALT-9238',sev:'high',t:'Brute-force authentication burst',host:'sso.nimbus',rule:'IDP.BruteForce',st:'ack',mitre:'T1110',src:'193.43.18.0/24',conf:'94%'},
-  {id:'ALT-9237',sev:'high',t:'Suspicious PowerShell — encoded payload',host:'WS-2210',rule:'EDR.PSEncoded',st:'new',mitre:'T1059',src:'local',conf:'91%'},
-  {id:'ALT-9235',sev:'med',t:'Anomalous data egress volume',host:'db-prod-3',rule:'DLP.Egress',st:'ack',mitre:'T1030',src:'10.2.4.9',conf:'82%'},
-  {id:'ALT-9233',sev:'high',t:'Registry Run-key persistence',host:'WS-4471',rule:'EDR.Persist',st:'esc',mitre:'T1547',src:'local',conf:'96%'},
-  {id:'ALT-9230',sev:'med',t:'Outbound to unclassified host',host:'mkt-laptop-7',rule:'NET.Unclassified',st:'new',mitre:'T1071',src:'cdn.unknown-host.ru',conf:'74%'},
-  {id:'ALT-9228',sev:'low',t:'Port scan detected (internal)',host:'10.0.0.0/24',rule:'NET.PortScan',st:'ack',mitre:'T1046',src:'10.0.4.18',conf:'68%'},
-  {id:'ALT-9225',sev:'med',t:'New admin account created off-hours',host:'dc-01',rule:'IDP.AdminCreate',st:'new',mitre:'T1136',src:'svc_deploy',conf:'80%'},
-  {id:'ALT-9222',sev:'low',t:'Expired TLS certificate served',host:'legacy.acme.io',rule:'TLS.Expired',st:'ack',mitre:'—',src:'edge',conf:'60%'},
-  {id:'ALT-9219',sev:'high',t:'Phishing link clicked by user',host:'WS-4471',rule:'MAIL.PhishClick',st:'esc',mitre:'T1566',src:'free-prizes-login.xyz',conf:'95%'}
-];
-const evidence={
-  'ALT-9241':[['memory_dump_WS4471.raw','2.1 GB · acquired 09:42','9f86…0a08','mem'],['chrome_login_data.sqlite','212 KB · extracted','a31c…7f02','db'],['process_tree.json','18 KB · svc_update.dll','c0ffee…','json'],['screenshot_0941.png','840 KB · desktop capture','ee21…','img'],['netflow_capture.pcap','44 MB · 60s C2 window','b00b…','pcap']],
-  'ALT-9240':[['gate_php_beacon.pcap','12 MB · POST capture','d4d4…','pcap'],['dns_resolution.log','4 KB · duckdns chain','77aa…','json'],['c2_payload.bin','38 KB · decoded','feed…','mem']]
-};
+let alerts=[];          // populated from REAL backend alerts (agent_alerts) + live ML scans
+const evidence={};      // real evidence bundles keyed by alert id (none synthetic)
 const evIco={mem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6V3M16 6V3M9 18v3M15 18v3"/></svg>',
   db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6"/></svg>',
   json:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H6a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h2M16 3h2a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-2"/></svg>',
@@ -169,7 +154,7 @@ function renderAlerts(){
     '<span class="sev">'+sevIco[a.sev]+'</span><div class="ainfo"><div class="at">'+a.t+'</div>'+
     '<div class="am"><span>'+a.id+'</span><span>'+a.host+'</span><span>'+a.rule+'</span></div></div>'+
     '<span class="astat '+a.st+'">'+a.st.toUpperCase()+'</span></div>';
-  }).join('') || '<div style="padding:30px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No alerts match this filter</div>';
+  }).join('') || ('<div style="padding:30px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">'+(alerts.length?'No alerts match this filter':'No active alerts — queue is clear')+'</div>');
   alertsEl.querySelectorAll('.al').forEach(el=>el.addEventListener('click',()=>{selected=+el.dataset.i;renderAlerts();renderDetail();}));
 }
 function renderDetail(){
@@ -197,26 +182,13 @@ function renderEvidence(id){
     '<span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>').join('');
 }
 renderAlerts(); renderDetail();
+['kOpen','kCrit'].forEach(function(id){var e=document.getElementById(id); if(e)e.textContent='0';});
+(function(){var oc=document.getElementById('openc'); if(oc)oc.textContent='0 open'; var ec=document.getElementById('evCount'); if(ec)ec.textContent='0 items';})();
 document.querySelectorAll('#qfilters .qf').forEach(q=>q.addEventListener('click',()=>{
   document.querySelectorAll('#qfilters .qf').forEach(x=>x.classList.remove('on'));q.classList.add('on');filter=q.dataset.f;renderAlerts();
 }));
 
-// new alerts stream in occasionally
-const incoming=[
-  {sev:'med',t:'Geo-improbable login detected',host:'sso.nimbus',rule:'IDP.GeoVelocity',mitre:'T1078',src:'GB→SG 4m',conf:'78%'},
-  {sev:'low',t:'Outdated TLS cipher negotiated',host:'api.legacy',rule:'TLS.WeakCipher',mitre:'—',src:'edge',conf:'55%'},
-  {sev:'high',t:'LSASS memory access attempt',host:'WS-2210',rule:'EDR.LSASS',mitre:'T1003',src:'local',conf:'93%'}
-];
-let aid=9242;
-setInterval(()=>{
-  if(Math.random()<0.5){const t=incoming[Math.floor(Math.random()*incoming.length)];
-    alerts.unshift(Object.assign({id:'ALT-'+(aid++),st:'new'},t)); if(selected>=0)selected++;
-    renderAlerts();
-    const ko=document.getElementById('kOpen');ko.textContent=alerts.filter(a=>a.st==='new').length;
-    document.getElementById('openc').textContent=alerts.length+' open';
-    document.getElementById('kCrit').textContent=alerts.filter(a=>a.sev==='crit'&&a.st==='new').length;
-  }
-},4200);
+// (no synthetic alert stream — alerts arrive from agent_alerts + live ML scans below)
 
 // Ack All
 document.querySelector('.btn-refresh').addEventListener('click',()=>{alerts.forEach(a=>{if(a.st==='new')a.st='ack';});renderAlerts();renderDetail();document.getElementById('kCrit').textContent='0';});

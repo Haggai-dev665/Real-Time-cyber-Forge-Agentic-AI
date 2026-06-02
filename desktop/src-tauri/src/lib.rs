@@ -13,6 +13,7 @@ mod http;
 mod memory;
 mod metrics;
 mod ml;
+mod policy;
 mod state;
 mod system;
 
@@ -37,6 +38,17 @@ pub fn run() {
             // Floating agent panel — real local + backend telemetry
             system::get_system_stats,
             system::detect_browsers,
+            // Header IP search — resolve a website to its IP(s) via OS DNS
+            system::resolve_ip,
+            // Installation wizard — OS-aware profile + real PATH registration
+            system::get_system_profile,
+            system::get_path_status,
+            system::add_to_path,
+            // Real browser history → URLs to scan in real time
+            system::get_browser_history,
+            // One-time install gate
+            system::is_installed,
+            system::mark_installed,
             metrics::agent_status,
             // Agent Core + scanning (backend-connected)
             agent::scan_url,
@@ -59,6 +71,17 @@ pub fn run() {
             ml::ml_ioc_scan,
             ml::ml_url_enrich,
             ml::ml_status,
+            ml::set_hf_token,
+            ml::hf_token_status,
+            // Security Functions — Policy Engine (what to do during a threat)
+            policy::policy_meta,
+            policy::policy_list,
+            policy::policy_stats,
+            policy::policy_response_log,
+            policy::policy_create,
+            policy::policy_update,
+            policy::policy_delete,
+            policy::policy_evaluate,
         ])
         .setup(|app| {
             // `Manager` provides `get_webview_window` (debug devtools) and

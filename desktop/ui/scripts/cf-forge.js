@@ -47,7 +47,9 @@
   };
 
   function fit(id){const w=document.getElementById(id||'win');if(!w)return;
-    function f(){const s=Math.min(window.innerWidth/1440,window.innerHeight/824);w.style.transform='scale('+s+')';}
+    function f(){const s=window.innerWidth/1440;            // fill viewport width — no side bands
+      w.style.transformOrigin='top left';w.style.transform='scale('+s+')';
+      const stage=w.parentElement;if(stage)stage.style.height=(824*s)+'px';}   // real height → scrollable
     window.addEventListener('resize',f);f();}
-  window.fitWindow=window.fitWindow||fit;
+  window.fitWindow=fit;
 })();

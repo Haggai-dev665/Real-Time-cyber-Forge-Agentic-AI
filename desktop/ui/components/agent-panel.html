@@ -308,7 +308,7 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
           <div class="head-sweep"></div>
           <div class="agent-av"><span class="ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
           <div class="agent-meta"><b>CyberForge Agent</b><span>v2.1 · agentic mode</span></div>
-          <div class="agent-active"><span class="dot"></span>ACTIVE</div>
+          <div class="agent-active"><span class="dot"></span>SYNC</div>
           <div class="win-btns"><i>&minus;</i><i>⌃</i><i>×</i></div>
         </div>
         <div class="agent-body" id="agentBody">
@@ -318,30 +318,30 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
             <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>SYSTEM</div>
             <div class="sys-grid">
               <div class="sys-tile">
-                <div class="gauge"><svg width="42" height="42" viewBox="0 0 42 42" data-gauge="82" data-color="var(--amber)"></svg><span class="val" data-cpu>82%</span></div>
+                <div class="gauge"><svg width="42" height="42" viewBox="0 0 42 42" data-gauge="0" data-color="var(--amber)"></svg><span class="val" data-cpu>0%</span></div>
                 <div class="cap">CPU</div>
               </div>
               <div class="sys-tile">
-                <div class="gauge"><svg width="42" height="42" viewBox="0 0 42 42" data-gauge="57" data-color="var(--cyan)"></svg><span class="val" data-ram>57%</span></div>
+                <div class="gauge"><svg width="42" height="42" viewBox="0 0 42 42" data-gauge="0" data-color="var(--cyan)"></svg><span class="val" data-ram>0%</span></div>
                 <div class="cap">RAM</div>
               </div>
               <div class="sys-tile">
                 <svg class="ico-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                <div class="big" id="uptime">1h 10m</div><div class="cap">Uptime</div>
+                <div class="big" id="uptime">—</div><div class="cap">Uptime</div>
               </div>
               <div class="sys-tile">
                 <svg class="ico-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>
-                <div class="big">1</div><div class="cap">Browsers</div>
+                <div class="big">—</div><div class="cap">Browsers</div>
               </div>
             </div>
           </div>
           <!-- SCANNING -->
           <div class="sect">
-            <div class="sect-h has-id"><svg class="radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 19 8M12 12v9"/></svg>SCANNING<span class="scan-id" id="scanId">#1247</span></div>
+            <div class="sect-h has-id"><svg class="radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 19 8M12 12v9"/></svg>SCANNING<span class="scan-id" id="scanId">idle</span></div>
             <div class="scan-target">
               <span class="globe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg></span>
-              <span class="turl" id="scanTarget">api.acme-corp.io</span>
-              <span class="pct" id="scanPct">0%</span>
+              <span class="turl" id="scanTarget">Waiting for active page…</span>
+              <span class="pct" id="scanPct">—</span>
               <span class="scan-bar" id="scanBar"></span>
             </div>
             <div class="scan-tools" id="scanTools"></div>
@@ -364,7 +364,7 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
               <span class="sl">Throughput</span>
               <span class="vright">
                 <span class="mbars"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-                <span class="vval"><span id="thru">12.4k</span><small>/min</small></span>
+                <span class="vval"><span id="thru">0</span><small>/min</small></span>
               </span>
             </div>
             <div class="svc">
@@ -372,7 +372,7 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
               <span class="sl">Inference latency</span>
               <span class="vright">
                 <svg class="spark-sm" id="latSpark" viewBox="0 0 52 16" preserveAspectRatio="none"></svg>
-                <span class="vval"><span id="lat">42</span><small> ms</small></span>
+                <span class="vval"><span id="lat">0</span><small> ms</small></span>
               </span>
             </div>
             <div class="svc">
@@ -380,19 +380,14 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
               <span class="sl">Active agents</span>
               <span class="vright">
                 <span class="adots" id="adots"></span>
-                <span class="vval">1<small>/8</small></span>
+                <span class="vval">0<small>/8</small></span>
               </span>
             </div>
           </div>
           <!-- BROWSERS -->
           <div class="sect">
             <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>BROWSERS<button class="refresh" id="browserRefresh" title="Resync"><div class="spinner sm" style="border-top-color:var(--amber);border-color:rgba(245,166,35,.25)"></div></button></div>
-            <div class="browser-row">
-              <div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/><path d="M12 9h9M12 9 7.5 4.2M12 15l-4.5 4.6"/></svg></div>
-              <div><div class="bname">Google Chrome</div><div class="bver">v148.0.7778.181</div></div>
-              <span class="running"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)"></span>RUNNING</span>
-            </div>
-            <div class="browser-foot">1 installed · 1 running</div>
+            <div class="browser-foot" id="browserEmpty">Detecting browsers…</div>
           </div>
           <!-- CONTROLS -->
           <div class="sect">
@@ -405,7 +400,7 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
           </div>
           <!-- NEURAL ACTIVITY -->
           <div class="agent-stream">
-            <div class="stream-head"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span>NEURAL ACTIVITY<span class="ops" id="ops">1,204 ops/s</span></div>
+            <div class="stream-head"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span>NEURAL ACTIVITY<span class="ops" id="ops">—</span></div>
             <div class="stream-line"><span class="cdot"></span><span id="streamText"></span><span class="cursor"></span></div>
             <div class="stream-log" id="streamLog"></div>
           </div>
@@ -532,7 +527,7 @@ function logLine(t){
 
   // latency + sparkline
   const lat=document.getElementById('lat'),sp=document.getElementById('latSpark');
-  let hist=Array.from({length:13},()=>0.4+Math.random()*0.3);
+  let hist=Array.from({length:13},()=>0.05);
   function drawLat(){
     const W=52,H=16, pts=hist.map((v,i)=>(i*(W/(hist.length-1)))+','+ (H-2-v*(H-4))).join(' ');
     sp.innerHTML='<polyline points="'+pts+'" fill="none" stroke="var(--cyan)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'+
@@ -575,7 +570,7 @@ function logLine(t){
         elPct=document.getElementById('scanPct'),elBar=document.getElementById('scanBar'),
         elVerdict=document.getElementById('scanVerdict'),elId=document.getElementById('scanId');
   if(!elTools)return;
-  let scanNo=1247;
+  let scanNo=1;
   elTools.innerHTML=tools.map(t=>
     '<div class="tool pending"><span class="t-node"><span class="led"></span><span class="t-spin"></span></span>'+
     '<span class="t-ico">'+t.icon+'</span><span class="t-name">'+t.name+'</span><span class="t-res"></span></div>'
@@ -628,22 +623,43 @@ function logLine(t){
     elVerdict.className='scan-verdict show '+cls;
     setTimeout(runScan, 32000); // next real scan in ~32s (each scan hits the backend)
   }
-  function runScan(){
-    elId.textContent='#'+(scanNo++);
-    // scan the active browser tab; fall back to a benign default if none open
+  // No real page to scan → show an honest idle state (NEVER a placeholder URL).
+  function idleScan(){
+    elId.textContent='idle';
+    elTarget.textContent='Waiting for active page…';
+    elPct.textContent='—'; elBar.style.width='0%';
+    rows.forEach(function(r){ r.className='tool pending'; var re=r.querySelector('.t-res'); re.className='t-res'; re.textContent=''; });
+    elVerdict.className='scan-verdict show';
+    elVerdict.innerHTML='<span class="vi">'+I.globe+'</span>Idle · no active page to scan<span class="meta">monitoring</span>';
+  }
+  var histUrls=[], histIdx=0, histAt=0;
+  // Pick a REAL URL to scan: the live active tab (browser extension) if present,
+  // otherwise cycle through the user's actual browser history. Never synthetic.
+  function pickFromHistory(cb){
+    if(histUrls.length && (Date.now()-histAt)<120000){ cb(histUrls[histIdx++ % histUrls.length]); return; }
+    cfInvoke('get_browser_history',{limit:25}).then(function(h){
+      histUrls=((h&&h.data&&h.data.history)||[]).map(function(x){return x.url;}).filter(Boolean);
+      histAt=Date.now();
+      cb(histUrls.length ? histUrls[histIdx++ % histUrls.length] : '');
+    }).catch(function(){ cb(''); });
+  }
+  function pickUrl(cb){
     cfInvoke('get_active_urls').then(function(r){
-      var list=(r&&r.data&&r.data.urls)||[];
-      var url=(list[0]&&list[0].url)||'https://example.com';
+      var u=((r&&r.data&&r.data.urls)||[])[0]; u=(u&&u.url)||'';
+      if(u){ cb(u); } else { pickFromHistory(cb); }
+    }).catch(function(){ pickFromHistory(cb); });
+  }
+  function runScan(){
+    pickUrl(function(url){
+      if(!url){ idleScan(); setTimeout(runScan, 10000); return; }
+      elId.textContent='#'+(scanNo++);
       elTarget.textContent=url.replace(/^https?:\/\//,'').slice(0,42);
       resetRows();
-      return cfInvoke('scan_url',{url:url});
-    }).then(function(res){
-      var d=(res&&res.data)||{};
-      applyResults(toolResults(d), +d.riskScore||0, d.category||'');
-      if(typeof logLine==='function') logLine('Scanned '+((d.url||'').replace(/^https?:\/\//,'').slice(0,34))+' · risk '+(d.riskScore||0)+' · '+(d.category||'ok'));
-    }).catch(function(){
-      applyResults(rows.map(function(){return {label:'—',cls:'info'};}),0,'');
-      setTimeout(runScan, 32000);
+      cfInvoke('scan_url',{url:url}).then(function(res){
+        var d=(res&&res.data)||{};
+        applyResults(toolResults(d), +d.riskScore||0, d.category||'');
+        if(typeof logLine==='function') logLine('Scanned '+((d.url||url).replace(/^https?:\/\//,'').slice(0,34))+' · risk '+(d.riskScore||0)+' · '+(d.category||'ok'));
+      }).catch(function(){ idleScan(); setTimeout(runScan, 12000); });
     });
   }
   runScan();
@@ -654,7 +670,7 @@ function logLine(t){
    via Tauri commands (get_system_stats, detect_browsers, agent_status).
    Calls go through the parent window's __TAURI__ (same-origin iframe).
    =========================================================== */
-window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:1,threats:0,latency:0,backendOk:false,mlOk:false};
+window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:0,threats:0,latency:0,backendOk:false,mlOk:false};
 (function(){
   function cfInvoke(cmd,args){
     try{
@@ -692,6 +708,10 @@ window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:1,threats:0,latency:0,backendO
     var sect=ref?ref.closest('.sect'):null; if(!sect)return;
     sect.querySelectorAll('.browser-row,.browser-foot').forEach(function(n){n.remove();});
     list=list||[];
+    if(!list.length){
+      var none=document.createElement('div'); none.className='browser-foot';
+      none.textContent='No browsers detected'; sect.appendChild(none); return;
+    }
     list.sort(function(a,b){return (b.isRunning?1:0)-(a.isRunning?1:0);});
     list.forEach(function(b){
       var on=!!b.isRunning;
@@ -747,6 +767,11 @@ window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:1,threats:0,latency:0,backendO
     var T=(window.parent&&window.parent.__TAURI__)||window.__TAURI__;
     if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyTelemetry(e.payload); });
   }catch(e){}
+  // Also accept telemetry relayed by the host page (cf-agent.js) via postMessage —
+  // this path works even when the iframe can't subscribe to Tauri events directly.
+  window.addEventListener('message', function(e){
+    if(e && e.data && e.data.cf==='telemetry') applyTelemetry(e.data.payload);
+  });
 
   // immediate first paint, then a SLOW cached-command fallback (the event is the
   // real-time path; these only matter if events ever stop arriving).

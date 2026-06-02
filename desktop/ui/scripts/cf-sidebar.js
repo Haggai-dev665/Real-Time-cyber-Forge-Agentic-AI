@@ -54,7 +54,7 @@
     h+=navItem({k:'sandbox',label:'Sandbox',href:'sandbox.html',icon:I.box,tag:{t:'NEW',c:'new'}},active);
     h+=navItem({k:'browser',label:'Browser Intelligence',href:'browser-intelligence.html',icon:I.globe,tag:{t:'0',c:'zero'}},active);
     h+=navItem({k:'assistant',label:'AI Assistance',href:'ai-assistance.html',icon:I.spark,tag:{t:'AI',c:'ai'}},active);
-    h+=navItem({k:'orchestrator',label:'8-Agent Orchestrator',href:'#',icon:I.nodes,tag:{t:'8',c:'num'}},active);
+    h+=navItem({k:'security',label:'Security Functions',href:'security-functions.html',icon:I.shield,tag:{t:'LIVE',c:'live'}},active);
     h+=navItem({k:'pipeline',label:'Signal Pipeline',href:'signal-pipeline.html',icon:I.flow},active);
 
     // MODEL INFERENCE
@@ -100,6 +100,13 @@
       sub('Scheduled Reports','reports.html')+'</div>';
 
     const el=document.getElementById('sidebar');
-    if(el) el.innerHTML=h;
+    if(el){
+      el.innerHTML=h;
+      // Always an icon rail: it expands while the mouse is over it (CSS :hover)
+      // and collapses back to icons as soon as the mouse leaves. No button.
+      el.classList.add('collapsed');
+      const body=el.closest('.body');
+      if(body) body.classList.add('sidebar-collapsed');
+    }
   };
 })();

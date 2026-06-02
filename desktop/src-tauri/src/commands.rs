@@ -81,6 +81,32 @@ async fn restore_session_from_storage(shared: &SharedState) -> Result<Option<Use
         return Ok(None);
     };
 
+    // OPTIMISTIC RESTORE: if we cached the user profile at login, restore the
+    // session immediately with NO network call — so login persists across
+    // restarts even when the backend is slow, asleep, or rate-limited. A
+    // best-effort background check then re-validates and only logs out on a
+    // definitive 401/403 (a genuinely expired or revoked token).
+    if let Some(uj) = crate::auth::get_stored_user() {
+        if let Ok(val) = serde_json::from_str::<Value>(&uj) {
+            let user = build_user_info(&val);
+            if !user.email.is_empty() || !user.id.is_empty() {
+                {
+                    let mut s = shared.lock().await;
+                    s.set_authenticated(user.clone(), tok.clone());
+                }
+                #[cfg(debug_assertions)]
+                eprintln!("[cyberforge] restore_session: optimistic (cached user {})", user.email);
+                let shared2 = shared.clone();
+                let url = format!("{}/api/auth/profile", backend_url);
+                let tok2 = tok.clone();
+                tauri::async_runtime::spawn(async move { revalidate(shared2, url, tok2).await });
+                return Ok(Some(user));
+            }
+        }
+    }
+
+    // No cached user (older / token-only session): validate against the backend,
+    // and cache the profile on success so future launches restore offline.
     let profile_url = format!("{}/api/auth/profile", backend_url);
     let client = crate::http::client();
     let response = client
@@ -91,20 +117,58 @@ async fn restore_session_from_storage(shared: &SharedState) -> Result<Option<Use
 
     match response {
         Ok(resp) => {
-            let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
+            let status = resp.status();
+            let body = match crate::http::read_json(resp).await {
+                Ok(b) => b,
+                // Non-JSON (rate-limited / server hiccup): keep the token, don't log out.
+                Err(_) => return Ok(None),
+            };
             if body.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
                 if let Some(user_val) = body.pointer("/data/user") {
                     let user = build_user_info(user_val);
-                    let mut s = shared.lock().await;
-                    s.set_authenticated(user.clone(), tok.clone());
+                    let user_json = serde_json::to_string(&user).unwrap_or_default();
+                    {
+                        let mut s = shared.lock().await;
+                        s.set_authenticated(user.clone(), tok.clone());
+                    }
                     let _ = crate::auth::store_token(&tok);
+                    crate::auth::store_user(&user_json);
                     return Ok(Some(user));
                 }
             }
-            let _ = crate::auth::delete_token();
+            // Only forget the token when the server DEFINITIVELY rejected it.
+            if status == reqwest::StatusCode::UNAUTHORIZED
+                || status == reqwest::StatusCode::FORBIDDEN
+            {
+                let _ = crate::auth::delete_token();
+            }
             Ok(None)
         }
         Err(_) => Ok(None),
+    }
+}
+
+/// Background re-validation for an optimistically-restored session. Only clears
+/// the session when the server DEFINITIVELY rejects the token (401/403); a
+/// network / rate-limit / non-JSON failure keeps the session intact.
+async fn revalidate(shared: SharedState, profile_url: String, token: String) {
+    let client = crate::http::client();
+    if let Ok(resp) = client
+        .get(&profile_url)
+        .header("Authorization", format!("Bearer {}", token))
+        .send()
+        .await
+    {
+        let status = resp.status();
+        if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+            {
+                let mut s = shared.lock().await;
+                s.clear_auth();
+            }
+            let _ = crate::auth::delete_token();
+            #[cfg(debug_assertions)]
+            eprintln!("[cyberforge] revalidate: token rejected ({status}), session cleared");
+        }
     }
 }
 
@@ -158,7 +222,7 @@ pub async fn auth_login(
         .await
         .map_err(crate::http::error_chain)?;
 
-    let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
+    let body = crate::http::read_json(resp).await?;
     let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
 
     if success {
@@ -167,9 +231,12 @@ pub async fn auth_login(
             body.pointer("/data/token").and_then(|t| t.as_str()),
         ) {
             let user = build_user_info(user_val);
+            let user_json = serde_json::to_string(&user).unwrap_or_default();
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
+            drop(s);
             let _ = crate::auth::store_token(token);
+            crate::auth::store_user(&user_json); // cache profile for offline restore
 
             // Flatten so the frontend can read `result.token` / `result.user`.
             return Ok(serde_json::json!({
@@ -214,7 +281,7 @@ pub async fn auth_register(
         .await
         .map_err(crate::http::error_chain)?;
 
-    let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
+    let body = crate::http::read_json(resp).await?;
     let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
 
     if success {
@@ -223,9 +290,12 @@ pub async fn auth_register(
             body.pointer("/data/token").and_then(|t| t.as_str()),
         ) {
             let user = build_user_info(user_val);
+            let user_json = serde_json::to_string(&user).unwrap_or_default();
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
+            drop(s);
             let _ = crate::auth::store_token(token);
+            crate::auth::store_user(&user_json); // cache profile for offline restore
 
             return Ok(serde_json::json!({
                 "success": true,

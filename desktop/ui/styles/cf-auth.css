@@ -3,13 +3,14 @@
    Shared styling + the animated "forge" illustration
    ============================================================ */
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{background:#000;font-family:var(--sans);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;
-  display:flex;align-items:center;justify-content:center}
-.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:
+/* Responsive canvas — see cyberforge.css: fill viewport width, scroll vertically. */
+html{height:100%}
+body{height:100%;background:#03050a;font-family:var(--sans);color:var(--text);
+  overflow-x:hidden;overflow-y:auto;-webkit-font-smoothing:antialiased}
+.stage{position:relative;width:100%;min-height:100%;overflow-x:hidden;background:
   radial-gradient(1200px 700px at 70% -10%, #0c1726 0%, transparent 60%),
   radial-gradient(900px 600px at 10% 110%, #0a1320 0%, transparent 55%), #03050a}
-.window{position:relative;width:1440px;height:824px;flex:none;transform-origin:center center;overflow:hidden;
+.window{position:absolute;top:0;left:0;width:1440px;height:824px;transform-origin:top left;overflow:hidden;
   border:1px solid var(--border-2);border-radius:10px;
   background:radial-gradient(1100px 800px at 78% 0%, rgba(246,157,57,0.05), transparent 55%),
     radial-gradient(900px 700px at 0% 100%, rgba(43,212,238,0.05), transparent 55%),

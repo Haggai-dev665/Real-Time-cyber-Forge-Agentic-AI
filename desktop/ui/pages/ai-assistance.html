@@ -70,6 +70,38 @@
 .ai-orb .orb svg{width:21px;height:21px;animation:bob 3.4s ease-in-out infinite}
 .ai-identity .nm{font-size:14px;font-weight:600}
 .ai-identity .sb{font-family:var(--mono);font-size:9.5px;color:var(--amber-2);opacity:.85;margin-top:2px}
+
+/* markdown rendering inside AI bubbles */
+.bubble .md-h{font-weight:600;color:var(--amber-2);margin:10px 0 4px;font-size:13px}
+.bubble code{font-family:var(--mono);font-size:11.5px;background:rgba(8,12,20,.6);border:1px solid var(--border);border-radius:5px;padding:1px 5px;color:var(--cyan)}
+.bubble a{color:var(--cyan)}
+.bubble>div{margin:3px 0}
+.bubble ul{margin:6px 0 4px}
+
+/* connect-DeepSeek key banner */
+.cf-keybar{margin-bottom:6px;padding:13px 15px;border-radius:12px;border:1px solid rgba(245,166,35,.3);
+  background:linear-gradient(180deg,rgba(245,166,35,.10),rgba(245,166,35,.02));display:flex;flex-direction:column;gap:9px}
+.cf-keybar .kb-t{font-size:12.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.cf-keybar .kb-t svg{width:15px;height:15px;color:var(--amber-2)}
+.cf-keybar .kb-d{font-size:11px;color:var(--dim);line-height:1.55}
+.cf-keybar .kb-d a{color:var(--cyan)}
+.cf-keybar .kb-row{display:flex;gap:8px}
+.cf-keybar input{flex:1;height:38px;padding:0 12px;border-radius:9px;border:1px solid var(--border-2);background:rgba(8,12,20,.7);color:var(--text);font-family:var(--mono);font-size:11.5px;outline:none}
+.cf-keybar input:focus{border-color:rgba(245,166,35,.5)}
+.cf-keybar button{height:38px;padding:0 16px;border-radius:9px;border:1px solid rgba(245,166,35,.5);background:linear-gradient(180deg,#ffc15a,#f5a623);color:#1a1206;font-weight:600;font-size:12px;cursor:pointer}
+.cf-keybar button:hover{filter:brightness(1.05)} .cf-keybar button:disabled{opacity:.5;cursor:default}
+.cf-keybar .kb-note{font-size:9.5px;color:var(--faint);font-family:var(--mono)}
+
+/* FIX: this icon has a viewBox but no width/height, so it rendered at a huge
+   intrinsic size and overflowed up into the chat. Constrain it. */
+.inputbar .field>svg{width:18px;height:18px;flex:none;color:var(--faint)}
+
+/* nicer AI bubble + staggered "composing" reveal of each answer block */
+.msg.ai .bubble{box-shadow:0 3px 14px -8px rgba(0,0,0,.55)}
+.bubble.rendering>*{opacity:0;transform:translateY(6px);animation:rvIn .36s cubic-bezier(.2,.9,.25,1) forwards}
+@keyframes rvIn{to{opacity:1;transform:none}}
+.send{transition:transform .15s, box-shadow .2s} .send:hover{box-shadow:0 6px 20px -5px rgba(245,166,35,.7)}
+.schip{transition:transform .15s,border-color .2s,background .2s,color .2s}
 </style>
 </head>
 <body>
@@ -83,9 +115,9 @@
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg></div>
           <h1>AI Assistance</h1>
           <div class="head-right">
-            <span class="live-ind"><span class="dot"></span>Online</span>
-            <span>claude-sentinel · 200k ctx</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>New Chat</button>
+            <span class="live-ind"><span class="dot"></span><span id="liveState">Online</span></span>
+            <span id="modelBadge">DeepSeek</span>
+            <button class="btn-refresh" id="newChatBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>New Chat</button>
           </div>
         </div>
 
@@ -108,19 +140,20 @@
             </div>
             <div class="card">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Connected Tools</div>
-              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><div class="cinfo"><div class="cn">Threat Search</div><div class="cd">48k indexed</div></div><span class="con"></span></div>
-              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></span><div class="cinfo"><div class="cn">Sandbox Detonation</div><div class="cd">VM-04 ready</div></div><span class="con"></span></div>
+              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><div class="cinfo"><div class="cn">Threat Search</div><div class="cd">scan &amp; classify</div></div><span class="con"></span></div>
+              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></span><div class="cinfo"><div class="cn">Sandbox Detonation</div><div class="cd">detonate</div></div><span class="con"></span></div>
               <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 17 6-6-6-6M12 19h8"/></svg></span><div class="cinfo"><div class="cn">Agent Core</div><div class="cd">autonomous</div></div><span class="con"></span></div>
               <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg></span><div class="cinfo"><div class="cn">Report Generator</div><div class="cd">PDF · CSV</div></div><span class="con"></span></div>
             </div>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Session Context</div>
               <div style="overflow-y:auto">
-                <div class="ctx"><span class="cx"></span><span class="cl">Active incident</span><span class="cv">INC-2207</span></div>
-                <div class="ctx"><span class="cx"></span><span class="cl">Focus host</span><span class="cv">WS-4471</span></div>
-                <div class="ctx"><span class="cx"></span><span class="cl">Threats today</span><span class="cv">318</span></div>
-                <div class="ctx"><span class="cx"></span><span class="cl">Last sandbox</span><span class="cv">MALICIOUS</span></div>
-                <div class="ctx"><span class="cx"></span><span class="cl">Tokens used</span><span class="cv" id="tok">68k / 200k</span></div>
+                <div class="ctx"><span class="cx"></span><span class="cl">Model</span><span class="cv" id="ctxModel">DeepSeek</span></div>
+                <div class="ctx"><span class="cx"></span><span class="cl">Inference</span><span class="cv">HF Providers</span></div>
+                <div class="ctx"><span class="cx"></span><span class="cl">DeepSeek key</span><span class="cv" id="ctxKey">checking…</span></div>
+                <div class="ctx"><span class="cx"></span><span class="cl">Backend</span><span class="cv" id="ctxBackend">—</span></div>
+                <div class="ctx"><span class="cx"></span><span class="cl">Active threats</span><span class="cv" id="ctxThreats">—</span></div>
+                <div class="ctx"><span class="cx"></span><span class="cl">Browsers</span><span class="cv" id="ctxBrowsers">—</span></div>
               </div>
             </div>
           </div>
@@ -141,7 +174,7 @@
 <script>
 buildHeader({status:'ASSISTANT',cta:'New Chat'});
 buildSidebar('assistant');
-buildFooter({items:[{txt:'claude-sentinel',cls:'sb-amber'},{txt:'ctx 68k/200k',cls:'sb-cyan'},{txt:'4 tools',cls:'sb-cyan'},{txt:'Online',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'DeepSeek',cls:'sb-amber'},{txt:'HF Providers',cls:'sb-cyan'},{txt:'4 tools',cls:'sb-cyan'},{txt:'Online',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 const chat=document.getElementById('chat');
@@ -152,85 +185,128 @@ function addUser(text){
   const m=document.createElement('div');m.className='msg user';
   m.innerHTML=userAv+'<div class="bubble">'+text+'</div>';chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
 }
-function addBot(html,stream){
+function addBot(html){
   const m=document.createElement('div');m.className='msg ai';
   const b=document.createElement('div');b.className='bubble';
-  m.innerHTML=botAv;m.appendChild(b);chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
-  if(!stream){b.innerHTML=html;return;}
-  // typewriter that preserves HTML by revealing text nodes
-  b.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';
-  setTimeout(()=>{
-    b.innerHTML=''; let i=0; const tmp=document.createElement('div');tmp.innerHTML=html;
-    const full=html; // type raw, then set HTML at chunks - simple char reveal of plain text then swap
-    // Strategy: reveal progressively by slicing the HTML at tag boundaries
-    const tokens=full.split(/(<[^>]+>)/).filter(Boolean);
-    let out=''; let ti=0;
-    function step(){
-      if(ti>=tokens.length){b.innerHTML=out;chat.scrollTop=chat.scrollHeight;return;}
-      const t=tokens[ti];
-      if(t.startsWith('<')){ out+=t; ti++; b.innerHTML=out+'<span class="cursor-blink"></span>'; step2(0); return; }
-      // type chars
-      let ci=0;
-      (function typeChar(){
-        if(ci>t.length){ti++;step();return;}
-        b.innerHTML=out+t.slice(0,ci)+'<span class="cursor-blink"></span>';
-        chat.scrollTop=chat.scrollHeight; ci+=2; setTimeout(typeChar,12);
-      })();
-      out+=''; // appended via slice
-      function step2(){ out+=t; }
-    }
-    step();
-  },650);
+  m.innerHTML=botAv;m.appendChild(b);b.innerHTML=html;
+  chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
+  return b;
+}
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+/* lightweight, safe markdown → HTML (escape first, then format) — DeepSeek replies in markdown */
+function mdToHtml(raw){
+  const lines=escHtml(raw).split('\n'); const out=[]; let inList=false,inCode=false,code=[];
+  const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  const closeList=()=>{ if(inList){ out.push('</ul>'); inList=false; } };
+  for(const ln of lines){
+    if(/^```/.test(ln)){ if(inCode){ out.push('<div class="codeline">'+code.join('\n')+'</div>'); code=[]; inCode=false; } else { closeList(); inCode=true; } continue; }
+    if(inCode){ code.push(ln); continue; }
+    const h=ln.match(/^#{1,6}\s+(.+)$/); if(h){ closeList(); out.push('<div class="md-h">'+inline(h[1])+'</div>'); continue; }
+    const li=ln.match(/^\s*(?:[-*]|\d+\.)\s+(.+)$/); if(li){ if(!inList){ out.push('<ul>'); inList=true; } out.push('<li>'+inline(li[1])+'</li>'); continue; }
+    closeList();
+    if(ln.trim()==='') out.push('<br>'); else out.push('<div>'+inline(ln)+'</div>');
+  }
+  if(inCode) out.push('<div class="codeline">'+code.join('\n')+'</div>');
+  closeList(); return out.join('');
+}
+/* staggered "composing" reveal of an answer's blocks (works with rendered markdown) */
+function revealBubble(b){
+  b.classList.add('rendering');
+  var kids=b.querySelectorAll(':scope > *'), i=0;
+  kids.forEach(function(k){ if(k.tagName==='BR'){ k.style.animation='none'; return; } k.style.animationDelay=(i*55)+'ms'; i++; });
+  var n=0, iv=setInterval(function(){ chat.scrollTop=chat.scrollHeight; if(++n>14) clearInterval(iv); }, 45);
 }
 
-const responses={
-  'What happened with INC-2207?':'<b>INC-2207 — RedLine Stealer</b> on host <b>WS-4471</b>, started 09:41 UTC from a phishing link.<ul><li>Payload detonated in sandbox → verdict <b>MALICIOUS (87/100)</b></li><li>C2 beacon to cdn-sync.duckdns.org confirmed</li><li>Credential access on Chrome login store</li><li>No lateral movement across 1,204 hosts</li></ul>Containment took 4m 12s. I can isolate the host or draft the incident report.',
-  'Isolate WS-4471':'Queuing isolation for <b>WS-4471</b>.<div class="toolchip">⚡ tool: agent.isolate</div><div class="codeline">→ network quarantine applied\n→ active sessions terminated\n→ forensic snapshot captured</div>Host is now isolated. Pending operator approval to reimage. Want me to rotate the affected user\'s credentials too?',
-  'Summarize today\'s threats':'Today: <b>318 active threats</b>, 2,041 blocked.<ul><li>Top vector: <b>SQL injection (34%)</b></li><li>Top origin: Russia, China, N. Korea</li><li>1 critical incident (INC-2207, contained)</li></ul>Posture is <b>nominal</b> — no open criticals. I can generate the weekly summary report.',
-  'Draft an incident report':'Generating <b>incident report</b> for INC-2207…<div class="toolchip">📄 tool: report.generate</div>Done — a full report with executive summary, key metrics, findings, and recommended actions is ready in <b>Reports</b>. Exported as PDF + CSV. Anything you\'d like me to adjust before sharing?'
-};
 const suggestions=[
-  ['What happened with INC-2207?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>'],
-  ['Isolate WS-4471','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
-  ['Summarize today\'s threats','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m6 15 4-5 3 3 5-7"/></svg>'],
-  ['Draft an incident report','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>']
+  ['What is a DGA and how do I detect it?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>'],
+  ['How should I respond to a ransomware infection?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
+  ['What are the signs of C2 beaconing?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m6 15 4-5 3 3 5-7"/></svg>'],
+  ['Map a phishing attack to MITRE ATT&CK','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>']
 ];
-document.getElementById('suggest').innerHTML=suggestions.map(s=>'<div class="schip" data-q="'+s[0].replace(/"/g,'&quot;')+'">'+s[1]+s[0]+'</div>').join('');
+const suggestEl=document.getElementById('suggest');
+suggestEl.innerHTML=suggestions.map(s=>'<div class="schip" data-q="'+s[0].replace(/"/g,'&quot;')+'">'+s[1]+s[0]+'</div>').join('');
+suggestEl.querySelectorAll('.schip').forEach(c=>c.addEventListener('click',()=>ask(c.dataset.q)));
 
+const modelBadge=document.getElementById('modelBadge'), ctxModel=document.getElementById('ctxModel'), ctxKey=document.getElementById('ctxKey');
 let busy=false;
-function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 async function ask(q){
   if(busy)return; busy=true;
   addUser(escHtml(q));
-  // Live bubble with typing indicator → real DeepSeek/Mistral answer via ML service.
-  const m=document.createElement('div');m.className='msg ai';
-  const b=document.createElement('div');b.className='bubble';
-  m.innerHTML=botAv;m.appendChild(b);
-  b.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';
-  chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
+  const b=addBot('<span class="typing"><i></i><i></i><i></i></span>');
   try{
-    const body=await CF.ml.chat(q,512);
+    const body=await CF.ml.chat(q,640);
     const d=(body&&body.data)||body||{};
     let txt=d.response||d.answer||d.text||d.output||d.reply||body.response||body.message||'';
-    if(!txt) txt='I couldn\'t generate a response just now — the ML service may be warming up on HuggingFace. Please try again in a moment.';
-    b.innerHTML=escHtml(txt).replace(/\n/g,'<br>');
-    const model=d.model||body.model; if(model){var mh=document.querySelector('.head-right > span:nth-of-type(1) + span'); if(mh) mh.textContent=model;}
+    const model=d.model||body.model||''; const fallback=d.fallback||body.fallback;
+    if(!txt) txt='I couldn\'t generate a response just now. If you haven\'t connected DeepSeek yet, paste your Hugging Face token above to enable it.';
+    var html=mdToHtml(txt);
+    if(fallback){ html+='<div class="kb-note" style="margin-top:9px">⚠ DeepSeek not connected — answered from the built-in knowledge base. Connect your HF token for full DeepSeek reasoning.</div>'; }
+    b.innerHTML=html; revealBubble(b);
+    if(model){ var nice=/deepseek/i.test(model)?'DeepSeek':(/cyberforge-kb/i.test(model)?'CyberForge KB':String(model).split('/').pop()); if(modelBadge)modelBadge.textContent=nice; if(ctxModel)ctxModel.textContent=nice; }
   }catch(e){
     const offline=String((e&&e.message)||e).indexOf('tauri-unavailable')>=0;
-    b.innerHTML=offline
+    b.innerHTML= offline
       ? 'The AI service is only available inside the desktop app (Tauri bridge not found in this preview).'
-      : 'I hit an error reaching the ML service — it may be cold-starting on HuggingFace. Please retry shortly.';
+      : 'I hit an error reaching the model. If DeepSeek isn\'t connected, paste your Hugging Face token above; otherwise retry shortly.';
   }
   chat.scrollTop=chat.scrollHeight; busy=false;
 }
-document.querySelectorAll('.schip').forEach(c=>c.addEventListener('click',()=>ask(c.dataset.q)));
 const input=document.getElementById('msgInput'),send=document.getElementById('sendBtn');
 function submit(){const v=input.value.trim();if(!v)return;input.value='';ask(v);}
 send.addEventListener('click',submit);
 input.addEventListener('keydown',e=>{if(e.key==='Enter')submit();});
+var nc=document.getElementById('newChatBtn'); if(nc) nc.addEventListener('click',function(){ chat.innerHTML=''; seed(); });
 
-// seed conversation
-addBot('Hi — I\'m the <b>CyberForge Assistant</b>, grounded in your live telemetry. I can investigate incidents, isolate hosts, detonate samples, and draft reports. There\'s 1 active critical incident right now: <b>INC-2207</b>. What would you like to do?',false);
+/* ---- Connect DeepSeek: paste the HF token once (stored in the OS keychain) ---- */
+function showKeyBar(){
+  if(document.getElementById('cfKeyBar')) return;
+  var bar=document.createElement('div'); bar.className='cf-keybar'; bar.id='cfKeyBar';
+  bar.innerHTML=
+    '<div class="kb-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Connect DeepSeek</div>'+
+    '<div class="kb-d">Paste a Hugging Face access token to enable real DeepSeek reasoning — stored securely in your OS keychain, never in the app. Create one at <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">huggingface.co/settings/tokens</a> (needs the Inference permission).</div>'+
+    '<div class="kb-row"><input id="hfKeyInput" type="password" placeholder="hf_..." autocomplete="off" spellcheck="false"/><button id="hfKeySave">Connect</button></div>'+
+    '<div class="kb-note">Or set the HF_TOKEN environment variable before launching.</div>';
+  chat.parentElement.insertBefore(bar, chat);
+  var inp=bar.querySelector('#hfKeyInput'), btn=bar.querySelector('#hfKeySave');
+  function save(){
+    var v=(inp.value||'').trim(); if(!v) return;
+    btn.disabled=true; btn.textContent='Connecting…';
+    CF.invoke('set_hf_token',{token:v}).then(function(){
+      bar.remove(); if(ctxKey)ctxKey.textContent='connected';
+      addBot('✅ DeepSeek connected. Ask me about threats, malware, MITRE ATT&CK, IOCs or incident response — answers now come from the DeepSeek model.');
+    }).catch(function(e){
+      btn.disabled=false; btn.textContent='Connect';
+      addBot('Couldn\'t save the token: '+escHtml(String((e&&e.message)||e))+'. You can also set the HF_TOKEN environment variable instead.');
+    });
+  }
+  btn.addEventListener('click',save);
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') save(); });
+}
+CF.invoke('hf_token_status').then(function(r){
+  var ok=r&&r.configured;
+  if(ctxKey)ctxKey.textContent= ok?'connected':'not set';
+  if(!ok) showKeyBar();
+}).catch(function(){ if(ctxKey)ctxKey.textContent='—'; });
+
+/* ---- live session context from cf-telemetry ---- */
+(function(){
+  function apply(p){ if(!p)return;
+    var st=(p.status&&p.status.data)||null;
+    if(st){ var be=document.getElementById('ctxBackend'); if(be)be.textContent=st.backendOk?'online':'offline';
+      var th=document.getElementById('ctxThreats'); if(th)th.textContent=(st.threatCount!=null?st.threatCount:'—');
+      var ls=document.getElementById('liveState'); if(ls)ls.textContent=st.backendOk?'Online':'Offline'; }
+    var br=(p.browsers&&p.browsers.data)||null;
+    if(br){ var b=document.getElementById('ctxBrowsers'); if(b)b.textContent=(br.installed||0)+' detected'; }
+  }
+  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
+    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ apply(e.payload); });
+  }catch(e){}
+})();
+
+function seed(){
+  addBot('Hi — I\'m the <b>CyberForge Assistant</b>, powered by <b>DeepSeek</b>. Ask me about threats, malware, phishing, ransomware, C2, MITRE ATT&CK, IOCs, or incident-response playbooks and I\'ll give grounded, actionable guidance.');
+}
+seed();
 </script>
 </body>
 </html>

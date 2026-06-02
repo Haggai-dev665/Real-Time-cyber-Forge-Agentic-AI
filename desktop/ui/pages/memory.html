@@ -98,9 +98,9 @@
               </div>
             </div>
             <div class="card usage">
-              <div class="ul"><span>Memory Store — 6.8 / 16 GB</span><span>42%</span></div>
+              <div class="ul"><span>Memory Store</span><span id="memTotal">—</span></div>
               <div class="ubar"><i id="uEp" style="background:var(--amber);width:0"></i><i id="uSe" style="background:var(--cyan);width:0"></i><i id="uPr" style="background:var(--green);width:0"></i></div>
-              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Episodic 24%</span><span><span class="d" style="background:var(--cyan)"></span>Semantic 13%</span><span><span class="d" style="background:var(--green)"></span>Procedural 5%</span></div>
+              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Episodic <b id="legEp">0</b></span><span><span class="d" style="background:var(--cyan)"></span>Semantic <b id="legSe">0</b></span><span><span class="d" style="background:var(--green)"></span>Procedural <b id="legPr">0</b></span></div>
             </div>
           </div>
 
@@ -129,7 +129,7 @@
 <script>
 buildHeader({status:'MEMORY'});
 buildSidebar('memory');
-buildFooter({items:[{txt:'48.2k memories',cls:'sb-amber'},{txt:'store 42%',cls:'sb-cyan'},{txt:'recall 8ms',cls:'sb-green'},{txt:'Consolidating…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'local vector store',cls:'sb-amber'},{txt:'synced',cls:'sb-cyan'},{txt:'recall <1ms',cls:'sb-green'},{txt:'Live',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 setTimeout(()=>{document.getElementById('uEp').style.width='24%';document.getElementById('uSe').style.width='13%';document.getElementById('uPr').style.width='5%';},150);
@@ -203,17 +203,20 @@ document.querySelectorAll('#mfilters .mchip').forEach(c=>c.addEventListener('cli
 
 /* recall activity */
 const recallEl=document.getElementById('recall');
-const queries=['"RedLine C2 indicators"','"isolation playbook"','"duckdns reputation"','"WS-4471 history"','"macro detonation steps"','"port 4444 patterns"','"phishing cluster xyz"','"brute force 193.43.*"'];
 function addRecall(){
+  // Only surface recalls of REAL stored memories — no synthetic queries.
+  if(!memData.length){ if(!recallEl.querySelector('.rc')) recallEl.innerHTML='<div style="padding:18px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No recall activity yet<br><span style="font-size:9px">memories are written as the agent scans URLs</span></div>'; return; }
+  var ph=recallEl.firstElementChild; if(ph && !ph.classList.contains('rc')) recallEl.innerHTML='';
   if(window.__memRecall)window.__memRecall();
   const el=document.createElement('div');el.className='rc';
   const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  var pick=memData[Math.floor(Math.random()*memData.length)];
   el.innerHTML='<svg class="rci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
-    '<span class="rcn">recall '+(memData.length?('"'+String(memData[Math.floor(Math.random()*memData.length)][1]).slice(0,38).replace(/[<>]/g,'')+'"'):queries[Math.floor(Math.random()*queries.length)])+'</span><span class="rct">'+ts+' · '+(1+Math.floor(Math.random()*3))+'ms</span>';
+    '<span class="rcn">recall "'+String(pick[1]).slice(0,38).replace(/[<>]/g,'')+'"</span><span class="rct">'+ts+'</span>';
   recallEl.prepend(el);while(recallEl.children.length>30)recallEl.lastChild.remove();
 }
-for(let i=0;i<5;i++)addRecall();
-setInterval(addRecall,1100);
+addRecall();
+setInterval(addRecall,1400);
 
 /* ===========================================================
    REAL vector memory — local Rust store (memory_list), synced to
@@ -232,6 +235,10 @@ setInterval(addRecall,1100);
       });
       renderMems();
       var total=d.total||0;
+      var mt=document.getElementById('memTotal'); if(mt) mt.textContent=total+(total===1?' mem':' mems');
+      var le=document.getElementById('legEp'); if(le) le.textContent=(d.episodic||0);
+      var ls=document.getElementById('legSe'); if(ls) ls.textContent=(d.semantic||0);
+      var lp=document.getElementById('legPr'); if(lp) lp.textContent=(d.procedural||0);
       var kMem=document.getElementById('kMem'); if(kMem) kMem.textContent=total.toLocaleString();
       var kEdge=document.getElementById('kEdge'); if(kEdge) kEdge.textContent=((d.episodic||0)+(d.semantic||0)+(d.procedural||0));
       var gNodes=document.getElementById('gNodes'); if(gNodes) gNodes.textContent=Math.min(total,240);

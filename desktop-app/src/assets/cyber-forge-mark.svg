@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none" role="img" aria-label="CyberForge mark">
-  <g transform="translate(30, 30)">
-    <rect x="1" y="1" width="58" height="58" fill="none" stroke="#1F1A1B" stroke-width="2"></rect>
-    <path d="M15 45 L30 13 L45 45 Z" fill="#F69D39"></path>
-    <path d="M23 45 L30 29 L37 45 Z" fill="#1F1A1B"></path>
-    <circle cx="30" cy="45" r="3.2" fill="#869B7E"></circle>
-  </g>
-</svg>

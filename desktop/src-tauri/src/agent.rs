@@ -286,16 +286,29 @@ pub async fn threats_data(state: &SharedState) -> Value {
     {
         let s = state.lock().await;
         if let Some((t, v)) = &s.threats_cache {
-            if t.elapsed() < Duration::from_secs(15) {
+            if t.elapsed() < Duration::from_secs(60) {
                 return v.clone();
             }
         }
     }
 
-    let (base, headers) = {
+    let (base, headers, is_auth, user_id) = {
         let s = state.lock().await;
-        (s.backend_url.clone(), s.auth_headers())
+        (
+            s.backend_url.clone(),
+            s.auth_headers(),
+            s.is_authenticated,
+            s.current_user.as_ref().map(|u| u.id.clone()),
+        )
     };
+    // Skip the backend entirely until signed in (same rate-limit reasoning as
+    // metrics::status_data) — the broadcaster runs on the login screen too.
+    if !is_auth {
+        return json!({ "success": true, "data": {
+            "total": 0, "critical": 0, "high": 0, "medium": 0, "low": 0,
+            "threats": [], "stats": Value::Null
+        }});
+    }
     let client = reqwest::Client::new();
 
     let mut threats: Vec<Value> = Vec::new();
@@ -321,6 +334,57 @@ pub async fn threats_data(state: &SharedState) -> Value {
                     }
                 }
                 threats = arr.clone();
+            }
+        }
+    }
+
+    // Real detections also live in the agent "alerts" collection (scraper/scan
+    // analyses), which is separate from /api/threats. Merge them so the Threat
+    // Overview reflects actual activity instead of an empty threats table.
+    if let Some(uid) = &user_id {
+        if let Ok(r) = authed(
+            client
+                .get(format!("{}/api/agent/alerts?userId={}&limit=50", base, uid))
+                .timeout(Duration::from_secs(12)),
+            &headers,
+        )
+        .send()
+        .await
+        {
+            if let Ok(b) = r.json::<Value>().await {
+                if let Some(arr) = b.pointer("/data/alerts").and_then(|v| v.as_array()) {
+                    for a in arr {
+                        let sev = a.get("severity").and_then(|v| v.as_str()).unwrap_or("low");
+                        match sev {
+                            "critical" => crit += 1,
+                            "high" => high += 1,
+                            "medium" => med += 1,
+                            _ => low += 1,
+                        }
+                        let desc = a.get("description").and_then(|v| v.as_str()).unwrap_or("");
+                        let title: String = desc
+                            .lines()
+                            .next()
+                            .unwrap_or("")
+                            .trim_start_matches('#')
+                            .trim()
+                            .chars()
+                            .take(90)
+                            .collect();
+                        let source = a.get("source").and_then(|v| v.as_str()).unwrap_or("alert");
+                        threats.push(json!({
+                            "severity": sev,
+                            "type": source,
+                            "title": if title.is_empty() { source.to_string() } else { title },
+                            "source": source,
+                            "alertId": a.get("alert_id").cloned().unwrap_or(Value::Null),
+                            "createdAt": a.get("created_at").cloned()
+                                .or_else(|| a.get("timestamp").cloned()).unwrap_or(Value::Null),
+                            "riskScore": a.get("riskScore").cloned()
+                                .or_else(|| a.get("risk_score").cloned()).unwrap_or(Value::Null)
+                        }));
+                    }
+                }
             }
         }
     }
@@ -517,7 +581,7 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
         .send()
         .await
         .map_err(crate::http::error_chain)?;
-    let body: Value = resp.json().await.map_err(crate::http::error_chain)?;
+    let body = crate::http::read_json(resp).await?;
 
     // 6) flatten + persist (same shape as auth_login)
     let token = body
@@ -527,12 +591,14 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
     let user_val = body.pointer("/data/user").or_else(|| body.get("user"));
     if let (Some(tok), Some(uv)) = (token, user_val) {
         let user = crate::commands::build_user_info(uv);
+        let user_json = serde_json::to_string(&user).unwrap_or_default();
         let user_clone = uv.clone();
         {
             let mut s = state.lock().await;
             s.set_authenticated(user, tok.to_string());
         }
         let _ = crate::auth::store_token(tok);
+        crate::auth::store_user(&user_json); // cache profile for offline restore
         return Ok(json!({ "success": true, "token": tok, "user": user_clone, "message": "Signed in with Google" }));
     }
 

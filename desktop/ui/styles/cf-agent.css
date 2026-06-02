@@ -10,7 +10,7 @@
    and the status bar so the whole panel is visible (body scrolls internally) */
 .cf-agent-frame{
   position:absolute; top:8px; right:12px; width:404px; height:calc(100% - 16px);
-  border:0; background:transparent; z-index:46; color-scheme:dark;
+  border:0; background:transparent; z-index:30; color-scheme:dark;
 }
 
 /* fallback floating icon for pages that don't ship cyberforge.css's .agent-fab

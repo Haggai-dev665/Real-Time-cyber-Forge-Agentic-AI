@@ -129,30 +129,10 @@
 <script>
 buildHeader({status:'INVESTIGATING'});
 buildSidebar('invest');
-buildFooter({items:[{txt:'3 active cases',cls:'sb-amber'},{txt:'28 closed (7d)',cls:'sb-green'},{txt:'41 linked alerts',cls:'sb-cyan'},{txt:'Correlating…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'case correlation',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
-const cases=[
-  {id:'CASE-0207',n:'RedLine Stealer Containment',sev:'crit',st:'active',prog:72,assignee:'Agent Core',alerts:6,opened:'2h ago',run:true,
-   steps:[['done','Detection','EDR flagged credential access on WS-4471','09:41'],['done','Triage','Sandbox detonation confirmed RedLine (87/100)','09:44'],['done','Scoping','Fleet sweep — 1,204 hosts, no spread','09:52'],['active','Containment','Host isolation applied; awaiting reimage approval','10:05'],['todo','Eradication','Remove persistence, rotate credentials','—'],['todo','Recovery','Restore host, close case','—']],
-   ents:[['host','WS-4471','endpoint'],['user','j.okafor','identity'],['domain','cdn-sync.duckdns.org','c2'],['file','svc_update.dll','payload'],['ip','193.43.18.22','source']],
-   iocs:['cdn-sync.duckdns.org','9f86…0a08','193.43.18.22','free-prizes-login.xyz']},
-  {id:'CASE-0206',n:'Brute-force Auth Campaign',sev:'high',st:'active',prog:45,assignee:'Analyst · M. Reyes',alerts:4,opened:'5h ago',run:true,
-   steps:[['done','Detection','IDP flagged auth burst from /24','06:10'],['done','Triage','Confirmed distributed brute-force','06:22'],['active','Scoping','Identifying targeted accounts','07:30'],['todo','Containment','Block source range, force MFA','—'],['todo','Recovery','Reset affected creds','—']],
-   ents:[['ip','193.43.18.0/24','source'],['host','sso.nimbus','service'],['user','12 accounts','identity']],
-   iocs:['193.43.18.0/24','user-agent: hydra']},
-  {id:'CASE-0205',n:'Anomalous Data Egress',sev:'med',st:'active',prog:30,assignee:'Agent Core',alerts:2,opened:'8h ago',run:true,
-   steps:[['done','Detection','DLP flagged egress volume on db-prod-3','01:14'],['active','Triage','Validating against baseline','02:00'],['todo','Scoping','Identify destination & data class','—'],['todo','Containment','Throttle / block egress','—']],
-   ents:[['host','db-prod-3','database'],['ip','10.2.4.9','internal']],
-   iocs:['10.2.4.9','egress +340%']},
-  {id:'CASE-0198',n:'Phishing Wave — Q2 Prizes',sev:'high',st:'closed',prog:100,assignee:'Agent Core',alerts:9,opened:'2d ago',run:false,
-   steps:[['done','Detection','Mail gateway flagged campaign','—'],['done','Triage','Confirmed credential-harvest kit','—'],['done','Containment','Blocked domains, recalled mail','—'],['done','Eradication','Reset 3 clicked-user creds','—'],['done','Recovery','Case closed — resolved','—']],
-   ents:[['domain','free-prizes-login.xyz','phishing'],['user','3 clicked','identity']],
-   iocs:['free-prizes-login.xyz','*.prizes-cdn.xyz']},
-  {id:'CASE-0192',n:'Port Scan — Internal Recon',sev:'low',st:'closed',prog:100,assignee:'Analyst · K. Daus',alerts:1,opened:'4d ago',run:false,
-   steps:[['done','Detection','Internal port scan detected','—'],['done','Triage','Traced to misconfigured scanner','—'],['done','Recovery','False positive — closed','—']],
-   ents:[['ip','10.0.4.18','internal']],iocs:['10.0.4.18']}
-];
+const cases=[];   // built from REAL backend threats (loadInvestigations / get_threats)
 const entIco={host:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg>',
   user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
   domain:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>',
@@ -186,16 +166,10 @@ function renderCase(){
   document.getElementById('iocs').innerHTML=c.iocs.map(i=>'<span class="ioc-pill"><span class="d"></span>'+i+'</span>').join('');
 }
 renderCases(); renderCase();
+document.querySelectorAll('.kpi .kv').forEach(function(e){ e.textContent='0'; });   // real counts fill from get_threats
 document.querySelectorAll('#tabs .tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');tab=t.dataset.t;selected=0;renderCases();renderCase();
 }));
-
-// active case progress creeps up
-setInterval(()=>{
-  cases.forEach(c=>{if(c.st==='active'&&c.prog<96){c.prog=Math.min(96,c.prog+Math.random()*2);}});
-  renderCases(); const cur=visibleCases()[selected];
-  if(cur&&cur.st==='active'){const h=document.querySelector('#cdHead .cinfo');if(h){const pe=document.querySelector('#cdHead div[style*="text-align:right"] div');if(pe)pe.textContent=Math.round(cur.prog)+'%';}}
-},2600);
 
 // ===== REAL cases — built from live threats (get_threats) =====
 function threatToCase(x,i){

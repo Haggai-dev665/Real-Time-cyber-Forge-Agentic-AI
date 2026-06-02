@@ -32,6 +32,10 @@ keyring = "3"
 # Real local telemetry for the floating agent panel (CPU / memory / uptime,
 # running-browser detection) — same crate the desktop-app uses.
 sysinfo = "0.32"
+# Read the user's REAL browser history (Chrome/Edge/Brave `urls`, Firefox
+# `moz_places`) so the agent can scan actually-visited URLs in real time — no
+# browser extension required. `bundled` compiles SQLite in (no system dep).
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 [features]
 # This feature is used for production builds where `devtools` is disabled.

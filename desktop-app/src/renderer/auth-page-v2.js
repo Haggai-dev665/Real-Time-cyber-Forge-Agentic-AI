@@ -7,8 +7,9 @@
 // CONFIGURATION
 // =====================================================
 
-const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com/api';
-const WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com';
+const _HEROKU = 'https://cyberforge-ddd97655464f.herokuapp.com';
+const API_BASE_URL = (localStorage.getItem('cyberforge_backend_url') || _HEROKU) + '/api';
+const WS_URL = (localStorage.getItem('cyberforge_backend_url') || _HEROKU).replace(/^https?/, m => m === 'https' ? 'wss' : 'ws');
 
 // =====================================================
 // STATE MANAGEMENT
@@ -17,7 +18,14 @@ const WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com';
 const authState = {
     isConnected: false,
     isLoading: false,
+    isBootstrapping: true,
     currentForm: 'login' // 'login', 'register', 'reset'
+};
+
+const AUTH_STORAGE_KEYS = {
+    token: 'authToken',
+    refreshToken: 'refreshToken',
+    user: 'user'
 };
 
 // =====================================================
@@ -44,16 +52,178 @@ const elements = {
     toastContainer: null
 };
 
+function normalizeAuthResponse(payload) {
+    const data = payload || {};
+    const nested = data.data || {};
+
+    return {
+        success: Boolean(data.success),
+        message: data.message || nested.message,
+        token: data.token || nested.token,
+        refreshToken: data.refreshToken || nested.refreshToken,
+        user: data.user || nested.user,
+        errors: data.errors || nested.errors
+    };
+}
+
+function navigateToDashboard() {
+    setTimeout(() => {
+        try {
+            window.location.replace('dashboard.html');
+        } catch (_) {
+            window.location.href = 'dashboard.html';
+        }
+    }, 700);
+}
+
 // =====================================================
 // INITIALIZATION
 // =====================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 180ms ease-out';
+
+    initializeTheme();
     initializeElements();
-    checkServerConnection();
     setupEventListeners();
-    animateEntrance();
+
+    const hasSession = await bootstrapAuthSession();
+    if (!hasSession) {
+        checkServerConnection();
+        animateEntrance();
+    }
+
+    // Always make the page visible — even if we're about to redirect,
+    // this prevents an invisible page if navigation is delayed.
+    document.body.style.opacity = '1';
+
+    authState.isBootstrapping = false;
 });
+
+function initializeTheme() {
+    if (window.CyberForgeTheme) {
+        window.CyberForgeTheme.initTheme('light');
+        return;
+    }
+
+    const saved = localStorage.getItem('cyberforge-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+}
+
+async function bootstrapAuthSession() {
+    const electronToken = await tryHydrateSessionFromSecureStorage();
+    const token = electronToken
+        || sessionStorage.getItem(AUTH_STORAGE_KEYS.token)
+        || localStorage.getItem(AUTH_STORAGE_KEYS.token);
+
+    if (!token) {
+        return false;
+    }
+
+    const valid = await validateTokenWithProfile(token);
+    if (valid) {
+        navigateToDashboard();
+        return true;
+    }
+
+    const refreshed = await trySilentRefresh(token);
+    if (refreshed) {
+        navigateToDashboard();
+        return true;
+    }
+
+    clearAuthStorage();
+    return false;
+}
+
+async function tryHydrateSessionFromSecureStorage() {
+    if (!(typeof window !== 'undefined' && window.electronAPI?.auth)) {
+        return null;
+    }
+
+    try {
+        const auth = await window.electronAPI.auth.isAuthenticated();
+        if (!auth?.authenticated) return null;
+
+        const [tokenResult, userResult] = await Promise.all([
+            window.electronAPI.auth.getToken(),
+            window.electronAPI.auth.getUser()
+        ]);
+
+        const token = tokenResult?.token;
+        if (!token) return null;
+
+        localStorage.setItem(AUTH_STORAGE_KEYS.token, token);
+
+        if (userResult?.success && userResult?.user) {
+            localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(userResult.user));
+        }
+
+        return token;
+    } catch (error) {
+        console.warn('Secure auth hydration failed:', error?.message || error);
+        return null;
+    }
+}
+
+async function validateTokenWithProfile(token) {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+        return response.ok;
+    } catch (_) {
+        return false;
+    }
+}
+
+async function trySilentRefresh(token) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ refreshToken: token })
+        });
+
+        if (!response.ok) return false;
+
+        const payload = await response.json();
+        const auth = normalizeAuthResponse(payload);
+        if (!auth.success || !auth.token) return false;
+
+        localStorage.setItem(AUTH_STORAGE_KEYS.token, auth.token);
+        if (auth.user) {
+            localStorage.setItem(AUTH_STORAGE_KEYS.user, JSON.stringify(auth.user));
+        }
+
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function clearAuthStorage() {
+    localStorage.removeItem(AUTH_STORAGE_KEYS.token);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.user);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.token);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.user);
+}
 
 function initializeElements() {
     elements.loginForm = document.getElementById('login-form');
@@ -111,8 +281,8 @@ async function checkServerConnection() {
             }
         };
 
-        // Always use the production Heroku backend
-        const baseUrl = 'https://cyberforge-ddd97655464f.herokuapp.com';
+        // Use local backend in desktop development
+        const baseUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
         
         try {
             const response = await fetchWithTimeout(`${baseUrl}/health`);
@@ -231,7 +401,7 @@ async function handleLogin(event) {
         if (useIPC) {
             // Use Electron IPC for persistent login (stores in electron-store)
             console.log('📡 Using Electron IPC for login...');
-            data = await window.electronAPI.auth.login({ email, password });
+            data = await window.electronAPI.auth.login({ email, password, rememberMe });
         } else {
             // Fallback to direct API call (web mode)
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -252,29 +422,30 @@ async function handleLogin(event) {
         }
         
         console.log('📦 Login response data:', data);
-        
-        if (data.success) {
-            // Also store in localStorage for api-client.js to use
-            const storage = rememberMe ? localStorage : sessionStorage;
-            storage.setItem('authToken', data.token);
-            if (data.refreshToken) {
-                storage.setItem('refreshToken', data.refreshToken);
+
+        const auth = normalizeAuthResponse(data);
+
+        if (auth.success && auth.token) {
+            // Always persist to localStorage for desktop app (survives app restart)
+            localStorage.setItem('authToken', auth.token);
+            sessionStorage.setItem('authToken', auth.token);
+            if (auth.refreshToken) {
+                localStorage.setItem('refreshToken', auth.refreshToken);
+                sessionStorage.setItem('refreshToken', auth.refreshToken);
             }
-            storage.setItem('user', JSON.stringify(data.user));
-            
-            showToast('success', 'Welcome Back!', `Signed in as ${data.user.email}`);
-            
-            // Notify main process to load dashboard if using IPC
-            if (useIPC) {
-                await window.electronAPI.auth.onAuthSuccess();
-            } else {
-                // Redirect to main app after short delay
-                setTimeout(() => {
-                    window.location.href = 'caido-index.html';
-                }, 1000);
+            if (auth.user) {
+                localStorage.setItem('user', JSON.stringify(auth.user));
+                sessionStorage.setItem('user', JSON.stringify(auth.user));
             }
+
+            const userEmail = auth.user?.email || email;
+            
+            showToast('success', 'Welcome Back!', `Signed in as ${userEmail}`);
+            
+            // Navigate to dashboard after short delay
+            navigateToDashboard();
         } else {
-            showToast('error', 'Login Failed', data.message || 'Invalid credentials. Please try again.');
+            showToast('error', 'Login Failed', auth.message || 'Invalid credentials. Please try again.');
         }
     } catch (error) {
         console.error('❌ Login error:', error);
@@ -344,7 +515,7 @@ async function handleRegister(event) {
         const termsCheckbox = document.getElementById('terms-agree');
         const termsLabel = termsCheckbox?.parentElement;
         if (termsLabel) {
-            termsLabel.style.border = '1px solid #ef4444';
+            termsLabel.style.border = '1px solid #E5573E';
             termsLabel.style.borderRadius = '8px';
             termsLabel.style.padding = '8px';
             setTimeout(() => {
@@ -401,35 +572,32 @@ async function handleRegister(event) {
         }
         
         console.log('📦 Register response data:', data);
-        
-        if (data.success) {
+
+        const auth = normalizeAuthResponse(data);
+
+        if (auth.success && auth.token) {
             showToast('success', 'Account Created!', 'You are now signed in.');
             
             // Store tokens in localStorage for api-client.js
             const storage = localStorage;
-            storage.setItem('authToken', data.token);
-            if (data.refreshToken) {
-                storage.setItem('refreshToken', data.refreshToken);
+            storage.setItem('authToken', auth.token);
+            if (auth.refreshToken) {
+                storage.setItem('refreshToken', auth.refreshToken);
             }
-            storage.setItem('user', JSON.stringify(data.user));
+            if (auth.user) {
+                storage.setItem('user', JSON.stringify(auth.user));
+            }
             
-            // Notify main process to load dashboard if using IPC
-            if (useIPC) {
-                await window.electronAPI.auth.onAuthSuccess();
-            } else {
-                // Redirect to main app after short delay
-                setTimeout(() => {
-                    window.location.href = 'caido-index.html';
-                }, 1000);
-            }
+            // Navigate to dashboard after short delay
+            navigateToDashboard();
         } else {
-            const validationMsg = Array.isArray(data?.errors) && data.errors.length > 0
-                ? (data.errors[0].msg || data.errors[0].message)
+            const validationMsg = Array.isArray(auth?.errors) && auth.errors.length > 0
+                ? (auth.errors[0].msg || auth.errors[0].message)
                 : null;
             showToast(
                 'error',
                 'Registration Failed',
-                validationMsg || data.message || 'Unable to create account. Please try again.'
+                validationMsg || auth.message || 'Unable to create account. Please try again.'
             );
         }
     } catch (error) {
@@ -643,3 +811,86 @@ window.showRegisterForm = showRegisterForm;
 window.showResetPassword = showResetPassword;
 window.togglePassword = togglePassword;
 window.checkPasswordStrength = checkPasswordStrength;
+
+// =====================================================
+// VISUAL ENHANCEMENTS (no auth logic changes)
+// =====================================================
+
+/**
+ * Theme toggle button handler.
+ * Delegates to CyberForgeTheme if available, otherwise manual toggle.
+ */
+(function initVisualEnhancements() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-toggle-icon');
+
+    function updateThemeIcon(theme) {
+        if (!themeIcon) return;
+        themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    }
+
+    // Set initial icon based on current theme
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    updateThemeIcon(currentTheme);
+
+    // Listen for theme changes from CyberForgeTheme
+    document.addEventListener('cyberforge:theme-changed', (e) => {
+        updateThemeIcon(e.detail?.theme);
+    });
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            if (window.CyberForgeTheme) {
+                window.CyberForgeTheme.toggleTheme();
+            } else {
+                const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+                const next = cur === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('cyberforge-theme', next);
+                updateThemeIcon(next);
+            }
+        });
+    }
+
+    /**
+     * Enhanced form switching — focus first input after transition.
+     */
+    const origShowLogin = window.showLoginForm;
+    const origShowRegister = window.showRegisterForm;
+    const origShowReset = window.showResetPassword;
+
+    window.showLoginForm = function () {
+        origShowLogin();
+        requestAnimationFrame(() => {
+            document.getElementById('login-email')?.focus();
+        });
+    };
+
+    window.showRegisterForm = function () {
+        origShowRegister();
+        requestAnimationFrame(() => {
+            document.getElementById('register-firstname')?.focus();
+        });
+    };
+
+    window.showResetPassword = function () {
+        origShowReset();
+        requestAnimationFrame(() => {
+            document.getElementById('reset-email')?.focus();
+        });
+    };
+
+    /**
+     * Enhanced password toggle — add visual feedback class.
+     */
+    const origTogglePassword = window.togglePassword;
+    window.togglePassword = function (inputId) {
+        origTogglePassword(inputId);
+        const input = document.getElementById(inputId);
+        const btn = input?.parentElement?.querySelector('.password-toggle');
+        if (btn) {
+            const isText = input.type === 'text';
+            btn.classList.toggle('toggled', isText);
+        }
+    };
+})();

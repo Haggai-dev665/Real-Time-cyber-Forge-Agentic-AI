@@ -391,6 +391,97 @@ async def predict_threat(model_id: str, features: Dict[str, Any]) -> Dict[str, A
     return await client.predict(model_id, features)
 
 
+async def detect_threat(
+    evidence_text: str,
+    url: Optional[str] = None,
+    risk_score_override: Optional[float] = None
+) -> Dict[str, Any]:
+    """
+    Detect threats from evidence text via HF Space /detect_threat endpoint.
+    Matches the contract expected by mlServiceClient.classifyThreat().
+    
+    Args:
+        evidence_text: Raw evidence string (browser data, log entry, etc.)
+        url: Optional URL to include in the analysis
+        risk_score_override: Optional manual risk score (0-1)
+    
+    Returns:
+        Dict with threat_type, risk_score, categories, recommendations, etc.
+    """
+    client = get_hf_client()
+    try:
+        if client._client:
+            result = client._client.predict(
+                evidence_text,
+                url or "",
+                risk_score_override if risk_score_override is not None else -1,
+                api_name="/detect_threat"
+            )
+            return json.loads(result) if isinstance(result, str) else result
+        else:
+            # HTTP fallback
+            async with httpx.AsyncClient(timeout=30.0) as http:
+                response = await http.post(
+                    f"{client.space_url}/api/detect_threat",
+                    json={"data": [evidence_text, url or "", risk_score_override or -1]}
+                )
+                response.raise_for_status()
+                data = response.json()
+                raw = data.get("data", [{}])[0]
+                return json.loads(raw) if isinstance(raw, str) else raw
+    except Exception as e:
+        logger.error(f"detect_threat failed: {e}")
+        return {
+            "threat_type": "unknown",
+            "risk_score": 0.5,
+            "categories": {},
+            "recommendations": ["Manual review recommended — detection service unavailable"],
+            "error": str(e)
+        }
+
+
+async def explain_threat(threat_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Get a human-readable explanation of a threat detection result
+    via HF Space /explain_threat endpoint.
+    Matches the contract expected by mlServiceClient.getExplanation().
+    
+    Args:
+        threat_data: The detection result dict (from detect_threat or classify)
+    
+    Returns:
+        Dict with explanation, severity, recommendations, confidence, etc.
+    """
+    client = get_hf_client()
+    threat_json = json.dumps(threat_data) if isinstance(threat_data, dict) else threat_data
+    try:
+        if client._client:
+            result = client._client.predict(
+                threat_json,
+                api_name="/explain_threat"
+            )
+            return json.loads(result) if isinstance(result, str) else result
+        else:
+            async with httpx.AsyncClient(timeout=30.0) as http:
+                response = await http.post(
+                    f"{client.space_url}/api/explain_threat",
+                    json={"data": [threat_json]}
+                )
+                response.raise_for_status()
+                data = response.json()
+                raw = data.get("data", [{}])[0]
+                return json.loads(raw) if isinstance(raw, str) else raw
+    except Exception as e:
+        logger.error(f"explain_threat failed: {e}")
+        return {
+            "explanation": f"Unable to generate explanation: {e}",
+            "severity": "unknown",
+            "recommendations": ["Manual analysis recommended"],
+            "confidence": 0.0,
+            "error": str(e)
+        }
+
+
 async def batch_predict_threats(
     model_id: str, 
     batch_features: List[Dict[str, Any]]
@@ -432,5 +523,16 @@ if __name__ == "__main__":
             features = {"feature1": 0.5, "feature2": 1.2, "feature3": 0.8}
             result = await client.predict(model_id, features)
             print(f"Prediction: {result}")
+        
+        # Example threat detection
+        detection = await detect_threat(
+            "Suspicious login attempt from IP 192.168.1.100 with credential stuffing pattern",
+            url="https://example.com/login"
+        )
+        print(f"Threat Detection: {json.dumps(detection, indent=2)}")
+        
+        # Example threat explanation
+        explanation = await explain_threat(detection)
+        print(f"Explanation: {json.dumps(explanation, indent=2)}")
     
     asyncio.run(main())

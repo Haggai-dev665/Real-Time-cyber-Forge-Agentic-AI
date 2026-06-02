@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { validationResult } = require('express-validator');
+const { appwriteService } = require('../services/appwriteService');
 
 class AuthController {
   /**
@@ -25,6 +26,13 @@ class AuthController {
 
       const { email, password, firstName, lastName, role } = req.body;
 
+      if (!appwriteService?.isInitialized) {
+        return res.status(503).json({
+          success: false,
+          message: 'Authentication service unavailable. Appwrite is not initialized.'
+        });
+      }
+
       // Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -38,10 +46,28 @@ class AuthController {
       const saltRounds = 12;
       const passwordHash = await bcrypt.hash(password, saltRounds);
 
+      let appwriteAuthUser;
+      try {
+        appwriteAuthUser = await appwriteService.registerAppwriteUser({
+          email,
+          password,
+          firstName,
+          lastName,
+          role: role || 'user'
+        });
+      } catch (appwriteError) {
+        console.error('Appwrite registration error:', appwriteError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create account in Appwrite. Please try again.'
+        });
+      }
+
       // Create new user
       const user = new User({
         email,
         passwordHash,
+        appwriteUserId: appwriteAuthUser.$id,
         firstName,
         lastName,
         role: role || 'user',
@@ -73,6 +99,7 @@ class AuthController {
         data: {
           user: {
             id: user._id,
+            appwriteUserId: user.appwriteUserId,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,

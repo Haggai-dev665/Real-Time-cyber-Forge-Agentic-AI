@@ -204,3 +204,11 @@ temp/
 test_datasets/
 __pycache__/
 .pytest_cache/
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
+
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc

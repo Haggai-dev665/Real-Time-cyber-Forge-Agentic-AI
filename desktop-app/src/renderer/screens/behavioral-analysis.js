@@ -1,578 +1,485 @@
 /**
- * Behavioral Analysis Screen Component
- * Advanced behavioral analysis for threat detection
+ * BehavioralAnalysisScreen
+ * CyberForge — SPA screen class
+ * Tokens only: no hardcoded colours. XSS-safe via _esc().
  */
 
 class BehavioralAnalysisScreen {
-    constructor() {
-        this.isInitialized = false;
-        this.analysisResults = [];
-        this.activeAnalyses = new Map();
-        this.baselineData = new Map();
+  constructor() {
+    this._container = null;
+    this._analysisPanel = null;
+    this._tableBody = null;
+    this._data = [];
+    this._detailsVisible = false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // XSS helper
+  // ---------------------------------------------------------------------------
+  _esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Static fallback data
+  // ---------------------------------------------------------------------------
+  _staticData() {
+    return [
+      { entity: 'jdoe@corp.com',     type: 'Off-hours Login',       score: 92, severity: 'critical', firstSeen: '2026-04-30 02:14', status: 'Active' },
+      { entity: 'WORKSTATION-042',   type: 'Lateral Movement',      score: 87, severity: 'high',     firstSeen: '2026-04-30 09:31', status: 'Investigating' },
+      { entity: 'svc_backup',        type: 'Privilege Escalation',  score: 78, severity: 'high',     firstSeen: '2026-04-29 18:05', status: 'Investigating' },
+      { entity: 'msmith@corp.com',   type: 'Data Exfiltration',     score: 65, severity: 'warning',  firstSeen: '2026-04-29 14:22', status: 'Active' },
+      { entity: 'FILESERVER-01',     type: 'Anomalous Access Rate', score: 54, severity: 'warning',  firstSeen: '2026-04-29 11:40', status: 'Resolved' },
+      { entity: 'api_gateway',       type: 'Unexpected Protocol',   score: 44, severity: 'info',     firstSeen: '2026-04-28 08:17', status: 'Resolved' },
+      { entity: 'rjones@corp.com',   type: 'Geo-velocity Anomaly',  score: 71, severity: 'high',     firstSeen: '2026-04-30 06:58', status: 'Active' },
+      { entity: 'DESKTOP-115',       type: 'DNS Tunnelling',        score: 83, severity: 'critical', firstSeen: '2026-04-30 07:42', status: 'Investigating' },
+    ];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hourly bar data (last 24 h, pseudo-random but deterministic per hour)
+  // ---------------------------------------------------------------------------
+  _hourlyData() {
+    const seed = [3, 1, 0, 2, 1, 0, 5, 8, 14, 18, 22, 19, 17, 21, 16, 13, 11, 14, 19, 23, 17, 12, 8, 5];
+    const now = new Date();
+    const currentHour = now.getHours();
+    return seed.map((count, i) => ({
+      hour: ((currentHour - 23 + i + 24) % 24),
+      count,
+    }));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch from backend, fall back to static
+  // ---------------------------------------------------------------------------
+  async _fetchData() {
+    try {
+      const res = await fetch('http://localhost:3001/api/threats?type=behavioral&limit=20');
+      if (!res.ok) throw new Error('non-2xx');
+      const json = await res.json();
+      const threats = Array.isArray(json) ? json : (json.data || json.threats || []);
+      if (!threats.length) return this._staticData();
+      return threats.map(t => ({
+        entity:    t.source || t.entity || t.host || 'Unknown',
+        type:      t.type   || t.anomalyType || 'Behavioral Anomaly',
+        score:     Math.min(100, Math.max(0, parseInt(t.score || t.severity_score || 50, 10))),
+        severity:  this._mapSeverity(t.severity),
+        firstSeen: t.timestamp || t.firstSeen || t.created_at || '—',
+        status:    t.status || 'Active',
+      }));
+    } catch (_) {
+      return this._staticData();
     }
+  }
 
-    async init() {
-        if (this.isInitialized) return;
-        
-        console.log('Initializing Behavioral Analysis Screen...');
-        await this.loadAnalysisData();
-        this.setupEventListeners();
-        this.startRealTimeMonitoring();
-        this.isInitialized = true;
-    }
+  _mapSeverity(s) {
+    const v = String(s || '').toLowerCase();
+    if (v === 'critical') return 'critical';
+    if (v === 'high')     return 'high';
+    if (v === 'medium' || v === 'warning') return 'warning';
+    return 'info';
+  }
 
-    render() {
-        return `
-            <div class="screen behavioral-analysis-screen">
-                <div class="screen-header">
-                    <div class="header-content">
-                        <div class="header-title">
-                            <i class="fas fa-user-check"></i>
-                            <h1>Behavioral Analysis</h1>
-                            <span class="status-badge analyzing">Analyzing</span>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn btn-primary" id="new-analysis-btn">
-                                <i class="fas fa-plus"></i>
-                                New Analysis
-                            </button>
-                            <button class="btn btn-secondary" id="baseline-config-btn">
-                                <i class="fas fa-cog"></i>
-                                Baseline Config
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  _severityBadgeClass(severity) {
+    const map = { critical: 'error', high: 'error', warning: 'warning', info: 'info' };
+    return map[severity] || 'info';
+  }
 
-                <div class="screen-content">
-                    <!-- Analysis Types -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Analysis Types</h2>
-                        </div>
-                        <div class="analysis-types-grid">
-                            <div class="analysis-type-card" data-type="user-behavior">
-                                <div class="card-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="card-content">
-                                    <h3>User Behavior</h3>
-                                    <p>Analyze user activity patterns and detect anomalies</p>
-                                    <div class="card-stats">
-                                        <span class="stat-value" id="user-anomalies">0</span>
-                                        <span class="stat-label">Anomalies Detected</span>
-                                    </div>
-                                </div>
-                                <button class="card-action-btn" onclick="behavioralAnalysisScreen.startAnalysis('user-behavior')">
-                                    <i class="fas fa-play"></i>
-                                    Start
-                                </button>
-                            </div>
-                            
-                            <div class="analysis-type-card" data-type="process-behavior">
-                                <div class="card-icon">
-                                    <i class="fas fa-microchip"></i>
-                                </div>
-                                <div class="card-content">
-                                    <h3>Process Behavior</h3>
-                                    <p>Monitor process execution and resource usage patterns</p>
-                                    <div class="card-stats">
-                                        <span class="stat-value" id="process-anomalies">0</span>
-                                        <span class="stat-label">Suspicious Processes</span>
-                                    </div>
-                                </div>
-                                <button class="card-action-btn" onclick="behavioralAnalysisScreen.startAnalysis('process-behavior')">
-                                    <i class="fas fa-play"></i>
-                                    Start
-                                </button>
-                            </div>
-                            
-                            <div class="analysis-type-card" data-type="network-behavior">
-                                <div class="card-icon">
-                                    <i class="fas fa-network-wired"></i>
-                                </div>
-                                <div class="card-content">
-                                    <h3>Network Behavior</h3>
-                                    <p>Analyze network traffic patterns and communication flows</p>
-                                    <div class="card-stats">
-                                        <span class="stat-value" id="network-anomalies">0</span>
-                                        <span class="stat-label">Traffic Anomalies</span>
-                                    </div>
-                                </div>
-                                <button class="card-action-btn" onclick="behavioralAnalysisScreen.startAnalysis('network-behavior')">
-                                    <i class="fas fa-play"></i>
-                                    Start
-                                </button>
-                            </div>
-                            
-                            <div class="analysis-type-card" data-type="application-behavior">
-                                <div class="card-icon">
-                                    <i class="fas fa-window-maximize"></i>
-                                </div>
-                                <div class="card-content">
-                                    <h3>Application Behavior</h3>
-                                    <p>Monitor application usage and interaction patterns</p>
-                                    <div class="card-stats">
-                                        <span class="stat-value" id="app-anomalies">0</span>
-                                        <span class="stat-label">App Anomalies</span>
-                                    </div>
-                                </div>
-                                <button class="card-action-btn" onclick="behavioralAnalysisScreen.startAnalysis('application-behavior')">
-                                    <i class="fas fa-play"></i>
-                                    Start
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+  _statusStyle(status) {
+    const s = String(status).toLowerCase();
+    if (s === 'active')        return 'error';
+    if (s === 'investigating') return 'warning';
+    if (s === 'resolved')      return 'success';
+    return 'info';
+  }
 
-                    <!-- Active Analyses -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Active Analyses</h2>
-                            <div class="header-controls">
-                                <select id="analysis-filter">
-                                    <option value="all">All Analyses</option>
-                                    <option value="running">Running</option>
-                                    <option value="anomalies">Anomalies Found</option>
-                                    <option value="completed">Completed</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="active-analyses-container" id="active-analyses">
-                            <!-- Active analyses will be rendered here -->
-                        </div>
-                    </div>
+  // ---------------------------------------------------------------------------
+  // Stats computation
+  // ---------------------------------------------------------------------------
+  _stats(data) {
+    const anomalies   = data.length;
+    const deviations  = data.filter(d => d.score >= 70).length;
+    const users       = new Set(data.map(d => d.entity)).size;
+    const eventsPerSec = Math.floor(Math.random() * 900) + 200; // simulated
+    return { anomalies, deviations, users, eventsPerSec };
+  }
 
-                    <!-- Anomaly Detection Results -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Anomaly Detection Results</h2>
-                            <div class="header-controls">
-                                <select id="severity-filter">
-                                    <option value="all">All Severities</option>
-                                    <option value="critical">Critical</option>
-                                    <option value="high">High</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="low">Low</option>
-                                </select>
-                                <button class="btn btn-sm" id="export-anomalies-btn">
-                                    <i class="fas fa-download"></i>
-                                    Export
-                                </button>
-                            </div>
-                        </div>
-                        <div class="anomalies-container">
-                            <table class="data-table" id="anomalies-table">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Type</th>
-                                        <th>Entity</th>
-                                        <th>Anomaly</th>
-                                        <th>Severity</th>
-                                        <th>Confidence</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="anomalies-tbody">
-                                    <!-- Anomalies will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+  // ---------------------------------------------------------------------------
+  // Render helpers
+  // ---------------------------------------------------------------------------
+  _renderStats(stats) {
+    const items = [
+      { label: 'Anomalies Detected',  value: stats.anomalies,   icon: '⚠' },
+      { label: 'Baseline Deviations', value: stats.deviations,  icon: '📊' },
+      { label: 'Users Monitored',     value: stats.users,       icon: '👤' },
+      { label: 'Events / sec',        value: stats.eventsPerSec, icon: '⚡' },
+    ];
+    return `
+      <div class="ba-stats-row">
+        ${items.map(it => `
+          <div class="ba-stat-card cf-card">
+            <div class="ba-stat-icon">${it.icon}</div>
+            <div class="ba-stat-value">${this._esc(String(it.value))}</div>
+            <div class="ba-stat-label">${this._esc(it.label)}</div>
+          </div>
+        `).join('')}
+      </div>`;
+  }
 
-                    <!-- Behavioral Baselines -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Behavioral Baselines</h2>
-                            <div class="header-controls">
-                                <button class="btn btn-sm" id="update-baselines-btn">
-                                    <i class="fas fa-sync-alt"></i>
-                                    Update Baselines
-                                </button>
-                            </div>
-                        </div>
-                        <div class="baselines-grid" id="baselines-grid">
-                            <!-- Baseline cards will be rendered here -->
-                        </div>
-                    </div>
+  _renderTimeline() {
+    const hourly  = this._hourlyData();
+    const maxVal  = Math.max(...hourly.map(h => h.count), 1);
+    const bars    = hourly.map(h => {
+      const pct     = Math.round((h.count / maxVal) * 100);
+      const opacity = 0.3 + (pct / 100) * 0.7;
+      const label   = String(h.hour).padStart(2, '0') + ':00';
+      return `
+        <div class="ba-bar-wrap" title="${this._esc(label)}: ${this._esc(String(h.count))} anomalies">
+          <div class="ba-bar" style="height:${pct}%;opacity:${opacity.toFixed(2)}"></div>
+          <div class="ba-bar-label">${this._esc(String(h.hour).padStart(2,'0'))}</div>
+        </div>`;
+    }).join('');
 
-                    <!-- Analysis Insights -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>AI-Powered Insights</h2>
-                        </div>
-                        <div class="insights-container" id="analysis-insights">
-                            <!-- AI insights will be rendered here -->
-                        </div>
-                    </div>
-                </div>
+    return `
+      <div class="cf-card ba-timeline-card">
+        <div class="cf-card-header">
+          <h3 class="cf-card-title">Anomaly Timeline — Last 24 Hours</h3>
+        </div>
+        <div class="cf-card-body">
+          <div class="ba-chart">${bars}</div>
+          <div class="ba-chart-legend">
+            <span class="ba-legend-dot"></span>
+            <span style="font-size:var(--cf-text-xs);color:var(--cf-text-muted)">Anomaly Events per Hour</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  _renderTable(data) {
+    const rows = data.map((row, idx) => {
+      const badgeClass  = this._severityBadgeClass(row.severity);
+      const statusClass = this._statusStyle(row.status);
+      const barWidth    = Math.min(100, row.score);
+      return `
+        <tr class="ba-row" data-idx="${idx}">
+          <td class="ba-cell">
+            <span class="ba-entity-name">${this._esc(row.entity)}</span>
+          </td>
+          <td class="ba-cell">${this._esc(row.type)}</td>
+          <td class="ba-cell">
+            <div class="ba-score-wrap">
+              <div class="ba-score-bar">
+                <div class="ba-score-fill" style="width:${barWidth}%"></div>
+              </div>
+              <span class="ba-score-val">${this._esc(String(row.score))}%</span>
             </div>
-        `;
-    }
+          </td>
+          <td class="ba-cell">
+            <span class="cf-badge ${this._esc(badgeClass)}">${this._esc(row.severity.toUpperCase())}</span>
+          </td>
+          <td class="ba-cell ba-mono">${this._esc(row.firstSeen)}</td>
+          <td class="ba-cell">
+            <span class="cf-badge ${this._esc(statusClass)}">${this._esc(row.status)}</span>
+          </td>
+          <td class="ba-cell">
+            <button class="cf-btn sm ba-analyze-btn" data-idx="${idx}">Analyze Pattern</button>
+          </td>
+        </tr>`;
+    }).join('');
 
-    async loadAnalysisData() {
-        try {
-            // Load active analyses
-            const analysesResponse = await fetch('/api/behavioral-analysis/active');
-            const analysesData = await analysesResponse.json();
-            
-            if (analysesData.success) {
-                this.activeAnalyses = new Map(analysesData.analyses.map(analysis => [analysis.id, analysis]));
-                this.updateActiveAnalysesDisplay();
-            }
+    return `
+      <div class="cf-card">
+        <div class="cf-card-header">
+          <h3 class="cf-card-title">Anomaly Events</h3>
+          <span class="cf-badge info">${data.length} Events</span>
+        </div>
+        <div class="cf-card-body ba-table-body">
+          <table class="ba-table">
+            <thead>
+              <tr>
+                <th class="ba-th">Entity</th>
+                <th class="ba-th">Anomaly Type</th>
+                <th class="ba-th">Deviation Score</th>
+                <th class="ba-th">Severity</th>
+                <th class="ba-th">First Seen</th>
+                <th class="ba-th">Status</th>
+                <th class="ba-th">Action</th>
+              </tr>
+            </thead>
+            <tbody id="ba-tbody">${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
 
-            // Load anomalies
-            const anomaliesResponse = await fetch('/api/behavioral-analysis/anomalies');
-            const anomaliesData = await anomaliesResponse.json();
-            
-            if (anomaliesData.success) {
-                this.updateAnomaliesTable(anomaliesData.anomalies);
-            }
+  _renderDetailsPanel() {
+    return `
+      <div class="cf-card ba-details-panel" id="ba-details-panel" style="display:none">
+        <div class="cf-card-header">
+          <h3 class="cf-card-title" id="ba-details-title">Pattern Analysis</h3>
+          <button class="cf-btn sm" id="ba-details-close">Close</button>
+        </div>
+        <div class="cf-card-body">
+          <div id="ba-details-content" class="ba-details-content">
+            <div class="cf-loading"><div class="cf-spinner"></div></div>
+          </div>
+        </div>
+      </div>`;
+  }
 
-            // Load baselines
-            await this.loadBaselines();
-            
-            // Load statistics
-            await this.loadStatistics();
-            
-        } catch (error) {
-            console.error('Error loading behavioral analysis data:', error);
-            this.showNotification('Failed to load analysis data', 'error');
+  _buildHTML(data) {
+    const stats = this._stats(data);
+    return `
+      <style>
+        /* ── BehavioralAnalysisScreen local styles ── */
+        .ba-stats-row {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          gap: var(--cf-space-4);
+          margin-bottom: var(--cf-space-6);
         }
-    }
-
-    setupEventListeners() {
-        // New analysis button
-        document.getElementById('new-analysis-btn')?.addEventListener('click', () => {
-            this.showNewAnalysisModal();
-        });
-
-        // Baseline configuration
-        document.getElementById('baseline-config-btn')?.addEventListener('click', () => {
-            this.showBaselineConfigModal();
-        });
-
-        // Filters
-        document.getElementById('analysis-filter')?.addEventListener('change', (e) => {
-            this.filterAnalyses(e.target.value);
-        });
-
-        document.getElementById('severity-filter')?.addEventListener('change', (e) => {
-            this.filterAnomalies(e.target.value);
-        });
-
-        // Export anomalies
-        document.getElementById('export-anomalies-btn')?.addEventListener('click', () => {
-            this.exportAnomalies();
-        });
-
-        // Update baselines
-        document.getElementById('update-baselines-btn')?.addEventListener('click', () => {
-            this.updateBaselines();
-        });
-    }
-
-    async startAnalysis(analysisType) {
-        try {
-            const response = await fetch('/api/behavioral-analysis/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: analysisType,
-                    duration: '24h',
-                    sensitivity: 'medium',
-                    enableML: true,
-                    realTime: true
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                this.addActiveAnalysis(result.analysis);
-                this.showNotification(`${analysisType.replace('-', ' ')} analysis started`, 'success');
-            }
-        } catch (error) {
-            console.error('Error starting analysis:', error);
-            this.showNotification('Failed to start analysis', 'error');
+        .ba-stat-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: var(--cf-space-5);
+          text-align: center;
+          gap: var(--cf-space-2);
         }
-    }
-
-    addActiveAnalysis(analysis) {
-        this.activeAnalyses.set(analysis.id, analysis);
-        this.updateActiveAnalysesDisplay();
-    }
-
-    updateActiveAnalysesDisplay() {
-        const container = document.getElementById('active-analyses');
-        if (!container) return;
-
-        container.innerHTML = Array.from(this.activeAnalyses.values())
-            .map(analysis => this.renderAnalysisCard(analysis))
-            .join('');
-    }
-
-    renderAnalysisCard(analysis) {
-        const progress = analysis.progress || 0;
-        const statusClass = analysis.status === 'completed' ? 'success' : 
-                           analysis.status === 'anomalies' ? 'warning' : 'info';
-
-        return `
-            <div class="analysis-card" data-analysis-id="${analysis.id}">
-                <div class="card-header">
-                    <div class="analysis-info">
-                        <h3>${analysis.name || analysis.type}</h3>
-                        <div class="analysis-meta">
-                            <span class="analysis-type">${analysis.type}</span>
-                            <span class="analysis-target">${analysis.target}</span>
-                        </div>
-                    </div>
-                    <div class="analysis-status ${statusClass}">
-                        ${analysis.status}
-                    </div>
-                </div>
-                <div class="card-progress">
-                    <div class="progress-info">
-                        <span>Progress: ${progress}%</span>
-                        <span>Runtime: ${this.formatDuration(analysis.runtime || 0)}</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${progress}%"></div>
-                    </div>
-                </div>
-                <div class="analysis-metrics">
-                    <div class="metric-item">
-                        <span class="metric-value">${analysis.dataPoints || 0}</span>
-                        <span class="metric-label">Data Points</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-value">${analysis.anomaliesFound || 0}</span>
-                        <span class="metric-label">Anomalies</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-value">${analysis.confidence || 0}%</span>
-                        <span class="metric-label">Confidence</span>
-                    </div>
-                </div>
-                <div class="card-actions">
-                    <button class="btn btn-sm" onclick="behavioralAnalysisScreen.viewAnalysisDetails('${analysis.id}')">
-                        <i class="fas fa-eye"></i>
-                        Details
-                    </button>
-                    <button class="btn btn-sm" onclick="behavioralAnalysisScreen.pauseAnalysis('${analysis.id}')">
-                        <i class="fas fa-pause"></i>
-                        Pause
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="behavioralAnalysisScreen.stopAnalysis('${analysis.id}')">
-                        <i class="fas fa-stop"></i>
-                        Stop
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    updateAnomaliesTable(anomalies) {
-        const tbody = document.getElementById('anomalies-tbody');
-        if (!tbody) return;
-
-        tbody.innerHTML = anomalies.map(anomaly => `
-            <tr class="anomaly-row ${anomaly.severity.toLowerCase()}">
-                <td>${new Date(anomaly.timestamp).toLocaleString()}</td>
-                <td>
-                    <span class="anomaly-type-badge">${anomaly.type}</span>
-                </td>
-                <td>${anomaly.entity}</td>
-                <td>
-                    <div class="anomaly-description">
-                        <strong>${anomaly.title}</strong>
-                        <p>${anomaly.description}</p>
-                    </div>
-                </td>
-                <td>
-                    <span class="severity-badge ${anomaly.severity.toLowerCase()}">${anomaly.severity}</span>
-                </td>
-                <td>
-                    <div class="confidence-meter">
-                        <div class="confidence-fill" style="width: ${anomaly.confidence}%"></div>
-                        <span class="confidence-text">${anomaly.confidence}%</span>
-                    </div>
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn btn-xs" onclick="behavioralAnalysisScreen.investigateAnomaly('${anomaly.id}')">
-                            <i class="fas fa-search"></i>
-                        </button>
-                        <button class="btn btn-xs" onclick="behavioralAnalysisScreen.dismissAnomaly('${anomaly.id}')">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    async loadBaselines() {
-        try {
-            const response = await fetch('/api/behavioral-analysis/baselines');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.baselineData = new Map(data.baselines.map(baseline => [baseline.type, baseline]));
-                this.updateBaselinesDisplay();
-            }
-        } catch (error) {
-            console.error('Error loading baselines:', error);
+        .ba-stat-icon { font-size: var(--cf-text-2xl); }
+        .ba-stat-value {
+          font-size: var(--cf-text-2xl);
+          font-weight: var(--cf-weight-bold);
+          color: var(--cf-interactive-default);
+          font-family: var(--cf-font-mono);
         }
-    }
-
-    updateBaselinesDisplay() {
-        const container = document.getElementById('baselines-grid');
-        if (!container) return;
-
-        container.innerHTML = Array.from(this.baselineData.values())
-            .map(baseline => this.renderBaselineCard(baseline))
-            .join('');
-    }
-
-    renderBaselineCard(baseline) {
-        return `
-            <div class="baseline-card">
-                <div class="baseline-header">
-                    <h4>${baseline.name}</h4>
-                    <span class="baseline-status ${baseline.status}">${baseline.status}</span>
-                </div>
-                <div class="baseline-metrics">
-                    <div class="baseline-metric">
-                        <span class="metric-label">Data Points:</span>
-                        <span class="metric-value">${baseline.dataPoints || 0}</span>
-                    </div>
-                    <div class="baseline-metric">
-                        <span class="metric-label">Last Updated:</span>
-                        <span class="metric-value">${new Date(baseline.lastUpdated).toLocaleDateString()}</span>
-                    </div>
-                    <div class="baseline-metric">
-                        <span class="metric-label">Accuracy:</span>
-                        <span class="metric-value">${baseline.accuracy || 0}%</span>
-                    </div>
-                </div>
-                <div class="baseline-actions">
-                    <button class="btn btn-xs" onclick="behavioralAnalysisScreen.viewBaseline('${baseline.type}')">
-                        <i class="fas fa-eye"></i>
-                        View
-                    </button>
-                    <button class="btn btn-xs" onclick="behavioralAnalysisScreen.updateBaseline('${baseline.type}')">
-                        <i class="fas fa-sync-alt"></i>
-                        Update
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    async loadStatistics() {
-        try {
-            const response = await fetch('/api/behavioral-analysis/statistics');
-            const data = await response.json();
-            
-            if (data.success) {
-                document.getElementById('user-anomalies').textContent = data.stats.userAnomalies;
-                document.getElementById('process-anomalies').textContent = data.stats.processAnomalies;
-                document.getElementById('network-anomalies').textContent = data.stats.networkAnomalies;
-                document.getElementById('app-anomalies').textContent = data.stats.appAnomalies;
-            }
-        } catch (error) {
-            console.error('Error loading statistics:', error);
+        .ba-stat-label {
+          font-size: var(--cf-text-xs);
+          color: var(--cf-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
-    }
 
-    startRealTimeMonitoring() {
-        // Update data every 30 seconds
-        setInterval(() => {
-            this.loadAnalysisData();
-        }, 30000);
-    }
-
-    formatDuration(seconds) {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        } else if (minutes > 0) {
-            return `${minutes}m ${secs}s`;
-        } else {
-            return `${secs}s`;
+        /* Timeline */
+        .ba-timeline-card { margin-bottom: var(--cf-space-6); }
+        .ba-chart {
+          display: flex;
+          align-items: flex-end;
+          gap: 4px;
+          height: 120px;
+          padding: var(--cf-space-3) 0;
+          border-bottom: 1px solid var(--cf-border-light);
         }
-    }
-
-    showNotification(message, type = 'info') {
-        if (window.notificationSystem) {
-            window.notificationSystem.show(message, type);
+        .ba-bar-wrap {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-end;
+          height: 100%;
+          gap: 4px;
+          cursor: default;
         }
-    }
+        .ba-bar {
+          width: 100%;
+          background: var(--cf-interactive-default);
+          border-radius: var(--cf-radius-sm) var(--cf-radius-sm) 0 0;
+          min-height: 3px;
+          transition: opacity 0.2s;
+        }
+        .ba-bar-wrap:hover .ba-bar { opacity: 1 !important; }
+        .ba-bar-label {
+          font-size: 9px;
+          color: var(--cf-text-muted);
+          font-family: var(--cf-font-mono);
+        }
+        .ba-chart-legend {
+          display: flex;
+          align-items: center;
+          gap: var(--cf-space-2);
+          margin-top: var(--cf-space-2);
+        }
+        .ba-legend-dot {
+          width: 10px; height: 10px;
+          border-radius: var(--cf-radius-full);
+          background: var(--cf-interactive-default);
+          opacity: 0.8;
+          display: inline-block;
+        }
 
-    // Action methods
-    async viewAnalysisDetails(analysisId) {
-        console.log('Viewing analysis details for:', analysisId);
-    }
+        /* Table */
+        .ba-table-body { overflow-x: auto; padding: 0; }
+        .ba-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: var(--cf-text-sm);
+        }
+        .ba-th {
+          text-align: left;
+          padding: var(--cf-space-3) var(--cf-space-4);
+          background: var(--cf-table-header-bg);
+          color: var(--cf-text-secondary);
+          font-size: var(--cf-text-xs);
+          font-weight: var(--cf-weight-semibold);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border-bottom: 1px solid var(--cf-table-border);
+          white-space: nowrap;
+        }
+        .ba-row { border-bottom: 1px solid var(--cf-border-light); }
+        .ba-row:hover { background: var(--cf-table-row-hover); }
+        .ba-cell {
+          padding: var(--cf-space-3) var(--cf-space-4);
+          color: var(--cf-text-primary);
+          vertical-align: middle;
+        }
+        .ba-entity-name {
+          font-weight: var(--cf-weight-medium);
+          font-family: var(--cf-font-mono);
+          font-size: var(--cf-text-xs);
+        }
+        .ba-mono { font-family: var(--cf-font-mono); font-size: var(--cf-text-xs); }
 
-    async pauseAnalysis(analysisId) {
-        console.log('Pausing analysis:', analysisId);
-    }
+        /* Score bar */
+        .ba-score-wrap { display: flex; align-items: center; gap: var(--cf-space-2); min-width: 110px; }
+        .ba-score-bar {
+          flex: 1;
+          height: 6px;
+          background: var(--cf-surface-2);
+          border-radius: var(--cf-radius-full);
+          overflow: hidden;
+        }
+        .ba-score-fill {
+          height: 100%;
+          background: var(--cf-interactive-default);
+          border-radius: var(--cf-radius-full);
+          transition: width 0.4s ease;
+        }
+        .ba-score-val {
+          font-size: var(--cf-text-xs);
+          font-family: var(--cf-font-mono);
+          color: var(--cf-text-secondary);
+          white-space: nowrap;
+        }
 
-    async stopAnalysis(analysisId) {
-        console.log('Stopping analysis:', analysisId);
-    }
+        /* Details panel */
+        .ba-details-panel { margin-top: var(--cf-space-6); }
+        .ba-details-content {
+          font-size: var(--cf-text-sm);
+          color: var(--cf-text-primary);
+          line-height: 1.7;
+          white-space: pre-wrap;
+          font-family: var(--cf-font-primary);
+        }
+        .ba-details-content .ba-result-text {
+          padding: var(--cf-space-4);
+          background: var(--cf-surface-1);
+          border-radius: var(--cf-radius-md);
+          border: 1px solid var(--cf-border-light);
+        }
+        .ba-error-msg {
+          color: var(--cf-status-error);
+          background: var(--cf-status-error-bg);
+          padding: var(--cf-space-3) var(--cf-space-4);
+          border-radius: var(--cf-radius-md);
+          font-size: var(--cf-text-sm);
+        }
+      </style>
 
-    async investigateAnomaly(anomalyId) {
-        console.log('Investigating anomaly:', anomalyId);
-    }
+      <div class="screen-header">
+        <div>
+          <h1 class="screen-title">Behavioral Analysis</h1>
+          <p class="screen-subtitle">User and entity behavior analytics — anomaly detection and pattern investigation</p>
+        </div>
+        <div class="screen-actions">
+          <button class="cf-btn sm" id="ba-refresh-btn">Refresh</button>
+        </div>
+      </div>
 
-    async dismissAnomaly(anomalyId) {
-        console.log('Dismissing anomaly:', anomalyId);
-    }
+      ${this._renderStats(stats)}
+      ${this._renderTimeline()}
+      ${this._renderTable(data)}
+      ${this._renderDetailsPanel()}
+    `;
+  }
 
-    async viewBaseline(baselineType) {
-        console.log('Viewing baseline:', baselineType);
-    }
+  // ---------------------------------------------------------------------------
+  // Analyze a row via ML endpoint
+  // ---------------------------------------------------------------------------
+  async _analyzePattern(idx) {
+    const row    = this._data[idx];
+    if (!row) return;
+    const panel  = this._container.querySelector('#ba-details-panel');
+    const title  = this._container.querySelector('#ba-details-title');
+    const content = this._container.querySelector('#ba-details-content');
 
-    async updateBaseline(baselineType) {
-        console.log('Updating baseline:', baselineType);
-    }
+    title.textContent = `Pattern Analysis — ${row.entity}`;
+    content.innerHTML = '<div class="cf-loading"><div class="cf-spinner"></div></div>';
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    async updateBaselines() {
-        console.log('Updating all baselines');
+    try {
+      const res = await fetch('http://localhost:8001/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query:   'behavioral analysis of entity ' + row.entity,
+          context: 'behavioral',
+        }),
+      });
+      if (!res.ok) throw new Error(`ML service returned ${res.status}`);
+      const json = await res.json();
+      const text = json.result || json.analysis || json.response || JSON.stringify(json, null, 2);
+      content.innerHTML = `<div class="ba-result-text">${this._esc(text)}</div>`;
+    } catch (err) {
+      content.innerHTML = `<div class="ba-error-msg">Analysis unavailable: ${this._esc(err.message)}</div>`;
     }
+  }
 
-    showNewAnalysisModal() {
-        console.log('Showing new analysis modal');
-    }
+  // ---------------------------------------------------------------------------
+  // Event wiring
+  // ---------------------------------------------------------------------------
+  _bindEvents() {
+    // Analyze buttons
+    this._container.addEventListener('click', e => {
+      const btn = e.target.closest('.ba-analyze-btn');
+      if (btn) {
+        const idx = parseInt(btn.dataset.idx, 10);
+        this._analyzePattern(idx);
+        return;
+      }
+      if (e.target.id === 'ba-details-close') {
+        const panel = this._container.querySelector('#ba-details-panel');
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+      if (e.target.id === 'ba-refresh-btn') {
+        this._reload();
+      }
+    });
+  }
 
-    showBaselineConfigModal() {
-        console.log('Showing baseline configuration modal');
-    }
+  async _reload() {
+    if (!this._container) return;
+    this._data = await this._fetchData();
+    this._container.innerHTML = this._buildHTML(this._data);
+    this._bindEvents();
+  }
 
-    filterAnalyses(filter) {
-        console.log('Filtering analyses by:', filter);
-    }
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+  async show(container) {
+    this._container = container;
+    container.innerHTML = '<div class="cf-loading"><div class="cf-spinner"></div></div>';
+    this._data = await this._fetchData();
+    container.innerHTML = this._buildHTML(this._data);
+    this._bindEvents();
+  }
 
-    filterAnomalies(severity) {
-        console.log('Filtering anomalies by severity:', severity);
-    }
-
-    exportAnomalies() {
-        console.log('Exporting anomalies');
-    }
+  hide() {
+    this._container = null;
+  }
 }
 
-// Initialize and export
-const behavioralAnalysisScreen = new BehavioralAnalysisScreen();
-
-// Auto-initialize when screen is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.behavioral-analysis-screen')) {
-        behavioralAnalysisScreen.init();
-    }
-});
+window.BehavioralAnalysisScreen = BehavioralAnalysisScreen;

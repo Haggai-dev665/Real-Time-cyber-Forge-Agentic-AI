@@ -1,0 +1,110 @@
+/* ============================================================
+   CyberForge — pre-app screens (loading / login / register / onboarding)
+   Shared styling + the animated "forge" illustration
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#000;font-family:var(--sans);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;
+  display:flex;align-items:center;justify-content:center}
+.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:
+  radial-gradient(1200px 700px at 70% -10%, #0c1726 0%, transparent 60%),
+  radial-gradient(900px 600px at 10% 110%, #0a1320 0%, transparent 55%), #03050a}
+.window{position:relative;width:1440px;height:824px;flex:none;transform-origin:center center;overflow:hidden;
+  border:1px solid var(--border-2);border-radius:10px;
+  background:radial-gradient(1100px 800px at 78% 0%, rgba(246,157,57,0.05), transparent 55%),
+    radial-gradient(900px 700px at 0% 100%, rgba(43,212,238,0.05), transparent 55%),
+    linear-gradient(180deg,#080c15 0%, #060910 100%);
+  box-shadow:0 40px 120px -20px rgba(0,0,0,0.8)}
+/* animated ambient grid */
+.bg-grid{position:absolute;inset:0;opacity:.5;pointer-events:none;
+  background-image:linear-gradient(rgba(120,150,190,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(120,150,190,.04) 1px,transparent 1px);
+  background-size:40px 40px;mask:radial-gradient(circle at 50% 50%,#000,transparent 80%)}
+.bg-scan{position:absolute;left:0;right:0;height:300px;top:-300px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(43,212,238,.04),transparent);animation:bgscan 7s linear infinite}
+@keyframes bgscan{0%{top:-300px}100%{top:100%}}
+
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:rgba(130,160,200,.18)}::-webkit-scrollbar-track{background:transparent}
+
+/* ===== FORGE ILLUSTRATION ===== */
+.forge{position:relative;display:grid;place-items:center}
+.forge .forge-rings{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.forge .ringA{transform-origin:110px 110px;animation:spin 14s linear infinite}
+.forge .ringB{transform-origin:110px 110px;animation:spin 9s linear infinite reverse}
+.forge .orbit{transform-origin:110px 110px;animation:spin 6s linear infinite}
+.forge .orbit2{transform-origin:110px 110px;animation:spin 10s linear infinite reverse}
+.forge .forge-mark{position:relative;width:44%;height:44%;overflow:visible;filter:drop-shadow(0 6px 24px rgba(246,157,57,.35))}
+.forge-mark .sq{stroke-dasharray:232;stroke-dashoffset:232;animation:fdraw 1.3s .1s ease forwards}
+.forge-mark .tri{transform-origin:30px 45px;transform:scaleY(0);animation:frise 1s .7s cubic-bezier(.2,.9,.25,1) forwards}
+.forge-mark .triIn{transform-origin:30px 45px;transform:scaleY(0);animation:frise .9s 1s cubic-bezier(.2,.9,.25,1) forwards}
+.forge-mark .sage{transform-origin:30px 45px;opacity:0;animation:fdot .5s 1.5s ease forwards, pulse 2.2s 1.6s infinite}
+@keyframes fdraw{to{stroke-dashoffset:0}}
+@keyframes frise{to{transform:scaleY(1)}}
+@keyframes fdot{to{opacity:1}}
+.embers{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ember{position:absolute;bottom:32%;width:4px;height:4px;border-radius:50%;background:var(--brand-orange);
+  box-shadow:0 0 7px var(--brand-orange);opacity:0;animation:ember linear infinite}
+@keyframes ember{0%{opacity:0;transform:translate(0,0) scale(1)}15%{opacity:.9}100%{opacity:0;transform:translate(var(--dx,0),-150px) scale(.3)}}
+
+/* ===== layout helpers ===== */
+.split{display:flex;height:100%}
+.brand-panel{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:26px;
+  border-right:1px solid var(--border);overflow:hidden;
+  background:radial-gradient(700px 600px at 50% 40%,rgba(246,157,57,.06),transparent 60%)}
+.brand-panel .tagline{text-align:center;max-width:420px;z-index:2}
+.brand-panel .tagline h2{font-size:26px;font-weight:600;letter-spacing:.2px;line-height:1.3}
+.brand-panel .tagline h2 .fg{color:var(--brand-orange)}
+.brand-panel .tagline p{color:var(--dim);font-size:14px;margin-top:12px;line-height:1.6}
+.brand-panel .feat{display:flex;gap:22px;margin-top:8px;z-index:2}
+.brand-panel .feat .f{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.brand-panel .feat .f svg{width:15px;height:15px;color:var(--sage)}
+
+.wordmark{display:flex;align-items:center;gap:14px;z-index:2}
+.wordmark .wm-mark{width:46px;height:46px}
+.wordmark .wm-text{font-size:30px;font-weight:700;letter-spacing:.5px}
+.wordmark .wm-text .fg{color:var(--brand-orange)}
+.wordmark .wm-sub{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--dim)}
+
+.form-panel{width:480px;flex:none;display:flex;flex-direction:column;justify-content:center;padding:0 56px;position:relative}
+.form-panel.wide{width:560px}
+.fp-head{margin-bottom:30px}
+.fp-head .step{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--brand-orange);text-transform:uppercase}
+.fp-head h1{font-size:28px;font-weight:600;margin-top:10px}
+.fp-head p{color:var(--dim);font-size:13.5px;margin-top:8px}
+.field{margin-bottom:16px}
+.field label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;margin-bottom:7px}
+.field .inp{display:flex;align-items:center;gap:11px;height:48px;padding:0 15px;border-radius:10px;border:1px solid var(--border-2);background:rgba(8,12,20,.7);transition:.2s}
+.field .inp:focus-within{border-color:rgba(246,157,57,.5);box-shadow:0 0 0 3px rgba(246,157,57,.12)}
+.field .inp svg{width:17px;height:17px;color:var(--faint)}
+.field .inp input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:var(--sans)}
+.field .inp input::placeholder{color:var(--faint)}
+.field .inp .eye{cursor:pointer}
+.row-between{display:flex;align-items:center;justify-content:space-between;margin:4px 0 22px;font-size:12.5px}
+.row-between .rm{display:flex;align-items:center;gap:8px;color:var(--dim);cursor:pointer}
+.row-between .rm .cb{width:16px;height:16px;border-radius:5px;border:1px solid var(--border-3);display:grid;place-items:center}
+.row-between .rm .cb.on{background:var(--brand-orange);border-color:var(--brand-orange)}
+.row-between .rm .cb svg{width:11px;height:11px;color:#1a1206;opacity:0}
+.row-between .rm .cb.on svg{opacity:1}
+.row-between a{color:var(--amber-2);text-decoration:none}
+.row-between a:hover{text-decoration:underline}
+.btn-primary{width:100%;height:50px;border-radius:11px;cursor:pointer;font-weight:600;font-size:14.5px;color:#1a1206;position:relative;overflow:hidden;
+  border:1px solid rgba(246,157,57,.5);background:linear-gradient(180deg,#ffc15a,#f69d39);box-shadow:0 8px 22px -8px rgba(246,157,57,.6);transition:transform .15s;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary:hover{transform:translateY(-1px)} .btn-primary:active{transform:scale(.98)}
+.btn-primary svg{width:17px;height:17px}
+.divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--faint);font-family:var(--mono);font-size:10px;letter-spacing:1px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.sso{display:flex;gap:11px}
+.sso .s{flex:1;height:46px;border-radius:10px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);
+  display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;font-size:12.5px;transition:.15s}
+.sso .s:hover{color:var(--text);border-color:var(--border-3)}
+.sso .s svg{width:16px;height:16px}
+.fp-foot{margin-top:26px;text-align:center;font-size:13px;color:var(--dim)}
+.fp-foot a{color:var(--amber-2);text-decoration:none;font-weight:500}
+.fp-foot a:hover{text-decoration:underline}
+.secure-note{position:absolute;bottom:26px;left:56px;right:56px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.secure-note svg{width:13px;height:13px;color:var(--sage)}
+
+/* inline auth error (login / register) */
+.auth-error{display:none;margin:0 0 16px;padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.4;
+  color:#ff8a9b;background:rgba(244,73,94,.10);border:1px solid rgba(244,73,94,.32)}
+.auth-error.show{display:block;animation:auth-err-in .25s cubic-bezier(.2,.9,.25,1)}
+@keyframes auth-err-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}

@@ -87,22 +87,22 @@
 
 .metric-icon.threats {
     background: var(--gradient-danger);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 12px rgba(229,87,62, 0.3);
 }
 
 .metric-icon.analyses {
     background: var(--gradient-primary);
-    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(179, 136, 255, 0.3);
 }
 
 .metric-icon.risk {
     background: var(--gradient-warning);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 12px rgba(216,182,90, 0.3);
 }
 
 .metric-icon.health {
     background: var(--gradient-success);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(246,157,57, 0.3);
 }
 
 .metric-actions .btn-icon {
@@ -203,12 +203,12 @@
 
 .indicator-dot.healthy {
     background: var(--success);
-    box-shadow: 0 0 4px rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 4px rgba(246,157,57, 0.5);
 }
 
 .indicator-dot.unhealthy {
     background: var(--error);
-    box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 4px rgba(229,87,62, 0.5);
 }
 
 /* Charts Section */
@@ -492,7 +492,7 @@
     font-size: 1.5rem;
     color: white;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(179, 136, 255, 0.3);
 }
 
 .tool-content {
@@ -628,11 +628,11 @@
 
 /* Dark Mode Enhancements */
 [data-theme="dark"] .tool-card:hover {
-    box-shadow: var(--shadow-lg), 0 0 20px rgba(0, 212, 255, 0.1);
+    box-shadow: var(--shadow-lg), 0 0 20px rgba(179, 136, 255, 0.1);
 }
 
 [data-theme="dark"] .metric-card:hover {
-    box-shadow: var(--shadow-lg), 0 0 20px rgba(0, 212, 255, 0.05);
+    box-shadow: var(--shadow-lg), 0 0 20px rgba(179, 136, 255, 0.05);
 }
 
 /* Print Styles */

@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberForge</title>
+    
+    <!-- ═══ ENTERPRISE DESIGN SYSTEM ═══ -->
+    <!-- Layer 0-3: Tokens + Resets + Theme (single source of truth) -->
+    <link rel="stylesheet" href="css/design-tokens.css">
+    <!-- App Shell: Header, Sidebar, Content, Footer, Floating Panel, Motion -->
+    <link rel="stylesheet" href="css/enterprise-shell.css">
+    <!-- Main Theme: Typography, Colors, Component Overrides -->
+    <link rel="stylesheet" href="css/cyberforge-theme.css">
+    <!-- Domain-specific component styles -->
+    <link rel="stylesheet" href="css/threat-globe.css">
+    <link rel="stylesheet" href="css/browser-intelligence.css">
+    <link rel="stylesheet" href="css/agent-core.css">
+    <!-- TODO 4: Distributed Intelligence -->
+    <link rel="stylesheet" href="css/distributed-intelligence.css">
+
+    <style>
+        html { color-scheme: light dark; }
+        body { margin: 0; padding: 0; }
+    </style>
+    
+    <!-- Leaflet CSS for Map -->
+    
+    <!-- External Dependencies -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet JS for Map -->
+    
+    <!-- Three.js for 3D Globe -->
+</head>
+<body data-theme="dark">
+    <div class="cf-app" id="app">
+        <!-- Mobile Overlay for Sidebar -->
+        <div class="mobile-overlay" id="mobile-overlay"></div>
+        
+        <!-- Top Header Bar -->
+        <header class="cf-header">
+            <div class="cf-header-left">
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Toggle Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="cf-logo">
+                    <div class="cf-logo-mark">
+                        <img src="../assets/logo.png" alt="CyberForge" class="cf-logo-image"
+                             onerror="this.style.display='none'">
+                    </div>
+                    <div class="cf-logo-text">
+                        <span class="cf-logo-name">CyberForge</span>
+                        <span class="cf-logo-tag">AI Security</span>
+                    </div>
+                </div>
+
+                <div class="header-divider"></div>
+                
+                <!-- AI Agent Status in Header -->
+                <div class="header-agent-status" id="header-agent-status" title="AI Agents Status">
+                    <span class="agent-status-ring">
+                        <span class="agent-status-indicator-mini"></span>
+                    </span>
+                    <span class="agent-status-label">Agents Online</span>
+                </div>
+                
+                <!-- Quick Scan Button -->
+                <button class="header-btn primary" id="quick-scan-btn" title="Quick Threat Scan">
+                    <i class="fas fa-bolt"></i>
+                    <span>Scan</span>
+                </button>
+            </div>
+            
+            <div class="cf-header-center">
+                <div class="header-search" id="header-search">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" placeholder="Search threats, assets, events…" id="global-search">
+                    <kbd class="search-kbd"><span class="kbd-symbol">⌘</span>K</kbd>
+                </div>
+            </div>
+            
+            <div class="cf-header-right">
+                <!-- Backend Status Badge -->
+                <span class="cf-badge" id="backend-status" title="Backend Connection"><i class="fas fa-circle-notch fa-spin"></i> Connecting</span>
+
+                <!-- Device Identity -->
+                <div class="header-device-id" id="header-device-id" title="Device Identity">
+                    <i class="fas fa-desktop"></i>
+                    <span id="device-name">Local</span>
+                </div>
+                
+                <!-- Active Alert Count -->
+                <div class="header-alert-count" id="header-alert-widget" title="Active Alerts">
+                    <i class="fas fa-shield-alt"></i>
+                    <span id="header-alert-number">0</span>
+                </div>
+                
+                <!-- Privacy Mode Indicator -->
+                <div class="header-privacy-mode" id="header-privacy-mode" title="Privacy Mode">
+                    <i class="fas fa-user-secret"></i>
+                </div>
+
+                <div class="header-divider"></div>
+                
+                <button class="header-btn header-btn-icon" id="notifications-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notification-count">0</span>
+                </button>
+                
+                <button class="header-btn header-btn-icon" id="theme-toggle" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <button class="header-btn header-btn-icon" id="settings-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                
+                <div class="user-avatar" id="user-avatar" title="User Menu">
+                    <i class="fas fa-user"></i>
+                    <span class="avatar-online-dot"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="cf-main">
+            <!-- Left Sidebar -->
+            <aside class="cf-sidebar" id="sidebar">
+                <!-- Intelligence Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="intelligence">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-brain"></i>
+                        <span>Intelligence</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="dashboard.html" data-screen="dashboard">
+                                <i class="fas fa-gauge"></i>
+                                <span>Threat Overview</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="threat-globe.html" data-screen="threat-globe">
+                                <i class="fas fa-globe"></i>
+                                <span>Threat Globe</span>
+                                <span class="sidebar-nav-badge live-badge">LIVE</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="signal-pipeline">
+                                <i class="fas fa-diagram-project"></i>
+                                <span>Signal Pipeline</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="pipeline-ingest">Ingest</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="pipeline-normalize">Normalize</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="pipeline-analyze">Analyze</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="pipeline-reason">Reason</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="ai-models-screen.html" data-screen="ai-models">
+                                <i class="fas fa-microchip"></i>
+                                <span>Model Inference</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="models-trained">Active Models</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="models-training">Training</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="models-datasets">Datasets</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Agent System Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="agent-system">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-robot"></i>
+                        <span>Agent System</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="agent-control">
+                                <i class="fas fa-terminal"></i>
+                                <span>Agent Core</span>
+                                <span class="sidebar-nav-badge agent-badge">ACTIVE</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="agent-tasks">Active Tasks <span class="child-badge" id="active-tasks-count">0</span></a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="agent-schedule">Scheduled</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="agent-memory">Memory</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="browser-intel-screen.html" data-screen="browser-intel">
+                                <i class="fas fa-brain"></i>
+                                <span>Browser Intelligence</span>
+                                <span class="sidebar-nav-badge live-badge" id="intel-risk-badge">0</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="intel-sessions">Active Sessions</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="intel-alerts">Behavioral Alerts <span class="child-badge" id="intel-alerts-count">0</span></a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="intel-domains">Domain Graph</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="intel-config">Configuration</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="http-history.html" data-screen="http-history">
+                                <i class="fas fa-history"></i>
+                                <span>HTTP History</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="http-all">HTTP History</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="ws-history">WebSocket</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="intercept">Intercept <span class="child-badge">5</span></a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   id="sidebar-agent-center"   href="operational-page.html" data-screen="agent-center">
+                                <i class="fas fa-broadcast-tower"></i>
+                                <span>Floating Agent Center</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Security Operations Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="security-ops">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Security Operations</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="alerts">
+                                <i class="fas fa-bell"></i>
+                                <span>Alerts & Evidence</span>
+                                <span class="sidebar-nav-badge alert" id="alert-count-badge">0</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="alerts-critical">Critical <span class="child-badge critical">0</span></a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="alerts-high">High</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="alerts-evidence">Evidence</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="investigations">
+                                <i class="fas fa-search-plus"></i>
+                                <span>Investigations</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="investigations-active">Active</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="investigations-closed">Closed</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="incident-timeline">
+                                <i class="fas fa-timeline"></i>
+                                <span>Incident Timeline</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="timeline-today">Today</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="timeline-week">This Week</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="timeline-all">All Events</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Observability Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="observability">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Observability</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="datadog-metrics">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Metrics (Datadog)</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="metrics-agent">Agent Metrics</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="metrics-system">System</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="errors">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Errors</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="latency">
+                                <i class="fas fa-stopwatch"></i>
+                                <span>Latency</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- System Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="system">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-cog"></i>
+                        <span>System</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="settings.html" data-screen="settings">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Settings</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="settings-general">General</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="settings-agent">Agent Config</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="settings-network">Network</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="privacy">
+                                <i class="fas fa-user-shield"></i>
+                                <span>Privacy</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="privacy-mode">Privacy Mode</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="privacy-data">Data Control</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="system-logs.html" data-screen="system-logs">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Logs</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="logs-agent">Agent Logs</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="logs-system">System Logs</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="logs-export">Export</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Real-Time Intelligence Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="realtime-intel">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-satellite-dish"></i>
+                        <span>Real-Time Intel</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="event-feed">
+                                <i class="fas fa-stream"></i>
+                                <span>Event Feed</span>
+                                <span class="sidebar-nav-badge pulse" id="events-count">0</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="risk-analysis">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Risk Analysis</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Scanning Modes Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="scan-modes">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-crosshairs"></i>
+                        <span>Scan Modes</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+
+                <!-- TODO 4: Distributed Intelligence Section -->
+                <div class="sidebar-section sidebar-parent-section" data-section="distributed-intel">
+                    <div class="sidebar-section-title sidebar-parent-title">
+                        <i class="fas fa-network-wired"></i>
+                        <span>Distributed Intel</span>
+                        <i class="fas fa-chevron-down section-chevron"></i>
+                    </div>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="distributed-intelligence.html" data-screen="distributed-intelligence">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Intelligence Hub</span>
+                                <span class="sidebar-nav-badge live-badge" id="dist-nodes-badge">0</span>
+                            </a>
+                            <ul class="sidebar-nav-children">
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="dist-nodes">Node Management</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="dist-correlations">Correlations</a></li>
+                                <li><a class="sidebar-child-link"   href="operational-page.html" data-screen="dist-heatmap">Threat Heatmap</a></li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="dist-global-metrics">
+                                <i class="fas fa-chart-area"></i>
+                                <span>Global Metrics</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="dist-weights">
+                                <i class="fas fa-balance-scale"></i>
+                                <span>Risk Weights</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="dist-sync">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Sync Status</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                    <ul class="sidebar-nav scan-modes">
+                        <li class="sidebar-nav-item scan-mode" data-mode="quick">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="scan-quick">
+                                <i class="fas fa-bolt"></i>
+                                <span>Quick Scan</span>
+                                <span class="mode-indicator active" id="quick-mode-status"></span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item scan-mode" data-mode="deep">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="scan-deep">
+                                <i class="fas fa-brain"></i>
+                                <span>AI Deep Scan</span>
+                                <span class="mode-indicator" id="deep-mode-status"></span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item scan-mode" data-mode="stealth">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="scan-stealth">
+                                <i class="fas fa-user-secret"></i>
+                                <span>Stealth Mode</span>
+                                <span class="mode-indicator" id="stealth-mode-status"></span>
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item scan-mode" data-mode="forensic">
+                            <a class="sidebar-nav-link"   href="operational-page.html" data-screen="scan-forensic">
+                                <i class="fas fa-microscope"></i>
+                                <span>Forensic Mode</span>
+                                <span class="mode-indicator" id="forensic-mode-status"></span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Sidebar Footer -->
+                <div class="sidebar-footer">
+                    <button class="sidebar-collapse-btn" id="collapse-sidebar">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Collapse Sidebar</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content Panel -->
+            <div class="cf-content">
+                <!-- Tab Bar -->
+                <div class="cf-tabs">
+                    <button class="cf-tab active" data-tab="requests">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Requests</span>
+                    </button>
+                    <button class="cf-tab" data-tab="responses">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Responses</span>
+                    </button>
+                    <button class="cf-tab" data-tab="websockets">
+                        <i class="fas fa-plug"></i>
+                        <span>Websockets</span>
+                    </button>
+                </div>
+                
+                <!-- Query Bar -->
+                <div class="query-bar">
+                    <input type="text" class="query-input" id="query-input" placeholder="Enter an HTTPQL query...">
+                </div>
+                
+                <!-- Screen Container -->
+                <div id="screen-container" class="cf-split-view">
+                    <!-- HTTP History Screen (Default) -->
+                    <div class="cf-split-horizontal" id="http-history-screen">
+                        <!-- Requests Table Panel -->
+                        <div class="cf-panel" style="flex: 1;">
+                            <div class="cf-table-container">
+                                <table class="cf-table" id="requests-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Host</th>
+                                            <th>Method</th>
+                                            <th>Path</th>
+                                            <th>Query</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="requests-tbody">
+                                        <!-- Requests will be populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Resizer -->
+                        <div class="cf-resizer" id="main-resizer"></div>
+                        
+                        <!-- Request Detail Panel -->
+                        <div class="cf-panel" id="detail-panel" style="width: 50%;">
+                            <div class="cf-panel-header">
+                                <div class="cf-panel-title">Request Details</div>
+                                <div class="cf-panel-actions">
+                                    <button class="panel-action-btn" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button class="panel-action-btn" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="cf-panel-content" id="request-detail-content">
+                                <div class="empty-state">
+                                    <i class="fas fa-mouse-pointer empty-state-icon"></i>
+                                    <div class="empty-state-title">Select a request</div>
+                                    <div class="empty-state-description">Click on a request in the table to view its details</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Application Footer -->
+                <footer class="cf-footer" id="app-footer">
+                    <div class="footer-left">
+                        <div class="footer-agent-status">
+                            <span class="footer-status-dot" id="footer-agent-dot"></span>
+                            <span class="footer-status-text" id="footer-agent-text">AI Agent: Monitoring</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-stat">
+                            <i class="fas fa-clock"></i>
+                            <span id="footer-uptime">Uptime: 0:00:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-center">
+                        <div class="footer-system-stats">
+                            <div class="footer-stat" title="CPU Usage">
+                                <i class="fas fa-microchip"></i>
+                                <span id="footer-cpu">CPU: 0%</span>
+                            </div>
+                            <div class="footer-stat" title="Memory Usage">
+                                <i class="fas fa-memory"></i>
+                                <span id="footer-memory">MEM: 0%</span>
+                            </div>
+                            <div class="footer-stat" title="Network Activity">
+                                <i class="fas fa-network-wired"></i>
+                                <span id="footer-network">NET: 0 KB/s</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-right">
+                        <div class="footer-stat" title="Active Sessions">
+                            <i class="fas fa-users"></i>
+                            <span id="footer-sessions">1 Session</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-stat" title="Last Sync">
+                            <i class="fas fa-sync-alt"></i>
+                            <span id="footer-sync">Synced</span>
+                        </div>
+                        <div class="footer-divider"></div>
+                        <div class="footer-version">
+                            <span>v2.0.0</span>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Panel Minimized Button (Side tab - Shows when panel is hidden) -->
+    <button class="agent-minimized-btn" id="agent-minimized-btn" title="Show Agent Panel" style="display: none;">
+        <i class="fas fa-robot"></i>
+        <span class="agent-mini-label">Agent</span>
+        <span class="agent-mini-pulse"></span>
+    </button>
+
+    <!-- AI Agent Control Center Panel (Redesigned) -->
+    <!-- Floating Agent Control Panel -->
+    <div class="agent-control-panel floating-agent-panel" id="agent-control-panel">
+        <div class="agent-panel-header">
+            <div class="agent-panel-title">
+                <div class="agent-avatar">
+                    <i class="fas fa-robot"></i>
+                    <span class="agent-pulse" id="agent-pulse-indicator"></span>
+                </div>
+                <div class="agent-title-info">
+                    <span class="agent-name">CyberForge Agent</span>
+                    <span class="agent-version">v2.0</span>
+                </div>
+            </div>
+            <div class="agent-panel-status">
+                <span class="agent-status-dot" id="agent-main-status"></span>
+                <span class="agent-status-text" id="agent-status-text">Initializing...</span>
+            </div>
+            <div class="agent-panel-controls">
+                <button class="agent-panel-minimize" id="agent-panel-minimize" title="Minimize Panel">
+                    <i class="fas fa-window-minimize"></i>
+                </button>
+                <button class="agent-panel-hide" id="agent-panel-hide" title="Hide Panel">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="agent-panel-toggle" id="agent-panel-toggle" title="Collapse/Expand">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="agent-panel-body" id="agent-panel-body">
+            <!-- Live System Stats -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-microchip"></i>
+                    SYSTEM STATS
+                </div>
+                <div class="agent-live-stats">
+                    <div class="agent-live-stat">
+                        <i class="fas fa-microchip"></i>
+                        <span id="fp-cpu-pct">--</span>
+                        <label>CPU</label>
+                    </div>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-memory"></i>
+                        <span id="fp-mem-pct">--</span>
+                        <label>Memory</label>
+                    </div>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-clock"></i>
+                        <span id="fp-uptime">--</span>
+                        <label>Uptime</label>
+                    </div>
+                    <div class="agent-live-stat">
+                        <i class="fas fa-globe"></i>
+                        <span id="fp-browser-count">--</span>
+                        <label>Browsers</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detected Browsers -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-globe"></i>
+                    DETECTED BROWSERS
+                    <button class="fp-refresh-btn" id="fp-refresh-browsers" title="Rescan browsers">
+                        <i class="fas fa-rotate"></i>
+                    </button>
+                </div>
+                <div class="fp-browsers-list" id="fp-browsers-list">
+                    <div class="fp-loading"><i class="fas fa-spinner fa-spin"></i> Scanning...</div>
+                </div>
+            </div>
+
+            <!-- Backend Status -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-server"></i>
+                    BACKEND STATUS
+                </div>
+                <div class="fp-backend-grid">
+                    <div class="fp-backend-item">
+                        <span class="fp-backend-label">Backend</span>
+                        <span class="fp-backend-value" id="fp-backend-status">checking...</span>
+                    </div>
+                    <div class="fp-backend-item">
+                        <span class="fp-backend-label">ML Service</span>
+                        <span class="fp-backend-value" id="fp-ml-status">checking...</span>
+                    </div>
+                    <div class="fp-backend-item">
+                        <span class="fp-backend-label">Agents</span>
+                        <span class="fp-backend-value" id="fp-agent-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Controls -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-bolt"></i>
+                    CONTROLS
+                </div>
+                <div class="agent-quick-controls">
+                    <button class="agent-control-btn" id="agent-resync-btn" title="Resync All Data">
+                        <i class="fas fa-sync"></i>
+                        <span>Resync</span>
+                    </button>
+                    <button class="agent-control-btn" id="fp-open-agent-center" title="Open Agent Center">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>Center</span>
+                    </button>
+                    <button class="agent-action-btn primary" id="agent-add-browser" title="Add Browser Manually">
+                        <i class="fas fa-plus"></i>
+                        <span>Add</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-history"></i>
+                    ACTIVITY LOG
+                </div>
+                <div class="agent-actions-log" id="agent-actions-log">
+                    <!-- Populated by JS from real data -->
+                </div>
+            </div>
+
+            <!-- URL Scanning Feed -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-shield-alt"></i>
+                    URL SCANNING
+                    <span class="fp-url-status-dot" id="fp-url-scan-dot"></span>
+                </div>
+                <div class="fp-url-feed" id="fp-url-feed">
+                    <div class="fp-url-empty">Open a browser to start scanning</div>
+                </div>
+            </div>
+
+            <!-- Behavioral Intelligence Alerts -->
+            <div class="agent-section">
+                <div class="agent-section-label">
+                    <i class="fas fa-brain"></i>
+                    BEHAVIORAL ALERTS
+                    <span class="fp-behavioral-badge" id="fp-behavioral-count">0</span>
+                </div>
+                <div class="fp-behavioral-alerts" id="fp-behavioral-alerts">
+                    <div class="fp-empty">No behavioral alerts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-Time Event Feed Sidebar -->
+    <div class="event-feed-panel" id="event-feed-panel">
+        <div class="event-feed-header">
+            <div class="event-feed-title">
+                <span class="live-indicator-dot"></span>
+                <span>Real-Time Events</span>
+            </div>
+            <button class="event-feed-close" id="event-feed-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="event-feed-filters">
+            <button class="event-filter active" data-filter="all">All</button>
+            <button class="event-filter" data-filter="critical">Critical</button>
+            <button class="event-filter" data-filter="warning">Warning</button>
+            <button class="event-filter" data-filter="info">Info</button>
+        </div>
+        <div class="event-feed-list" id="event-feed-list">
+            <!-- Events will be populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Context Menu (Hidden by default) -->
+        <div class="context-menu" id="context-menu" style="display: none;">
+            <div class="context-menu-item" data-action="copy-url">
+                <i class="fas fa-link"></i>
+                <span>Copy URL</span>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Send to Replay</span>
+                </div>
+                <div class="context-menu">
+                    <div class="context-menu-item" data-action="replay-new">New Tab</div>
+                    <div class="context-menu-item" data-action="replay-existing">Existing Tab</div>
+                </div>
+            </div>
+            <div class="context-menu-item" data-action="send-automate">
+                <i class="fas fa-robot"></i>
+                <span>Send to Automate</span>
+                <span class="shortcut">^M</span>
+            </div>
+            <div class="context-menu-item" data-action="send-findings">
+                <i class="fas fa-flag"></i>
+                <span>Send to Findings...</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" data-action="replay-browser">
+                <i class="fas fa-globe"></i>
+                <span>Replay in browser</span>
+            </div>
+            <div class="context-menu-item" data-action="view-response">
+                <i class="fas fa-eye"></i>
+                <span>View response in browser</span>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" data-action="highlight">
+                <i class="fas fa-highlighter"></i>
+                <span>Highlight</span>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add in Scope</span>
+                </div>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-minus-circle"></i>
+                    <span>Add out of Scope</span>
+                </div>
+            </div>
+            <div class="context-menu-divider"></div>
+            <div class="context-menu-item" data-action="run-workflow">
+                <i class="fas fa-play"></i>
+                <span>Run workflow</span>
+            </div>
+            <div class="context-menu-submenu">
+                <div class="context-menu-item has-submenu">
+                    <i class="fas fa-puzzle-piece"></i>
+                    <span>Plugins</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Browser Modal -->
+    <div class="modal-overlay" id="add-browser-modal" style="display: none;">
+        <div class="modal-container add-browser-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-globe"></i> Add Browser Connection</h3>
+                <button class="modal-close" id="add-browser-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Connect to a browser with remote debugging enabled. Start your browser with the appropriate flag:</p>
+                
+                <div class="browser-launch-tips">
+                    <div class="tip-card">
+                        <div class="tip-icon chrome"><i class="fab fa-chrome"></i></div>
+                        <div class="tip-content">
+                            <strong>Chrome / Edge</strong>
+                            <code>--remote-debugging-port=9222</code>
+                        </div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-icon firefox"><i class="fab fa-firefox"></i></div>
+                        <div class="tip-content">
+                            <strong>Firefox</strong>
+                            <code>-start-debugger-server 9222</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="browser-name">Browser Name</label>
+                    <input type="text" id="browser-name" placeholder="e.g., Chrome, Firefox, Edge" value="Chrome">
+                </div>
+                
+                <div class="form-group">
+                    <label for="browser-host">Debug Host</label>
+                    <input type="text" id="browser-host" placeholder="localhost" value="localhost">
+                </div>
+                
+                <div class="form-group">
+                    <label for="browser-port">Debug Port</label>
+                    <input type="number" id="browser-port" placeholder="9222" value="9222">
+                </div>
+
+                <div class="connection-status" id="browser-connection-status">
+                    <span class="status-text">Not connected</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="add-browser-cancel">Cancel</button>
+                <button class="btn btn-primary" id="add-browser-test">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+                <button class="btn btn-success" id="add-browser-connect" disabled>
+                    <i class="fas fa-check"></i> Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tauri Bridge (replaces Electron preload.js) -->
+    <script src="../tauri-bridge.js"></script>
+    <script src="utils/theme-provider.js"></script>
+    
+    <!-- Scripts -->
+    <script src="../config/api-endpoints.js"></script>
+    <script src="../config/constants.js"></script>
+    <script src="interaction-fix.js"></script>
+    <script src="api-client.js"></script>
+    <script src="child-page-layouts.js"></script>
+    <script src="components/ai-assistant-v2.js"></script>
+    <script src="agent-ui-controller.js"></script>
+    <script src="utils/data-loaders.js"></script>
+
+    <!-- Extracted Screen Modules (loaded BEFORE cyberforge-app.js) -->
+
+        <script src="screens/assistant-screen.js"></script>
+
+    <!-- Main App (lightweight initializer with delegation stubs) -->
+    <script src="cyberforge-app.js"></script>
+</body>
+</html>

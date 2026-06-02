@@ -25,8 +25,9 @@
 8. [AI Services Integration](#-ai-services-integration)
 9. [API Endpoints](#-api-endpoints)
 10. [Data Flow](#-data-flow)
-11. [Configuration](#-configuration)
-12. [Usage Examples](#-usage-examples)
+11. [Desktop Agent Runtime Updates (April 2026)](#-desktop-agent-runtime-updates-april-2026)
+12. [Configuration](#-configuration)
+13. [Usage Examples](#-usage-examples)
 
 ---
 
@@ -540,6 +541,115 @@ class AIInterface {
   }
 }
 ```
+
+---
+
+## 🧩 Desktop Agent Runtime Updates (April 2026)
+
+This section documents the latest desktop renderer architecture and implementation updates completed for Threat Globe, OTX integration, and the floating agent control panel.
+
+### Summary of Implemented Changes
+
+1. Replaced legacy map rendering dependencies with direct Leaflet map initialization for Threat Globe pages.
+2. Added direct frontend OTX Pulse ingestion for Threat Globe with backend fallback.
+3. Added high-volume threat clarity features (prioritization, throttling, target aggregation, hotspot pulses).
+4. Added adaptive zoom-based aggregation and redraw behavior.
+5. Rebalanced Threat Globe layout so the map area is the dominant visual region.
+6. Added a unified floating agent panel visual layer with consistent typography, motion, and color harmonization.
+7. Added theme-aware floating panel behavior for both light and dark modes.
+8. Added panel visual modes (tactical, ai-lab, enterprise) with persisted preference and auto-by-theme mode.
+
+### Updated Desktop Code Structure
+
+```text
+desktop-app/src/renderer/
+├── utils/
+│   └── data-loaders.js
+│       ├── ensureLeafletLoaded()
+│       ├── ensureThreatLeafletMap()
+│       ├── renderThreatsOnLeaflet(threats, options)
+│       ├── getClusterCellStepForZoom(zoom)
+│       ├── aggregateThreatTargets(routes, zoom)
+│       ├── fetchThreatsFromOTXFrontend(limit)
+│       ├── mapOTXPulseToThreat(pulse)
+│       └── initThreatMap()
+├── css/
+│   ├── threat-globe.css
+│   │   ├── map dominance layout adjustments
+│   │   ├── cluster count and pulse marker styling
+│   │   └── readability updates for dense threat maps
+│   └── cyberforge-theme.css
+│       ├── floating panel final visual override layer
+│       ├── [data-theme="light"] / [data-theme="dark"] panel token mapping
+│       ├── fp-style-tactical
+│       ├── fp-style-ai-lab
+│       └── fp-style-enterprise
+├── agent-ui-controller.js
+│   ├── initFloatingPanelVisualMode(panel)
+│   ├── applyFloatingPanelStyle(panel, style)
+│   ├── getPreferredFloatingPanelStyle(theme)
+│   └── theme observer synchronization for panel style + icon state
+├── cyberforge-app.js
+│   └── theme toggle ownership marker (data-theme-managed="true")
+├── dashboard.html
+│   └── explicit Leaflet CSS/JS includes
+└── threat-globe.html
+        └── explicit Leaflet CSS/JS includes
+```
+
+### Threat Globe Rendering Pipeline
+
+```text
+OTX Pulses API (frontend key) → pulse-to-threat normalization →
+route generation + severity sort + throttling →
+zoom-aware target aggregation →
+Leaflet layers (routes, markers, clusters, hotspots) →
+periodic refresh + zoom redraw from cached threat set
+```
+
+Key behavior:
+- Frontend-first OTX request path for Threat Globe.
+- Safe fallback to backend API threat retrieval if frontend OTX call fails.
+- Zoom interactions trigger cluster recalculation without forcing disruptive view resets.
+
+### Floating Agent Panel Runtime Behavior
+
+Panel behavior now includes:
+- Unified visual token layer to reduce style conflicts from multiple CSS files.
+- Theme-aware token resolution using root data-theme state.
+- Visual style modes:
+    - tactical
+    - ai-lab
+    - enterprise
+- Style persistence keys:
+    - cyberforge-agent-panel-style
+    - cyberforge-agent-panel-style-mode
+- Interaction shortcuts:
+    - Double-click panel header: cycle style mode
+    - Alt + Double-click panel header: restore automatic style-by-theme mode
+
+### Theme Switching Contract
+
+- Main page controller owns theme toggle click handling.
+- Theme updates are written to root data-theme and synchronized to panel styling.
+- Agent panel controller tracks root theme mutations and updates panel visual mode in real time.
+- Prevents duplicate toggle conflicts by using a theme owner marker on the toggle element.
+
+### Files Updated in This Cycle
+
+- desktop-app/src/renderer/utils/data-loaders.js
+- desktop-app/src/renderer/css/threat-globe.css
+- desktop-app/src/renderer/css/cyberforge-theme.css
+- desktop-app/src/renderer/agent-ui-controller.js
+- desktop-app/src/renderer/cyberforge-app.js
+- desktop-app/src/renderer/dashboard.html
+- desktop-app/src/renderer/threat-globe.html
+
+### Notes for Future Contributors
+
+1. Keep floating panel changes scoped to the final override block in cyberforge-theme.css to avoid regressions from older overlapping CSS definitions.
+2. For map feature additions, continue using the Leaflet-first path in data-loaders.js rather than legacy globe/canvas dependencies.
+3. Any new theme behavior should update root data-theme and avoid introducing parallel toggle ownership.
 
 ---
 

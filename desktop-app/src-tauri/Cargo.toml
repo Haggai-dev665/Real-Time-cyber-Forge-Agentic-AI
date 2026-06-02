@@ -1,0 +1,43 @@
+[package]
+name = "cyber-forge-desktop"
+version = "2.0.0"
+description = "Real-Time Cyber Forge Agentic AI Desktop Application"
+authors = ["Haggai-dev665"]
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
+tauri-plugin-shell = "2"
+tauri-plugin-http = "2"
+tauri-plugin-store = "2"
+tauri-plugin-os = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+sysinfo = "0.32"
+chrono = "0.4"
+uuid = { version = "1", features = ["v4"] }
+url = "2"
+log = "0.4"
+env_logger = "0.11"
+keyring = "3"
+dirs = "6"
+urlencoding = "2"
+lazy_static = "1.5"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<link rel="stylesheet" href="../styles/cf-agent.css" />
+<style>
+.mem-grid{display:grid;grid-template-columns:1fr 350px;gap:14px;height:calc(100% - 56px);min-height:0}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.graph-card{flex:1;display:flex;flex-direction:column;min-height:0;position:relative;overflow:hidden}
+.graph-stage{flex:1;position:relative;overflow:hidden;border-radius:0 0 9px 9px;background:radial-gradient(700px 500px at 50% 45%,rgba(245,166,35,.05),transparent 60%),#070b13}
+.graph-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.glegend{position:absolute;left:16px;bottom:14px;display:flex;gap:16px;font-family:var(--mono);font-size:10px;color:var(--dim);z-index:3}
+.glegend .row{display:flex;align-items:center;gap:7px}
+.glegend .sw{width:9px;height:9px;border-radius:50%}
+.gmeta{position:absolute;right:16px;top:14px;text-align:right;z-index:3}
+.gmeta b{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--amber-2);display:block}
+.gmeta span{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.kpi{padding:13px 15px}
+.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}
+.kpi .kd{font-size:10px;color:var(--faint);margin-top:2px}
+
+.usage{padding:14px 15px}
+.usage .ul{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:8px}
+.usage .ubar{height:10px;border-radius:6px;background:rgba(130,160,200,.12);overflow:hidden;display:flex}
+.usage .ubar i{height:100%;transition:width 1s ease}
+.usage .leg{display:flex;gap:14px;margin-top:10px;font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.usage .leg span{display:flex;align-items:center;gap:6px}
+.usage .leg .d{width:8px;height:8px;border-radius:2px}
+
+.mems{overflow-y:auto;min-height:0}
+.mrow{display:flex;gap:11px;padding:11px 15px;border-bottom:1px solid var(--border);transition:background .2s;animation:memin .4s ease}
+@keyframes memin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.mrow:hover{background:rgba(130,160,200,.05)}
+.mrow .mi{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex:none;border:1px solid var(--border-2);background:var(--tile)}
+.mrow .mi svg{width:13px;height:13px}
+.mrow.episodic .mi{color:var(--amber-2)} .mrow.semantic .mi{color:var(--cyan)} .mrow.procedural .mi{color:var(--green)}
+.mrow .mc{flex:1;min-width:0}
+.mrow .mt{font-size:12px;line-height:1.4}
+.mrow .mm{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:3px;display:flex;gap:8px}
+.mrow .conf{font-family:var(--mono);font-size:10px;color:var(--amber-2);flex:none}
+.recall{padding:4px 0;overflow-y:auto}
+.mfilters{display:flex;gap:5px}
+.mchip{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:3px 8px;border-radius:5px;cursor:pointer;
+  border:1px solid var(--border-2);background:var(--surface-2);color:var(--faint);transition:.15s;text-transform:uppercase}
+.mchip:hover{color:var(--text)}
+.mchip.on{color:var(--amber-2);border-color:rgba(245,166,35,.4);background:var(--amber-dim)}
+.rc{display:flex;align-items:center;gap:9px;padding:8px 15px;font-family:var(--mono);font-size:11px;border-bottom:1px solid var(--border);animation:memin .35s ease}
+.rc .rci{color:var(--cyan);flex:none;width:13px;height:13px}
+.rc .rcn{flex:1;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc .rct{color:var(--faint);font-size:9px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Memory" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></div>
+          <h1>Memory</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Recalling</span>
+            <span id="recps">142 recalls/min</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6M12 19h8"/></svg>Consolidate</button>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="card kpi"><div class="kl">Total Memories</div><div class="kv" style="color:var(--amber-2)" id="kMem">48,210</div><div class="kd">+312 today</div></div>
+          <div class="card kpi"><div class="kl">Embeddings</div><div class="kv" style="color:var(--cyan)">1,536<span style="font-size:13px;color:var(--faint)">d</span></div><div class="kd">vector dim</div></div>
+          <div class="card kpi"><div class="kl">Recall Latency</div><div class="kv" style="color:var(--green)" id="kRec">8<span style="font-size:13px;color:var(--faint)">ms</span></div><div class="kd">avg kNN lookup</div></div>
+          <div class="card kpi"><div class="kl">Graph Edges</div><div class="kv" id="kEdge">128k</div><div class="kd">associations</div></div>
+        </div>
+
+        <div class="mem-grid">
+          <div class="col">
+            <div class="card graph-card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5 11 16M16.5 7.5 13 16M8 6h8"/></svg>Associative Memory Graph<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="graph-stage">
+                <canvas id="graph"></canvas>
+                <div class="gmeta"><b id="gNodes">240</b><span>active nodes</span></div>
+                <div class="glegend">
+                  <div class="row"><span class="sw" style="background:var(--amber)"></span>Episodic</div>
+                  <div class="row"><span class="sw" style="background:var(--cyan)"></span>Semantic</div>
+                  <div class="row"><span class="sw" style="background:var(--green)"></span>Procedural</div>
+                </div>
+              </div>
+            </div>
+            <div class="card usage">
+              <div class="ul"><span>Memory Store — 6.8 / 16 GB</span><span>42%</span></div>
+              <div class="ubar"><i id="uEp" style="background:var(--amber);width:0"></i><i id="uSe" style="background:var(--cyan);width:0"></i><i id="uPr" style="background:var(--green);width:0"></i></div>
+              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Episodic 24%</span><span><span class="d" style="background:var(--cyan)"></span>Semantic 13%</span><span><span class="d" style="background:var(--green)"></span>Procedural 5%</span></div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="card" style="flex:1.5;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Recent Memories<span class="right mfilters" id="mfilters"><span class="mchip on" data-f="all">All</span><span class="mchip" data-f="episodic">Episodic</span><span class="mchip" data-f="semantic">Semantic</span><span class="mchip" data-f="procedural">Proc</span></span></div>
+              <div class="mems" id="mems"></div>
+            </div>
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Recall Activity<span class="right"><span class="badge-cyan"><span class="dot"></span>LIVE</span></span></div>
+              <div class="recall" id="recall"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'MEMORY'});
+buildSidebar('memory');
+buildFooter({items:[{txt:'48.2k memories',cls:'sb-amber'},{txt:'store 42%',cls:'sb-cyan'},{txt:'recall 8ms',cls:'sb-green'},{txt:'Consolidating…',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+setTimeout(()=>{document.getElementById('uEp').style.width='24%';document.getElementById('uSe').style.width='13%';document.getElementById('uPr').style.width='5%';},150);
+
+/* ===== animated memory graph ===== */
+(function(){
+  const cvs=document.getElementById('graph'),ctx=cvs.getContext('2d');
+  let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
+  function resize(){const r=cvs.parentElement.getBoundingClientRect();W=r.width;H=r.height;
+    cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
+  resize();window.addEventListener('resize',resize);
+  const COL={ep:'#f5a623',se:'#2bd4ee',pr:'#43e08a'};
+  const types=['ep','se','pr'];
+  let filter=null; window.__memFilter=function(t){filter=t;};
+  const MAP={episodic:'ep',semantic:'se',procedural:'pr'};
+  const N=46, nodes=[], edges=[];
+  for(let i=0;i<N;i++){const t=types[Math.random()<0.5?0:(Math.random()<0.6?1:2)];
+    nodes.push({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*0.0006,vy:(Math.random()-.5)*0.0006,
+      r:2.5+Math.random()*3.5,t:t,pulse:0});}
+  // connect nearby
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){if(Math.random()<0.06)edges.push([i,j,0]);}
+  let pulses=[]; // traveling recall pulses along edges
+  function recall(){
+    const e=edges[Math.floor(Math.random()*edges.length)];
+    pulses.push({e,t:0}); nodes[e[0]].pulse=1; 
+  }
+  window.__memRecall=recall;
+  function frame(){
+    if(W<2){requestAnimationFrame(frame);return;}
+    ctx.clearRect(0,0,W,H);
+    nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0.05||n.x>0.95)n.vx*=-1;if(n.y<0.05||n.y>0.95)n.vy*=-1;n.pulse*=0.94;});
+    // edges
+    edges.forEach(e=>{const a=nodes[e[0]],b=nodes[e[1]];
+      ctx.strokeStyle='rgba(126,148,184,'+(0.06+Math.max(a.pulse,b.pulse)*0.4).toFixed(2)+')';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(a.x*W,a.y*H);ctx.lineTo(b.x*W,b.y*H);ctx.stroke();});
+    // traveling pulses
+    pulses=pulses.filter(p=>{p.t+=0.03;if(p.t>=1){nodes[p.e[1]].pulse=1;return false;}
+      const a=nodes[p.e[0]],b=nodes[p.e[1]];const x=(a.x+(b.x-a.x)*p.t)*W,y=(a.y+(b.y-a.y)*p.t)*H;
+      ctx.fillStyle='#ffd27a';ctx.shadowColor='#f5a623';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();ctx.shadowBlur=0;return true;});
+    // nodes
+    nodes.forEach(n=>{const c=COL[n.t];const x=n.x*W,y=n.y*H,rr=n.r+n.pulse*3;
+      const dim=filter&&MAP[filter]!==n.t;
+      ctx.globalAlpha=dim?0.16:1;
+      if(n.pulse>0.1&&!dim){ctx.fillStyle=c;ctx.globalAlpha=n.pulse*0.3;ctx.beginPath();ctx.arc(x,y,rr+6,0,7);ctx.fill();ctx.globalAlpha=1;}
+      ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,rr,0,7);ctx.fill();ctx.globalAlpha=1;});
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setInterval(recall,650);
+})();
+
+/* recent memories */
+const memTypes={episodic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  semantic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+  procedural:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7l5 5-5 5M13 17h6"/></svg>'};
+let memData=[];  // populated from the real local vector memory (memory_list)
+const memsEl=document.getElementById('mems');
+function memRow(m){return '<div class="mrow '+m[0]+'"><span class="mi">'+memTypes[m[0]]+'</span>'+
+  '<div class="mc"><div class="mt">'+m[1]+'</div><div class="mm"><span>'+m[2]+'</span></div></div><span class="conf">'+m[3]+'</span></div>';}
+let memFilter='all';
+function renderMems(){
+  const list=memFilter==='all'?memData:memData.filter(m=>m[0]===memFilter);
+  memsEl.innerHTML=list.map(memRow).join('');
+}
+renderMems();
+document.querySelectorAll('#mfilters .mchip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#mfilters .mchip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); memFilter=c.dataset.f; renderMems();
+  if(window.__memFilter) window.__memFilter(memFilter==='all'?null:memFilter);
+}));
+
+/* recall activity */
+const recallEl=document.getElementById('recall');
+const queries=['"RedLine C2 indicators"','"isolation playbook"','"duckdns reputation"','"WS-4471 history"','"macro detonation steps"','"port 4444 patterns"','"phishing cluster xyz"','"brute force 193.43.*"'];
+function addRecall(){
+  if(window.__memRecall)window.__memRecall();
+  const el=document.createElement('div');el.className='rc';
+  const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  el.innerHTML='<svg class="rci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
+    '<span class="rcn">recall '+(memData.length?('"'+String(memData[Math.floor(Math.random()*memData.length)][1]).slice(0,38).replace(/[<>]/g,'')+'"'):queries[Math.floor(Math.random()*queries.length)])+'</span><span class="rct">'+ts+' · '+(1+Math.floor(Math.random()*3))+'ms</span>';
+  recallEl.prepend(el);while(recallEl.children.length>30)recallEl.lastChild.remove();
+}
+for(let i=0;i<5;i++)addRecall();
+setInterval(addRecall,1100);
+
+/* ===========================================================
+   REAL vector memory — local Rust store (memory_list), synced to
+   the backend /api/memory. Scans auto-write episodic memories.
+   =========================================================== */
+(function(){
+  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+  function pollMemory(){
+    cfInvoke('memory_list',{limit:40}).then(function(r){
+      var d=(r&&r.data)||{};
+      memData=(d.memories||[]).map(function(m){
+        var meta=(m.category||'scan')+' · '+ago(m.ts);
+        var conf=(m.risk!=null)?('risk '+m.risk):'';
+        return [(m.kind||'episodic'), m.text, meta, conf];
+      });
+      renderMems();
+      var total=d.total||0;
+      var kMem=document.getElementById('kMem'); if(kMem) kMem.textContent=total.toLocaleString();
+      var kEdge=document.getElementById('kEdge'); if(kEdge) kEdge.textContent=((d.episodic||0)+(d.semantic||0)+(d.procedural||0));
+      var gNodes=document.getElementById('gNodes'); if(gNodes) gNodes.textContent=Math.min(total,240);
+      var recps=document.getElementById('recps'); if(recps) recps.textContent=total?'55 recalls/min':'idle';
+      var kRec=document.getElementById('kRec'); if(kRec) kRec.innerHTML='1<span style="font-size:13px;color:var(--faint)">ms</span>';
+      var tot=(d.episodic||0)+(d.semantic||0)+(d.procedural||0)||1;
+      var uEp=document.getElementById('uEp'),uSe=document.getElementById('uSe'),uPr=document.getElementById('uPr');
+      if(uEp) uEp.style.width=Math.round((d.episodic||0)/tot*42)+'%';
+      if(uSe) uSe.style.width=Math.round((d.semantic||0)/tot*42)+'%';
+      if(uPr) uPr.style.width=Math.round((d.procedural||0)/tot*42)+'%';
+    }).catch(function(){});
+  }
+  pollMemory(); setInterval(pollMemory,5000);
+  cfInvoke('memory_sync').catch(function(){});
+  setInterval(function(){ cfInvoke('memory_sync').catch(function(){}); },30000);
+})();
+</script>
+</body>
+</html>

@@ -32,11 +32,14 @@ class CyberForgeApp {
 
     async init() {
         console.log('🚀 Starting Cyber Forge AI Application...');
-        
+
         try {
+            // Apply saved theme immediately before anything renders
+            this.initTheme();
+
             // Show loading screen
             this.showLoadingScreen();
-            
+
             // Initialize core systems
             await this.initializeCore();
             
@@ -54,6 +57,9 @@ class CyberForgeApp {
             
             // Restore sidebar state
             this.restoreSidebarState();
+
+            // Restore sidebar layout preference (icons-only by default)
+            this.applySidebarLayoutPreference();
             
             // Add navigation enhancements
             this.addNavigationEnhancements();
@@ -66,7 +72,8 @@ class CyberForgeApp {
             
             // Hide loading screen
             this.hideLoadingScreen();
-            
+            if (typeof window._cfLoaderDone === 'function') window._cfLoaderDone();
+
             this.isInitialized = true;
             console.log('✅ Application initialized successfully');
             
@@ -367,25 +374,36 @@ class CyberForgeApp {
             'dashboard': typeof DashboardScreen !== 'undefined' ? DashboardScreen : null,
             'real-time-monitor': typeof RealTimeMonitorScreen !== 'undefined' ? RealTimeMonitorScreen : null,
             'threat-center': typeof ThreatCenterScreen !== 'undefined' ? ThreatCenterScreen : null,
+            'threat-globe': typeof ThreatGlobeScreen !== 'undefined' ? ThreatGlobeScreen : null,
             'deep-analysis': typeof DeepAnalysisScreen !== 'undefined' ? DeepAnalysisScreen : null,
-            'ai-assistant': typeof AIAssistantScreen !== 'undefined' ? AIAssistantScreen : null,
-            'ml-models': typeof MLModelsScreen !== 'undefined' ? MLModelsScreen : null,
-            'ai-insights': typeof AIInsightsScreen !== 'undefined' ? AIInsightsScreen : null,
-            'predictions': typeof PredictionsScreen !== 'undefined' ? PredictionsScreen : null,
-            'vulnerability-scanner': typeof VulnerabilityScannerScreen !== 'undefined' ? VulnerabilityScannerScreen : null,
             'network-analysis': typeof NetworkAnalysisScreen !== 'undefined' ? NetworkAnalysisScreen : null,
             'malware-detection': typeof MalwareDetectionScreen !== 'undefined' ? MalwareDetectionScreen : null,
+            'vulnerability-scanner': typeof VulnerabilityScannerScreen !== 'undefined' ? VulnerabilityScannerScreen : null,
+            'penetration-testing': typeof PenetrationTestingScreen !== 'undefined' ? PenetrationTestingScreen : null,
             'digital-forensics': typeof DigitalForensicsScreen !== 'undefined' ? DigitalForensicsScreen : null,
-            'datasets': typeof DatasetsScreen !== 'undefined' ? DatasetsScreen : null,
-            'reports': typeof ReportsScreen !== 'undefined' ? ReportsScreen : null,
-            'compliance': typeof ComplianceScreen !== 'undefined' ? ComplianceScreen : null,
-            'settings': typeof SettingsScreen !== 'undefined' ? SettingsScreen : null,
-            'profile': typeof ProfileScreen !== 'undefined' ? ProfileScreen : null,
-            'system-logs': typeof SystemLogsScreen !== 'undefined' ? SystemLogsScreen : null,
+            'behavioral-analysis': typeof BehavioralAnalysisScreen !== 'undefined' ? BehavioralAnalysisScreen : null,
+            'ai-assistant': typeof AIAssistantScreen !== 'undefined' ? AIAssistantScreen : null,
+            'ai-insights': typeof AIInsightsScreen !== 'undefined' ? AIInsightsScreen : null,
+            'predictions': typeof PredictionsScreen !== 'undefined' ? PredictionsScreen : null,
+            'threat-intel': typeof ThreatIntelScreen !== 'undefined' ? ThreatIntelScreen : null,
+            'osint-tools': typeof OsintToolsScreen !== 'undefined' ? OsintToolsScreen : null,
+            'domain-intelligence': typeof DomainIntelligenceScreen !== 'undefined' ? DomainIntelligenceScreen : null,
             'incident-response': typeof IncidentResponseScreen !== 'undefined' ? IncidentResponseScreen : null,
             'risk-assessment': typeof RiskAssessmentScreen !== 'undefined' ? RiskAssessmentScreen : null,
             'security-metrics': typeof SecurityMetricsScreen !== 'undefined' ? SecurityMetricsScreen : null,
-            'penetration-testing': typeof PenetrationTestingScreen !== 'undefined' ? PenetrationTestingScreen : null
+            'reports': typeof ReportsScreen !== 'undefined' ? ReportsScreen : null,
+            'compliance': typeof ComplianceScreen !== 'undefined' ? ComplianceScreen : null,
+            'ml-models': typeof MLModelsScreen !== 'undefined' ? MLModelsScreen : null,
+            'datasets': typeof DatasetsScreen !== 'undefined' ? DatasetsScreen : null,
+            'system-logs': typeof SystemLogsScreen !== 'undefined' ? SystemLogsScreen : null,
+            'settings': typeof SettingsScreen !== 'undefined' ? SettingsScreen : null,
+            'profile': typeof ProfileScreen !== 'undefined' ? ProfileScreen : null,
+            'sandbox-scanner': typeof SandboxScannerScreen !== 'undefined' ? SandboxScannerScreen : null,
+            'distributed-intelligence': typeof DistributedIntelligenceScreen !== 'undefined' ? DistributedIntelligenceScreen : null,
+            'browser-intel': typeof BrowserIntelScreen !== 'undefined' ? BrowserIntelScreen : null,
+            'threat-hunting': typeof ThreatHuntingScreen !== 'undefined' ? ThreatHuntingScreen : null,
+            'policy-control': typeof PolicyControlScreen !== 'undefined' ? PolicyControlScreen : null,
+            'soc-dashboard': typeof SOCDashboardScreen !== 'undefined' ? SOCDashboardScreen : null,
         };
 
         // Only initialize screens that have classes defined
@@ -662,18 +680,39 @@ class CyberForgeApp {
     }
 
     handleResize() {
-        // Handle responsive behavior
         const sidebar = document.getElementById('sidebar');
-        if (window.innerWidth < 1024) {
-            sidebar?.classList.add('collapsed');
+        if (!sidebar) return;
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('collapsed');
         } else {
-            sidebar?.classList.remove('collapsed');
+            this.applySidebarLayoutPreference();
         }
     }
 
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
-        sidebar?.classList.toggle('collapsed');
+        if (!sidebar) return;
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('cf-sidebar-collapsed', String(isCollapsed));
+
+        // Update toggle icon direction
+        const toggleIcon = sidebar.querySelector('.sidebar-toggle i');
+        if (toggleIcon) {
+            toggleIcon.style.transform = isCollapsed ? 'rotate(180deg)' : '';
+        }
+    }
+
+    applySidebarLayoutPreference() {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+        // Default to expanded; respect saved preference
+        const savedCollapsed = localStorage.getItem('cf-sidebar-collapsed');
+        if (savedCollapsed === 'true') {
+            sidebar.classList.add('collapsed');
+        } else {
+            sidebar.classList.remove('collapsed');
+        }
     }
 
     toggleFullscreen() {
@@ -1093,24 +1132,34 @@ class CyberForgeApp {
     }
 
     toggleTheme() {
-        if (window.themeManager) {
-            window.themeManager.toggleTheme();
-        } else {
-            document.body.classList.toggle('light-theme');
-        }
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
 
-        // Update theme icon
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('cf-theme', next);
+
+        // Update icon
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
             const icon = themeToggle.querySelector('i');
             if (icon) {
-                icon.className = document.body.classList.contains('light-theme') 
-                    ? 'fas fa-sun' 
-                    : 'fas fa-moon';
+                icon.className = next === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
             }
         }
 
-        window.notificationSystem?.success('Theme', 'Theme changed successfully');
+        // Notify any child page iframes / panels listening for theme changes
+        window.dispatchEvent(new CustomEvent('cf-theme-change', { detail: { theme: next } }));
+    }
+
+    initTheme() {
+        const saved = localStorage.getItem('cf-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            if (icon) icon.className = saved === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
     }
 
     openAIChat() {

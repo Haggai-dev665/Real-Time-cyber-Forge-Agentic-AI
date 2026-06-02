@@ -5,7 +5,7 @@
 
 (() => {
     // Configuration
-    const API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
+    const API_BASE_URL = (typeof localStorage !== 'undefined' && localStorage.getItem('cyberforge_backend_url')) || 'https://cyberforge-ddd97655464f.herokuapp.com';
     const FIREBASE_CONFIG = {
         apiKey: "YOUR_FIREBASE_API_KEY",
         authDomain: "cyber-forge-ai.firebaseapp.com",
@@ -82,16 +82,193 @@
     }
 
     function initializeParticles() {
-        const particlesContainer = document.getElementById('particles');
-        if (!particlesContainer) return;
+        // Check if particles.js is loaded
+        if (typeof particlesJS !== 'undefined') {
+            const particlesContainer = document.getElementById('particles-js');
+            if (!particlesContainer) {
+                // Create particles container if it doesn't exist
+                const container = document.createElement('div');
+                container.id = 'particles-js';
+                const authVisual = document.querySelector('.auth-visual');
+                if (authVisual) {
+                    authVisual.insertBefore(container, authVisual.firstChild);
+                }
+            }
+            
+            // Initialize particles.js with cybersecurity theme
+            particlesJS('particles-js', {
+                particles: {
+                    number: {
+                        value: 80,
+                        density: {
+                            enable: true,
+                            value_area: 800
+                        }
+                    },
+                    color: {
+                        value: ['#A66416', '#EFE9DD', '#E2DBCD']
+                    },
+                    shape: {
+                        type: 'circle',
+                        stroke: {
+                            width: 0,
+                            color: '#000000'
+                        }
+                    },
+                    opacity: {
+                        value: 0.5,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 1,
+                            opacity_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 2,
+                            size_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: '#A66416',
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 2,
+                        direction: 'none',
+                        random: false,
+                        straight: false,
+                        out_mode: 'out',
+                        bounce: false,
+                        attract: {
+                            enable: false,
+                            rotateX: 600,
+                            rotateY: 1200
+                        }
+                    }
+                },
+                interactivity: {
+                    detect_on: 'canvas',
+                    events: {
+                        onhover: {
+                            enable: true,
+                            mode: 'repulse'
+                        },
+                        onclick: {
+                            enable: true,
+                            mode: 'push'
+                        },
+                        resize: true
+                    },
+                    modes: {
+                        repulse: {
+                            distance: 100,
+                            duration: 0.4
+                        },
+                        push: {
+                            particles_nb: 4
+                        }
+                    }
+                },
+                retina_detect: true
+            });
+        } else {
+            // Fallback to simple particle animation
+            const particlesContainer = document.getElementById('particles');
+            if (!particlesContainer) return;
 
-        for (let i = 0; i < 30; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.animationDelay = `${Math.random() * 10}s`;
-            particle.style.animationDuration = `${8 + Math.random() * 6}s`;
-            particlesContainer.appendChild(particle);
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 10}s`;
+                particle.style.animationDuration = `${8 + Math.random() * 6}s`;
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Initialize GSAP animations
+        initializeGSAPAnimations();
+    }
+    
+    function initializeGSAPAnimations() {
+        // Check if GSAP is loaded
+        if (typeof gsap === 'undefined') return;
+        
+        // Animate auth visual elements
+        gsap.from('.brand-title', {
+            duration: 1,
+            y: 50,
+            opacity: 0,
+            ease: 'power3.out',
+            delay: 0.2
+        });
+        
+        gsap.from('.brand-subtitle', {
+            duration: 1,
+            y: 50,
+            opacity: 0,
+            ease: 'power3.out',
+            delay: 0.4
+        });
+        
+        gsap.from('.feature-item', {
+            duration: 0.8,
+            x: -30,
+            opacity: 0,
+            stagger: 0.2,
+            ease: 'power2.out',
+            delay: 0.6
+        });
+        
+        // Animate form elements
+        gsap.from('.auth-form-section', {
+            duration: 1,
+            x: 50,
+            opacity: 0,
+            ease: 'power3.out',
+            delay: 0.3
+        });
+        
+        // Add hover animations to buttons using GSAP
+        const buttons = document.querySelectorAll('.auth-btn, .auth-social-btn');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', () => {
+                gsap.to(button, {
+                    scale: 1.05,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                });
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                gsap.to(button, {
+                    scale: 1,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                });
+            });
+        });
+        
+        // Animate AI illustration with rotation
+        const aiIllustration = document.querySelector('.ai-illustration');
+        if (aiIllustration) {
+            gsap.to(aiIllustration, {
+                rotation: 360,
+                duration: 20,
+                ease: 'none',
+                repeat: -1
+            });
         }
     }
 
@@ -130,22 +307,37 @@
         const statusText = statusElement?.querySelector('.status-text');
 
         try {
-            const response = await fetch(`${API_BASE_URL}/health`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                timeout: 5000
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                state.backendConnected = true;
-                
-                if (statusElement) {
-                    statusElement.classList.add('connected');
-                    statusElement.classList.remove('error');
-                    statusText.textContent = `Connected to Cyber Forge (${data.environment || 'development'})`;
+            // Try Tauri IPC health check first (bypasses CORS entirely)
+            let data;
+            if (window.electronAPI && window.electronAPI.healthCheck) {
+                try {
+                    data = await window.electronAPI.healthCheck();
+                } catch (ipcErr) {
+                    // Fallback to direct fetch
+                    const response = await fetch(`${API_BASE_URL}/health`, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(8000)
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    data = await response.json();
                 }
-                console.log('✅ Backend connected:', data);
+            } else {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(8000)
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                data = await response.json();
+            }
+
+            state.backendConnected = true;
+            
+            if (statusElement) {
+                statusElement.classList.add('connected');
+                statusElement.classList.remove('error');
+                statusText.textContent = `Connected to Cyber Forge (${data.environment || 'production'})`;
+            }
+            console.log('✅ Backend connected:', data);
             } else {
                 throw new Error('Backend returned non-OK status');
             }
@@ -217,20 +409,31 @@
         try {
             let result;
             
-            // Try Electron IPC first
+            // Try Tauri IPC first, then direct API
             if (window.electronAPI) {
-                result = await window.electronAPI.auth.login({ email, password, rememberMe });
+                try {
+                    result = await window.electronAPI.auth.login({ email, password, rememberMe });
+                } catch (ipcErr) {
+                    console.warn('IPC login failed, falling back to direct API:', ipcErr);
+                    result = await loginViaAPI(email, password);
+                }
             } else {
-                // Fallback to direct API call
                 result = await loginViaAPI(email, password);
             }
 
             if (result.success) {
                 showToast('success', 'Welcome Back!', 'Login successful. Redirecting...');
                 
-                // Store token if available
-                if (result.token) {
-                    localStorage.setItem('cyberforge_token', result.token);
+                // Store token — check both flattened and nested locations
+                const token = result.token || result.data?.token;
+                if (token) {
+                    localStorage.setItem('authToken', token);
+                }
+                
+                // Store user data for the dashboard
+                const user = result.user || result.data?.user;
+                if (user) {
+                    localStorage.setItem('user', JSON.stringify(user));
                 }
                 
                 setTimeout(() => {
@@ -241,7 +444,7 @@
             }
         } catch (error) {
             console.error('Login error:', error);
-            showToast('error', 'Connection Error', 'Unable to connect to server. Please try again.');
+            showToast('error', 'Login Error', error.message || 'Unable to connect to server. Please try again.');
         } finally {
             setLoading('login-btn', false);
         }
@@ -287,11 +490,16 @@
         setLoading('register-btn', true);
 
         try {
-            const userData = { firstName, lastName, email, password, role };
+            const userData = { firstName, lastName, email, password, role, name: `${firstName} ${lastName}`.trim() };
             let result;
 
             if (window.electronAPI) {
-                result = await window.electronAPI.auth.register(userData);
+                try {
+                    result = await window.electronAPI.auth.register(userData);
+                } catch (ipcErr) {
+                    console.warn('IPC register failed, falling back to direct API:', ipcErr);
+                    result = await registerViaAPI(userData);
+                }
             } else {
                 result = await registerViaAPI(userData);
             }
@@ -299,8 +507,15 @@
             if (result.success) {
                 showToast('success', 'Account Created!', 'Your account has been created. Redirecting...');
                 
-                if (result.token) {
-                    localStorage.setItem('cyberforge_token', result.token);
+                const token = result.token || result.data?.token;
+                if (token) {
+                    localStorage.setItem('authToken', token);
+                }
+                
+                // Store user data for the dashboard
+                const user = result.user || result.data?.user;
+                if (user) {
+                    localStorage.setItem('user', JSON.stringify(user));
                 }
                 
                 setTimeout(() => {
@@ -311,7 +526,7 @@
             }
         } catch (error) {
             console.error('Registration error:', error);
-            showToast('error', 'Connection Error', 'Unable to connect to server. Please try again.');
+            showToast('error', 'Registration Error', error.message || 'Unable to connect to server. Please try again.');
         } finally {
             setLoading('register-btn', false);
         }
@@ -379,7 +594,12 @@
                 showToast('success', 'Welcome!', `Signed in as ${result.user?.email || 'user'}. Redirecting...`);
                 
                 if (result.token) {
-                    localStorage.setItem('cyberforge_token', result.token);
+                    localStorage.setItem('authToken', result.token);
+                }
+                
+                // Store user data for the dashboard
+                if (result.user) {
+                    localStorage.setItem('user', JSON.stringify(result.user));
                 }
                 
                 setTimeout(() => {
@@ -494,12 +714,13 @@
     // =========================================
 
     function redirectToDashboard() {
-        // Notify Electron main process to show dashboard
-        if (window.electronAPI && window.electronAPI.auth.onAuthSuccess) {
-            window.electronAPI.auth.onAuthSuccess();
-        } else {
-            // For web fallback, reload to main app
-            window.location.href = 'caido-index.html';
+        console.log('🚀 Navigating to dashboard...');
+        try {
+            // Use replace so back button doesn't return to login
+            window.location.replace('dashboard.html');
+        } catch (e) {
+            console.error('Navigation failed, trying fallback:', e);
+            window.location.href = 'dashboard.html';
         }
     }
 
@@ -630,10 +851,13 @@
                 <div class="toast-title">${title}</div>
                 <div class="toast-message">${message}</div>
             </div>
-            <button class="toast-close" onclick="this.parentElement.remove()">
+            <button class="toast-close">
                 <i class="fas fa-times"></i>
             </button>
         `;
+
+        // Use addEventListener instead of inline onclick (CSP blocks inline handlers in Tauri v2)
+        toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
 
         container.appendChild(toast);
 

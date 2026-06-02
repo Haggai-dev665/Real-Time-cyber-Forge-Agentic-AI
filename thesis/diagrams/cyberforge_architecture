@@ -1,0 +1,150 @@
+digraph "CyberForge — Multi-Platform Agentic AI Architecture" {
+	graph [bgcolor=white compound=true concentrate=false fontcolor="#2D3436" fontname="Helvetica-Bold" fontsize=20 label="CyberForge — Multi-Platform Agentic AI Architecture" nodesep=0.6 pad=0.6 rankdir=LR ranksep=1.4 splines=spline]
+	node [fixedsize=true fontcolor="#2D3436" fontname=Helvetica fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#444444" fontname=Helvetica fontsize=11]
+	subgraph cluster_Actors {
+		graph [bgcolor="#F4F6F7" fontname="Helvetica-Bold" fontsize=14 label=Actors labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		f17973a2b6ae4fce95ac9e9ff2ef428c [label="End User" height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/client/user.png" shape=none]
+		d396c508f4484936b65d956389d80831 [label="Security Analyst" height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/client/client.png" shape=none]
+	}
+	subgraph "cluster_User Channels" {
+		graph [bgcolor="#FDF2E9" fontname="Helvetica-Bold" fontsize=14 label="User Channels" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"0990a5857dfe46daa7e794ed93340f89" [label="Web Browser" height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/network/internet.png" shape=none]
+		"260262ecfc5f41aa82997779bc57582a" [label="Electron Desktop" height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/os/windows.png" shape=none]
+		a1a1ce4219e24dd791eca1072597a709 [label="Mobile (RN)" height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/device/mobile.png" shape=none]
+		f1bc6c0da4764fcbb2e3137c0e901f7b [label=Tablet height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/device/tablet.png" shape=none]
+	}
+	subgraph "cluster_CyberForge Cloud  ·  Heroku PaaS + HuggingFace Spaces" {
+		graph [bgcolor="#EAF2F8" color="#2874A6" fontname="Helvetica-Bold" fontsize=16 label="CyberForge Cloud  ·  Heroku PaaS + HuggingFace Spaces" labeljust=l pencolor="#AEB6BE" penwidth=2 rankdir=LR shape=box style=rounded]
+		subgraph "cluster_API Gateway" {
+			graph [bgcolor="#D6EAF8" fontname="Sans-Serif" fontsize=12 label="API Gateway" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"2e5e2b4b42194b4496c7d2cc44605914" [label="Express API
+/api/orchestrator" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/network/nginx.png" shape=none]
+			b3cefec370224fc99e29a18bdee64569 [label="Auth / JWT" height=1.9 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/saas/identity/auth0.png" shape=none]
+		}
+		subgraph "cluster_Agent Orchestrator  ·  DAG Executor" {
+			graph [bgcolor="#FCF3CF" fontname="Helvetica-Bold" fontsize=13 label="Agent Orchestrator  ·  DAG Executor" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"547fe12a977b4996aa3c348f91798d07" [label="Orchestrator
+(node)" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/nodejs.png" shape=none]
+		}
+		subgraph "cluster_Stage 1  ·  parallel" {
+			graph [bgcolor="#FADBD8" fontname="Sans-Serif" fontsize=12 label="Stage 1  ·  parallel" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"0ac7a2f100be4c43a798ab4127a46a73" [label="1) URL
+Classifier" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+			"8c52e499ef414410ae85e6202306ab5e" [label="2) DGA
+Detector" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+			"46925fd76e1f46cca2529635c8f374b5" [label="3) Web
+Scraper" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+			"211e1ec70aa54fb6a151c7bef1895e2a" [label="4) Memory
+Reader" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+		}
+		subgraph "cluster_Stage 2  ·  parallel" {
+			graph [bgcolor="#D5F5E3" fontname="Sans-Serif" fontsize=12 label="Stage 2  ·  parallel" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"3ca85adc15c2446093b26f541d74299f" [label="5) IOC
+Extractor" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+			"7ed26cdbe5ee4001ac9fde0d64455251" [label="6) Behavioural
+Analyser" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+			b9425ff1dcf04db3ba14c89022f83952 [label="7) MITRE
+Mapper" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+		}
+		subgraph "cluster_Stage 3" {
+			graph [bgcolor="#E8DAEF" fontname="Sans-Serif" fontsize=12 label="Stage 3" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			d6de871a754d409a95ab39470e5fcf5f [label="8) Threat-Intel
+Enricher" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/javascript.png" shape=none]
+		}
+		subgraph "cluster_Reporter  ·  aggregator" {
+			graph [bgcolor="#FDEBD0" fontname="Sans-Serif" fontsize=12 label="Reporter  ·  aggregator" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"55be599b74ce4af49fa72ad415ee7c4d" [label="Reporter
+Agent" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/analytics/spark.png" shape=none]
+		}
+		subgraph "cluster_Memory Layer" {
+			graph [bgcolor="#FDF2E9" fontname="Sans-Serif" fontsize=12 label="Memory Layer" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"93a5ee29b66948b29284b4372d5de486" [label="Redis
+Session Cache" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/inmemory/redis.png" shape=none]
+			"86fa334ff3a247889e5960050eef85ae" [label="Pinecone / Chroma
+Embeddings" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/storage/storage.png" shape=none]
+			"8ea80b9159e7483cb3adfb0c09328a1c" [label="Domain History
+(in-process Map)" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/database/mongodb.png" shape=none]
+		}
+		subgraph "cluster_HuggingFace Space  ·  FastAPI" {
+			graph [bgcolor="#D4E6F1" fontname="Sans-Serif" fontsize=12 label="HuggingFace Space  ·  FastAPI" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"0b597d5f15074beea9b7692d3e9056f8" [label="FastAPI
+Gateway" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/framework/fastapi.png" shape=none]
+			"0d209dee0df74c54acdf912bfae1c8d0" [label="BERT
+elftsdmr/malware-url-detect" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/mlops/mlflow.png" shape=none]
+			"5da392e9f4754dffaa96f1b83a23e091" [label="DGA Heuristic
+(Shannon entropy)" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/mlops/mlflow.png" shape=none]
+			c9048f93a73442849f1e363abcdfe713 [label="LLM Chain
+Gemini → Mistral → heuristic" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/programming/language/python.png" shape=none]
+		}
+	}
+	subgraph "cluster_External Services" {
+		graph [bgcolor="#F2F4F4" fontname="Helvetica-Bold" fontsize=14 label="External Services" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"26a0ccc238664b18bf29b8dca5618a5f" [label="AlienVault OTX
+Threat-Intel" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/network/firewall.png" shape=none]
+		"808ed6a1e2554a98a20d91c13caab86f" [label="WebScrapper.live
+DOM / Net / Headers" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/network/subnet.png" shape=none]
+		eab59257a2db40cfbde031c7ba885b1a [label="Google
+Gemini API" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/compute/rack.png" shape=none]
+		f4baea65dafa421fbb72f5ba24c27255 [label="HF Inference API
+Mistral-7B" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/compute/rack.png" shape=none]
+	}
+	subgraph cluster_Persistence {
+		graph [bgcolor="#FADBD8" fontname="Helvetica-Bold" fontsize=14 label=Persistence labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"2bbb427618ec4ddd8b53da6b0907e419" [label="Appwrite Cloud
+alerts · tasks · users" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/onprem/database/mongodb.png" shape=none]
+		db9be955d8bd4279aa4af296c6cc24be [label="PDF Reports
+(pdfkit)" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/generic/storage/storage.png" shape=none]
+	}
+	subgraph cluster_Notifications {
+		graph [bgcolor="#D5F5E3" fontname="Helvetica-Bold" fontsize=14 label=Notifications labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"1f56405222c349328bf3be48ec35262f" [label="Real-Time
+Toast / WS Push" height=2.3 image="/Users/Dadaicon/Documents/GitHub/Real-Time-cyber-Forge-Agentic-AI/.venv/lib/python3.15/site-packages/resources/saas/chat/slack.png" shape=none]
+	}
+	f17973a2b6ae4fce95ac9e9ff2ef428c -> "0990a5857dfe46daa7e794ed93340f89" [color="#5D6D7E" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=bold]
+	f17973a2b6ae4fce95ac9e9ff2ef428c -> "260262ecfc5f41aa82997779bc57582a" [color="#5D6D7E" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=bold]
+	f17973a2b6ae4fce95ac9e9ff2ef428c -> a1a1ce4219e24dd791eca1072597a709 [color="#5D6D7E" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=bold]
+	d396c508f4484936b65d956389d80831 -> "260262ecfc5f41aa82997779bc57582a" [color="#5D6D7E" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	f17973a2b6ae4fce95ac9e9ff2ef428c -> f1bc6c0da4764fcbb2e3137c0e901f7b [color="#5D6D7E" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=dashed]
+	"260262ecfc5f41aa82997779bc57582a" -> "2e5e2b4b42194b4496c7d2cc44605914" [label="1  URL change
+(every 5 s)" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"2e5e2b4b42194b4496c7d2cc44605914" -> b3cefec370224fc99e29a18bdee64569 [label=authenticate color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"2e5e2b4b42194b4496c7d2cc44605914" -> "547fe12a977b4996aa3c348f91798d07" [label="2  dispatch" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"547fe12a977b4996aa3c348f91798d07" -> "0ac7a2f100be4c43a798ab4127a46a73" [label="3  Stage 1
+fan-out" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"547fe12a977b4996aa3c348f91798d07" -> "8c52e499ef414410ae85e6202306ab5e" [color="#E67E22" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 penwidth=2 style=bold]
+	"547fe12a977b4996aa3c348f91798d07" -> "46925fd76e1f46cca2529635c8f374b5" [color="#E67E22" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 penwidth=2 style=bold]
+	"547fe12a977b4996aa3c348f91798d07" -> "211e1ec70aa54fb6a151c7bef1895e2a" [color="#E67E22" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 penwidth=2 style=bold]
+	"0ac7a2f100be4c43a798ab4127a46a73" -> "0b597d5f15074beea9b7692d3e9056f8" [label="4  BERT" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"8c52e499ef414410ae85e6202306ab5e" -> "0b597d5f15074beea9b7692d3e9056f8" [color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=dashed]
+	"46925fd76e1f46cca2529635c8f374b5" -> "808ed6a1e2554a98a20d91c13caab86f" [label="5  scrape" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"211e1ec70aa54fb6a151c7bef1895e2a" -> "93a5ee29b66948b29284b4372d5de486" [label=read color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"211e1ec70aa54fb6a151c7bef1895e2a" -> "8ea80b9159e7483cb3adfb0c09328a1c" [color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"211e1ec70aa54fb6a151c7bef1895e2a" -> "86fa334ff3a247889e5960050eef85ae" [color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"0b597d5f15074beea9b7692d3e9056f8" -> "0d209dee0df74c54acdf912bfae1c8d0" [color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"0b597d5f15074beea9b7692d3e9056f8" -> "5da392e9f4754dffaa96f1b83a23e091" [color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"547fe12a977b4996aa3c348f91798d07" -> "3ca85adc15c2446093b26f541d74299f" [label="6  Stage 2
+on scraped DOM" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"547fe12a977b4996aa3c348f91798d07" -> "7ed26cdbe5ee4001ac9fde0d64455251" [color="#E67E22" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 penwidth=2 style=bold]
+	"547fe12a977b4996aa3c348f91798d07" -> b9425ff1dcf04db3ba14c89022f83952 [color="#E67E22" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 penwidth=2 style=bold]
+	"3ca85adc15c2446093b26f541d74299f" -> d6de871a754d409a95ab39470e5fcf5f [label="7  extracted IOCs" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	d6de871a754d409a95ab39470e5fcf5f -> "26a0ccc238664b18bf29b8dca5618a5f" [label="8  enrich" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	"0ac7a2f100be4c43a798ab4127a46a73" -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"8c52e499ef414410ae85e6202306ab5e" -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"46925fd76e1f46cca2529635c8f374b5" -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"211e1ec70aa54fb6a151c7bef1895e2a" -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"3ca85adc15c2446093b26f541d74299f" -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"7ed26cdbe5ee4001ac9fde0d64455251" -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	b9425ff1dcf04db3ba14c89022f83952 -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	d6de871a754d409a95ab39470e5fcf5f -> "55be599b74ce4af49fa72ad415ee7c4d" [color="#27AE60" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"55be599b74ce4af49fa72ad415ee7c4d" -> c9048f93a73442849f1e363abcdfe713 [label="9  narrative" color="#E67E22" dir=forward fontcolor="#C0392B" fontname="Helvetica-Bold" fontsize=14 penwidth=2.5 style=bold]
+	c9048f93a73442849f1e363abcdfe713 -> eab59257a2db40cfbde031c7ba885b1a [label=primary color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	c9048f93a73442849f1e363abcdfe713 -> f4baea65dafa421fbb72f5ba24c27255 [label=fallback color="#7F8C8D" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=10 style=dashed]
+	"55be599b74ce4af49fa72ad415ee7c4d" -> "2bbb427618ec4ddd8b53da6b0907e419" [label="create alert" color="#27AE60" dir=forward fontcolor="#1E8449" fontname="Sans-Serif" fontsize=11 style=bold]
+	"55be599b74ce4af49fa72ad415ee7c4d" -> db9be955d8bd4279aa4af296c6cc24be [label=PDF color="#27AE60" dir=forward fontcolor="#1E8449" fontname="Sans-Serif" fontsize=11 style=bold]
+	"55be599b74ce4af49fa72ad415ee7c4d" -> "93a5ee29b66948b29284b4372d5de486" [label="update memory" color="#27AE60" dir=forward fontcolor="#1E8449" fontname="Sans-Serif" fontsize=11 style=bold]
+	"55be599b74ce4af49fa72ad415ee7c4d" -> "8ea80b9159e7483cb3adfb0c09328a1c" [color="#27AE60" dir=forward fontcolor="#1E8449" fontname="Sans-Serif" fontsize=11 style=bold]
+	"55be599b74ce4af49fa72ad415ee7c4d" -> "1f56405222c349328bf3be48ec35262f" [label=" report" color="#2980B9" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 penwidth=2 style=bold]
+	"1f56405222c349328bf3be48ec35262f" -> "260262ecfc5f41aa82997779bc57582a" [color="#2980B9" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=bold]
+	"1f56405222c349328bf3be48ec35262f" -> a1a1ce4219e24dd791eca1072597a709 [color="#2980B9" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 style=bold]
+}

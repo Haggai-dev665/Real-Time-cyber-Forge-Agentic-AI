@@ -8,11 +8,11 @@ const { API_CONFIG } = typeof require !== 'undefined' ? require('../../config/ap
 
 class APIClient {
     constructor() {
-        // Use configuration from api-endpoints.js - Default to Heroku production URL
-        this.backendUrl = API_CONFIG?.backend?.base || 'https://cyberforge-ddd97655464f.herokuapp.com';
-        this.apiUrl = API_CONFIG?.backend?.api || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
-        this.wsUrl = API_CONFIG?.backend?.websocket || 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
-        this.mlUrl = API_CONFIG?.ml?.base || 'https://che237-cyberforge-models.hf.space';
+        // Use configuration from api-endpoints.js - default to local backend in desktop development
+        this.backendUrl = API_CONFIG?.backend?.base || localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+        this.apiUrl = API_CONFIG?.backend?.api || (this.backendUrl + '/api');
+        this.wsUrl = API_CONFIG?.backend?.websocket || (this.backendUrl.replace(/^https?/, m => m === 'https' ? 'wss' : 'ws') + '://' + this.backendUrl.replace(/^https?:\/\//, '') + '/ws');
+        this.mlUrl = API_CONFIG?.ml?.base || window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
         
         this.authToken = localStorage.getItem('authToken');
         this.refreshToken = localStorage.getItem('refreshToken');
@@ -35,15 +35,15 @@ class APIClient {
              * Handles all communication between the desktop app and backend services
              */
 
-            const FALLBACK_API_BASE_URL = 'https://cyberforge-ddd97655464f.herokuapp.com';
-            const FALLBACK_WS_URL = 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
+            const FALLBACK_API_BASE_URL = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+            const FALLBACK_WS_URL = FALLBACK_API_BASE_URL.replace(/^https?/, m => m === 'https' ? 'wss' : 'ws') + '://' + FALLBACK_API_BASE_URL.replace(/^https?:\/\//, '') + '/ws';
 
             class CyberForgeAPI {
                 constructor() {
                     const config = (typeof window !== 'undefined' && window.electronAPI?.config) || {};
                     this.baseUrl = config.backendUrl || FALLBACK_API_BASE_URL;
                     this.wsUrl = config.wsUrl || FALLBACK_WS_URL;
-                    this.token = localStorage.getItem('cyberforge_token');
+                    this.token = localStorage.getItem('authToken');
                     this.ws = null;
                     this.wsReconnectAttempts = 0;
                     this.maxReconnectAttempts = 5;
@@ -84,7 +84,7 @@ class APIClient {
                 setToken(token) {
                     if (token) {
                         this.token = token;
-                        localStorage.setItem('cyberforge_token', token);
+                        localStorage.setItem('authToken', token);
                     }
                 }
 
@@ -179,7 +179,7 @@ class APIClient {
 
                 logout() {
                     this.token = null;
-                    localStorage.removeItem('cyberforge_token');
+                    localStorage.removeItem('authToken');
                     this.disconnectWebSocket();
                 }
 

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Incident Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<style>
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.kpi{padding:13px 15px}.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}.kpi .kd{font-size:10px;color:var(--faint);margin-top:2px}
+
+/* phase swimlane */
+.phase-card{margin-bottom:14px;position:relative;overflow:hidden}
+.phase-head{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--border)}
+.phase-head b{font-size:13px} .phase-head .pid{font-family:var(--mono);font-size:10px;color:var(--amber-2)}
+.phase-row{display:flex;align-items:flex-start;padding:24px 26px 22px;position:relative}
+.ph{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center;position:relative;z-index:2}
+.ph .pn{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;position:relative;border:1px solid var(--border-2);background:var(--surface-solid);color:var(--faint);transition:.3s}
+.ph .pn svg{width:23px;height:23px}
+.ph.done .pn{color:var(--green);border-color:rgba(67,224,138,.4);background:rgba(67,224,138,.08)}
+.ph.active .pn{color:var(--amber-2);border-color:rgba(245,166,35,.5);background:var(--amber-dim);box-shadow:0 0 26px -4px rgba(245,166,35,.6)}
+.ph.active .pn::after{content:"";position:absolute;inset:-5px;border-radius:18px;border:1.5px solid transparent;border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 1.4s linear infinite}
+.ph .pl{font-size:12px;font-weight:600}
+.ph .pt{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.pconn{position:absolute;top:50px;height:3px;border-radius:3px;background:rgba(126,148,184,.14);z-index:1;overflow:hidden}
+.pconn i{position:absolute;inset:0;background:linear-gradient(90deg,var(--green),var(--amber));transform-origin:left;transform:scaleX(0);transition:transform .8s ease}
+.pconn .pp{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 7px var(--amber);transform:translate(-50%,-50%)}
+
+.tl-grid{display:grid;grid-template-columns:1fr 320px;gap:14px;height:calc(100% - 350px);min-height:0}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.feed{overflow-y:auto;min-height:0;padding:6px 0}
+.daygroup{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;padding:10px 16px 6px;position:sticky;top:0;background:var(--surface-solid);z-index:3}
+.tev{display:flex;gap:13px;padding:9px 16px;position:relative;animation:tin .4s ease}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.tev::before{content:"";position:absolute;left:53px;top:26px;bottom:-2px;width:1.5px;background:var(--border)}
+.tev:last-child::before{display:none}
+.tev .ttime{font-family:var(--mono);font-size:9.5px;color:var(--faint);width:46px;flex:none;text-align:right;padding-top:4px}
+.tev .tnode{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:none;z-index:2;border:1px solid var(--border-2);background:var(--surface-solid)}
+.tev .tnode svg{width:12px;height:12px}
+.tev.crit .tnode{color:#ff7185;border-color:rgba(244,73,94,.4)} .tev.warn .tnode{color:var(--amber-2);border-color:rgba(245,166,35,.4)} .tev.ok .tnode{color:var(--green);border-color:rgba(67,224,138,.4)} .tev.info .tnode{color:var(--cyan)}
+.tev .ttx{flex:1}
+.tev .ttx b{font-size:12.5px;font-weight:600}
+.tev .ttx .td{font-size:11px;color:var(--dim);margin-top:1px}
+.tev .ttx .tm{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:3px}
+
+.inc{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .18s}
+.inc:hover{background:rgba(130,160,200,.05)}
+.inc .idot{width:9px;height:9px;border-radius:50%;flex:none}
+.inc.crit .idot{background:#ff7185;box-shadow:0 0 6px #ff7185;animation:pulse 1.5s infinite} .inc.high .idot{background:var(--amber)} .inc.contained .idot{background:var(--green)}
+.inc .iinfo{flex:1;min-width:0}
+.inc .inm{font-size:12px;font-weight:600}
+.inc .imeta{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:2px}
+.inc .istat{font-family:var(--mono);font-size:8px;letter-spacing:.5px;padding:2px 7px;border-radius:4px;font-weight:600}
+.clock-card{padding:16px 15px;text-align:center}
+.clock-card .ck{font-family:var(--mono);font-size:34px;font-weight:600;color:var(--amber-2);letter-spacing:1px}
+.clock-card .ckl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;margin-top:4px}
+.clock-card .ckm{font-size:11px;color:var(--dim);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Incident Timeline" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8M9 6h11M9 18h7M9 12h9"/></svg></div>
+          <h1>Incident Timeline</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>1 active</span>
+            <span id="mttr">MTTR 1h 48m</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>Export</button>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="card kpi"><div class="kl">Active Incidents</div><div class="kv" style="color:#ff7185">1</div><div class="kd">INC-2207 critical</div></div>
+          <div class="card kpi"><div class="kl">Contained Today</div><div class="kv" style="color:var(--green)">4</div><div class="kd">0 escalated</div></div>
+          <div class="card kpi"><div class="kl">MTTR</div><div class="kv" style="color:var(--cyan)">1.8<span style="font-size:13px;color:var(--faint)">h</span></div><div class="kd">rolling 30d</div></div>
+          <div class="card kpi"><div class="kl">This Week</div><div class="kv">23</div><div class="kd">incidents logged</div></div>
+        </div>
+
+        <!-- PHASE SWIMLANE -->
+        <div class="card phase-card">
+          <div class="phase-head"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--amber-2)" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg><b>INC-2207 — RedLine Stealer Containment</b><span class="pid" style="margin-left:auto">WS-4471 · started 09:41</span></div>
+          <div class="phase-row" id="phaseRow"></div>
+        </div>
+
+        <div class="tl-grid">
+          <div class="card" style="display:flex;flex-direction:column;min-height:0">
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Event Timeline<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+            <div class="feed" id="feed"></div>
+          </div>
+          <div class="col">
+            <div class="card clock-card">
+              <div class="ck" id="ck">00:24:18</div>
+              <div class="ckl">Time Since Detection</div>
+              <div class="ckm">INC-2207 · <span style="color:var(--amber-2)">Containment phase</span></div>
+            </div>
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Recent Incidents</div>
+              <div style="overflow-y:auto" id="incs"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="cyberforge-shared.js"></script>
+<script src="cf-header.js"></script>
+<script src="cf-sidebar.js"></script>
+<script src="cf-footer.js"></script>
+<script>
+buildHeader({status:'INCIDENT'});
+buildSidebar('incident');
+buildFooter({items:[{txt:'1 active incident',cls:'sb-amber'},{txt:'4 contained today',cls:'sb-green'},{txt:'MTTR 1.8h',cls:'sb-cyan'},{txt:'Tracking…',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+/* phase swimlane */
+const phases=[
+  ['done','Detection','09:41','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'],
+  ['done','Triage','09:44','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>'],
+  ['active','Containment','10:05','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
+  ['todo','Eradication','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>'],
+  ['todo','Recovery','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>']
+];
+const stepIco={done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>'};
+const row=document.getElementById('phaseRow');
+row.innerHTML=phases.map((p,i)=>'<div class="ph '+p[0]+'" data-i="'+i+'"><div class="pn">'+(p[0]==='done'?stepIco.done:p[3])+'</div><div class="pl">'+p[1]+'</div><div class="pt">'+p[2]+'</div></div>').join('');
+// connectors
+function layoutConn(){
+  row.querySelectorAll('.pconn').forEach(c=>c.remove());
+  const phs=[...row.querySelectorAll('.ph')], rr=row.getBoundingClientRect();
+  for(let i=0;i<phs.length-1;i++){
+    const a=phs[i].querySelector('.pn').getBoundingClientRect(), b=phs[i+1].querySelector('.pn').getBoundingClientRect();
+    const c=document.createElement('div'); c.className='pconn';
+    c.style.left=(a.right-rr.left)+'px'; c.style.width=(b.left-a.right)+'px';
+    const fill=phases[i][0]==='done'?1:(phases[i][0]==='active'?0.5:0);
+    c.innerHTML='<i style="transform:scaleX('+fill+')"></i>';
+    row.appendChild(c);
+  }
+}
+layoutConn(); window.addEventListener('resize',layoutConn);
+// particle on active connector
+setInterval(()=>{
+  const conns=[...row.querySelectorAll('.pconn')];
+  const ac=conns[1]; if(!ac)return; // containment connector index
+  const p=document.createElement('span'); p.className='pp'; ac.appendChild(p);
+  let t0=performance.now();(function s(now){const t=(now-t0)/700;if(t>=0.5){p.remove();return;}p.style.left=(t*100)+'%';requestAnimationFrame(s);})(t0);
+},500);
+
+/* time since detection clock */
+(function(){
+  let sec=24*60+18;
+  setInterval(()=>{sec++;const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+    document.getElementById('ck').textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');},1000);
+})();
+
+/* event feed */
+const evIco={crit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
+  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'};
+const seed=[
+  ['10:05','active','warn','Host isolation applied','WS-4471 quarantined; awaiting reimage approval','Containment'],
+  ['09:52','ok','Fleet sweep complete','1,204 hosts scanned — no lateral movement','Scoping'],
+  ['09:48','crit','Credential access confirmed','svc_update.dll read Chrome Login Data','Triage'],
+  ['09:44','warn','Sandbox verdict: MALICIOUS','Risk 87/100 · RedLine Stealer family','Triage'],
+  ['09:42','info','Evidence acquired','Memory dump + pcap captured (chain-of-custody)','Triage'],
+  ['09:41','crit','Incident declared','EDR flagged credential-access on WS-4471','Detection']
+];
+const feed=document.getElementById('feed');
+function evRow(e){
+  const c=e[2]||e[1];
+  return '<div class="tev '+c+'"><span class="ttime">'+e[0]+'</span><span class="tnode">'+evIco[c]+'</span>'+
+    '<div class="ttx"><b>'+(e[3]||e[2])+'</b><div class="td">'+(e[4]||e[3])+'</div><div class="tm">phase: '+(e[5]||e[4])+'</div></div></div>';
+}
+function render(){
+  feed.innerHTML='<div class="daygroup">Today</div>'+seed.map(evRow).join('')+
+    '<div class="daygroup">Earlier This Week</div>'+
+    [['Mon 14:20','contained','ok','DDoS event mitigated','Volumetric attack absorbed at edge','Recovery'],
+     ['Mon 09:10','ok','Phishing wave contained','Domains blocked, 3 creds reset','Eradication'],
+     ['Sun 22:40','warn','Brute-force burst blocked','Source /24 throttled','Containment']].map(evRow).join('');
+}
+render();
+
+// stream a new live event occasionally into Today
+const live=[
+  ['ok','Credentials rotated','j.okafor session tokens revoked','Eradication'],
+  ['info','Agent recommendation','Reimage WS-4471 from golden image','Containment'],
+  ['warn','C2 domain re-resolved','duckdns rotated IP — blocklist updated','Containment'],
+  ['ok','Persistence removed','Run-key svc_update deleted','Eradication']
+];
+setInterval(()=>{
+  if(Math.random()<0.5){
+    const e=live[Math.floor(Math.random()*live.length)];
+    const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    seed.unshift([ts,e[0],e[0],e[1],e[2],e[3]]);
+    if(seed.length>9)seed.pop();
+    render();
+  }
+},4500);
+</script>
+</body>
+</html>

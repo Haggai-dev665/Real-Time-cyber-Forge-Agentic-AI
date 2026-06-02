@@ -191,6 +191,15 @@ router.post('/google/token',
  */
 router.get('/google/callback', authController.googleCallback);
 
+/**
+ * @route   GET /api/auth/google/config
+ * @desc    Expose the Google OAuth client id for the desktop loopback sign-in
+ * @access  Public
+ */
+router.get('/google/config', (req, res) => {
+  res.json({ success: true, clientId: process.env.GOOGLE_CLIENT_ID || '' });
+});
+
 // Firebase Authentication Routes
 
 /**

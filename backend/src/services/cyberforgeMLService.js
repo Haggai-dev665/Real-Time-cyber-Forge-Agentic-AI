@@ -57,43 +57,120 @@ class CyberForgeMLService {
             has_suspicious_tld: 0.25
         };
 
+        // Phase-3 transformer models (real HF transformers, hosted in the Space)
+        this.transformerModels = {
+            url_phishing_bert: {
+                endpoint: '/api/v2/url-classify',
+                input:    'url',
+                desc:     'BERT URL phishing/malware classifier (elftsdmr/malware-url-detect)',
+            },
+            dga_detector: {
+                endpoint: '/api/v2/dga-detect',
+                input:    'domain',
+                desc:     'DGA-generated domain detector (YangYang-Research/dga-detection)',
+            },
+            security_llm: {
+                endpoint: '/api/v2/security-chat',
+                input:    'query',
+                desc:     'Cybersecurity Q&A LLM (DeepSeek via HF Inference Providers, Mistral-7B fallback)',
+            },
+        };
+
         console.log('🤖 CyberForge ML Service initialized');
-        console.log(`   Models: ${Object.keys(this.models).join(', ')}`);
+        console.log(`   Heuristic Models: ${Object.keys(this.models).join(', ')}`);
+        console.log(`   Transformer Models: ${Object.keys(this.transformerModels).join(', ')}`);
+    }
+
+    // ============================================================
+    // Phase-3 Transformer model calls (delegate to HF Space v2 API)
+    // ============================================================
+
+    async _callTransformerEndpoint(endpoint, payload) {
+        try {
+            const response = await axios.post(`${this.hfSpaceUrl}${endpoint}`, payload, {
+                timeout: 60000,
+                headers: { 'Content-Type': 'application/json' },
+            });
+            return response.data;
+        } catch (error) {
+            return {
+                error: error.response?.data?.detail || error.message,
+                status: error.response?.status,
+                inference_source: 'hf-space-v2-error',
+            };
+        }
+    }
+
+    async classifyUrlPhishing(url) {
+        return this._callTransformerEndpoint('/api/v2/url-classify', { url });
+    }
+
+    async detectDga(domain) {
+        return this._callTransformerEndpoint('/api/v2/dga-detect', { domain });
+    }
+
+    async securityChat(query, maxTokens = 512) {
+        return this._callTransformerEndpoint('/api/v2/security-chat', { query, max_tokens: maxTokens });
+    }
+
+    async iocScan(indicators = {}) {
+        // indicators: { url?, domain?, ip?, hash?, context? } — runs all ML models +
+        // DGA + BERT against multiple IOC types, with DeepSeek narrative when HF_TOKEN is set.
+        return this._callTransformerEndpoint('/api/v2/ioc-scan', indicators);
+    }
+
+    async urlEnrich(url) {
+        // Richer "AI Deep Scan": ML predictions + BERT + DGA + feature importances, single scored result.
+        return this._callTransformerEndpoint('/api/v2/url-enrich', { url });
+    }
+
+    async transformerStatus() {
+        try {
+            const response = await axios.get(`${this.hfSpaceUrl}/api/v2/status`, { timeout: 10000 });
+            return response.data;
+        } catch (error) {
+            return { error: error.message };
+        }
     }
 
     /**
-     * Calculate threat score from features
+     * Calculate threat score from features.
+     * Score is the *signal density* of suspicious features (not a baseline).
+     * A clean URL with no flags → 0 (minimal risk).
+     * Range after clamp: [0, 1]. Sum of all positive weights ≈ 1.7.
      */
     calculateThreatScore(features) {
         let score = 0.0;
-        
+
         for (const [feature, weight] of Object.entries(this.featureWeights)) {
             if (features[feature] !== undefined) {
                 let value = features[feature];
-                if (typeof value === 'boolean') {
-                    value = value ? 1 : 0;
-                }
+                if (typeof value === 'boolean') value = value ? 1 : 0;
                 score += value * weight;
             }
         }
-        
-        // Normalize to 0-1
-        return Math.max(0, Math.min(1, score + 0.5));
+
+        // No baseline offset — features must EARN risk, not start with it.
+        // Negative weights (e.g. is_https=-0.2) reduce risk for clean signals.
+        return Math.max(0, Math.min(1, score));
     }
 
     /**
-     * Get risk level from score
+     * Get risk level from score.
+     * Tightened from prior thresholds — "medium" now requires real signals,
+     * not the +0.5 baseline that flagged every URL.
      */
     getRiskLevel(score) {
-        if (score >= 0.8) return 'critical';
-        if (score >= 0.6) return 'high';
-        if (score >= 0.4) return 'medium';
-        if (score >= 0.2) return 'low';
+        if (score >= 0.65) return 'critical';
+        if (score >= 0.45) return 'high';
+        if (score >= 0.25) return 'medium';
+        if (score >= 0.10) return 'low';
         return 'minimal';
     }
 
     /**
-     * Predict using local scoring (fast, no network)
+     * Predict using local scoring (fast, no network).
+     * Used as fallback when HF Space is unreachable.
      */
     predictLocal(modelName, features) {
         if (!this.models[modelName]) {
@@ -102,19 +179,21 @@ class CyberForgeMLService {
 
         const info = this.models[modelName];
         const score = this.calculateThreatScore(features);
-        const prediction = score > 0.5 ? 1 : 0;
-        const confidence = Math.abs(score - 0.5) * 2 * 100;
+        // Threshold for binary classification — aligned with "medium" risk floor
+        const prediction = score >= 0.25 ? 1 : 0;
+        // Confidence reflects distance from decision boundary, not arbitrary midpoint
+        const confidence = Math.round(Math.min(100, Math.abs(score - 0.25) * 200) * 100) / 100;
 
         return {
             model: modelName,
             prediction: info.classes[prediction],
             prediction_id: prediction,
             is_threat: prediction === 1,
-            confidence: Math.round(confidence * 100) / 100,
+            confidence,
             risk_level: this.getRiskLevel(score),
             threat_score: Math.round(score * 10000) / 10000,
             model_accuracy: info.accuracy,
-            inference_source: 'local'
+            inference_source: 'local-heuristic'
         };
     }
 
@@ -143,9 +222,11 @@ class CyberForgeMLService {
     }
 
     /**
-     * Main prediction method - tries remote first, falls back to local
+     * Main prediction method — uses real ML on HF Space by default,
+     * falls back to local heuristic only if remote fails.
+     * Pass `preferLocal=true` for offline/fast paths (e.g. bulk scans).
      */
-    async predict(modelName, features, preferLocal = true) {
+    async predict(modelName, features, preferLocal = false) {
         if (preferLocal) {
             return this.predictLocal(modelName, features);
         }
@@ -162,23 +243,39 @@ class CyberForgeMLService {
     }
 
     /**
-     * Analyze URL for security threats
+     * Analyze URL for security threats.
+     * Aggregate logic: weighted blend of average + max so a single model
+     * misfire can't dominate, but a unanimous high-confidence threat does.
+     * Block requires either multi-model agreement or a single very-high score.
      */
     async analyzeUrl(url, additionalFeatures = {}) {
-        // Extract URL features
         const urlFeatures = this.extractUrlFeatures(url);
         const features = { ...urlFeatures, ...additionalFeatures };
 
-        // Run all models
         const results = {};
         for (const modelName of Object.keys(this.models)) {
             results[modelName] = await this.predict(modelName, features);
         }
 
-        // Calculate aggregate threat assessment
-        const scores = Object.values(results).map(r => r.threat_score);
+        const scores = Object.values(results).map(r => r.threat_score || 0);
         const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
         const maxScore = Math.max(...scores);
+        // 60% average + 40% max — average grounds the verdict, max gives weight to outliers
+        const blendedScore = 0.6 * avgScore + 0.4 * maxScore;
+        // How many models flagged this as a threat?
+        const agreeingModels = Object.values(results).filter(r => r.is_threat).length;
+        const totalModels = Object.keys(results).length;
+        const consensus = agreeingModels / totalModels;
+
+        // Block: 2+ models agree AND blended ≥ high, OR any single model very confident
+        // Warn: 1+ model flags it AND blended ≥ medium
+        // Allow: otherwise
+        let recommendedAction = 'allow';
+        if ((consensus >= 0.5 && blendedScore >= 0.45) || maxScore >= 0.75) {
+            recommendedAction = 'block';
+        } else if (agreeingModels >= 1 && blendedScore >= 0.25) {
+            recommendedAction = 'warn';
+        }
 
         return {
             url,
@@ -186,8 +283,10 @@ class CyberForgeMLService {
             aggregate: {
                 average_threat_score: Math.round(avgScore * 10000) / 10000,
                 max_threat_score: Math.round(maxScore * 10000) / 10000,
-                overall_risk_level: this.getRiskLevel(maxScore),
-                recommended_action: maxScore >= 0.6 ? 'block' : maxScore >= 0.4 ? 'warn' : 'allow'
+                blended_threat_score: Math.round(blendedScore * 10000) / 10000,
+                overall_risk_level: this.getRiskLevel(blendedScore),
+                model_consensus: `${agreeingModels}/${totalModels}`,
+                recommended_action: recommendedAction
             },
             model_predictions: results,
             features_analyzed: features
@@ -296,16 +395,56 @@ class CyberForgeMLService {
     }
 
     /**
-     * Health check
+     * AI analysis — proxies to HF Space /analyze (Gemini + ML fallback)
+     */
+    async analyze(query, context = {}, conversationHistory = []) {
+        try {
+            const response = await axios.post(`${this.hfSpaceUrl}/analyze`, {
+                query,
+                context,
+                conversation_history: conversationHistory,
+            }, {
+                timeout: 30000,
+                headers: { 'Content-Type': 'application/json' },
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`⚠️ HF Space /analyze failed: ${error.message}`);
+            return {
+                response: 'ML service temporarily unavailable. Please try again.',
+                confidence: 0.1,
+                risk_level: 'Unknown',
+                risk_score: 0,
+                insights: [],
+                recommendations: ['Retry in a moment'],
+                model_used: 'error-fallback',
+                timestamp: new Date().toISOString(),
+            };
+        }
+    }
+
+    /**
+     * Health check — includes live HF Space status
      */
     async healthCheck() {
+        let hfStatus = 'unknown';
+        let mlModelsLoaded = [];
+        try {
+            const res = await axios.get(`${this.hfSpaceUrl}/health`, { timeout: 10000 });
+            hfStatus = res.data?.status || 'healthy';
+            mlModelsLoaded = res.data?.services?.models_loaded || [];
+        } catch {
+            hfStatus = 'unreachable';
+        }
         return {
-            status: 'healthy',
+            status: hfStatus === 'unreachable' ? 'degraded' : 'healthy',
             models_available: Object.keys(this.models),
             model_count: Object.keys(this.models).length,
+            hf_space_status: hfStatus,
+            ml_models_loaded: mlModelsLoaded,
             huggingface_repo: 'https://huggingface.co/Che237/cyberforge-models',
             training_space: 'https://huggingface.co/spaces/Che237/cyberforge',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
     }
 }

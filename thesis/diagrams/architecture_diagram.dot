@@ -1,0 +1,96 @@
+digraph cyberforge_arch {
+  graph [rankdir=TB, splines=ortho, compound=true, bgcolor="white",
+         concentrate=true, nodesep=0.45, ranksep=0.9, pad=0.5, fontname="Helvetica-Bold",
+         fontsize=22, labelloc=t, label="CyberForge — Real-Time Agentic-AI Threat-Analysis Architecture\n\n"];
+  node [shape=box, style="rounded,filled", fontname="Helvetica",
+        fontsize=11, penwidth=1.6, margin="0.16,0.10", height=0.6];
+  edge [fontname="Helvetica-Bold", fontsize=10, penwidth=1.9,
+        color="#34495E", arrowsize=0.85];
+  subgraph cluster_l1 {
+    label=<<B>LAYER 1 · Users &amp; Client Channels</B>>;
+    fontsize=14; fontcolor="#0A6B7B"; style="rounded,filled"; fillcolor="#F2F5F9"; color="#0A6B7B"; penwidth=2; margin=12;
+  user [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>End User</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">browses the web</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#16233D", shape=oval, style="rounded,filled"];
+  analyst [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Security Analyst</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">reviews verdicts</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#16233D", shape=oval, style="rounded,filled"];
+  desktop [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Electron Desktop Client</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">renderer + main · floating agent panel</FONT></TD></TR></TABLE>>, fillcolor="#E3F4F6", color="#0E8FA3", shape=box, style="rounded,filled"];
+  browser [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Web Browser</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">Chrome · Firefox · Edge</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#0E8FA3", shape=box, style="rounded,filled"];
+  mobile [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Mobile Client</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">React Native — planned</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#5B6B82", shape=box, style="rounded,filled"];
+    {rank=same; user; analyst; browser; desktop; mobile;}
+    user -> desktop [style=invis]; browser -> desktop [style=invis];
+  }
+  subgraph cluster_l2 {
+    label=<<B>LAYER 2 · Back-end — Node.js / Express on Heroku PaaS</B>>;
+    fontsize=14; fontcolor="#0A6B7B"; style="rounded,filled"; fillcolor="#F2F5F9"; color="#0A6B7B"; penwidth=2; margin=12;
+  apigw [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>REST API Gateway</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">/api/orchestrator · /sandbox · /cyberforge-ml · Auth/JWT</FONT></TD></TR></TABLE>>, fillcolor="#0E8FA3", color="white", shape=box, style="filled"];
+    apigw [fontcolor="white"];
+  orch [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Agent Orchestrator — DAG Executor</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">builds ScanContext · 3 staged dispatches · ring buffer</FONT></TD></TR></TABLE>>, fillcolor="#FFF6DE", color="#E8743B", shape=box, style="rounded,filled"];
+    subgraph cluster_core {
+      label=<<B>AGENTIC AI CORE · 8 specialist agents</B>>;
+      fontsize=12; fontcolor="#8A6D00"; style="rounded,filled"; fillcolor="#FFFBEC"; color="#F4C20D"; penwidth=2; margin=10;
+  a_url [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>1 · URL Classifier</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">BERT phishing</FONT></TD></TR></TABLE>>, fillcolor="#FCE6E2", color="#C0392B", shape=box, style="rounded,filled"];
+  a_dga [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>2 · DGA Detector</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">Shannon entropy</FONT></TD></TR></TABLE>>, fillcolor="#FCE6E2", color="#C0392B", shape=box, style="rounded,filled"];
+  a_scrap [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>3 · Web Scraper</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">DOM · net · headers</FONT></TD></TR></TABLE>>, fillcolor="#FCE6E2", color="#C0392B", shape=box, style="rounded,filled"];
+  a_mem [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>4 · Memory Reader</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">domain history</FONT></TD></TR></TABLE>>, fillcolor="#FCE6E2", color="#C0392B", shape=box, style="rounded,filled"];
+  a_ioc [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>5 · IOC Extractor</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">10 regex patterns</FONT></TD></TR></TABLE>>, fillcolor="#DEF3E6", color="#1E8449", shape=box, style="rounded,filled"];
+  a_behav [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>6 · Behavioural</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">net · JS · cookies</FONT></TD></TR></TABLE>>, fillcolor="#DEF3E6", color="#1E8449", shape=box, style="rounded,filled"];
+  a_mitre [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>7 · MITRE Mapper</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">20-signal ATT&amp;CK</FONT></TD></TR></TABLE>>, fillcolor="#DEF3E6", color="#1E8449", shape=box, style="rounded,filled"];
+  a_intel [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>8 · Threat-Intel</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">OTX pulse lookup</FONT></TD></TR></TABLE>>, fillcolor="#EBE2F7", color="#6C3FBF", shape=box, style="rounded,filled"];
+  reporter [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>R · Reporter Agent</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">blended score · escalation · narrative</FONT></TD></TR></TABLE>>, fillcolor="#FFF6DE", color="#1F9D57", shape=box, style="rounded,filled"];
+      {rank=same; a_url; a_dga; a_scrap; a_mem;}
+      {rank=same; a_ioc; a_behav; a_mitre;}
+      {rank=same; a_intel; reporter;}
+    }
+    subgraph cluster_mem {
+      label=<<B>MEMORY LAYER</B>>;
+      fontsize=12; fontcolor="#0A6B7B"; style="rounded,filled"; fillcolor="#EAF4F6"; color="#0A6B7B"; penwidth=1.6; margin=10;
+  redis [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Redis</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">session cache</FONT></TD></TR></TABLE>>, fillcolor="#E3F4F6", color="#0A6B7B", shape=cylinder, style="rounded,filled"];
+  vec [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Pinecone / Chroma</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">embeddings</FONT></TD></TR></TABLE>>, fillcolor="#E3F4F6", color="#0A6B7B", shape=cylinder, style="rounded,filled"];
+  domain [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Domain History</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">in-process Map</FONT></TD></TR></TABLE>>, fillcolor="#E3F4F6", color="#0A6B7B", shape=cylinder, style="rounded,filled"];
+      {rank=same; redis; vec; domain;}
+    }
+  }
+  subgraph cluster_l3 {
+    label=<<B>LAYER 3 · Inference — Python FastAPI on Hugging Face Space</B>>;
+    fontsize=14; fontcolor="#0A6B7B"; style="rounded,filled"; fillcolor="#F2F5F9"; color="#0A6B7B"; penwidth=2; margin=12;
+  fastapi [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>FastAPI Gateway</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">app.py · lazy loaders</FONT></TD></TR></TABLE>>, fillcolor="#DCEEF4", color="#0A6B7B", shape=box, style="rounded,filled"];
+  bert [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>URL-Phishing BERT</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">elftsdmr/malware-url-detect</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#0A6B7B", shape=box, style="rounded,filled"];
+  dgam [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>DGA Heuristic</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">entropy · vowel · digit</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#0A6B7B", shape=box, style="rounded,filled"];
+  llm [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>LLM Fallback Chain</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">Gemini → Mistral → heuristic</FONT></TD></TR></TABLE>>, fillcolor="#FFF6DE", color="#7C5CD6", shape=box, style="rounded,filled"];
+    {rank=same; fastapi; bert; dgam; llm;}
+  }
+  subgraph cluster_l4 {
+    label=<<B>LAYER 4 · External Services &amp; Persistence</B>>;
+    fontsize=14; fontcolor="#0A6B7B"; style="rounded,filled"; fillcolor="#F2F5F9"; color="#0A6B7B"; penwidth=2; margin=12;
+  appwrite [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Appwrite Cloud</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">users · tasks · alerts</FONT></TD></TR></TABLE>>, fillcolor="#FBE7E5", color="#C0392B", shape=cylinder, style="rounded,filled"];
+  otx [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>AlienVault OTX</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">threat-intel pulses</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#C0392B", shape=box, style="rounded,filled"];
+  webscr [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>WebScrapper.live</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">DOM · net · headers</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#0E8FA3", shape=box, style="rounded,filled"];
+  gemini [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>Google Gemini API</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">primary LLM</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#7C5CD6", shape=box, style="rounded,filled"];
+  hfapi [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>HF Inference API</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">Mistral-7B</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#7C5CD6", shape=box, style="rounded,filled"];
+  pdf [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="13" COLOR="#16233D"><B>PDF Reports</B></FONT></TD></TR><TR><TD><FONT POINT-SIZE="9.5" COLOR="#5B6B82">pdfkit export</FONT></TD></TR></TABLE>>, fillcolor="#FFFFFF", color="#1F9D57", shape=cylinder, style="rounded,filled"];
+    {rank=same; appwrite; otx; webscr; gemini; hfapi; pdf;}
+  }
+  desktop -> apigw [label="1  HTTPS/TLS", color="#E8743B", penwidth=2.4, fontcolor="#E8743B"];
+  browser -> desktop [label="poll 5s", color="#5B6B82", style=dashed, constraint=false, penwidth=1.5];
+  apigw -> orch [label="2  dispatch", color="#E8743B", penwidth=2.4, fontcolor="#E8743B"];
+  orch -> a_url [label="3  Stage 1", color="#E8743B", penwidth=2.4, fontcolor="#E8743B"];
+  orch -> a_dga [color="#E8743B", penwidth=2.4, fontcolor="#E8743B"]; orch -> a_scrap [color="#E8743B", penwidth=2.4, fontcolor="#E8743B"]; orch -> a_mem [color="#E8743B", penwidth=2.4, fontcolor="#E8743B"];
+  a_url -> fastapi [taillabel="4 BERT", labelangle=0, labeldistance=2.4, color="#E8743B", penwidth=2.4, fontcolor="#E8743B"];
+  a_dga -> fastapi [color="#0E8FA3", penwidth=1.9, fontcolor="#0A6B7B"];
+  fastapi -> bert [color="#0E8FA3", penwidth=1.9, fontcolor="#0A6B7B"]; fastapi -> dgam [color="#0E8FA3", penwidth=1.9, fontcolor="#0A6B7B"];
+  a_scrap -> webscr [taillabel="5 scrape", labeldistance=2.4, color="#0E8FA3", penwidth=1.9, fontcolor="#0A6B7B"];
+  a_mem -> domain [color="#0E8FA3", penwidth=1.9, fontcolor="#0A6B7B"]; a_mem -> redis [color="#0E8FA3", penwidth=1.9, fontcolor="#0A6B7B"];
+  a_scrap -> a_ioc [label="6  page", color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", style=dashed];
+  a_scrap -> a_behav [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", style=dashed]; a_scrap -> a_mitre [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", style=dashed];
+  a_ioc -> a_intel [label="7  IOCs", color="#7C5CD6", penwidth=2.0, fontcolor="#7C5CD6"];
+  a_intel -> otx [label="8  enrich", color="#C0392B", penwidth=1.9, fontcolor="#C0392B"];
+  a_url -> reporter [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", arrowhead=vee, constraint=false];
+  a_dga -> reporter [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", arrowhead=vee, constraint=false];
+  a_mem -> reporter [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", arrowhead=vee, constraint=false];
+  a_behav -> reporter [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", arrowhead=vee, constraint=false];
+  a_mitre -> reporter [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", arrowhead=vee, constraint=false];
+  a_intel -> reporter [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", arrowhead=vee, constraint=false];
+  reporter -> llm [label="9  narrative", color="#7C5CD6", penwidth=2.0, fontcolor="#7C5CD6"];
+  llm -> gemini [color="#7C5CD6", penwidth=2.0, fontcolor="#7C5CD6"]; llm -> hfapi [color="#7C5CD6", penwidth=2.0, fontcolor="#7C5CD6"];
+  reporter -> appwrite [label="persist", color="#C0392B", penwidth=1.9, fontcolor="#C0392B"];
+  reporter -> pdf [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57"]; reporter -> redis [color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", style=dashed, label="write-back", constraint=false];
+  reporter -> desktop [taillabel="consolidated\nreport", labeldistance=3, color="#1F9D57", penwidth=2.0, fontcolor="#1F9D57", constraint=false, penwidth=2.4];
+}

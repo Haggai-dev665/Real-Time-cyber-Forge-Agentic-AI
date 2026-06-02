@@ -40,7 +40,7 @@
     justify-content: center;
     font-size: 1.5rem;
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(179, 136, 255, 0.3);
 }
 
 .status-indicator {
@@ -428,7 +428,7 @@
 #chat-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.1);
 }
 
 #chat-input::placeholder {
@@ -452,7 +452,7 @@
 
 .send-btn:hover:not(:disabled) {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(179, 136, 255, 0.4);
 }
 
 .send-btn:disabled {
@@ -709,14 +709,14 @@
 /* Quick Action Buttons */
 .ai-quick-action {
     transition: all 0.2s ease;
-    border: 1px solid var(--caido-border);
+    border: 1px solid var(--cf-border);
 }
 
 .ai-quick-action:hover {
-    background: var(--caido-accent-purple) !important;
+    background: var(--cf-accent-purple) !important;
     color: white !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(94,122,136, 0.3);
 }
 
 /* Suggestion Chips */
@@ -725,8 +725,8 @@
 }
 
 .ai-suggestion:hover {
-    background: var(--caido-bg-dark) !important;
-    border-color: var(--caido-accent-blue) !important;
+    background: var(--cf-bg-dark) !important;
+    border-color: var(--cf-accent-blue) !important;
     transform: translateY(-2px);
 }
 
@@ -753,16 +753,16 @@
 
 @keyframes glowPulse {
     0%, 100% {
-        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        box-shadow: 0 0 20px rgba(94,122,136, 0.3);
     }
     50% {
-        box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 40px rgba(94,122,136, 0.5);
     }
 }
 
 /* Typing indicator animation */
 #ai-typing-indicator {
-    color: var(--caido-accent-purple);
+    color: var(--cf-accent-purple);
 }
 
 /* Context panel styling */
@@ -772,8 +772,8 @@
 
 /* Input focus styling */
 #assistant-input:focus {
-    border-color: var(--caido-accent-purple);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: var(--cf-accent-purple);
+    box-shadow: 0 0 0 3px rgba(94,122,136, 0.1);
 }
 
 /* Code block styling in AI responses */
@@ -783,7 +783,7 @@
 
 .ai-message pre {
     scrollbar-width: thin;
-    scrollbar-color: var(--caido-border) transparent;
+    scrollbar-color: var(--cf-border) transparent;
 }
 
 .ai-message pre::-webkit-scrollbar {
@@ -791,12 +791,12 @@
 }
 
 .ai-message pre::-webkit-scrollbar-thumb {
-    background: var(--caido-border);
+    background: var(--cf-border);
     border-radius: 3px;
 }
 
 /* Status badge pulse for online */
-.caido-badge.green .status-dot {
+.cf-badge.green .status-dot {
     animation: statusPulse 2s infinite;
 }
 

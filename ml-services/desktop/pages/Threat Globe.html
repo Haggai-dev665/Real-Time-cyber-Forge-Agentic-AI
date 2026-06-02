@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Threat Globe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<style>
+.globe-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;height:calc(100% - 56px)}
+.map-card{position:relative;overflow:hidden;display:flex;flex-direction:column}
+.map-stage{flex:1;position:relative;overflow:hidden;border-radius:0 0 9px 9px;
+  background:radial-gradient(900px 600px at 50% 46%,rgba(43,212,238,.06),transparent 60%),#070b14}
+.map-stage svg.world,.map-stage canvas.world{position:absolute;inset:0;width:100%;height:100%;display:block}
+.map-meta{position:absolute;left:16px;bottom:14px;display:flex;gap:22px;font-family:var(--mono);z-index:5}
+.map-meta .m b{display:block;font-size:24px;font-weight:600;line-height:1}
+.map-meta .m span{font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.map-legend{position:absolute;right:16px;top:14px;display:flex;flex-direction:column;gap:7px;z-index:5}
+.map-legend .row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.map-legend .sw{width:9px;height:9px;border-radius:50%}
+.gl-tabs{position:absolute;left:16px;top:14px;display:flex;gap:6px;z-index:5}
+.gl-tab{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:5px 11px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--border-2);background:rgba(10,14,23,.7);color:var(--dim);transition:.18s}
+.gl-tab.active{color:var(--amber-2);border-color:rgba(245,166,35,.4);background:var(--amber-dim)}
+
+.side-col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.feed-card{display:flex;flex-direction:column;min-height:0;flex:1}
+.attack-stream{overflow-y:auto;padding:6px 8px 8px;display:flex;flex-direction:column;gap:5px}
+.atk{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface-2);position:relative;overflow:hidden;animation:atkin .45s cubic-bezier(.2,.9,.25,1)}
+@keyframes atkin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.atk .flag{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-size:14px;flex:none;
+  background:#0d1320;border:1px solid var(--border-2)}
+.atk .who{flex:1;min-width:0}
+.atk .who b{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.atk .who .ip{font-family:var(--mono);font-size:9.5px;color:var(--faint);display:block;margin-top:1px}
+.atk .arrow{color:var(--faint);font-size:11px}
+.atk .when{font-family:var(--mono);font-size:9px;color:var(--faint);flex:none}
+.atk .edge{position:absolute;left:0;top:0;bottom:0;width:2px}
+.atk.crit .edge{background:var(--red)} .atk.med .edge{background:var(--amber)} .atk.low .edge{background:var(--cyan)}
+
+.origin{display:flex;align-items:center;gap:10px;padding:9px 12px}
+.origin .rank{font-family:var(--mono);font-size:10px;color:var(--faint);width:14px}
+.origin .flag{font-size:15px}
+.origin .nm{font-size:12.5px;flex:none;width:78px}
+.origin .track{flex:1;height:6px;border-radius:4px;background:rgba(130,160,200,.1);overflow:hidden}
+.origin .track i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--amber),var(--amber-2));width:0;transition:width 1s cubic-bezier(.3,.8,.3,1)}
+.origin .ct{font-family:var(--mono);font-size:11px;color:var(--amber-2);font-weight:600;width:34px;text-align:right}
+.typ{display:flex;align-items:center;gap:10px;padding:9px 12px}
+.typ .ic{width:14px;height:14px;color:var(--dim)}
+.typ .nm{font-size:12px;flex:1}
+.typ .bar{width:80px;height:5px;border-radius:3px;background:rgba(130,160,200,.1);overflow:hidden}
+.typ .bar i{display:block;height:100%;border-radius:3px;width:0;transition:width 1.1s ease}
+.typ .pc{font-family:var(--mono);font-size:10px;color:var(--dim);width:30px;text-align:right}
+.row-div{border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Threat Globe" id="win">
+    <!-- TOP BAR -->
+    <div class="topbar" id="topbar"></div>
+
+    <div class="body">
+      <!-- SIDEBAR -->
+      <aside class="sidebar" id="sidebar"></aside>
+
+      <!-- MAIN -->
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg></div>
+          <h1>Threat Globe</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Live</span>
+            <span id="rate">42 attacks/min</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Replay</button>
+          </div>
+        </div>
+
+        <div class="globe-grid">
+          <!-- MAP -->
+          <div class="card map-card">
+            <div class="map-stage" id="mapStage">
+              <div class="gl-tabs">
+                <div class="gl-tab active" data-mode="globe">GLOBE</div>
+                <div class="gl-tab" data-mode="map">2D MAP</div>
+                <div class="gl-tab" data-mode="heat">HEATMAP</div>
+              </div>
+              <div class="map-legend">
+                <div class="row"><span class="sw" style="background:var(--red)"></span>Critical</div>
+                <div class="row"><span class="sw" style="background:var(--amber)"></span>Medium</div>
+                <div class="row"><span class="sw" style="background:var(--cyan)"></span>Low / probe</div>
+              </div>
+              <canvas class="world" id="world"></canvas>
+              <div class="map-meta">
+                <div class="m"><b id="mTotal" class="sev-crit">318</b><span>Active threats</span></div>
+                <div class="m"><b id="mBlocked" style="color:var(--green)">2,041</b><span>Blocked today</span></div>
+                <div class="m"><b id="mNodes" style="color:var(--cyan)">7</b><span>Sensor nodes</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIDE COLUMN -->
+          <div class="side-col">
+            <div class="card feed-card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Live Attack Stream<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="attack-stream" id="stream"></div>
+            </div>
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>Top Origins</div>
+              <div id="origins"></div>
+            </div>
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>Attack Vectors</div>
+              <div id="vectors"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- FLOATING AGENT LAUNCHER -->
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="cyberforge-shared.js"></script>
+<script src="cf-header.js"></script>
+<script src="cf-sidebar.js"></script>
+<script src="cf-footer.js"></script>
+<script>
+buildHeader({status:'TRACKING',threats:'318'});
+buildSidebar('globe');
+buildFooter({items:[{txt:'7 nodes online',cls:'sb-cyan'},{txt:'318 threats',cls:'sb-amber'},{txt:'tracking 42/min'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+/* ============ ANIMATED GLOBE + 2D MAP (canvas) ============ */
+(function(){
+  const cvs=document.getElementById('world'), ctx=cvs.getContext('2d');
+  let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
+  function resize(){
+    const r=cvs.parentElement.getBoundingClientRect();
+    W=r.width; H=r.height;
+    cvs.width=W*dpr; cvs.height=H*dpr; cvs.style.width=W+'px'; cvs.style.height=H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resize(); window.addEventListener('resize',resize);
+
+  let mode='globe', yaw=0, CLOCK=0;
+  const TILT=23*Math.PI/180;
+
+  // ---- recognizable continents from an encoded land mask ----
+  // segments: [row, colStart, colEnd] on a 48×24 equirectangular grid
+  // row 0 = +90° lat (step −7.5°), col 0 = −180° lon (step +7.5°)
+  const segs=[
+    [1,13,16],[1,19,21],
+    [2,7,16],[2,18,21],[2,34,45],
+    [3,4,16],[3,18,20],[3,24,27],[3,28,45],
+    [4,3,16],[4,19,20],[4,23,28],[4,29,46],
+    [5,6,16],[5,23,29],[5,30,46],
+    [6,7,16],[6,24,29],[6,30,45],
+    [7,9,16],[7,24,30],[7,38,45],
+    [8,10,15],[8,23,33],[8,35,42],
+    [9,12,14],[9,22,33],[9,34,41],
+    [10,13,15],[10,22,31],[10,35,36],[10,39,42],
+    [11,15,17],[11,23,31],[11,40,43],
+    [12,15,18],[12,24,30],[12,40,43],
+    [13,16,19],[13,24,30],[13,41,43],
+    [14,16,19],[14,25,30],[14,40,44],
+    [15,16,19],[15,26,29],[15,39,44],
+    [16,16,18],[16,26,28],[16,40,43],
+    [17,16,18],[17,27,27],[17,41,43],[17,46,46],
+    [18,16,17],[18,46,46],
+    [19,16,16]
+  ];
+  const land=[];
+  segs.forEach(([row,c0,c1])=>{
+    for(let c=c0;c<=c1;c++){
+      const lat=90-row*7.5, lon=-180+c*7.5;
+      for(let dy=0;dy<2;dy++) for(let dx=0;dx<2;dx++){
+        land.push([lat-dy*3.75-1.6+(Math.random()*1.2-0.6), lon+dx*3.75-1.6+(Math.random()*1.2-0.6)]);
+      }
+    }
+  });
+
+  const origins=[
+    {name:'Russia',flag:'🇷🇺',lat:60,lon:95},{name:'China',flag:'🇨🇳',lat:34,lon:105},
+    {name:'N. Korea',flag:'🇰🇵',lat:40,lon:127},{name:'Iran',flag:'🇮🇷',lat:32,lon:53},
+    {name:'Brazil',flag:'🇧🇷',lat:-10,lon:-52},{name:'Nigeria',flag:'🇳🇬',lat:9,lon:8},
+    {name:'USA',flag:'🇺🇸',lat:39,lon:-98},{name:'Ukraine',flag:'🇺🇦',lat:49,lon:32}
+  ];
+  const hubs=[[40,-74],[51,0],[50,8],[1,103],[35,139],[37,-122]]; // defender nodes
+  window.__origins=origins;
+
+  // ---- projections ----
+  function latlonToVec(lat,lon){const p=lat*Math.PI/180,l=lon*Math.PI/180;
+    return [Math.cos(p)*Math.sin(l), Math.sin(p), Math.cos(p)*Math.cos(l)];}
+  function geom(){const cx=W/2,cy=H/2,R=Math.max(2,Math.min(W,H)*0.42);return {cx,cy,R};}
+  function projVec(v,rf){ // rotate by yaw + tilt, orthographic
+    let [x,y,z]=v; const l=yaw*Math.PI/180;
+    const xr=x*Math.cos(l)+z*Math.sin(l); let zr=-x*Math.sin(l)+z*Math.cos(l);
+    const yr=y*Math.cos(TILT)-zr*Math.sin(TILT); const zr2=y*Math.sin(TILT)+zr*Math.cos(TILT);
+    const g=geom(); const r=g.R*(rf||1);
+    return {x:g.cx+xr*r, y:g.cy-yr*r, vis:zr2>0, z:zr2};
+  }
+  function projLL(lat,lon,rf){
+    if(mode==='globe') return projVec(latlonToVec(lat,lon),rf);
+    // equirectangular map
+    const g=geom(), mw=Math.min(W*0.92,H*1.7), mh=mw/2, mx=g.cx-mw/2, my=g.cy-mh/2;
+    return {x:mx+(lon+180)/360*mw, y:my+(90-lat)/180*mh, vis:true, z:1, mw, mh, mx, my};
+  }
+
+  // ---- attack arcs ----
+  let arcs=[];
+  function slerp(a,b,t){
+    let d=a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; d=Math.max(-1,Math.min(1,d));
+    const o=Math.acos(d); if(o<1e-4) return a;
+    const s=Math.sin(o), w1=Math.sin((1-t)*o)/s, w2=Math.sin(t*o)/s;
+    return [a[0]*w1+b[0]*w2, a[1]*w1+b[1]*w2, a[2]*w1+b[2]*w2];
+  }
+  const sevs=[['crit','#f4495e',0.22],['med','#f5a623',0.42],['low','#2bd4ee',1]];
+  function fireArc(o){
+    const tgt=hubs[Math.floor(Math.random()*hubs.length)];
+    const r=Math.random(); const sev=sevs.find(s=>r<=s[2]);
+    arcs.push({from:[o.lat,o.lon], to:tgt, color:sev[1], t0:CLOCK, dur:1100+Math.random()*500, sev:sev[0]});
+    return {o, sev:sev[0]};
+  }
+  window.__fireArc=()=>fireArc(origins[Math.floor(Math.random()*origins.length)]);
+
+  // impact rings
+  let rings=[];
+  function addRing(lat,lon,color){rings.push({lat,lon,color,t0:CLOCK});}
+
+  // twinkling stars behind globe
+  const stars=Array.from({length:70},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.3,p:Math.random()*Math.PI*2}));
+
+  function drawGlobe(now){
+    const g=geom();
+    // atmosphere glow
+    let ga=ctx.createRadialGradient(g.cx,g.cy,g.R*0.6,g.cx,g.cy,g.R*1.35);
+    ga.addColorStop(0,'rgba(43,212,238,0.10)'); ga.addColorStop(1,'rgba(43,212,238,0)');
+    ctx.fillStyle=ga; ctx.beginPath(); ctx.arc(g.cx,g.cy,g.R*1.35,0,7); ctx.fill();
+    // ocean sphere
+    let og=ctx.createRadialGradient(g.cx-g.R*0.3,g.cy-g.R*0.35,g.R*0.2,g.cx,g.cy,g.R);
+    og.addColorStop(0,'#10202f'); og.addColorStop(0.7,'#0a1622'); og.addColorStop(1,'#060d16');
+    ctx.fillStyle=og; ctx.beginPath(); ctx.arc(g.cx,g.cy,g.R,0,7); ctx.fill();
+    // graticule
+    ctx.strokeStyle='rgba(126,148,184,0.12)'; ctx.lineWidth=1;
+    for(let lat=-60;lat<=60;lat+=30){ ctx.beginPath(); let started=false;
+      for(let lon=-180;lon<=180;lon+=6){const p=projLL(lat,lon); if(p.vis){p.x&&(started?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));started=true;}else started=false;}
+      ctx.stroke();
+    }
+    for(let lon=-180;lon<180;lon+=30){ ctx.beginPath(); let started=false;
+      for(let lat=-90;lat<=90;lat+=6){const p=projLL(lat,lon); if(p.vis){started?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);started=true;}else started=false;}
+      ctx.stroke();
+    }
+    // land dots
+    for(const [lat,lon] of land){const p=projLL(lat,lon); if(!p.vis)continue;
+      const a=0.5+p.z*0.45; ctx.fillStyle='rgba(86,196,224,'+a.toFixed(2)+')';
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.8,0,7); ctx.fill();
+    }
+    // rim light
+    ctx.strokeStyle='rgba(43,212,238,0.35)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(g.cx,g.cy,g.R,0,7); ctx.stroke();
+  }
+
+  function drawMap(now,heat){
+    const g=geom(), s=projLL(0,0); const mx=s.mx,my=s.my,mw=s.mw,mh=s.mh;
+    // panel
+    ctx.fillStyle='rgba(10,22,34,0.5)'; ctx.fillRect(mx,my,mw,mh);
+    // grid
+    ctx.strokeStyle='rgba(126,148,184,0.08)'; ctx.lineWidth=1;
+    for(let lon=-180;lon<=180;lon+=30){const x=mx+(lon+180)/360*mw;ctx.beginPath();ctx.moveTo(x,my);ctx.lineTo(x,my+mh);ctx.stroke();}
+    for(let lat=-90;lat<=90;lat+=30){const y=my+(90-lat)/180*mh;ctx.beginPath();ctx.moveTo(mx,y);ctx.lineTo(mx+mw,y);ctx.stroke();}
+    // land dots
+    for(const [lat,lon] of land){const p=projLL(lat,lon);
+      ctx.fillStyle='rgba(86,196,224,0.6)'; ctx.beginPath(); ctx.arc(p.x,p.y,1.7,0,7); ctx.fill();}
+    if(heat){ // heat blooms at origins
+      origins.forEach(o=>{const p=projLL(o.lat,o.lon); const rr=18+10*Math.sin(now/400+o.lon);
+        let hg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,rr);
+        hg.addColorStop(0,'rgba(244,73,94,0.5)');hg.addColorStop(1,'rgba(244,73,94,0)');
+        ctx.fillStyle=hg;ctx.beginPath();ctx.arc(p.x,p.y,rr,0,7);ctx.fill();});
+    }
+  }
+
+  function drawArcs(now){
+    // hubs
+    hubs.forEach(h=>{const p=projLL(h[0],h[1]); if(!p.vis)return;
+      ctx.fillStyle='#2bd4ee'; ctx.beginPath(); ctx.arc(p.x,p.y,2.6,0,7); ctx.fill();
+      const pr=(now/900)%1; ctx.strokeStyle='rgba(43,212,238,'+(1-pr).toFixed(2)+')'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.1,2.6+pr*9),0,7); ctx.stroke();
+    });
+    arcs=arcs.filter(a=>{
+      const prog=(now-a.t0)/a.dur; if(prog>=1.25) return false;
+      const va=latlonToVec(a.from[0],a.from[1]), vb=latlonToVec(a.to[0],a.to[1]);
+      const head=Math.min(prog,1), tail=Math.max(0,prog-0.35);
+      ctx.strokeStyle=a.color; ctx.lineWidth=1.6; ctx.globalAlpha=prog<1?1:1-(prog-1)/0.25;
+      ctx.beginPath(); let started=false, lastPt=null;
+      for(let t=tail;t<=head;t+=0.04){
+        let pt, sx,sy,vis;
+        if(mode==='globe'){const v=slerp(va,vb,t); const rf=1+Math.sin(t*Math.PI)*0.28; const p=projVec(v,rf); sx=p.x;sy=p.y;vis=p.vis;}
+        else{ // 2D bezier arc
+          const pf=projLL(a.from[0],a.from[1]), pt2=projLL(a.to[0],a.to[1]);
+          const mxp=(pf.x+pt2.x)/2, myp=(pf.y+pt2.y)/2-Math.hypot(pt2.x-pf.x,pt2.y-pf.y)*0.32;
+          const u=1-t; sx=u*u*pf.x+2*u*t*mxp+t*t*pt2.x; sy=u*u*pf.y+2*u*t*myp+t*t*pt2.y; vis=true;
+        }
+        if(vis){started?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);started=true;lastPt=[sx,sy];}else started=false;
+      }
+      ctx.stroke();
+      // head glow
+      if(prog<=1 && lastPt){ctx.fillStyle=a.color;ctx.beginPath();ctx.arc(lastPt[0],lastPt[1],2.8,0,7);ctx.fill();
+        ctx.globalAlpha*=0.4;ctx.beginPath();ctx.arc(lastPt[0],lastPt[1],6,0,7);ctx.fill();}
+      ctx.globalAlpha=1;
+      if(prog>=1 && !a.hit){a.hit=true; addRing(a.to[0],a.to[1],a.color);}
+      return true;
+    });
+    // impact rings
+    rings=rings.filter(r=>{const t=(now-r.t0)/650; if(t>=1)return false;
+      const p=projLL(r.lat,r.lon); if(!p.vis)return true;
+      ctx.strokeStyle=r.color; ctx.globalAlpha=1-t; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.1,3+t*16),0,7); ctx.stroke(); ctx.globalAlpha=1; return true;});
+  }
+
+  function frame(now){
+    if(W<2||H<2){requestAnimationFrame(frame);return;}
+    CLOCK=now;
+    ctx.clearRect(0,0,W,H);
+    if(mode==='globe'){
+      // stars
+      stars.forEach(s=>{const a=0.3+0.5*Math.abs(Math.sin(now/700+s.p));ctx.fillStyle='rgba(140,170,210,'+a.toFixed(2)+')';
+        ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,7);ctx.fill();});
+      yaw+=0.12;
+      drawGlobe(now); drawArcs(now);
+    } else {
+      drawMap(now, mode==='heat'); drawArcs(now);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // tabs
+  document.querySelectorAll('.gl-tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.gl-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active'); mode=t.dataset.mode;
+  }));
+})();
+
+/* ============ LIVE ATTACK STREAM ============ */
+(function(){
+  const stream=document.getElementById('stream');
+  const types=['SQL Injection','DDoS Probe','Port Scan','Brute Force','XSS Attempt','Malware C2','Credential Stuffing','Ransomware'];
+  const targets=['api.acme-corp.io','login.medsys.health','vpn.gov-grid.io','mail.zeta-bank.com','sso.nimbus-cloud.dev'];
+  function rip(){return Math.floor(Math.random()*223+1)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255);}
+  function add(){
+    const a=window.__fireArc(); if(!a)return;
+    const el=document.createElement('div');
+    el.className='atk '+a.sev;
+    el.innerHTML='<span class="edge"></span><span class="flag">'+a.o.flag+'</span>'+
+      '<div class="who"><b>'+types[Math.floor(Math.random()*types.length)]+
+      ' <span class="pill '+a.sev+'">'+a.sev.toUpperCase()+'</span></b>'+
+      '<span class="ip">'+a.o.name+' · '+rip()+' → '+targets[Math.floor(Math.random()*targets.length)]+'</span></div>'+
+      '<span class="when">now</span>';
+    stream.prepend(el);
+    [...stream.children].forEach((c,i)=>{const w=c.querySelector('.when'); if(i>0&&w)w.textContent=i+'s';});
+    while(stream.children.length>9) stream.lastChild.remove();
+  }
+  for(let i=0;i<6;i++) setTimeout(add,i*180);
+  setInterval(add,1500);
+})();
+
+/* ============ ORIGINS + VECTORS ============ */
+(function(){
+  const data=[['🇷🇺','Russia',92],['🇨🇳','China',78],['🇰🇵','N. Korea',54],['🇮🇷','Iran',41],['🇧🇷','Brazil',27]];
+  const max=92;
+  document.getElementById('origins').innerHTML=data.map((d,i)=>
+    '<div class="origin'+(i?' row-div':'')+'"><span class="rank">'+(i+1)+'</span><span class="flag">'+d[0]+'</span>'+
+    '<span class="nm">'+d[1]+'</span><span class="track"><i data-w="'+(d[2]/max*100)+'"></i></span>'+
+    '<span class="ct">'+d[2]+'</span></div>').join('');
+  const vec=[['SQLi',34,'var(--red)'],['DDoS',26,'var(--amber)'],['Phishing',21,'var(--cyan)'],['Malware',19,'var(--amber-2)']];
+  document.getElementById('vectors').innerHTML=vec.map((v,i)=>
+    '<div class="typ'+(i?' row-div':'')+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'+
+    '<span class="nm">'+v[0]+'</span><span class="bar"><i data-w="'+v[1]+'" style="background:'+v[2]+'"></i></span><span class="pc">'+v[1]+'%</span></div>').join('');
+  setTimeout(()=>{document.querySelectorAll('[data-w]').forEach(i=>i.style.width=i.dataset.w+'%');},150);
+})();
+
+/* live counters */
+(function(){
+  const t=document.getElementById('mTotal'),b=document.getElementById('mBlocked'),
+        tb=document.getElementById('tbThreats'),sb=document.getElementById('sbThreats'),rate=document.getElementById('rate');
+  let total=318,blocked=2041;
+  setInterval(()=>{
+    if(Math.random()<.6){total+=Math.floor(Math.random()*3)-1; if(total<300)total=300;}
+    blocked+=Math.floor(Math.random()*4);
+    t.textContent=total; b.textContent=blocked.toLocaleString();
+    if(tb) tb.innerHTML=tb.innerHTML.replace(/\d[\d,]*\s*threats/,total+' threats');
+    if(sb) sb.textContent=total+' threats';
+    rate.textContent=(38+Math.floor(Math.random()*12))+' attacks/min';
+  },1600);
+})();
+</script>
+</body>
+</html>

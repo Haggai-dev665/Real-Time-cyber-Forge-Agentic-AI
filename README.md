@@ -15,6 +15,52 @@
 
 **Real-Time Cyber Forge Agentic AI** is a cutting-edge, comprehensive cybersecurity platform that harnesses the power of artificial intelligence and machine learning to provide unparalleled threat detection, real-time security monitoring, and intelligent incident response capabilities. Built for the modern digital landscape, this platform combines advanced AI agents with sophisticated analytics to create an adaptive security ecosystem.
 
+---
+
+## 🎯 **NEW: TODO 1 - Core Agent & Control Plane (COMPLETE)**
+
+✅ **Cyberforge is now a real security system, not a demo!**
+
+TODO 1 establishes the foundational control plane and autonomous security agent:
+
+- **Appwrite Control Plane** - Single source of truth for identity, authentication, and agent control
+- **Autonomous Security Agents** - Continuously running agents with heartbeat and task polling
+- **Complete Traceability** - Every alert maps to user, device, agent, and evidence
+- **ML + Gemini Integration** - Threat classification and AI-generated explanations
+- **Datadog Observability** - Comprehensive metrics tracking
+
+### 📚 TODO 1 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [**Quick Start Guide**](docs/TODO_1_QUICKSTART.md) | Get started in 5 minutes |
+| [**Implementation Details**](docs/TODO_1_IMPLEMENTATION.md) | Technical documentation |
+| [**Appwrite Setup**](docs/APPWRITE_SETUP.md) | Control plane configuration |
+| [**Summary**](docs/TODO_1_SUMMARY.md) | Executive overview |
+
+### 🚀 Quick Start (TODO 1)
+
+```bash
+# 1. Install dependencies
+cd backend && npm install
+
+# 2. Configure Appwrite (see docs/APPWRITE_SETUP.md)
+cp .env.example .env
+# Add your Appwrite credentials
+
+# 3. Start the backend
+npm run dev
+
+# 4. Start an agent
+curl -X POST http://localhost:8000/api/agent/start \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "user-123", "agentName": "scanner1"}'
+```
+
+[➡️ Full Quick Start Guide](docs/TODO_1_QUICKSTART.md)
+
+---
+
 ## ⚡ Quick Start
 
 ### 🎯 One-Command Setup

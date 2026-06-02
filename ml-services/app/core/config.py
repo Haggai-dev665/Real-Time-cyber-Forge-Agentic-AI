@@ -16,9 +16,15 @@ class Settings(BaseSettings):
     # CORS settings
     ALLOWED_HOSTS: List[str] = ["*"]
     
-    # AI/ML Configuration - Gemini API
+    # AI/ML Configuration - reasoning LLM (DeepSeek via HF Inference Providers).
+    # Gemini has been retired; the GEMINI_* fields below are kept only as harmless
+    # backward-compat aliases for any code/env that still references them.
+    HF_TOKEN: Optional[str] = None
+    REASONING_LLM_MODEL: str = "deepseek-ai/DeepSeek-V3-0324"
+    LLM_TEMPERATURE: float = 0.3
+    LLM_MAX_TOKENS: int = 2048
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
+    GEMINI_MODEL: str = "deepseek-ai/DeepSeek-V3-0324"
     GEMINI_TEMPERATURE: float = 0.3
     GEMINI_MAX_TOKENS: int = 2048
     

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberForge — Setup Wizard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <link rel="stylesheet" href="css/setup-wizard.css">
+</head>
+<body>
+
+<div class="wizard-shell" id="wizard-shell">
+
+  <!-- ═══════ LEFT SIDEBAR ═══════ -->
+  <aside class="wizard-sidebar">
+    <div class="sidebar-brand">
+      <img src="../assets/logo-icon.png" alt="CF" onerror="this.style.display='none'">
+      <span>CyberForge</span>
+    </div>
+    <nav class="sidebar-steps">
+      <div class="sidebar-step active" data-step="0">
+        <span class="step-num">1</span>
+        <span class="step-label">Welcome</span>
+      </div>
+      <div class="sidebar-step" data-step="1">
+        <span class="step-num">2</span>
+        <span class="step-label">License</span>
+      </div>
+      <div class="sidebar-step" data-step="2">
+        <span class="step-num">3</span>
+        <span class="step-label">System Scan</span>
+      </div>
+      <div class="sidebar-step" data-step="3">
+        <span class="step-num">4</span>
+        <span class="step-label">Browsers</span>
+      </div>
+      <div class="sidebar-step" data-step="4">
+        <span class="step-num">5</span>
+        <span class="step-label">Connection</span>
+      </div>
+      <div class="sidebar-step" data-step="5">
+        <span class="step-num">6</span>
+        <span class="step-label">Complete</span>
+      </div>
+    </nav>
+    <div class="sidebar-version">
+      <i class="fas fa-lock"></i> Secure Install &middot; v2.0.0
+    </div>
+  </aside>
+
+  <!-- ═══════ MAIN PANEL ═══════ -->
+  <div class="wizard-main">
+
+    <!-- Scrollable content area -->
+    <div class="wizard-content">
+
+      <!-- ═══════ STEP 0: WELCOME ═══════ -->
+      <section class="wizard-step" id="step-welcome">
+        <div class="welcome-hero">
+          <div class="shield-container">
+            <svg class="shield-svg" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#CE7A1F"/>
+                  <stop offset="100%" style="stop-color:#F69D39"/>
+                </linearGradient>
+              </defs>
+              <path d="M60 10 L110 35 L110 75 C110 105 85 130 60 138 C35 130 10 105 10 75 L10 35 Z" fill="url(#shieldGrad)" opacity="0.15"/>
+              <path d="M60 10 L110 35 L110 75 C110 105 85 130 60 138 C35 130 10 105 10 75 L10 35 Z" fill="none" stroke="url(#shieldGrad)" stroke-width="3"/>
+              <path d="M42 72 L55 85 L80 55" fill="none" stroke="#CE7A1F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring delay-1"></div>
+          </div>
+          <div class="welcome-text">
+            <h1>Welcome to CyberForge</h1>
+            <p>Your AI-powered cybersecurity command center. This wizard will prepare your system, detect installed browsers, and connect you to CyberForge cloud services.</p>
+          </div>
+        </div>
+        <div class="welcome-features">
+          <div class="welcome-feat">
+            <div class="feat-icon" style="background:rgba(206,122,31,0.1);color:#CE7A1F;"><i class="fas fa-shield-halved"></i></div>
+            <div class="feat-text"><strong>Real-Time Threat Detection</strong><span>Monitor network traffic and browser activity for threats</span></div>
+          </div>
+          <div class="welcome-feat">
+            <div class="feat-icon" style="background:rgba(94,122,136,0.1);color:#5E7A88;"><i class="fas fa-globe"></i></div>
+            <div class="feat-text"><strong>Browser Intelligence</strong><span>Deep integration with Chrome, Firefox, Edge, Safari &amp; more</span></div>
+          </div>
+          <div class="welcome-feat">
+            <div class="feat-icon" style="background:rgba(199,146,62,0.1);color:#B8862A;"><i class="fas fa-brain"></i></div>
+            <div class="feat-text"><strong>AI-Driven Analysis</strong><span>Machine learning models scan for vulnerabilities in real time</span></div>
+          </div>
+          <div class="welcome-feat">
+            <div class="feat-icon" style="background:rgba(94,122,136,0.1);color:#5E7A88;"><i class="fas fa-chart-line"></i></div>
+            <div class="feat-text"><strong>Security Analytics</strong><span>Comprehensive dashboard with actionable insights</span></div>
+          </div>
+        </div>
+        <div class="welcome-meta">
+          <div class="meta-chip"><i class="fas fa-clock"></i> ~2 min setup</div>
+          <div class="meta-chip"><i class="fas fa-lock"></i> Privacy-first</div>
+          <div class="meta-chip"><i class="fas fa-microchip"></i> OS-Aware</div>
+          <div class="meta-chip"><i class="fas fa-bolt"></i> Tauri v2</div>
+        </div>
+      </section>
+
+      <!-- ═══════ STEP 1: LICENSE AGREEMENT ═══════ -->
+      <section class="wizard-step" id="step-license">
+        <div class="step-header">
+          <h1><i class="fas fa-file-contract"></i> License Agreement</h1>
+          <p>Please review and accept the CyberForge End-User License Agreement to continue.</p>
+        </div>
+        <div class="license-box">
+          <div class="license-scroll" id="license-text">
+            <h3>CyberForge End-User License Agreement (EULA)</h3>
+            <p><strong>Effective Date:</strong> February 14, 2026</p>
+            <p><strong>Version:</strong> 2.0.0</p>
+
+            <h4>1. Grant of License</h4>
+            <p>CyberForge grants you a non-exclusive, non-transferable, revocable license to install and use the CyberForge desktop application ("Software") on devices you own or control, subject to the terms of this Agreement.</p>
+
+            <h4>2. Privacy &amp; Data Collection</h4>
+            <p>CyberForge is designed with privacy as a core principle. The Software:</p>
+            <ul>
+              <li><strong>DOES</strong> collect system-level metadata (OS type, architecture, installed browser paths) to configure security monitoring.</li>
+              <li><strong>DOES NOT</strong> access browsing history, cookies, passwords, bookmarks, or personal profile data.</li>
+              <li><strong>DOES NOT</strong> transmit personal data to third-party services without your explicit consent.</li>
+              <li><strong>DOES</strong> connect to CyberForge cloud services for threat intelligence updates and AI-driven analysis.</li>
+            </ul>
+
+            <h4>3. Browser Monitoring</h4>
+            <p>When enabled, CyberForge monitors browser network traffic for threats using debug protocol connections. This feature:</p>
+            <ul>
+              <li>Only captures network request metadata (URLs, headers, response codes).</li>
+              <li>Does not intercept encrypted content or read page content.</li>
+              <li>Can be disabled at any time through Settings.</li>
+            </ul>
+
+            <h4>4. Security Scanning</h4>
+            <p>The Software performs automated security scans of your system, including process inspection, port scanning, and vulnerability assessment. All scanning is performed locally unless cloud analysis is explicitly enabled.</p>
+
+            <h4>5. Open Source Components</h4>
+            <p>CyberForge includes open-source components licensed under MIT, Apache 2.0, and other permissive licenses. A full list of dependencies and their licenses is available in the application's About section.</p>
+
+            <h4>6. Disclaimer of Warranty</h4>
+            <p>THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. CYBERFORGE DOES NOT GUARANTEE COMPLETE PROTECTION AGAINST ALL SECURITY THREATS.</p>
+
+            <h4>7. Limitation of Liability</h4>
+            <p>In no event shall CyberForge be liable for any damages arising from the use or inability to use the Software, including but not limited to data loss, security breaches, or system damage.</p>
+
+            <h4>8. Termination</h4>
+            <p>This license is effective until terminated. CyberForge may terminate this license at any time if you fail to comply with any term of this Agreement. Upon termination, you must destroy all copies of the Software.</p>
+
+            <h4>9. Contact</h4>
+            <p>For questions about this agreement, contact: <strong>support@cyberforge.app</strong></p>
+          </div>
+        </div>
+        <div class="license-actions">
+          <label class="license-checkbox" id="license-accept-label">
+            <input type="checkbox" id="license-accept">
+            <span class="checkmark"></span>
+            <span>I have read and agree to the CyberForge End-User License Agreement</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- ═══════ STEP 2: SYSTEM SCAN ═══════ -->
+      <section class="wizard-step" id="step-system">
+        <div class="step-header">
+          <h1><i class="fas fa-search"></i> System Analysis</h1>
+          <p>Scanning your environment and installing core security components.</p>
+        </div>
+
+        <div class="install-progress" id="install-bar-2">
+          <div class="install-header">
+            <span class="install-label">Installing system components...</span>
+            <span class="install-pct" id="install-pct-2">0%</span>
+          </div>
+          <div class="install-track">
+            <div class="install-fill" id="install-fill-2"></div>
+          </div>
+          <div class="install-current" id="install-current-2">
+            <i class="fas fa-angle-right blink"></i> <span>Preparing...</span>
+          </div>
+          <div class="install-log" id="install-log-2"></div>
+        </div>
+
+        <div class="scan-results" id="scan-results">
+          <div class="scan-item" id="scan-os">
+            <div class="scan-icon"><i class="fas fa-desktop"></i></div>
+            <div class="scan-info">
+              <div class="scan-label">Operating System</div>
+              <div class="scan-value">Detecting...</div>
+            </div>
+            <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+          </div>
+          <div class="scan-item" id="scan-cpu">
+            <div class="scan-icon"><i class="fas fa-microchip"></i></div>
+            <div class="scan-info">
+              <div class="scan-label">Processor</div>
+              <div class="scan-value">Detecting...</div>
+            </div>
+            <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+          </div>
+          <div class="scan-item" id="scan-mem">
+            <div class="scan-icon"><i class="fas fa-memory"></i></div>
+            <div class="scan-info">
+              <div class="scan-label">Memory</div>
+              <div class="scan-value">Detecting...</div>
+            </div>
+            <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+          </div>
+          <div class="scan-item" id="scan-arch">
+            <div class="scan-icon"><i class="fas fa-cogs"></i></div>
+            <div class="scan-info">
+              <div class="scan-label">Architecture</div>
+              <div class="scan-value">Detecting...</div>
+            </div>
+            <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+          </div>
+          <div class="scan-item" id="scan-hostname">
+            <div class="scan-icon"><i class="fas fa-server"></i></div>
+            <div class="scan-info">
+              <div class="scan-label">Hostname</div>
+              <div class="scan-value">Detecting...</div>
+            </div>
+            <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+          </div>
+          <div class="scan-item" id="scan-uptime">
+            <div class="scan-icon"><i class="fas fa-clock"></i></div>
+            <div class="scan-info">
+              <div class="scan-label">Uptime</div>
+              <div class="scan-value">Detecting...</div>
+            </div>
+            <div class="scan-status scanning"><div class="mini-spinner"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ STEP 3: BROWSER REGISTRY ═══════ -->
+      <section class="wizard-step" id="step-browsers">
+        <div class="step-header">
+          <h1><i class="fas fa-globe"></i> Browser Registry</h1>
+          <p>Detecting installed browsers and configuring monitoring hooks.</p>
+        </div>
+
+        <div class="install-progress" id="install-bar-3">
+          <div class="install-header">
+            <span class="install-label">Registering browser hooks...</span>
+            <span class="install-pct" id="install-pct-3">0%</span>
+          </div>
+          <div class="install-track">
+            <div class="install-fill" id="install-fill-3"></div>
+          </div>
+          <div class="install-current" id="install-current-3">
+            <i class="fas fa-angle-right blink"></i> <span>Preparing...</span>
+          </div>
+          <div class="install-log" id="install-log-3"></div>
+        </div>
+
+        <div id="browser-scanning" class="browser-scanning">
+          <div class="scan-spinner-lg"></div>
+          <p>Scanning system for installed browsers...</p>
+        </div>
+
+        <div id="browser-list" class="browser-list" style="display:none;"></div>
+
+        <div id="browser-summary" class="browser-summary" style="display:none;">
+          <div class="summary-stat"><span class="stat-num" id="browsers-total">0</span><span class="stat-label">Detected</span></div>
+          <div class="summary-stat"><span class="stat-num" id="browsers-running">0</span><span class="stat-label">Running</span></div>
+          <div class="summary-stat"><span class="stat-num" id="browsers-selected">0</span><span class="stat-label">Monitored</span></div>
+        </div>
+      </section>
+
+      <!-- ═══════ STEP 4: CONNECTION ═══════ -->
+      <section class="wizard-step" id="step-connection">
+        <div class="step-header">
+          <h1><i class="fas fa-cloud"></i> Backend Connection</h1>
+          <p>Verifying connectivity to CyberForge cloud services.</p>
+        </div>
+
+        <div class="install-progress" id="install-bar-4">
+          <div class="install-header">
+            <span class="install-label">Configuring network layer...</span>
+            <span class="install-pct" id="install-pct-4">0%</span>
+          </div>
+          <div class="install-track">
+            <div class="install-fill" id="install-fill-4"></div>
+          </div>
+          <div class="install-current" id="install-current-4">
+            <i class="fas fa-angle-right blink"></i> <span>Preparing...</span>
+          </div>
+          <div class="install-log" id="install-log-4"></div>
+        </div>
+
+        <div class="connection-tests">
+          <div class="conn-item" id="conn-api">
+            <div class="conn-icon"><i class="fas fa-server"></i></div>
+            <div class="conn-info">
+              <div class="conn-label">API Server</div>
+              <div class="conn-url">cyberforge-ddd97655464f.herokuapp.com</div>
+            </div>
+            <div class="conn-status waiting"><span>&mdash;</span></div>
+          </div>
+          <div class="conn-item" id="conn-ws">
+            <div class="conn-icon"><i class="fas fa-plug"></i></div>
+            <div class="conn-info">
+              <div class="conn-label">WebSocket</div>
+              <div class="conn-url">Real-time event stream</div>
+            </div>
+            <div class="conn-status waiting"><span>&mdash;</span></div>
+          </div>
+          <div class="conn-item" id="conn-ml">
+            <div class="conn-icon"><i class="fas fa-brain"></i></div>
+            <div class="conn-info">
+              <div class="conn-label">ML Services</div>
+              <div class="conn-url">HuggingFace AI Models</div>
+            </div>
+            <div class="conn-status waiting"><span>&mdash;</span></div>
+          </div>
+          <div class="conn-item" id="conn-db">
+            <div class="conn-icon"><i class="fas fa-database"></i></div>
+            <div class="conn-info">
+              <div class="conn-label">Data Store</div>
+              <div class="conn-url">Appwrite Cloud</div>
+            </div>
+            <div class="conn-status waiting"><span>&mdash;</span></div>
+          </div>
+        </div>
+
+        <div class="connection-result" id="connection-result" style="display:none;">
+          <div class="result-badge" id="conn-result-badge">
+            <i class="fas fa-check-circle"></i>
+            <span id="conn-result-text">Checking...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ STEP 5: COMPLETE ═══════ -->
+      <section class="wizard-step" id="step-complete">
+        <div class="complete-content">
+          <div class="complete-anim">
+            <div class="success-circle">
+              <svg viewBox="0 0 120 120">
+                <circle class="success-ring" cx="60" cy="60" r="54" fill="none" stroke="#CE7A1F" stroke-width="4"/>
+                <path class="success-check" d="M35 60 L52 77 L85 44" fill="none" stroke="#CE7A1F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div id="confetti-container" class="confetti-container"></div>
+          </div>
+          <h1>Setup Complete!</h1>
+          <p>CyberForge is configured and ready to protect your system.</p>
+
+          <div class="setup-summary">
+            <div class="summary-card">
+              <i class="fas fa-desktop"></i>
+              <div class="card-info">
+                <div class="card-label">System</div>
+                <div class="card-value" id="summary-os">&mdash;</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <i class="fas fa-globe"></i>
+              <div class="card-info">
+                <div class="card-label">Browsers</div>
+                <div class="card-value" id="summary-browsers">&mdash;</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <i class="fas fa-cloud"></i>
+              <div class="card-info">
+                <div class="card-label">Backend</div>
+                <div class="card-value" id="summary-backend">&mdash;</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <i class="fas fa-shield-halved"></i>
+              <div class="card-info">
+                <div class="card-label">Security</div>
+                <div class="card-value" id="summary-security">Active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /wizard-content -->
+
+    <!-- ═══════ ALWAYS-VISIBLE FOOTER ═══════ -->
+    <div class="wizard-footer" id="wizard-footer">
+      <div class="footer-left">
+        <button class="btn btn-back" id="btn-back" style="visibility:hidden;">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+      </div>
+      <div class="footer-progress">
+        <div class="footer-dots" id="footer-dots"></div>
+      </div>
+      <div class="footer-right">
+        <button class="btn btn-next" id="btn-next">
+          Begin Setup <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /wizard-main -->
+</div>
+
+<script src="../tauri-bridge.js"></script>
+<script src="setup-wizard.js"></script>
+</body>
+</html>

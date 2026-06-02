@@ -1,0 +1,414 @@
+/* =====================================================
+   CyberForge Professional Theme
+   Modern Desktop Application Design
+   Inspired by MongoDB Compass & pgAdmin
+   ===================================================== */
+
+:root {
+    /* === Professional Color Palette === */
+    /* Primary Colors - Light backgrounds */
+    --cf-bg-primary: #E2DBCD;        /* Main background - light neutral */
+    --cf-bg-secondary: #EFE9DD;       /* Secondary background - soft gray-blue */
+    --cf-bg-dark: #251F20;            /* Dark accents - deep slate */
+    --cf-bg-accent: #A66416;          /* Accent background - muted olive */
+    
+    /* Surface Colors */
+    --cf-surface-0: #FFFFFF;          /* Elevated surfaces */
+    --cf-surface-1: #F7F3EB;          /* Level 1 cards */
+    --cf-surface-2: #E2DBCD;          /* Level 2 panels */
+    --cf-surface-3: #C9C1B2;          /* Level 3 sections */
+    
+    /* Dark Surface Colors (for dark mode) */
+    --cf-surface-dark-0: #1A1516;     /* Base dark */
+    --cf-surface-dark-1: #251F20;     /* Level 1 dark */
+    --cf-surface-dark-2: #352E2F;     /* Level 2 dark */
+    --cf-surface-dark-3: #352E2F;     /* Level 3 dark */
+    
+    /* Text Colors */
+    --cf-text-primary: #251F20;       /* Primary text - dark slate */
+    --cf-text-secondary: #5C5454;     /* Secondary text */
+    --cf-text-tertiary: #756E66;      /* Tertiary text */
+    --cf-text-muted: #9A9182;         /* Muted text */
+    --cf-text-inverse: #FFFFFF;       /* Text on dark backgrounds */
+    
+    /* Interactive Colors */
+    --cf-interactive-default: #A66416;     /* Default interactive state */
+    --cf-interactive-hover: #B8862A;       /* Hover state */
+    --cf-interactive-active: #A66416;      /* Active/pressed state */
+    --cf-interactive-disabled: #BDB5A6;    /* Disabled state */
+    
+    /* Border Colors */
+    --cf-border-light: #C9C1B2;
+    --cf-border-medium: #EFE9DD;
+    --cf-border-strong: #9A9182;
+    --cf-border-dark: #251F20;
+    
+    /* Status Colors - Professional */
+    --cf-status-success: #F69D39;
+    --cf-status-success-bg: #F4E8C7;
+    --cf-status-warning: #F69D39;
+    --cf-status-warning-bg: #FFF3E0;
+    --cf-status-error: #E5573E;
+    --cf-status-error-bg: #FAEAE0;
+    --cf-status-info: #2196F3;
+    --cf-status-info-bg: #E2DBCD;
+    
+    /* Shadows - Subtle and Professional */
+    --cf-shadow-xs: 0 1px 2px rgba(37,31,32, 0.04);
+    --cf-shadow-sm: 0 2px 4px rgba(37,31,32, 0.06);
+    --cf-shadow-md: 0 4px 8px rgba(37,31,32, 0.08);
+    --cf-shadow-lg: 0 8px 16px rgba(37,31,32, 0.1);
+    --cf-shadow-xl: 0 12px 24px rgba(37,31,32, 0.12);
+    
+    /* === Typography - Professional Desktop App === */
+    /* Font Families - System fonts for performance */
+    --cf-font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+                       'Helvetica Neue', Arial, sans-serif;
+    --cf-font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 
+                    'Courier New', monospace;
+    --cf-font-headings: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+                        'Helvetica Neue', Arial, sans-serif;
+    
+    /* Font Sizes - Optimized for Desktop */
+    --cf-text-xs: 0.6875rem;      /* 11px - small labels */
+    --cf-text-sm: 0.8125rem;      /* 13px - body small */
+    --cf-text-base: 0.875rem;     /* 14px - primary body */
+    --cf-text-md: 1rem;           /* 16px - emphasized body */
+    --cf-text-lg: 1.125rem;       /* 18px - subheadings */
+    --cf-text-xl: 1.25rem;        /* 20px - headings */
+    --cf-text-2xl: 1.5rem;        /* 24px - large headings */
+    --cf-text-3xl: 1.875rem;      /* 30px - page titles */
+    
+    /* Font Weights */
+    --cf-weight-light: 300;
+    --cf-weight-normal: 400;
+    --cf-weight-medium: 500;
+    --cf-weight-semibold: 600;
+    --cf-weight-bold: 700;
+    
+    /* Line Heights */
+    --cf-leading-tight: 1.25;
+    --cf-leading-normal: 1.5;
+    --cf-leading-relaxed: 1.75;
+    
+    /* === Spacing === */
+    --cf-space-xs: 0.25rem;       /* 4px */
+    --cf-space-sm: 0.5rem;        /* 8px */
+    --cf-space-md: 0.75rem;       /* 12px */
+    --cf-space-lg: 1rem;          /* 16px */
+    --cf-space-xl: 1.5rem;        /* 24px */
+    --cf-space-2xl: 2rem;         /* 32px */
+    --cf-space-3xl: 3rem;         /* 48px */
+    
+    /* === Border Radius === */
+    --cf-radius-sm: 4px;
+    --cf-radius-md: 6px;
+    --cf-radius-lg: 8px;
+    --cf-radius-xl: 12px;
+    --cf-radius-full: 9999px;
+    
+    /* === Transitions === */
+    --cf-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --cf-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --cf-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* === Layout === */
+    --cf-sidebar-width: 260px;
+    --cf-sidebar-collapsed: 64px;
+    --cf-header-height: 56px;
+    --cf-footer-height: 40px;
+    
+    /* === Z-Index === */
+    --cf-z-base: 0;
+    --cf-z-dropdown: 1000;
+    --cf-z-sticky: 1020;
+    --cf-z-fixed: 1030;
+    --cf-z-modal-backdrop: 1040;
+    --cf-z-modal: 1050;
+    --cf-z-popover: 1060;
+    --cf-z-tooltip: 1070;
+    --cf-z-notification: 1080;
+}
+
+/* === Dark Mode Overrides === */
+[data-theme="dark"] {
+    --cf-bg-primary: #1A1516;
+    --cf-bg-secondary: #251F20;
+    --cf-bg-dark: #E2DBCD;
+    --cf-bg-accent: #B8862A;
+    
+    --cf-surface-0: var(--cf-surface-dark-0);
+    --cf-surface-1: var(--cf-surface-dark-1);
+    --cf-surface-2: var(--cf-surface-dark-2);
+    --cf-surface-3: var(--cf-surface-dark-3);
+    
+    --cf-text-primary: #E2DBCD;
+    --cf-text-secondary: #EFE9DD;
+    --cf-text-tertiary: #9A9182;
+    --cf-text-muted: #756E66;
+    --cf-text-inverse: #251F20;
+    
+    --cf-border-light: #352E2F;
+    --cf-border-medium: #352E2F;
+    --cf-border-strong: #5C5454;
+    
+    --cf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --cf-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15);
+    --cf-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --cf-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.25);
+    --cf-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* =====================================================
+   Base Resets
+   ===================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: var(--cf-font-primary);
+    font-size: var(--cf-text-base);
+    font-weight: var(--cf-weight-normal);
+    line-height: var(--cf-leading-normal);
+    color: var(--cf-text-primary);
+    background-color: var(--cf-bg-primary);
+    overflow-x: hidden;
+}
+
+/* =====================================================
+   Typography System
+   ===================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--cf-font-headings);
+    font-weight: var(--cf-weight-semibold);
+    line-height: var(--cf-leading-tight);
+    color: var(--cf-text-primary);
+    margin: 0;
+}
+
+h1 { font-size: var(--cf-text-3xl); font-weight: var(--cf-weight-bold); }
+h2 { font-size: var(--cf-text-2xl); }
+h3 { font-size: var(--cf-text-xl); }
+h4 { font-size: var(--cf-text-lg); }
+h5 { font-size: var(--cf-text-md); }
+h6 { font-size: var(--cf-text-base); }
+
+p {
+    font-size: var(--cf-text-base);
+    line-height: var(--cf-leading-normal);
+    color: var(--cf-text-secondary);
+    margin: 0;
+}
+
+small {
+    font-size: var(--cf-text-sm);
+    color: var(--cf-text-tertiary);
+}
+
+code {
+    font-family: var(--cf-font-mono);
+    font-size: 0.9em;
+    padding: 0.125rem 0.25rem;
+    background-color: var(--cf-surface-1);
+    border: 1px solid var(--cf-border-light);
+    border-radius: var(--cf-radius-sm);
+    color: var(--cf-text-primary);
+}
+
+pre {
+    font-family: var(--cf-font-mono);
+    font-size: var(--cf-text-sm);
+    padding: var(--cf-space-lg);
+    background-color: var(--cf-surface-1);
+    border: 1px solid var(--cf-border-light);
+    border-radius: var(--cf-radius-md);
+    overflow-x: auto;
+    line-height: var(--cf-leading-relaxed);
+}
+
+pre code {
+    padding: 0;
+    background: none;
+    border: none;
+}
+
+/* =====================================================
+   Links
+   ===================================================== */
+
+a {
+    color: var(--cf-interactive-default);
+    text-decoration: none;
+    transition: color var(--cf-transition-fast);
+}
+
+a:hover {
+    color: var(--cf-interactive-hover);
+    text-decoration: underline;
+}
+
+a:active {
+    color: var(--cf-interactive-active);
+}
+
+/* =====================================================
+   Scrollbar Styling (Professional)
+   ===================================================== */
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--cf-surface-1);
+    border-left: 1px solid var(--cf-border-light);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--cf-border-medium);
+    border-radius: 6px;
+    border: 2px solid var(--cf-surface-1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--cf-border-strong);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--cf-surface-1);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cf-border-medium) var(--cf-surface-1);
+}
+
+/* =====================================================
+   Selection
+   ===================================================== */
+
+::selection {
+    background-color: var(--cf-bg-accent);
+    color: var(--cf-text-inverse);
+}
+
+::-moz-selection {
+    background-color: var(--cf-bg-accent);
+    color: var(--cf-text-inverse);
+}
+
+/* =====================================================
+   Focus States
+   ===================================================== */
+
+:focus-visible {
+    outline: 2px solid var(--cf-interactive-default);
+    outline-offset: 2px;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--cf-interactive-default);
+    outline-offset: -2px;
+}
+
+/* =====================================================
+   Utility Classes - Professional
+   ===================================================== */
+
+/* Text Utilities */
+.cf-text-primary { color: var(--cf-text-primary) !important; }
+.cf-text-secondary { color: var(--cf-text-secondary) !important; }
+.cf-text-tertiary { color: var(--cf-text-tertiary) !important; }
+.cf-text-muted { color: var(--cf-text-muted) !important; }
+
+.cf-text-xs { font-size: var(--cf-text-xs) !important; }
+.cf-text-sm { font-size: var(--cf-text-sm) !important; }
+.cf-text-base { font-size: var(--cf-text-base) !important; }
+.cf-text-md { font-size: var(--cf-text-md) !important; }
+.cf-text-lg { font-size: var(--cf-text-lg) !important; }
+.cf-text-xl { font-size: var(--cf-text-xl) !important; }
+
+.cf-weight-light { font-weight: var(--cf-weight-light) !important; }
+.cf-weight-normal { font-weight: var(--cf-weight-normal) !important; }
+.cf-weight-medium { font-weight: var(--cf-weight-medium) !important; }
+.cf-weight-semibold { font-weight: var(--cf-weight-semibold) !important; }
+.cf-weight-bold { font-weight: var(--cf-weight-bold) !important; }
+
+/* Background Utilities */
+.cf-bg-primary { background-color: var(--cf-bg-primary) !important; }
+.cf-bg-secondary { background-color: var(--cf-bg-secondary) !important; }
+.cf-bg-surface-0 { background-color: var(--cf-surface-0) !important; }
+.cf-bg-surface-1 { background-color: var(--cf-surface-1) !important; }
+
+/* Border Utilities */
+.cf-border { border: 1px solid var(--cf-border-light) !important; }
+.cf-border-medium { border: 1px solid var(--cf-border-medium) !important; }
+.cf-border-strong { border: 1px solid var(--cf-border-strong) !important; }
+
+/* Spacing Utilities */
+.cf-p-xs { padding: var(--cf-space-xs) !important; }
+.cf-p-sm { padding: var(--cf-space-sm) !important; }
+.cf-p-md { padding: var(--cf-space-md) !important; }
+.cf-p-lg { padding: var(--cf-space-lg) !important; }
+.cf-p-xl { padding: var(--cf-space-xl) !important; }
+
+.cf-m-xs { margin: var(--cf-space-xs) !important; }
+.cf-m-sm { margin: var(--cf-space-sm) !important; }
+.cf-m-md { margin: var(--cf-space-md) !important; }
+.cf-m-lg { margin: var(--cf-space-lg) !important; }
+.cf-m-xl { margin: var(--cf-space-xl) !important; }
+
+/* Display Utilities */
+.cf-flex { display: flex !important; }
+.cf-inline-flex { display: inline-flex !important; }
+.cf-grid { display: grid !important; }
+.cf-block { display: block !important; }
+.cf-inline-block { display: inline-block !important; }
+.cf-hidden { display: none !important; }
+
+/* Flex Utilities */
+.cf-flex-row { flex-direction: row !important; }
+.cf-flex-col { flex-direction: column !important; }
+.cf-items-center { align-items: center !important; }
+.cf-items-start { align-items: flex-start !important; }
+.cf-items-end { align-items: flex-end !important; }
+.cf-justify-center { justify-content: center !important; }
+.cf-justify-between { justify-content: space-between !important; }
+.cf-justify-start { justify-content: flex-start !important; }
+.cf-justify-end { justify-content: flex-end !important; }
+.cf-gap-xs { gap: var(--cf-space-xs) !important; }
+.cf-gap-sm { gap: var(--cf-space-sm) !important; }
+.cf-gap-md { gap: var(--cf-space-md) !important; }
+.cf-gap-lg { gap: var(--cf-space-lg) !important; }
+.cf-gap-xl { gap: var(--cf-space-xl) !important; }
+
+/* Shadow Utilities */
+.cf-shadow-xs { box-shadow: var(--cf-shadow-xs) !important; }
+.cf-shadow-sm { box-shadow: var(--cf-shadow-sm) !important; }
+.cf-shadow-md { box-shadow: var(--cf-shadow-md) !important; }
+.cf-shadow-lg { box-shadow: var(--cf-shadow-lg) !important; }
+.cf-shadow-xl { box-shadow: var(--cf-shadow-xl) !important; }
+
+/* Radius Utilities */
+.cf-rounded-sm { border-radius: var(--cf-radius-sm) !important; }
+.cf-rounded-md { border-radius: var(--cf-radius-md) !important; }
+.cf-rounded-lg { border-radius: var(--cf-radius-lg) !important; }
+.cf-rounded-xl { border-radius: var(--cf-radius-xl) !important; }
+.cf-rounded-full { border-radius: var(--cf-radius-full) !important; }

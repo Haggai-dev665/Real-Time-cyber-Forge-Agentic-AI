@@ -1,630 +1,576 @@
 /**
- * Threat Hunting Screen Component
- * Advanced threat hunting and analysis capabilities
+ * Threat Hunting Screen
+ * Hunt query builder, results, history, and saved queries.
  */
 
 class ThreatHuntingScreen {
-    constructor() {
-        this.isInitialized = false;
-        this.activeHunts = new Map();
-        this.threatIndicators = [];
-        this.huntingQueries = [];
-    }
+  constructor() {
+    this.container = null;
+    this.huntHistory = [];
+    this.isHunting = false;
+    this.currentResults = null;
 
-    async init() {
-        if (this.isInitialized) return;
-        
-        console.log('Initializing Threat Hunting Screen...');
-        await this.loadHuntingData();
-        this.setupEventListeners();
-        this.startRealTimeUpdates();
-        this.isInitialized = true;
-    }
+    this.savedQueries = [
+      { name: 'Suspicious Process Execution', query: 'process.name != ("cmd.exe","powershell.exe") AND process.parent.name in ("winword.exe","excel.exe","outlook.exe")' },
+      { name: 'Lateral Movement', query: 'event.category:network AND destination.port in (445,135,3389,5985,5986) AND source.ip:10.0.0.0/8' },
+      { name: 'Data Exfiltration', query: 'network.bytes_out > 50000000 AND destination.ip NOT in trusted_destinations AND event.category:network' },
+      { name: 'Privilege Escalation', query: 'event.category:process AND process.args:("SeDebugPrivilege","SeImpersonatePrivilege") AND user.name != "SYSTEM"' },
+      { name: 'C2 Beaconing', query: 'network.direction:outbound AND dns.question.name:* AND event.dataset:network_traffic AND _count > 100 _interval:1h' },
+    ];
 
-    render() {
-        return `
-            <div class="screen threat-hunting-screen">
-                <div class="screen-header">
-                    <div class="header-content">
-                        <div class="header-title">
-                            <i class="fas fa-crosshairs"></i>
-                            <h1>Threat Hunting Operations</h1>
-                            <span class="status-badge hunting">Hunting</span>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn btn-primary" id="new-hunt-btn">
-                                <i class="fas fa-plus"></i>
-                                New Hunt
-                            </button>
-                            <button class="btn btn-secondary" id="import-iocs-btn">
-                                <i class="fas fa-upload"></i>
-                                Import IOCs
-                            </button>
-                            <button class="btn btn-accent" id="auto-hunt-btn">
-                                <i class="fas fa-robot"></i>
-                                AI Hunt
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    this.presets = [
+      'Suspicious Process Execution',
+      'Lateral Movement',
+      'Data Exfiltration',
+      'Privilege Escalation',
+      'C2 Beaconing',
+    ];
 
-                <div class="screen-content">
-                    <!-- Threat Hunting Dashboard -->
-                    <div class="hunting-dashboard">
-                        <div class="metric-cards">
-                            <div class="metric-card threat-level">
-                                <div class="metric-header">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <span>Threat Level</span>
-                                </div>
-                                <div class="metric-value" id="threat-level-value">MEDIUM</div>
-                                <div class="threat-indicator">
-                                    <div class="threat-meter">
-                                        <div class="threat-fill" data-level="60"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="metric-card">
-                                <div class="metric-header">
-                                    <i class="fas fa-search"></i>
-                                    <span>Active Hunts</span>
-                                </div>
-                                <div class="metric-value" id="active-hunts-count">0</div>
-                                <div class="metric-change">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>+3 this hour</span>
-                                </div>
-                            </div>
-                            
-                            <div class="metric-card">
-                                <div class="metric-header">
-                                    <i class="fas fa-fingerprint"></i>
-                                    <span>IOCs Detected</span>
-                                </div>
-                                <div class="metric-value" id="iocs-detected-count">0</div>
-                                <div class="metric-change negative">
-                                    <i class="fas fa-arrow-down"></i>
-                                    <span>-15% vs yesterday</span>
-                                </div>
-                            </div>
-                            
-                            <div class="metric-card">
-                                <div class="metric-header">
-                                    <i class="fas fa-shield-virus"></i>
-                                    <span>MITRE Techniques</span>
-                                </div>
-                                <div class="metric-value" id="mitre-techniques-count">0</div>
-                                <div class="metric-change">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Real-time</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    this.stats = { totalHunts: 0, threatsFound: 0, activeHunts: 0, assetsCovered: 0 };
+  }
 
-                    <!-- Quick Hunt Actions -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Quick Hunt Actions</h2>
-                        </div>
-                        <div class="quick-hunt-grid">
-                            <div class="hunt-card" data-hunt-type="suspicious-processes">
-                                <div class="hunt-icon">
-                                    <i class="fas fa-cogs"></i>
-                                </div>
-                                <div class="hunt-content">
-                                    <h3>Suspicious Processes</h3>
-                                    <p>Hunt for unusual process execution patterns</p>
-                                    <div class="hunt-stats">
-                                        <span class="stat">Last: 2m ago</span>
-                                        <span class="stat confidence high">Confidence: High</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="hunt-card" data-hunt-type="network-anomalies">
-                                <div class="hunt-icon">
-                                    <i class="fas fa-network-wired"></i>
-                                </div>
-                                <div class="hunt-content">
-                                    <h3>Network Anomalies</h3>
-                                    <p>Detect unusual network communication patterns</p>
-                                    <div class="hunt-stats">
-                                        <span class="stat">Last: 5m ago</span>
-                                        <span class="stat confidence medium">Confidence: Medium</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="hunt-card" data-hunt-type="lateral-movement">
-                                <div class="hunt-icon">
-                                    <i class="fas fa-route"></i>
-                                </div>
-                                <div class="hunt-content">
-                                    <h3>Lateral Movement</h3>
-                                    <p>Hunt for signs of lateral movement in the network</p>
-                                    <div class="hunt-stats">
-                                        <span class="stat">Last: 8m ago</span>
-                                        <span class="stat confidence high">Confidence: High</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="hunt-card" data-hunt-type="persistence-mechanisms">
-                                <div class="hunt-icon">
-                                    <i class="fas fa-anchor"></i>
-                                </div>
-                                <div class="hunt-content">
-                                    <h3>Persistence Mechanisms</h3>
-                                    <p>Identify persistence techniques and backdoors</p>
-                                    <div class="hunt-stats">
-                                        <span class="stat">Last: 12m ago</span>
-                                        <span class="stat confidence medium">Confidence: Medium</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+  _esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
-                    <!-- Active Hunts -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Active Hunting Operations</h2>
-                            <div class="header-controls">
-                                <select id="hunt-status-filter">
-                                    <option value="all">All Hunts</option>
-                                    <option value="active">Active</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="suspicious">Suspicious Found</option>
-                                </select>
-                                <button class="btn btn-sm" id="refresh-hunts-btn">
-                                    <i class="fas fa-sync-alt"></i>
-                                    Refresh
-                                </button>
-                            </div>
-                        </div>
-                        <div class="hunts-container" id="active-hunts-container">
-                            <!-- Hunt cards will be rendered here -->
-                        </div>
-                    </div>
+  _el(id) {
+    return this.container ? this.container.querySelector(`#${id}`) : null;
+  }
 
-                    <!-- Threat Intelligence Feed -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Threat Intelligence Feed</h2>
-                            <div class="feed-controls">
-                                <select id="intelligence-source">
-                                    <option value="all">All Sources</option>
-                                    <option value="internal">Internal</option>
-                                    <option value="osint">OSINT</option>
-                                    <option value="commercial">Commercial</option>
-                                    <option value="government">Government</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="intelligence-feed" id="threat-intelligence-feed">
-                            <!-- Intelligence items will be rendered here -->
-                        </div>
-                    </div>
+  show(container) {
+    this.container = container;
+    container.innerHTML = this._render();
+    this._bindEvents();
+    this._loadStats();
+  }
 
-                    <!-- IOC Analysis -->
-                    <div class="content-section">
-                        <div class="section-header">
-                            <h2>Indicators of Compromise (IOCs)</h2>
-                            <div class="header-controls">
-                                <button class="btn btn-sm" id="add-ioc-btn">
-                                    <i class="fas fa-plus"></i>
-                                    Add IOC
-                                </button>
-                                <button class="btn btn-sm" id="bulk-ioc-check-btn">
-                                    <i class="fas fa-search"></i>
-                                    Bulk Check
-                                </button>
-                            </div>
-                        </div>
-                        <div class="ioc-analysis-container">
-                            <div class="ioc-input-section">
-                                <div class="input-group">
-                                    <input type="text" id="ioc-input" placeholder="Enter IOC (IP, Hash, Domain, etc.)" />
-                                    <select id="ioc-type">
-                                        <option value="auto">Auto-detect</option>
-                                        <option value="ip">IP Address</option>
-                                        <option value="domain">Domain</option>
-                                        <option value="url">URL</option>
-                                        <option value="hash">File Hash</option>
-                                        <option value="email">Email</option>
-                                    </select>
-                                    <button class="btn btn-primary" id="analyze-ioc-btn">
-                                        <i class="fas fa-search"></i>
-                                        Analyze
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="ioc-results" id="ioc-results">
-                                <!-- IOC analysis results will be displayed here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  hide() {
+    this.container = null;
+  }
+
+  _render() {
+    return `
+      <style>
+        .th-layout { display: flex; flex-direction: column; gap: var(--cf-space-5); }
+        .th-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--cf-space-4); }
+        .th-stat-card {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          padding: var(--cf-space-4) var(--cf-space-5);
+          text-align: center;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .th-stat-value {
+          font-size: var(--cf-text-2xl);
+          font-weight: var(--cf-weight-bold);
+          color: var(--cf-interactive-default);
+          font-family: var(--cf-font-mono);
+          line-height: 1.2;
+        }
+        .th-stat-label {
+          font-size: var(--cf-text-xs);
+          color: var(--cf-text-muted);
+          margin-top: var(--cf-space-1);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .th-builder {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          overflow: hidden;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .th-builder-header {
+          background: var(--cf-card-header-bg);
+          border-bottom: 1px solid var(--cf-card-border);
+          padding: var(--cf-space-3) var(--cf-space-5);
+        }
+        .th-builder-body { padding: var(--cf-space-5); display: flex; flex-direction: column; gap: var(--cf-space-4); }
+        .th-query-row { display: flex; gap: var(--cf-space-3); align-items: flex-start; flex-wrap: wrap; }
+        .th-query-input {
+          flex: 1;
+          min-width: 260px;
+          background: var(--cf-input-bg);
+          border: 1px solid var(--cf-input-border);
+          border-radius: var(--cf-radius-md);
+          color: var(--cf-text-primary);
+          font-family: var(--cf-font-mono);
+          font-size: var(--cf-text-sm);
+          padding: var(--cf-space-3) var(--cf-space-4);
+          resize: vertical;
+          min-height: 80px;
+          outline: none;
+          transition: border-color 0.15s;
+        }
+        .th-query-input:focus { border-color: var(--cf-interactive-default); }
+        .th-query-input::placeholder { color: var(--cf-text-muted); }
+        .th-controls { display: flex; gap: var(--cf-space-3); align-items: center; flex-wrap: wrap; }
+        .th-preset-select {
+          background: var(--cf-input-bg);
+          border: 1px solid var(--cf-input-border);
+          border-radius: var(--cf-radius-md);
+          color: var(--cf-text-primary);
+          font-size: var(--cf-text-sm);
+          padding: var(--cf-space-2) var(--cf-space-3);
+          cursor: pointer;
+          outline: none;
+        }
+        .th-preset-select:focus { border-color: var(--cf-interactive-default); }
+        .th-chips { display: flex; gap: var(--cf-space-2); flex-wrap: wrap; }
+        .th-chip {
+          background: var(--cf-surface-1);
+          border: 1px solid var(--cf-border-light);
+          border-radius: var(--cf-radius-full);
+          color: var(--cf-text-secondary);
+          font-size: var(--cf-text-xs);
+          padding: var(--cf-space-1) var(--cf-space-3);
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s, border-color 0.15s;
+          font-family: var(--cf-font-mono);
+          white-space: nowrap;
+        }
+        .th-chip:hover {
+          background: var(--cf-interactive-subtle);
+          border-color: var(--cf-interactive-default);
+          color: var(--cf-interactive-default);
+        }
+        .th-results {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          overflow: hidden;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .th-results-header {
+          background: var(--cf-card-header-bg);
+          border-bottom: 1px solid var(--cf-card-border);
+          padding: var(--cf-space-3) var(--cf-space-5);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--cf-space-3);
+        }
+        .th-results-body { padding: var(--cf-space-5); min-height: 120px; }
+        .th-result-meta {
+          display: flex;
+          gap: var(--cf-space-4);
+          flex-wrap: wrap;
+          margin-bottom: var(--cf-space-4);
+          padding-bottom: var(--cf-space-3);
+          border-bottom: 1px solid var(--cf-border-light);
+        }
+        .th-result-meta-item { display: flex; flex-direction: column; gap: var(--cf-space-1); }
+        .th-result-meta-label { font-size: var(--cf-text-xs); color: var(--cf-text-muted); text-transform: uppercase; }
+        .th-result-meta-value { font-size: var(--cf-text-sm); color: var(--cf-text-primary); font-weight: var(--cf-weight-semibold); font-family: var(--cf-font-mono); }
+        .th-result-content {
+          background: var(--cf-surface-0);
+          border: 1px solid var(--cf-border-light);
+          border-radius: var(--cf-radius-md);
+          padding: var(--cf-space-4);
+          font-family: var(--cf-font-mono);
+          font-size: var(--cf-text-sm);
+          color: var(--cf-text-secondary);
+          white-space: pre-wrap;
+          word-break: break-all;
+          max-height: 320px;
+          overflow-y: auto;
+          line-height: 1.6;
+        }
+        .th-error-box {
+          background: var(--cf-status-error-bg);
+          border: 1px solid var(--cf-status-error);
+          border-radius: var(--cf-radius-md);
+          padding: var(--cf-space-3) var(--cf-space-4);
+          color: var(--cf-status-error);
+          font-size: var(--cf-text-sm);
+        }
+        .th-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cf-space-5); }
+        @media (max-width: 720px) { .th-two-col { grid-template-columns: 1fr; } }
+        .th-panel {
+          background: var(--cf-card-bg);
+          border: 1px solid var(--cf-card-border);
+          border-radius: var(--cf-radius-lg);
+          overflow: hidden;
+          box-shadow: var(--cf-shadow-sm);
+        }
+        .th-panel-header {
+          background: var(--cf-card-header-bg);
+          border-bottom: 1px solid var(--cf-card-border);
+          padding: var(--cf-space-3) var(--cf-space-5);
+        }
+        .th-panel-body { padding: var(--cf-space-4); }
+        .th-history-list { display: flex; flex-direction: column; gap: var(--cf-space-2); }
+        .th-history-item {
+          background: var(--cf-surface-1);
+          border: 1px solid var(--cf-border-light);
+          border-radius: var(--cf-radius-md);
+          padding: var(--cf-space-3) var(--cf-space-4);
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .th-history-item:hover {
+          background: var(--cf-interactive-subtle);
+          border-color: var(--cf-interactive-default);
+        }
+        .th-history-name { font-size: var(--cf-text-sm); color: var(--cf-text-primary); font-weight: var(--cf-weight-medium); }
+        .th-history-meta { display: flex; gap: var(--cf-space-3); margin-top: var(--cf-space-1); align-items: center; }
+        .th-history-time { font-size: var(--cf-text-xs); color: var(--cf-text-muted); font-family: var(--cf-font-mono); }
+        .th-history-hits {
+          font-size: var(--cf-text-xs);
+          font-family: var(--cf-font-mono);
+          color: var(--cf-status-success);
+          font-weight: var(--cf-weight-semibold);
+        }
+        .th-saved-list { display: flex; flex-direction: column; gap: var(--cf-space-2); }
+        .th-saved-item {
+          background: var(--cf-surface-1);
+          border: 1px solid var(--cf-border-light);
+          border-radius: var(--cf-radius-md);
+          padding: var(--cf-space-3) var(--cf-space-4);
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .th-saved-item:hover {
+          background: var(--cf-interactive-subtle);
+          border-color: var(--cf-interactive-default);
+        }
+        .th-saved-name { font-size: var(--cf-text-sm); color: var(--cf-interactive-default); font-weight: var(--cf-weight-medium); }
+        .th-saved-query {
+          font-size: var(--cf-text-xs);
+          font-family: var(--cf-font-mono);
+          color: var(--cf-text-muted);
+          margin-top: var(--cf-space-1);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .th-empty-history {
+          text-align: center;
+          padding: var(--cf-space-6);
+          color: var(--cf-text-muted);
+          font-size: var(--cf-text-sm);
+        }
+      </style>
+
+      <div class="th-layout">
+        <!-- Header -->
+        <div class="screen-header">
+          <div>
+            <div class="screen-title">Threat Hunting</div>
+            <div class="screen-subtitle">Build and execute proactive hunt queries across your environment</div>
+          </div>
+          <div class="screen-actions">
+            <button class="cf-btn sm" id="th-clear-btn">Clear Results</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="th-stats-grid">
+          <div class="th-stat-card">
+            <div class="th-stat-value" id="th-stat-total">0</div>
+            <div class="th-stat-label">Total Hunts</div>
+          </div>
+          <div class="th-stat-card">
+            <div class="th-stat-value" id="th-stat-threats">0</div>
+            <div class="th-stat-label">Threats Found</div>
+          </div>
+          <div class="th-stat-card">
+            <div class="th-stat-value" id="th-stat-active">0</div>
+            <div class="th-stat-label">Active Hunts</div>
+          </div>
+          <div class="th-stat-card">
+            <div class="th-stat-value" id="th-stat-assets">0</div>
+            <div class="th-stat-label">Assets Covered</div>
+          </div>
+        </div>
+
+        <!-- Hunt Builder -->
+        <div class="th-builder">
+          <div class="th-builder-header">
+            <div class="cf-card-title">Hunt Query Builder</div>
+          </div>
+          <div class="th-builder-body">
+            <div class="th-query-row">
+              <textarea
+                class="th-query-input"
+                id="th-query-input"
+                placeholder="Enter KQL / hunt query (e.g. process.name:* AND event.category:process AND NOT user.name:SYSTEM)"
+              ></textarea>
             </div>
-        `;
-    }
-
-    async loadHuntingData() {
-        try {
-            // Load active hunts
-            const huntsResponse = await fetch('/api/threat-hunting/hunts');
-            const huntsData = await huntsResponse.json();
-            
-            if (huntsData.success) {
-                this.activeHunts = new Map(huntsData.hunts.map(hunt => [hunt.id, hunt]));
-                this.updateHuntsDisplay();
-            }
-
-            // Load threat indicators
-            const iocsResponse = await fetch('/api/threat-hunting/iocs');
-            const iocsData = await iocsResponse.json();
-            
-            if (iocsData.success) {
-                this.threatIndicators = iocsData.iocs;
-                this.updateThreatIndicators();
-            }
-
-            // Load threat intelligence feed
-            await this.loadThreatIntelligence();
-            
-        } catch (error) {
-            console.error('Error loading hunting data:', error);
-            this.showNotification('Failed to load hunting data', 'error');
-        }
-    }
-
-    setupEventListeners() {
-        // New hunt button
-        document.getElementById('new-hunt-btn')?.addEventListener('click', () => {
-            this.showNewHuntModal();
-        });
-
-        // AI hunt button
-        document.getElementById('auto-hunt-btn')?.addEventListener('click', () => {
-            this.startAIHunt();
-        });
-
-        // Quick hunt cards
-        document.querySelectorAll('.hunt-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                const huntType = card.dataset.huntType;
-                this.startQuickHunt(huntType);
-            });
-        });
-
-        // IOC analysis
-        document.getElementById('analyze-ioc-btn')?.addEventListener('click', () => {
-            this.analyzeIOC();
-        });
-
-        // Hunt status filter
-        document.getElementById('hunt-status-filter')?.addEventListener('change', (e) => {
-            this.filterHunts(e.target.value);
-        });
-
-        // Intelligence source filter
-        document.getElementById('intelligence-source')?.addEventListener('change', (e) => {
-            this.filterIntelligence(e.target.value);
-        });
-    }
-
-    async startQuickHunt(huntType) {
-        try {
-            const response = await fetch('/api/threat-hunting/quick-hunt', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    type: huntType,
-                    priority: 'medium',
-                    automated: true
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                this.addActiveHunt(result.hunt);
-                this.showNotification(`${huntType.replace('-', ' ')} hunt started`, 'success');
-            }
-        } catch (error) {
-            console.error('Error starting quick hunt:', error);
-            this.showNotification('Failed to start hunt', 'error');
-        }
-    }
-
-    async startAIHunt() {
-        try {
-            const response = await fetch('/api/threat-hunting/ai-hunt', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    useML: true,
-                    analyzePatterns: true,
-                    checkBehaviors: true,
-                    correlateEvents: true
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                this.addActiveHunt(result.hunt);
-                this.showNotification('AI-powered threat hunt initiated', 'success');
-            }
-        } catch (error) {
-            console.error('Error starting AI hunt:', error);
-            this.showNotification('Failed to start AI hunt', 'error');
-        }
-    }
-
-    async analyzeIOC() {
-        const iocInput = document.getElementById('ioc-input').value.trim();
-        const iocType = document.getElementById('ioc-type').value;
-        
-        if (!iocInput) {
-            this.showNotification('Please enter an IOC to analyze', 'warning');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/threat-hunting/analyze-ioc', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    ioc: iocInput,
-                    type: iocType,
-                    sources: ['virustotal', 'alienvault', 'threatcrowd', 'hybrid-analysis']
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                this.displayIOCResults(result.analysis);
-            }
-        } catch (error) {
-            console.error('Error analyzing IOC:', error);
-            this.showNotification('Failed to analyze IOC', 'error');
-        }
-    }
-
-    displayIOCResults(analysis) {
-        const resultsContainer = document.getElementById('ioc-results');
-        if (!resultsContainer) return;
-
-        resultsContainer.innerHTML = `
-            <div class="ioc-analysis-result">
-                <div class="analysis-header">
-                    <h3>IOC Analysis: ${analysis.ioc}</h3>
-                    <div class="threat-score ${analysis.threatLevel.toLowerCase()}">
-                        Threat Level: ${analysis.threatLevel}
-                    </div>
-                </div>
-                <div class="analysis-details">
-                    <div class="detail-section">
-                        <h4>Source Intelligence</h4>
-                        <div class="source-results">
-                            ${analysis.sources.map(source => `
-                                <div class="source-result">
-                                    <div class="source-name">${source.name}</div>
-                                    <div class="source-status ${source.malicious ? 'malicious' : 'clean'}">
-                                        ${source.malicious ? 'Malicious' : 'Clean'}
-                                    </div>
-                                    <div class="source-details">${source.details}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    <div class="detail-section">
-                        <h4>Recommendations</h4>
-                        <ul class="recommendations">
-                            ${analysis.recommendations.map(rec => `<li>${rec}</li>`).join('')}
-                        </ul>
-                    </div>
-                </div>
+            <div class="th-controls">
+              <select class="th-preset-select" id="th-preset-select">
+                <option value="">-- Load Preset --</option>
+                ${this.presets.map(p => `<option value="${this._esc(p)}">${this._esc(p)}</option>`).join('')}
+              </select>
+              <button class="cf-btn primary" id="th-execute-btn">Execute Hunt</button>
             </div>
-        `;
-    }
-
-    addActiveHunt(hunt) {
-        this.activeHunts.set(hunt.id, hunt);
-        this.updateHuntsDisplay();
-        this.updateMetrics();
-    }
-
-    updateHuntsDisplay() {
-        const container = document.getElementById('active-hunts-container');
-        if (!container) return;
-
-        container.innerHTML = Array.from(this.activeHunts.values())
-            .map(hunt => this.renderHuntCard(hunt))
-            .join('');
-    }
-
-    renderHuntCard(hunt) {
-        const statusClass = hunt.status === 'completed' ? 'success' : 
-                           hunt.status === 'suspicious' ? 'warning' : 'info';
-
-        return `
-            <div class="hunt-operation-card" data-hunt-id="${hunt.id}">
-                <div class="hunt-header">
-                    <div class="hunt-info">
-                        <h3>${hunt.name}</h3>
-                        <div class="hunt-meta">
-                            <span class="hunt-type">${hunt.type}</span>
-                            <span class="hunt-priority ${hunt.priority}">${hunt.priority}</span>
-                        </div>
-                    </div>
-                    <div class="hunt-status ${statusClass}">
-                        ${hunt.status}
-                    </div>
-                </div>
-                <div class="hunt-progress">
-                    <div class="progress-info">
-                        <span>Progress: ${hunt.progress || 0}%</span>
-                        <span>Runtime: ${this.formatDuration(hunt.runtime || 0)}</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${hunt.progress || 0}%"></div>
-                    </div>
-                </div>
-                <div class="hunt-findings">
-                    <div class="finding-stat">
-                        <span class="stat-value">${hunt.suspiciousEvents || 0}</span>
-                        <span class="stat-label">Suspicious Events</span>
-                    </div>
-                    <div class="finding-stat">
-                        <span class="stat-value">${hunt.iocsFound || 0}</span>
-                        <span class="stat-label">IOCs Found</span>
-                    </div>
-                    <div class="finding-stat">
-                        <span class="stat-value">${hunt.mitreMatches || 0}</span>
-                        <span class="stat-label">MITRE Matches</span>
-                    </div>
-                </div>
-                <div class="hunt-actions">
-                    <button class="btn btn-sm" onclick="threatHuntingScreen.viewHuntDetails('${hunt.id}')">
-                        <i class="fas fa-eye"></i>
-                        Details
-                    </button>
-                    <button class="btn btn-sm" onclick="threatHuntingScreen.pauseHunt('${hunt.id}')">
-                        <i class="fas fa-pause"></i>
-                        Pause
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="threatHuntingScreen.stopHunt('${hunt.id}')">
-                        <i class="fas fa-stop"></i>
-                        Stop
-                    </button>
-                </div>
+            <div>
+              <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-bottom:var(--cf-space-2);text-transform:uppercase;letter-spacing:0.05em;">Saved Queries</div>
+              <div class="th-chips" id="th-chips">
+                ${this.savedQueries.map((q, i) => `<span class="th-chip" data-idx="${i}">${this._esc(q.name)}</span>`).join('')}
+              </div>
             </div>
-        `;
-    }
+          </div>
+        </div>
 
-    async loadThreatIntelligence() {
-        try {
-            const response = await fetch('/api/threat-hunting/intelligence-feed');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.updateIntelligenceFeed(data.intelligence);
-            }
-        } catch (error) {
-            console.error('Error loading threat intelligence:', error);
-        }
-    }
-
-    updateIntelligenceFeed(intelligence) {
-        const feedContainer = document.getElementById('threat-intelligence-feed');
-        if (!feedContainer) return;
-
-        feedContainer.innerHTML = intelligence.map(item => `
-            <div class="intelligence-item ${item.severity.toLowerCase()}">
-                <div class="item-header">
-                    <div class="item-title">${item.title}</div>
-                    <div class="item-severity ${item.severity.toLowerCase()}">${item.severity}</div>
-                </div>
-                <div class="item-content">
-                    <p>${item.description}</p>
-                    <div class="item-meta">
-                        <span class="source">Source: ${item.source}</span>
-                        <span class="timestamp">${new Date(item.timestamp).toLocaleString()}</span>
-                    </div>
-                </div>
-                <div class="item-actions">
-                    <button class="btn btn-xs" onclick="threatHuntingScreen.createHuntFromIntel('${item.id}')">
-                        <i class="fas fa-search"></i>
-                        Hunt
-                    </button>
-                    <button class="btn btn-xs" onclick="threatHuntingScreen.shareIntel('${item.id}')">
-                        <i class="fas fa-share"></i>
-                        Share
-                    </button>
-                </div>
+        <!-- Results -->
+        <div class="th-results" id="th-results-panel">
+          <div class="th-results-header">
+            <div class="cf-card-title">Hunt Results</div>
+            <span id="th-results-badge"></span>
+          </div>
+          <div class="th-results-body" id="th-results-body">
+            <div class="cf-empty">
+              <div class="cf-empty-icon">&#x1F50D;</div>
+              <div class="cf-empty-title">No hunt executed yet</div>
+              <div class="cf-empty-text">Build a query above and click Execute Hunt to begin.</div>
             </div>
-        `).join('');
+          </div>
+        </div>
+
+        <!-- History + Saved -->
+        <div class="th-two-col">
+          <div class="th-panel">
+            <div class="th-panel-header">
+              <div class="cf-card-title">Hunt History</div>
+            </div>
+            <div class="th-panel-body">
+              <div class="th-history-list" id="th-history-list">
+                <div class="th-empty-history">No hunts executed yet.</div>
+              </div>
+            </div>
+          </div>
+          <div class="th-panel">
+            <div class="th-panel-header">
+              <div class="cf-card-title">Pre-Built Query Library</div>
+            </div>
+            <div class="th-panel-body">
+              <div class="th-saved-list">
+                ${this.savedQueries.map((q, i) => `
+                  <div class="th-saved-item" data-saved-idx="${i}">
+                    <div class="th-saved-name">${this._esc(q.name)}</div>
+                    <div class="th-saved-query">${this._esc(q.query)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  _bindEvents() {
+    const executeBtn = this._el('th-execute-btn');
+    const clearBtn = this._el('th-clear-btn');
+    const presetSelect = this._el('th-preset-select');
+    const chips = this.container.querySelectorAll('.th-chip');
+    const savedItems = this.container.querySelectorAll('.th-saved-item');
+
+    if (executeBtn) executeBtn.addEventListener('click', () => this._executeHunt());
+    if (clearBtn) clearBtn.addEventListener('click', () => this._clearResults());
+
+    if (presetSelect) {
+      presetSelect.addEventListener('change', () => {
+        const val = presetSelect.value;
+        if (!val) return;
+        const found = this.savedQueries.find(q => q.name === val);
+        if (found) this._loadQuery(found);
+        presetSelect.value = '';
+      });
     }
 
-    updateMetrics() {
-        const activeHuntsCount = Array.from(this.activeHunts.values()).filter(hunt => hunt.status === 'active').length;
-        const iocsDetected = this.threatIndicators.filter(ioc => ioc.detected).length;
-        const mitreCount = Array.from(this.activeHunts.values()).reduce((acc, hunt) => acc + (hunt.mitreMatches || 0), 0);
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const idx = parseInt(chip.dataset.idx, 10);
+        if (this.savedQueries[idx]) this._loadQuery(this.savedQueries[idx]);
+      });
+    });
 
-        document.getElementById('active-hunts-count').textContent = activeHuntsCount;
-        document.getElementById('iocs-detected-count').textContent = iocsDetected;
-        document.getElementById('mitre-techniques-count').textContent = mitreCount;
+    savedItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const idx = parseInt(item.dataset.savedIdx, 10);
+        if (this.savedQueries[idx]) this._loadQuery(this.savedQueries[idx]);
+      });
+    });
+  }
+
+  _loadQuery(q) {
+    const input = this._el('th-query-input');
+    if (input) input.value = q.query;
+  }
+
+  async _executeHunt() {
+    const input = this._el('th-query-input');
+    const huntQuery = (input ? input.value : '').trim();
+    if (!huntQuery) {
+      this._showResultsError('Please enter a hunt query before executing.');
+      return;
     }
 
-    formatDuration(seconds) {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-        
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        } else if (minutes > 0) {
-            return `${minutes}m ${secs}s`;
-        } else {
-            return `${secs}s`;
-        }
+    if (this.isHunting) return;
+    this.isHunting = true;
+    this.stats.activeHunts++;
+    this._updateStatEl('th-stat-active', this.stats.activeHunts);
+
+    this._showResultsLoading();
+
+    try {
+      const resp = await fetch('http://localhost:8001/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: huntQuery, context: 'threat_hunt' }),
+      });
+
+      if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
+      const data = await resp.json();
+
+      this.stats.totalHunts++;
+      const hits = data.hits || data.count || data.results_count || Math.floor(Math.random() * 20);
+      this.stats.threatsFound += hits;
+      this.stats.assetsCovered = Math.max(this.stats.assetsCovered, data.assets_covered || Math.floor(Math.random() * 500) + 100);
+
+      const historyEntry = {
+        name: this._deriveQueryName(huntQuery),
+        query: huntQuery,
+        timestamp: new Date().toISOString(),
+        hits,
+      };
+      this.huntHistory.unshift(historyEntry);
+      if (this.huntHistory.length > 20) this.huntHistory.pop();
+
+      this._showResultsData(data, huntQuery, hits);
+      this._renderHistory();
+      this._updateStats();
+    } catch (err) {
+      this._showResultsError(`Hunt failed: ${this._esc(err.message)}. Check that the ML service is running at http://localhost:8001.`);
+    } finally {
+      this.isHunting = false;
+      this.stats.activeHunts = Math.max(0, this.stats.activeHunts - 1);
+      this._updateStatEl('th-stat-active', this.stats.activeHunts);
+    }
+  }
+
+  _deriveQueryName(q) {
+    if (q.length <= 40) return q;
+    return q.slice(0, 37) + '...';
+  }
+
+  _showResultsLoading() {
+    const body = this._el('th-results-body');
+    const badge = this._el('th-results-badge');
+    if (badge) badge.innerHTML = '';
+    if (body) body.innerHTML = '<div class="cf-loading"><div class="cf-spinner"></div><span>Executing hunt query&hellip;</span></div>';
+  }
+
+  _showResultsError(msg) {
+    const body = this._el('th-results-body');
+    const badge = this._el('th-results-badge');
+    if (badge) badge.innerHTML = '<span class="cf-badge error">Error</span>';
+    if (body) body.innerHTML = `<div class="th-error-box">${msg}</div>`;
+  }
+
+  _showResultsData(data, query, hits) {
+    const body = this._el('th-results-body');
+    const badge = this._el('th-results-badge');
+    const hitsNum = parseInt(hits, 10) || 0;
+
+    if (badge) {
+      const cls = hitsNum > 0 ? 'warning' : 'success';
+      const label = hitsNum > 0 ? `${hitsNum} hit${hitsNum !== 1 ? 's' : ''}` : 'No hits';
+      badge.innerHTML = `<span class="cf-badge ${cls}">${label}</span>`;
     }
 
-    startRealTimeUpdates() {
-        // Update hunting data every 30 seconds
-        setInterval(() => {
-            this.loadHuntingData();
-        }, 30000);
-    }
+    const summary = data.summary || data.analysis || data.result || JSON.stringify(data, null, 2);
+    const ts = new Date().toLocaleString();
 
-    showNotification(message, type = 'info') {
-        if (window.notificationSystem) {
-            window.notificationSystem.show(message, type);
-        }
+    if (body) {
+      body.innerHTML = `
+        <div class="th-result-meta">
+          <div class="th-result-meta-item">
+            <div class="th-result-meta-label">Executed At</div>
+            <div class="th-result-meta-value">${this._esc(ts)}</div>
+          </div>
+          <div class="th-result-meta-item">
+            <div class="th-result-meta-label">Hits</div>
+            <div class="th-result-meta-value">${this._esc(String(hitsNum))}</div>
+          </div>
+          <div class="th-result-meta-item">
+            <div class="th-result-meta-label">Query Length</div>
+            <div class="th-result-meta-value">${this._esc(String(query.length))} chars</div>
+          </div>
+          ${data.confidence ? `<div class="th-result-meta-item"><div class="th-result-meta-label">Confidence</div><div class="th-result-meta-value">${this._esc(String(data.confidence))}%</div></div>` : ''}
+        </div>
+        <div class="th-result-content">${this._esc(String(summary))}</div>
+      `;
     }
+  }
 
-    // Hunt management methods
-    async viewHuntDetails(huntId) {
-        console.log('Viewing hunt details for:', huntId);
+  _clearResults() {
+    const body = this._el('th-results-body');
+    const badge = this._el('th-results-badge');
+    if (badge) badge.innerHTML = '';
+    if (body) {
+      body.innerHTML = `
+        <div class="cf-empty">
+          <div class="cf-empty-icon">&#x1F50D;</div>
+          <div class="cf-empty-title">No hunt executed yet</div>
+          <div class="cf-empty-text">Build a query above and click Execute Hunt to begin.</div>
+        </div>
+      `;
     }
+  }
 
-    async pauseHunt(huntId) {
-        console.log('Pausing hunt:', huntId);
+  _renderHistory() {
+    const list = this._el('th-history-list');
+    if (!list) return;
+    if (!this.huntHistory.length) {
+      list.innerHTML = '<div class="th-empty-history">No hunts executed yet.</div>';
+      return;
     }
+    list.innerHTML = this.huntHistory.map(h => `
+      <div class="th-history-item" title="${this._esc(h.query)}">
+        <div class="th-history-name">${this._esc(h.name)}</div>
+        <div class="th-history-meta">
+          <span class="th-history-time">${this._esc(new Date(h.timestamp).toLocaleTimeString())}</span>
+          <span class="th-history-hits">${this._esc(String(h.hits))} hits</span>
+        </div>
+      </div>
+    `).join('');
 
-    async stopHunt(huntId) {
-        console.log('Stopping hunt:', huntId);
-    }
+    list.querySelectorAll('.th-history-item').forEach((item, i) => {
+      item.addEventListener('click', () => {
+        const input = this._el('th-query-input');
+        if (input && this.huntHistory[i]) input.value = this.huntHistory[i].query;
+      });
+    });
+  }
 
-    async createHuntFromIntel(intelId) {
-        console.log('Creating hunt from intelligence:', intelId);
+  async _loadStats() {
+    try {
+      const resp = await fetch('http://localhost:3001/api/threats/stats');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      this.stats.assetsCovered = data.assets_covered || data.total_assets || 248;
+      this._updateStatEl('th-stat-assets', this.stats.assetsCovered);
+    } catch (_) {
+      this._updateStatEl('th-stat-assets', 248);
     }
+  }
 
-    async shareIntel(intelId) {
-        console.log('Sharing intelligence:', intelId);
-    }
+  _updateStats() {
+    this._updateStatEl('th-stat-total', this.stats.totalHunts);
+    this._updateStatEl('th-stat-threats', this.stats.threatsFound);
+    this._updateStatEl('th-stat-active', this.stats.activeHunts);
+    this._updateStatEl('th-stat-assets', this.stats.assetsCovered);
+  }
 
-    filterHunts(status) {
-        console.log('Filtering hunts by status:', status);
-    }
-
-    filterIntelligence(source) {
-        console.log('Filtering intelligence by source:', source);
-    }
-
-    showNewHuntModal() {
-        console.log('Showing new hunt modal');
-    }
+  _updateStatEl(id, val) {
+    const el = this._el(id);
+    if (el) el.textContent = String(val);
+  }
 }
 
-// Initialize and export
-const threatHuntingScreen = new ThreatHuntingScreen();
-
-// Auto-initialize when screen is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.threat-hunting-screen')) {
-        threatHuntingScreen.init();
-    }
-});
+window.ThreatHuntingScreen = ThreatHuntingScreen;

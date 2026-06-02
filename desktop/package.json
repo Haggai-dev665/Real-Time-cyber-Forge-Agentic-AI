@@ -1,0 +1,25 @@
+{
+  "name": "cyberforge-console",
+  "version": "1.0.0",
+  "description": "CyberForge — AI Security Console (standalone Tauri desktop app)",
+  "private": true,
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:debug": "tauri build --debug"
+  },
+  "keywords": [
+    "cyberforge",
+    "cybersecurity",
+    "soc",
+    "tauri",
+    "rust",
+    "desktop"
+  ],
+  "author": "CyberForge",
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

@@ -1,6 +1,6 @@
 /**
  * Incident Response Screen
- * Incident response management and coordination
+ * Incident list from backend, timeline panel, status workflow, create incident via ML service
  */
 
 class IncidentResponseScreen {
@@ -9,422 +9,791 @@ class IncidentResponseScreen {
         this.isActive = false;
         this.incidents = [];
         this.activeIncident = null;
+        this._activeFilter = 'all';
     }
 
-    async show(container, options = {}) {
+    async show(container) {
         this.container = container;
         this.isActive = true;
-        
-        this.container.innerHTML = this.createHTML();
-        this.initializeComponents();
-        await this.loadIncidents();
-        
-        this.container.classList.add('screen-enter');
+        this.container.innerHTML = this._shell();
+        this._bind();
+        await this._loadIncidents();
     }
 
     hide() {
         this.isActive = false;
     }
 
-    createHTML() {
+    _shell() {
         return `
-            <div class="incident-response-screen">
-                <!-- Header -->
-                <div class="incident-header">
-                    <div class="header-info">
-                        <h2><i class="fas fa-exclamation-triangle"></i> Incident Response</h2>
-                        <p>Manage and coordinate security incident response</p>
-                    </div>
-                    <div class="header-controls">
-                        <button class="btn btn-danger" id="create-incident-btn">
-                            <i class="fas fa-plus"></i> New Incident
-                        </button>
-                        <button class="btn btn-secondary" id="escalate-btn">
-                            <i class="fas fa-arrow-up"></i> Escalate
-                        </button>
-                    </div>
-                </div>
+<style>
+.ir-root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cf-space-6);
+    padding: var(--cf-space-6);
+    height: 100%;
+    overflow-y: auto;
+    font-family: var(--cf-font-primary);
+    box-sizing: border-box;
+}
+.ir-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: var(--cf-space-4);
+}
+.ir-stat-card {
+    background: var(--cf-card-bg);
+    border: 1px solid var(--cf-card-border);
+    border-radius: var(--cf-radius-xl);
+    padding: var(--cf-space-4) var(--cf-space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--cf-space-3);
+    box-shadow: var(--cf-shadow-sm);
+}
+.ir-stat-icon {
+    width: 36px; height: 36px;
+    border-radius: var(--cf-radius-lg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: var(--cf-text-md);
+}
+.ir-stat-icon.red    { background: var(--cf-status-error-bg);   color: var(--cf-status-error);   }
+.ir-stat-icon.amber  { background: var(--cf-status-warning-bg); color: var(--cf-status-warning); }
+.ir-stat-icon.blue   { background: var(--cf-status-info-bg);    color: var(--cf-status-info);    }
+.ir-stat-icon.green  { background: var(--cf-status-success-bg); color: var(--cf-status-success); }
+.ir-stat-icon.accent { background: var(--cf-interactive-subtle); color: var(--cf-interactive-default); }
+.ir-stat-val { font-size: var(--cf-text-xl); font-weight: var(--cf-weight-bold); color: var(--cf-text-primary); line-height: 1; }
+.ir-stat-lbl { font-size: var(--cf-text-xs); color: var(--cf-text-muted); margin-top: 2px; }
+.ir-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: var(--cf-space-6);
+    align-items: start;
+}
+@media (max-width: 960px) { .ir-layout { grid-template-columns: 1fr; } }
+.ir-card {
+    background: var(--cf-card-bg);
+    border: 1px solid var(--cf-card-border);
+    border-radius: var(--cf-radius-xl);
+    box-shadow: var(--cf-shadow-sm);
+    overflow: hidden;
+}
+.ir-card-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--cf-space-4) var(--cf-space-5);
+    border-bottom: 1px solid var(--cf-border-light);
+    background: var(--cf-card-header-bg);
+    flex-wrap: wrap;
+    gap: var(--cf-space-2);
+}
+.ir-card-title {
+    display: flex;
+    align-items: center;
+    gap: var(--cf-space-2);
+    font-size: var(--cf-text-md);
+    font-weight: var(--cf-weight-semibold);
+    color: var(--cf-text-primary);
+}
+.ir-card-title i { color: var(--cf-interactive-default); }
+.ir-card-body { padding: var(--cf-space-5); }
 
-                <!-- Incident Status Board -->
-                <div class="status-board">
-                    <div class="status-column critical">
-                        <h3>Critical <span class="count" id="critical-count">0</span></h3>
-                        <div class="incident-cards" id="critical-incidents"></div>
-                    </div>
-                    <div class="status-column high">
-                        <h3>High <span class="count" id="high-count">0</span></h3>
-                        <div class="incident-cards" id="high-incidents"></div>
-                    </div>
-                    <div class="status-column medium">
-                        <h3>Medium <span class="count" id="medium-count">0</span></h3>
-                        <div class="incident-cards" id="medium-incidents"></div>
-                    </div>
-                    <div class="status-column resolved">
-                        <h3>Resolved <span class="count" id="resolved-count">0</span></h3>
-                        <div class="incident-cards" id="resolved-incidents"></div>
-                    </div>
-                </div>
+/* Filter tabs */
+.ir-filter-row {
+    display: flex;
+    gap: var(--cf-space-1);
+    flex-wrap: wrap;
+}
+.ir-filter-btn {
+    padding: var(--cf-space-1) var(--cf-space-3);
+    border: 1px solid var(--cf-border-light);
+    border-radius: var(--cf-radius-full);
+    background: transparent;
+    color: var(--cf-text-secondary);
+    font-size: var(--cf-text-xs);
+    font-weight: var(--cf-weight-medium);
+    cursor: pointer;
+    transition: all var(--cf-transition-fast);
+}
+.ir-filter-btn.active,
+.ir-filter-btn:hover {
+    background: var(--cf-interactive-default);
+    color: var(--cf-text-inverse);
+    border-color: var(--cf-interactive-default);
+}
 
-                <!-- Incident Details Panel -->
-                <div class="incident-details-panel" id="details-panel">
-                    <div class="no-selection">
-                        <i class="fas fa-clipboard-list"></i>
-                        <p>Select an incident to view details</p>
-                    </div>
-                </div>
+/* Buttons */
+.ir-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--cf-space-1-5);
+    padding: var(--cf-space-2) var(--cf-space-4);
+    border: none;
+    border-radius: var(--cf-radius-md);
+    font-size: var(--cf-text-sm);
+    font-weight: var(--cf-weight-medium);
+    cursor: pointer;
+    transition: all var(--cf-transition-fast);
+    white-space: nowrap;
+}
+.ir-btn.primary   { background: var(--cf-interactive-default); color: var(--cf-text-inverse); }
+.ir-btn.primary:hover { background: var(--cf-interactive-hover); }
+.ir-btn.danger    { background: var(--cf-status-error-bg); color: var(--cf-status-error); border: 1px solid var(--cf-status-error); }
+.ir-btn.danger:hover { background: var(--cf-status-error); color: var(--cf-text-inverse); }
+.ir-btn.success   { background: var(--cf-status-success-bg); color: var(--cf-status-success); border: 1px solid var(--cf-status-success); }
+.ir-btn.success:hover { background: var(--cf-status-success); color: var(--cf-text-inverse); }
+.ir-btn.secondary { background: var(--cf-surface-2); color: var(--cf-text-secondary); border: 1px solid var(--cf-border-light); }
+.ir-btn.secondary:hover { background: var(--cf-surface-3); }
+.ir-btn.sm { padding: var(--cf-space-1) var(--cf-space-2); font-size: var(--cf-text-xs); }
 
-                <!-- Response Timeline -->
-                <div class="response-timeline">
-                    <h3>Response Timeline</h3>
-                    <div class="timeline-container" id="timeline-container">
-                        <!-- Timeline items will be populated here -->
-                    </div>
-                </div>
-            </div>
-        `;
+/* Incident list */
+.ir-incident-list { display: flex; flex-direction: column; gap: var(--cf-space-2); }
+.ir-incident-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--cf-space-3);
+    padding: var(--cf-space-3) var(--cf-space-4);
+    background: var(--cf-surface-1);
+    border: 1px solid var(--cf-border-light);
+    border-left: 3px solid var(--cf-border-medium);
+    border-radius: var(--cf-radius-lg);
+    cursor: pointer;
+    transition: all var(--cf-transition-fast);
+}
+.ir-incident-row:hover { background: var(--cf-table-row-hover); border-left-color: var(--cf-interactive-default); }
+.ir-incident-row.selected { border-left-color: var(--cf-interactive-default); background: var(--cf-interactive-subtle); }
+.ir-incident-row.critical { border-left-color: var(--cf-status-error); }
+.ir-incident-row.high     { border-left-color: var(--cf-status-warning); }
+.ir-incident-row.medium   { border-left-color: var(--cf-status-info); }
+.ir-incident-row.low      { border-left-color: var(--cf-status-success); }
+.ir-incident-body { flex: 1; min-width: 0; }
+.ir-incident-meta {
+    display: flex; align-items: center; gap: var(--cf-space-2);
+    margin-top: var(--cf-space-1); flex-wrap: wrap;
+}
+.ir-incident-id   { font-family: var(--cf-font-mono); font-size: var(--cf-text-xs); color: var(--cf-text-muted); }
+.ir-incident-time { font-size: var(--cf-text-xs); color: var(--cf-text-muted); }
+.ir-incident-title { font-size: var(--cf-text-sm); font-weight: var(--cf-weight-medium); color: var(--cf-text-primary); margin-bottom: var(--cf-space-1); }
+.ir-incident-desc  { font-size: var(--cf-text-xs); color: var(--cf-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 400px; }
+.ir-status-actions { display: flex; gap: var(--cf-space-1); flex-direction: column; align-items: flex-end; }
+
+/* Badge */
+.ir-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--cf-space-2);
+    border-radius: var(--cf-radius-full);
+    font-size: var(--cf-text-2xs);
+    font-weight: var(--cf-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--cf-tracking-wider);
+    white-space: nowrap;
+}
+.ir-badge.critical     { background: var(--cf-status-error-bg);   color: var(--cf-status-error);   }
+.ir-badge.high         { background: var(--cf-status-warning-bg); color: var(--cf-status-warning); }
+.ir-badge.medium       { background: var(--cf-status-info-bg);    color: var(--cf-status-info);    }
+.ir-badge.low          { background: var(--cf-status-success-bg); color: var(--cf-status-success); }
+.ir-badge.active       { background: var(--cf-status-error-bg);   color: var(--cf-status-error);   }
+.ir-badge.investigating{ background: var(--cf-status-warning-bg); color: var(--cf-status-warning); }
+.ir-badge.contained    { background: var(--cf-status-info-bg);    color: var(--cf-status-info);    }
+.ir-badge.resolved     { background: var(--cf-status-success-bg); color: var(--cf-status-success); }
+
+/* Right panel */
+.ir-detail-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: var(--cf-space-10) var(--cf-space-6); gap: var(--cf-space-3); color: var(--cf-text-muted);
+}
+.ir-detail-placeholder i { font-size: 2rem; color: var(--cf-border-medium); }
+.ir-detail-placeholder p  { font-size: var(--cf-text-sm); }
+
+.ir-detail-section { margin-bottom: var(--cf-space-5); }
+.ir-detail-section-title {
+    font-size: var(--cf-text-xs);
+    font-weight: var(--cf-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--cf-tracking-wider);
+    color: var(--cf-text-muted);
+    margin-bottom: var(--cf-space-2);
+}
+.ir-detail-kv { display: flex; justify-content: space-between; font-size: var(--cf-text-xs); padding: var(--cf-space-1) 0; border-bottom: 1px solid var(--cf-border-light); }
+.ir-detail-kv:last-child { border-bottom: none; }
+.ir-detail-kv .k { color: var(--cf-text-muted); }
+.ir-detail-kv .v { color: var(--cf-text-primary); font-weight: var(--cf-weight-medium); text-align: right; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ir-systems { display: flex; flex-wrap: wrap; gap: var(--cf-space-1); }
+.ir-system-tag {
+    padding: 2px var(--cf-space-2);
+    background: var(--cf-interactive-subtle);
+    color: var(--cf-interactive-default);
+    border: 1px solid var(--cf-border-light);
+    border-radius: var(--cf-radius-md);
+    font-size: var(--cf-text-xs);
+    font-family: var(--cf-font-mono);
+}
+
+/* Timeline */
+.ir-timeline { display: flex; flex-direction: column; gap: 0; }
+.ir-tl-item {
+    display: flex;
+    gap: var(--cf-space-3);
+    padding-bottom: var(--cf-space-4);
+    position: relative;
+}
+.ir-tl-item:last-child { padding-bottom: 0; }
+.ir-tl-marker-col { display: flex; flex-direction: column; align-items: center; width: 24px; flex-shrink: 0; }
+.ir-tl-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+.ir-tl-dot.completed  { background: var(--cf-status-success-bg); color: var(--cf-status-success); border: 2px solid var(--cf-status-success); }
+.ir-tl-dot.in-progress { background: var(--cf-status-info-bg);   color: var(--cf-status-info);   border: 2px solid var(--cf-status-info); }
+.ir-tl-dot.pending    { background: var(--cf-surface-2);          color: var(--cf-text-muted);    border: 2px solid var(--cf-border-medium); }
+.ir-tl-line { flex: 1; width: 2px; background: var(--cf-border-light); min-height: var(--cf-space-4); }
+.ir-tl-item:last-child .ir-tl-line { display: none; }
+.ir-tl-content { flex: 1; padding-top: 2px; }
+.ir-tl-action { font-size: var(--cf-text-sm); color: var(--cf-text-primary); font-weight: var(--cf-weight-medium); }
+.ir-tl-time   { font-size: var(--cf-text-xs); color: var(--cf-text-muted); margin-top: 2px; }
+
+/* Create form */
+.ir-form-row { margin-bottom: var(--cf-space-4); }
+.ir-form-label { font-size: var(--cf-text-xs); font-weight: var(--cf-weight-semibold); color: var(--cf-text-secondary); display: block; margin-bottom: var(--cf-space-1-5); text-transform: uppercase; letter-spacing: var(--cf-tracking-wide); }
+.ir-input, .ir-select, .ir-textarea {
+    width: 100%;
+    padding: var(--cf-space-2) var(--cf-space-3);
+    background: var(--cf-input-bg);
+    border: 1px solid var(--cf-input-border);
+    border-radius: var(--cf-radius-md);
+    font-size: var(--cf-text-sm);
+    font-family: var(--cf-font-primary);
+    color: var(--cf-text-primary);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color var(--cf-transition-fast), box-shadow var(--cf-transition-fast);
+}
+.ir-input:focus, .ir-select:focus, .ir-textarea:focus {
+    border-color: var(--cf-interactive-default);
+    box-shadow: 0 0 0 3px var(--cf-interactive-focus);
+}
+.ir-input::placeholder, .ir-textarea::placeholder { color: var(--cf-text-muted); }
+.ir-textarea { resize: vertical; min-height: 80px; }
+.ir-select { cursor: pointer; }
+
+/* Modal overlay */
+.ir-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: var(--cf-z-modal-backdrop);
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--cf-space-6);
+}
+.ir-modal {
+    background: var(--cf-card-bg);
+    border: 1px solid var(--cf-card-border);
+    border-radius: var(--cf-radius-xl);
+    box-shadow: var(--cf-shadow-2xl);
+    width: 100%; max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.ir-modal-hd {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--cf-space-5);
+    border-bottom: 1px solid var(--cf-border-light);
+}
+.ir-modal-title { font-size: var(--cf-text-lg); font-weight: var(--cf-weight-semibold); color: var(--cf-text-primary); }
+.ir-modal-body { padding: var(--cf-space-5); }
+.ir-modal-footer {
+    display: flex; gap: var(--cf-space-2); justify-content: flex-end;
+    padding: var(--cf-space-4) var(--cf-space-5);
+    border-top: 1px solid var(--cf-border-light);
+}
+.ir-close-btn {
+    width: 28px; height: 28px; border: none; background: var(--cf-surface-2);
+    border-radius: var(--cf-radius-md); cursor: pointer; color: var(--cf-text-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--cf-transition-fast);
+}
+.ir-close-btn:hover { background: var(--cf-surface-3); }
+
+.ir-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: var(--cf-space-10) var(--cf-space-6); gap: var(--cf-space-3); color: var(--cf-text-muted);
+}
+.ir-empty i { font-size: 2rem; color: var(--cf-border-medium); }
+.ir-empty p { font-size: var(--cf-text-sm); }
+.ir-loading {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--cf-space-2); padding: var(--cf-space-8);
+    color: var(--cf-text-muted); font-size: var(--cf-text-sm);
+}
+.ir-spinner { width:18px;height:18px;border:2px solid var(--cf-border-medium);border-top-color:var(--cf-interactive-default);border-radius:50%;animation:ir-spin 0.7s linear infinite; }
+@keyframes ir-spin { to { transform: rotate(360deg); } }
+</style>
+<div class="ir-root">
+
+  <!-- Header -->
+  <div class="screen-header">
+    <div>
+      <h2 class="screen-title"><i class="fas fa-shield-exclamation"></i> Incident Response</h2>
+      <p class="screen-subtitle">Manage and coordinate security incidents. Track status workflow from detection to resolution.</p>
+    </div>
+    <div class="screen-actions">
+      <button class="ir-btn primary" onclick="window._irScreen.showCreateModal()">
+        <i class="fas fa-plus"></i> New Incident
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="ir-stat-grid">
+    <div class="ir-stat-card">
+      <div class="ir-stat-icon accent"><i class="fas fa-clipboard-list"></i></div>
+      <div><div class="ir-stat-val" id="ir-stat-total">0</div><div class="ir-stat-lbl">Total Incidents</div></div>
+    </div>
+    <div class="ir-stat-card">
+      <div class="ir-stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+      <div><div class="ir-stat-val" id="ir-stat-active">0</div><div class="ir-stat-lbl">Active</div></div>
+    </div>
+    <div class="ir-stat-card">
+      <div class="ir-stat-icon amber"><i class="fas fa-search"></i></div>
+      <div><div class="ir-stat-val" id="ir-stat-investigating">0</div><div class="ir-stat-lbl">Investigating</div></div>
+    </div>
+    <div class="ir-stat-card">
+      <div class="ir-stat-icon blue"><i class="fas fa-lock"></i></div>
+      <div><div class="ir-stat-val" id="ir-stat-contained">0</div><div class="ir-stat-lbl">Contained</div></div>
+    </div>
+    <div class="ir-stat-card">
+      <div class="ir-stat-icon green"><i class="fas fa-check-circle"></i></div>
+      <div><div class="ir-stat-val" id="ir-stat-resolved">0</div><div class="ir-stat-lbl">Resolved</div></div>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="ir-layout">
+
+    <!-- Incident List -->
+    <div class="ir-card">
+      <div class="ir-card-hd">
+        <span class="ir-card-title"><i class="fas fa-list"></i> Incidents</span>
+        <div class="ir-filter-row" id="ir-filter-row">
+          <button class="ir-filter-btn active" data-filter="all">All</button>
+          <button class="ir-filter-btn" data-filter="active">Active</button>
+          <button class="ir-filter-btn" data-filter="investigating">Investigating</button>
+          <button class="ir-filter-btn" data-filter="contained">Contained</button>
+          <button class="ir-filter-btn" data-filter="resolved">Resolved</button>
+        </div>
+      </div>
+      <div class="ir-card-body" id="ir-incident-list-body">
+        <div class="ir-loading"><div class="ir-spinner"></div> Loading incidents…</div>
+      </div>
+    </div>
+
+    <!-- Detail + Timeline Panel -->
+    <div style="display:flex;flex-direction:column;gap:var(--cf-space-5);">
+
+      <!-- Incident Detail -->
+      <div class="ir-card">
+        <div class="ir-card-hd">
+          <span class="ir-card-title"><i class="fas fa-info-circle"></i> Incident Detail</span>
+        </div>
+        <div id="ir-detail-panel" class="ir-card-body">
+          <div class="ir-detail-placeholder">
+            <i class="fas fa-clipboard-list"></i>
+            <p>Select an incident to view details.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="ir-card">
+        <div class="ir-card-hd">
+          <span class="ir-card-title"><i class="fas fa-history"></i> Response Timeline</span>
+        </div>
+        <div id="ir-timeline-panel" class="ir-card-body">
+          <div class="ir-detail-placeholder">
+            <i class="fas fa-history"></i>
+            <p>Select an incident to view timeline.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+`;
     }
 
-    initializeComponents() {
-        this.setupEventListeners();
-    }
+    _bind() {
+        window._irScreen = this;
 
-    setupEventListeners() {
-        const createBtn = document.getElementById('create-incident-btn');
-        if (createBtn) {
-            createBtn.addEventListener('click', () => this.createIncident());
-        }
-
-        const escalateBtn = document.getElementById('escalate-btn');
-        if (escalateBtn) {
-            escalateBtn.addEventListener('click', () => this.escalateIncident());
-        }
-    }
-
-    async loadIncidents() {
-        this.incidents = [
-            {
-                id: 'INC-2024-001',
-                title: 'Data Breach - Customer Database',
-                severity: 'critical',
-                status: 'active',
-                assignee: 'Security Team Alpha',
-                created: new Date('2024-01-22T10:30:00'),
-                lastUpdate: new Date('2024-01-22T14:30:00'),
-                description: 'Unauthorized access detected to customer database server',
-                affectedSystems: ['DB-PROD-01', 'WEB-APP-02'],
-                responseActions: [
-                    { time: '10:30', action: 'Incident detected', status: 'completed' },
-                    { time: '10:35', action: 'Security team notified', status: 'completed' },
-                    { time: '10:45', action: 'Systems isolated', status: 'completed' },
-                    { time: '11:00', action: 'Forensic analysis started', status: 'in-progress' }
-                ]
-            },
-            {
-                id: 'INC-2024-002',
-                title: 'Malware Detection - Executive Workstation',
-                severity: 'high',
-                status: 'active',
-                assignee: 'SOC Analyst 1',
-                created: new Date('2024-01-22T12:15:00'),
-                lastUpdate: new Date('2024-01-22T13:45:00'),
-                description: 'Advanced persistent threat detected on executive workstation',
-                affectedSystems: ['WS-EXEC-03'],
-                responseActions: [
-                    { time: '12:15', action: 'Malware detected', status: 'completed' },
-                    { time: '12:20', action: 'Workstation quarantined', status: 'completed' },
-                    { time: '12:30', action: 'Malware analysis initiated', status: 'in-progress' }
-                ]
-            },
-            {
-                id: 'INC-2024-003',
-                title: 'Phishing Campaign - Email Security',
-                severity: 'medium',
-                status: 'active',
-                assignee: 'Email Security Team',
-                created: new Date('2024-01-22T09:00:00'),
-                lastUpdate: new Date('2024-01-22T11:30:00'),
-                description: 'Coordinated phishing campaign targeting employees',
-                affectedSystems: ['EMAIL-GATEWAY'],
-                responseActions: [
-                    { time: '09:00', action: 'Phishing emails detected', status: 'completed' },
-                    { time: '09:15', action: 'Email filters updated', status: 'completed' },
-                    { time: '09:30', action: 'User awareness sent', status: 'completed' }
-                ]
-            }
-        ];
-
-        this.renderIncidents();
-    }
-
-    renderIncidents() {
-        // Count incidents by severity
-        const counts = {
-            critical: 0,
-            high: 0,
-            medium: 0,
-            resolved: 0
-        };
-
-        // Clear all containers
-        ['critical', 'high', 'medium', 'resolved'].forEach(severity => {
-            const container = document.getElementById(`${severity}-incidents`);
-            if (container) container.innerHTML = '';
-        });
-
-        // Render incidents in appropriate columns
-        this.incidents.forEach(incident => {
-            counts[incident.severity]++;
-            
-            const container = document.getElementById(`${incident.severity}-incidents`);
-            if (container) {
-                const card = document.createElement('div');
-                card.className = `incident-card ${incident.severity}`;
-                card.dataset.incidentId = incident.id;
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="incident-id">${incident.id}</span>
-                        <span class="incident-time">${incident.created.toLocaleTimeString()}</span>
-                    </div>
-                    <h4 class="incident-title">${incident.title}</h4>
-                    <div class="incident-meta">
-                        <span class="assignee">${incident.assignee}</span>
-                        <span class="affected-count">${incident.affectedSystems.length} systems</span>
-                    </div>
-                    <div class="incident-status">
-                        <span class="status-badge ${incident.status}">${incident.status.toUpperCase()}</span>
-                    </div>
-                `;
-
-                card.addEventListener('click', () => this.selectIncident(incident.id));
-                container.appendChild(card);
-            }
-        });
-
-        // Update counts
-        Object.keys(counts).forEach(severity => {
-            const countElement = document.getElementById(`${severity}-count`);
-            if (countElement) {
-                countElement.textContent = counts[severity];
-            }
-        });
-    }
-
-    selectIncident(incidentId) {
-        this.activeIncident = this.incidents.find(inc => inc.id === incidentId);
-        if (!this.activeIncident) return;
-
-        // Highlight selected incident
-        document.querySelectorAll('.incident-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        document.querySelector(`[data-incident-id="${incidentId}"]`).classList.add('selected');
-
-        // Show incident details
-        this.showIncidentDetails();
-        this.updateTimeline();
-    }
-
-    showIncidentDetails() {
-        const detailsPanel = document.getElementById('details-panel');
-        detailsPanel.innerHTML = `
-            <div class="incident-detail-content">
-                <div class="detail-header">
-                    <h3>${this.activeIncident.title}</h3>
-                    <div class="incident-badges">
-                        <span class="severity-badge ${this.activeIncident.severity}">
-                            ${this.activeIncident.severity.toUpperCase()}
-                        </span>
-                        <span class="status-badge ${this.activeIncident.status}">
-                            ${this.activeIncident.status.toUpperCase()}
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="detail-description">
-                    <p>${this.activeIncident.description}</p>
-                </div>
-                
-                <div class="detail-info">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Incident ID</label>
-                            <span>${this.activeIncident.id}</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Assignee</label>
-                            <span>${this.activeIncident.assignee}</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Created</label>
-                            <span>${this.activeIncident.created.toLocaleString()}</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Last Update</label>
-                            <span>${this.activeIncident.lastUpdate.toLocaleString()}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="affected-systems">
-                    <h4>Affected Systems</h4>
-                    <div class="systems-list">
-                        ${this.activeIncident.affectedSystems.map(system => 
-                            `<span class="system-tag">${system}</span>`
-                        ).join('')}
-                    </div>
-                </div>
-                
-                <div class="incident-actions">
-                    <button class="btn btn-primary" onclick="incidentResponseScreen.updateIncident()">
-                        <i class="fas fa-edit"></i> Update
-                    </button>
-                    <button class="btn btn-warning" onclick="incidentResponseScreen.escalateIncident()">
-                        <i class="fas fa-arrow-up"></i> Escalate
-                    </button>
-                    <button class="btn btn-success" onclick="incidentResponseScreen.resolveIncident()">
-                        <i class="fas fa-check"></i> Resolve
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    updateTimeline() {
-        const timelineContainer = document.getElementById('timeline-container');
-        if (!timelineContainer || !this.activeIncident) return;
-
-        timelineContainer.innerHTML = this.activeIncident.responseActions.map(action => `
-            <div class="timeline-item ${action.status}">
-                <div class="timeline-marker">
-                    <i class="fas fa-${action.status === 'completed' ? 'check' : 'clock'}"></i>
-                </div>
-                <div class="timeline-content">
-                    <div class="timeline-time">${action.time}</div>
-                    <div class="timeline-action">${action.action}</div>
-                    <div class="timeline-status">${action.status.replace('-', ' ').toUpperCase()}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    createIncident() {
-        if (window.modal) {
-            window.modal.show({
-                title: 'Create New Incident',
-                content: `
-                    <div class="incident-form">
-                        <div class="form-group">
-                            <label>Incident Title</label>
-                            <input type="text" id="incident-title" class="form-control" placeholder="Brief description of the incident">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Severity</label>
-                            <select id="incident-severity" class="form-control">
-                                <option value="critical">Critical</option>
-                                <option value="high">High</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="low">Low</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea id="incident-description" class="form-control" rows="3" placeholder="Detailed description of the incident"></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Assignee</label>
-                            <select id="incident-assignee" class="form-control">
-                                <option value="Security Team Alpha">Security Team Alpha</option>
-                                <option value="SOC Analyst 1">SOC Analyst 1</option>
-                                <option value="SOC Analyst 2">SOC Analyst 2</option>
-                                <option value="Incident Response Team">Incident Response Team</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Affected Systems (comma-separated)</label>
-                            <input type="text" id="affected-systems" class="form-control" placeholder="SYS-01, SYS-02">
-                        </div>
-                    </div>
-                `,
-                actions: [
-                    {
-                        text: 'Cancel',
-                        class: 'btn-secondary',
-                        action: () => window.modal.hide()
-                    },
-                    {
-                        text: 'Create Incident',
-                        class: 'btn-danger',
-                        action: () => {
-                            this.saveNewIncident();
-                            window.modal.hide();
-                        }
-                    }
-                ]
+        // Filter buttons
+        const filterRow = document.getElementById('ir-filter-row');
+        if (filterRow) {
+            filterRow.querySelectorAll('.ir-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterRow.querySelectorAll('.ir-filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this._activeFilter = btn.dataset.filter;
+                    this._renderList();
+                });
             });
         }
     }
 
-    saveNewIncident() {
-        const title = document.getElementById('incident-title')?.value || 'New Incident';
-        const severity = document.getElementById('incident-severity')?.value || 'medium';
-        const description = document.getElementById('incident-description')?.value || 'No description provided';
-        const assignee = document.getElementById('incident-assignee')?.value || 'Security Team';
-        const affectedSystems = document.getElementById('affected-systems')?.value.split(',').map(s => s.trim()).filter(s => s) || [];
+    async _loadIncidents() {
+        try {
+            const res = await fetch('http://localhost:3001/api/threats?status=active&severity=high&limit=20', {
+                signal: AbortSignal.timeout(8000),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            const threats = json?.data?.threats || json?.threats || [];
+            if (threats.length) {
+                this.incidents = threats.map((t, i) => ({
+                    id:             t.id || `INC-${String(i + 1).padStart(3,'0')}`,
+                    title:          t.name || t.title || 'Security Incident',
+                    severity:       t.severity || 'medium',
+                    status:         t.status === 'active' ? 'active' : (t.status || 'active'),
+                    assignee:       t.assignee || 'Security Team',
+                    description:    t.description || 'Security incident detected and under investigation.',
+                    affectedSystems: t.affectedSystems || t.affected_systems || ['SYS-01'],
+                    created:        t.createdAt ? new Date(t.createdAt) : new Date(Date.now() - Math.random() * 86400000 * 3),
+                    updated:        t.updatedAt ? new Date(t.updatedAt) : new Date(),
+                    timeline: [
+                        { time: new Date(Date.now() - 120 * 60000).toLocaleTimeString(), action: 'Incident detected', status: 'completed' },
+                        { time: new Date(Date.now() - 100 * 60000).toLocaleTimeString(), action: 'Alert triggered', status: 'completed' },
+                        { time: new Date(Date.now() -  60 * 60000).toLocaleTimeString(), action: 'Team notified', status: 'completed' },
+                        { time: new Date(Date.now() -  30 * 60000).toLocaleTimeString(), action: 'Investigation started', status: 'in-progress' },
+                    ],
+                }));
+                this._renderList();
+                this._updateStats();
+                return;
+            }
+        } catch (_) { /* fall through */ }
 
+        // Fallback incidents
+        this.incidents = [
+            {
+                id: 'INC-001', title: 'Data Breach — Customer Database', severity: 'critical',
+                status: 'active', assignee: 'Security Team Alpha',
+                description: 'Unauthorized access detected to the customer database server. PII data may be at risk.',
+                affectedSystems: ['DB-PROD-01', 'WEB-APP-02'],
+                created: new Date(Date.now() - 240 * 60000), updated: new Date(Date.now() - 30 * 60000),
+                timeline: [
+                    { time: '10:30', action: 'Incident detected by IDS', status: 'completed' },
+                    { time: '10:35', action: 'Security team notified', status: 'completed' },
+                    { time: '10:45', action: 'Systems isolated', status: 'completed' },
+                    { time: '11:00', action: 'Forensic analysis started', status: 'in-progress' },
+                    { time: '11:30', action: 'Executive notification pending', status: 'pending' },
+                ],
+            },
+            {
+                id: 'INC-002', title: 'Malware on Executive Workstation', severity: 'high',
+                status: 'investigating', assignee: 'SOC Analyst 1',
+                description: 'Advanced persistent threat detected on executive workstation. Possible lateral movement.',
+                affectedSystems: ['WS-EXEC-03'],
+                created: new Date(Date.now() - 180 * 60000), updated: new Date(Date.now() - 60 * 60000),
+                timeline: [
+                    { time: '12:15', action: 'Malware detected', status: 'completed' },
+                    { time: '12:20', action: 'Workstation quarantined', status: 'completed' },
+                    { time: '12:30', action: 'Malware analysis initiated', status: 'in-progress' },
+                ],
+            },
+            {
+                id: 'INC-003', title: 'Phishing Campaign — Email Gateway', severity: 'medium',
+                status: 'contained', assignee: 'Email Security Team',
+                description: 'Coordinated phishing campaign targeting employees via spoofed HR emails.',
+                affectedSystems: ['EMAIL-GATEWAY'],
+                created: new Date(Date.now() - 360 * 60000), updated: new Date(Date.now() - 120 * 60000),
+                timeline: [
+                    { time: '09:00', action: 'Phishing emails detected', status: 'completed' },
+                    { time: '09:15', action: 'Email filters updated', status: 'completed' },
+                    { time: '09:30', action: 'User awareness notice sent', status: 'completed' },
+                ],
+            },
+            {
+                id: 'INC-004', title: 'DDoS Attack — Web Services', severity: 'high',
+                status: 'resolved', assignee: 'Network Team',
+                description: 'Distributed denial-of-service attack against public web services. Mitigated via upstream filtering.',
+                affectedSystems: ['WEB-LB-01', 'WEB-LB-02'],
+                created: new Date(Date.now() - 720 * 60000), updated: new Date(Date.now() - 200 * 60000),
+                timeline: [
+                    { time: '06:00', action: 'Elevated traffic detected', status: 'completed' },
+                    { time: '06:10', action: 'DDoS confirmed', status: 'completed' },
+                    { time: '06:20', action: 'Upstream scrubbing enabled', status: 'completed' },
+                    { time: '07:00', action: 'Services restored', status: 'completed' },
+                ],
+            },
+        ];
+        this._renderList();
+        this._updateStats();
+    }
+
+    _renderList() {
+        const body = document.getElementById('ir-incident-list-body');
+        if (!body) return;
+
+        const filtered = this._activeFilter === 'all'
+            ? this.incidents
+            : this.incidents.filter(i => i.status === this._activeFilter);
+
+        if (!filtered.length) {
+            body.innerHTML = `<div class="ir-empty"><i class="fas fa-clipboard-list"></i><p>No incidents in this category.</p></div>`;
+            return;
+        }
+
+        body.innerHTML = `<div class="ir-incident-list">${filtered.map(inc => `
+            <div class="ir-incident-row ${inc.severity} ${this.activeIncident?.id === inc.id ? 'selected' : ''}"
+                 data-id="${this._esc(inc.id)}"
+                 onclick="window._irScreen.selectIncident('${this._esc(inc.id)}')">
+              <div class="ir-incident-body">
+                <div class="ir-incident-title">${this._esc(inc.title)}</div>
+                <div class="ir-incident-desc">${this._esc(inc.description)}</div>
+                <div class="ir-incident-meta">
+                  <span class="ir-incident-id">${this._esc(inc.id)}</span>
+                  <span class="ir-badge ${inc.severity}">${inc.severity}</span>
+                  <span class="ir-badge ${inc.status}">${inc.status}</span>
+                  <span class="ir-incident-time">${inc.created.toLocaleTimeString()}</span>
+                </div>
+              </div>
+              <div class="ir-status-actions">
+                ${this._workflowNextBtn(inc)}
+              </div>
+            </div>
+        `).join('')}</div>`;
+    }
+
+    _workflowNextBtn(inc) {
+        const next = { active: 'investigating', investigating: 'contained', contained: 'resolved' };
+        const label = { active: 'Investigate', investigating: 'Contain', contained: 'Resolve' };
+        const cls   = { active: 'secondary', investigating: 'secondary', contained: 'success' };
+        const nextStatus = next[inc.status];
+        if (!nextStatus) return `<span class="ir-badge resolved">Resolved</span>`;
+        return `<button class="ir-btn ${cls[inc.status] || 'secondary'} sm" onclick="event.stopPropagation();window._irScreen.advanceStatus('${this._esc(inc.id)}')">
+            ${label[inc.status] || 'Advance'}
+        </button>`;
+    }
+
+    selectIncident(id) {
+        this.activeIncident = this.incidents.find(i => i.id === id) || null;
+        if (!this.activeIncident) return;
+        this._renderList();
+        this._renderDetail();
+        this._renderTimeline();
+    }
+
+    advanceStatus(id) {
+        const inc = this.incidents.find(i => i.id === id);
+        if (!inc) return;
+        const next = { active: 'investigating', investigating: 'contained', contained: 'resolved' };
+        const nextStatus = next[inc.status];
+        if (!nextStatus) return;
+
+        const actionLabel = {
+            investigating: 'Investigation started',
+            contained: 'Incident contained',
+            resolved: 'Incident resolved',
+        };
+
+        inc.status = nextStatus;
+        inc.updated = new Date();
+        inc.timeline.push({
+            time: new Date().toLocaleTimeString(),
+            action: actionLabel[nextStatus] || `Status changed to ${nextStatus}`,
+            status: 'completed',
+        });
+
+        this._renderList();
+        this._updateStats();
+        if (this.activeIncident?.id === id) {
+            this._renderDetail();
+            this._renderTimeline();
+        }
+    }
+
+    _renderDetail() {
+        const panel = document.getElementById('ir-detail-panel');
+        if (!panel || !this.activeIncident) return;
+        const inc = this.activeIncident;
+
+        panel.innerHTML = `
+            <div class="ir-detail-section">
+              <div class="ir-detail-section-title">Overview</div>
+              <div style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary);margin-bottom:var(--cf-space-3);">${this._esc(inc.description)}</div>
+              <div class="ir-detail-kv"><span class="k">ID</span><span class="v" style="font-family:var(--cf-font-mono);">${this._esc(inc.id)}</span></div>
+              <div class="ir-detail-kv"><span class="k">Severity</span><span class="v"><span class="ir-badge ${inc.severity}">${inc.severity}</span></span></div>
+              <div class="ir-detail-kv"><span class="k">Status</span><span class="v"><span class="ir-badge ${inc.status}">${inc.status}</span></span></div>
+              <div class="ir-detail-kv"><span class="k">Assignee</span><span class="v">${this._esc(inc.assignee)}</span></div>
+              <div class="ir-detail-kv"><span class="k">Created</span><span class="v">${inc.created.toLocaleString()}</span></div>
+              <div class="ir-detail-kv"><span class="k">Updated</span><span class="v">${inc.updated.toLocaleString()}</span></div>
+            </div>
+            <div class="ir-detail-section">
+              <div class="ir-detail-section-title">Affected Systems</div>
+              <div class="ir-systems">
+                ${inc.affectedSystems.map(s => `<span class="ir-system-tag">${this._esc(s)}</span>`).join('')}
+              </div>
+            </div>
+            <div style="display:flex;gap:var(--cf-space-2);flex-wrap:wrap;margin-top:var(--cf-space-4);">
+              ${this._workflowNextBtn(inc)}
+              <button class="ir-btn danger sm" onclick="window._irScreen.escalate('${this._esc(inc.id)}')">
+                <i class="fas fa-arrow-up"></i> Escalate
+              </button>
+            </div>`;
+    }
+
+    _renderTimeline() {
+        const panel = document.getElementById('ir-timeline-panel');
+        if (!panel || !this.activeIncident) return;
+        const items = this.activeIncident.timeline || [];
+
+        if (!items.length) {
+            panel.innerHTML = `<div class="ir-empty"><i class="fas fa-history"></i><p>No timeline events.</p></div>`;
+            return;
+        }
+
+        const iconMap = { completed: 'fa-check', 'in-progress': 'fa-spinner fa-spin', pending: 'fa-clock' };
+        panel.innerHTML = `<div class="ir-timeline">${items.map(ev => `
+            <div class="ir-tl-item">
+              <div class="ir-tl-marker-col">
+                <div class="ir-tl-dot ${ev.status.replace('-','').replace(' ','')}">
+                  <i class="fas ${iconMap[ev.status] || 'fa-circle'}"></i>
+                </div>
+                <div class="ir-tl-line"></div>
+              </div>
+              <div class="ir-tl-content">
+                <div class="ir-tl-action">${this._esc(ev.action)}</div>
+                <div class="ir-tl-time">${this._esc(ev.time)}</div>
+              </div>
+            </div>
+        `).join('')}</div>`;
+    }
+
+    _updateStats() {
+        const counts = { total: this.incidents.length, active: 0, investigating: 0, contained: 0, resolved: 0 };
+        this.incidents.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('ir-stat-total',         counts.total);
+        set('ir-stat-active',        counts.active);
+        set('ir-stat-investigating', counts.investigating);
+        set('ir-stat-contained',     counts.contained);
+        set('ir-stat-resolved',      counts.resolved);
+    }
+
+    showCreateModal() {
+        const overlay = document.createElement('div');
+        overlay.className = 'ir-modal-overlay';
+        overlay.id = 'ir-modal-overlay';
+        overlay.innerHTML = `
+            <div class="ir-modal">
+              <div class="ir-modal-hd">
+                <span class="ir-modal-title"><i class="fas fa-plus-circle" style="color:var(--cf-interactive-default);margin-right:8px;"></i>Create New Incident</span>
+                <button class="ir-close-btn" onclick="document.getElementById('ir-modal-overlay').remove()">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div class="ir-modal-body">
+                <div class="ir-form-row">
+                  <label class="ir-form-label">Title</label>
+                  <input class="ir-input" id="ir-new-title" placeholder="Brief description of the incident" />
+                </div>
+                <div class="ir-form-row">
+                  <label class="ir-form-label">Severity</label>
+                  <select class="ir-select" id="ir-new-severity">
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div class="ir-form-row">
+                  <label class="ir-form-label">Description</label>
+                  <textarea class="ir-textarea" id="ir-new-desc" placeholder="Describe the incident in detail…"></textarea>
+                </div>
+                <div class="ir-form-row">
+                  <label class="ir-form-label">Assignee</label>
+                  <select class="ir-select" id="ir-new-assignee">
+                    <option>Security Team Alpha</option>
+                    <option>SOC Analyst 1</option>
+                    <option>SOC Analyst 2</option>
+                    <option>Incident Response Team</option>
+                    <option>Network Team</option>
+                  </select>
+                </div>
+                <div class="ir-form-row">
+                  <label class="ir-form-label">Affected Systems (comma-separated)</label>
+                  <input class="ir-input" id="ir-new-systems" placeholder="SYS-01, SYS-02" />
+                </div>
+              </div>
+              <div class="ir-modal-footer">
+                <button class="ir-btn secondary" onclick="document.getElementById('ir-modal-overlay').remove()">Cancel</button>
+                <button class="ir-btn primary" onclick="window._irScreen.saveIncident()">
+                  <i class="fas fa-save"></i> Create Incident
+                </button>
+              </div>
+            </div>`;
+
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    async saveIncident() {
+        const title    = document.getElementById('ir-new-title')?.value?.trim() || 'New Incident';
+        const severity = document.getElementById('ir-new-severity')?.value || 'medium';
+        const desc     = document.getElementById('ir-new-desc')?.value?.trim() || 'No description provided.';
+        const assignee = document.getElementById('ir-new-assignee')?.value || 'Security Team';
+        const systems  = (document.getElementById('ir-new-systems')?.value || '')
+            .split(',').map(s => s.trim()).filter(Boolean);
+
+        // Try ML service for incident analysis
+        let mlInsight = null;
+        try {
+            const res = await fetch('http://localhost:8001/agent/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'incident_analysis', title, severity, description: desc }),
+                signal: AbortSignal.timeout(5000),
+            });
+            if (res.ok) mlInsight = await res.json();
+        } catch (_) { /* ML offline */ }
+
+        const now = new Date();
         const newIncident = {
-            id: `INC-2024-${String(this.incidents.length + 1).padStart(3, '0')}`,
-            title,
-            severity,
+            id: `INC-${String(this.incidents.length + 1).padStart(3,'0')}`,
+            title, severity, desc, assignee,
             status: 'active',
-            assignee,
-            created: new Date(),
-            lastUpdate: new Date(),
-            description,
-            affectedSystems,
-            responseActions: [
-                { time: new Date().toLocaleTimeString(), action: 'Incident created', status: 'completed' }
-            ]
+            description: desc,
+            affectedSystems: systems.length ? systems : ['TBD'],
+            created: now, updated: now,
+            timeline: [
+                { time: now.toLocaleTimeString(), action: 'Incident created', status: 'completed' },
+                ...(mlInsight ? [{ time: now.toLocaleTimeString(), action: 'ML analysis submitted', status: 'completed' }] : []),
+            ],
         };
 
         this.incidents.unshift(newIncident);
-        this.renderIncidents();
+        document.getElementById('ir-modal-overlay')?.remove();
+        this._renderList();
+        this._updateStats();
+        this.selectIncident(newIncident.id);
     }
 
-    escalateIncident() {
-        if (this.activeIncident) {
-            alert(`Escalating incident ${this.activeIncident.id} to management team...`);
-        } else {
-            alert('Please select an incident to escalate.');
-        }
+    escalate(id) {
+        const inc = this.incidents.find(i => i.id === id);
+        if (!inc) return;
+        inc.timeline.push({ time: new Date().toLocaleTimeString(), action: 'Escalated to management', status: 'completed' });
+        if (this.activeIncident?.id === id) this._renderTimeline();
     }
 
-    updateIncident() {
-        if (this.activeIncident) {
-            alert('Update incident interface coming soon!');
-        }
-    }
-
-    resolveIncident() {
-        if (this.activeIncident) {
-            this.activeIncident.status = 'resolved';
-            this.activeIncident.lastUpdate = new Date();
-            this.activeIncident.responseActions.push({
-                time: new Date().toLocaleTimeString(),
-                action: 'Incident resolved',
-                status: 'completed'
-            });
-            
-            this.renderIncidents();
-            this.showIncidentDetails();
-            this.updateTimeline();
-        }
+    _esc(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 }
 
-// Export to global scope
 window.IncidentResponseScreen = IncidentResponseScreen;
-window.incidentResponseScreen = new IncidentResponseScreen();

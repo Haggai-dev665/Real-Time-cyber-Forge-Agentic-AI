@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Create Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<link rel="stylesheet" href="cf-auth.css" />
+<style>
+.frow{display:flex;gap:14px}
+.frow .field{flex:1}
+.strength{display:flex;gap:5px;margin-top:9px}
+.strength i{flex:1;height:4px;border-radius:3px;background:rgba(130,160,200,.15);transition:.3s}
+.strength i.on{background:var(--brand-orange)} .strength i.on.good{background:var(--green)}
+.strength-l{font-family:var(--mono);font-size:9.5px;color:var(--faint);margin-top:6px}
+.terms{display:flex;align-items:flex-start;gap:9px;margin:6px 0 20px;font-size:12px;color:var(--dim);cursor:pointer;line-height:1.5}
+.terms .cb{width:16px;height:16px;border-radius:5px;border:1px solid var(--border-3);display:grid;place-items:center;flex:none;margin-top:1px}
+.terms .cb.on{background:var(--brand-orange);border-color:var(--brand-orange)}
+.terms .cb svg{width:11px;height:11px;color:#1a1206;opacity:0} .terms .cb.on svg{opacity:1}
+.terms a{color:var(--amber-2);text-decoration:none}
+.form-scroll{overflow-y:auto;max-height:100%;padding:48px 56px}
+.benefit{display:flex;align-items:center;gap:12px;width:340px;padding:13px 15px;border-radius:11px;border:1px solid var(--border);background:rgba(15,21,34,.5);backdrop-filter:blur(6px);z-index:2}
+.benefit .bi{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex:none;color:var(--sage);border:1px solid var(--border-2);background:var(--tile)}
+.benefit .bi svg{width:16px;height:16px}
+.benefit .bt{font-size:12.5px;font-weight:600} .benefit .bd{font-size:11px;color:var(--dim);margin-top:1px}
+.benefits{display:flex;flex-direction:column;gap:11px;z-index:2}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" id="win">
+    <div class="split">
+      <!-- BRAND -->
+      <div class="brand-panel">
+        <div class="bg-grid"></div>
+        <div class="bg-scan"></div>
+        <div id="forge"></div>
+        <div class="wordmark" id="word" style="margin:-6px 0 6px"></div>
+        <div class="benefits">
+          <div class="benefit"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg></span><div><div class="bt">Deploy in minutes</div><div class="bd">Connect sensors and the agent starts learning instantly.</div></div></div>
+          <div class="benefit"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 16h6"/></svg></span><div><div class="bt">8 autonomous agents</div><div class="bd">Detect, detonate, contain — with human-in-the-loop control.</div></div></div>
+          <div class="benefit"><span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></span><div><div class="bt">Compliance-ready</div><div class="bd">SOC 2, chain-of-custody evidence, audit-grade reports.</div></div></div>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div class="form-panel wide" style="padding:0">
+        <div class="form-scroll">
+          <div class="fp-head">
+            <div class="step">Get started</div>
+            <h1>Create your account</h1>
+            <p>14-day trial · no credit card · full agent access.</p>
+          </div>
+          <form id="form" onsubmit="return false">
+            <div class="frow">
+              <div class="field"><label>First name</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><input value="Jordan" /></div></div>
+              <div class="field"><label>Last name</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg><input value="Okafor" /></div></div>
+            </div>
+            <div class="field"><label>Work email</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input type="email" value="jordan@acme-corp.io" /></div></div>
+            <div class="field"><label>Organization</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-5h6v5"/></svg><input value="Acme Corp Security" /></div></div>
+            <div class="field"><label>Password</label><div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input id="pw" type="password" placeholder="Create a strong password" /><svg class="eye" id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+              <div class="strength"><i></i><i></i><i></i><i></i></div><div class="strength-l" id="sl">Use 8+ chars with a mix of letters, numbers & symbols</div>
+            </div>
+            <div class="terms" id="terms"><span class="cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span><span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>, and consent to security telemetry processing.</span></div>
+            <button class="btn-primary" id="create">Create Account<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </form>
+          <div class="fp-foot">Already have an account? <a href="Login.html">Sign in</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="cf-forge.js"></script>
+<script>
+fitWindow('win');
+forgeIllustration(document.getElementById('forge'),212);
+cfWordmark(document.getElementById('word'));
+
+document.getElementById('eye').addEventListener('click',function(){const pw=document.getElementById('pw');pw.type=pw.type==='password'?'text':'password';this.style.color=pw.type==='text'?'var(--amber-2)':'';});
+document.getElementById('terms').addEventListener('click',function(){this.querySelector('.cb').classList.toggle('on');});
+
+const pw=document.getElementById('pw'),bars=document.querySelectorAll('.strength i'),sl=document.getElementById('sl');
+pw.addEventListener('input',()=>{
+  const v=pw.value;let s=0;if(v.length>=8)s++;if(/[A-Z]/.test(v)&&/[a-z]/.test(v))s++;if(/\d/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+  bars.forEach((b,i)=>{b.classList.toggle('on',i<s);b.classList.toggle('good',s>=4);});
+  sl.textContent=['Too weak','Weak','Fair','Strong','Excellent — forge-grade'][s];
+  sl.style.color=s>=4?'var(--green)':s>=2?'var(--amber-2)':'var(--faint)';
+});
+
+const btn=document.getElementById('create');
+btn.addEventListener('click',()=>{
+  btn.disabled=true;btn.innerHTML='<span class="spinner sm" style="border-top-color:#1a1206;border-color:rgba(26,18,6,.3)"></span>Creating account…';
+  setTimeout(()=>{window.location.href='Onboarding.html';},1200);
+});
+</script>
+</body>
+</html>

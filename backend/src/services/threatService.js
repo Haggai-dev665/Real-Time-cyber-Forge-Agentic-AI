@@ -49,6 +49,20 @@ class ThreatService {
         console.warn('ML threat detection unavailable:', mlError.message);
       }
 
+      // Push any detected threats to live dashboards over SSE (real-time).
+      try {
+        const realtimeBus = require('./realtimeBus');
+        const rs = this.calculateRiskScore(threats);
+        threats.forEach((t) => realtimeBus.emit('threat:new', {
+          indicator: t.url || data.url,
+          type: t.type,
+          severity: t.severity,
+          riskScore: rs,
+          confidence: t.confidence,
+          source: 'threat-scan'
+        }));
+      } catch (_) { /* realtime is best-effort */ }
+
       return {
         success: true,
         threats,
@@ -183,14 +197,24 @@ class ThreatService {
    */
   async getThreatStats(userId = null) {
     try {
-      // This would typically query the database
-      // For now, return mock stats
+      const Threat = require('../models/Threat');
+      
+      const query = {};
+      // If scoping by user, add query.user = userId, but Threat model might not have user?
+      
+      const total_threats = await Threat.countDocuments(query);
+      const active_threats = await Threat.countDocuments({ ...query, status: { $in: ['detected', 'investigating', 'confirmed'] } });
+      const resolved_threats = await Threat.countDocuments({ ...query, status: { $in: ['mitigated', 'false_positive'] } });
+      const high_severity = await Threat.countDocuments({ ...query, severity: { $in: ['high', 'critical'] } });
+      
+      const lastThreat = await Threat.findOne(query).sort({ 'detection.timestamp': -1 });
+      
       return {
-        total_threats: 0,
-        active_threats: 0,
-        resolved_threats: 0,
-        high_severity: 0,
-        last_scan: new Date().toISOString()
+        total_threats,
+        active_threats,
+        resolved_threats,
+        high_severity,
+        last_scan: lastThreat?.detection?.timestamp || new Date().toISOString()
       };
     } catch (error) {
       console.error('Error getting threat stats:', error);

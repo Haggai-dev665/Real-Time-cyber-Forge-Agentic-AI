@@ -1,477 +1,241 @@
 /**
- * Risk Assessment Screen
- * Security risk assessment and management
+ * Risk Assessment Screen — CyberForge
+ * Security risk scoring with SVG gauge, category breakdown, and AI-powered assessment.
  */
 
 class RiskAssessmentScreen {
     constructor() {
         this.container = null;
         this.isActive = false;
-        this.riskData = {};
-        this.assessments = [];
+        this.riskScore = 0;
+        this.BACKEND = window.CF_API?.API || 'https://cyberforge-ddd97655464f.herokuapp.com/api';
+        this.ML = window.CF_API?.ML || 'https://cyberforge-ddd97655464f.herokuapp.com/api/cyberforge-ml';
     }
 
-    async show(container, options = {}) {
+    async show(container) {
         this.container = container;
         this.isActive = true;
-        
-        this.container.innerHTML = this.createHTML();
-        this.initializeComponents();
-        await this.loadRiskData();
-        
-        this.container.classList.add('screen-enter');
+        this.container.innerHTML = this._shell();
+        this._bind();
+        await this._loadData();
     }
 
-    hide() {
-        this.isActive = false;
+    hide() { this.isActive = false; }
+
+    async _loadData() {
+        try {
+            const res = await fetch(`${this.BACKEND}/threats/stats`, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            const data = json.data || json;
+            const total = data.total ?? data.totalThreats ?? 0;
+            const critical = data.critical ?? data.bySeverity?.critical ?? 0;
+            this.riskScore = Math.min(100, Math.round(Math.min(total * 2, 60) + Math.min(critical * 5, 40)));
+        } catch {
+            this.riskScore = 42;
+        }
+        this._renderGauge(this.riskScore);
+        this._renderCategories(this.riskScore);
     }
 
-    createHTML() {
+    _renderGauge(score) {
+        const el = document.getElementById('ra-gauge-score');
+        const ring = document.getElementById('ra-gauge-ring');
+        const label = document.getElementById('ra-gauge-label');
+        if (!el || !ring) return;
+
+        el.textContent = score;
+        const r = 54, circ = 2 * Math.PI * r;
+        const fill = circ - (score / 100) * circ;
+        ring.style.strokeDasharray = `${circ}`;
+        ring.style.strokeDashoffset = `${fill}`;
+
+        const color = score >= 70 ? 'var(--cf-status-error)' : score >= 40 ? 'var(--cf-status-warning)' : 'var(--cf-status-success)';
+        ring.style.stroke = color;
+        el.style.color = color;
+
+        if (label) label.textContent = score >= 70 ? 'High Risk' : score >= 40 ? 'Moderate Risk' : 'Low Risk';
+    }
+
+    _renderCategories(base) {
+        const cats = [
+            { id: 'ra-network', score: Math.min(100, base + 8), label: 'Network Risk', icon: 'fa-network-wired', desc: 'Perimeter exposure and traffic anomalies' },
+            { id: 'ra-data', score: Math.min(100, base - 5), label: 'Data Risk', icon: 'fa-database', desc: 'Data exfiltration and integrity threats' },
+            { id: 'ra-access', score: Math.min(100, base + 12), label: 'Access Risk', icon: 'fa-user-lock', desc: 'Privilege escalation and auth failures' },
+            { id: 'ra-compliance', score: Math.min(100, base - 10), label: 'Compliance Risk', icon: 'fa-clipboard-check', desc: 'Regulatory gaps and policy violations' },
+        ];
+        cats.forEach(c => {
+            const el = document.getElementById(c.id);
+            if (!el) return;
+            const s = Math.max(0, c.score);
+            const col = s >= 70 ? 'var(--cf-status-error)' : s >= 40 ? 'var(--cf-status-warning)' : 'var(--cf-status-success)';
+            el.innerHTML = `
+                <div style="display:flex;align-items:flex-start;gap:var(--cf-space-3)">
+                    <div style="width:36px;height:36px;border-radius:var(--cf-radius-lg);background:var(--cf-surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="fas ${c.icon}" style="color:${col};font-size:14px"></i>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                            <span style="font-size:var(--cf-text-sm);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary)">${c.label}</span>
+                            <span style="font-size:var(--cf-text-lg);font-weight:var(--cf-weight-bold);color:${col}">${s}</span>
+                        </div>
+                        <div style="background:var(--cf-surface-2);border-radius:var(--cf-radius-full);height:4px;margin-bottom:6px;overflow:hidden">
+                            <div style="width:${s}%;height:100%;background:${col};border-radius:var(--cf-radius-full);transition:width 0.6s ease"></div>
+                        </div>
+                        <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted)">${c.desc}</div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async _runAssessment() {
+        const btn = document.getElementById('ra-run-btn');
+        const panel = document.getElementById('ra-ai-panel');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assessing...'; }
+        if (panel) panel.innerHTML = `<div class="cf-loading"><div class="cf-spinner"></div><span>Running AI risk assessment...</span></div>`;
+
+        try {
+            const res = await fetch(`${this.ML}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: `Provide a detailed risk assessment for a cybersecurity environment with a current risk score of ${this.riskScore}/100. Include top vulnerabilities and mitigation priorities.`, context: 'risk_assessment' }),
+                signal: AbortSignal.timeout(15000),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const reply = data.response || data.message || '';
+            const recs = data.recommendations || [];
+
+            if (panel) panel.innerHTML = `
+                <div style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary);line-height:1.7;margin-bottom:var(--cf-space-3)">
+                    ${this._esc(reply).replace(/\n/g, '<br>')}
+                </div>
+                ${recs.length ? `
+                <div style="font-size:var(--cf-text-xs);font-weight:var(--cf-weight-semibold);text-transform:uppercase;letter-spacing:0.06em;color:var(--cf-text-muted);margin-bottom:var(--cf-space-2)">Recommended Actions</div>
+                <ol style="margin:0;padding-left:var(--cf-space-5);display:flex;flex-direction:column;gap:var(--cf-space-1)">
+                    ${recs.map(r => `<li style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary)">${this._esc(r)}</li>`).join('')}
+                </ol>` : ''}`;
+        } catch {
+            if (panel) panel.innerHTML = `
+                <div style="font-size:var(--cf-text-sm);color:var(--cf-text-muted)"><i class="fas fa-info-circle"></i> ML service offline. Showing standard mitigation recommendations:</div>
+                <ol style="margin:var(--cf-space-3) 0 0;padding-left:var(--cf-space-5);display:flex;flex-direction:column;gap:var(--cf-space-2)">
+                    ${['Implement MFA across all privileged accounts','Patch critical CVEs within 24 hours of disclosure','Segment network to limit lateral movement','Enable SIEM alerting for anomalous authentication','Conduct quarterly penetration testing','Review and rotate API keys and secrets'].map(r =>
+                        `<li style="font-size:var(--cf-text-sm);color:var(--cf-text-secondary)">${r}</li>`
+                    ).join('')}
+                </ol>`;
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-brain"></i> Run Assessment'; }
+    }
+
+    _bind() {
+        window._raScreen = this;
+        document.getElementById('ra-run-btn')?.addEventListener('click', () => this._runAssessment());
+    }
+
+    _esc(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    _shell() {
+        const r = 54, circ = 2 * Math.PI * r;
         return `
-            <div class="risk-assessment-screen">
-                <!-- Header -->
-                <div class="risk-header">
-                    <div class="header-info">
-                        <h2><i class="fas fa-balance-scale"></i> Risk Assessment</h2>
-                        <p>Comprehensive security risk analysis and management</p>
-                    </div>
-                    <div class="header-controls">
-                        <button class="btn btn-primary" id="new-assessment-btn">
-                            <i class="fas fa-plus"></i> New Assessment
-                        </button>
-                        <button class="btn btn-secondary" id="export-report-btn">
-                            <i class="fas fa-download"></i> Export Report
-                        </button>
-                    </div>
-                </div>
+<style>
+.ra-layout { display:grid;grid-template-columns:280px 1fr;gap:var(--cf-space-5);align-items:start; }
+.ra-cat-grid { display:grid;grid-template-columns:1fr 1fr;gap:var(--cf-space-3); }
+.ra-factor-row { display:flex;align-items:center;justify-content:space-between;padding:var(--cf-space-3) 0;border-bottom:1px solid var(--cf-border-light);font-size:var(--cf-text-sm); }
+.ra-factor-row:last-child { border-bottom:none; }
+@media(max-width:900px){.ra-layout{grid-template-columns:1fr;}.ra-cat-grid{grid-template-columns:1fr;}}
+</style>
 
-                <!-- Risk Overview -->
-                <div class="risk-overview">
-                    <div class="risk-score-card">
-                        <div class="score-circle">
-                            <div class="score-value" id="overall-score">0</div>
-                            <div class="score-label">Risk Score</div>
-                        </div>
-                        <div class="score-breakdown">
-                            <div class="risk-level critical">
-                                <span class="count" id="critical-risks">0</span>
-                                <span class="label">Critical</span>
-                            </div>
-                            <div class="risk-level high">
-                                <span class="count" id="high-risks">0</span>
-                                <span class="label">High</span>
-                            </div>
-                            <div class="risk-level medium">
-                                <span class="count" id="medium-risks">0</span>
-                                <span class="label">Medium</span>
-                            </div>
-                            <div class="risk-level low">
-                                <span class="count" id="low-risks">0</span>
-                                <span class="label">Low</span>
-                            </div>
-                        </div>
-                    </div>
+<div style="display:flex;flex-direction:column;gap:var(--cf-space-5)">
 
-                    <div class="risk-trends">
-                        <h3>Risk Trends</h3>
-                        <canvas id="risk-trends-chart"></canvas>
-                    </div>
-                </div>
+    <div class="screen-header">
+        <div>
+            <h1 class="screen-title">Risk Assessment</h1>
+            <p class="screen-subtitle">Quantified security risk scoring with AI-powered mitigation guidance</p>
+        </div>
+        <div class="screen-actions">
+            <button class="cf-btn primary" id="ra-run-btn"><i class="fas fa-brain"></i> Run Assessment</button>
+        </div>
+    </div>
 
-                <!-- Risk Categories -->
-                <div class="risk-categories">
-                    <h3>Risk Categories</h3>
-                    <div class="categories-grid">
-                        <div class="category-card">
-                            <div class="category-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div class="category-content">
-                                <h4>Cybersecurity</h4>
-                                <div class="risk-meter">
-                                    <div class="meter-fill" style="width: 75%"></div>
-                                </div>
-                                <span class="risk-value">7.5/10</span>
-                            </div>
-                        </div>
+    <div class="ra-layout">
 
-                        <div class="category-card">
-                            <div class="category-icon">
-                                <i class="fas fa-database"></i>
-                            </div>
-                            <div class="category-content">
-                                <h4>Data Protection</h4>
-                                <div class="risk-meter">
-                                    <div class="meter-fill" style="width: 60%"></div>
-                                </div>
-                                <span class="risk-value">6.0/10</span>
-                            </div>
-                        </div>
-
-                        <div class="category-card">
-                            <div class="category-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="category-content">
-                                <h4>Access Control</h4>
-                                <div class="risk-meter">
-                                    <div class="meter-fill" style="width: 85%"></div>
-                                </div>
-                                <span class="risk-value">8.5/10</span>
-                            </div>
-                        </div>
-
-                        <div class="category-card">
-                            <div class="category-icon">
-                                <i class="fas fa-network-wired"></i>
-                            </div>
-                            <div class="category-content">
-                                <h4>Network Security</h4>
-                                <div class="risk-meter">
-                                    <div class="meter-fill" style="width: 70%"></div>
-                                </div>
-                                <span class="risk-value">7.0/10</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Risk Assessment Table -->
-                <div class="risk-assessments">
-                    <h3>Risk Assessments</h3>
-                    <div class="assessments-table" id="assessments-table">
-                        <!-- Table will be populated here -->
-                    </div>
-                </div>
-
-                <!-- Risk Mitigation -->
-                <div class="risk-mitigation">
-                    <h3>Risk Mitigation Recommendations</h3>
-                    <div class="mitigation-list" id="mitigation-list">
-                        <!-- Recommendations will be populated here -->
-                    </div>
-                </div>
+        <!-- Gauge -->
+        <div class="cf-card" style="text-align:center">
+            <div class="cf-card-header"><h3 class="cf-card-title"><i class="fas fa-tachometer-alt"></i> Risk Score</h3></div>
+            <div class="cf-card-body">
+                <svg width="140" height="140" viewBox="0 0 140 140" style="margin:auto;display:block">
+                    <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--cf-surface-2)" stroke-width="10"/>
+                    <circle id="ra-gauge-ring" cx="70" cy="70" r="${r}" fill="none"
+                        stroke="var(--cf-status-warning)" stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="${circ}" stroke-dashoffset="${circ}"
+                        transform="rotate(-90 70 70)" style="transition:stroke-dashoffset 0.8s ease,stroke 0.3s ease"/>
+                    <text id="ra-gauge-score" x="70" y="67" text-anchor="middle" dominant-baseline="middle"
+                        style="font-size:32px;font-weight:700;font-family:var(--cf-font-mono);fill:var(--cf-text-primary)">0</text>
+                    <text x="70" y="90" text-anchor="middle" style="font-size:11px;fill:var(--cf-text-muted);font-family:var(--cf-font-primary)">/ 100</text>
+                </svg>
+                <div id="ra-gauge-label" style="font-size:var(--cf-text-md);font-weight:var(--cf-weight-semibold);color:var(--cf-text-primary);margin-top:var(--cf-space-2)">Calculating...</div>
+                <div style="font-size:var(--cf-text-xs);color:var(--cf-text-muted);margin-top:4px">Overall Risk Level</div>
             </div>
-        `;
-    }
+        </div>
 
-    initializeComponents() {
-        this.setupEventListeners();
-        this.initializeCharts();
-    }
-
-    setupEventListeners() {
-        const newAssessmentBtn = document.getElementById('new-assessment-btn');
-        if (newAssessmentBtn) {
-            newAssessmentBtn.addEventListener('click', () => this.createNewAssessment());
-        }
-
-        const exportReportBtn = document.getElementById('export-report-btn');
-        if (exportReportBtn) {
-            exportReportBtn.addEventListener('click', () => this.exportReport());
-        }
-    }
-
-    initializeCharts() {
-        const trendsCtx = document.getElementById('risk-trends-chart');
-        if (trendsCtx) {
-            new Chart(trendsCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Overall Risk Score',
-                        data: [6.5, 7.2, 6.8, 7.5, 7.1, 6.9],
-                        borderColor: '#ff6b6b',
-                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                        tension: 0.4
-                    }, {
-                        label: 'Critical Risks',
-                        data: [3, 5, 4, 6, 4, 3],
-                        borderColor: '#feca57',
-                        backgroundColor: 'rgba(254, 202, 87, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 10
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    async loadRiskData() {
-        // Simulate loading risk data
-        this.riskData = {
-            overallScore: 6.9,
-            criticalRisks: 3,
-            highRisks: 8,
-            mediumRisks: 15,
-            lowRisks: 24
-        };
-
-        this.assessments = [
-            {
-                id: 'RA-2024-001',
-                name: 'Network Infrastructure Assessment',
-                date: new Date('2024-01-20'),
-                scope: 'Network Infrastructure',
-                riskLevel: 'high',
-                score: 7.5,
-                status: 'completed',
-                assessor: 'Security Team Alpha'
-            },
-            {
-                id: 'RA-2024-002',
-                name: 'Application Security Review',
-                date: new Date('2024-01-18'),
-                scope: 'Web Applications',
-                riskLevel: 'medium',
-                score: 6.2,
-                status: 'completed',
-                assessor: 'SOC Analyst 1'
-            },
-            {
-                id: 'RA-2024-003',
-                name: 'Employee Access Audit',
-                date: new Date('2024-01-15'),
-                scope: 'Access Control',
-                riskLevel: 'low',
-                score: 4.1,
-                status: 'in-progress',
-                assessor: 'Compliance Team'
-            }
-        ];
-
-        this.updateRiskOverview();
-        this.renderAssessmentsTable();
-        this.renderMitigationRecommendations();
-    }
-
-    updateRiskOverview() {
-        document.getElementById('overall-score').textContent = this.riskData.overallScore.toFixed(1);
-        document.getElementById('critical-risks').textContent = this.riskData.criticalRisks;
-        document.getElementById('high-risks').textContent = this.riskData.highRisks;
-        document.getElementById('medium-risks').textContent = this.riskData.mediumRisks;
-        document.getElementById('low-risks').textContent = this.riskData.lowRisks;
-    }
-
-    renderAssessmentsTable() {
-        const table = document.getElementById('assessments-table');
-        if (!table) return;
-
-        table.innerHTML = `
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Assessment ID</th>
-                        <th>Name</th>
-                        <th>Date</th>
-                        <th>Scope</th>
-                        <th>Risk Level</th>
-                        <th>Score</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${this.assessments.map(assessment => `
-                        <tr>
-                            <td>${assessment.id}</td>
-                            <td>${assessment.name}</td>
-                            <td>${assessment.date.toLocaleDateString()}</td>
-                            <td>${assessment.scope}</td>
-                            <td><span class="risk-badge ${assessment.riskLevel}">${assessment.riskLevel.toUpperCase()}</span></td>
-                            <td>${assessment.score}/10</td>
-                            <td><span class="status-badge ${assessment.status}">${assessment.status.toUpperCase()}</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-secondary" onclick="riskAssessmentScreen.viewAssessment('${assessment.id}')">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <button class="btn btn-sm btn-primary" onclick="riskAssessmentScreen.editAssessment('${assessment.id}')">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-
-    renderMitigationRecommendations() {
-        const mitigationList = document.getElementById('mitigation-list');
-        if (!mitigationList) return;
-
-        const recommendations = [
-            {
-                priority: 'critical',
-                title: 'Implement Multi-Factor Authentication',
-                description: 'Deploy MFA across all critical systems to reduce unauthorized access risk',
-                effort: 'Medium',
-                impact: 'High'
-            },
-            {
-                priority: 'high',
-                title: 'Update Network Segmentation',
-                description: 'Improve network segmentation to limit lateral movement of threats',
-                effort: 'High',
-                impact: 'High'
-            },
-            {
-                priority: 'medium',
-                title: 'Enhanced Employee Training',
-                description: 'Conduct additional security awareness training for all employees',
-                effort: 'Low',
-                impact: 'Medium'
-            },
-            {
-                priority: 'medium',
-                title: 'Vulnerability Patch Management',
-                description: 'Implement automated patch management system for critical vulnerabilities',
-                effort: 'Medium',
-                impact: 'Medium'
-            }
-        ];
-
-        mitigationList.innerHTML = recommendations.map(rec => `
-            <div class="mitigation-item ${rec.priority}">
-                <div class="mitigation-header">
-                    <h4>${rec.title}</h4>
-                    <span class="priority-badge ${rec.priority}">${rec.priority.toUpperCase()}</span>
-                </div>
-                <p class="mitigation-description">${rec.description}</p>
-                <div class="mitigation-meta">
-                    <span class="effort">Effort: ${rec.effort}</span>
-                    <span class="impact">Impact: ${rec.impact}</span>
-                    <button class="btn btn-sm btn-primary">Implement</button>
-                </div>
+        <!-- Categories -->
+        <div style="display:flex;flex-direction:column;gap:var(--cf-space-4)">
+            <div class="ra-cat-grid">
+                <div class="cf-card cf-card-body" id="ra-network" style="padding:var(--cf-space-4)"><div class="cf-loading" style="padding:8px"><div class="cf-spinner"></div></div></div>
+                <div class="cf-card cf-card-body" id="ra-data" style="padding:var(--cf-space-4)"><div class="cf-loading" style="padding:8px"><div class="cf-spinner"></div></div></div>
+                <div class="cf-card cf-card-body" id="ra-access" style="padding:var(--cf-space-4)"><div class="cf-loading" style="padding:8px"><div class="cf-spinner"></div></div></div>
+                <div class="cf-card cf-card-body" id="ra-compliance" style="padding:var(--cf-space-4)"><div class="cf-loading" style="padding:8px"><div class="cf-spinner"></div></div></div>
             </div>
-        `).join('');
-    }
+        </div>
+    </div>
 
-    createNewAssessment() {
-        if (window.modal) {
-            window.modal.show({
-                title: 'Create New Risk Assessment',
-                content: `
-                    <div class="assessment-form">
-                        <div class="form-group">
-                            <label>Assessment Name</label>
-                            <input type="text" id="assessment-name" class="form-control" placeholder="Enter assessment name">
+    <!-- Risk Factors Table -->
+    <div class="cf-card">
+        <div class="cf-card-header"><h3 class="cf-card-title"><i class="fas fa-list-ul"></i> Risk Factor Matrix</h3></div>
+        <div class="cf-card-body">
+            ${[
+                { factor: 'Unpatched Critical CVEs', impact: 'High', likelihood: 'High', score: 85, mit: 'Automated patch management' },
+                { factor: 'Weak Authentication', impact: 'High', likelihood: 'Medium', score: 70, mit: 'Enforce MFA everywhere' },
+                { factor: 'Exposed Admin Interfaces', impact: 'High', likelihood: 'Medium', score: 65, mit: 'VPN + IP allowlisting' },
+                { factor: 'Insufficient Logging', impact: 'Medium', likelihood: 'High', score: 55, mit: 'Centralize SIEM logging' },
+                { factor: 'Outdated SSL/TLS Config', impact: 'Medium', likelihood: 'Medium', score: 40, mit: 'Enforce TLS 1.3 minimum' },
+                { factor: 'Social Engineering Exposure', impact: 'High', likelihood: 'Low', score: 35, mit: 'Security awareness training' },
+            ].map(f => {
+                const impCls = f.impact === 'High' ? 'error' : f.impact === 'Medium' ? 'warning' : 'info';
+                const liCls = f.likelihood === 'High' ? 'error' : f.likelihood === 'Medium' ? 'warning' : 'info';
+                const barCol = f.score >= 70 ? 'var(--cf-status-error)' : f.score >= 40 ? 'var(--cf-status-warning)' : 'var(--cf-status-success)';
+                return `<div class="ra-factor-row">
+                    <div style="flex:2;font-weight:var(--cf-weight-medium);color:var(--cf-text-primary)">${f.factor}</div>
+                    <div style="flex:0.8;text-align:center"><span class="cf-badge ${impCls}">${f.impact}</span></div>
+                    <div style="flex:0.8;text-align:center"><span class="cf-badge ${liCls}">${f.likelihood}</span></div>
+                    <div style="flex:1;display:flex;align-items:center;gap:var(--cf-space-2)">
+                        <div style="flex:1;background:var(--cf-surface-2);border-radius:var(--cf-radius-full);height:4px;overflow:hidden">
+                            <div style="width:${f.score}%;height:100%;background:${barCol};border-radius:var(--cf-radius-full)"></div>
                         </div>
-                        
-                        <div class="form-group">
-                            <label>Scope</label>
-                            <select id="assessment-scope" class="form-control">
-                                <option value="network">Network Infrastructure</option>
-                                <option value="applications">Web Applications</option>
-                                <option value="data">Data Protection</option>
-                                <option value="access">Access Control</option>
-                                <option value="physical">Physical Security</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Assessor</label>
-                            <select id="assessment-assessor" class="form-control">
-                                <option value="Security Team Alpha">Security Team Alpha</option>
-                                <option value="SOC Analyst 1">SOC Analyst 1</option>
-                                <option value="SOC Analyst 2">SOC Analyst 2</option>
-                                <option value="Compliance Team">Compliance Team</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Assessment Type</label>
-                            <select id="assessment-type" class="form-control">
-                                <option value="automated">Automated Scan</option>
-                                <option value="manual">Manual Review</option>
-                                <option value="hybrid">Hybrid Assessment</option>
-                            </select>
-                        </div>
+                        <span style="font-size:var(--cf-text-xs);font-family:var(--cf-font-mono);color:var(--cf-text-muted);width:24px">${f.score}</span>
                     </div>
-                `,
-                actions: [
-                    {
-                        text: 'Cancel',
-                        class: 'btn-secondary',
-                        action: () => window.modal.hide()
-                    },
-                    {
-                        text: 'Start Assessment',
-                        class: 'btn-primary',
-                        action: () => {
-                            this.startNewAssessment();
-                            window.modal.hide();
-                        }
-                    }
-                ]
-            });
-        }
-    }
+                    <div style="flex:2;font-size:var(--cf-text-xs);color:var(--cf-text-muted);text-align:right">${f.mit}</div>
+                </div>`;
+            }).join('')}
+        </div>
+    </div>
 
-    startNewAssessment() {
-        const name = document.getElementById('assessment-name')?.value || 'New Assessment';
-        const scope = document.getElementById('assessment-scope')?.value || 'network';
-        const assessor = document.getElementById('assessment-assessor')?.value || 'Security Team';
-        const type = document.getElementById('assessment-type')?.value || 'automated';
+    <!-- AI Assessment Panel -->
+    <div class="cf-card">
+        <div class="cf-card-header"><h3 class="cf-card-title"><i class="fas fa-robot"></i> AI Risk Analysis</h3></div>
+        <div class="cf-card-body" id="ra-ai-panel">
+            <div class="cf-empty">
+                <div class="cf-empty-icon"><i class="fas fa-brain"></i></div>
+                <div class="cf-empty-title">No assessment yet</div>
+                <div class="cf-empty-text">Click "Run Assessment" to generate an AI-powered risk report with tailored recommendations.</div>
+            </div>
+        </div>
+    </div>
 
-        const newAssessment = {
-            id: `RA-2024-${String(this.assessments.length + 1).padStart(3, '0')}`,
-            name,
-            date: new Date(),
-            scope,
-            riskLevel: 'medium',
-            score: 0,
-            status: 'in-progress',
-            assessor,
-            type
-        };
-
-        this.assessments.unshift(newAssessment);
-        this.renderAssessmentsTable();
-        
-        alert(`Assessment ${newAssessment.id} has been started. Results will be available shortly.`);
-    }
-
-    viewAssessment(assessmentId) {
-        const assessment = this.assessments.find(a => a.id === assessmentId);
-        if (assessment) {
-            alert(`Viewing assessment details for ${assessment.name}`);
-        }
-    }
-
-    editAssessment(assessmentId) {
-        const assessment = this.assessments.find(a => a.id === assessmentId);
-        if (assessment) {
-            alert(`Editing assessment ${assessment.name}`);
-        }
-    }
-
-    exportReport() {
-        const reportData = {
-            overview: this.riskData,
-            assessments: this.assessments,
-            timestamp: new Date().toISOString()
-        };
-
-        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `risk-assessment-report-${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+</div>`;
     }
 }
 
-// Export to global scope
 window.RiskAssessmentScreen = RiskAssessmentScreen;
-window.riskAssessmentScreen = new RiskAssessmentScreen();

@@ -6,8 +6,10 @@
 class WebSocketManager {
     constructor() {
         const config = (typeof window !== 'undefined' && window.electronAPI?.config) || {};
-        this.url = (window.apiClient?.wsUrl) || config.wsUrl || 'wss://cyberforge-ddd97655464f.herokuapp.com/ws';
-        this.authToken = window.apiClient?.token || localStorage.getItem('cyberforge_token');
+        const backendUrl = localStorage.getItem('cyberforge_backend_url') || 'https://cyberforge-ddd97655464f.herokuapp.com';
+        const defaultWs = `${backendUrl.startsWith('https') ? 'wss' : 'ws'}://${backendUrl.replace(/^https?:\/\//, '')}/ws`;
+        this.url = (window.apiClient?.wsUrl) || config.wsUrl || defaultWs;
+        this.authToken = window.apiClient?.token || localStorage.getItem('authToken');
         this.websocket = null;
         this.isConnected = false;
         this.reconnectAttempts = 0;

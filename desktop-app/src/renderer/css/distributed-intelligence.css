@@ -1,0 +1,534 @@
+/* CyberForge Distributed Intelligence Styles
+ * TODO 4: Styles for distributed intelligence screens.
+ * ISOLATION: New CSS file. Does NOT override any existing styles.
+ * Uses scoped selectors under .distributed-intelligence-screen
+ */
+
+/* ── Main Screen ── */
+.distributed-intelligence-screen {
+  padding: 24px;
+  max-width: 100%;
+  animation: fadeIn 0.3s ease;
+}
+
+.distributed-intelligence-screen .screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.distributed-intelligence-screen .screen-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.distributed-intelligence-screen .screen-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.distributed-intelligence-screen .screen-title i {
+  color: var(--accent-primary, #E58A2B);
+}
+
+.distributed-intelligence-screen .screen-subtitle {
+  color: var(--text-secondary, #9A9182);
+  font-size: 0.85rem;
+}
+
+.distributed-intelligence-screen .screen-header-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Metrics Grid ── */
+.distributed-intelligence-screen .metrics-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.distributed-intelligence-screen .metrics-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.distributed-intelligence-screen .metrics-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .distributed-intelligence-screen .metrics-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .distributed-intelligence-screen .metrics-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .distributed-intelligence-screen .metrics-grid-4,
+  .distributed-intelligence-screen .metrics-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.distributed-intelligence-screen .metric-card {
+  background: var(--surface-secondary, #251F20);
+  border: 1px solid var(--border-primary, #352E2F);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.distributed-intelligence-screen .metric-card:hover {
+  border-color: var(--accent-primary, #E58A2B);
+  box-shadow: 0 0 0 1px var(--accent-primary, #E58A2B);
+}
+
+.distributed-intelligence-screen .metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--accent-primary-alpha, rgba(94,122,136, 0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--accent-primary, #E58A2B);
+  flex-shrink: 0;
+}
+
+.distributed-intelligence-screen .metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  line-height: 1.2;
+}
+
+.distributed-intelligence-screen .metric-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #9A9182);
+  margin-top: 2px;
+}
+
+/* ── Tabs ── */
+.distributed-intelligence-screen .content-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-primary, #352E2F);
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+
+.distributed-intelligence-screen .tab-btn {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #9A9182);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.distributed-intelligence-screen .tab-btn:hover {
+  color: var(--text-primary, #fff);
+}
+
+.distributed-intelligence-screen .tab-btn.active {
+  color: var(--accent-primary, #E58A2B);
+  border-bottom-color: var(--accent-primary, #E58A2B);
+}
+
+/* ── Panels ── */
+.distributed-intelligence-screen .panel-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.distributed-intelligence-screen .panel-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 900px) {
+  .distributed-intelligence-screen .panel-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.distributed-intelligence-screen .panel {
+  background: var(--surface-secondary, #251F20);
+  border: 1px solid var(--border-primary, #352E2F);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.distributed-intelligence-screen .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-primary, #352E2F);
+}
+
+.distributed-intelligence-screen .panel-header h3,
+.distributed-intelligence-screen .panel-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.distributed-intelligence-screen .panel-body {
+  padding: 20px;
+}
+
+/* ── Info Rows ── */
+.distributed-intelligence-screen .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+}
+
+.distributed-intelligence-screen .info-row:last-child {
+  border-bottom: none;
+}
+
+.distributed-intelligence-screen .info-label {
+  color: var(--text-secondary, #9A9182);
+  font-size: 0.85rem;
+}
+
+.distributed-intelligence-screen .info-value {
+  color: var(--text-primary, #fff);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.distributed-intelligence-screen .info-value.mono,
+.distributed-intelligence-screen .mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.distributed-intelligence-screen .info-text {
+  color: var(--text-tertiary, #756E66);
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+/* ── Risk Multiplier Display ── */
+.distributed-intelligence-screen .risk-multiplier-display {
+  text-align: center;
+  padding: 16px;
+}
+
+.distributed-intelligence-screen .risk-multiplier-display.large {
+  padding: 32px 16px;
+}
+
+.distributed-intelligence-screen .risk-multiplier-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent-primary, #E58A2B);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.distributed-intelligence-screen .risk-multiplier-display.large .risk-multiplier-value {
+  font-size: 3.5rem;
+}
+
+.distributed-intelligence-screen .risk-multiplier-label {
+  color: var(--text-secondary, #9A9182);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+/* ── Status Elements ── */
+.distributed-intelligence-screen .status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.distributed-intelligence-screen .status-badge.idle {
+  background: rgba(94,122,136, 0.15);
+  color: #818cf8;
+}
+
+.distributed-intelligence-screen .status-badge.syncing {
+  background: rgba(246,157,57, 0.15);
+  color: #F69D39;
+  animation: pulse 1.5s infinite;
+}
+
+.distributed-intelligence-screen .status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.distributed-intelligence-screen .status-dot.online {
+  background: #E58A2B;
+  box-shadow: 0 0 6px rgba(246,157,57, 0.5);
+}
+
+.distributed-intelligence-screen .status-dot.offline {
+  background: #756E66;
+}
+
+/* ── Risk Badges ── */
+.distributed-intelligence-screen .risk-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.distributed-intelligence-screen .risk-badge.risk-critical {
+  background: rgba(76,100,112, 0.2);
+  color: #7E97A6;
+}
+
+.distributed-intelligence-screen .risk-badge.risk-high {
+  background: rgba(229,87,62, 0.2);
+  color: #EE6A50;
+}
+
+.distributed-intelligence-screen .risk-badge.risk-medium {
+  background: rgba(216,182,90, 0.2);
+  color: #D8B65A;
+}
+
+.distributed-intelligence-screen .risk-badge.risk-low {
+  background: rgba(246,157,57, 0.2);
+  color: #FFB45C;
+}
+
+/* ── Heatmap ── */
+.distributed-intelligence-screen .heatmap-container {
+  padding: 16px 0;
+}
+
+.distributed-intelligence-screen .heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  min-height: 100px;
+}
+
+.distributed-intelligence-screen .heatmap-cell {
+  border-radius: 8px;
+  padding: 12px 10px;
+  text-align: center;
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.distributed-intelligence-screen .heatmap-cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.distributed-intelligence-screen .heatmap-domain {
+  display: block;
+  font-weight: 600;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.distributed-intelligence-screen .heatmap-score {
+  display: block;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-top: 4px;
+}
+
+.distributed-intelligence-screen .heatmap-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.distributed-intelligence-screen .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #9A9182);
+}
+
+.distributed-intelligence-screen .legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ── Data Tables ── */
+.distributed-intelligence-screen .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.distributed-intelligence-screen .data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text-secondary, #9A9182);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-primary, #352E2F);
+}
+
+.distributed-intelligence-screen .data-table td {
+  padding: 10px 12px;
+  color: var(--text-primary, #fff);
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+}
+
+.distributed-intelligence-screen .data-table tbody tr:hover {
+  background: rgba(94,122,136, 0.05);
+}
+
+/* ── Empty States ── */
+.distributed-intelligence-screen .empty-state {
+  color: var(--text-tertiary, #756E66);
+  text-align: center;
+  padding: 32px 16px;
+  font-size: 0.85rem;
+}
+
+.distributed-intelligence-screen .empty-state i {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+/* ── Buttons ── */
+.distributed-intelligence-screen .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.distributed-intelligence-screen .btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.distributed-intelligence-screen .btn-primary {
+  background: var(--accent-primary, #E58A2B);
+  color: #fff;
+  border-color: var(--accent-primary, #E58A2B);
+}
+
+.distributed-intelligence-screen .btn-primary:hover {
+  background: var(--accent-primary-hover, #4C6470);
+}
+
+.distributed-intelligence-screen .btn-outline {
+  background: transparent;
+  color: var(--text-secondary, #9A9182);
+  border-color: var(--border-primary, #352E2F);
+}
+
+.distributed-intelligence-screen .btn-outline:hover {
+  color: var(--text-primary, #fff);
+  border-color: var(--text-secondary, #9A9182);
+}
+
+.distributed-intelligence-screen .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Badge ── */
+.distributed-intelligence-screen .badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--accent-primary-alpha, rgba(94,122,136, 0.15));
+  color: var(--accent-primary, #E58A2B);
+}
+
+/* ── Correlation List ── */
+.distributed-intelligence-screen .correlation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distributed-intelligence-screen .correlation-item {
+  background: var(--surface-tertiary, #1F1A1B);
+  border: 1px solid var(--border-primary, #352E2F);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.distributed-intelligence-screen .correlation-item .corr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.distributed-intelligence-screen .correlation-item .corr-desc {
+  color: var(--text-secondary, #9A9182);
+  font-size: 0.85rem;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

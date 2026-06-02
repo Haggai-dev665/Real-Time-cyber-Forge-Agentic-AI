@@ -8,6 +8,8 @@ const { body, query, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { mlService } = require('../services/mlService');
+const { agentManager } = require('../agent/AgentManager');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -577,12 +579,50 @@ router.get('/ai/agent/status', auth, asyncHandler(async (req, res) => {
   res.json({ success: true, data: status });
 }));
 
+// POST /ai/agent/status — toggle agent on/off (called by toggleAIAgent in frontend)
+router.post('/ai/agent/status', auth, asyncHandler(async (req, res) => {
+  const { enabled } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    if (enabled) {
+      const agent = await agentManager.startAgent({ userId, agentName: 'default' });
+      logger.info(`✅ AI Agent started for user ${userId}`);
+      res.json({
+        success: true,
+        message: 'AI Agent started',
+        data: { agentId: agent.agentId, deviceId: agent.deviceId, state: agent.state }
+      });
+    } else {
+      await agentManager.stopAgent('default');
+      logger.info(`✅ AI Agent stopped for user ${userId}`);
+      res.json({ success: true, message: 'AI Agent stopped' });
+    }
+  } catch (error) {
+    logger.error('❌ AI Agent toggle failed:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}));
+
 router.post('/ai/agent/start', auth, asyncHandler(async (req, res) => {
-  res.json({ success: true, message: 'AI Agent started' });
+  const userId = req.user.userId;
+  try {
+    const agent = await agentManager.startAgent({ userId, agentName: 'default' });
+    res.json({ success: true, message: 'AI Agent started', data: { agentId: agent.agentId, deviceId: agent.deviceId } });
+  } catch (error) {
+    logger.error('❌ AI Agent start failed:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
 }));
 
 router.post('/ai/agent/stop', auth, asyncHandler(async (req, res) => {
-  res.json({ success: true, message: 'AI Agent stopped' });
+  try {
+    await agentManager.stopAgent('default');
+    res.json({ success: true, message: 'AI Agent stopped' });
+  } catch (error) {
+    logger.error('❌ AI Agent stop failed:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
 }));
 
 router.get('/ai/agent/tasks', auth, asyncHandler(async (req, res) => {

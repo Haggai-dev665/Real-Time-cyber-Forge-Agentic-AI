@@ -1,0 +1,63 @@
+/*
+ * CyberForge Palette Override
+ * This file ONLY patches tokens that diverge between dark and light mode.
+ * It does NOT duplicate values. It uses design-tokens.css as the base.
+ * No !important usage — specificity is managed through [data-theme] selectors.
+ */
+
+/* ── Kill gradients globally (enterprise rule) ── */
+*:not(svg):not(svg *):not(canvas):not(img) {
+    background-image: none !important;
+}
+
+/* ── Dark mode token overrides ── */
+/* Already defined in design-tokens.css [data-theme="dark"] block.
+   This file extends that with component-level dark patches. */
+
+[data-theme="dark"] .cf-footer {
+    background-color: var(--cf-footer-bg);
+    border-top-color: var(--cf-footer-border);
+    color: var(--cf-footer-text);
+}
+
+[data-theme="dark"] .console-output,
+[data-theme="dark"] pre {
+    background-color: var(--cf-console-bg);
+    border-color: var(--cf-console-border);
+    color: var(--cf-console-text);
+}
+
+[data-theme="dark"] .cf-table th {
+    background-color: var(--cf-table-header-bg);
+}
+
+[data-theme="dark"] .cf-table tr:hover td {
+    background-color: var(--cf-table-row-hover);
+}
+
+[data-theme="dark"] .cf-input,
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background-color: var(--cf-input-bg);
+    border-color: var(--cf-input-border);
+    color: var(--cf-text-primary);
+}
+
+[data-theme="dark"] .cf-card {
+    background-color: var(--cf-card-bg);
+    border-color: var(--cf-card-border);
+}
+
+[data-theme="dark"] .cf-card-header {
+    background-color: var(--cf-card-header-bg);
+}
+
+/* ── Scrollbar patch for dark ── */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--cf-scrollbar-thumb);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--cf-scrollbar-hover);
+}

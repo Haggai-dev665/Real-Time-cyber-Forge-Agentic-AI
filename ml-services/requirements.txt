@@ -17,10 +17,11 @@ python-dotenv==1.0.0
 # AI and ML core dependencies
 langchain>=0.0.335
 chromadb>=0.4.15
-google-genai>=0.2.0
+# Reasoning LLM is DeepSeek via HF Inference Providers (router.huggingface.co/v1),
+# called over HTTPS — no provider SDK required. Gemini retired.
 sentence-transformers>=2.2.2
 transformers>=4.30.0
-huggingface_hub>=0.16.0
+huggingface_hub>=0.26.0
 accelerate>=0.20.0
 
 # Machine Learning libraries

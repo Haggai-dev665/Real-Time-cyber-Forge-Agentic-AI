@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Signal Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cyberforge.css" />
+<style>
+.pipe-hero{position:relative;padding:26px 22px 30px;overflow:hidden;margin-bottom:14px}
+.pipe-row{display:flex;align-items:stretch;gap:0;position:relative;z-index:2}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:11px;text-align:center;position:relative}
+.stage .node{width:74px;height:74px;border-radius:18px;display:grid;place-items:center;position:relative;
+  border:1px solid var(--border-2);background:radial-gradient(circle at 50% 35%,#13202f,#0a121d);color:var(--dim);transition:.3s}
+.stage .node svg{width:30px;height:30px}
+.stage.on .node{color:var(--amber-2);border-color:rgba(245,166,35,.5);
+  box-shadow:0 0 30px -6px rgba(245,166,35,.6),inset 0 0 18px -8px rgba(245,166,35,.5)}
+.stage.on .node::after{content:"";position:absolute;inset:-5px;border-radius:21px;border:1.5px solid transparent;
+  border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 2.6s linear infinite}
+.stage.queued .node{color:var(--cyan);border-color:rgba(43,212,238,.4)}
+.stage .sname{font-size:13px;font-weight:600}
+.stage .smeta{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.stage .scount{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--amber-2)}
+.conn{position:absolute;top:37px;height:3px;border-radius:3px;background:rgba(126,148,184,.14);z-index:1;overflow:hidden}
+.conn .pp{position:absolute;top:50%;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px currentColor}
+.hero-bg{position:absolute;inset:0;opacity:.5;background:
+  radial-gradient(700px 300px at 50% 0%,rgba(245,166,35,.06),transparent 60%),
+  linear-gradient(rgba(120,150,190,.04) 1px,transparent 1px);background-size:100% 100%,28px 28px}
+
+.cols3{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;height:calc(100% - 280px);min-height:0}
+.stage-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start}
+.sc{padding:14px 15px}
+.sc .sch{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.sc .sch .ci{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--border-2);background:var(--tile)}
+.sc .sch .ci svg{width:15px;height:15px}
+.sc .sch b{font-size:13px}
+.sc .sch .st{margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:3px 8px;border-radius:5px}
+.st.active{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
+.st.idle{color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(43,212,238,.3)}
+.sc .metrics{display:flex;gap:14px}
+.sc .met{flex:1}
+.sc .met b{font-family:var(--mono);font-size:19px;font-weight:600;display:block}
+.sc .met span{font-family:var(--mono);font-size:8.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.sc .util{height:4px;border-radius:3px;background:rgba(130,160,200,.12);margin-top:12px;overflow:hidden}
+.sc .util i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--amber),var(--amber-2));transition:width 1s ease}
+
+.evlog{display:flex;flex-direction:column;min-height:0}
+.evstream{overflow-y:auto;font-family:var(--mono);font-size:11px}
+.evr{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid var(--border);animation:evin .4s ease}
+@keyframes evin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.evr .et{color:var(--faint);font-size:9.5px;flex:none;width:54px}
+.evr .eid{color:var(--cyan);flex:none}
+.evr .es{flex:1;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evr .estage{font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:.5px;flex:none}
+.estage.ingest{color:var(--cyan);background:var(--cyan-dim)}
+.estage.normalize{color:var(--blue);background:rgba(90,169,230,.12)}
+.estage.analyze{color:var(--amber-2);background:var(--amber-dim)}
+.estage.reason{color:var(--green);background:rgba(67,224,138,.12)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.kpi{padding:13px 15px}
+.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.kpi .kv{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:6px}
+.kpi .kd{font-size:10.5px;color:var(--faint);margin-top:2px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Signal Pipeline" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg></div>
+          <h1>Signal Pipeline</h1>
+          <div class="head-right">
+            <span class="live-ind"><span class="dot"></span>Streaming</span>
+            <span id="thru">12,480 events/s</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="card kpi"><div class="kl">Ingest Rate</div><div class="kv accent-amber" id="kIngest" style="color:var(--amber-2)">12.4k<span style="font-size:13px;color:var(--faint)">/s</span></div><div class="kd">across 7 sources</div></div>
+          <div class="card kpi"><div class="kl">Pipeline Latency</div><div class="kv" style="color:var(--cyan)" id="kLat">142<span style="font-size:13px;color:var(--faint)">ms</span></div><div class="kd">end-to-end p95</div></div>
+          <div class="card kpi"><div class="kl">Backlog</div><div class="kv" style="color:var(--green)" id="kBack">0</div><div class="kd">queue depth</div></div>
+          <div class="card kpi"><div class="kl">Enriched Today</div><div class="kv" id="kEnrich">3.2M</div><div class="kd">+18% vs avg</div></div>
+        </div>
+
+        <!-- HERO PIPELINE -->
+        <div class="card pipe-hero">
+          <div class="hero-bg"></div>
+          <div class="pipe-row" id="pipeRow">
+            <div class="stage on" data-stage="ingest">
+              <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
+              <div class="sname">Ingest</div><div class="scount" data-c="12480">12.4k/s</div><div class="smeta">7 collectors</div>
+            </div>
+            <div class="stage on" data-stage="normalize">
+              <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/><path d="m17 14 3 3-3 3"/></svg></div>
+              <div class="sname">Normalize</div><div class="scount" data-c="12350">12.3k/s</div><div class="smeta">ECS schema</div>
+            </div>
+            <div class="stage on" data-stage="analyze">
+              <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+              <div class="sname">Analyze</div><div class="scount" data-c="11920">11.9k/s</div><div class="smeta">142 rules</div>
+            </div>
+            <div class="stage queued" data-stage="reason">
+              <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></div>
+              <div class="sname">Reason</div><div class="scount" data-c="318">318/s</div><div class="smeta">LLM agents</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAIL + LOG -->
+        <div class="cols3">
+          <div class="stage-cards">
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/></svg></span><b>Ingest</b><span class="st active">ACTIVE</span></div><div class="metrics"><div class="met"><b style="color:var(--cyan)">12.4k</b><span>events/s</span></div><div class="met"><b>7</b><span>sources</span></div><div class="met"><b>4ms</b><span>latency</span></div></div><div class="util"><i data-u="74" style="background:var(--cyan)"></i></div></div>
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/></svg></span><b>Normalize</b><span class="st active">ACTIVE</span></div><div class="metrics"><div class="met"><b style="color:var(--blue)">12.3k</b><span>events/s</span></div><div class="met"><b>99.1%</b><span>parsed</span></div><div class="met"><b>11ms</b><span>latency</span></div></div><div class="util"><i data-u="68" style="background:var(--blue)"></i></div></div>
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--amber-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><b>Analyze</b><span class="st active">ACTIVE</span></div><div class="metrics"><div class="met"><b style="color:var(--amber-2)">11.9k</b><span>events/s</span></div><div class="met"><b>142</b><span>rules</span></div><div class="met"><b>38ms</b><span>latency</span></div></div><div class="util"><i data-u="88"></i></div></div>
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></span><b>Reason</b><span class="st idle">LLM</span></div><div class="metrics"><div class="met"><b style="color:var(--green)">318</b><span>infer/s</span></div><div class="met"><b>8</b><span>agents</span></div><div class="met"><b>89ms</b><span>latency</span></div></div><div class="util"><i data-u="42" style="background:var(--green)"></i></div></div>
+          </div>
+          <div class="card evlog">
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Live Event Flow<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+            <div class="evstream" id="evstream"></div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="cyberforge-shared.js"></script>
+<script src="cf-header.js"></script>
+<script src="cf-sidebar.js"></script>
+<script src="cf-footer.js"></script>
+<script>
+buildHeader({status:'STREAMING'});
+buildSidebar('pipeline');
+buildFooter({items:[{txt:'7 sources',cls:'sb-cyan'},{txt:'12.4k events/s',cls:'sb-amber'},{txt:'backlog 0',cls:'sb-green'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+// stage utilization bars
+setTimeout(()=>document.querySelectorAll('.util i').forEach(i=>i.style.width=i.dataset.u+'%'),150);
+
+// connectors + particles between stages
+(function(){
+  const row=document.getElementById('pipeRow');
+  const stages=[...row.querySelectorAll('.stage')];
+  const colors=['#2bd4ee','#5aa9e6','#f5a623','#43e08a'];
+  function layout(){
+    row.querySelectorAll('.conn').forEach(c=>c.remove());
+    for(let i=0;i<stages.length-1;i++){
+      const a=stages[i].querySelector('.node').getBoundingClientRect();
+      const b=stages[i+1].querySelector('.node').getBoundingClientRect();
+      const rr=row.getBoundingClientRect();
+      const c=document.createElement('div'); c.className='conn';
+      c.style.left=(a.right-rr.left)+'px'; c.style.width=(b.left-a.right)+'px';
+      c.dataset.i=i; row.appendChild(c);
+    }
+  }
+  layout(); window.addEventListener('resize',layout);
+  setInterval(()=>{
+    row.querySelectorAll('.conn').forEach(c=>{
+      const i=+c.dataset.i, p=document.createElement('span'); p.className='pp';
+      p.style.color=colors[i]; p.style.background=colors[i]; c.appendChild(p);
+      let t0=performance.now(); const dur=520+Math.random()*200;
+      (function step(now){const t=(now-t0)/dur; if(t>=1){p.remove();return;}
+        p.style.left=(t*100)+'%'; p.style.opacity=(1-Math.abs(t-0.5)*0.8).toFixed(2); requestAnimationFrame(step);})(t0);
+    });
+  },130);
+})();
+
+// live event stream
+(function(){
+  const stream=document.getElementById('evstream');
+  const srcs=['edr.endpoint','fw.paloalto','dns.resolver','idp.okta','cloud.aws','proxy.zscaler','email.o365'];
+  const stagesK=['ingest','normalize','analyze','reason'];
+  const evs=['auth.login','net.flow','proc.exec','dns.query','file.write','api.call','threat.match','user.geo'];
+  let id=84021;
+  function add(){
+    const sk=stagesK[Math.floor(Math.random()*(Math.random()<0.7?3:4))];
+    const el=document.createElement('div'); el.className='evr';
+    const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+    el.innerHTML='<span class="et">'+ts+'</span><span class="eid">#'+(id++)+'</span>'+
+      '<span class="es">'+srcs[Math.floor(Math.random()*srcs.length)]+' · '+evs[Math.floor(Math.random()*evs.length)]+'</span>'+
+      '<span class="estage '+sk+'">'+sk.toUpperCase()+'</span>';
+    stream.prepend(el); while(stream.children.length>40) stream.lastChild.remove();
+  }
+  for(let i=0;i<14;i++) add();
+  setInterval(add,420);
+})();
+
+// live KPI jitter
+(function(){
+  const thru=document.getElementById('thru'),kIngest=document.getElementById('kIngest'),
+        kLat=document.getElementById('kLat'),kBack=document.getElementById('kBack');
+  setInterval(()=>{
+    const v=11.8+Math.random()*1.4;
+    thru.textContent=(v*1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')+' events/s';
+    kIngest.innerHTML=v.toFixed(1)+'<span style="font-size:13px;color:var(--faint)">k/s</span>';
+    kLat.innerHTML=(120+Math.floor(Math.random()*60))+'<span style="font-size:13px;color:var(--faint)">ms</span>';
+    kBack.textContent=Math.random()<0.7?'0':Math.floor(Math.random()*40);
+    document.querySelectorAll('.scount').forEach(s=>{const base=+s.dataset.c;const n=base*(0.95+Math.random()*0.1);
+      s.textContent=n>=1000?(n/1000).toFixed(1)+'k/s':Math.round(n)+'/s';});
+  },1400);
+})();
+</script>
+</body>
+</html>

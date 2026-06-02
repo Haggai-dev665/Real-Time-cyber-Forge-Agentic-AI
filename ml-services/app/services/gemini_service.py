@@ -1,5 +1,7 @@
 """
-Gemini AI Service for cybersecurity analysis with custom training data integration
+Reasoning LLM service for cybersecurity analysis (DeepSeek via HF Inference Providers)
+with custom training data integration. Class name kept as `GeminiService` for
+backward-compat with existing importers; Gemini itself has been retired.
 """
 import asyncio
 import logging
@@ -8,30 +10,24 @@ import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from google import genai
-from google.genai.types import SafetySetting, HarmCategory, HarmBlockThreshold
+import requests
 
 from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class GeminiService:
-    """Google Gemini AI Service with custom training data integration"""
-    
+    """DeepSeek-backed cybersecurity reasoning service (HF Inference Providers)."""
+
     def __init__(self):
-        self.client = None
         self.is_initialized = False
         self.custom_knowledge = {}
         self.training_examples = []
-        
-        # Safety settings for cybersecurity analysis
-        self.safety_settings = [
-            SafetySetting(category=HarmCategory.HARM_CATEGORY_HARASSMENT, threshold=HarmBlockThreshold.BLOCK_NONE),
-            SafetySetting(category=HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold=HarmBlockThreshold.BLOCK_NONE),
-            SafetySetting(category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold=HarmBlockThreshold.BLOCK_NONE),
-            SafetySetting(category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold=HarmBlockThreshold.BLOCK_NONE),
-        ]
-        
+
+        # Reasoning LLM: DeepSeek via HF Inference Providers (OpenAI-compatible router)
+        self.hf_token = ""
+        self.model = settings.REASONING_LLM_MODEL
+
         # Cybersecurity-focused system prompt
         self.system_prompt = """You are CyberForge AI, an advanced cybersecurity expert specializing in:
 
@@ -68,32 +64,30 @@ Always provide structured responses with:
 Focus on practical, actionable cybersecurity guidance based on current threat landscape and best practices."""
 
     async def initialize(self):
-        """Initialize Gemini AI service"""
+        """Initialize the reasoning LLM service (DeepSeek via HF Inference Providers)."""
         try:
-            if not settings.GEMINI_API_KEY:
-                logger.error("GEMINI_API_KEY not found in configuration")
-                raise ValueError("Gemini API key is required")
-            
-            # Configure Gemini client
-            self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
-            
+            self.hf_token = settings.HF_TOKEN or settings.HUGGINGFACE_API_TOKEN or ""
+            if not self.hf_token:
+                logger.error("HF_TOKEN not found in configuration")
+                raise ValueError("HF_TOKEN is required for the DeepSeek reasoning engine")
+
             # Load custom training data
             await self._load_custom_training_data()
-            
+
             # Test connection
             await self._test_connection()
-            
+
             self.is_initialized = True
-            logger.info("✅ Gemini AI service initialized successfully")
-            
+            logger.info(f"✅ DeepSeek reasoning service initialized ({self.model})")
+
         except Exception as e:
-            logger.error(f"❌ Failed to initialize Gemini service: {e}")
+            logger.error(f"❌ Failed to initialize reasoning service: {e}")
             self.is_initialized = False
             raise
-    
+
     def is_ready(self) -> bool:
-        """Check if Gemini service is ready"""
-        return self.is_initialized and self.client is not None
+        """Check if the reasoning service is ready"""
+        return self.is_initialized and bool(self.hf_token)
     
     async def _load_custom_training_data(self):
         """Load custom cybersecurity training data and knowledge base"""
@@ -162,20 +156,32 @@ Focus on practical, actionable cybersecurity guidance based on current threat la
             }
         }
     
+    def _deepseek_chat(self, prompt: str, max_tokens: int = 2048, temperature: float = 0.3) -> str:
+        """Call DeepSeek via the HF Inference Providers router (OpenAI-compatible)."""
+        r = requests.post(
+            "https://router.huggingface.co/v1/chat/completions",
+            headers={"Authorization": f"Bearer {self.hf_token}", "Content-Type": "application/json"},
+            json={
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt[:8000]}],
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            },
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"]
+
     async def _test_connection(self):
-        """Test Gemini API connection"""
+        """Test the DeepSeek reasoning endpoint."""
         try:
-            test_prompt = "Test connection. Respond with 'OK' if you can receive this message."
-            response = self.client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=test_prompt
-            )
-            if response.text:
-                logger.info("✅ Gemini API connection test successful")
+            text = self._deepseek_chat("Test connection. Respond with 'OK'.", max_tokens=16)
+            if text:
+                logger.info("✅ DeepSeek connection test successful")
             else:
-                raise Exception("No response from Gemini API")
+                raise Exception("No response from DeepSeek endpoint")
         except Exception as e:
-            logger.error(f"❌ Gemini API connection test failed: {e}")
+            logger.error(f"❌ DeepSeek connection test failed: {e}")
             raise
     
     async def analyze_security_query(self, query: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
@@ -187,19 +193,15 @@ Focus on practical, actionable cybersecurity guidance based on current threat la
             # Prepare enhanced prompt with custom knowledge
             enhanced_prompt = self._create_enhanced_prompt(query, context)
             
-            # Generate response
-            response = self.client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=enhanced_prompt,
-                config={
-                    "temperature": settings.GEMINI_TEMPERATURE,
-                    "max_output_tokens": settings.GEMINI_MAX_TOKENS,
-                    "safety_settings": self.safety_settings
-                }
+            # Generate response via DeepSeek
+            response_text = self._deepseek_chat(
+                enhanced_prompt,
+                max_tokens=settings.LLM_MAX_TOKENS,
+                temperature=settings.LLM_TEMPERATURE,
             )
-            
+
             # Parse and structure response
-            analysis_result = self._parse_security_response(response.text, query, context)
+            analysis_result = self._parse_security_response(response_text, query, context)
             
             return analysis_result
             
@@ -304,7 +306,7 @@ Provide a comprehensive cybersecurity analysis following the response format abo
                 "threat_types": threat_types,
                 "recommendations": recommendations[:5],  # Limit to 5 recommendations
                 "analysis_timestamp": datetime.utcnow().isoformat(),
-                "model_used": "gemini-pro",
+                "model_used": self.model,
                 "custom_data_used": len(self.custom_knowledge) > 0 or len(self.training_examples) > 0
             }
             
@@ -332,21 +334,17 @@ Provide a comprehensive cybersecurity analysis following the response format abo
         }
     
     async def generate_text(self, prompt: str, max_length: int = 500) -> str:
-        """Generate text using Gemini (for compatibility with existing interfaces)"""
+        """Generate text using the reasoning LLM (compat with existing interfaces)."""
         if not self.is_ready():
-            return "Gemini service not available"
-        
+            return "Reasoning service not available"
+
         try:
-            response = self.client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=prompt,
-                config={
-                    "temperature": settings.GEMINI_TEMPERATURE,
-                    "max_output_tokens": min(max_length, settings.GEMINI_MAX_TOKENS),
-                    "safety_settings": self.safety_settings
-                }
+            text = self._deepseek_chat(
+                prompt,
+                max_tokens=min(max_length, settings.LLM_MAX_TOKENS),
+                temperature=settings.LLM_TEMPERATURE,
             )
-            return response.text if response.text else "No response generated"
+            return text if text else "No response generated"
         except Exception as e:
             logger.error(f"Text generation error: {e}")
             return f"Text generation failed: {str(e)}"

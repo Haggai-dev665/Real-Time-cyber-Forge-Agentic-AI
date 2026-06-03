@@ -34,6 +34,12 @@ pub struct AppState {
     pub sys_cache: Option<(Instant, Value)>,
     pub browsers_cache: Option<(Instant, Value)>,
     pub threats_cache: Option<(Instant, Value)>,
+    /// Latest full browser-history snapshot collected in the background (all
+    /// browsers, all profiles, read straight from the on-disk SQLite files even
+    /// while the browsers are closed). The startup collector task refreshes this;
+    /// UI commands serve from it so the history appears instantly. (timestamp,
+    /// payload).
+    pub history_cache: Option<(Instant, Value)>,
 }
 
 impl AppState {
@@ -49,6 +55,7 @@ impl AppState {
             sys_cache: None,
             browsers_cache: None,
             threats_cache: None,
+            history_cache: None,
         }
     }
 

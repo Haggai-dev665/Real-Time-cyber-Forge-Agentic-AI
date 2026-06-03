@@ -73,34 +73,7 @@
 .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
 .kpi{padding:13px 15px}.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
 .kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}.kpi .kd{font-size:10px;color:var(--faint);margin-top:2px}
-
-/* ===== printable PDF report (Export PDF → WebView print / Save as PDF) ===== */
-#printReport{display:none}
-@media print{
-  @page{margin:16mm}
-  html,body{height:auto !important;background:#fff !important;overflow:visible !important}
-  .stage,.agent-fab,.cf-agent-frame,.cf-fab,#topbar,.statusbar{display:none !important}
-  #printReport{display:block !important;position:static;color:#16181d;font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.55}
-  #printReport *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-  #printReport .pr-head{display:flex;align-items:flex-start;gap:14px;border-bottom:2px solid #1a1a1a;padding-bottom:14px;margin-bottom:18px}
-  #printReport .pr-mark{width:40px;height:40px;flex:none;display:grid;place-items:center;color:#b8860b;border:1.5px solid #b8860b;border-radius:8px}
-  #printReport .pr-mark svg{width:22px;height:22px}
-  #printReport h1{font-size:21px;font-weight:700;margin:0}
-  #printReport .pr-meta{font-size:10px;color:#666;margin-top:3px;font-family:'JetBrains Mono',monospace}
-  #printReport .pr-id{margin-left:auto;text-align:right;font-size:10px;color:#b8860b;font-family:'JetBrains Mono',monospace}
-  #printReport h2{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:#9a6a00;border-bottom:1px solid #ddd;padding-bottom:4px;margin:22px 0 9px;font-family:'JetBrains Mono',monospace}
-  #printReport p{font-size:12px;color:#333;margin:0 0 8px}
-  #printReport table.pr-metrics{width:100%;border-collapse:collapse;margin-top:6px}
-  #printReport table.pr-metrics td{border:1px solid #ccc;padding:9px 10px;text-align:center;font-family:'JetBrains Mono',monospace}
-  #printReport table.pr-metrics .pm-v{font-size:18px;font-weight:700;display:block}
-  #printReport table.pr-metrics .pm-l{font-size:8px;letter-spacing:1px;color:#777;text-transform:uppercase}
-  #printReport .pr-find{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid #eee;break-inside:avoid}
-  #printReport .pr-find .pf-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
-  #printReport .pr-find b{font-size:12px}
-  #printReport .pr-find p{font-size:10.5px;color:#555;margin:2px 0 0}
-  #printReport .pr-find .pf-sev{margin-left:auto;font-size:8.5px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:2px 7px;border:1px solid #ccc;border-radius:4px;height:fit-content}
-  #printReport .pr-foot{margin-top:24px;border-top:1px solid #ddd;padding-top:10px;font-size:9px;color:#999;font-family:'JetBrains Mono',monospace}
-}
+/* Printable PDF styling is injected by ../scripts/cf-report.js (CFReport). */
 </style>
 </head>
 <body>
@@ -162,15 +135,13 @@
   </div>
 </div>
 
-<!-- clean, light, print-only report built by exportPDF() → window.print() -->
-<div id="printReport"></div>
-
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-realtime.js"></script>
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
+<script src="../scripts/cf-report.js"></script>
 <script>
 buildHeader({status:'REPORTING',cta:'New Report'});
 buildSidebar('reports');
@@ -219,15 +190,28 @@ function renderDoc(animated){
 async function buildDoc(){
   const d=await reportData(); const arr=d.threats||[];
   var ml=(d.medium||0)+(d.low||0);
-  var summary = d.total
-    ? (d.total+' threat'+(d.total>1?'s':'')+' currently tracked — '+(d.critical||0)+' critical, '+(d.high||0)+' high, '+ml+' lower. ')
-    : 'No active threats are currently tracked — security posture is nominal. ';
-  summary += 'Generated live from CyberForge telemetry.';
+  var crit=d.critical||0, high=d.high||0, total=d.total||0;
+  // Detailed, explanatory executive summary (two paragraphs).
+  var posture = crit>0 ? 'ELEVATED' : (high>0 ? 'GUARDED' : 'NOMINAL');
+  var summary = (total
+    ? ('As of this report, CyberForge is actively tracking '+total+' threat'+(total>1?'s':'')+' across the monitored browsing surface, comprising '+crit+' critical, '+high+' high, and '+ml+' medium or low severity item'+((ml===1)?'':'s')+'. The overall security posture is assessed as '+posture+'. ')
+    : 'No active threats are currently being tracked across the monitored browsing surface. The overall security posture is assessed as NOMINAL, indicating that no URLs, domains, or page behaviours observed in the current window crossed the escalation threshold. ')
+    + 'These figures are produced live by the eight-agent orchestrator, which evaluates each browsed URL through machine-learning classification, indicator-of-compromise extraction, MITRE ATT&CK mapping, and external threat-intelligence enrichment before assigning a blended risk verdict.'
+    + '\n\n'
+    + (total
+      ? 'The findings below summarise the most significant detections, ranked by severity. Each item reflects the consolidated judgement of multiple specialist agents rather than a single model, which materially reduces the false-positive rate relative to signature-only tooling. Analysts should treat critical and high items as actionable and triage them first.'
+      : 'Continuous monitoring remains in effect. This report should be regenerated after any significant browsing activity or at the start of each working session to confirm that the posture remains nominal.');
+
+  var methodology = 'Every URL encountered during browsing is dispatched through a three-stage directed-acyclic-graph pipeline. Stage one classifies the URL string and domain (phishing model and domain-generation-algorithm heuristic); stage two scrapes and inspects the page content for indicators of compromise, risky behaviour, and ATT&CK techniques; stage three enriches any extracted indicators against AlienVault OTX threat intelligence. A reporter agent then blends the per-agent scores (weighted 60% average, 40% maximum) and applies a consensus-and-escalation rule so that a single high-confidence malicious indicator raises the verdict. All processing is performed on live data; no values in this report are synthetic.';
+
   sections=[
     {h:'Executive Summary',type:'p',body:summary},
-    {h:'Key Metrics',type:'stats',body:[[String(d.total||0),'Total','var(--amber-2)'],[String(d.critical||0),'Critical','#ff7185'],[String(d.high||0),'High','var(--amber-2)'],[String(ml),'Med/Low','var(--cyan)']]},
-    {h:'Findings',type:'finds',body: arr.length ? arr.slice(0,6).map(function(x){ var s=String(x.severity||'medium').toLowerCase(); var c=s==='critical'?'crit':(s==='high'?'high':'info'); var det=x.detection||{}; return [c,(x.title||x.type||x.indicator||x.url||'Threat detected'),(x.description||x.summary||x.category||det.source||('risk '+(x.riskScore!=null?x.riskScore:'—')))]; }) : [['info','No findings','No threats detected in the current window — no action required.']]},
-    {h:'Recommended Actions',type:'p',body: arr.length ? 'Review the findings above, add confirmed indicators to the blocklist, isolate affected endpoints, and rotate exposed credentials. CyberForge agents apply containment automatically where configured.' : 'Maintain monitoring. No immediate action required.'}
+    {h:'Key Metrics',type:'stats',body:[[String(total),'Total','#b87800'],[String(crit),'Critical','#c2283b'],[String(high),'High','#b87800'],[String(ml),'Med / Low','#0a72b8']]},
+    {h:'Findings',type:'finds',body: arr.length ? arr.slice(0,8).map(function(x){ var s=String(x.severity||'medium').toLowerCase(); var c=s==='critical'?'crit':(s==='high'?'high':(s==='medium'?'med':'info')); var det=x.detection||{}; return [c,(x.title||x.type||x.indicator||x.url||'Threat detected'),(x.description||x.summary||x.category||det.source||('Risk score '+(x.riskScore!=null?x.riskScore:'—')+' — flagged by the orchestrator.'))]; }) : [['info','No findings','No threats were detected in the current window. No remediation is required at this time.']]},
+    {h:'Methodology',type:'p',body:methodology},
+    {h:'Recommended Actions',type:'p',body: arr.length
+      ? ('1. Review each critical and high finding above and confirm whether the indicator is present in your environment.\n2. Add confirmed malicious domains, URLs, and file hashes to the blocklist so future visits are intercepted automatically.\n3. Isolate any endpoint that interacted with a confirmed malicious resource and rotate any credentials that may have been exposed.\n4. Where CyberForge containment policies are configured, verify that the automatic response actions executed as expected.\n5. Re-run this report after remediation to confirm the affected items have cleared.')
+      : 'No immediate action is required. Maintain continuous monitoring and regenerate this report at the start of each session, or immediately after any high-risk browsing activity, to reconfirm the security posture.'}
   ];
 }
 async function renderDocLive(animated){ await buildDoc(); setDocHeader(); renderDoc(animated); }
@@ -262,25 +246,17 @@ document.getElementById('dtCopy').addEventListener('click',function(){
   var c=this; c.style.color='var(--green)'; setTimeout(function(){c.style.color='';},900);
 });
 
-/* ---- Export PDF: render a clean light report, then window.print() (Save as PDF) ---- */
-function buildPrintHtml(){
-  var cr=currentReport;
-  var h='<div class="pr-head"><div class="pr-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg></div>'+
-    '<div><h1>'+esc(cr.title)+'</h1><div class="pr-meta">CyberForge AI Security · Confidential · TLP:AMBER</div></div>'+
-    '<div class="pr-id">'+esc(cr.id)+'<br>'+esc(cr.date)+'</div></div>';
-  sections.forEach(function(s){
-    h+='<h2>'+esc(s.h)+'</h2>';
-    if(s.type==='p') h+='<p>'+esc(s.body)+'</p>';
-    else if(s.type==='stats') h+='<table class="pr-metrics"><tr>'+s.body.map(function(d){return '<td><span class="pm-v">'+esc(d[0])+'</span><span class="pm-l">'+esc(d[1])+'</span></td>';}).join('')+'</tr></table>';
-    else if(s.type==='finds') h+=s.body.map(function(f){ var col=f[0]==='crit'?'#d23344':(f[0]==='high'?'#b87800':'#0a72b8'); return '<div class="pr-find"><span class="pf-dot" style="background:'+col+'"></span><div><b>'+esc(f[1])+'</b><p>'+esc(f[2])+'</p></div><span class="pf-sev" style="color:'+col+'">'+esc(String(f[0]).toUpperCase())+'</span></div>'; }).join('');
-  });
-  h+='<div class="pr-foot">Generated '+esc(new Date().toLocaleString())+' · CyberForge — AI Security Console</div>';
-  return h;
-}
+/* ---- Export PDF: branded, detailed report via the shared CFReport module ---- */
 function exportPDF(){
   if(!sections.length){ if(CF.toast)CF.toast('Generate a report first','warn'); return; }
-  document.getElementById('printReport').innerHTML=buildPrintHtml();
-  try{ window.print(); }catch(e){ if(CF.toast)CF.toast('Print unavailable: '+e,'error'); }
+  if(!window.CFReport){ if(CF.toast)CF.toast('Report module not loaded','error'); return; }
+  CFReport.export({
+    title: currentReport.title,
+    subtitle: 'Threat posture report · generated from live telemetry',
+    id: currentReport.id,
+    classification: 'CONFIDENTIAL · TLP:AMBER',
+    sections: sections
+  }).then(function(){ if(CF.toast)CF.toast('Report ready — choose “Save as PDF” in the print dialog','ok'); });
 }
 document.getElementById('expPdf').addEventListener('click',exportPDF);
 

@@ -46,6 +46,8 @@ pub fn run() {
             system::add_to_path,
             // Real browser history → URLs to scan in real time
             system::get_browser_history,
+            // Full background-collected history (all browsers, all profiles)
+            system::get_collected_history,
             // One-time install gate
             system::is_installed,
             system::mark_installed,
@@ -123,6 +125,41 @@ pub fn run() {
                         }),
                     );
                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                }
+            });
+
+            // Background browser-history collector: as soon as the app opens it
+            // reads the FULL history of every detected browser — across all
+            // profiles, straight from the on-disk SQLite files — even when the
+            // browsers are closed. The snapshot is cached in shared state (so the
+            // UI loads it instantly), persisted locally to the app-config dir,
+            // and announced via a `cf-history` event. It then refreshes every few
+            // minutes to pick up newly visited pages. Reads run in parallel on
+            // the blocking pool, so this never stalls the UI or the telemetry
+            // poller above.
+            let hist_state = app.state::<Arc<Mutex<AppState>>>().inner().clone();
+            let hist_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                use tauri::Emitter;
+                // Small delay so the window mounts before the first heavy read.
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                loop {
+                    let snapshot = crate::system::refresh_history(&hist_state).await;
+                    crate::system::persist_history_snapshot(&hist_handle, &snapshot);
+                    // Announce a lightweight summary (counts only — not every URL).
+                    let _ = hist_handle.emit(
+                        "cf-history",
+                        serde_json::json!({
+                            "count": snapshot.pointer("/data/count"),
+                            "totalUnique": snapshot.pointer("/data/totalUnique"),
+                            "byBrowser": snapshot.pointer("/data/byBrowser"),
+                            "sources": snapshot.pointer("/data/sources"),
+                            "collectedAt": snapshot.pointer("/data/collectedAt"),
+                        }),
+                    );
+                    // Refresh cadence: often enough to stay current, rare enough
+                    // to keep disk/CPU cost negligible.
+                    tokio::time::sleep(std::time::Duration::from_secs(300)).await;
                 }
             });
 

@@ -37,6 +37,15 @@ sysinfo = "0.32"
 # browser extension required. `bundled` compiles SQLite in (no system dep).
 rusqlite = { version = "0.32", features = ["bundled"] }
 
+# Windows-only: read the foreground window title so we can identify the active
+# browser tab the user is actually looking at (priority target for real-time
+# scanning). Only the two UI feature groups we call are pulled in.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
 [features]
 # This feature is used for production builds where `devtools` is disabled.
 custom-protocol = ["tauri/custom-protocol"]

@@ -51,8 +51,7 @@ def architecture():
     A('  graph [rankdir=TB, splines=ortho, compound=true, bgcolor="white",')
     A('         concentrate=true, nodesep=0.45, ranksep=0.9, pad=0.5, '
       'fontname="Helvetica-Bold",')
-    A('         fontsize=22, labelloc=t, label="CyberForge \\u2014 Real-Time '
-      'Agentic-AI Threat-Analysis Architecture\\n\\n"];')
+    A('         fontsize=22];')
     A('  node [shape=box, style="rounded,filled", fontname="Helvetica",')
     A('        fontsize=11, penwidth=1.6, margin="0.16,0.10", height=0.6];')
     A('  edge [fontname="Helvetica-Bold", fontsize=10, penwidth=1.9,')
@@ -249,9 +248,7 @@ def class_diagram():
     A = L.append
     A('digraph cyberforge_class {')
     A('  graph [rankdir=TB, splines=ortho, bgcolor="white", nodesep=0.55,')
-    A('         ranksep=0.9, pad=0.5, fontname="Helvetica-Bold", fontsize=22,')
-    A('         labelloc=t, label="CyberForge \\u2014 Class Diagram '
-      '(Agent-Orchestrator Subsystem)\\n\\n"];')
+    A('         ranksep=0.9, pad=0.5, fontname="Helvetica-Bold", fontsize=22];')
     A('  node [shape=plaintext, fontname="Helvetica"];')
     A('  edge [fontname="Helvetica", fontsize=10, penwidth=1.6, '
       'color="#5A6B82"];')

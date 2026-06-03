@@ -46,11 +46,127 @@ fn run_osascript(_script: &str) -> Option<String> {
     None
 }
 
-/// Active tab URL/title from each running browser. Uses a `System Events`
-/// existence guard so a browser is never launched just to be queried.
+/// The URL of the tab the user is **actively looking at** — the priority target
+/// for real-time scanning. On macOS we ask the front browser directly. On
+/// Windows there is no scripting bridge, so we read the foreground window title
+/// (which is the active tab's page title) and resolve it to a URL via the user's
+/// browser history. Either way the result is the single active tab, so the
+/// scanner never has to guess between many history entries.
 #[tauri::command]
-pub async fn get_active_urls() -> Result<Value, String> {
-    Ok(json!({ "success": true, "data": { "urls": collect_active_urls() } }))
+pub async fn get_active_urls(state: State<'_, SharedState>) -> Result<Value, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = &state;
+        return Ok(json!({ "success": true, "data": { "urls": collect_active_urls() } }));
+    }
+
+    #[cfg(windows)]
+    {
+        if let Some((key, name, page)) = foreground_browser_tab() {
+            let snap = crate::system::history_data(state.inner()).await;
+            if let Some(item) = match_title_in_history(&snap, &page) {
+                return Ok(json!({ "success": true, "data": { "urls": [item] } }));
+            }
+            // Foreground IS a browser but the page isn't in history yet (e.g. a
+            // brand-new tab). Expose the title so the UI can show context, but
+            // give no URL to scan — better idle than scanning the wrong page.
+            return Ok(json!({
+                "success": true,
+                "data": { "urls": [], "active": { "browser": name, "key": key, "title": page } }
+            }));
+        }
+        let _ = &state;
+        return Ok(json!({ "success": true, "data": { "urls": [] } }));
+    }
+
+    #[cfg(not(any(target_os = "macos", windows)))]
+    {
+        let _ = &state;
+        Ok(json!({ "success": true, "data": { "urls": [] } }))
+    }
+}
+
+/// Read the foreground window's title and, if it belongs to a known browser,
+/// return (browser-key, browser-name, page-title). The page title is the window
+/// title with the trailing " - <Browser>" suffix removed.
+#[cfg(windows)]
+fn foreground_browser_tab() -> Option<(String, String, String)> {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW,
+    };
+    // (title suffix, display name, key) — order matters (em-dash Firefox first).
+    const SUF: &[(&str, &str, &str)] = &[
+        (" - Google Chrome", "Google Chrome", "chrome"),
+        (" - Microsoft\u{200b} Edge", "Microsoft Edge", "edge"),
+        (" - Microsoft Edge", "Microsoft Edge", "edge"),
+        (" \u{2014} Mozilla Firefox", "Firefox", "firefox"),
+        (" - Mozilla Firefox", "Firefox", "firefox"),
+        (" - Brave", "Brave", "brave"),
+        (" - Opera", "Opera", "opera"),
+        (" - Chromium", "Chromium", "chromium"),
+    ];
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return None;
+        }
+        let len = GetWindowTextLengthW(hwnd);
+        if len <= 0 {
+            return None;
+        }
+        let mut buf = vec![0u16; (len as usize) + 1];
+        let n = GetWindowTextW(hwnd, &mut buf);
+        if n <= 0 {
+            return None;
+        }
+        let title = String::from_utf16_lossy(&buf[..n as usize]);
+        for (suf, name, key) in SUF {
+            if let Some(p) = title.strip_suffix(suf) {
+                let page = p.trim().to_string();
+                if page.is_empty() || page.eq_ignore_ascii_case("New Tab") {
+                    return None;
+                }
+                return Some((key.to_string(), name.to_string(), page));
+            }
+        }
+        None
+    }
+}
+
+/// Find the most recent history entry whose title matches the foreground page
+/// title, and return it shaped like an active-tab record. History is newest
+/// first, so the first qualifying entry is the freshest. Substring matching is
+/// length-guarded to avoid spurious matches on very short titles.
+#[cfg(windows)]
+fn match_title_in_history(snap: &Value, page: &str) -> Option<Value> {
+    let arr = snap.pointer("/data/history")?.as_array()?;
+    let pl = page.to_lowercase();
+    for it in arr {
+        let url = it.get("url").and_then(|v| v.as_str()).unwrap_or("");
+        if !url.starts_with("http") {
+            continue;
+        }
+        let t = it.get("title").and_then(|v| v.as_str()).unwrap_or("");
+        if t.is_empty() {
+            continue;
+        }
+        let tl = t.to_lowercase();
+        let long = pl.len() >= 5 && tl.len() >= 5;
+        if tl == pl || (long && (tl.contains(&pl) || pl.contains(&tl))) {
+            let host = url
+                .split("://")
+                .nth(1)
+                .and_then(|r| r.split('/').next())
+                .unwrap_or("")
+                .to_string();
+            let browser = it.get("browser").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            return Some(json!({
+                "browser": browser, "key": "active", "url": url, "title": t,
+                "host": host, "https": url.starts_with("https"), "source": "foreground"
+            }));
+        }
+    }
+    None
 }
 
 /// Active tab URL/title/host for each running browser (macOS AppleScript).

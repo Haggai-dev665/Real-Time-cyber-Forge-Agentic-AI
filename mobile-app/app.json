@@ -1,41 +1,60 @@
 {
   "expo": {
-    "name": "Cyber Forge AI",
-    "slug": "cyber-forge-mobile",
+    "name": "CyberForge",
+    "slug": "cyberforge-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "cyberforge",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1e3c72"
+      "backgroundColor": "#070b14"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cyberforge.mobile"
+      "bundleIdentifier": "io.cyberforge.mobile"
     },
     "android": {
+      "package": "io.cyberforge.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1e3c72"
+        "backgroundColor": "#070b14"
       },
-      "package": "com.cyberforge.mobile"
+      "permissions": [
+        "INTERNET",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_SPECIAL_USE",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
+      "bundler": "metro",
+      "output": "static",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-router",
+      "expo-secure-store",
       [
-        "expo-notifications",
+        "expo-splash-screen",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#ffffff"
+          "backgroundColor": "#070b14",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
         }
       ]
-    ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "https://cyberforge-ddd97655464f.herokuapp.com"
+    }
   }
 }

@@ -32,6 +32,14 @@ type SharedState = Arc<Mutex<AppState>>;
 
 const SYS_TTL: Duration = Duration::from_millis(2500);
 const BROWSERS_TTL: Duration = Duration::from_secs(15);
+/// How long a background-collected history snapshot is served before a UI
+/// command triggers a fresh collection (the startup task also refreshes it).
+const HISTORY_TTL: Duration = Duration::from_secs(90);
+/// Rows read per individual history database (per browser profile).
+const HISTORY_PER_DB: usize = 5000;
+/// Hard cap on the de-duplicated aggregate, to bound memory regardless of how
+/// many profiles/browsers the machine has.
+const HISTORY_CAP: usize = 20_000;
 
 fn round1(x: f64) -> f64 {
     (x * 10.0).round() / 10.0
@@ -947,11 +955,16 @@ fn chromium_to_unix(t: i64) -> i64 {
 /// means we never contend with the browser's lock on the live database.
 fn read_history_db(db: &str, firefox: bool, limit: usize) -> Vec<(String, String, i64)> {
     use rusqlite::{Connection, OpenFlags};
+    use std::sync::atomic::{AtomicU64, Ordering};
+    // Unique temp name per copy: nanos alone can collide when many profiles are
+    // copied in parallel, so we append a process-wide monotonic counter.
+    static SEQ: AtomicU64 = AtomicU64::new(0);
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let tmp = std::env::temp_dir().join(format!("cf_hist_{}.sqlite", stamp));
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let tmp = std::env::temp_dir().join(format!("cf_hist_{}_{}.sqlite", stamp, seq));
     if std::fs::copy(db, &tmp).is_err() {
         return Vec::new();
     }
@@ -987,32 +1000,266 @@ fn read_history_db(db: &str, firefox: bool, limit: usize) -> Vec<(String, String
     out
 }
 
-fn compute_history(limit: usize) -> Value {
-    let defs = browser_defs();
-    let mut items: Vec<Value> = Vec::new();
-    for d in &defs {
-        let Some(h) = locate_history(d) else { continue };
-        for (url, title, ts) in read_history_db(&h.path, d.firefox, limit) {
-            items.push(json!({ "url": url, "title": title, "browser": d.name, "lastVisit": ts }));
+/// Every on-disk history database for a browser, across **all** of its profiles
+/// (not just `Default`). Chromium keeps one `History` file per profile directory
+/// under `User Data` (`Default`, `Profile 1`, …); Firefox keeps one
+/// `places.sqlite` per profile under `Profiles`. Reading the file directly is
+/// what lets us collect history even while the browser is closed.
+fn history_db_paths(d: &BrowserDef) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+
+    if d.firefox {
+        // Every `<profile>/places.sqlite` under the Profiles directory.
+        if let Some(dir) = d.history_paths.first() {
+            if let Ok(rd) = std::fs::read_dir(dir) {
+                for entry in rd.flatten() {
+                    let cand = entry.path().join("places.sqlite");
+                    if cand.exists() {
+                        if let Some(s) = cand.to_str() {
+                            out.push(s.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    // Chromium family: the listed path ends in `…/User Data/Default/History`.
+    // Walk every sibling profile directory and collect each `History` file.
+    if let Some(p) = d.history_paths.first() {
+        let path = Path::new(p);
+        let is_chromium = path.file_name().map(|f| f == "History").unwrap_or(false);
+        if is_chromium {
+            if let Some(user_data) = path.parent().and_then(|pp| pp.parent()) {
+                if let Ok(rd) = std::fs::read_dir(user_data) {
+                    for entry in rd.flatten() {
+                        if entry.path().is_dir() {
+                            let cand = entry.path().join("History");
+                            if cand.exists() {
+                                if let Some(s) = cand.to_str() {
+                                    out.push(s.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Fall back to the literal Default path if enumeration found nothing.
+            if out.is_empty() && path.exists() {
+                out.push(p.clone());
+            }
+            return out;
         }
     }
-    // newest first, then de-dup by URL, then cap
+
+    // Anything else (e.g. Safari `History.db`): the listed single DB if present.
+    for p in &d.history_paths {
+        if Path::new(p).exists() {
+            out.push(p.clone());
+        }
+    }
+    out
+}
+
+/// The friendly profile name for a DB path (the parent directory: `Default`,
+/// `Profile 1`, a Firefox profile folder, …). Used only for display/grouping.
+fn profile_label(db_path: &str) -> String {
+    Path::new(db_path)
+        .parent()
+        .and_then(|p| p.file_name())
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default()
+}
+
+fn now_unix() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// Build the aggregate history JSON from already-read rows: newest first,
+/// de-duplicated by URL, capped, with a per-browser breakdown.
+fn assemble_history(
+    mut items: Vec<Value>,
+    by_browser: std::collections::BTreeMap<String, u64>,
+    sources: u32,
+    cap: usize,
+) -> Value {
     items.sort_by(|a, b| {
         b["lastVisit"].as_i64().unwrap_or(0).cmp(&a["lastVisit"].as_i64().unwrap_or(0))
     });
     let mut seen = std::collections::HashSet::new();
     items.retain(|it| seen.insert(it["url"].as_str().unwrap_or("").to_string()));
-    items.truncate(limit);
-    json!({ "success": true, "data": { "history": items, "count": items.len() } })
+    let total_unique = items.len();
+    items.truncate(cap);
+    json!({
+        "success": true,
+        "data": {
+            "history": items,
+            "count": items.len(),
+            "totalUnique": total_unique,
+            "byBrowser": by_browser,
+            "sources": sources,
+            "collectedAt": now_unix(),
+        }
+    })
 }
 
-/// Recent real URLs from the user's browser history (all detected browsers,
-/// newest first, de-duplicated). The UI scans these with the ML backend so the
-/// agent analyses actually-visited sites in real time — no extension needed.
+/// Synchronous full collection (used by the diagnostic test). Reads every
+/// profile DB of every detected browser in sequence.
+#[cfg(test)]
+fn compute_history(per_db: usize, cap: usize) -> Value {
+    let defs = browser_defs();
+    let mut items: Vec<Value> = Vec::new();
+    let mut by_browser: std::collections::BTreeMap<String, u64> = std::collections::BTreeMap::new();
+    let mut sources = 0u32;
+    for d in &defs {
+        for db in history_db_paths(d) {
+            let profile = profile_label(&db);
+            let rows = read_history_db(&db, d.firefox, per_db);
+            if !rows.is_empty() {
+                sources += 1;
+            }
+            *by_browser.entry(d.name.to_string()).or_insert(0) += rows.len() as u64;
+            for (url, title, ts) in rows {
+                items.push(json!({
+                    "url": url, "title": title, "browser": d.name,
+                    "profile": profile, "lastVisit": ts,
+                }));
+            }
+        }
+    }
+    assemble_history(items, by_browser, sources, cap)
+}
+
+/// **Background-friendly full collection.** Reads every profile database of every
+/// detected browser **in parallel** — each blocking SQLite copy-and-read runs on
+/// the blocking thread pool via `spawn_blocking`, so a machine with several
+/// browsers and many profiles is collected concurrently rather than one by one.
+/// This is the workhorse the startup collector and the UI commands both use.
+pub async fn collect_history_snapshot(per_db: usize, cap: usize) -> Value {
+    // Enumerate (browser, firefox, profile, db-path) jobs up front.
+    let mut jobs: Vec<(String, bool, String, String)> = Vec::new();
+    for d in browser_defs() {
+        for db in history_db_paths(&d) {
+            let profile = profile_label(&db);
+            jobs.push((d.name.to_string(), d.firefox, profile, db));
+        }
+    }
+
+    // Fan out: one blocking task per database.
+    let mut handles = Vec::with_capacity(jobs.len());
+    for (name, firefox, profile, db) in jobs {
+        handles.push(tokio::task::spawn_blocking(move || {
+            let rows = read_history_db(&db, firefox, per_db);
+            (name, profile, rows)
+        }));
+    }
+
+    // Fan in.
+    let mut items: Vec<Value> = Vec::new();
+    let mut by_browser: std::collections::BTreeMap<String, u64> = std::collections::BTreeMap::new();
+    let mut sources = 0u32;
+    for h in handles {
+        if let Ok((name, profile, rows)) = h.await {
+            if !rows.is_empty() {
+                sources += 1;
+            }
+            *by_browser.entry(name.clone()).or_insert(0) += rows.len() as u64;
+            for (url, title, ts) in rows {
+                items.push(json!({
+                    "url": url, "title": title, "browser": name,
+                    "profile": profile, "lastVisit": ts,
+                }));
+            }
+        }
+    }
+
+    let snapshot = assemble_history(items, by_browser, sources, cap);
+
+    #[cfg(debug_assertions)]
+    eprintln!(
+        "[cyberforge] history collected: {} URLs from {} profile(s)",
+        snapshot.pointer("/data/count").and_then(|v| v.as_i64()).unwrap_or(0),
+        snapshot.pointer("/data/sources").and_then(|v| v.as_i64()).unwrap_or(0),
+    );
+
+    snapshot
+}
+
+/// Run a full collection and store it in shared state (so UI commands serve it
+/// instantly). Called by the startup background task and on cache-miss.
+pub async fn refresh_history(state: &SharedState) -> Value {
+    let snapshot = collect_history_snapshot(HISTORY_PER_DB, HISTORY_CAP).await;
+    let mut s = state.lock().await;
+    s.history_cache = Some((Instant::now(), snapshot.clone()));
+    snapshot
+}
+
+/// Cached history: serve the background snapshot while it is fresh, otherwise
+/// collect on demand. Mirrors the other cached-snapshot accessors in this file.
+pub async fn history_data(state: &SharedState) -> Value {
+    {
+        let s = state.lock().await;
+        if let Some((t, v)) = &s.history_cache {
+            if t.elapsed() < HISTORY_TTL {
+                return v.clone();
+            }
+        }
+    }
+    refresh_history(state).await
+}
+
+/// Persist the latest snapshot to the app-config dir so the collection survives
+/// restarts and is available locally (never uploaded anywhere).
+pub fn persist_history_snapshot(app: &tauri::AppHandle, snapshot: &Value) {
+    use tauri::Manager;
+    if let Ok(dir) = app.path().app_config_dir() {
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("history_collection.json");
+        if let Ok(text) = serde_json::to_string(snapshot) {
+            let _ = std::fs::write(path, text);
+        }
+    }
+}
+
+/// Recent real URLs from the user's browser history (all detected browsers, all
+/// profiles, newest first, de-duplicated). Served from the background snapshot
+/// when available. The UI scans these with the ML backend so the agent analyses
+/// actually-visited sites in real time — no extension needed.
 #[tauri::command]
-pub async fn get_browser_history(limit: Option<usize>) -> Result<Value, String> {
+pub async fn get_browser_history(
+    state: State<'_, SharedState>,
+    limit: Option<usize>,
+) -> Result<Value, String> {
     let limit = limit.unwrap_or(25).clamp(1, 200);
-    Ok(compute_history(limit))
+    let snapshot = history_data(state.inner()).await;
+    // Slice the cached aggregate down to the requested size without re-reading.
+    let sliced: Vec<Value> = snapshot
+        .pointer("/data/history")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().take(limit).cloned().collect())
+        .unwrap_or_default();
+    Ok(json!({
+        "success": true,
+        "data": {
+            "history": sliced,
+            "count": snapshot.pointer("/data/history")
+                .and_then(|v| v.as_array()).map(|a| a.len().min(limit)).unwrap_or(0),
+            "totalUnique": snapshot.pointer("/data/totalUnique").cloned().unwrap_or(json!(0)),
+            "byBrowser": snapshot.pointer("/data/byBrowser").cloned().unwrap_or(json!({})),
+            "collectedAt": snapshot.pointer("/data/collectedAt").cloned().unwrap_or(json!(0)),
+        }
+    }))
+}
+
+/// The full background-collected history snapshot (all browsers, all profiles).
+/// Served instantly from the in-memory cache the startup collector populates.
+#[tauri::command]
+pub async fn get_collected_history(state: State<'_, SharedState>) -> Result<Value, String> {
+    Ok(history_data(state.inner()).await)
 }
 
 #[cfg(test)]
@@ -1049,7 +1296,7 @@ mod diag {
     /// Confirms the user's real browser history is readable on this machine.
     #[test]
     fn dbg_history() {
-        let v = compute_history(10);
+        let v = compute_history(50, 500);
         eprintln!("[cyberforge] history count={}", v["data"]["count"]);
         if let Some(arr) = v["data"]["history"].as_array() {
             for it in arr.iter().take(6) {

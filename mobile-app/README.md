@@ -1,121 +1,105 @@
-# Cyber Forge AI - Mobile Application
+# CyberForge Mobile
 
-React Native + Expo mobile companion app that connects to the desktop application for remote security monitoring and analysis.
+Expo + React Native (TypeScript) mobile client for the CyberForge agentic
+cybersecurity platform. It mirrors the security agent in real time and is built
+from the design in [`design/`](design/) (the original HTML/CSS/JS mockup), wired
+to the live backend.
 
-## Features
+## Stack
 
-- **Real-time Connection**: Connect to desktop app via WebSocket
-- **Security Dashboard**: View analysis metrics and activity
-- **Threat Monitoring**: Real-time threat alerts and notifications
-- **Analysis Insights**: Browse security analysis results
-- **Cross-Platform**: Works on iOS and Android
+- **Expo SDK 52** + **expo-router** (file-based navigation, typed routes)
+- **TypeScript** (strict)
+- **react-native-svg** for the ported line-icon set, rings, and threat globe
+- **react-native-sse** for the live Server-Sent-Events feed
+- **expo-secure-store** for token persistence (keychain / keystore)
+- Fonts: Space Grotesk + JetBrains Mono (`@expo-google-fonts/*`)
 
-## Screenshots
+## Backend integration
 
-The app features a modern design with:
-- Gradient backgrounds with cybersecurity theme
-- Real-time status indicators
-- Interactive security metrics
-- Threat alert notifications
-- Settings for connection management
+The app talks to the same backend the desktop app uses. Base URL is configured
+in `app.json` → `expo.extra.apiBaseUrl` (default: the deployed Heroku instance)
+and can be overridden with `EXPO_PUBLIC_API_BASE_URL`.
 
-## Architecture
+| Screen | Endpoint(s) |
+| --- | --- |
+| Connect / health | `GET /health` |
+| Auth | `POST /api/auth/login`, `POST /api/auth/register` |
+| Live feed (all screens) | `GET /api/stream?token=` (SSE: `threat:new`, `alert:new`, `scan:update`, `agent:activity`, `metrics:update`) |
+| Home | `GET /api/threats/stats` |
+| Alerts | `GET /api/threats?status=active` + live alert events |
+| Agent | `GET /api/orchestrator/stats` + `agent:activity` events |
+| Globe | `GET /api/otx/threats/recent` + live threat events |
+| Sandbox | `GET /api/sandbox/history` |
+| Threat Intelligence | `GET /api/otx/pulses` |
+| Browser Intelligence | `GET /api/browser-intelligence/snapshot` |
+| Orchestrator | `GET /api/orchestrator/stats`, `/agents` |
+| Tasks | `GET /api/orchestrator/recent` |
+| Model Inference | `GET /api/cyberforge-ml/health`, `/models` |
+| AI Assistance | `POST /api/cyberforge-ml/v2/security-chat` |
+
+### Auth modes
+
+- **Sign in / Register** — issues a JWT used as `Authorization: Bearer` and as
+  the SSE `token` query param.
+- **Guest** — skips auth and relies on the backend's public endpoints
+  (orchestrator, OTX, sandbox, ML, health, global SSE events).
+
+### No mock data
+
+Every screen renders **real backend values or an honest loading / empty / error
+state** — there is no placeholder data. Rate-limited (`429`) responses are caught
+and surfaced as a "pull to refresh shortly" hint (the backend caps `/api/*` at
+100 req / 15 min).
+
+## Project layout
 
 ```
+app/                      # expo-router routes
+  _layout.tsx             # providers (Auth, LiveFeed, Alerts) + stack
+  index.tsx               # onboarding / connect (real /health handshake)
+  login.tsx               # sign in / register / guest
+  (tabs)/                 # Home, Alerts, Agent, Globe, More
+  alert/[id].tsx          # alert detail bottom sheet
+  screen/[key].tsx        # Explore sub-screens
 src/
-├── screens/           # Main app screens
-│   ├── DashboardScreen.js
-│   ├── AnalysisScreen.js
-│   ├── ThreatsScreen.js
-│   └── SettingsScreen.js
-├── navigation/        # Navigation configuration
-│   └── AppNavigator.js
-├── services/         # External service connections
-│   └── DesktopConnection.js
-├── components/       # Reusable UI components
-└── theme.js         # App theme and styling
+  api/                    # client, endpoints, SSE, storage, config, types
+  components/             # Icon, Ring, LiveDot, GlobeViz, ui primitives, Screen
+  context/                # AuthContext, LiveFeedContext, AlertsContext
+  sections/               # Explore section bodies
+  data/sections.ts        # Explore catalog
+  theme.ts                # design tokens ported from the mockup
+assets/                   # app icon / splash / brand mark (from the desktop app)
 ```
 
-## Installation
+## Run
 
-1. Install dependencies:
 ```bash
+cd mobile-app
 npm install
+npm run android        # or: npm start, then press "a"
 ```
 
-2. Start the Expo development server:
+> The editor will show "cannot find module" / `--jsx` errors until
+> `npm install` populates `node_modules` (the TS config extends
+> `expo/tsconfig.base`, which ships with the `expo` package).
+
+Type-check: `npm run typecheck`
+
+## Build an installable Android app
+
+Using EAS (recommended):
+
 ```bash
-npm start
+npm install -g eas-cli
+eas login
+eas build -p android --profile preview     # produces an installable .apk
 ```
 
-3. Run on device/simulator:
+Or a local prebuild + Gradle build:
+
 ```bash
-npm run android  # Android
-npm run ios      # iOS
-npm run web      # Web
+npx expo prebuild -p android
+cd android && ./gradlew assembleRelease
 ```
 
-## Connection Setup
-
-1. Ensure the desktop app is running
-2. Find your desktop computer's IP address
-3. Enter the IP:PORT in the mobile app settings
-4. Connect to start receiving security data
-
-## Configuration
-
-The app connects to the desktop application via WebSocket:
-- Default connection: `ws://192.168.1.100:8000`
-- Supports custom IP addresses
-- Automatic reconnection on connection loss
-
-## Features by Screen
-
-### Dashboard
-- Connection status indicator
-- Real-time security metrics
-- Recent activity feed
-- Quick action buttons
-
-### Analysis
-- Security analysis summary
-- Recent pages analyzed
-- Security pattern detection
-- AI-generated insights
-
-### Threats
-- Threat overview by severity
-- Active threat list with details
-- Manual threat scanning
-- Security recommendations
-
-### Settings
-- Desktop connection management
-- Notification preferences
-- Sync settings
-- App information
-
-## Building
-
-### Android APK
-```bash
-npm run build:android
-```
-
-### iOS App
-```bash
-npm run build:ios
-```
-
-## Development
-
-Built with:
-- React Native 0.72+
-- Expo SDK 49+
-- React Navigation 6+
-- React Native Paper (Material Design)
-- Expo Vector Icons
-
-## License
-
-MIT License - see LICENSE file for details.
+The APK lands in `android/app/build/outputs/apk/release/`.

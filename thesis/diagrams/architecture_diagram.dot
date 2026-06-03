@@ -1,7 +1,7 @@
 digraph cyberforge_arch {
   graph [rankdir=TB, splines=ortho, compound=true, bgcolor="white",
          concentrate=true, nodesep=0.45, ranksep=0.9, pad=0.5, fontname="Helvetica-Bold",
-         fontsize=22, labelloc=t, label="CyberForge — Real-Time Agentic-AI Threat-Analysis Architecture\n\n"];
+         fontsize=22];
   node [shape=box, style="rounded,filled", fontname="Helvetica",
         fontsize=11, penwidth=1.6, margin="0.16,0.10", height=0.6];
   edge [fontname="Helvetica-Bold", fontsize=10, penwidth=1.9,

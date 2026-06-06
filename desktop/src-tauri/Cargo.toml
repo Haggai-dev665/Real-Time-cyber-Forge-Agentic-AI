@@ -41,7 +41,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 # browser tab the user is actually looking at (priority target for real-time
 # scanning). Only the two UI feature groups we call are pulled in.
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = [
+windows = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
 ] }

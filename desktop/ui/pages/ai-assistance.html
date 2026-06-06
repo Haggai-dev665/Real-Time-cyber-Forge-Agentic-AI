@@ -102,6 +102,52 @@
 @keyframes rvIn{to{opacity:1;transform:none}}
 .send{transition:transform .15s, box-shadow .2s} .send:hover{box-shadow:0 6px 20px -5px rgba(245,166,35,.7)}
 .schip{transition:transform .15s,border-color .2s,background .2s,color .2s}
+
+/* ---- thinking indicator (animated line next to the icon) ---- */
+@keyframes blink{50%{opacity:0}}
+.think{display:flex;align-items:center;gap:10px;padding:4px 2px}
+.think-line{position:relative;width:74px;height:3px;border-radius:3px;overflow:hidden;background:rgba(245,166,35,.13)}
+.think-line::after{content:"";position:absolute;top:0;bottom:0;left:0;width:38%;border-radius:3px;background:linear-gradient(90deg,transparent,var(--amber-2),transparent);animation:thinslide 1.05s ease-in-out infinite}
+@keyframes thinslide{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
+.think-txt{font-family:var(--mono);font-size:11px;color:var(--amber-2);opacity:.92;letter-spacing:.3px}
+/* neural-activity equalizer pulse (matches the floating agent) */
+.think .eq{display:inline-flex;align-items:flex-end;gap:2.5px;height:15px;flex:none}
+.think .eq i{width:3px;height:4px;border-radius:2px;background:var(--amber-2);animation:eqp 1s ease-in-out infinite}
+.think .eq i:nth-child(2){animation-delay:.12s;background:var(--cyan)}
+.think .eq i:nth-child(3){animation-delay:.24s}
+.think .eq i:nth-child(4){animation-delay:.36s;background:var(--cyan)}
+.think .eq i:nth-child(5){animation-delay:.48s}
+@keyframes eqp{0%,100%{height:4px;opacity:.5}50%{height:15px;opacity:1}}
+/* threat action buttons under a flagged AI answer */
+.threat-actions{margin-top:12px;padding:12px;border-radius:10px;border:1px solid rgba(244,73,94,.3);background:rgba(244,73,94,.07)}
+.ta-head{font-size:12px;color:#ff9aa6;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ta-head b{color:#ff7185}
+.ta-btns{display:flex;gap:9px;flex-wrap:wrap}
+.ta-btn{display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:8px;font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid;transition:.15s}
+.ta-btn svg{width:14px;height:14px}
+.ta-btn.block{color:#ff7185;border-color:rgba(244,73,94,.45);background:rgba(244,73,94,.12)}
+.ta-btn.block:hover{background:rgba(244,73,94,.22)}
+.ta-btn.protect{color:var(--cyan);border-color:rgba(43,212,238,.4);background:var(--cyan-dim)}
+.ta-btn.protect:hover{background:rgba(43,212,238,.22)}
+.ta-btn.done{opacity:.7;pointer-events:none}
+.ta-note{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:9px;line-height:1.5}
+/* ---- streaming typewriter ---- */
+.typed{white-space:pre-wrap;word-break:break-word}
+.tcursor{display:inline-block;width:7px;height:15px;background:var(--amber-2);margin-left:1px;vertical-align:-2px;border-radius:1px;animation:blink 1s step-end infinite}
+.mem-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(43,212,238,.3);padding:3px 9px;border-radius:20px;margin-bottom:9px}
+.mem-chip svg{width:11px;height:11px}
+/* ---- conversations (chat history) ---- */
+.conv-card{flex:1;display:flex;flex-direction:column;min-height:0}
+.conv-new{font-family:var(--mono);font-size:10px;color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3);border-radius:6px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.conv-new:hover{background:rgba(245,166,35,.2)}
+.chatlist{overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:4px;min-height:0}
+.chatrow{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;color:var(--dim);transition:background .15s,color .15s,border-color .15s}
+.chatrow:hover{background:rgba(130,160,200,.05);color:var(--text)}
+.chatrow.active{background:linear-gradient(90deg,rgba(245,166,35,.13),transparent);border-color:rgba(245,166,35,.25);color:var(--amber-2)}
+.chatrow>svg{flex:none;opacity:.7}
+.chatrow .ct{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.chatrow .del{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--faint);flex:none;border:1px solid transparent}
+.chatrow .del:hover{color:var(--red);background:rgba(244,73,94,.12);border-color:rgba(244,73,94,.25)}
 </style>
 </head>
 <body>
@@ -139,14 +185,11 @@
               <div class="nm">CyberForge Assistant</div>
               <div class="sb">grounded in live telemetry</div>
             </div>
-            <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Connected Tools</div>
-              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><div class="cinfo"><div class="cn">Threat Search</div><div class="cd">scan &amp; classify</div></div><span class="con"></span></div>
-              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></span><div class="cinfo"><div class="cn">Sandbox Detonation</div><div class="cd">detonate</div></div><span class="con"></span></div>
-              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 17 6-6-6-6M12 19h8"/></svg></span><div class="cinfo"><div class="cn">Agent Core</div><div class="cd">autonomous</div></div><span class="con"></span></div>
-              <div class="cap-row"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg></span><div class="cinfo"><div class="cn">Report Generator</div><div class="cd">PDF · CSV</div></div><span class="con"></span></div>
+            <div class="card conv-card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>Conversations<span class="right"><button class="conv-new" id="convNew"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New</button></span></div>
+              <div class="chatlist" id="chatList"></div>
             </div>
-            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+            <div class="card" style="display:flex;flex-direction:column;min-height:0">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Session Context</div>
               <div style="overflow-y:auto">
                 <div class="ctx"><span class="cx"></span><span class="cl">Model</span><span class="cv" id="ctxModel">DeepSeek</span></div>
@@ -183,6 +226,9 @@ const chat=document.getElementById('chat');
 const botAv='<span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></span>';
 const userAv='<span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>';
 
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function cfInvoke(cmd,args){ try{ if(window.CF&&CF.invoke) return CF.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+
 function addUser(text){
   const m=document.createElement('div');m.className='msg user';
   m.innerHTML=userAv+'<div class="bubble">'+text+'</div>';chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
@@ -194,8 +240,8 @@ function addBot(html){
   chat.appendChild(m);chat.scrollTop=chat.scrollHeight;
   return b;
 }
-function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-/* lightweight, safe markdown → HTML (escape first, then format) — DeepSeek replies in markdown */
+
+/* lightweight, safe markdown -> HTML (escape first, then format) */
 function mdToHtml(raw){
   const lines=escHtml(raw).split('\n'); const out=[]; let inList=false,inCode=false,code=[];
   const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
@@ -211,100 +257,200 @@ function mdToHtml(raw){
   if(inCode) out.push('<div class="codeline">'+code.join('\n')+'</div>');
   closeList(); return out.join('');
 }
-/* staggered "composing" reveal of an answer's blocks (works with rendered markdown) */
-function revealBubble(b){
-  b.classList.add('rendering');
-  var kids=b.querySelectorAll(':scope > *'), i=0;
-  kids.forEach(function(k){ if(k.tagName==='BR'){ k.style.animation='none'; return; } k.style.animationDelay=(i*55)+'ms'; i++; });
-  var n=0, iv=setInterval(function(){ chat.scrollTop=chat.scrollHeight; if(++n>14) clearInterval(iv); }, 45);
+
+/* ============================ CHAT STORE (local, persisted) ============================ */
+var CHATS_KEY='cf_ai_chats', CUR_KEY='cf_ai_cur';
+function loadChats(){ try{ return JSON.parse(localStorage.getItem(CHATS_KEY)||'[]'); }catch(e){ return []; } }
+var chats=loadChats(), currentId=localStorage.getItem(CUR_KEY)||'';
+function persist(){ try{ localStorage.setItem(CHATS_KEY,JSON.stringify(chats)); localStorage.setItem(CUR_KEY,currentId); }catch(e){} }
+function curChat(){ for(var i=0;i<chats.length;i++) if(chats[i].id===currentId) return chats[i]; return null; }
+function newChat(){ finishTypingIfAny(); var id='c'+Date.now().toString(36);
+  chats.unshift({id:id,title:'',messages:[],at:Date.now()}); currentId=id; persist();
+  renderChatList(); chat.innerHTML=''; seed(); updateSuggest(); var i=document.getElementById('msgInput'); if(i)i.focus(); }
+function selectChat(id){ finishTypingIfAny(); currentId=id; persist(); renderChatList(); renderMessages(); updateSuggest(); }
+function deleteChat(id){ finishTypingIfAny(); chats=chats.filter(function(c){return c.id!==id;});
+  if(currentId===id) currentId=chats[0]?chats[0].id:'';
+  if(!chats.length){ persist(); newChat(); return; }
+  persist(); renderChatList(); renderMessages(); updateSuggest(); }
+function pushMsg(role,text){ var c=curChat(); if(!c)return; c.messages.push({role:role,text:text,at:Date.now()});
+  if(role==='user'&&!c.title) c.title=text.slice(0,42); c.at=Date.now(); persist(); renderChatList(); }
+function renderChatList(){ var el=document.getElementById('chatList'); if(!el)return;
+  if(!chats.length){ el.innerHTML='<div style="padding:16px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:10.5px">No conversations yet</div>'; return; }
+  el.innerHTML=chats.map(function(c){ var on=c.id===currentId;
+    return '<div class="chatrow'+(on?' active':'')+'" data-id="'+c.id+'">'+
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>'+
+      '<span class="ct">'+escHtml(c.title||'New chat')+'</span>'+
+      '<span class="del" data-del="'+c.id+'" title="Delete chat"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></span></div>'; }).join('');
+  el.querySelectorAll('.chatrow').forEach(function(r){ r.addEventListener('click',function(e){ if(e.target.closest('.del'))return; selectChat(r.dataset.id); }); });
+  el.querySelectorAll('.del').forEach(function(d){ d.addEventListener('click',function(e){ e.stopPropagation(); deleteChat(d.dataset.del); }); });
+}
+function renderMessages(){ chat.innerHTML=''; var c=curChat();
+  if(!c||!c.messages.length){ seed(); return; }
+  c.messages.forEach(function(m){ if(m.role==='user') addUser(escHtml(m.text)); else { var b=addBot(''); b.innerHTML=mdToHtml(m.text); } });
+  chat.scrollTop=chat.scrollHeight; }
+function updateSuggest(){ var s=document.getElementById('suggest'); if(!s)return; var c=curChat(); s.style.display=(c&&c.messages.length)?'none':'flex'; }
+
+/* ============================ MEMORY GROUNDING ============================ */
+/* Pull the most relevant memories saved across the app (OTX intel, scans,
+   browser intelligence, etc. — the same store the Memory page shows) and use
+   them as grounding context for the model. memory_search => Tauri camelCases
+   `top_k` to `topK`. */
+function gatherMemory(q){
+  // Pull BOTH semantic matches (relevance) AND recent memory (so listing /
+  // aggregation questions like "what scans have run?" work even when the wording
+  // doesn't lexically match the stored text). Merge, newest-aware, deduped.
+  var pSearch=cfInvoke('memory_search',{query:q, topK:8})
+    .then(function(r){ return (r&&r.data&&r.data.results)||[]; }).catch(function(){ return []; });
+  var pList=cfInvoke('memory_list',{limit:80})
+    .then(function(r){ return (r&&r.data)||{}; }).catch(function(){ return {}; });
+  return Promise.all([pSearch,pList]).then(function(a){
+    var sem=a[0]||[], listd=a[1]||{}, recent=listd.memories||[];
+    var seen={}, merged=[];
+    function add(m){ if(!m||!m.text) return; var k=String(m.text).slice(0,120); if(seen[k]) return; seen[k]=1;
+      merged.push({text:m.text, category:m.category||m.kind||'memory', kind:m.kind, ts:m.ts, url:m.url, risk:m.risk}); }
+    sem.forEach(add);           // most relevant first
+    recent.forEach(add);        // then fill with recent activity (scans, reports, analyses)
+    var items=merged.slice(0,20);
+    items._counts={ total:(listd.total!=null?listd.total:merged.length), episodic:listd.episodic||0, semantic:listd.semantic||0, procedural:listd.procedural||0 };
+    return items;
+  });
+}
+function buildAugmented(q, mems){
+  if(!mems||!mems.length) return q;
+  var c=mems._counts||{};
+  var ctx=mems.map(function(m,i){ return (i+1)+'. ['+m.category+'] '+m.text; }).join('\n');
+  var overview='Memory overview: '+(c.total||mems.length)+' memories — '+(c.episodic||0)+' scans/analyses, '+(c.semantic||0)+' threat-intel, '+(c.procedural||0)+' reports/digests.';
+  return 'You are the CyberForge security assistant. The CONTEXT below is the user\'s local CyberForge memory — every URL/IOC scan, threat-intel pulse, report and analysis saved across the app (scan entries begin with "Scanned …"). Ground your answer in it. When the user asks WHAT scans / reports / analyses / activity exist, LIST the relevant items you see in the context (do not claim there are none if scan entries are present). Cite specifics — hosts, verdicts, risk scores, countries, malware, techniques. If the context is genuinely irrelevant, answer from your own knowledge. '+overview+'\n\nCONTEXT:\n'+ctx+'\n\nQUESTION: '+q;
+}
+function memChipHTML(n){ return '<div class="mem-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>grounded in '+n+' memor'+(n===1?'y':'ies')+'</div>'; }
+
+/* ============================ THINKING + TYPEWRITER ============================ */
+function thinkingHTML(){ return '<div class="think"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span><span class="think-line"></span><span class="think-txt">Thinking…</span></div>'; }
+function rotateThinking(b){ var msgs=['Reading memory…','Connecting signals…','Reasoning…','Composing reply…']; var i=0;
+  var t=b.querySelector('.think-txt'); if(t)t.textContent=msgs[0];
+  var iv=setInterval(function(){ i=(i+1)%msgs.length; var el=b.querySelector('.think-txt'); if(el)el.textContent=msgs[i]; },1100);
+  return function(){ clearInterval(iv); }; }
+
+var typingIv=null, typingState=null;
+function typeInto(b, full, mems, fallback, onDone){
+  b.innerHTML='<span class="typed"></span><span class="tcursor"></span>';
+  var span=b.querySelector('.typed');
+  var i=0, n=full.length, step=Math.max(1, Math.round(n/240));
+  typingState={b:b, full:full, mems:mems, fallback:fallback, onDone:onDone};
+  typingIv=setInterval(function(){
+    i=Math.min(n, i+step+(Math.random()<0.3?1:0));
+    span.textContent=full.slice(0,i);
+    chat.scrollTop=chat.scrollHeight;
+    if(i>=n) finishTyping();
+  }, 14);
+}
+/* ---- threat detection from grounded memory -> Block / Protect actions ---- */
+function hostOf(u){ try{ var h=(String(u).split('://')[1]||String(u)).split('/')[0]; return h.split('?')[0].replace(/^www\./,''); }catch(e){ return ''; } }
+function hostFromText(t){ var m=String(t||'').match(/\b((?:[a-z0-9-]+\.)+[a-z]{2,})\b/i); return m?m[1].replace(/^www\./,''):''; }
+function threatCandidate(mems){
+  if(!mems||!mems.length) return null; var best=null;
+  mems.forEach(function(m){
+    var risk=(m.risk!=null)?+m.risk:0;
+    var mal=/phishing|malicious|malware|ransomware|botnet|trojan|c2|spyware|dga/i.test(m.text||'');
+    var host=m.url?hostOf(m.url):(mal?hostFromText(m.text):'');
+    if(!host) return;
+    var sev=Math.max(risk, mal?65:0);
+    if(sev>=50 && (!best || sev>best.risk)) best={host:host, risk:sev};
+  });
+  return best;
+}
+function appendThreatActions(bubble, threat){
+  // Shared Block / Protect / Allow actions (cyberforge-shared.js) so the
+  // assistant, floating agent and agent core all behave identically.
+  if(window.CF&&CF.threatActions){ bubble.appendChild(CF.threatActions({host:threat.host, risk:threat.risk})); chat.scrollTop=chat.scrollHeight; }
 }
 
+function finishTyping(){
+  if(!typingIv) return; clearInterval(typingIv); typingIv=null;
+  var s=typingState; typingState=null;
+  var html=(s.mems&&s.mems.length?memChipHTML(s.mems.length):'')+mdToHtml(s.full);
+  if(s.fallback) html+='<div class="kb-note" style="margin-top:9px">⚠ DeepSeek not connected — answered from the built-in knowledge base. Connect your HF token for full DeepSeek reasoning.</div>';
+  s.b.innerHTML=html;
+  var threat=threatCandidate(s.mems); if(threat) appendThreatActions(s.b, threat);
+  chat.scrollTop=chat.scrollHeight;
+  busy=false;
+  if(s.onDone) s.onDone();
+}
+function finishTypingIfAny(){ if(typingIv) finishTyping(); }
+
+/* ============================ ASK ============================ */
+const modelBadge=document.getElementById('modelBadge'), ctxModel=document.getElementById('ctxModel'), ctxKey=document.getElementById('ctxKey');
+let busy=false;
+function updateModel(model){ if(!model)return; var nice=/deepseek/i.test(model)?'DeepSeek':(/cyberforge-kb/i.test(model)?'CyberForge KB':String(model).split('/').pop());
+  if(modelBadge)modelBadge.textContent=nice; if(ctxModel)ctxModel.textContent=nice; }
+
+async function ask(q){
+  if(busy) return; busy=true;
+  finishTypingIfAny();
+  addUser(escHtml(q)); pushMsg('user',q); updateSuggest();
+  const b=addBot(thinkingHTML());
+  const stopThink=rotateThinking(b);
+  try{
+    const mems=await gatherMemory(q);
+    const body=await CF.ml.chat(buildAugmented(q,mems), 700);
+    const d=(body&&body.data)||body||{};
+    let txt=d.response||d.answer||d.text||d.output||d.reply||body.response||body.message||'';
+    const model=d.model||body.model||''; const fallback=d.fallback||body.fallback;
+    if(!txt) txt='I couldn\'t generate a response just now. If you haven\'t connected DeepSeek yet, paste your Hugging Face token above to enable it.';
+    stopThink();
+    typeInto(b, txt, mems, fallback, function(){ pushMsg('ai',txt); updateModel(model); });
+  }catch(e){
+    stopThink();
+    const offline=/no tauri|tauri-unavailable/i.test(String((e&&e.message)||e));
+    b.innerHTML= offline
+      ? 'The AI service is only available inside the desktop app (Tauri bridge not found).'
+      : 'I hit an error reaching the model. If DeepSeek isn\'t connected, paste your Hugging Face token above; otherwise retry shortly.';
+    busy=false;
+  }
+}
+const input=document.getElementById('msgInput'), send=document.getElementById('sendBtn');
+function submit(){ const v=input.value.trim(); if(!v)return; input.value=''; ask(v); }
+send.addEventListener('click',submit);
+input.addEventListener('keydown',e=>{ if(e.key==='Enter') submit(); });
+var nc=document.getElementById('newChatBtn'); if(nc) nc.addEventListener('click', newChat);
+var cn=document.getElementById('convNew'); if(cn) cn.addEventListener('click', newChat);
+
+/* ---- suggestions ---- */
 const suggestions=[
-  ['What is a DGA and how do I detect it?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>'],
-  ['How should I respond to a ransomware infection?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
-  ['What are the signs of C2 beaconing?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m6 15 4-5 3 3 5-7"/></svg>'],
+  ['What does my recent threat intel say about the most-targeted countries?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>'],
+  ['Summarise the malware families and TTPs in my memory','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
+  ['How should I respond to a ransomware infection?','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m6 15 4-5 3 3 5-7"/></svg>'],
   ['Map a phishing attack to MITRE ATT&CK','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>']
 ];
 const suggestEl=document.getElementById('suggest');
 suggestEl.innerHTML=suggestions.map(s=>'<div class="schip" data-q="'+s[0].replace(/"/g,'&quot;')+'">'+s[1]+s[0]+'</div>').join('');
 suggestEl.querySelectorAll('.schip').forEach(c=>c.addEventListener('click',()=>ask(c.dataset.q)));
 
-const modelBadge=document.getElementById('modelBadge'), ctxModel=document.getElementById('ctxModel'), ctxKey=document.getElementById('ctxKey');
-// Conversation transcript (raw text) — used to build the PDF report.
-var transcript=[];
-let busy=false;
-async function ask(q){
-  if(busy)return; busy=true;
-  addUser(escHtml(q));
-  transcript.push({role:'user',text:q});
-  const b=addBot('<span class="typing"><i></i><i></i><i></i></span>');
-  try{
-    const body=await CF.ml.chat(q,640);
-    const d=(body&&body.data)||body||{};
-    let txt=d.response||d.answer||d.text||d.output||d.reply||body.response||body.message||'';
-    const model=d.model||body.model||''; const fallback=d.fallback||body.fallback;
-    if(!txt) txt='I couldn\'t generate a response just now. If you haven\'t connected DeepSeek yet, paste your Hugging Face token above to enable it.';
-    transcript.push({role:'ai',text:txt,model:model||''});
-    var html=mdToHtml(txt);
-    if(fallback){ html+='<div class="kb-note" style="margin-top:9px">⚠ DeepSeek not connected — answered from the built-in knowledge base. Connect your HF token for full DeepSeek reasoning.</div>'; }
-    b.innerHTML=html; revealBubble(b);
-    if(model){ var nice=/deepseek/i.test(model)?'DeepSeek':(/cyberforge-kb/i.test(model)?'CyberForge KB':String(model).split('/').pop()); if(modelBadge)modelBadge.textContent=nice; if(ctxModel)ctxModel.textContent=nice; }
-  }catch(e){
-    const offline=String((e&&e.message)||e).indexOf('tauri-unavailable')>=0;
-    b.innerHTML= offline
-      ? 'The AI service is only available inside the desktop app (Tauri bridge not found in this preview).'
-      : 'I hit an error reaching the model. If DeepSeek isn\'t connected, paste your Hugging Face token above; otherwise retry shortly.';
-  }
-  chat.scrollTop=chat.scrollHeight; busy=false;
-}
-const input=document.getElementById('msgInput'),send=document.getElementById('sendBtn');
-function submit(){const v=input.value.trim();if(!v)return;input.value='';ask(v);}
-send.addEventListener('click',submit);
-input.addEventListener('keydown',e=>{if(e.key==='Enter')submit();});
-var nc=document.getElementById('newChatBtn'); if(nc) nc.addEventListener('click',function(){ chat.innerHTML=''; transcript=[]; seed(); });
-
-/* ---- Generate a branded PDF report of the conversation (logo + watermark + user info) ---- */
+/* ---- Generate a branded PDF report of the CURRENT conversation ---- */
 function ctxVal(id){ var el=document.getElementById(id); return el?el.textContent.trim():'—'; }
 function exportConversationPDF(){
   if(!window.CFReport){ if(CF.toast)CF.toast('Report module not loaded','error'); return; }
+  var c=curChat(); var msgs=(c&&c.messages)||[];
   var qa=[]; var pendingQ=null;
-  transcript.forEach(function(t){
-    if(t.role==='user'){ if(pendingQ!=null) qa.push([pendingQ,'(no answer recorded)']); pendingQ=t.text; }
-    else if(t.role==='ai'){ qa.push([pendingQ!=null?pendingQ:'(context)', t.text]); pendingQ=null; }
-  });
+  msgs.forEach(function(m){ if(m.role==='user'){ if(pendingQ!=null) qa.push([pendingQ,'(no answer)']); pendingQ=m.text; }
+    else if(m.role==='ai'){ qa.push([pendingQ!=null?pendingQ:'(context)', m.text]); pendingQ=null; } });
   if(pendingQ!=null) qa.push([pendingQ,'(awaiting answer)']);
   if(!qa.length){ if(CF.toast)CF.toast('Ask the assistant something first','warn'); return; }
-
   var model=ctxVal('ctxModel');
-  var intro='This report captures an advisory session with the CyberForge AI Assistant, an analyst-facing assistant grounded in the system’s live security telemetry. '
-    +'The questions and answers below were produced during an interactive session and are reproduced verbatim. '
-    +'The guidance is generated by the '+model+' language model via the CyberForge inference layer and is intended to support — not replace — the judgement of a qualified security analyst.';
-  var disclaimer='AI-generated guidance may contain inaccuracies and should be validated against authoritative sources and your organisation’s policies before action is taken. '
-    +'Treat any indicators, commands, or remediation steps as advisory. CyberForge records this session locally for the signed-in user only.';
-
+  var intro='This report captures an advisory session with the CyberForge AI Assistant, grounded in the system’s local security memory (threat-intel, scans, browser intelligence). The questions and answers below are reproduced verbatim and are intended to support — not replace — the judgement of a qualified analyst.';
+  var disclaimer='AI-generated guidance may contain inaccuracies and should be validated before action. Treat indicators and remediation steps as advisory. The session is stored locally for the signed-in user only.';
   CFReport.export({
-    title:'AI Assistant Advisory Report',
-    subtitle:'Conversational threat-analysis session',
-    id:'AIR-'+String(Date.now()).slice(-6),
-    classification:'CONFIDENTIAL · TLP:AMBER',
+    title:'AI Assistant Advisory Report', subtitle:'Conversational threat-analysis session',
+    id:'AIR-'+String(Date.now()).slice(-6), classification:'CONFIDENTIAL · TLP:AMBER',
     sections:[
       {h:'Overview',type:'p',body:intro},
-      {h:'Session Context',type:'kv',body:[
-        ['Assistant model',model],
-        ['Inference',ctxVal('ctxModel')==='—'?'CyberForge':'HF Providers'],
-        ['Backend status',ctxVal('ctxBackend')],
-        ['Active threats',ctxVal('ctxThreats')],
-        ['Browsers detected',ctxVal('ctxBrowsers')],
-        ['Questions in session',String(qa.length)]
-      ]},
+      {h:'Session Context',type:'kv',body:[['Assistant model',model],['Backend status',ctxVal('ctxBackend')],['Active threats',ctxVal('ctxThreats')],['Browsers detected',ctxVal('ctxBrowsers')],['Questions in session',String(qa.length)]]},
       {h:'Advisory Transcript',type:'qa',body:qa},
       {h:'Important Notice',type:'p',body:disclaimer}
     ]
   }).then(function(){ if(CF.toast)CF.toast('Report ready — choose “Save as PDF” in the print dialog','ok'); });
 }
 var epb=document.getElementById('exportPdfBtn'); if(epb) epb.addEventListener('click',exportConversationPDF);
-// the "Report Generator" tool row in the right rail also triggers it
-(function(){ var rows=document.querySelectorAll('.cap-row'); rows.forEach(function(r){ var n=r.querySelector('.cn'); if(n&&/report generator/i.test(n.textContent)){ r.style.cursor='pointer'; r.title='Generate a PDF report of this conversation'; r.addEventListener('click',exportConversationPDF); } }); })();
 
 /* ---- Connect DeepSeek: paste the HF token once (stored in the OS keychain) ---- */
 function showKeyBar(){
@@ -322,7 +468,7 @@ function showKeyBar(){
     btn.disabled=true; btn.textContent='Connecting…';
     CF.invoke('set_hf_token',{token:v}).then(function(){
       bar.remove(); if(ctxKey)ctxKey.textContent='connected';
-      addBot('✅ DeepSeek connected. Ask me about threats, malware, MITRE ATT&CK, IOCs or incident response — answers now come from the DeepSeek model.');
+      addBot('✅ DeepSeek connected. Answers now come from the DeepSeek model, grounded in your CyberForge memory.');
     }).catch(function(e){
       btn.disabled=false; btn.textContent='Connect';
       addBot('Couldn\'t save the token: '+escHtml(String((e&&e.message)||e))+'. You can also set the HF_TOKEN environment variable instead.');
@@ -353,9 +499,13 @@ CF.invoke('hf_token_status').then(function(r){
 })();
 
 function seed(){
-  addBot('Hi — I\'m the <b>CyberForge Assistant</b>, powered by <b>DeepSeek</b>. Ask me about threats, malware, phishing, ransomware, C2, MITRE ATT&CK, IOCs, or incident-response playbooks and I\'ll give grounded, actionable guidance.');
+  addBot('Hi — I\'m the <b>CyberForge Assistant</b>. I read your local CyberForge <b>memory</b> (threat-intel, scans, browser intelligence saved across the app) to ground every answer. Ask me about threats, malware, MITRE ATT&CK, IOCs, or incident-response playbooks.');
 }
-seed();
+
+/* ============================ INIT ============================ */
+renderChatList();
+if(!chats.length){ newChat(); }
+else { if(!curChat()) currentId=chats[0].id; renderChatList(); renderMessages(); updateSuggest(); }
 </script>
 </body>
 </html>

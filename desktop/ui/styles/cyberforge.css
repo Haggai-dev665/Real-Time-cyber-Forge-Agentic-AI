@@ -125,19 +125,27 @@ body{height:100%;background:#03050a;font-family:var(--sans);color:var(--text);
 .main{transition:margin-left .2s ease}
 /* pulled out of flow (absolute) with 56px reserved on .main, so expanding on
    hover OVERLAYS the content instead of shoving it (no reflow on hover). */
-.sidebar.collapsed{position:absolute;left:0;top:0;bottom:0;width:56px;z-index:45;overflow:hidden;
+.sidebar.collapsed{position:absolute;left:0;top:0;bottom:0;width:56px;z-index:45;overflow-x:hidden;overflow-y:auto;
   transition:width .2s ease, box-shadow .2s ease;
   background:linear-gradient(180deg,rgba(10,14,23,0.97),rgba(7,10,17,0.98));backdrop-filter:blur(10px)}
-.sidebar.collapsed:hover{width:250px;overflow-y:auto;box-shadow:8px 0 30px -8px rgba(0,0,0,0.7)}
+.sidebar.collapsed:hover{width:250px;box-shadow:8px 0 30px -8px rgba(0,0,0,0.7)}
 .body.sidebar-collapsed .main{margin-left:56px}
-/* icon-only while the mouse isn't over the rail */
-.sidebar.collapsed:not(:hover) .nav-item{justify-content:center;padding:9px 0;margin:0 6px}
+/* hide the rail scrollbar so the icons stay perfectly centred in the 56px column */
+.sidebar.collapsed:not(:hover)::-webkit-scrollbar{width:0;height:0}
+/* icon-only rail while the mouse isn't over it: one tidy, centred column */
+.sidebar.collapsed:not(:hover){align-items:center}
+.sidebar.collapsed:not(:hover) .nav-item{width:40px;height:40px;padding:0;margin:2px auto;justify-content:center;border-radius:9px}
+.sidebar.collapsed:not(:hover) .nav-item svg{width:18px;height:18px;opacity:.9}
+.sidebar.collapsed:not(:hover) .nav-item.active svg{opacity:1}
 .sidebar.collapsed:not(:hover) .nav-item .lbl,
 .sidebar.collapsed:not(:hover) .nav-item .tag,
 .sidebar.collapsed:not(:hover) .nav-sec .chev,
 .sidebar.collapsed:not(:hover) .subnav,
 .sidebar.collapsed:not(:hover) .nav-item.active::before{display:none}
-.sidebar.collapsed:not(:hover) .nav-sec{justify-content:center;padding:9px 0 5px;font-size:0;gap:0}
+/* section headers become a slim, centred divider between icon groups */
+.sidebar.collapsed:not(:hover) .nav-sec{width:24px;height:1px;min-height:1px;padding:0;margin:7px auto;background:var(--border);overflow:hidden;font-size:0;gap:0}
+.sidebar.collapsed:not(:hover) .nav-sec svg{display:none}
+.sidebar.collapsed:not(:hover) .nav-sec:first-child{margin:2px auto;background:transparent}
 
 /* ---- collapsed icon rail (Threat Globe) ---- */
 .rail{width:56px;flex:none;border-right:1px solid var(--border);

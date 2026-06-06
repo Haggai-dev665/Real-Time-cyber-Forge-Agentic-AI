@@ -217,6 +217,17 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
 .scan-verdict.show{opacity:1;transform:none}
 .scan-verdict .vi{width:16px;height:16px;flex:none}
 .scan-verdict .meta{margin-left:auto;color:var(--faint);font-weight:400}
+/* threat action buttons (Block / Protect / Allow) under a bad verdict */
+.scan-actions{margin-top:8px}
+.scan-actions:empty{display:none}
+.scan-actions .pa-head{font-family:var(--mono);font-size:10px;color:#ff9aa6;margin-bottom:7px}
+.scan-actions .pa-btns{display:flex;gap:6px}
+.scan-actions .pa{flex:1;height:30px;border-radius:7px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;border:1px solid;background:transparent;transition:.15s}
+.scan-actions .pa.blk{color:#ff7185;border-color:rgba(244,73,94,.45);background:rgba(244,73,94,.12)}
+.scan-actions .pa.prt{color:var(--cyan);border-color:rgba(43,212,238,.4);background:var(--cyan-dim)}
+.scan-actions .pa.alw{color:var(--green);border-color:rgba(67,224,138,.4);background:rgba(67,224,138,.12)}
+.scan-actions .pa:disabled{opacity:.6;cursor:default}
+.scan-actions .pa-note{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:6px;line-height:1.5}
 /* ---------- AI ANALYST (DeepSeek security chat) ---------- */
 .ai-eng{margin-left:auto;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.4px;color:var(--cyan);text-transform:uppercase}
 .ai-out{font-size:11px;line-height:1.55;color:var(--dim);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:7px;max-height:170px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
@@ -253,7 +264,7 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
 .ctrl svg{width:18px;height:18px;color:var(--amber-2);transition:transform .35s}
 .ctrl:hover svg{transform:scale(1.15)}
 .ctrl.busy svg{animation:spin .8s linear infinite}
-.ctrl span{font-family:var(--mono);font-size:9.5px;letter-spacing:1px}
+.ctrl span{font-family:var(--mono);font-size:9px;letter-spacing:.4px;white-space:nowrap}
 .ripple{position:absolute;border-radius:50%;background:rgba(245,166,35,.4);transform:translate(-50%,-50%) scale(0);
   animation:ripple .6s ease-out;pointer-events:none}
 @keyframes ripple{to{transform:translate(-50%,-50%) scale(9);opacity:0}}
@@ -331,7 +342,7 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
               </div>
               <div class="sys-tile">
                 <svg class="ico-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>
-                <div class="big">—</div><div class="cap">Browsers</div>
+                <div class="big">—</div><div class="cap">Running</div>
               </div>
             </div>
           </div>
@@ -346,6 +357,22 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
             </div>
             <div class="scan-tools" id="scanTools"></div>
             <div class="scan-verdict" id="scanVerdict"></div>
+            <div class="scan-actions" id="scanActions"></div>
+          </div>
+          <!-- CONTROLS (brought up) -->
+          <div class="sect">
+            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>CONTROLS</div>
+            <div class="controls">
+              <div class="ctrl" id="btnResync" title="Re-sync telemetry &amp; browsers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span>RESYNC</span></div>
+              <div class="ctrl" id="btnCore" title="Open Agent Core"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7.6 7.6 11 16M16.4 7.6 13 16M8 6h8"/></svg><span>AGENT CORE</span></div>
+              <div class="ctrl" id="btnAssist" title="Open AI Assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg><span>ASSISTANT</span></div>
+            </div>
+          </div>
+          <!-- NEURAL ACTIVITY (brought up) -->
+          <div class="agent-stream">
+            <div class="stream-head"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span>NEURAL ACTIVITY<span class="ops" id="ops">—</span></div>
+            <div class="stream-line"><span class="cdot"></span><span id="streamText"></span><span class="cursor"></span></div>
+            <div class="stream-log" id="streamLog"></div>
           </div>
           <!-- AI ANALYST (DeepSeek via HF Inference Providers) -->
           <div class="sect">
@@ -356,7 +383,12 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
               <button id="aiSend" title="Ask the analyst"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
             </div>
           </div>
-          <!-- AGENT VITALS -->
+          <!-- BROWSERS (running only) -->
+          <div class="sect">
+            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>RUNNING BROWSERS<button class="refresh" id="browserRefresh" title="Resync"><div class="spinner sm" style="border-top-color:var(--amber);border-color:rgba(245,166,35,.25)"></div></button></div>
+            <div class="browser-foot" id="browserEmpty">Detecting browsers…</div>
+          </div>
+          <!-- AGENT VITALS (sent to bottom) -->
           <div class="sect">
             <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V5M14 18v-8M19 18v-4"/></svg>AGENT VITALS</div>
             <div class="svc">
@@ -383,26 +415,6 @@ body{background:transparent;overflow:hidden;font-family:var(--sans);color:var(--
                 <span class="vval">0<small>/8</small></span>
               </span>
             </div>
-          </div>
-          <!-- BROWSERS -->
-          <div class="sect">
-            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>BROWSERS<button class="refresh" id="browserRefresh" title="Resync"><div class="spinner sm" style="border-top-color:var(--amber);border-color:rgba(245,166,35,.25)"></div></button></div>
-            <div class="browser-foot" id="browserEmpty">Detecting browsers…</div>
-          </div>
-          <!-- CONTROLS -->
-          <div class="sect">
-            <div class="sect-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>CONTROLS</div>
-            <div class="controls">
-              <div class="ctrl" id="btnResync"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><span>RESYNC</span></div>
-              <div class="ctrl" id="btnCenter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><span>CENTER</span></div>
-              <div class="ctrl" id="btnAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>ADD</span></div>
-            </div>
-          </div>
-          <!-- NEURAL ACTIVITY -->
-          <div class="agent-stream">
-            <div class="stream-head"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span>NEURAL ACTIVITY<span class="ops" id="ops">—</span></div>
-            <div class="stream-line"><span class="cdot"></span><span id="streamText"></span><span class="cursor"></span></div>
-            <div class="stream-log" id="streamLog"></div>
           </div>
         </div>
       </section>
@@ -494,25 +506,39 @@ function logLine(t){
   const d=document.createElement('div'); d.className='ln'; d.innerHTML='<span class="t">'+ts+'</span>'+t;
   log.prepend(d); while(log.children.length>3) log.lastChild.remove();
 }
-['btnCenter','btnAdd'].forEach(id=>{ const b=document.getElementById(id);
-  b&&b.addEventListener('click',e=>{ ripple(b,e); logLine(id==='btnAdd'?'New browser instance queued':'View re-centered'); }); });
-
-/* ---------- RESYNC sequence ---------- */
+/* ---------- CONTROLS: functional resync + navigation ---------- */
 (function(){
   const btn=document.getElementById('btnResync'), body=document.getElementById('agentBody'),
-        rsvg=btn&&btn.querySelector('svg'), brefresh=document.getElementById('browserRefresh');
+        brefresh=document.getElementById('browserRefresh');
+  function inv(cmd,args){ try{ var T=(window.parent&&window.parent.__TAURI__)||window.__TAURI__;
+    if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  // Navigate the HOST window (the panel is an iframe inside a pages/ document).
+  function go(page){
+    var url=page;
+    try{ var host=(window.top&&window.top!==window)?window.top:window;
+      if(/\/components\//.test((host.location&&host.location.pathname)||'')) url='../pages/'+page; }catch(e){}
+    try{ (window.top||window).location.href=url; }catch(e){ try{ location.href=url; }catch(e2){} }
+  }
   function resync(e){
     if(e) ripple(btn,e);
-    rsvg.parentElement.classList.add('busy');
+    btn&&btn.classList.add('busy');
     brefresh&&brefresh.classList.add('busy');
     body.classList.remove('scanning'); void body.offsetWidth; body.classList.add('scanning');
-    GA.sweepIn();
+    if(typeof GA!=='undefined'&&GA.sweepIn) GA.sweepIn();
     logLine('Resync initiated…');
+    // Real re-fetch: system stats, running browsers, agent status.
+    inv('get_system_stats').catch(function(){});
+    inv('detect_browsers').catch(function(){});
+    inv('agent_status').catch(function(){});
     setTimeout(()=>logLine('Telemetry re-synced · all systems nominal'),900);
-    setTimeout(()=>{ rsvg.parentElement.classList.remove('busy'); brefresh&&brefresh.classList.remove('busy'); body.classList.remove('scanning'); },1200);
+    setTimeout(()=>{ btn&&btn.classList.remove('busy'); brefresh&&brefresh.classList.remove('busy'); body.classList.remove('scanning'); },1200);
   }
   btn&&btn.addEventListener('click',resync);
-  brefresh&&brefresh.addEventListener('click',()=>resync());
+  brefresh&&brefresh.addEventListener('click',function(){ resync(); });
+  var core=document.getElementById('btnCore');
+  core&&core.addEventListener('click',function(e){ ripple(core,e); logLine('Opening Agent Core…'); setTimeout(function(){ go('agent-core.html'); },150); });
+  var asst=document.getElementById('btnAssist');
+  asst&&asst.addEventListener('click',function(e){ ripple(asst,e); logLine('Opening AI Assistant…'); setTimeout(function(){ go('ai-assistance.html'); },150); });
   logLine('Agent online · v2.1 agentic mode');
 })();
 /* ---------- agent vitals: live task / throughput / latency / agents ---------- */
@@ -621,7 +647,7 @@ function logLine(t){
     else{cls='ok';txt='No threats · safe';}
     elVerdict.innerHTML='<span class="vi">'+VI[cls]+'</span>'+txt+'<span class="meta">'+rows.length+' checks</span>';
     elVerdict.className='scan-verdict show '+cls;
-    setTimeout(runScan, 32000); // next real scan in ~32s (each scan hits the backend)
+    // Next scan is scheduled by the real-time controller (active-tab driven) below.
   }
   // No real page to scan → show an honest idle state (NEVER a placeholder URL).
   function idleScan(){
@@ -632,37 +658,89 @@ function logLine(t){
     elVerdict.className='scan-verdict show';
     elVerdict.innerHTML='<span class="vi">'+I.globe+'</span>Idle · no active page to scan<span class="meta">monitoring</span>';
   }
-  var histUrls=[], histIdx=0, histAt=0;
-  // Pick a REAL URL to scan: the live active tab (browser extension) if present,
-  // otherwise cycle through the user's actual browser history. Never synthetic.
-  function pickFromHistory(cb){
-    if(histUrls.length && (Date.now()-histAt)<120000){ cb(histUrls[histIdx++ % histUrls.length]); return; }
-    cfInvoke('get_browser_history',{limit:25}).then(function(h){
-      histUrls=((h&&h.data&&h.data.history)||[]).map(function(x){return x.url;}).filter(Boolean);
-      histAt=Date.now();
-      cb(histUrls.length ? histUrls[histIdx++ % histUrls.length] : '');
+  /* =========================================================================
+     REAL-TIME SCAN CONTROLLER
+     Priority is the tab the user is ACTIVELY looking at (get_active_urls →
+     active browser tab). Rules:
+       • a running scan is NEVER interrupted;
+       • if the user switches/opens another tab mid-scan, that newest tab is
+         queued and scanned the instant the current scan finishes ("on top");
+       • the same active tab is only re-scanned after REFRESH_MS;
+       • if no active browser tab can be resolved we fall back ONCE to the most
+         recent history URL, then idle — we never cycle history (that was the
+         "confused about which URL to scan" bug).
+     ======================================================================== */
+  var POLL_MS=2500, REFRESH_MS=60000;
+  var ctl={scanning:false,current:'',last:'',lastAt:0,queued:'',usedFallback:false};
+
+  function getActiveUrl(cb){
+    cfInvoke('get_active_urls').then(function(r){
+      var u=((r&&r.data&&r.data.urls)||[])[0]; cb((u&&u.url)||'');
     }).catch(function(){ cb(''); });
   }
-  function pickUrl(cb){
-    cfInvoke('get_active_urls').then(function(r){
-      var u=((r&&r.data&&r.data.urls)||[])[0]; u=(u&&u.url)||'';
-      if(u){ cb(u); } else { pickFromHistory(cb); }
-    }).catch(function(){ pickFromHistory(cb); });
+  var elActions=document.getElementById('scanActions');
+  function clearActions(){ if(elActions) elActions.innerHTML=''; }
+  // Floating-agent Block / Protect / Allow (same Rust commands as the rest of
+  // the app — the agent core has these too, this is its compact twin).
+  function showActions(url, risk){
+    if(!elActions) return; clearActions();
+    if(risk<50) return;
+    var host=(url||'').split('://')[1]; host=host?host.split('/')[0].replace(/^www\./,''):''; if(!host) return;
+    elActions.innerHTML='<div class="pa-head">⚠ '+host.replace(/[<>]/g,'')+' (risk '+risk+') — choose an action:</div>'+
+      '<div class="pa-btns"><button class="pa blk">Block</button><button class="pa prt">Protect</button><button class="pa alw">Allow</button></div><div class="pa-note"></div>';
+    var note=elActions.querySelector('.pa-note');
+    function wire(sel,cmd,args,okfn){ var b=elActions.querySelector(sel); b&&b.addEventListener('click',function(){ b.disabled=true; var o=b.textContent; b.textContent='…';
+      cfInvoke(cmd,args).then(function(r){ b.textContent=okfn(r); }).catch(function(e){ b.disabled=false; b.textContent=o; note.textContent='unavailable — rebuild the desktop app'; }); }); }
+    wire('.blk','block_site',{domain:host,reason:'Floating agent action'},function(r){ note.textContent=(r&&r.enforced)?(host+' blocked system-wide.'):'Listed — needs admin to enforce.'; return (r&&r.enforced)?'✓ Blocked':'✓ Listed'; });
+    wire('.prt','protect_site',{domain:host},function(r){ note.textContent=((r&&r.note)||'Protected.')+((r&&r.publicIp)?(' IP: '+r.publicIp):''); return '✓ Protected'; });
+    wire('.alw','allow_site',{domain:host},function(r){ note.textContent=host+' marked trusted'+((r&&r.wasUnblocked)?' & unblocked':'')+'.'; return '✓ Allowed'; });
   }
-  function runScan(){
-    pickUrl(function(url){
-      if(!url){ idleScan(); setTimeout(runScan, 10000); return; }
-      elId.textContent='#'+(scanNo++);
-      elTarget.textContent=url.replace(/^https?:\/\//,'').slice(0,42);
-      resetRows();
-      cfInvoke('scan_url',{url:url}).then(function(res){
-        var d=(res&&res.data)||{};
-        applyResults(toolResults(d), +d.riskScore||0, d.category||'');
-        if(typeof logLine==='function') logLine('Scanned '+((d.url||url).replace(/^https?:\/\//,'').slice(0,34))+' · risk '+(d.riskScore||0)+' · '+(d.category||'ok'));
-      }).catch(function(){ idleScan(); setTimeout(runScan, 12000); });
+  function beginScan(url){
+    ctl.scanning=true; ctl.current=url; ctl.queued='';
+    elId.textContent='#'+(scanNo++);
+    elTarget.textContent=url.replace(/^https?:\/\//,'').slice(0,42);
+    resetRows(); clearActions();
+    cfInvoke('scan_url',{url:url}).then(function(res){
+      var d=(res&&res.data)||{};
+      applyResults(toolResults(d), +d.riskScore||0, d.category||'');
+      showActions(url, +d.riskScore||0);
+      if(typeof logLine==='function') logLine('Scanned '+((d.url||url).replace(/^https?:\/\//,'').slice(0,34))+' · risk '+(d.riskScore||0)+' · '+(d.category||'ok'));
+      endScan(url, rows.length*150+760);   // let the verdict animation play out
+    }).catch(function(){ endScan(url, 400); });
+  }
+  function endScan(url, delay){
+    setTimeout(function(){
+      ctl.scanning=false; ctl.last=url; ctl.lastAt=Date.now(); ctl.current='';
+      var next=ctl.queued; ctl.queued='';
+      if(next && next!==url) beginScan(next);   // a tab switched-to mid-scan goes next
+    }, Math.max(300, delay||400));
+  }
+  function tick(){
+    getActiveUrl(function(u){
+      if(u){
+        ctl.usedFallback=false;
+        if(ctl.scanning){
+          if(u!==ctl.current) ctl.queued=u;                 // newest tab waits on top
+        } else if(u!==ctl.last || (Date.now()-ctl.lastAt)>REFRESH_MS){
+          beginScan(u);                                     // active tab is the priority
+        }
+        return;
+      }
+      // No active browser tab in focus.
+      if(ctl.scanning) return;
+      if(!ctl.last && !ctl.usedFallback){
+        ctl.usedFallback=true;                              // one-time history fallback
+        cfInvoke('get_browser_history',{limit:1}).then(function(h){
+          var fu=(((h&&h.data&&h.data.history)||[])[0]||{}).url||'';
+          if(fu && !ctl.scanning) beginScan(fu); else idleScan();
+        }).catch(idleScan);
+      } else if(!ctl.last){
+        idleScan();
+      }
+      // else: keep showing the last verdict until the user focuses a tab again.
     });
   }
-  runScan();
+  tick(); setInterval(tick, POLL_MS);
 })();
 
 /* ===========================================================
@@ -702,28 +780,31 @@ window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:0,threats:0,latency:0,backendO
     var vval=ad&&ad.closest('.svc')?ad.closest('.svc').querySelector('.vval'):null;
     if(vval&&vval.firstChild&&vval.firstChild.nodeType===3) vval.firstChild.textContent=String(n);
   }
-  // BROWSERS section — real installed/running list
-  function renderBrowsers(list,installed,running){
+  // BROWSERS section — RUNNING browsers only (installed-but-closed are hidden).
+  function renderBrowsers(list){
     var ref=document.getElementById('browserRefresh');
     var sect=ref?ref.closest('.sect'):null; if(!sect)return;
     sect.querySelectorAll('.browser-row,.browser-foot').forEach(function(n){n.remove();});
-    list=list||[];
+    list=(list||[]).filter(function(b){ return b && b.isRunning; });
     if(!list.length){
       var none=document.createElement('div'); none.className='browser-foot';
-      none.textContent='No browsers detected'; sect.appendChild(none); return;
+      none.textContent='No running browsers'; sect.appendChild(none); return;
     }
-    list.sort(function(a,b){return (b.isRunning?1:0)-(a.isRunning?1:0);});
     list.forEach(function(b){
-      var on=!!b.isRunning;
-      var row=document.createElement('div'); row.className='browser-row'; if(!on) row.style.opacity='.7';
+      var row=document.createElement('div'); row.className='browser-row';
       row.innerHTML='<div class="bicon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/><path d="M12 9h9M12 9 7.5 4.2M12 15l-4.5 4.6"/></svg></div>'+
-        '<div><div class="bname">'+b.name+'</div><div class="bver">'+(b.version?('v'+b.version):(on?'running':'installed'))+'</div></div>'+
-        '<span class="running" style="'+(on?'':'color:var(--faint);background:rgba(130,160,200,.1);border-color:var(--border)')+'"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:'+(on?'var(--green)':'var(--faint)')+';box-shadow:'+(on?'0 0 5px var(--green)':'none')+'"></span>'+(on?'RUNNING':'IDLE')+'</span>';
+        '<div><div class="bname">'+b.name+'</div><div class="bver">running</div></div>'+
+        '<span class="running"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)"></span>RUNNING</span>';
       sect.appendChild(row);
     });
     var foot=document.createElement('div'); foot.className='browser-foot';
-    foot.textContent=(installed||list.length)+' installed · '+(running||0)+' running';
+    foot.textContent=list.length+(list.length===1?' running browser':' running browsers');
     sect.appendChild(foot);
+  }
+  function runningCount(d){
+    if(d && d.running!=null) return d.running;
+    var list=(d && d.browsers)||[];
+    return list.filter(function(b){return b&&b.isRunning;}).length;
   }
 
   function pollSystem(){
@@ -734,10 +815,11 @@ window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:0,threats:0,latency:0,backendO
   }
   function pollBrowsers(){
     cfInvoke('detect_browsers').then(function(r){
-      var d=(r&&r.data)||{}; var list=d.browsers||[];
-      window.CF.browsers=d.installed||list.length||0;
-      setBrowsersTile(window.CF.browsers);
-      renderBrowsers(list,d.installed||0,d.running||0);
+      var d=(r&&r.data)||{};
+      var running=runningCount(d);
+      window.CF.browsers=running;
+      setBrowsersTile(running);
+      renderBrowsers(d.browsers||[]);
     }).catch(function(){});
   }
   function pollAgent(){
@@ -761,7 +843,7 @@ window.CF={cpu:0,mem:0,uptime:0,browsers:0,agents:0,threats:0,latency:0,backendO
     if(st){ window.CF.agents=st.agentCount||0; window.CF.threats=st.threatCount||0; window.CF.latency=st.latencyMs||0;
       window.CF.backendOk=!!st.backendOk; window.CF.mlOk=!!st.mlOk; setBadge(window.CF.backendOk); setAgents(window.CF.agents); }
     var br=(p.browsers&&p.browsers.data)||null;
-    if(br){ var list=br.browsers||[]; window.CF.browsers=br.installed||list.length||0; setBrowsersTile(window.CF.browsers); renderBrowsers(list,br.installed||0,br.running||0); }
+    if(br){ var running=runningCount(br); window.CF.browsers=running; setBrowsersTile(running); renderBrowsers(br.browsers||[]); }
   }
   try{
     var T=(window.parent&&window.parent.__TAURI__)||window.__TAURI__;

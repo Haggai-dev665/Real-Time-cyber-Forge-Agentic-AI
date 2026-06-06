@@ -8,6 +8,7 @@
 
 mod agent;
 mod auth;
+mod blocking;
 mod commands;
 mod http;
 mod memory;
@@ -61,6 +62,8 @@ pub fn run() {
             agent::auth_google,
             agent::browser_intel,
             agent::browser_intel_report,
+            // Threat Globe — live AlienVault OTX threat-intel pulses
+            agent::otx_fetch,
             // Local-first vector memory
             memory::memory_save,
             memory::memory_search,
@@ -75,6 +78,7 @@ pub fn run() {
             ml::ml_status,
             ml::set_hf_token,
             ml::hf_token_status,
+            ml::hf_token_get,
             // Security Functions — Policy Engine (what to do during a threat)
             policy::policy_meta,
             policy::policy_list,
@@ -84,6 +88,17 @@ pub fn run() {
             policy::policy_update,
             policy::policy_delete,
             policy::policy_evaluate,
+            // Site blocking (hosts file) + protection (assistant Block/Protect)
+            blocking::block_site,
+            blocking::unblock_site,
+            blocking::list_blocked,
+            blocking::protect_site,
+            blocking::unprotect_site,
+            blocking::list_protected,
+            blocking::allow_site,
+            blocking::unallow_site,
+            blocking::list_allowed,
+            blocking::public_ip,
         ])
         .setup(|app| {
             // `Manager` provides `get_webview_window` (debug devtools) and
@@ -94,6 +109,11 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 window.open_devtools();
             }
+
+            // Prepare the per-user data directory + crucial editable files so
+            // everything the app needs exists right after installation
+            // (app-config dir, hf_config.json template, README). Idempotent.
+            crate::system::prepare_filesystem(&app.handle());
 
             // Real-time telemetry broadcaster: ONE poller for the whole app.
             // Every 3s it pushes a single `cf-telemetry` event (system stats +

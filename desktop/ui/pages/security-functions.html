@@ -83,6 +83,19 @@
 .sf-eng .en{flex:1;font-size:12px}
 .sf-eng .es{font-family:var(--mono);font-size:9px;color:var(--cyan)}
 .sf-log{overflow-y:auto;max-height:236px}
+.blk-add{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.blk-add input{flex:1;height:32px;padding:0 11px;border-radius:7px;border:1px solid var(--border-2);background:rgba(8,12,20,.6);color:var(--text);font-family:var(--mono);font-size:11px;outline:none}
+.blk-add input:focus{border-color:rgba(244,73,94,.5)}
+.blk-add button{height:32px;padding:0 14px;border-radius:7px;border:1px solid rgba(244,73,94,.4);background:rgba(244,73,94,.12);color:#ff7185;font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer}
+.blk-add button:hover{background:rgba(244,73,94,.22)}
+.blk-list{overflow-y:auto;max-height:240px}
+.blk-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.blk-row .bd{width:8px;height:8px;border-radius:50%;flex:none}
+.blk-row .bi{flex:1;min-width:0}
+.blk-row .bi b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk-row .bi span{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.blk-row .bx{height:26px;padding:0 11px;border-radius:6px;font-family:var(--mono);font-size:10px;cursor:pointer;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);transition:.15s;flex:none}
+.blk-row .bx:hover{color:var(--text);border-color:var(--border-3)}
 .sf-logrow{display:flex;align-items:center;gap:9px;padding:9px 15px;border-bottom:1px solid var(--border);font-size:11px;animation:alin .3s ease}
 .sf-logrow .ldot{width:7px;height:7px;border-radius:50%;flex:none}
 .sf-logrow .ln{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -140,9 +153,27 @@
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 4-5"/></svg>Response Log<span class="right" id="logCount">0</span></div>
               <div class="sf-log" id="logList"><div class="sf-empty">No response actions yet</div></div>
             </div>
+
+            <!-- Blocked sites (system hosts file) -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>Blocked Sites<span class="right" id="blkCount">0</span></div>
+              <div class="blk-add"><input id="blkInput" placeholder="Block a domain — e.g. evil.example.com" autocomplete="off" spellcheck="false" /><button id="blkAdd">Block</button></div>
+              <div class="blk-list" id="blkList"><div class="sf-empty">No sites blocked</div></div>
+            </div>
           </div>
 
           <div class="sf-col">
+            <!-- Protected sites -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Protected Sites<span class="right" id="prCount">0</span></div>
+              <div class="blk-list" id="prList"><div class="sf-empty">No protected sites</div></div>
+            </div>
+            <!-- Allowed (trusted) sites -->
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Allowed Sites<span class="right" id="alCount">0</span></div>
+              <div class="blk-list" id="alList"><div class="sf-empty">No allowed sites</div></div>
+            </div>
+
             <!-- Threat simulator -->
             <div class="card">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 7v5l3 3"/></svg>Threat Simulator</div>
@@ -181,6 +212,55 @@ buildHeader({status:'ARMED'});
 buildSidebar('security');
 buildFooter({items:[{txt:'policy engine',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'ML sensors',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
 fitWindow('win');
+
+/* ---- Blocked & Protected sites (real Rust hosts-file blocking) ---- */
+(function(){
+  function inv(c,a){ try{ if(window.CF&&CF.invoke) return CF.invoke(c,a||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function e(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; }
+  var blkList=document.getElementById('blkList'), prList=document.getElementById('prList');
+  function loadBlocked(){
+    inv('list_blocked').then(function(r){
+      var arr=(r&&r.blocked)||[]; var c=document.getElementById('blkCount'); if(c)c.textContent=arr.length;
+      if(!arr.length){ blkList.innerHTML='<div class="sf-empty">No sites blocked</div>'; return; }
+      blkList.innerHTML=arr.map(function(b){ var on=b.enforced;
+        return '<div class="blk-row"><span class="bd" style="background:'+(on?'var(--red)':'var(--amber)')+'"></span>'+
+          '<div class="bi"><b>'+e(b.domain)+'</b><span>'+e(b.reason||'')+' · '+(on?'enforced':'listed · needs admin')+' · '+ago(b.ts)+' ago</span></div>'+
+          '<button class="bx" data-d="'+e(b.domain)+'">Unblock</button></div>'; }).join('');
+      blkList.querySelectorAll('.bx').forEach(function(btn){ btn.addEventListener('click',function(){ btn.textContent='…'; inv('unblock_site',{domain:btn.dataset.d}).then(loadBlocked).catch(function(){ btn.textContent='Unblock'; }); }); });
+    }).catch(function(){ blkList.innerHTML='<div class="sf-empty">Blocking needs a rebuilt desktop app.</div>'; });
+  }
+  function loadProtected(){
+    inv('list_protected').then(function(r){
+      var arr=(r&&r.protected)||[]; var c=document.getElementById('prCount'); if(c)c.textContent=arr.length;
+      if(!arr.length){ prList.innerHTML='<div class="sf-empty">No protected sites</div>'; return; }
+      prList.innerHTML=arr.map(function(p){ return '<div class="blk-row"><span class="bd" style="background:var(--cyan)"></span>'+
+        '<div class="bi"><b>'+e(p.domain)+'</b><span>protected access · '+ago(p.ts)+' ago</span></div>'+
+        '<button class="bx" data-d="'+e(p.domain)+'">Remove</button></div>'; }).join('');
+      prList.querySelectorAll('.bx').forEach(function(btn){ btn.addEventListener('click',function(){ btn.textContent='…'; inv('unprotect_site',{domain:btn.dataset.d}).then(loadProtected).catch(function(){ btn.textContent='Remove'; }); }); });
+    }).catch(function(){ prList.innerHTML='<div class="sf-empty">—</div>'; });
+  }
+  var ai=document.getElementById('blkInput'), ab=document.getElementById('blkAdd');
+  function addBlock(){ var v=(ai.value||'').trim(); if(!v) return; ab.textContent='…';
+    inv('block_site',{domain:v, reason:'Manually blocked'}).then(function(r){ ai.value=''; ab.textContent='Block';
+      if(window.CF&&CF.toast) CF.toast((r&&r.enforced)?('Blocked '+(r.domain||v)+' system-wide'):('Listed — '+((r&&r.message)||'needs admin')), (r&&r.enforced)?'ok':'warn'); loadBlocked();
+    }).catch(function(){ ab.textContent='Block'; if(window.CF&&CF.toast) CF.toast('Block failed','error'); }); }
+  ab&&ab.addEventListener('click',addBlock);
+  ai&&ai.addEventListener('keydown',function(ev){ if(ev.key==='Enter') addBlock(); });
+  var alList=document.getElementById('alList');
+  function loadAllowed(){
+    inv('list_allowed').then(function(r){
+      var arr=(r&&r.allowed)||[]; var c=document.getElementById('alCount'); if(c)c.textContent=arr.length;
+      if(!arr.length){ alList.innerHTML='<div class="sf-empty">No allowed sites</div>'; return; }
+      alList.innerHTML=arr.map(function(p){ return '<div class="blk-row"><span class="bd" style="background:var(--green)"></span>'+
+        '<div class="bi"><b>'+e(p.domain)+'</b><span>trusted · '+ago(p.ts)+' ago</span></div>'+
+        '<button class="bx" data-d="'+e(p.domain)+'">Remove</button></div>'; }).join('');
+      alList.querySelectorAll('.bx').forEach(function(btn){ btn.addEventListener('click',function(){ btn.textContent='…'; inv('unallow_site',{domain:btn.dataset.d}).then(loadAllowed).catch(function(){ btn.textContent='Remove'; }); }); });
+    }).catch(function(){ alList.innerHTML='<div class="sf-empty">—</div>'; });
+  }
+  var rf=document.getElementById('sfRefresh'); rf&&rf.addEventListener('click',function(){ loadBlocked(); loadProtected(); loadAllowed(); });
+  loadBlocked(); loadProtected(); loadAllowed(); setInterval(function(){ loadBlocked(); loadProtected(); loadAllowed(); }, 20000);
+})();
 
 (function(){
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]; }); }

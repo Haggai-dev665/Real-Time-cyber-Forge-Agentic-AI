@@ -289,6 +289,134 @@ pub async fn browser_intel_report(state: State<'_, SharedState>) -> Result<Value
     }
 }
 
+/// Fetch threat-intelligence pulses from AlienVault OTX. The API key is supplied
+/// by the caller (the Threat Globe holds it in the frontend). The request runs
+/// from Rust via reqwest so it bypasses the webview's CSP/CORS (`connect-src`
+/// blocks otx.alienvault.com from JS). Tries the richest source first and falls
+/// back, so a fresh key still returns data.
+#[tauri::command]
+pub async fn otx_fetch(api_key: String, limit: Option<u32>) -> Result<Value, String> {
+    let key = api_key.trim().to_string();
+    if key.is_empty() {
+        return Err("OTX API key is required".into());
+    }
+    let limit = limit.unwrap_or(40).clamp(1, 100);
+    let base = "https://otx.alienvault.com/api/v1";
+    let endpoints = [
+        format!("{}/pulses/subscribed?limit={}&page=1", base, limit),
+        format!("{}/pulses/activity?limit={}&page=1", base, limit),
+        format!("{}/search/pulses?q=malware&limit={}&sort=-modified", base, limit),
+    ];
+    let client = reqwest::Client::new();
+    let mut last_err = String::new();
+    for url in endpoints.iter() {
+        let res = client
+            .get(url)
+            .header("X-OTX-API-KEY", &key)
+            .header("User-Agent", "cyberforge-desktop/1.0")
+            .timeout(Duration::from_secs(20))
+            .send()
+            .await;
+        match res {
+            Ok(r) => {
+                let status = r.status();
+                let body: Value = match r.json().await {
+                    Ok(v) => v,
+                    Err(e) => {
+                        last_err = format!("decode error: {}", e);
+                        continue;
+                    }
+                };
+                let results = body.get("results").cloned().unwrap_or(Value::Null);
+                let count = results.as_array().map(|a| a.len()).unwrap_or(0);
+                if status.is_success() && count > 0 {
+                    // Geolocate the malicious IP indicators so the globe can draw
+                    // real origin → destination movement (OTX has no source geo).
+                    let ips = extract_indicator_ips(&results);
+                    let ip_geo = geolocate_ips(&client, &ips).await;
+                    return Ok(json!({
+                        "success": true, "source": url, "count": count,
+                        "results": results, "ip_geo": ip_geo
+                    }));
+                }
+                if !status.is_success() {
+                    last_err = format!("HTTP {} from OTX", status.as_u16());
+                }
+            }
+            Err(e) => {
+                last_err = crate::http::error_chain(e);
+            }
+        }
+    }
+    Ok(json!({
+        "success": false,
+        "error": if last_err.is_empty() { "OTX returned no pulses".into() } else { last_err },
+        "results": [], "ip_geo": {}
+    }))
+}
+
+/// Collect unique IPv4/IPv6 indicators from the pulse list (capped) so they can
+/// be geolocated into attack-origin coordinates.
+fn extract_indicator_ips(results: &Value) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    if let Some(arr) = results.as_array() {
+        for p in arr {
+            if let Some(inds) = p.get("indicators").and_then(|v| v.as_array()) {
+                for ind in inds {
+                    let t = ind.get("type").and_then(|v| v.as_str()).unwrap_or("");
+                    if t.starts_with("IPv4") || t.starts_with("IPv6") {
+                        if let Some(ip) = ind.get("indicator").and_then(|v| v.as_str()) {
+                            if seen.insert(ip.to_string()) {
+                                out.push(ip.to_string());
+                                if out.len() >= 100 {
+                                    return out;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Batch-geolocate IPs via ip-api.com (free, no key). Returns a map
+/// ip → { lat, lon, country, cc }. Failures are skipped silently.
+async fn geolocate_ips(
+    client: &reqwest::Client,
+    ips: &[String],
+) -> serde_json::Map<String, Value> {
+    let mut out = serde_json::Map::new();
+    if ips.is_empty() {
+        return out;
+    }
+    let url = "http://ip-api.com/batch?fields=status,country,countryCode,lat,lon,query";
+    if let Ok(r) = client.post(url).json(&ips).timeout(Duration::from_secs(15)).send().await {
+        if let Ok(arr) = r.json::<Value>().await {
+            if let Some(list) = arr.as_array() {
+                for g in list {
+                    if g.get("status").and_then(|v| v.as_str()) == Some("success") {
+                        if let Some(ip) = g.get("query").and_then(|v| v.as_str()) {
+                            out.insert(
+                                ip.to_string(),
+                                json!({
+                                    "lat": g.get("lat").cloned().unwrap_or(Value::Null),
+                                    "lon": g.get("lon").cloned().unwrap_or(Value::Null),
+                                    "country": g.get("country").cloned().unwrap_or(Value::Null),
+                                    "cc": g.get("countryCode").cloned().unwrap_or(Value::Null),
+                                }),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
 /// Scan a URL through the backend agent pipeline and cache the result in state.
 #[tauri::command]
 pub async fn scan_url(

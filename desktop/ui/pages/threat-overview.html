@@ -625,11 +625,16 @@ body{
 buildHeader({status:'CHECKING',threats:'—'});
 buildSidebar('overview');
 buildFooter({items:[{txt:'— agents'},{txt:'CPU 0%',cls:'sb-amber'},{txt:'MEM 0%',cls:'sb-cyan'},{txt:'1 browser',cls:'sb-cyan'},{txt:'Syncing…',cls:'sb-green',spin:true}]});
-/* ---------- scale window to fit viewport ---------- */
+/* ---------- scale window to fill the viewport (match every other screen) ----------
+   Scale so the height exactly fits (footer visible) and WIDEN the design so the
+   scaled width fills the viewport — no dark side bands. The window keeps its
+   centred model, so this works without touching the page's layout CSS. */
 function fit(){
   const w=document.getElementById('win');
-  const s=Math.min(window.innerWidth/1440, window.innerHeight/824);
-  w.style.transform='scale('+s+')';
+  const vw=window.innerWidth, vh=window.innerHeight, DW=1440, DH=824;
+  const sH=vh/DH;
+  if(vw/sH>=DW){ w.style.width=(vw/sH)+'px'; w.style.transform='scale('+sH+')'; }
+  else { w.style.width=DW+'px'; w.style.transform='scale('+(vw/DW)+')'; }
 }
 window.addEventListener('resize',fit); fit();
 

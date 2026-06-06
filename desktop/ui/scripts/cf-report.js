@@ -90,6 +90,9 @@
         return '<div class="pr-qa"><div class="pr-q">' + esc(q[0]) + '</div>' +
           '<div class="pr-a">' + mdLite(q[1]) + '</div></div>';
       }).join('');
+    } else if (s.type === 'md') {
+      // AI-written markdown body (DeepSeek report sections)
+      inner += '<div class="pr-md">' + mdLite(s.body) + '</div>';
     }
     return '<section class="pr-sec">' + inner + '</section>';
   }
@@ -187,6 +190,9 @@
       '  #' + ROOT_ID + ' .pr-q::before{content:"Q  ";color:#b87800;font-family:\'JetBrains Mono\',monospace}',
       '  #' + ROOT_ID + ' .pr-a{padding-left:14px;border-left:2px solid #ecdfc7}',
       '  #' + ROOT_ID + ' .pr-a .qa-h{font-weight:700;color:#9a6a00;margin:6px 0 2px}',
+      // AI markdown report sub-headings
+      '  #' + ROOT_ID + ' .pr-md .qa-h{font-weight:700;color:#9a6a00;font-size:12px;margin:9px 0 3px}',
+      '  #' + ROOT_ID + ' .pr-md code{font-family:\'JetBrains Mono\',monospace;font-size:10.5px;background:#f3efe6;padding:1px 4px;border-radius:3px}',
       '  #' + ROOT_ID + ' .pr-a code{font-family:\'JetBrains Mono\',monospace;font-size:10.5px;background:#f3efe6;padding:1px 4px;border-radius:3px}',
       '  #' + ROOT_ID + ' ul{margin:4px 0 8px 2px;padding-left:16px}',
       '  #' + ROOT_ID + ' li{font-size:11px;color:#333;margin:2px 0}',

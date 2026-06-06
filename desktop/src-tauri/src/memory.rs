@@ -45,20 +45,65 @@ fn lock() -> std::sync::MutexGuard<'static, Vec<Memory>> {
     STORE.lock().unwrap_or_else(|e| e.into_inner())
 }
 
+/// Stable per-user directory for the local memory file. On Windows `HOME` is
+/// usually unset, so older builds fell back to a cwd-relative path (which moved
+/// with the working directory). We now pin it to the same per-user location the
+/// rest of the app uses (`%APPDATA%\com.cyberforge.console` on Windows).
+fn memory_dir() -> PathBuf {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(a) = std::env::var("APPDATA") {
+            return PathBuf::from(a).join("com.cyberforge.console");
+        }
+        if let Ok(u) = std::env::var("USERPROFILE") {
+            return PathBuf::from(u).join(".cyberforge-console");
+        }
+    }
+    if let Ok(h) = std::env::var("HOME") {
+        return PathBuf::from(h).join(".cyberforge-console");
+    }
+    PathBuf::from(".").join(".cyberforge-console")
+}
+
 fn memory_path() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    PathBuf::from(home)
-        .join(".cyberforge-console")
-        .join("memories.json")
+    memory_dir().join("memories.json")
+}
+
+/// Locations older builds may have written to (cwd-relative / HOME), so a switch
+/// to the stable path doesn't lose existing memories.
+fn legacy_memory_paths() -> Vec<PathBuf> {
+    let mut v = vec![PathBuf::from(".").join(".cyberforge-console").join("memories.json")];
+    if let Ok(h) = std::env::var("HOME") {
+        v.push(PathBuf::from(h).join(".cyberforge-console").join("memories.json"));
+    }
+    v
+}
+
+fn read_memories(p: &PathBuf) -> Option<Vec<Memory>> {
+    std::fs::read_to_string(p)
+        .ok()
+        .and_then(|s| serde_json::from_str::<Vec<Memory>>(&s).ok())
 }
 
 fn ensure_loaded() {
     if LOADED.swap(true, Ordering::SeqCst) {
         return;
     }
-    if let Ok(data) = std::fs::read_to_string(memory_path()) {
-        if let Ok(mems) = serde_json::from_str::<Vec<Memory>>(&data) {
-            *lock() = mems;
+    // Primary (stable) location.
+    if let Some(mems) = read_memories(&memory_path()).filter(|m| !m.is_empty()) {
+        *lock() = mems;
+        return;
+    }
+    // Migrate from a legacy location once, then persist to the stable path.
+    let target = memory_path();
+    for p in legacy_memory_paths() {
+        if p == target {
+            continue;
+        }
+        if let Some(mems) = read_memories(&p).filter(|m| !m.is_empty()) {
+            *lock() = mems.clone();
+            persist(&mems);
+            return;
         }
     }
 }

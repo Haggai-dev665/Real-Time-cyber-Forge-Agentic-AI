@@ -892,6 +892,224 @@ pub async fn add_to_path(install_dir: Option<String>) -> Result<Value, String> {
 }
 
 // ──────────────────────────────────────────────
+// First-run filesystem preparation
+// ──────────────────────────────────────────────
+
+/// Create the full per-user CyberForge filesystem so the app is properly
+/// integrated with the OS right after installation — the standard config / data
+/// / cache / log directories the platform expects, a complete sub-folder layout
+/// (config, logs, cache, intel, quarantine, reports, models, backups, profiles),
+/// and seeded configuration + manifest + log files.
+///
+/// Runs on every launch but only writes files/dirs that are missing, so it is
+/// safe and idempotent. The live stores managed by other modules — the vector
+/// memory (`memories.json`), the block/protect/allow lists, and `session.json`
+/// — are created on first write by those modules and are NEVER overwritten here.
+pub fn prepare_filesystem(app: &tauri::AppHandle) {
+    use tauri::Manager;
+
+    let Ok(dir) = app.path().app_config_dir() else {
+        return;
+    };
+    if std::fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+
+    // helpers ----------------------------------------------------------------
+    let mkdir = |p: &std::path::Path| {
+        let _ = std::fs::create_dir_all(p);
+    };
+    let seed = |p: std::path::PathBuf, body: &str| {
+        if !p.exists() {
+            if let Some(parent) = p.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let _ = std::fs::write(&p, body);
+        }
+    };
+
+    // 1) Standard OS-integrated locations (config / data / cache / log /
+    //    local-data). On some platforms several of these resolve to the same
+    //    path; create_dir_all is idempotent so that is fine.
+    for d in [
+        app.path().app_data_dir().ok(),
+        app.path().app_cache_dir().ok(),
+        app.path().app_log_dir().ok(),
+        app.path().app_local_data_dir().ok(),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        mkdir(&d);
+    }
+
+    // 2) Full sub-folder layout inside the main data directory.
+    let subdirs = [
+        "config",     // user + default settings, preferences, policies, integrations
+        "logs",       // application + audit logs
+        "cache",      // transient scan/render cache
+        "intel",      // threat-intelligence cache (OTX pulses, indicators)
+        "quarantine", // artifacts from blocked / flagged sites
+        "reports",    // saved report exports
+        "models",     // ML model registry + metadata
+        "backups",    // rolling config backups
+        "profiles",   // per-browser collected-history working area
+        "rules",      // detection rule sets
+    ];
+    for s in subdirs {
+        let p = dir.join(s);
+        mkdir(&p);
+        // Keep empty dirs present + self-describing.
+        seed(
+            p.join(".keep"),
+            "This directory is managed by CyberForge. Safe to leave empty.\n",
+        );
+    }
+
+    // 3) Editable Hugging Face token config. Seeded EMPTY (never a fake token,
+    //    so get_hf_token() correctly reports "not connected" until the user
+    //    sets one from Settings -> AI & Models or edits this file).
+    seed(
+        dir.join("hf_config.json"),
+        "{\n  \"_comment\": \"CyberForge AI (DeepSeek via Hugging Face). Paste your token in \\\"active\\\", or save it from Settings -> AI & Models. Local to this machine; never committed.\",\n  \"active\": \"\",\n  \"tokens\": []\n}\n",
+    );
+
+    // 4) Application manifest — an integration descriptor for the install.
+    let manifest = serde_json::json!({
+        "name": "CyberForge",
+        "product": "CyberForge - AI Security Console",
+        "identifier": "com.cyberforge.console",
+        "version": env!("CARGO_PKG_VERSION"),
+        "kind": "desktop-security-console",
+        "localFirst": true,
+        "os": os,
+        "arch": arch,
+        "dataDir": dir.to_string_lossy(),
+        "createdAt": now,
+        "directories": subdirs,
+        "managedFiles": [
+            "memories.json", "blocklist.json", "protected.json",
+            "allowed.json", "session.json", "install.json"
+        ]
+    });
+    seed(
+        dir.join("manifest.json"),
+        &serde_json::to_string_pretty(&manifest).unwrap_or_else(|_| "{}".into()),
+    );
+    seed(dir.join("version"), &format!("{}\n", env!("CARGO_PKG_VERSION")));
+
+    // 5) Default settings (real, capability-backed toggles).
+    seed(
+        dir.join("config").join("settings.json"),
+        &serde_json::to_string_pretty(&serde_json::json!({
+            "schemaVersion": 1,
+            "scanning": { "backgroundScan": true, "scanHistory": true, "activeTabPriority": true, "intervalSeconds": 300 },
+            "protection": { "hostsFileBlocking": true, "autoBlockMalicious": false, "notifyOnThreat": true },
+            "ai": { "provider": "deepseek", "model": "deepseek-ai/DeepSeek-V3-0324", "maxTokens": 1800, "groundInMemory": true },
+            "telemetry": { "localOnly": true, "shareWithCloud": false },
+            "appearance": { "theme": "dark", "reduceMotion": false }
+        }))
+        .unwrap_or_else(|_| "{}".into()),
+    );
+
+    // 6) UI preferences template.
+    seed(
+        dir.join("config").join("preferences.json"),
+        &serde_json::to_string_pretty(&serde_json::json!({
+            "theme": "dark", "reduceMotion": false, "sidebarCollapsed": false, "lastPage": "threat-overview.html"
+        }))
+        .unwrap_or_else(|_| "{}".into()),
+    );
+
+    // 7) Default response-policy template.
+    seed(
+        dir.join("config").join("policies.json"),
+        &serde_json::to_string_pretty(&serde_json::json!({
+            "schemaVersion": 1,
+            "policies": [
+                { "id": "block-phishing", "when": "verdict=phishing", "action": "block", "enabled": true },
+                { "id": "warn-suspicious", "when": "risk>=50", "action": "warn", "enabled": true },
+                { "id": "log-all-scans", "when": "any", "action": "log", "enabled": true }
+            ]
+        }))
+        .unwrap_or_else(|_| "{}".into()),
+    );
+
+    // 8) Integrations descriptor.
+    seed(
+        dir.join("config").join("integrations.json"),
+        &serde_json::to_string_pretty(&serde_json::json!({
+            "backend": { "url": "https://cyberforge-ddd97655464f.herokuapp.com", "enabled": true },
+            "huggingface": { "provider": "DeepSeek via HF Inference", "configured": false },
+            "threatIntel": { "provider": "AlienVault OTX", "enabled": true }
+        }))
+        .unwrap_or_else(|_| "{}".into()),
+    );
+
+    // 9) ML model registry — the real capabilities the app uses.
+    seed(
+        dir.join("models").join("registry.json"),
+        &serde_json::to_string_pretty(&serde_json::json!({
+            "models": [
+                { "id": "deepseek-v3", "role": "assistant", "provider": "huggingface" },
+                { "id": "url-classifier", "role": "phishing-url" },
+                { "id": "dga-detector", "role": "domain-generation-algorithm" },
+                { "id": "ioc-scanner", "role": "indicator-of-compromise" }
+            ]
+        }))
+        .unwrap_or_else(|_| "{}".into()),
+    );
+
+    // 10) Log files — initialise with an install line so logs/ is non-empty.
+    let log_line = format!(
+        "[{}] CyberForge {} initialised on {}/{} — data dir prepared.\n",
+        now,
+        env!("CARGO_PKG_VERSION"),
+        os,
+        arch
+    );
+    seed(dir.join("logs").join("app.log"), &log_line);
+    seed(dir.join("logs").join("audit.log"), &log_line);
+
+    // 11) A self-describing README for the whole data directory.
+    seed(
+        dir.join("README.txt"),
+        "CyberForge - local data directory\n\
+            =================================\n\n\
+            Everything CyberForge stores stays on this device, in this folder.\n\
+            Nothing here is uploaded unless you explicitly sync.\n\n\
+            Layout:\n\
+            - manifest.json    App + install descriptor.\n\
+            - version          Installed version.\n\
+            - hf_config.json   Your Hugging Face token for the AI assistant (editable).\n\
+            - config/          settings.json, preferences.json, policies.json, integrations.json\n\
+            - logs/            app.log, audit.log\n\
+            - cache/           Transient scan/render cache.\n\
+            - intel/           Threat-intelligence cache (OTX pulses, indicators).\n\
+            - quarantine/      Artifacts from blocked / flagged sites.\n\
+            - reports/         Saved report exports.\n\
+            - models/          ML model registry + metadata.\n\
+            - backups/         Rolling config backups.\n\
+            - profiles/        Per-browser collected-history working area.\n\
+            - rules/           Detection rule sets.\n\n\
+            Created on first run by the app. Files written as you use it:\n\
+            - memories.json    Local vector memory: scans, intel, reports, actions.\n\
+            - blocklist.json / protected.json / allowed.json   Your site lists.\n\
+            - session.json     Your signed-in session (token cache).\n\
+            - install.json     One-time install marker.\n\n\
+            To remove all CyberForge data, delete this folder (or run the\n\
+            uninstall script shipped with the app).\n",
+    );
+}
+
+// ──────────────────────────────────────────────
 // One-time installation marker (per user/computer)
 // ──────────────────────────────────────────────
 

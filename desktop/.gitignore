@@ -5,6 +5,10 @@ node_modules/
 src-tauri/target/
 src-tauri/gen/schemas/
 
+# Secrets — real HF token lives here (committed: hf_config.example.json only)
+hf_config.json
+src-tauri/hf_config.json
+
 # OS
 .DS_Store
 Thumbs.db

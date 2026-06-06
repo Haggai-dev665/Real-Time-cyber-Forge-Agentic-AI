@@ -172,6 +172,65 @@ pub async fn hf_token_status() -> Result<Value, String> {
     Ok(json!({ "configured": crate::auth::get_hf_token().is_some() }))
 }
 
+/// Mask a secret for display: `hf_Ykf…vzsTZ` (first 6 + last 4).
+fn mask_token(t: &str) -> String {
+    let t = t.trim();
+    let n = t.chars().count();
+    if n == 0 {
+        return String::new();
+    }
+    if n <= 10 {
+        return "\u{2022}".repeat(n);
+    }
+    let head: String = t.chars().take(6).collect();
+    let tail: String = t.chars().skip(n - 4).collect();
+    format!("{}\u{2026}{}", head, tail)
+}
+
+/// Return the saved HF token so Settings can show it. Includes the full token
+/// (for the reveal toggle — it is the user's own secret on their own machine),
+/// a masked preview, and which source it came from.
+#[tauri::command]
+pub async fn hf_token_get() -> Result<Value, String> {
+    let (tok, source) = crate::auth::hf_token_info();
+    let configured = tok.is_some();
+    let token = tok.unwrap_or_default();
+    let masked = mask_token(&token);
+    Ok(json!({ "configured": configured, "token": token, "masked": masked, "source": source }))
+}
+
+/// Persist a one-line summary of an analysis to the local vector memory, so the
+/// AI Assistant (and the Memory page) can recall every scan/analysis the user
+/// runs — not just orchestrator scans.
+fn capture_ml(label: &str, subject: &str, result: &Value) {
+    if subject.trim().is_empty() {
+        return;
+    }
+    let d = result.get("data").unwrap_or(result);
+    let score = d
+        .get("riskScore")
+        .or_else(|| d.get("score"))
+        .or_else(|| d.get("confidence"))
+        .and_then(|v| v.as_f64())
+        .map(|f| if f <= 1.0 { (f * 100.0).round() as i64 } else { f.round() as i64 });
+    let verdict = d
+        .get("verdict")
+        .or_else(|| d.get("label"))
+        .or_else(|| d.get("prediction"))
+        .or_else(|| d.get("category"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let mut text = format!("{}: {}", label, subject);
+    if let Some(v) = &verdict {
+        text.push_str(&format!(" \u{2014} {}", v));
+    }
+    if let Some(s) = score {
+        text.push_str(&format!(" (risk {})", s));
+    }
+    let category = label.to_lowercase().replace(' ', "-");
+    crate::memory::remember(&text, "episodic", Some(subject.to_string()), Some(category), score);
+}
+
 /// BERT URL phishing/malware classification (elftsdmr/malware-url-detect).
 #[tauri::command]
 pub async fn ml_classify_url(state: State<'_, SharedState>, url: String) -> Result<Value, String> {
@@ -227,13 +286,20 @@ pub async fn ml_ioc_scan(
     if body.is_empty() {
         return Err("at least one of url, domain, ip, hash is required".into());
     }
-    ml_post(
+    let subject = ["url", "domain", "ip", "hash"]
+        .iter()
+        .filter_map(|k| body.get(*k).and_then(|v| v.as_str()))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let res = ml_post(
         state.inner(),
         "/api/cyberforge-ml/v2/ioc-scan",
         Value::Object(body),
         75,
     )
-    .await
+    .await?;
+    capture_ml("IOC scan", &subject, &res);
+    Ok(res)
 }
 
 /// AI Deep Scan — ML predictions + BERT + DGA + feature importances, one fused score.
@@ -242,13 +308,15 @@ pub async fn ml_url_enrich(state: State<'_, SharedState>, url: String) -> Result
     if url.trim().is_empty() {
         return Err("url is required".into());
     }
-    ml_post(
+    let res = ml_post(
         state.inner(),
         "/api/cyberforge-ml/v2/url-enrich",
         json!({ "url": url }),
         60,
     )
-    .await
+    .await?;
+    capture_ml("AI deep scan", &url, &res);
+    Ok(res)
 }
 
 /// ML stack status: transformer models loaded/available + service health.

@@ -47,9 +47,14 @@
   };
 
   function fit(id){const w=document.getElementById(id||'win');if(!w)return;
-    function f(){const s=window.innerWidth/1440;            // fill viewport width — no side bands
-      w.style.transformOrigin='top left';w.style.transform='scale('+s+')';
-      const stage=w.parentElement;if(stage)stage.style.height=(824*s)+'px';}   // real height → scrollable
+    function f(){const vw=window.innerWidth, vh=window.innerHeight, DW=1440, DH=824;
+      const sH=vh/DH; w.style.transformOrigin='top left';
+      if(vw/sH>=DW){                                       // fill width fluidly → no side bands, footer visible
+        w.style.width=(vw/sH)+'px';w.style.transform='scale('+sH+')';w.style.left='0px';w.style.top='0px';
+      }else{                                               // narrow → fit width, centre vertically
+        const s=vw/DW;w.style.width=DW+'px';w.style.transform='scale('+s+')';
+        w.style.left='0px';w.style.top=Math.max(0,(vh-DH*s)/2)+'px';}
+      const stage=w.parentElement;if(stage)stage.style.height=vh+'px';}
     window.addEventListener('resize',f);f();}
   window.fitWindow=fit;
 })();

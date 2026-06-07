@@ -44,6 +44,10 @@ body {
 @keyframes scanDown { 0% { transform: translateY(-100%); opacity: 0; } 10%,90% { opacity: 1; } 100% { transform: translateY(2200%); opacity: 0; } }
 @keyframes ringExpand { 0% { transform: scale(0.4); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
 @keyframes shimmerBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+@keyframes waveScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes scanX { 0% { left: 0; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+@keyframes driftBlip { 0%, 55%, 100% { opacity: 0; transform: scale(0.5); } 65% { opacity: 1; transform: scale(1.1); } 80% { opacity: 0.5; transform: scale(0.9); } }
+@keyframes baselineCount { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 
 /* section entrance */
 section { animation: fadeUp 700ms cubic-bezier(.2,.7,.2,1) both; }
@@ -59,6 +63,7 @@ button:hover { filter: brightness(1.05); }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
   section { animation: none; }
+  .baseline-monitor, .baseline-monitor * { animation: none !important; }
 }
 
 /* animated helpers */

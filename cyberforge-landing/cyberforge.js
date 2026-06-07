@@ -155,6 +155,12 @@ const btnPrimary = {
 
 const NAV = [["Platform", "#platform"], ["Features", "#features"], ["Security", "#security"], ["FAQ", "#faq"]];
 
+// ── Demo video link ─────────────────────────────────────────────────────────
+// The hero "Watch demo" button opens this. After uploading demo/cyberforge-demo.mp4
+// to YouTube, paste the share link here (e.g. "https://youtu.be/XXXXXXXXXXX").
+// Don't point this at the raw video in the repo — GitHub rejects pushes over 100 MB.
+const DEMO_URL = "https://youtu.be/d5GLapNKSKk";
+
 // ───────────────────────────────────────────────────────── header ─────────
 function Header({ os }) {
   const mob = useIsMobile();
@@ -294,17 +300,17 @@ function Hero({ os }) {
           </p>
 
           <div style={{ display: "flex", gap: 12, marginTop: mob ? 26 : 36, flexWrap: "wrap" }}>
-            <button
-              onClick={() => setOpen(true)}
+            <a
+              href={DEMO_URL} target="_blank" rel="noopener noreferrer"
               onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-              style={{ ...btnPrimary, padding: "14px 22px", fontSize: 13, transform: hover ? "translateY(-1px)" : "none", background: hover ? "var(--dusty)" : "var(--orange)" }}
+              style={{ ...btnPrimary, textDecoration: "none", padding: "14px 22px", fontSize: 13, transform: hover ? "translateY(-1px)" : "none", background: hover ? "var(--dusty)" : "var(--orange)" }}
             >
-              <OSIcon os={os} size={15} color="var(--black)" />
-              <span>{isMobile ? "Get the " + meta.label + " app" : "Download for " + meta.label}</span>
-            </button>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--black)" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+              <span>Watch demo</span>
+            </a>
             <button onClick={() => setOpen(true)} style={{ ...btnPrimary, background: "transparent", border: "1px solid var(--line-strong)", color: "var(--dusty)", padding: "14px 22px", fontSize: 13 }}>
-              <span style={{ width: 6, height: 6, borderRadius: 999, background: "var(--sage)" }} />
-              <span>All platforms</span>
+              <OSIcon os={os} size={15} color="var(--dusty)" />
+              <span>{isMobile ? "Get the " + meta.label + " app" : "Download for " + meta.label}</span>
             </button>
           </div>
 
@@ -573,7 +579,7 @@ function IlluFeatures() {
   const ref = useReveal();
   const blocks = [
     { img: ILLU.inspect, eyebrow: "browser intelligence", title: "Every request, inspected.", body: "CyberForge watches the links you open and the requests your apps make, scoring each one in real time. Suspicious URLs are pulled into the sandbox and detonated before anything reaches your browser — no extension store, no cloud round-trip.", points: ["Real-time URL & download scanning", "Sandbox detonation of suspicious links", "Phishing, malware & web-attack models"], flip: false },
-    { img: ILLU.identity, eyebrow: "on-device intelligence", title: "It learns your machine — not the cloud.", body: "The agent maps your device's normal behavior across processes, network, and browsing, then treats drift from that baseline as the signal. The intelligence that protects you runs locally and stays with you.", points: ["48-hour baseline, fully on-device", "Behavioral drift = the trigger", "Your data never leaves unless you sync it"], flip: true },
+    { img: ILLU.identity, eyebrow: "on-device intelligence", title: "It learns your machine — not the cloud.", body: "The agent maps your device's normal behavior across processes, network, and browsing, then treats drift from that baseline as the signal. The intelligence that protects you runs locally and stays with you.", points: ["48-hour baseline, fully on-device", "Behavioral drift = the trigger", "Your data never leaves unless you sync it"], flip: true, monitor: true },
   ];
   return (
     <section id="features" ref={ref} style={{ padding: mob ? "64px 18px" : "96px 28px", borderBottom: "1px solid var(--line)" }}>
@@ -599,6 +605,7 @@ function IlluFeatures() {
                   </li>
                 ))}
               </ul>
+              {b.monitor && <BaselineMonitor mob={mob} />}
             </div>
           </div>
         ))}
@@ -616,6 +623,60 @@ function IlluFrame({ img, order }) {
       <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: "absolute", top: 14, left: 14, color: "var(--orange)" }}><path d="M0 0 H10 M0 0 V10" stroke="currentColor" strokeWidth="1.2" /></svg>
       <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: "absolute", bottom: 14, right: 14, color: "var(--orange)" }}><path d="M22 22 H12 M22 22 V12" stroke="currentColor" strokeWidth="1.2" /></svg>
       <img src={img} alt="" style={{ position: "relative", width: "76%", height: "76%", objectFit: "contain", transform: hov ? "scale(1.04)" : "scale(1)", transition: "transform 700ms cubic-bezier(.2,.7,.2,1)", filter: "drop-shadow(0 18px 40px rgba(0,0,0,0.5))" }} />
+    </div>
+  );
+}
+
+// Animated "live baseline" panel — fills the on-device block's text column so the
+// tall square illustration no longer leaves a dead vertical gap beside short copy.
+function BaselineMonitor({ mob }) {
+  // one seamless wave tile (0..120 wide, baseline at y=24); two copies scroll for an endless EKG
+  const wave = "M0 24 C 10 9,20 9,30 24 S 50 39,60 24 S 80 9,90 24 S 110 39,120 24";
+  const lanes = [
+    { k: "processes", v: 86 },
+    { k: "network", v: 64 },
+    { k: "browsing", v: 73 },
+  ];
+  return (
+    <div className="reveal reveal-d2 float-y-sm baseline-monitor" style={{ marginTop: mob ? 28 : 34, border: "1px solid var(--line)", background: "linear-gradient(180deg, var(--raisin-2), var(--black))", padding: mob ? 16 : 20, position: "relative", overflow: "hidden", maxWidth: 520 }}>
+      <div aria-hidden style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(to right, var(--line) 1px, transparent 1px)", backgroundSize: "30px 30px", opacity: 0.4, pointerEvents: "none" }} />
+      <svg width="18" height="18" viewBox="0 0 22 22" aria-hidden style={{ position: "absolute", top: 12, right: 12, color: "var(--line-strong)" }}><path d="M22 0 H12 M22 0 V10" stroke="currentColor" strokeWidth="1.2" /></svg>
+      {/* header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14, position: "relative" }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--sage)", boxShadow: "0 0 9px var(--sage)", animation: "glowPulse 1.8s ease-in-out infinite", flex: "none" }} />
+        <span className="mono" style={{ fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase", opacity: 0.72 }}>learning baseline</span>
+        <span className="mono" style={{ marginLeft: "auto", fontSize: 10.5, color: "var(--sage)", animation: "baselineCount 2.4s ease-in-out infinite" }}>on-device</span>
+      </div>
+      {/* scrolling waveform window */}
+      <div style={{ position: "relative", height: mob ? 58 : 74, overflow: "hidden", borderTop: "1px dashed var(--line-strong)", borderBottom: "1px dashed var(--line-strong)" }}>
+        <div style={{ position: "absolute", left: 0, right: 0, top: "50%", height: 1, background: "var(--line)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", width: "200%", animation: "waveScroll 6s linear infinite" }}>
+          {[0, 1].map(i => (
+            <svg key={i} viewBox="0 0 120 48" preserveAspectRatio="none" style={{ width: "50%", height: "100%", display: "block" }}>
+              <path d={wave} fill="none" stroke="var(--orange)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity="0.9" />
+            </svg>
+          ))}
+        </div>
+        {/* a drift spike the model flags */}
+        <div style={{ position: "absolute", top: "12%", left: "70%", animation: "driftBlip 7s ease-in-out infinite" }}>
+          <span style={{ display: "block", width: 9, height: 9, borderRadius: "50%", background: "var(--orange)", boxShadow: "0 0 11px var(--orange)" }} />
+        </div>
+        {/* sweeping scan line */}
+        <div style={{ position: "absolute", top: 0, bottom: 0, width: 1, background: "linear-gradient(var(--sage), transparent)", animation: "scanX 4.5s linear infinite" }} />
+      </div>
+      {/* per-signal learning meters */}
+      <div style={{ display: "grid", gap: 11, marginTop: 16, position: "relative" }}>
+        {lanes.map((l, i) => (
+          <div key={l.k} style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <span className="mono" style={{ fontSize: 10, width: 74, opacity: 0.66, flex: "none" }}>{l.k}</span>
+            <span style={{ flex: 1, height: 4, background: "var(--line)", position: "relative", overflow: "hidden" }}>
+              <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: l.v + "%", background: i % 2 ? "var(--sage)" : "var(--orange)", opacity: 0.85 }} />
+              <span style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "38%", background: "linear-gradient(90deg, transparent, rgba(239,233,221,0.5), transparent)", animation: `shimmerBar ${3 + i * 0.7}s linear infinite` }} />
+            </span>
+            <span className="mono" style={{ fontSize: 10, color: "var(--sage)", flex: "none" }}>mapped</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

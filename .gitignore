@@ -220,3 +220,6 @@ thesis/
 # Ignore all Markdown files EXCEPT the root README (docs/notes kept locally)
 *.md
 !/README.md
+
+# Demo videos — host on YouTube / GitHub Releases, never commit (GitHub rejects pushes >100MB)
+demo/*.mp4

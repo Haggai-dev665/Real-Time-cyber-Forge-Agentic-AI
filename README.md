@@ -8,7 +8,9 @@ CyberForge watches the websites your browsers visit in real time, detects phishi
 malicious pages with machine learning **and** an autonomous AI agent, and lets you block,
 protect or investigate them in one click — all while your data stays on your machine.
 
-![Threat Overview](screenshots/threat-overview.png)
+![CyberForge — Threat Overview](images/after/threatoverview_after.png)
+
+🎥 **[Watch the demo walkthrough »](https://youtu.be/d5GLapNKSKk)**
 
 </div>
 
@@ -34,26 +36,20 @@ protect or investigate them in one click — all while your data stays on your m
 
 ## 🖼️ Screenshots
 
-> Drop your screenshots into [`screenshots/`](screenshots/) using the filenames below and they'll
-> render here. (See [Adding screenshots](#-adding-screenshots).)
-
 ### Threat Globe — live worldwide attacks (OTX)
-![Threat Globe](screenshots/threat-globe.png)
+![Threat Globe](images/after/threatglobe_after.png)
 
 ### Agent Core — autonomous reasoning + terminal
-![Agent Core](screenshots/agent-core.png)
+![Agent Core](images/after/agentcore_after.png)
 
-### AI Assistant — DeepSeek, grounded in your memory
-![AI Assistant](screenshots/ai-assistant.png)
+### Model Inference — live ML detection engines
+![Model Inference](images/after/modelinterface_after.png)
 
-### Reports — AI‑written, LaTeX‑styled PDF
-![Reports](screenshots/reports.png)
+### Signal Pipeline — real‑time scan signal flow
+![Signal Pipeline](images/after/signalpipeline_after.png)
 
-### Security Functions — real block / protect / allow
-![Security Functions](screenshots/security-functions.png)
-
-### Real‑time threat alert (pops over the browser, even minimized)
-![Threat Alert](screenshots/threat-alert.png)
+### Sign‑in — secure, local‑first authentication
+![Authentication](images/after/auth_after.png)
 
 ---
 
@@ -153,14 +149,12 @@ docs/               Documentation
 
 ---
 
-## 📸 Adding screenshots
+## 📸 Screenshots & assets
 
-The README expects images in **`screenshots/`** with these names:
-`threat-overview.png`, `threat-globe.png`, `agent-core.png`, `ai-assistant.png`,
-`reports.png`, `security-functions.png`, `threat-alert.png`.
-
-Copy your capture‑folder images into `screenshots/` using those names (or open an issue / tell
-the maintainer the folder path and they'll be wired in).
+Captures live in [`images/after/`](images/after/). The **before → after** comparison gallery —
+showing how each screen went from a mock‑data shell to live, on‑device functionality during the
+Finish‑Up‑A‑Thon — is in the dev.to writeup [`submission.md`](submission.md), pairing
+[`images/before/`](images/before/) with [`images/after/`](images/after/).
 
 ---
 

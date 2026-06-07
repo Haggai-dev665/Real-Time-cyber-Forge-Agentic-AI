@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Threat Globe</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .globe-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;height:calc(100% - 56px)}
@@ -398,6 +396,13 @@ const OTX_API_KEY = 'd32e3deb37526ef9095320ed7976388981f9c5052b6e85f5c5b5adab9a8
       note(/no tauri/i.test(m) ? 'Open this inside the CyberForge desktop app (not a browser).' : ('OTX call failed: '+m));
     });
   }
+  // Instant paint from the loading-screen prewarm (otx_fetch + geolocation is
+  // slow) so the globe already has pulses when you navigate here; loadOTX then
+  // refreshes live.
+  try{ var _pg=JSON.parse(localStorage.getItem('cf_pre_globe')||'null');
+    if(_pg&&_pg.payload&&_pg.payload.success&&Array.isArray(_pg.payload.results)&&_pg.payload.results.length&&(Date.now()-_pg.ts)<1800000){
+      ingest(_pg.payload.results, _pg.payload.ip_geo||{});
+    } }catch(e){}
   loadOTX(); setInterval(loadOTX, 180000);
   var rb=document.querySelector('.btn-refresh'); if(rb) rb.addEventListener('click', loadOTX);
 })();

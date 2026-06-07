@@ -212,3 +212,6 @@ __pycache__/
 
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
+
+# Ignore all Markdown files (docs/notes) — kept locally, not versioned
+*.md

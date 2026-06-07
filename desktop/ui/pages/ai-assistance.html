@@ -4,9 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — AI Assistance</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/report-fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .ai-grid{display:grid;grid-template-columns:1fr 320px;gap:14px;height:calc(100% - 56px);min-height:0}
@@ -163,7 +162,7 @@
           <div class="head-right">
             <span class="live-ind"><span class="dot"></span><span id="liveState">Online</span></span>
             <span id="modelBadge">DeepSeek</span>
-            <button class="btn-refresh" id="exportPdfBtn" title="Generate a PDF report of this conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>PDF Report</button>
+            <button class="btn-refresh" id="exportPdfBtn" title="Generate a detailed PDF security report from your findings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>PDF Report</button>
             <button class="btn-refresh" id="newChatBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>New Chat</button>
           </div>
         </div>
@@ -426,31 +425,30 @@ const suggestEl=document.getElementById('suggest');
 suggestEl.innerHTML=suggestions.map(s=>'<div class="schip" data-q="'+s[0].replace(/"/g,'&quot;')+'">'+s[1]+s[0]+'</div>').join('');
 suggestEl.querySelectorAll('.schip').forEach(c=>c.addEventListener('click',()=>ask(c.dataset.q)));
 
-/* ---- Generate a branded PDF report of the CURRENT conversation ---- */
-function ctxVal(id){ var el=document.getElementById(id); return el?el.textContent.trim():'—'; }
-function exportConversationPDF(){
+/* ---- Generate a branded PDF SECURITY REPORT from the user's real findings ----
+   (not the chat transcript): the shared CF.findingsReport engine gathers scans,
+   browsing history, threat-intel, actions and risks, and DeepSeek explains the
+   findings in depth. Rendered by CFReport as a LaTeX-style document. */
+function generateSecurityReport(){
   if(!window.CFReport){ if(CF.toast)CF.toast('Report module not loaded','error'); return; }
-  var c=curChat(); var msgs=(c&&c.messages)||[];
-  var qa=[]; var pendingQ=null;
-  msgs.forEach(function(m){ if(m.role==='user'){ if(pendingQ!=null) qa.push([pendingQ,'(no answer)']); pendingQ=m.text; }
-    else if(m.role==='ai'){ qa.push([pendingQ!=null?pendingQ:'(context)', m.text]); pendingQ=null; } });
-  if(pendingQ!=null) qa.push([pendingQ,'(awaiting answer)']);
-  if(!qa.length){ if(CF.toast)CF.toast('Ask the assistant something first','warn'); return; }
-  var model=ctxVal('ctxModel');
-  var intro='This report captures an advisory session with the CyberForge AI Assistant, grounded in the system’s local security memory (threat-intel, scans, browser intelligence). The questions and answers below are reproduced verbatim and are intended to support — not replace — the judgement of a qualified analyst.';
-  var disclaimer='AI-generated guidance may contain inaccuracies and should be validated before action. Treat indicators and remediation steps as advisory. The session is stored locally for the signed-in user only.';
-  CFReport.export({
-    title:'AI Assistant Advisory Report', subtitle:'Conversational threat-analysis session',
-    id:'AIR-'+String(Date.now()).slice(-6), classification:'CONFIDENTIAL · TLP:AMBER',
-    sections:[
-      {h:'Overview',type:'p',body:intro},
-      {h:'Session Context',type:'kv',body:[['Assistant model',model],['Backend status',ctxVal('ctxBackend')],['Active threats',ctxVal('ctxThreats')],['Browsers detected',ctxVal('ctxBrowsers')],['Questions in session',String(qa.length)]]},
-      {h:'Advisory Transcript',type:'qa',body:qa},
-      {h:'Important Notice',type:'p',body:disclaimer}
-    ]
-  }).then(function(){ if(CF.toast)CF.toast('Report ready — choose “Save as PDF” in the print dialog','ok'); });
+  if(!CF.findingsReport){ if(CF.toast)CF.toast('Report engine not loaded — restart the app','error'); return; }
+  var btn=document.getElementById('exportPdfBtn'); var orig=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.style.opacity='.6'; }
+  if(CF.toast) CF.toast('Generating your security report — reading findings + writing with DeepSeek…','ok');
+  CF.findingsReport({ rangeSec: 30*86400, label:'the last 30 days', maxTokens: 2200 }).then(function(res){
+    return CFReport.export({
+      title:'CyberForge Security Report',
+      subtitle:'Findings, risk assessment & recommendations · last 30 days',
+      id:'RPT-'+String(Date.now()).slice(-6), classification:'CONFIDENTIAL · TLP:AMBER',
+      sections: res.sections
+    }).then(function(){
+      if(CF.remember && res.data){ var d=res.data; CF.remember('Security report ('+res.label+'): '+d.histWin.length+' visits, '+d.scans.length+' scans, '+d.risks.length+' flagged risks, '+d.actions.length+' actions.',{kind:'procedural',category:'report',risk:(res.risk==='crit'?80:(res.risk==='high'?60:30))}); }
+      if(CF.toast)CF.toast('Report ready — choose “Save as PDF” in the print dialog','ok');
+    });
+  }).catch(function(){ if(CF.toast)CF.toast('Could not generate the report — try again','error'); })
+  .then(function(){ if(btn){ btn.disabled=false; btn.style.opacity=''; btn.innerHTML=orig; } });
 }
-var epb=document.getElementById('exportPdfBtn'); if(epb) epb.addEventListener('click',exportConversationPDF);
+var epb=document.getElementById('exportPdfBtn'); if(epb) epb.addEventListener('click',generateSecurityReport);
 
 /* ---- Connect DeepSeek: paste the HF token once (stored in the OS keychain) ---- */
 function showKeyBar(){

@@ -4,9 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Reports</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/report-fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .rp-grid{display:grid;grid-template-columns:330px 1fr;gap:14px;height:calc(100% - 56px);min-height:0}
@@ -301,106 +300,9 @@ function openRangeModal(){
 function closeRangeModal(){ var ov=document.getElementById('rgModal'); if(ov) ov.remove(); }
 genBtn.addEventListener('click',openRangeModal);
 
-/* ---- window-data helpers ---- */
-function hostOf(u){ try{ var h=(String(u).split('://')[1]||String(u)).split('/')[0]; return h.split('?')[0].replace(/^www\./,'').toLowerCase(); }catch(e){ return ''; } }
-function oneLine(t,n){ t=String(t==null?'':t).replace(/\s+/g,' ').trim(); n=n||160; return t.length>n?(t.slice(0,n-1)+'…'):t; }
+/* the period report is built by the shared CF.findingsReport engine
+   (memories + history + live threats → DeepSeek explains the findings in depth) */
 function setDocStatus(msg,sub){ var b=document.getElementById('docBody'); if(b) b.innerHTML='<div class="dwait"><div class="dwspin"></div><div class="dwt">'+esc(msg)+'</div>'+(sub?('<div class="dws">'+esc(sub)+'</div>'):'')+'</div>'; }
-
-/* gather everything recorded in the selected window (memories + history + live threats) */
-async function gatherWindowData(rangeSec){
-  const nowS=Math.floor(Date.now()/1000), cutoff=nowS-rangeSec;
-  let mems=[]; try{ const r=await CF.invoke('memory_list',{limit:500}); mems=(r&&r.data&&r.data.memories)||[]; }catch(e){}
-  const inWin=mems.filter(function(m){ return m.ts!=null && +m.ts>=cutoff; });
-  const isMal=function(t){ return /phishing|malware|malicious|ransomware|botnet|trojan|c2|spyware|dga|exploit|suspicious/i.test(t||''); };
-  const scans=inWin.filter(function(m){ return /^scanned/i.test(m.text||'') || (m.category||'')==='scan' || /verdict|risk score|classif/i.test(m.text||''); });
-  const intel=inWin.filter(function(m){ return m.kind==='semantic' || /otx|pulse|threat intel|indicator|alienvault/i.test((m.category||'')+' '+(m.text||'')); });
-  const actions=inWin.filter(function(m){ return /^action-/.test(m.category||'') || /\b(blocked|protected|allowed|marked trusted|enabled protected)\b/i.test(m.text||''); });
-  const risks=inWin.filter(function(m){ return (m.risk!=null && +m.risk>=50) || isMal(m.text); });
-  let hist=[]; try{ const r=await CF.invoke('get_collected_history'); hist=(r&&r.data&&r.data.history)||[]; }catch(e){}
-  const histWin=hist.filter(function(h){ return h.lastVisit!=null && +h.lastVisit>=cutoff; });
-  const hostCount={}; histWin.forEach(function(h){ var host=hostOf(h.url); if(host) hostCount[host]=(hostCount[host]||0)+1; });
-  const topHosts=Object.keys(hostCount).sort(function(a,b){ return hostCount[b]-hostCount[a]; }).slice(0,18);
-  let threats={}; try{ const r=await CF.invoke('get_threats'); threats=(r&&r.data)||{}; }catch(e){}
-  return {nowS,cutoff,inWin,scans,intel,actions,risks,histWin,hostCount,topHosts,threats,memsTotal:mems.length,histTotal:hist.length};
-}
-
-/* compose the DeepSeek prompt from the gathered window data */
-function buildReportPrompt(d, range){
-  const since=new Date(d.cutoff*1000).toLocaleString(), until=new Date().toLocaleString();
-  const L=[];
-  L.push('PERIOD: '+range.label+'  ('+since+'  →  '+until+')'); L.push('');
-  L.push('BROWSING ACTIVITY: '+d.histWin.length+' page visit(s) across '+Object.keys(d.hostCount).length+' unique host(s).');
-  if(d.topHosts.length) L.push('Most-visited hosts: '+d.topHosts.map(function(h){return h+' ('+d.hostCount[h]+')';}).join(', ')+'.');
-  L.push('');
-  L.push('SCANS PERFORMED ('+d.scans.length+'):');
-  L.push.apply(L, d.scans.length ? d.scans.slice(0,45).map(function(m){ return ' - '+oneLine(m.text)+(m.risk!=null?(' [risk '+m.risk+']'):''); }) : [' (none recorded in this period)']);
-  L.push('');
-  L.push('FLAGGED RISKS ('+d.risks.length+'):');
-  L.push.apply(L, d.risks.length ? d.risks.slice(0,30).map(function(m){ return ' - '+oneLine(m.text)+(m.risk!=null?(' [risk '+m.risk+']'):'')+(m.url?(' <'+m.url+'>'):''); }) : [' (no high-risk items recorded)']);
-  L.push('');
-  L.push('THREAT-INTELLIGENCE ('+d.intel.length+'):');
-  L.push.apply(L, d.intel.length ? d.intel.slice(0,25).map(function(m){ return ' - '+oneLine(m.text); }) : [' (none recorded)']);
-  L.push('');
-  L.push('ACTIONS TAKEN ('+d.actions.length+'):');
-  L.push.apply(L, d.actions.length ? d.actions.slice(0,30).map(function(m){ return ' - '+oneLine(m.text); }) : [' (no block/protect/allow actions recorded)']);
-  L.push('');
-  const t=d.threats||{};
-  L.push('CURRENT LIVE THREAT SNAPSHOT: total '+(t.total||0)+', critical '+(t.critical||0)+', high '+(t.high||0)+', medium '+(t.medium||0)+', low '+(t.low||0)+'.');
-  const ctx=L.join('\n');
-  return 'You are CyberForge, a senior AI security analyst. Using ONLY the CyberForge telemetry below — the user\'s own local scans, browsing history, threat intelligence and response actions for the selected period — write a DETAILED, LONG and professional security report for the period: '+range.label+'.\n\n'+
-    'Format the report in markdown using these exact "## " section headings, in order:\n'+
-    '## Executive Summary\n## Activity Overview\n## Scans & Detections\n## Key Findings & Risks\n## Actions Taken\n## Threat Intelligence\n## Risk Assessment\n## Recommendations\n\n'+
-    'Guidance:\n'+
-    '- Executive Summary: 2-3 full paragraphs on the overall posture for the period.\n'+
-    '- Be specific and cite the real data: name hosts, verdicts, risk scores and counts from the telemetry.\n'+
-    '- Key Findings & Risks: rank items by severity and explain why each matters; use bullet points.\n'+
-    '- Recommendations: concrete, prioritised, actionable next steps as a numbered list.\n'+
-    '- If a section has no relevant data, say so honestly and advise accordingly. NEVER invent data, hosts or numbers.\n'+
-    '- Write in clear professional prose. Aim for depth and length.\n\n'+
-    '=== CYBERFORGE TELEMETRY ('+range.label+') ===\n'+ctx;
-}
-
-function metricsSection(d){
-  return {h:'Period at a Glance', type:'stats', body:[
-    [String(d.histWin.length),'Page Visits','#0a72b8'],
-    [String(d.scans.length),'Scans','#b87800'],
-    [String(d.risks.length),'Flagged Risks','#c2283b'],
-    [String(d.actions.length),'Actions','#0a8a55']
-  ]};
-}
-function riskClass(d){ var t=d.threats||{}; if((t.critical||0)>0||d.risks.some(function(m){return m.risk!=null&&+m.risk>=80;})) return 'crit'; if((t.high||0)>0||d.risks.length) return 'high'; return 'info'; }
-
-/* honest data-driven fallback when DeepSeek isn't connected */
-function deterministicSections(d, range){
-  var topList=d.topHosts.slice(0,10).map(function(h){return '- '+h+' — '+d.hostCount[h]+' visit'+(d.hostCount[h]===1?'':'s');}).join('\n');
-  var riskList=d.risks.slice(0,10).map(function(m){return '- '+oneLine(m.text,140)+(m.risk!=null?(' (risk '+m.risk+')'):'');}).join('\n');
-  var actList=d.actions.slice(0,10).map(function(m){return '- '+oneLine(m.text,140);}).join('\n');
-  var rc=riskClass(d); var posture=rc==='crit'?'ELEVATED':(rc==='high'?'GUARDED':'NOMINAL');
-  return [
-    metricsSection(d),
-    {h:'Executive Summary',type:'md',body:'For the period **'+range.label+'**, CyberForge observed **'+d.histWin.length+'** page visit(s) across **'+Object.keys(d.hostCount).length+'** unique host(s), performed **'+d.scans.length+'** scan(s), recorded **'+d.risks.length+'** flagged risk(s) and **'+d.actions.length+'** response action(s). The overall security posture for this window is assessed as **'+posture+'**.\n\nThis is a data-driven summary generated locally. Connect a Hugging Face token in Settings → AI & Models to have DeepSeek write the full narrative analysis.'},
-    {h:'Activity Overview',type:'md',body: (topList? ('Most-visited hosts in this period:\n'+topList) : 'No browsing history was recorded in this period.')},
-    {h:'Key Findings & Risks',type:'md',body: (riskList||'No high-risk items were recorded in this period. No findings require triage.')},
-    {h:'Actions Taken',type:'md',body: (actList||'No block, protect or allow actions were taken in this period.')},
-    {h:'Recommendations',type:'md',body: (d.risks.length? '1. Review each flagged risk above and confirm whether the indicator is present in your environment.\n2. Block confirmed malicious hosts so future visits are intercepted automatically.\n3. Re-run this report after remediation to confirm the items cleared.' : '1. No immediate action is required for this period.\n2. Maintain continuous monitoring and regenerate this report at the start of each session.')}
-  ];
-}
-
-/* parse DeepSeek markdown into doc sections (one per "## heading") */
-function parseReportSections(md){
-  md=String(md||'').replace(/\r/g,'').trim();
-  var lines=md.split('\n'), secs=[], cur=null;
-  function clean(h){ return h.replace(/\*\*/g,'').replace(/[:#]+\s*$/,'').replace(/^#+\s*/,'').trim(); }
-  for(var i=0;i<lines.length;i++){ var ln=lines[i];
-    var h=ln.match(/^#{1,3}\s+(.+?)\s*$/);
-    if(h){ if(cur) secs.push(cur); cur={h:clean(h[1]), type:'md', body:''}; }
-    else { if(!cur) cur={h:'Report', type:'md', body:''}; cur.body+=ln+'\n'; }
-  }
-  if(cur) secs.push(cur);
-  secs.forEach(function(s){ s.body=s.body.trim(); });
-  secs=secs.filter(function(s){ return s.body || s.h; });
-  return secs.length?secs:[{h:'Report',type:'md',body:md}];
-}
 
 async function buildAiReport(range){
   genBtn.classList.add('busy');
@@ -409,23 +311,16 @@ async function buildAiReport(range){
   setDocHeader();
   document.getElementById('doc').classList.add('gen');
   setDocStatus('Gathering '+range.label.toLowerCase()+' telemetry…','Reading your local scans, browsing history, threat-intel and actions for this period.');
-  const data=await gatherWindowData(range.sec);
-  setDocStatus('CyberForge AI is writing your report…','Analysing '+data.histWin.length+' visits, '+data.scans.length+' scans and '+data.risks.length+' flagged risks for '+range.label.toLowerCase()+'.');
-  let aiText='', aiOk=false;
-  try{
-    const body=await CF.ml.chat(buildReportPrompt(data, range), 1800);
-    const dd=(body&&body.data)||body||{};
-    aiText=dd.response||dd.answer||dd.text||dd.output||body.response||body.message||'';
-    aiOk=!!(aiText && String(aiText).trim()) && (body&&body.success!==false);
-  }catch(e){}
-  if(aiOk){ sections=parseReportSections(aiText); sections.unshift(metricsSection(data)); }
-  else{ sections=deterministicSections(data, range); if(CF.toast) CF.toast('DeepSeek not connected — built a data report. Add your HF token in Settings → AI & Models.','warn'); }
+  const res=await CF.findingsReport({ rangeSec:range.sec, label:range.label, maxTokens:2200,
+    onData:function(d){ setDocStatus('CyberForge AI is writing your report…','Analysing '+d.histWin.length+' visits, '+d.scans.length+' scans and '+d.risks.length+' flagged risks for '+range.label.toLowerCase()+'.'); } });
+  const data=res.data; sections=res.sections;
+  if(!res.ok && CF.toast) CF.toast('DeepSeek not connected — built a data report. Add your HF token in Settings → AI & Models.','warn');
   renderDoc(true);
-  reports.unshift([currentReport.title+' — '+now.toLocaleDateString(undefined,{month:'short',day:'numeric'}), currentReport.id, riskClass(data), 'ready', 'just now']);
+  reports.unshift([currentReport.title+' — '+now.toLocaleDateString(undefined,{month:'short',day:'numeric'}), currentReport.id, res.risk, 'ready', 'just now']);
   renderList(0); reportsKpis();
   if(CF.remember){
     CF.remember('Security report '+currentReport.id+' ('+range.label+', '+currentReport.date+'): '+data.histWin.length+' visits, '+data.scans.length+' scans, '+data.risks.length+' flagged risks, '+data.actions.length+' actions over the period.',
-      {kind:'procedural', category:'report', risk:(riskClass(data)==='crit'?80:(riskClass(data)==='high'?60:30))});
+      {kind:'procedural', category:'report', risk:(res.risk==='crit'?80:(res.risk==='high'?60:30))});
   }
   setTimeout(function(){ genBtn.classList.remove('busy'); },500);
   if(CF.toast) CF.toast('Report ready — Export PDF to save','ok');

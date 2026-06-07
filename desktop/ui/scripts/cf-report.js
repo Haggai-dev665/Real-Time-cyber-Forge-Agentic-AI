@@ -103,22 +103,24 @@
     var who = name || email || 'Authenticated user';
     var preparedFor = name && email ? (esc(name) + ' &lt;' + esc(email) + '&gt;') : esc(who);
     var now = new Date();
+    // A clean letterhead (logo + classification + report id/date) above a
+    // centred LaTeX-style title block (\maketitle: title, subtitle, by-line).
     return '' +
-      '<div class="pr-head">' +
+      '<div class="pr-letterhead">' +
         '<img class="pr-logo" src="' + LOGO + '" alt="CyberForge" />' +
-        '<div class="pr-head-c">' +
+        '<div class="pr-lh-meta">' +
           '<div class="pr-class">' + esc(opts.classification || 'CONFIDENTIAL · TLP:AMBER') + '</div>' +
-          '<h1>' + esc(opts.title || 'CyberForge Report') + '</h1>' +
-          '<div class="pr-sub">' + esc(opts.subtitle || 'CyberForge — AI Security Console') + '</div>' +
-        '</div>' +
-        '<div class="pr-id">' +
-          '<div><span>Report</span>' + esc(opts.id || ('RPT-' + String(Date.now()).slice(-6))) + '</div>' +
-          '<div><span>Date</span>' + esc(now.toISOString().slice(0, 10)) + '</div>' +
+          '<div class="pr-lh-id">' + esc(opts.id || ('RPT-' + String(Date.now()).slice(-6))) + ' &middot; ' + esc(now.toISOString().slice(0, 10)) + '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="pr-who">' +
-        '<div><span>Prepared for</span>' + preparedFor + '</div>' +
-        '<div><span>Generated</span>' + esc(now.toLocaleString()) + '</div>' +
+      '<div class="pr-titleblock">' +
+        '<h1>' + esc(opts.title || 'CyberForge Report') + '</h1>' +
+        (opts.subtitle ? ('<div class="pr-sub">' + esc(opts.subtitle) + '</div>') : '') +
+        '<div class="pr-byline">' +
+          '<span>Prepared by <b>CyberForge &mdash; AI Security Console</b></span>' +
+          '<span>Prepared for <b>' + preparedFor + '</b></span>' +
+          '<span>' + esc(now.toLocaleString()) + '</span>' +
+        '</div>' +
       '</div>';
   }
 
@@ -129,8 +131,8 @@
       headerHtml(opts, user) +
       secs +
       '<div class="pr-foot">' +
-        'CyberForge — AI Security Console · ' + esc(opts.classification || 'CONFIDENTIAL · TLP:AMBER') +
-        ' · This report was generated from live system data and is intended for the named recipient only.' +
+        'CyberForge &mdash; AI Security Console &middot; ' + esc(opts.classification || 'CONFIDENTIAL · TLP:AMBER') +
+        ' &middot; Generated from live on-device data; intended for the named recipient only.' +
       '</div>';
   }
 
@@ -139,66 +141,69 @@
     var css = [
       '#' + ROOT_ID + '{display:none}',
       '@media print{',
-      '  @page{margin:16mm 15mm}',
+      '  @page{margin:20mm 18mm}',
       '  html,body{height:auto !important;background:#fff !important;overflow:visible !important}',
       // hide every app surface
       '  .stage,.window,.agent-fab,.cf-agent-frame,.cf-fab,#topbar,.topbar,.statusbar,.sidebar,.main-head,.kpi-row,.rp-grid,.ai-grid{display:none !important}',
       '  body>*:not(#' + ROOT_ID + '){display:none !important}',
-      '  #' + ROOT_ID + '{display:block !important;position:relative;color:#16181d;',
-      '    font-family:\'Space Grotesk\',system-ui,Arial,sans-serif;line-height:1.62;font-size:12px}',
+      // LaTeX-style serif document (Computer/Latin Modern if present, else Georgia/Times)
+      '  #' + ROOT_ID + '{display:block !important;position:relative;color:#1a1a1a;',
+      '    font-family:"Latin Modern Roman","CMU Serif",Georgia,"Times New Roman",Times,serif;',
+      '    font-size:11.2pt;line-height:1.55;counter-reset:cfsec}',
       '  #' + ROOT_ID + ' *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}',
-      // watermark — fixed so it repeats on every printed page
-      '  #' + ROOT_ID + ' .pr-watermark{position:fixed;top:50%;left:50%;width:62%;',
-      '    transform:translate(-50%,-50%) rotate(-18deg);opacity:0.05;z-index:0;pointer-events:none}',
-      '  #' + ROOT_ID + ' .pr-head,#' + ROOT_ID + ' .pr-who,#' + ROOT_ID + ' .pr-sec,#' + ROOT_ID + ' .pr-foot{position:relative;z-index:1}',
-      // header
-      '  #' + ROOT_ID + ' .pr-head{display:flex;align-items:flex-start;gap:16px;border-bottom:2px solid #1F1A1B;padding-bottom:12px}',
-      '  #' + ROOT_ID + ' .pr-logo{width:168px;height:auto;flex:none}',
-      '  #' + ROOT_ID + ' .pr-head-c{flex:1;padding-top:4px}',
-      '  #' + ROOT_ID + ' .pr-class{font-family:\'JetBrains Mono\',monospace;font-size:8.5px;letter-spacing:1.5px;color:#b87800;font-weight:700}',
-      '  #' + ROOT_ID + ' h1{font-size:22px;font-weight:700;margin:3px 0 2px;color:#1F1A1B}',
-      '  #' + ROOT_ID + ' .pr-sub{font-size:11px;color:#666}',
-      '  #' + ROOT_ID + ' .pr-id{text-align:right;font-family:\'JetBrains Mono\',monospace;font-size:10px;color:#333}',
-      '  #' + ROOT_ID + ' .pr-id span{display:block;font-size:7.5px;letter-spacing:1px;color:#999;text-transform:uppercase}',
-      '  #' + ROOT_ID + ' .pr-id div{margin-bottom:6px}',
-      // "prepared for" band
-      '  #' + ROOT_ID + ' .pr-who{display:flex;justify-content:space-between;gap:16px;margin:10px 0 4px;',
-      '    padding:8px 12px;background:#faf6ee;border:1px solid #ecdfc7;border-radius:6px;font-size:10.5px;color:#4a4030}',
-      '  #' + ROOT_ID + ' .pr-who span{display:block;font-size:7.5px;letter-spacing:1px;color:#a08a5e;text-transform:uppercase;font-family:\'JetBrains Mono\',monospace}',
-      // sections
-      '  #' + ROOT_ID + ' .pr-sec{margin-top:18px;break-inside:avoid}',
-      '  #' + ROOT_ID + ' h2{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:#9a6a00;',
-      '    border-bottom:1px solid #e3d9c5;padding-bottom:4px;margin:0 0 9px;font-family:\'JetBrains Mono\',monospace}',
-      '  #' + ROOT_ID + ' p{font-size:12px;color:#2c2c2c;margin:0 0 9px;text-align:justify}',
-      '  #' + ROOT_ID + ' .pr-metrics{width:100%;border-collapse:collapse;margin:4px 0 6px}',
-      '  #' + ROOT_ID + ' .pr-metrics td{border:1px solid #d9d2c4;padding:10px;text-align:center;font-family:\'JetBrains Mono\',monospace}',
-      '  #' + ROOT_ID + ' .pm-v{font-size:19px;font-weight:700;display:block;color:#1F1A1B}',
-      '  #' + ROOT_ID + ' .pm-l{font-size:7.5px;letter-spacing:1px;color:#888;text-transform:uppercase}',
-      '  #' + ROOT_ID + ' .pr-find{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid #eee;break-inside:avoid}',
-      '  #' + ROOT_ID + ' .pf-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}',
+      // watermark — faint logo mark, fixed so it repeats on every printed page
+      '  #' + ROOT_ID + ' .pr-watermark{position:fixed;top:50%;left:50%;width:56%;',
+      '    transform:translate(-50%,-50%) rotate(-20deg);opacity:0.06;z-index:0;pointer-events:none}',
+      '  #' + ROOT_ID + ' .pr-letterhead,#' + ROOT_ID + ' .pr-titleblock,#' + ROOT_ID + ' .pr-sec,#' + ROOT_ID + ' .pr-foot{position:relative;z-index:1}',
+      // organised letterhead
+      '  #' + ROOT_ID + ' .pr-letterhead{display:flex;align-items:center;gap:14px;border-bottom:1.5pt solid #1a1a1a;padding-bottom:9px}',
+      '  #' + ROOT_ID + ' .pr-logo{height:30px;width:auto;flex:none}',
+      '  #' + ROOT_ID + ' .pr-lh-meta{margin-left:auto;text-align:right}',
+      '  #' + ROOT_ID + ' .pr-class{font-size:8pt;letter-spacing:1.2px;color:#7a1f2b;font-weight:700;text-transform:uppercase}',
+      '  #' + ROOT_ID + ' .pr-lh-id{font-size:9pt;color:#555;margin-top:3px}',
+      // LaTeX \\maketitle title block
+      '  #' + ROOT_ID + ' .pr-titleblock{text-align:center;margin:24px 0 20px}',
+      '  #' + ROOT_ID + ' .pr-titleblock h1{font-size:23pt;font-weight:700;line-height:1.15;margin:0 0 5px}',
+      '  #' + ROOT_ID + ' .pr-sub{font-style:italic;font-size:12pt;color:#444;margin-bottom:14px}',
+      '  #' + ROOT_ID + ' .pr-byline{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;font-size:9.5pt;color:#555;',
+      '    border-top:.5pt solid #bbb;border-bottom:.5pt solid #bbb;padding:6px 0}',
+      '  #' + ROOT_ID + ' .pr-byline b{color:#1a1a1a;font-weight:700}',
+      // numbered sections (\\section)
+      '  #' + ROOT_ID + ' .pr-sec{margin-top:15px;break-inside:avoid}',
+      '  #' + ROOT_ID + ' h2{counter-increment:cfsec;font-size:13pt;font-weight:700;margin:0 0 7px;padding-bottom:2px;border-bottom:.5pt solid #ccc}',
+      '  #' + ROOT_ID + ' h2::before{content:counter(cfsec) "\\2003";color:#7a1f2b}',
+      // body text — justified, with LaTeX paragraph indents (not the first)
+      '  #' + ROOT_ID + ' p{font-size:11.2pt;color:#222;margin:0 0 7px;text-align:justify;hyphens:auto;-webkit-hyphens:auto}',
+      '  #' + ROOT_ID + ' .pr-sec>p+p,#' + ROOT_ID + ' .pr-md p+p{text-indent:1.5em}',
+      // metric tabular
+      '  #' + ROOT_ID + ' .pr-metrics{width:100%;border-collapse:collapse;margin:6px 0 8px}',
+      '  #' + ROOT_ID + ' .pr-metrics td{border:.5pt solid #999;padding:9px;text-align:center}',
+      '  #' + ROOT_ID + ' .pm-v{font-size:16pt;font-weight:700;display:block;color:#1a1a1a}',
+      '  #' + ROOT_ID + ' .pm-l{font-size:7.5pt;letter-spacing:.5px;color:#666;text-transform:uppercase}',
+      // findings
+      '  #' + ROOT_ID + ' .pr-find{display:flex;gap:8px;padding:6px 0;border-bottom:.5pt solid #ddd;break-inside:avoid}',
+      '  #' + ROOT_ID + ' .pf-dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex:none}',
       '  #' + ROOT_ID + ' .pf-body{flex:1}',
-      '  #' + ROOT_ID + ' .pr-find b{font-size:12px;color:#1F1A1B}',
-      '  #' + ROOT_ID + ' .pr-find p{font-size:10.5px;color:#555;margin:2px 0 0;text-align:left}',
-      '  #' + ROOT_ID + ' .pf-sev{margin-left:auto;font-size:8px;font-weight:700;font-family:\'JetBrains Mono\',monospace;',
-      '    padding:2px 7px;border:1px solid;border-radius:4px;height:fit-content}',
+      '  #' + ROOT_ID + ' .pr-find b{font-size:11pt}',
+      '  #' + ROOT_ID + ' .pr-find p{font-size:10pt;color:#444;margin:2px 0 0;text-align:left;text-indent:0}',
+      '  #' + ROOT_ID + ' .pf-sev{margin-left:auto;font-size:7.5pt;font-weight:700;padding:2px 7px;border:.5pt solid;border-radius:3px;height:fit-content}',
+      // key/value tabular
       '  #' + ROOT_ID + ' .pr-kv{width:100%;border-collapse:collapse}',
-      '  #' + ROOT_ID + ' .pr-kv td{border:1px solid #e6e0d4;padding:7px 10px;font-size:11px}',
-      '  #' + ROOT_ID + ' .pr-kv .k{width:34%;color:#777;font-family:\'JetBrains Mono\',monospace;font-size:10px}',
-      // Q&A transcript
-      '  #' + ROOT_ID + ' .pr-qa{margin:0 0 12px;break-inside:avoid}',
-      '  #' + ROOT_ID + ' .pr-q{font-weight:700;color:#1F1A1B;font-size:12px;margin-bottom:3px}',
-      '  #' + ROOT_ID + ' .pr-q::before{content:"Q  ";color:#b87800;font-family:\'JetBrains Mono\',monospace}',
-      '  #' + ROOT_ID + ' .pr-a{padding-left:14px;border-left:2px solid #ecdfc7}',
-      '  #' + ROOT_ID + ' .pr-a .qa-h{font-weight:700;color:#9a6a00;margin:6px 0 2px}',
-      // AI markdown report sub-headings
-      '  #' + ROOT_ID + ' .pr-md .qa-h{font-weight:700;color:#9a6a00;font-size:12px;margin:9px 0 3px}',
-      '  #' + ROOT_ID + ' .pr-md code{font-family:\'JetBrains Mono\',monospace;font-size:10.5px;background:#f3efe6;padding:1px 4px;border-radius:3px}',
-      '  #' + ROOT_ID + ' .pr-a code{font-family:\'JetBrains Mono\',monospace;font-size:10.5px;background:#f3efe6;padding:1px 4px;border-radius:3px}',
-      '  #' + ROOT_ID + ' ul{margin:4px 0 8px 2px;padding-left:16px}',
-      '  #' + ROOT_ID + ' li{font-size:11px;color:#333;margin:2px 0}',
+      '  #' + ROOT_ID + ' .pr-kv td{border:.5pt solid #ccc;padding:6px 9px;font-size:10.5pt}',
+      '  #' + ROOT_ID + ' .pr-kv .k{width:34%;color:#555}',
+      // Q&A
+      '  #' + ROOT_ID + ' .pr-qa{margin:0 0 10px;break-inside:avoid}',
+      '  #' + ROOT_ID + ' .pr-q{font-weight:700;font-size:11pt;margin-bottom:3px}',
+      '  #' + ROOT_ID + ' .pr-q::before{content:"Q.\\2002";color:#7a1f2b}',
+      '  #' + ROOT_ID + ' .pr-a{padding-left:13px;border-left:1.5pt solid #ddd}',
+      // markdown / qa sub-headings, lists, inline code
+      '  #' + ROOT_ID + ' .pr-md .qa-h,#' + ROOT_ID + ' .pr-a .qa-h{font-weight:700;font-style:italic;color:#1a1a1a;font-size:11.4pt;margin:9px 0 3px}',
+      '  #' + ROOT_ID + ' code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9.3pt;background:#f0f0f0;padding:1px 3px;border-radius:2px}',
+      '  #' + ROOT_ID + ' ul{margin:4px 0 8px 0;padding-left:20px}',
+      '  #' + ROOT_ID + ' li{font-size:10.8pt;color:#222;margin:3px 0;text-align:justify}',
       // footer
-      '  #' + ROOT_ID + ' .pr-foot{margin-top:22px;border-top:1px solid #ddd;padding-top:9px;',
-      '    font-size:8.5px;color:#999;font-family:\'JetBrains Mono\',monospace;text-align:center}',
+      '  #' + ROOT_ID + ' .pr-foot{margin-top:22px;border-top:.5pt solid #999;padding-top:7px;',
+      '    font-size:8.5pt;color:#777;text-align:center;font-style:italic}',
       '}'
     ].join('\n');
     var st = document.createElement('style');

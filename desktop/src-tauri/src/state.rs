@@ -40,6 +40,12 @@ pub struct AppState {
     /// UI commands serve from it so the history appears instantly. (timestamp,
     /// payload).
     pub history_cache: Option<(Instant, Value)>,
+    /// The latest threat the scanner flagged, read by the always-on-top threat
+    /// alert popup window (`get_pending_threat`).
+    pub pending_threat: Option<Value>,
+    /// Per-host throttle so the popup doesn't fire repeatedly for the same site
+    /// (host → last alerted time).
+    pub alerted_hosts: std::collections::HashMap<String, Instant>,
 }
 
 impl AppState {
@@ -56,6 +62,8 @@ impl AppState {
             browsers_cache: None,
             threats_cache: None,
             history_cache: None,
+            pending_threat: None,
+            alerted_hosts: std::collections::HashMap::new(),
         }
     }
 

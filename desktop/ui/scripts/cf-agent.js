@@ -138,7 +138,12 @@
       window.addEventListener('message', function (e) {
         if (e.data && e.data.cf === 'agent-min') minimize();
       });
-      // Start minimized: the floating icon is visible, click to open.
+      // Start minimized: the floating icon is visible, click to open. We load
+      // the panel iframe eagerly (kept hidden) so its real-time active-tab
+      // scanner runs immediately — this is what flags a phishing site and pops
+      // the always-on-top alert even when the panel was never opened and the
+      // CyberForge window is minimized.
+      frame.setAttribute('src', '../components/agent-panel.html');
       fab.classList.remove('cf-hidden');
     }
 

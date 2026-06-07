@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Threat Overview</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <style>
 :root{
   --bg:#060911;
@@ -789,6 +787,10 @@ function stampUpdated(){
       T.core.invoke('get_threats').then(function(r){ applyThreats({threats:r}); }).catch(function(){});
       T.core.invoke('agent_status').then(function(r){ applyThreats({status:r}); }).catch(function(){});
     }
+    // Instant paint from the loading-screen prewarm so the page has data the
+    // moment you navigate to it (then pull() refreshes live without a flash).
+    try{ var _pt=JSON.parse(localStorage.getItem('cf_pre_threats')||'null'); if(_pt&&_pt.payload&&(Date.now()-_pt.ts)<600000) applyThreats({threats:_pt.payload}); }catch(e){}
+    try{ var _ps=JSON.parse(localStorage.getItem('cf_pre_status')||'null'); if(_ps&&_ps.payload&&(Date.now()-_ps.ts)<600000) applyThreats({status:_ps.payload}); }catch(e){}
     pull(); // initial snapshot (telemetry keeps it live every 3s thereafter)
     var _rb=document.querySelector('.btn-refresh');
     if(_rb) _rb.addEventListener('click',function(){ _rb.classList.add('busy'); pull(); setTimeout(function(){ _rb.classList.remove('busy'); },700); });

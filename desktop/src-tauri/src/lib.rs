@@ -55,6 +55,7 @@ pub fn run() {
             metrics::agent_status,
             // Agent Core + scanning (backend-connected)
             agent::scan_url,
+            agent::get_pending_threat,
             agent::get_active_urls,
             agent::get_last_scan,
             agent::agent_alerts,

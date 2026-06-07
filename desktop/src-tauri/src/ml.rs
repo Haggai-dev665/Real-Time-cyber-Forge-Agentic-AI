@@ -58,7 +58,7 @@ async fn ml_post(
 /// completions). Returns a normalized `{response, model, source}` or `None` so
 /// the caller can fall back to the backend. The token is read from the
 /// keychain/env (see `auth::get_hf_token`) and is never embedded in source.
-async fn deepseek_chat(query: &str, max_tokens: u32, token: &str) -> Result<Value, String> {
+pub(crate) async fn deepseek_chat(query: &str, max_tokens: u32, token: &str) -> Result<Value, String> {
     let model = std::env::var("DEEPSEEK_MODEL")
         .unwrap_or_else(|_| "deepseek-ai/DeepSeek-V3-0324".to_string());
     let client = crate::http::client();

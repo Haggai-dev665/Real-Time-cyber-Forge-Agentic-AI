@@ -81,6 +81,15 @@ CF.getToken = async function(){
   try { var r = await CF.invoke('auth_get_token'); return (r && r.token) || null; } catch(e){ return null; }
 };
 
+/* Prewarm cache (localStorage). The loading screen fetches each page's data and
+   stashes it here so a page can paint instantly on navigate, then refresh live.
+   Format: cf_pre_<key> = {ts, payload}. */
+CF.preSet = function(key, payload){ try{ localStorage.setItem('cf_pre_'+key, JSON.stringify({ ts: Date.now(), payload: payload })); }catch(e){} };
+CF.preGet = function(key, maxAgeMs){
+  try{ var w = JSON.parse(localStorage.getItem('cf_pre_'+key) || 'null');
+    if(!w) return null; if(maxAgeMs && (Date.now()-w.ts) > maxAgeMs) return null; return w.payload; }catch(e){ return null; }
+};
+
 /* ML convenience wrappers over the ml_* Rust commands */
 CF.ml = {
   chat:       function(query, maxTokens){ return CF.invoke('ml_security_chat', { query: query, maxTokens: maxTokens||512 }); },
@@ -170,6 +179,124 @@ CF.threatActions=function(opts){
   w.querySelector('.prt').addEventListener('click',function(){ act(this,'protect_site',{domain:host},function(r,b){ b.textContent='✓ Protected'; var ip=r&&r.publicIp?(' Public IP: '+r.publicIp+'.'):''; note.textContent=((r&&r.note)||'Protected access recorded.')+ip; }); });
   w.querySelector('.alw').addEventListener('click',function(){ act(this,'allow_site',{domain:host},function(r,b){ b.textContent='✓ Allowed'; note.textContent=host+' marked trusted (allow-list)'+(r&&r.wasUnblocked?' and unblocked':'')+'.'; }); });
   return w;
+};
+
+/* ============================================================
+   Shared FINDINGS REPORT engine (used by Reports + AI Assistance)
+   Gathers the user's REAL local telemetry for a time window —
+   scans, browsing history, threat-intel, response actions, risks —
+   then has DeepSeek EXPLAIN those findings in depth so the report
+   is long and detailed (never a chat transcript). Returns ready-to-
+   render/export sections. Falls back to an honest data-only report
+   if DeepSeek isn't connected.
+   CF.findingsReport({rangeSec, label, maxTokens}) -> Promise<{ok,sections,data,label,risk}>
+   ============================================================ */
+CF._rpHost=function(u){ try{ var h=(String(u).split('://')[1]||String(u)).split('/')[0]; return h.split('?')[0].replace(/^www\./,'').toLowerCase(); }catch(e){ return ''; } };
+CF._rpOne=function(t,n){ t=String(t==null?'':t).replace(/\s+/g,' ').trim(); n=n||160; return t.length>n?(t.slice(0,n-1)+'…'):t; };
+CF._gatherReportData=function(rangeSec){
+  var nowS=Math.floor(Date.now()/1000), cutoff=nowS-rangeSec;
+  var pM=CF.invoke('memory_list',{limit:500}).then(function(r){ return (r&&r.data&&r.data.memories)||[]; }).catch(function(){ return []; });
+  var pH=CF.invoke('get_collected_history').then(function(r){ return (r&&r.data&&r.data.history)||[]; }).catch(function(){ return []; });
+  var pT=CF.invoke('get_threats').then(function(r){ return (r&&r.data)||{}; }).catch(function(){ return {}; });
+  return Promise.all([pM,pH,pT]).then(function(a){
+    var mems=a[0]||[], hist=a[1]||[], threats=a[2]||{};
+    var isMal=function(t){ return /phishing|malware|malicious|ransomware|botnet|trojan|c2|spyware|dga|exploit|suspicious/i.test(t||''); };
+    var inWin=mems.filter(function(m){ return m.ts!=null && +m.ts>=cutoff; });
+    var scans=inWin.filter(function(m){ return /^scanned/i.test(m.text||'') || (m.category||'')==='scan' || /verdict|risk score|classif/i.test(m.text||''); });
+    var intel=inWin.filter(function(m){ return m.kind==='semantic' || /otx|pulse|threat intel|indicator|alienvault/i.test((m.category||'')+' '+(m.text||'')); });
+    var actions=inWin.filter(function(m){ return /^action-/.test(m.category||'') || /\b(blocked|protected|allowed|marked trusted|enabled protected)\b/i.test(m.text||''); });
+    var risks=inWin.filter(function(m){ return (m.risk!=null && +m.risk>=50) || isMal(m.text); });
+    var histWin=hist.filter(function(h){ return h.lastVisit!=null && +h.lastVisit>=cutoff; });
+    var hostCount={}; histWin.forEach(function(h){ var host=CF._rpHost(h.url); if(host) hostCount[host]=(hostCount[host]||0)+1; });
+    var topHosts=Object.keys(hostCount).sort(function(a,b){ return hostCount[b]-hostCount[a]; }).slice(0,18);
+    return {nowS:nowS,cutoff:cutoff,inWin:inWin,scans:scans,intel:intel,actions:actions,risks:risks,histWin:histWin,hostCount:hostCount,topHosts:topHosts,threats:threats,memsTotal:mems.length,histTotal:hist.length};
+  });
+};
+CF._reportPrompt=function(d,label){
+  var since=new Date(d.cutoff*1000).toLocaleString(), until=new Date().toLocaleString();
+  var one=CF._rpOne, L=[];
+  L.push('PERIOD: '+label+'  ('+since+'  →  '+until+')'); L.push('');
+  L.push('BROWSING ACTIVITY: '+d.histWin.length+' page visit(s) across '+Object.keys(d.hostCount).length+' unique host(s).');
+  if(d.topHosts.length) L.push('Most-visited hosts: '+d.topHosts.map(function(h){return h+' ('+d.hostCount[h]+')';}).join(', ')+'.');
+  L.push('');
+  L.push('SCANS PERFORMED ('+d.scans.length+'):');
+  L.push.apply(L, d.scans.length ? d.scans.slice(0,45).map(function(m){ return ' - '+one(m.text)+(m.risk!=null?(' [risk '+m.risk+']'):''); }) : [' (none recorded in this period)']);
+  L.push('');
+  L.push('FLAGGED RISKS ('+d.risks.length+'):');
+  L.push.apply(L, d.risks.length ? d.risks.slice(0,30).map(function(m){ return ' - '+one(m.text)+(m.risk!=null?(' [risk '+m.risk+']'):'')+(m.url?(' <'+m.url+'>'):''); }) : [' (no high-risk items recorded)']);
+  L.push('');
+  L.push('THREAT-INTELLIGENCE ('+d.intel.length+'):');
+  L.push.apply(L, d.intel.length ? d.intel.slice(0,25).map(function(m){ return ' - '+one(m.text); }) : [' (none recorded)']);
+  L.push('');
+  L.push('ACTIONS TAKEN ('+d.actions.length+'):');
+  L.push.apply(L, d.actions.length ? d.actions.slice(0,30).map(function(m){ return ' - '+one(m.text); }) : [' (no block/protect/allow actions recorded)']);
+  L.push('');
+  var t=d.threats||{};
+  L.push('CURRENT LIVE THREAT SNAPSHOT: total '+(t.total||0)+', critical '+(t.critical||0)+', high '+(t.high||0)+', medium '+(t.medium||0)+', low '+(t.low||0)+'.');
+  var ctx=L.join('\n');
+  return 'You are CyberForge, a senior AI security analyst writing a formal security report. Using ONLY the CyberForge telemetry below — the user\'s own local scans, browsing history, threat intelligence and response actions for the period: '+label+' — write a DETAILED, LONG, professional report.\n\n'+
+    'Your job is to EXPLAIN THE FINDINGS IN DEPTH so the report reads as a thorough analysis, not a summary. For every notable item, explain what it is, why it matters, the potential impact, and what should be done about it. Write multiple full paragraphs per section.\n\n'+
+    'Format in markdown using these exact "## " section headings, in order:\n'+
+    '## Executive Summary\n## Activity Overview\n## Scans & Detections\n## Key Findings & Risks\n## Actions Taken\n## Threat Intelligence\n## Risk Assessment\n## Recommendations\n\n'+
+    'Guidance:\n'+
+    '- Executive Summary: 2-3 full paragraphs on the overall posture for the period.\n'+
+    '- Be specific and cite the real data: name hosts, verdicts, risk scores and counts from the telemetry.\n'+
+    '- Scans & Detections and Key Findings & Risks: go finding-by-finding and explain each in detail; rank by severity; use bullet points where helpful.\n'+
+    '- Recommendations: concrete, prioritised, actionable next steps as a numbered list.\n'+
+    '- If a section has no relevant data, say so honestly and advise accordingly. NEVER invent data, hosts or numbers.\n'+
+    '- Write in clear, formal, professional prose. Aim for depth and length.\n\n'+
+    '=== CYBERFORGE TELEMETRY ('+label+') ===\n'+ctx;
+};
+CF._rpRisk=function(d){ var t=d.threats||{}; if((t.critical||0)>0||d.risks.some(function(m){return m.risk!=null&&+m.risk>=80;})) return 'crit'; if((t.high||0)>0||d.risks.length) return 'high'; return 'info'; };
+CF._rpMetrics=function(d){ return {h:'Period at a Glance', type:'stats', body:[
+  [String(d.histWin.length),'Page Visits','#0a72b8'],[String(d.scans.length),'Scans','#b87800'],
+  [String(d.risks.length),'Flagged Risks','#c2283b'],[String(d.actions.length),'Actions','#0a8a55']]}; };
+CF._rpDeterministic=function(d,label){
+  var one=CF._rpOne;
+  var topList=d.topHosts.slice(0,10).map(function(h){return '- '+h+' — '+d.hostCount[h]+' visit'+(d.hostCount[h]===1?'':'s');}).join('\n');
+  var riskList=d.risks.slice(0,10).map(function(m){return '- '+one(m.text,140)+(m.risk!=null?(' (risk '+m.risk+')'):'');}).join('\n');
+  var actList=d.actions.slice(0,10).map(function(m){return '- '+one(m.text,140);}).join('\n');
+  var rc=CF._rpRisk(d); var posture=rc==='crit'?'ELEVATED':(rc==='high'?'GUARDED':'NOMINAL');
+  return [
+    {h:'Executive Summary',type:'md',body:'For the period **'+label+'**, CyberForge observed **'+d.histWin.length+'** page visit(s) across **'+Object.keys(d.hostCount).length+'** unique host(s), performed **'+d.scans.length+'** scan(s), recorded **'+d.risks.length+'** flagged risk(s) and **'+d.actions.length+'** response action(s). The overall security posture for this window is assessed as **'+posture+'**.\n\nThis is a data-driven summary generated locally. Connect a Hugging Face token in Settings → AI & Models to have DeepSeek write the full narrative analysis explaining each finding in detail.'},
+    {h:'Activity Overview',type:'md',body:(topList?('Most-visited hosts in this period:\n'+topList):'No browsing history was recorded in this period.')},
+    {h:'Key Findings & Risks',type:'md',body:(riskList||'No high-risk items were recorded in this period. No findings require triage.')},
+    {h:'Actions Taken',type:'md',body:(actList||'No block, protect or allow actions were taken in this period.')},
+    {h:'Recommendations',type:'md',body:(d.risks.length?'1. Review each flagged risk above and confirm whether the indicator is present in your environment.\n2. Block confirmed malicious hosts so future visits are intercepted automatically.\n3. Re-run this report after remediation to confirm the items cleared.':'1. No immediate action is required for this period.\n2. Maintain continuous monitoring and regenerate this report at the start of each session.')}
+  ];
+};
+CF._rpParse=function(md){
+  md=String(md||'').replace(/\r/g,'').trim();
+  var lines=md.split('\n'), secs=[], cur=null;
+  function clean(h){ return h.replace(/\*\*/g,'').replace(/[:#]+\s*$/,'').replace(/^#+\s*/,'').trim(); }
+  for(var i=0;i<lines.length;i++){ var ln=lines[i]; var h=ln.match(/^#{1,3}\s+(.+?)\s*$/);
+    if(h){ if(cur) secs.push(cur); cur={h:clean(h[1]),type:'md',body:''}; }
+    else { if(!cur) cur={h:'Report',type:'md',body:''}; cur.body+=ln+'\n'; } }
+  if(cur) secs.push(cur);
+  secs.forEach(function(s){ s.body=s.body.trim(); });
+  secs=secs.filter(function(s){ return s.body||s.h; });
+  return secs.length?secs:[{h:'Report',type:'md',body:md}];
+};
+CF.findingsReport=function(opts){
+  opts=opts||{};
+  var rangeSec=(opts.rangeSec!=null)?opts.rangeSec:(30*86400);
+  var label=opts.label||'the last 30 days';
+  var maxTokens=opts.maxTokens||2000;
+  return CF._gatherReportData(rangeSec).then(function(data){
+    if(typeof opts.onData==='function'){ try{ opts.onData(data); }catch(e){} }
+    var prompt=CF._reportPrompt(data,label);
+    return CF.ml.chat(prompt,maxTokens).then(function(body){
+      var d=(body&&body.data)||body||{};
+      var aiText=d.response||d.answer||d.text||d.output||body.response||body.message||'';
+      var ok=!!(aiText&&String(aiText).trim())&&(body&&body.success!==false);
+      var sections=ok?CF._rpParse(aiText):CF._rpDeterministic(data,label);
+      sections.unshift(CF._rpMetrics(data));
+      return {ok:ok,sections:sections,data:data,label:label,risk:CF._rpRisk(data)};
+    }).catch(function(){
+      var sections=CF._rpDeterministic(data,label); sections.unshift(CF._rpMetrics(data));
+      return {ok:false,sections:sections,data:data,label:label,risk:CF._rpRisk(data)};
+    });
+  });
 };
 
 /* lightweight toast (used by cf-live.js + any page); auto-styles once */

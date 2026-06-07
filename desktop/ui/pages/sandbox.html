@@ -7,11 +7,11 @@
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
-.sb-grid{display:grid;grid-template-columns:1fr 360px;gap:14px;height:calc(100% - 56px)}
+.sb-grid{display:grid;grid-template-columns:1fr 372px;gap:14px;height:calc(100% - 56px)}
 .left-col{display:flex;flex-direction:column;gap:14px;min-height:0}
-.right-col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
+.right-col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto;padding-right:2px}
 
-/* submit bar */
+/* ── submit bar ── */
 .submit{display:flex;align-items:center;gap:10px;padding:13px 14px}
 .submit .field{flex:1;display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-radius:9px;
   border:1px solid var(--border-2);background:rgba(8,12,20,.7);transition:border-color .2s,box-shadow .2s}
@@ -25,7 +25,7 @@
 .tchip:hover{color:var(--text);border-color:var(--border-3)}
 .tchip.on{color:var(--amber-2);border-color:rgba(245,166,35,.4);background:var(--amber-dim)}
 .btn-detonate{height:42px;display:flex;align-items:center;gap:9px;padding:0 18px;border-radius:9px;cursor:pointer;
-  font-weight:600;font-size:13px;color:#1a1206;border:1px solid rgba(245,166,35,.5);position:relative;overflow:hidden;
+  font-weight:700;font-size:13px;color:#1a1206;border:1px solid rgba(245,166,35,.5);position:relative;overflow:hidden;
   background:linear-gradient(180deg,#ffc15a,#f5a623);box-shadow:0 4px 16px -4px rgba(245,166,35,.6);transition:transform .15s}
 .btn-detonate:hover{transform:translateY(-1px)} .btn-detonate:active{transform:scale(.97)}
 .btn-detonate svg{width:16px;height:16px}
@@ -33,34 +33,76 @@
 .btn-detonate.busy::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;
   border:2.4px solid rgba(26,18,6,.4);border-top-color:#1a1206;animation:spin .7s linear infinite;left:50%;top:50%;margin:-9px}
 
-/* VM viewport */
+/* ── detonation chamber ── */
 .vm-card{flex:1;display:flex;flex-direction:column;min-height:0}
-.vm-screen{flex:1;margin:12px;border-radius:9px;position:relative;overflow:hidden;
-  background:linear-gradient(180deg,#0a0f1a,#070a12);border:1px solid var(--border-2)}
-.vm-scan{position:absolute;left:0;right:0;height:90px;top:-90px;pointer-events:none;z-index:4;opacity:0;
-  background:linear-gradient(180deg,transparent,rgba(43,212,238,.12) 70%,rgba(43,212,238,.45));
-  border-bottom:1.5px solid rgba(43,212,238,.8);box-shadow:0 0 24px rgba(43,212,238,.45)}
-.vm-card.running .vm-scan{opacity:1;animation:vmscan 2s linear infinite}
-@keyframes vmscan{0%{top:-90px}100%{top:100%}}
-.vm-grid{position:absolute;inset:0;opacity:.5;
+.vm-screen{flex:1;margin:12px;border-radius:11px;position:relative;overflow:hidden;
+  background:radial-gradient(120% 120% at 50% 30%,#0c1422,#05080f 70%);border:1px solid var(--border-2)}
+.vm-grid{position:absolute;inset:0;opacity:.55;
   background-image:linear-gradient(rgba(120,150,190,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,150,190,.05) 1px,transparent 1px);
-  background-size:26px 26px}
-.vm-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
-.vm-core{position:relative;width:128px;height:128px;display:grid;place-items:center}
-.vm-core .ring{position:absolute;border-radius:50%;border:2px solid transparent}
-.vm-core .r1{inset:0;border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 2.4s linear infinite}
-.vm-core .r2{inset:16px;border-bottom-color:var(--cyan);border-left-color:rgba(43,212,238,.3);animation:spin 3.4s linear infinite reverse}
-.vm-core .r3{inset:32px;border-top-color:rgba(245,166,35,.5);animation:spin 1.8s linear infinite}
-.vm-core .glyph{width:42px;height:42px;color:var(--amber-2)}
-.vm-core.idle .ring{animation-play-state:paused;opacity:.35}
-.vm-status{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:1px}
-.vm-status b{color:var(--amber-2)}
-.vm-osmeta{position:absolute;left:12px;top:10px;font-family:var(--mono);font-size:9.5px;color:var(--faint);display:flex;gap:14px;z-index:3}
+  background-size:28px 28px;mask-image:radial-gradient(circle at 50% 42%,#000,transparent 78%)}
+.vm-screen::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 110%,rgba(0,0,0,.55),transparent 60%)}
+.vm-scan{position:absolute;left:0;right:0;height:120px;top:-120px;pointer-events:none;z-index:5;opacity:0;
+  background:linear-gradient(180deg,transparent,rgba(43,212,238,.10) 65%,rgba(43,212,238,.4));
+  border-bottom:1.5px solid rgba(43,212,238,.85);box-shadow:0 0 28px rgba(43,212,238,.5)}
+.vm-card.running .vm-scan{opacity:1;animation:vmscan 2.2s linear infinite}
+@keyframes vmscan{0%{top:-120px}100%{top:100%}}
+.vm-osmeta{position:absolute;left:13px;top:11px;font-family:var(--mono);font-size:9.5px;color:var(--faint);display:flex;gap:14px;z-index:6}
 .vm-osmeta span{display:flex;align-items:center;gap:5px}
-.vm-net{position:absolute;right:12px;top:10px;font-family:var(--mono);font-size:9.5px;color:var(--cyan);z-index:3;display:flex;align-items:center;gap:6px}
+.vm-net{position:absolute;right:13px;top:11px;font-family:var(--mono);font-size:9.5px;color:var(--cyan);z-index:6;display:flex;align-items:center;gap:6px}
 
-/* VM network packet viz (bottom strip) */
-.vm-netviz{position:absolute;left:14px;right:14px;bottom:12px;height:34px;z-index:3;display:flex;align-items:flex-start;gap:0;opacity:0;transition:opacity .4s}
+/* reactor core */
+.vm-center{position:absolute;left:0;right:0;top:0;bottom:118px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;z-index:4}
+.reactor{position:relative;width:168px;height:168px;display:grid;place-items:center}
+.reactor .ring{position:absolute;border-radius:50%;border:2px solid transparent}
+.reactor .r1{inset:0;border-top-color:var(--amber);border-right-color:rgba(245,166,35,.3);animation:spin 3.4s linear infinite}
+.reactor .r2{inset:20px;border-bottom-color:var(--cyan);border-left-color:rgba(43,212,238,.3);animation:spin 4.6s linear infinite reverse}
+.reactor .r3{inset:40px;border-top-color:rgba(245,166,35,.55);border-left-color:rgba(245,166,35,.2);animation:spin 2.4s linear infinite}
+.reactor .dots{position:absolute;inset:6px;border-radius:50%;border:1px dashed rgba(126,148,184,.25);animation:spin 22s linear infinite}
+.reactor .glow{position:absolute;inset:48px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,.5),transparent 70%);filter:blur(6px);transition:background .6s}
+.reactor .glyph{position:relative;z-index:2;width:46px;height:46px;color:var(--amber-2);transition:color .5s,filter .5s;filter:drop-shadow(0 0 10px rgba(245,166,35,.6))}
+.reactor .shock{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(245,166,35,.8);opacity:0}
+.reactor.idle .ring,.reactor.idle .dots{animation-play-state:paused;opacity:.4}
+.reactor.idle .glow{background:radial-gradient(circle,rgba(126,148,184,.18),transparent 70%)}
+.reactor.charging .glow{background:radial-gradient(circle,rgba(245,166,35,.85),transparent 72%);animation:charge .7s ease}
+@keyframes charge{0%{transform:scale(.85)}100%{transform:scale(1)}}
+.reactor.detonate .shock{animation:shock .7s cubic-bezier(.2,.7,.3,1)}
+@keyframes shock{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(2.1)}}
+.reactor.active .glow{background:radial-gradient(circle,rgba(43,212,238,.6),transparent 72%);animation:reactorPulse 1.5s ease-in-out infinite}
+@keyframes reactorPulse{0%,100%{filter:blur(6px);opacity:.85}50%{filter:blur(10px);opacity:1}}
+.reactor.active .glyph{color:var(--cyan);filter:drop-shadow(0 0 12px rgba(43,212,238,.7))}
+.reactor.mal .glow{background:radial-gradient(circle,rgba(244,73,94,.7),transparent 72%)} .reactor.mal .glyph{color:#ff7185;filter:drop-shadow(0 0 12px rgba(244,73,94,.7))} .reactor.mal .r1{border-top-color:#ff7185}
+.reactor.sus .glow{background:radial-gradient(circle,rgba(245,166,35,.7),transparent 72%)} .reactor.sus .glyph{color:var(--amber-2)}
+.reactor.safe .glow{background:radial-gradient(circle,rgba(67,224,138,.6),transparent 72%)} .reactor.safe .glyph{color:var(--green);filter:drop-shadow(0 0 12px rgba(67,224,138,.6))} .reactor.safe .r1{border-top-color:var(--green)}
+.vm-status{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.6px}
+.vm-status b{color:var(--amber-2)}
+/* ember particles */
+.embers2{position:absolute;inset:0;pointer-events:none;z-index:3}
+.embers2 span{position:absolute;bottom:118px;width:3px;height:3px;border-radius:50%;background:var(--amber);opacity:0}
+.vm-card.running .embers2 span{animation:ember2 var(--d,3s) ease-in infinite}
+@keyframes ember2{0%{opacity:0;transform:translateY(0) scale(1)}15%{opacity:.9}100%{opacity:0;transform:translateY(-150px) translateX(var(--dx,0)) scale(.3)}}
+
+/* live activity bars (left strip) */
+.vm-act{position:absolute;left:13px;bottom:128px;display:flex;gap:9px;z-index:6;opacity:0;transition:opacity .4s}
+.vm-card.running .vm-act{opacity:1}
+.vm-act .b{display:flex;flex-direction:column;align-items:center;gap:4px}
+.vm-act .bar{width:6px;height:46px;border-radius:3px;background:rgba(126,148,184,.12);position:relative;overflow:hidden}
+.vm-act .bar i{position:absolute;left:0;right:0;bottom:0;height:10%;border-radius:3px;transition:height .25s ease}
+.vm-act .cpu i{background:linear-gradient(180deg,#ffc15a,#f5a623)} .vm-act .mem i{background:linear-gradient(180deg,#7fd4ff,#2bd4ee)}
+.vm-act .net i{background:linear-gradient(180deg,#73e0a8,#43e08a)} .vm-act .dsk i{background:linear-gradient(180deg,#ff9aa6,#f4495e)}
+.vm-act .bl{font-family:var(--mono);font-size:7px;letter-spacing:.5px;color:var(--faint)}
+
+/* analysis console (bottom of the VM screen) */
+.vm-console{position:absolute;left:0;right:0;bottom:0;height:112px;z-index:6;padding:9px 14px 10px;
+  background:linear-gradient(180deg,transparent,rgba(4,7,13,.92) 30%);border-top:1px solid rgba(126,148,184,.12);
+  font-family:var(--mono);font-size:10.5px;line-height:1.55;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.vm-console .cl{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;animation:clin .3s ease forwards}
+.vm-console .cl .t{color:var(--faint);margin-right:8px}
+.vm-console .cl .ok{color:var(--green)} .vm-console .cl .cy{color:var(--cyan)} .vm-console .cl .am{color:var(--amber-2)} .vm-console .cl .bad{color:#ff7185}
+@keyframes clin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* network packet viz (kept, polished) */
+.vm-netviz{position:absolute;left:14px;right:14px;bottom:118px;height:34px;z-index:6;display:flex;align-items:flex-start;gap:0;opacity:0;transition:opacity .4s}
 .vm-card.running .vm-netviz{opacity:1}
 .nv-node{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;width:54px}
 .nv-node .nd{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;border:1px solid var(--border-2);background:rgba(10,16,26,.9)}
@@ -70,7 +112,64 @@
 .nv-wire{flex:1;height:2px;background:rgba(126,148,184,.16);position:relative;border-radius:2px;margin-top:11px}
 .pkt{position:absolute;top:50%;width:6px;height:6px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 7px currentColor}
 
-/* MITRE ATT&CK tactic map */
+/* ── behavior timeline ── */
+.behave{padding:4px 6px 8px;overflow-y:auto}
+.bev{display:flex;align-items:flex-start;gap:11px;padding:8px 10px;position:relative;animation:bevin .35s ease}
+@keyframes bevin{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+.bev::before{content:"";position:absolute;left:16px;top:24px;bottom:-2px;width:1.5px;background:var(--border)}
+.bev:last-child::before{display:none}
+.bev .bnode{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;z-index:2;
+  border:1px solid var(--border-2);background:var(--surface-solid)}
+.bev .bnode svg{width:12px;height:12px}
+.bev.ok .bnode{color:var(--green);border-color:rgba(67,224,138,.4)}
+.bev.warn .bnode{color:var(--amber-2);border-color:rgba(245,166,35,.4)}
+.bev.bad .bnode{color:#ff7185;border-color:rgba(244,73,94,.45);box-shadow:0 0 12px -2px rgba(244,73,94,.5)}
+.bev .btxt{flex:1;font-size:12px;line-height:1.5}
+.bev .btxt .bt{font-family:var(--mono);font-size:9px;color:var(--faint);margin-right:7px}
+.bev .btxt b{font-weight:600}
+.bev .bdesc{color:var(--dim);font-size:11px;margin-top:1px}
+.placeholder{color:var(--faint);font-family:var(--mono);font-size:11px;text-align:center;padding:24px 16px}
+
+/* ── verdict ── */
+.verdict-card{text-align:center;padding:14px 14px 16px}
+.vg-stage{position:relative;width:152px;height:152px;margin:4px auto 11px}
+.vg-stage svg{width:100%;height:100%;display:block}
+.vg-stage .vlabel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.vg-stage .score{font-family:var(--mono);font-size:38px;font-weight:700;line-height:1}
+.vg-stage .of{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px}
+.vbadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;font-weight:700;
+  padding:8px 16px;border-radius:9px;letter-spacing:.5px}
+.vbadge.safe{color:var(--green);background:rgba(67,224,138,.12);border:1px solid rgba(67,224,138,.3)}
+.vbadge.sus{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
+.vbadge.mal{color:#ff7185;background:rgba(244,73,94,.12);border:1px solid rgba(244,73,94,.35);animation:badpulse 1.6s ease-in-out infinite}
+@keyframes badpulse{0%,100%{box-shadow:0 0 0 0 rgba(244,73,94,.0)}50%{box-shadow:0 0 16px -2px rgba(244,73,94,.5)}}
+.vbadge svg{width:15px;height:15px}
+.vtarget{font-family:var(--mono);font-size:11px;color:var(--cyan);margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── detection signals ── */
+.sig{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;border-top:1px solid var(--border);font-size:12px;animation:bevin .3s ease}
+.sig:first-child{border-top:none}
+.sig .sd{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:none}
+.sig.bad .sd{background:#ff7185;box-shadow:0 0 6px #ff7185} .sig.warn .sd{background:var(--amber-2);box-shadow:0 0 6px var(--amber-2)}
+.sig.ai .sd{background:var(--cyan);box-shadow:0 0 6px var(--cyan)} .sig.ok .sd{background:var(--green)}
+.sig .stx{flex:1;color:var(--dim);line-height:1.45}
+.sig .stx b{color:var(--text);font-weight:600}
+
+/* ── detection breakdown ── */
+.bd{padding:11px 14px;display:flex;flex-direction:column;gap:11px}
+.bdrow .bdh{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;margin-bottom:5px}
+.bdrow .bdh .bn{color:var(--dim)} .bdrow .bdh .bv{font-family:var(--mono);font-size:11px;color:var(--text);font-weight:600}
+.bdrow .track{height:7px;border-radius:5px;background:rgba(126,148,184,.12);overflow:hidden}
+.bdrow .track i{display:block;height:100%;width:0;border-radius:5px;transition:width .9s cubic-bezier(.3,.8,.3,1)}
+.bdrow.skip{opacity:.4}
+
+/* ── IOC / MITRE / telemetry ── */
+.ioc{display:flex;align-items:center;gap:10px;padding:9px 13px;font-family:var(--mono);font-size:11px;border-top:1px solid var(--border)}
+.ioc:first-child{border-top:none}
+.ioc .k{color:var(--faint);width:62px;flex:none}
+.ioc .v{color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ioc .v.bad{color:#ff7185} .ioc .copy{color:var(--faint);cursor:pointer;width:13px;height:13px}
+.ioc .copy:hover{color:var(--cyan)} .ioc.copied{background:rgba(43,212,238,.08)} .ioc.copied .copy{color:var(--green)}
 .attack{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:11px 13px}
 .tac{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;border:1px solid var(--border);
   background:var(--tile);transition:.3s;position:relative;overflow:hidden}
@@ -79,65 +178,20 @@
 .tac .tn{font-size:10px;color:var(--dim);transition:.3s;line-height:1.2}
 .tac.hit{border-color:rgba(244,73,94,.4);background:rgba(244,73,94,.08)}
 .tac.hit .ti{color:#ff7185} .tac.hit .tn{color:var(--text);font-weight:500}
-.tac.hit::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:#ff7185;
-  animation:tacflash .5s ease}
+.tac.hit::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:#ff7185;animation:tacflash .5s ease}
 @keyframes tacflash{0%{box-shadow:0 0 18px 2px rgba(244,73,94,.6)}100%{box-shadow:none}}
-.ioc.copied{background:rgba(43,212,238,.08)} .ioc.copied .copy{color:var(--green)}
-.bev{transition:background .2s} .bev:hover{background:rgba(130,160,200,.05)}
-
-/* behavior timeline */
-.behave{padding:4px 6px 8px;overflow-y:auto}
-.bev{display:flex;align-items:flex-start;gap:11px;padding:8px 10px;position:relative}
-.bev::before{content:"";position:absolute;left:16px;top:24px;bottom:-2px;width:1.5px;background:var(--border)}
-.bev:last-child::before{display:none}
-.bev .bnode{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;flex:none;z-index:2;
-  border:1px solid var(--border-2);background:var(--surface-solid)}
-.bev .bnode svg{width:12px;height:12px}
-.bev.ok .bnode{color:var(--green);border-color:rgba(67,224,138,.4)}
-.bev.warn .bnode{color:var(--amber-2);border-color:rgba(245,166,35,.4)}
-.bev.bad .bnode{color:#ff7185;border-color:rgba(244,73,94,.45)}
-.bev .btxt{flex:1;font-size:12px;line-height:1.5}
-.bev .btxt .bt{font-family:var(--mono);font-size:9px;color:var(--faint);margin-right:7px}
-.bev .btxt b{font-weight:600}
-.bev .bdesc{color:var(--dim);font-size:11px;margin-top:1px}
-
-/* verdict gauge */
-.verdict-card{text-align:center;padding:14px 14px 16px}
-.vg-stage{position:relative;width:140px;height:140px;margin:4px auto 11px}
-.vg-stage svg{width:100%;height:100%;display:block}
-.vg-stage .vlabel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.vg-stage .score{font-family:var(--mono);font-size:34px;font-weight:600;line-height:1}
-.vg-stage .of{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:2px}
-.vbadge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:600;
-  padding:7px 14px;border-radius:8px;letter-spacing:.5px}
-.vbadge.safe{color:var(--green);background:rgba(67,224,138,.12);border:1px solid rgba(67,224,138,.3)}
-.vbadge.sus{color:var(--amber-2);background:var(--amber-dim);border:1px solid rgba(245,166,35,.3)}
-.vbadge.mal{color:#ff7185;background:rgba(244,73,94,.12);border:1px solid rgba(244,73,94,.35)}
-.vbadge svg{width:15px;height:15px}
-
-/* IOC / evidence */
-.ioc{display:flex;align-items:center;gap:10px;padding:9px 13px;font-family:var(--mono);font-size:11px}
-.ioc .k{color:var(--faint);width:64px;flex:none}
-.ioc .v{color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ioc .copy{color:var(--faint);cursor:pointer;width:13px;height:13px}
-.ioc .copy:hover{color:var(--cyan)}
 .mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:13px 14px}
 .ms{text-align:center;padding:11px 6px;border-radius:8px;border:1px solid var(--border);background:var(--tile)}
 .ms b{font-family:var(--mono);font-size:20px;font-weight:600;display:block}
-.ms span{font-family:var(--mono);font-size:8.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
-.row-div{border-top:1px solid var(--border)}
-.placeholder{color:var(--faint);font-family:var(--mono);font-size:11px;text-align:center;padding:24px 16px}
+.ms span{font-family:var(--mono);font-size:8px;letter-spacing:.8px;color:var(--faint);text-transform:uppercase}
 </style>
 </head>
 <body>
 <div class="stage">
   <div class="window" data-screen-label="Sandbox" id="win">
-    <!-- TOP BAR -->
     <div class="topbar" id="topbar"></div>
-
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
-
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></div>
@@ -171,30 +225,43 @@
               <div class="vm-screen">
                 <div class="vm-grid"></div>
                 <div class="vm-scan"></div>
+                <div class="embers2" id="embers2"></div>
                 <div class="vm-osmeta">
                   <span><span class="dot" style="background:var(--cyan)"></span>Win11 x64</span>
                   <span>4 vCPU · 8 GB</span>
                   <span id="vmpid">PID —</span>
                 </div>
                 <div class="vm-net"><div class="spinner sm" style="width:9px;height:9px;border-color:rgba(43,212,238,.25);border-top-color:var(--cyan)"></div><span id="vmNet">net: idle</span></div>
+
+                <div class="vm-center">
+                  <div class="reactor idle" id="reactor">
+                    <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
+                    <span class="dots"></span><span class="glow"></span><span class="shock"></span>
+                    <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>
+                  </div>
+                  <div class="vm-status" id="vmStatus">Awaiting submission — press <b>Detonate</b></div>
+                </div>
+
+                <div class="vm-act">
+                  <div class="b"><div class="bar cpu"><i id="actCpu"></i></div><span class="bl">CPU</span></div>
+                  <div class="b"><div class="bar mem"><i id="actMem"></i></div><span class="bl">MEM</span></div>
+                  <div class="b"><div class="bar net"><i id="actNet"></i></div><span class="bl">NET</span></div>
+                  <div class="b"><div class="bar dsk"><i id="actDsk"></i></div><span class="bl">DSK</span></div>
+                </div>
+
                 <div class="vm-netviz">
                   <div class="nv-node host"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg></div><span class="nl">SAMPLE</span></div>
                   <div class="nv-wire" id="wireA"></div>
                   <div class="nv-node"><div class="nd" style="color:var(--amber-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg></div><span class="nl">GATEWAY</span></div>
                   <div class="nv-wire" id="wireB"></div>
-                  <div class="nv-node c2"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><span class="nl">C2 HOST</span></div>
+                  <div class="nv-node c2"><div class="nd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div><span class="nl">REMOTE</span></div>
                 </div>
-                <div class="vm-center">
-                  <div class="vm-core idle" id="vmCore">
-                    <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
-                    <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>
-                  </div>
-                  <div class="vm-status" id="vmStatus">Awaiting submission — press <b>Detonate</b></div>
-                </div>
+
+                <div class="vm-console" id="vmConsole"></div>
               </div>
             </div>
 
-            <div class="card">
+            <div class="card" style="max-height:210px;display:flex;flex-direction:column">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Behavior Timeline<span class="right" id="bevCount">0 events</span></div>
               <div class="behave" id="behave"><div class="placeholder">Behavioral events will stream here during analysis.</div></div>
             </div>
@@ -209,15 +276,32 @@
                 <div class="vlabel"><span class="score" id="vscore">—</span><span class="of">/ 100 risk</span></div>
               </div>
               <div class="vbadge sus" id="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>AWAITING</div>
+              <div class="vtarget" id="vtarget"></div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>Detection Signals<span class="right" id="sigCount">0</span></div>
+              <div id="signals"><div class="placeholder">Why a verdict was reached will appear here.</div></div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V5M14 18v-8M19 18v-4"/></svg>Detection Breakdown</div>
+              <div class="bd" id="breakdown">
+                <div class="bdrow" data-k="backend"><div class="bdh"><span class="bn">Backend ML</span><span class="bv" id="bdBackend">—</span></div><div class="track"><i style="background:linear-gradient(90deg,#5aa9e6,#2bd4ee)"></i></div></div>
+                <div class="bdrow" data-k="local"><div class="bdh"><span class="bn">URL + content heuristics</span><span class="bv" id="bdLocal">—</span></div><div class="track"><i style="background:linear-gradient(90deg,#ffc15a,#f5a623)"></i></div></div>
+                <div class="bdrow" data-k="bert"><div class="bdh"><span class="bn">BERT URL classifier</span><span class="bv" id="bdBert">—</span></div><div class="track"><i style="background:linear-gradient(90deg,#a98bff,#7b5bff)"></i></div></div>
+                <div class="bdrow" data-k="dga"><div class="bdh"><span class="bn">DGA domain check</span><span class="bv" id="bdDga">—</span></div><div class="track"><i style="background:linear-gradient(90deg,#73e0a8,#43e08a)"></i></div></div>
+                <div class="bdrow" data-k="ai"><div class="bdh"><span class="bn">DeepSeek AI confirm</span><span class="bv" id="bdAi">—</span></div><div class="track"><i style="background:linear-gradient(90deg,#ff9aa6,#f4495e)"></i></div></div>
+              </div>
             </div>
 
             <div class="card">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 7h16M4 7l1 12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2l1-12"/></svg>Indicators (IOCs)</div>
               <div id="iocs">
-                <div class="ioc"><span class="k">SHA-256</span><span class="v" id="iocHash">—</span><svg class="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></div>
-                <div class="ioc row-div"><span class="k">Host</span><span class="v" id="iocHost">—</span></div>
-                <div class="ioc row-div"><span class="k">C2</span><span class="v" id="iocC2">—</span></div>
-                <div class="ioc row-div"><span class="k">Family</span><span class="v" id="iocFam">—</span></div>
+                <div class="ioc"><span class="k">Host</span><span class="v" id="iocHost">—</span><svg class="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></div>
+                <div class="ioc"><span class="k">Primary IP</span><span class="v" id="iocIp">—</span></div>
+                <div class="ioc"><span class="k">Contacts</span><span class="v" id="iocC2">—</span></div>
+                <div class="ioc"><span class="k">Category</span><span class="v" id="iocFam">—</span></div>
               </div>
             </div>
 
@@ -236,9 +320,9 @@
             <div class="card">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18V8M9 18V5M14 18v-8M19 18v-4"/></svg>Telemetry</div>
               <div class="mini-stats">
-                <div class="ms"><b class="sev-crit" id="tFiles">0</b><span>Files</span></div>
-                <div class="ms"><b style="color:var(--amber-2)" id="tProc">0</b><span>Processes</span></div>
-                <div class="ms"><b style="color:var(--cyan)" id="tNet">0</b><span>Net calls</span></div>
+                <div class="ms"><b class="sev-crit" id="tSig">0</b><span>Signals</span></div>
+                <div class="ms"><b style="color:var(--amber-2)" id="tHdr">0</b><span>Missing hdrs</span></div>
+                <div class="ms"><b style="color:var(--cyan)" id="tNet">0</b><span>Contacts</span></div>
               </div>
             </div>
           </div>
@@ -247,7 +331,6 @@
 
       <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
     </div>
-
     <div class="statusbar" id="statusbar"></div>
   </div>
 </div>
@@ -262,30 +345,34 @@ buildSidebar('sandbox');
 buildFooter({items:[{txt:'backend · isolated',cls:'sb-cyan'},{txt:'state: idle',id:'sbState'},{txt:'Sandbox ready',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
-/* verdict gauge ring */
+function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('Desktop runtime unavailable')); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* ── verdict gauge ── */
 function drawGauge(score,color){
   const d=document.getElementById('vgauge');
-  const cx=85,cy=85,r=62,sw=16,C=2*Math.PI*r;
-  const frac=score==null?0:score/100;
+  const cx=85,cy=85,r=62,sw=15,C=2*Math.PI*r;
+  const frac=score==null?0:Math.max(0,Math.min(1,score/100));
   d.innerHTML=
     '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.12)" stroke-width="'+sw+'"/>'+
     '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+(color||'var(--amber)')+'" stroke-width="'+sw+'" stroke-linecap="round" '+
-      'stroke-dasharray="'+(C*frac).toFixed(1)+' '+C+'" transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dasharray 1s cubic-bezier(.3,.8,.3,1);filter:drop-shadow(0 0 6px '+(color||'var(--amber)')+')"/>';
+      'stroke-dasharray="'+(C*frac).toFixed(1)+' '+C+'" transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dasharray 1s cubic-bezier(.3,.8,.3,1);filter:drop-shadow(0 0 7px '+(color||'var(--amber)')+')"/>';
 }
 drawGauge(null);
 
-/* mode chips */
-const samples={
-  url:'https://www.google.com',   // benign, reachable — a real detonation target to try
-  file:'',
-  hash:''
-};
+/* ── embers (ambient) ── */
+(function(){ var e=document.getElementById('embers2'); for(var i=0;i<18;i++){ var s=document.createElement('span');
+  s.style.left=(8+Math.random()*84)+'%'; s.style.setProperty('--d',(2.4+Math.random()*2.6)+'s');
+  s.style.setProperty('--dx',(Math.random()*40-20)+'px'); s.style.animationDelay=(Math.random()*3)+'s'; e.appendChild(s);} })();
+
+/* ── sample chips ── */
+const samples={ url:'https://www.google.com', file:'', hash:'' };
 document.querySelectorAll('.tchip').forEach(c=>c.addEventListener('click',()=>{
   document.querySelectorAll('.tchip').forEach(x=>x.classList.remove('on'));
   c.classList.add('on'); document.getElementById('subInput').value=samples[c.dataset.mode];
 }));
 
-/* ============ DETONATION SEQUENCE ============ */
+/* ── behavior timeline ── */
 const EV={
   proc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>',
   file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>',
@@ -293,141 +380,230 @@ const EV={
   reg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
   alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>'
 };
-function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('Desktop runtime unavailable')); }
-function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-
-const det=document.getElementById('detonate'), vmCard=document.getElementById('vmCard'),
-      vmCore=document.getElementById('vmCore'), vmStatus=document.getElementById('vmStatus'),
-      behave=document.getElementById('behave'), bevCount=document.getElementById('bevCount'),
-      vmNet=document.getElementById('vmNet'), vmpid=document.getElementById('vmpid'),
-      elapsed=document.getElementById('elapsed'), sbState=document.getElementById('sbState'),
-      vmRight=document.getElementById('vmRight');
-let running=false, evN=0;
+const behave=document.getElementById('behave'), bevCount=document.getElementById('bevCount');
+let evN=0;
 function bev(c,k,t,title,d){
   const row=document.createElement('div'); row.className='bev '+c;
-  row.innerHTML='<span class="bnode">'+EV[k]+'</span><div class="btxt"><span class="bt">'+t+'</span><b>'+esc(title)+'</b><div class="bdesc">'+esc(d)+'</div></div>';
+  row.innerHTML='<span class="bnode">'+EV[k]+'</span><div class="btxt"><span class="bt">'+t+'</span><b>'+esc(title)+'</b>'+(d?('<div class="bdesc">'+esc(d)+'</div>'):'')+'</div>';
   behave.appendChild(row); behave.scrollTop=behave.scrollHeight; bevCount.textContent=(++evN)+' events';
 }
 function hitTac(t){ const tc=document.querySelector('.tac[data-tac="'+t+'"]'); if(tc&&!tc.classList.contains('hit')){ tc.classList.add('hit'); document.getElementById('tacCount').textContent=document.querySelectorAll('.tac.hit').length+' mapped'; } }
 
+/* ── live analysis console ── */
+const consoleEl=document.getElementById('vmConsole');
+let conTimer=null;
+function conLine(html){ const l=document.createElement('div'); l.className='cl'; l.innerHTML=html; consoleEl.appendChild(l);
+  while(consoleEl.children.length>6) consoleEl.removeChild(consoleEl.firstChild); }
+function startConsole(host){
+  consoleEl.innerHTML='';
+  const steps=[
+    ['boot','<span class="t">[boot]</span> restoring clean <span class="cy">Win11 x64</span> memory snapshot'],
+    ['hook','<span class="t">[kernel]</span> attaching syscall + API hooks'],
+    ['inject','<span class="t">[agent]</span> injecting behavioural monitor'],
+    ['dns','<span class="t">[net]</span> resolving DNS · <span class="cy">'+esc(host||'target')+'</span>'],
+    ['tls','<span class="t">[net]</span> negotiating TLS handshake'],
+    ['fetch','<span class="t">[scrape]</span> fetching DOM, scripts and resources'],
+    ['ioc','<span class="t">[analyze]</span> extracting indicators of compromise'],
+    ['ml','<span class="t">[ml]</span> running ensemble · <span class="am">BERT · DGA · IOC</span>'],
+    ['intel','<span class="t">[intel]</span> cross-checking threat intelligence'],
+    ['ai','<span class="t">[ai]</span> DeepSeek reviewing page characteristics'],
+    ['score','<span class="t">[verdict]</span> computing blended risk score']
+  ];
+  let i=0; conLine(steps[0][1]);
+  conTimer=setInterval(()=>{ i++; if(i>=steps.length){ conLine('<span class="t">[verdict]</span> finalising…'); return; } conLine(steps[i][1]); }, 720);
+}
+function stopConsole(verdictHtml){ if(conTimer){ clearInterval(conTimer); conTimer=null; } if(verdictHtml) conLine(verdictHtml); }
+
+/* ── live activity bars ── */
+let actTimer=null;
+function startActivity(){ const ids=['actCpu','actMem','actNet','actDsk'];
+  actTimer=setInterval(()=>{ ids.forEach(id=>{ document.getElementById(id).style.height=(18+Math.random()*78)+'%'; }); }, 260); }
+function stopActivity(){ if(actTimer){ clearInterval(actTimer); actTimer=null; } ['actCpu','actMem','actNet','actDsk'].forEach(id=>document.getElementById(id).style.height='10%'); }
+
+/* ── continuous packet flow ── */
+let pktTimer=null;
+function startPackets(color, viaRemote){
+  const wires=[document.getElementById('wireA')]; if(viaRemote) wires.push(document.getElementById('wireB'));
+  pktTimer=setInterval(()=>{ wires.forEach(w=>{
+      const p=document.createElement('span'); p.className='pkt'; p.style.color=color||'var(--cyan)'; p.style.background=color||'var(--cyan)';
+      w.appendChild(p); const rev=Math.random()<0.35; const t0=performance.now(), dur=620+Math.random()*260;
+      (function step(now){const t=(now-t0)/dur; if(t>=1){p.remove();return;} p.style.left=((rev?1-t:t)*100)+'%'; p.style.opacity=(1-Math.abs(t-0.5)).toFixed(2); requestAnimationFrame(step);})(t0);
+    }); }, 150);
+}
+function stopPackets(){ if(pktTimer){ clearInterval(pktTimer); pktTimer=null; } }
+
+/* ── breakdown bar helper ── */
+function setBar(k, valId, pct, txt){
+  const row=document.querySelector('.bdrow[data-k="'+k+'"]'); if(!row) return;
+  if(pct==null){ row.classList.add('skip'); document.getElementById(valId).textContent=txt||'—'; row.querySelector('.track i').style.width='0%'; return; }
+  row.classList.remove('skip'); document.getElementById(valId).textContent=txt!=null?txt:(Math.round(pct)+'/100');
+  row.querySelector('.track i').style.width=Math.max(0,Math.min(100,pct))+'%';
+}
+function resetBreakdown(){ ['backend','local','bert','dga','ai'].forEach(k=>setBar(k,'bd'+k.charAt(0).toUpperCase()+k.slice(1),null,'—')); }
+
+/* ── signals ── */
+function renderSignals(list){
+  const box=document.getElementById('signals'); box.innerHTML='';
+  if(!list || !list.length){ box.innerHTML='<div class="placeholder">No notable signals — nothing crossed the threshold.</div>'; document.getElementById('sigCount').textContent='0'; return; }
+  list.forEach(function(s){
+    const ai=/^AI:/i.test(s); const bad=/phish|malware|malicious|credential|password|free\/abused|cloaking|lure|brand|c2|punycode/i.test(s);
+    const cls=ai?'ai':(bad?'bad':'warn'); const txt=ai?('<b>AI verdict</b> — '+esc(s.replace(/^AI:\s*/i,''))):esc(s);
+    const row=document.createElement('div'); row.className='sig '+cls; row.innerHTML='<span class="sd"></span><span class="stx">'+txt+'</span>'; box.appendChild(row);
+  });
+  document.getElementById('sigCount').textContent=list.length;
+}
+
+/* ── elements / state ── */
+const det=document.getElementById('detonate'), vmCard=document.getElementById('vmCard'),
+      reactor=document.getElementById('reactor'), vmStatus=document.getElementById('vmStatus'),
+      vmNet=document.getElementById('vmNet'), vmpid=document.getElementById('vmpid'),
+      elapsed=document.getElementById('elapsed'), sbState=document.getElementById('sbState'),
+      vmRight=document.getElementById('vmRight');
+let running=false;
+
+/* ── detonation sequence ── */
 async function detonate(){
   if(running) return;
-  const mode=((document.querySelector('.tchip.on')||{}).dataset||{}).mode||'url';
   const raw=document.getElementById('subInput').value.trim();
   if(!raw){ vmStatus.innerHTML='Enter a URL to <b>detonate</b>'; return; }
+  const mode=((document.querySelector('.tchip.on')||{}).dataset||{}).mode||'url';
   running=true; evN=0;
-  det.classList.add('busy'); vmCard.classList.add('running'); vmCore.classList.remove('idle');
+
+  // reset results
+  det.classList.add('busy');
   behave.innerHTML=''; bevCount.textContent='0 events';
-  document.getElementById('vscore').textContent='—'; drawGauge(null);
+  renderSignals(null); resetBreakdown();
+  document.getElementById('vscore').textContent='—'; drawGauge(null); document.getElementById('vtarget').textContent='';
   document.querySelectorAll('.tac').forEach(t=>t.classList.remove('hit')); document.getElementById('tacCount').textContent='0 mapped';
+  ['tSig','tHdr','tNet'].forEach(id=>document.getElementById(id).textContent='0');
+  ['iocHost','iocIp','iocC2','iocFam'].forEach(id=>document.getElementById(id).textContent='—');
   const vb=document.getElementById('vbadge'); vb.className='vbadge sus'; vb.innerHTML='<div class="spinner sm" style="width:13px;height:13px;border-color:rgba(245,166,35,.3);border-top-color:var(--amber)"></div>ANALYZING';
-  ['tFiles','tProc','tNet'].forEach(id=>document.getElementById(id).textContent='0');
-  document.getElementById('iocHash').textContent='—';
-  ['iocHost','iocC2','iocFam'].forEach(id=>document.getElementById(id).textContent='—');
   vmpid.textContent='PID '+(4000+Math.floor(Math.random()*900));
   vmRight.innerHTML='<span class="badge-live"><span class="dot"></span>LIVE</span>';
   sbState.textContent='state: detonating';
-  const stages=['Booting snapshot…','Submitting to backend…','Scraping + ML classification…','Scoring verdict…'];
-  let si=0; const sint=setInterval(()=>{ vmStatus.innerHTML='<b>'+stages[Math.min(si,stages.length-1)]+'</b>'; si++; },1200);
-  const t0=performance.now(); const eint=setInterval(()=>{ elapsed.textContent=((performance.now()-t0)/1000).toFixed(1)+'s elapsed'; },100);
+  vmNet.textContent='net: opening…';
+
+  const url=/^https?:/i.test(raw)?raw:('http://'+raw);
+  let host=raw; try{ host=new URL(url).hostname; }catch(e){}
+
+  // --- cinematic detonation: charge → detonate → analyze ---
+  reactor.className='reactor charging';
+  vmStatus.innerHTML='<b>Charging snapshot…</b>';
+  await new Promise(r=>setTimeout(r,650));
+  reactor.classList.add('detonate');
+  await new Promise(r=>setTimeout(r,260));
+  reactor.className='reactor active'; vmCard.classList.add('running');
+  startConsole(host); startActivity(); startPackets('var(--cyan)', false);
+
+  const t0=performance.now();
+  const eint=setInterval(()=>{ elapsed.textContent=((performance.now()-t0)/1000).toFixed(1)+'s elapsed'; },100);
+  const stages=['Detonating in isolated VM…','Capturing behaviour…','Scraping + ML classification…','Scoring blended verdict…'];
+  let si=0; const sint=setInterval(()=>{ vmStatus.innerHTML='<b>'+stages[Math.min(si,stages.length-1)]+'</b>'; si++; },1100);
 
   if(mode!=='url'){ bev('warn','file','+0.1s','Mode: '+mode.toUpperCase(),'File/hash detonation needs upload — running URL analysis on the input string instead.'); }
-  bev('ok','proc','+0.2s','Sample submitted','Dispatched to isolated backend analysis');
-  const url=/^https?:/i.test(raw)?raw:('http://'+raw);
+  bev('ok','proc','+0.2s','Sample submitted','Dispatched to the isolated analysis backend');
 
   try{
     const res=await cfInvoke('scan_url',{url:url});
     const d=(res&&res.data)||{};
     clearInterval(sint); clearInterval(eint);
     det.classList.remove('busy'); vmCard.classList.remove('running');
-    const risk=+d.riskScore||0, cat=(d.category||'unknown');
+    stopActivity(); stopPackets();
+
+    const risk=Math.round(+d.riskScore||0), cat=(d.category||'unknown');
+    const backend=(d.backendRiskScore!=null)?Math.round(+d.backendRiskScore):null;
+    const signals=Array.isArray(d.signals)?d.signals:[];
+    const ext=(d.externalDomains||[]);
+    const miss=(d.missingHeaders||[]);
+
+    // behaviour timeline (from real findings)
     if(d.scraperSuccess===false){ bev('bad','net','scrape','Target unreachable',d.scraperError||'could not connect'); }
-    const ext=(d.externalDomains||[]); if(ext.length){ bev('warn','net','net','Outbound connections',ext.length+' external domain(s): '+ext.slice(0,3).join(', ')); vmNet.textContent='net: '+ext.length+' conn'; }
-    const miss=(d.missingHeaders||[]); if(miss.length){ bev('warn','reg','hdr','Missing security headers',miss.slice(0,4).join(', ')); }
-    const sus=(d.suspiciousRequests||[]); if(sus.length){ bev('bad','file','sus',sus.length+' suspicious request(s)',String(sus[0]).slice(0,60)); }
-    bev(risk>=50?'bad':(risk>=30?'warn':'ok'),'alert','ml','ML verdict: '+cat,(d.summary||('risk '+risk+'/100')).slice(0,100));
-    // telemetry
-    document.getElementById('tNet').textContent=ext.length;
-    document.getElementById('tFiles').textContent=miss.length;
-    document.getElementById('tProc').textContent=(d.modelPredictions?Object.keys(d.modelPredictions).length:1);
-    // IOCs
-    let host=raw; try{ host=new URL(url).hostname; }catch(e){}
-    document.getElementById('iocHost').textContent=host||'—';
-    document.getElementById('iocC2').textContent=ext.length?ext[0]:'none';
-    document.getElementById('iocFam').textContent=cat;
-    // MITRE heuristic from real findings
-    if(ext.length) hitTac('c2');
-    if(/phish|credential|login|steal/i.test(cat+' '+(d.summary||''))) hitTac('cred');
-    if(miss.length) hitTac('disc');
-    if(risk>=50){ hitTac('evade'); hitTac('exec'); }
-    // verdict gauge
-    const col=risk>=65?'#ff7185':risk>=35?'var(--amber-2)':'var(--green)';
-    let sc=0; const a=setInterval(()=>{ sc+=3; if(sc>=risk){sc=risk;clearInterval(a);} document.getElementById('vscore').textContent=sc; drawGauge(sc,col); },22);
-    if(risk===0){ document.getElementById('vscore').textContent='0'; drawGauge(0,col); }
+    if(ext.length){ bev('warn','net','net','Outbound connections',ext.length+' external host(s): '+ext.slice(0,3).join(', ')); vmNet.textContent='net: '+ext.length+' conn'; }
+    else { vmNet.textContent='net: '+(d.scraperSuccess===false?'no route':'quiet'); }
+    if(miss.length){ bev('warn','reg','hdr','Missing security headers',miss.slice(0,4).join(', ')); }
+    signals.slice(0,6).forEach(function(s){ const ai=/^AI:/i.test(s); bev(ai?'warn':( /phish|malware|password|free\/abused|cloaking|lure|brand/i.test(s)?'bad':'warn'),'alert','sig', ai?'AI analysis':'Signal', s.replace(/^AI:\s*/i,'')); });
+    bev(risk>=50?'bad':(risk>=30?'warn':'ok'),'alert','ml','Verdict: '+cat,(d.summary||('risk '+risk+'/100')).slice(0,110));
+
+    // verdict + reactor colour
     const cls=risk>=65?'mal':risk>=35?'sus':'safe', label=risk>=65?'MALICIOUS':risk>=35?'SUSPICIOUS':'CLEAN';
-    vb.className='vbadge '+cls;
-    vb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>'+label;
+    const col=risk>=65?'#ff7185':risk>=35?'var(--amber-2)':'var(--green)';
+    reactor.className='reactor '+cls;
     vmStatus.innerHTML='Analysis complete — <b>'+label.toLowerCase()+'</b>';
     sbState.textContent='state: complete';
     vmRight.innerHTML='<span class="pill '+(cls==='mal'?'crit':cls==='sus'?'med':'low')+'">'+(cls==='safe'?'CLEAN':'FLAGGED')+'</span>';
+    stopConsole('<span class="t">[verdict]</span> '+(cls==='mal'?'<span class="bad">MALICIOUS</span>':cls==='sus'?'<span class="am">SUSPICIOUS</span>':'<span class="ok">CLEAN</span>')+' · risk '+risk+'/100');
 
-    // ---- AI Deep Scan: BERT + DGA + ML ensemble (the new ML stack) ----
+    // animated score
+    let sc=0; const a=setInterval(()=>{ sc+=Math.max(1,Math.round(risk/22)); if(sc>=risk){sc=risk;clearInterval(a);} document.getElementById('vscore').textContent=sc; drawGauge(sc,col); },22);
+    if(risk===0){ document.getElementById('vscore').textContent='0'; drawGauge(0,col); }
+    const vb2=document.getElementById('vbadge'); vb2.className='vbadge '+cls;
+    vb2.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>'+label;
+    document.getElementById('vtarget').textContent=host;
+
+    // signals + telemetry
+    renderSignals(signals);
+    document.getElementById('tSig').textContent=signals.length;
+    document.getElementById('tHdr').textContent=miss.length;
+    document.getElementById('tNet').textContent=ext.length;
+
+    // IOCs
+    document.getElementById('iocHost').textContent=host||'—';
+    const c2=document.getElementById('iocC2'); c2.textContent=ext.length?ext.slice(0,2).join(', '):'none'; c2.className='v'+(ext.length?' bad':'');
+    document.getElementById('iocFam').textContent=cat+(d.reinforced?' · reinforced':'');
+    try{ const ipr=await cfInvoke('resolve_ip',{host:host}); if(ipr&&ipr.success){ document.getElementById('iocIp').textContent=ipr.ip||'—'; } }catch(_e){}
+
+    // MITRE (from real findings)
+    if(ext.length) hitTac('c2');
+    if(/phish|credential|login|password|steal|sign-in/i.test(cat+' '+signals.join(' ')+' '+(d.summary||''))) hitTac('cred');
+    if(/cloak|evasion|anti-bot/i.test(signals.join(' '))) hitTac('evade');
+    if(miss.length) hitTac('disc');
+    if(risk>=50){ hitTac('exec'); }
+
+    // breakdown bars
+    setBar('backend','bdBackend', backend, backend!=null?backend+'/100':'—');
+    // local heuristics: stronger the more signals fired
+    setBar('local','bdLocal', signals.length?Math.min(100,30+signals.length*12):null, signals.length?(signals.length+' signal'+(signals.length>1?'s':'')):'—');
+
+    // ---- AI deep scan (BERT + DGA + ML ensemble) ----
+    let aiSig = signals.find(function(s){ return /^AI:/i.test(s); });
     try{
       const en=await cfInvoke('ml_url_enrich',{url:url});
       const comp=(en&&en.components)||{};
       const bert=comp.bert_threat_score, dga=comp.dga_threat_score, mlmax=comp.ml_max_threat_score;
-      if(bert!=null) bev(bert>=0.6?'bad':bert>=0.35?'warn':'ok','file','bert','BERT URL classifier',Math.round(bert*100)+'% malicious likelihood');
-      if(dga!=null) bev(dga>=0.6?'bad':dga>=0.35?'warn':'ok','net','dga','DGA domain check',Math.round(dga*100)+'% generated-domain score');
-      if(mlmax!=null) bev(mlmax>=0.6?'bad':mlmax>=0.35?'warn':'ok','reg','mlx','ML ensemble',Math.round(mlmax*100)+'% max across 4 models');
+      if(bert!=null){ setBar('bert','bdBert', Math.round(bert*100), Math.round(bert*100)+'%'); bev(bert>=0.6?'bad':bert>=0.35?'warn':'ok','file','bert','BERT URL classifier',Math.round(bert*100)+'% malicious likelihood'); }
+      if(dga!=null){ setBar('dga','bdDga', Math.round(dga*100), Math.round(dga*100)+'%'); bev(dga>=0.6?'bad':dga>=0.35?'warn':'ok','net','dga','DGA domain check',Math.round(dga*100)+'% generated-domain score'); }
       const fused=+en.risk_score;
       if(!isNaN(fused) && fused>risk){
         const col2=fused>=65?'#ff7185':fused>=35?'var(--amber-2)':'var(--green)';
         document.getElementById('vscore').textContent=Math.round(fused); drawGauge(Math.round(fused),col2);
-        bev('warn','alert','fuse','Fused ML risk raised verdict',risk+' → '+Math.round(fused)+'/100');
+        bev('warn','alert','fuse','Fused ML risk raised the verdict',risk+' → '+Math.round(fused)+'/100');
       }
       if(en && en.risk_level) document.getElementById('iocFam').textContent=cat+' · '+en.risk_level;
-    }catch(_e){ /* deep scan is best-effort; the agent scan already rendered */ }
+    }catch(_e){ /* deep scan best-effort */ }
+    // AI confirmation bar (from the reinforcement signal, if present)
+    setBar('ai', 'bdAi', aiSig ? (risk>=50?80:40) : null, aiSig ? 'confirmed' : 'no flag');
   }catch(e){
     clearInterval(sint); clearInterval(eint);
-    det.classList.remove('busy'); vmCard.classList.remove('running');
+    det.classList.remove('busy'); vmCard.classList.remove('running'); stopActivity(); stopPackets();
+    reactor.className='reactor idle';
+    stopConsole('<span class="t">[error]</span> <span class="bad">analysis failed</span>');
     vmStatus.innerHTML='Analysis failed — <b>backend unreachable</b>';
     sbState.textContent='state: error';
     bev('bad','alert','err','Scan failed',(e&&e.message)||'backend unreachable or not signed in');
-    const vb2=document.getElementById('vbadge'); vb2.className='vbadge sus'; vb2.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>ERROR';
+    const vb3=document.getElementById('vbadge'); vb3.className='vbadge sus'; vb3.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>ERROR';
   }
   running=false;
 }
 det.addEventListener('click',detonate);
 attachRipple(det);
+document.getElementById('subInput').addEventListener('keydown',function(e){ if(e.key==='Enter') detonate(); });
 
-/* ---- network packet animation along the wires ---- */
-function burstPackets(color, viaC2){
-  const wires=[document.getElementById('wireA')];
-  if(viaC2) wires.push(document.getElementById('wireB'));
-  let n=0; const iv=setInterval(()=>{
-    wires.forEach(w=>{
-      const p=document.createElement('span'); p.className='pkt'; p.style.color=color; p.style.background=color;
-      w.appendChild(p); const rev=Math.random()<0.35;
-      let t0=performance.now(); const dur=620+Math.random()*260;
-      (function step(now){const t=(now-t0)/dur; if(t>=1){p.remove();return;}
-        p.style.left=((rev?1-t:t)*100)+'%'; p.style.opacity=(1-Math.abs(t-0.5)).toFixed(2);
-        requestAnimationFrame(step);})(t0);
-    });
-    if(++n>=5) clearInterval(iv);
-  },150);
-}
-
-/* ---- IOC copy feedback ---- */
-document.querySelectorAll('.ioc').forEach(row=>{
-  const c=row.querySelector('.copy'); if(!c)return;
-  c.addEventListener('click',()=>{
-    const v=row.querySelector('.v').textContent;
+/* ── IOC copy ── */
+document.querySelectorAll('.ioc .copy').forEach(c=>{
+  c.addEventListener('click',()=>{ const row=c.closest('.ioc'); const v=row.querySelector('.v').textContent;
     if(navigator.clipboard) navigator.clipboard.writeText(v).catch(()=>{});
-    row.classList.add('copied'); setTimeout(()=>row.classList.remove('copied'),900);
-  });
+    row.classList.add('copied'); setTimeout(()=>row.classList.remove('copied'),900); });
 });
-
-/* No auto-run — the user enters a URL and presses Detonate for a real scan. */
 </script>
 </body>
 </html>

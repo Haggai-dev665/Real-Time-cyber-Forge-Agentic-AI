@@ -102,19 +102,23 @@
     function watch(title){ location.href = 'login.php?title=' + encodeURIComponent(title || 'PrimeReel'); }
     document.addEventListener('scroll', function(){ document.getElementById('nav').classList.toggle('solid', window.scrollY>40); });
 
-    // Bundled fallback so the page looks complete even without a TMDB key / outbound API.
+    // Bundled catalogue with real movie posters (in ./posters/), so the page
+    // looks like a real streaming service even without a TMDB key / outbound API.
     var FALLBACK = [
-      {t:'Midnight Horizon',y:2024,g:'#3a1d2b'},{t:'The Last Signal',y:2023,g:'#1d2b3a'},
-      {t:'Echoes of Tomorrow',y:2024,g:'#2b3a1d'},{t:'Crimson Protocol',y:2022,g:'#3a1d1d'},
-      {t:'Neon Drift',y:2023,g:'#2b1d3a'},{t:'Silent Harbor',y:2024,g:'#1d3a35'},
-      {t:'Iron Verdict',y:2021,g:'#3a301d'},{t:'Paper Cities',y:2023,g:'#1d263a'},
-      {t:'After the Storm',y:2024,g:'#332b3a'},{t:'Glass Empire',y:2022,g:'#1d3a2b'},
-      {t:'Velvet Ashes',y:2023,g:'#3a1d2f'},{t:'North of Nowhere',y:2024,g:'#22303a'}
+      {t:'The Dark Knight',y:2008,img:'dark-knight'},{t:'Inception',y:2010,img:'inception'},
+      {t:'Interstellar',y:2014,img:'interstellar'},{t:'Joker',y:2019,img:'joker'},
+      {t:'The Avengers',y:2012,img:'avengers'},{t:'Pulp Fiction',y:1994,img:'pulp-fiction'},
+      {t:'The Matrix',y:1999,img:'the-matrix'},{t:'Fight Club',y:1999,img:'fight-club'},
+      {t:'Gladiator',y:2000,img:'gladiator'},{t:'Parasite',y:2019,img:'parasite'},
+      {t:'Django Unchained',y:2012,img:'django'},{t:'The Lord of the Rings',y:2001,img:'lotr'},
+      {t:'Avatar',y:2009,img:'avatar'},{t:'Titanic',y:1997,img:'titanic'},
+      {t:'Goodfellas',y:1990,img:'goodfellas'},{t:'Forrest Gump',y:1994,img:'forrest-gump'},
+      {t:'The Shawshank Redemption',y:1994,img:'shawshank'},{t:'The Godfather',y:1972,img:'the-godfather'}
     ];
     function fbCard(m){
       var d=document.createElement('div'); d.className='card'; d.onclick=function(){watch(m.t);};
-      d.innerHTML='<div class="poster" style="background:linear-gradient(160deg,'+m.g+',#0b0b0f)">'+
-        '<div class="ph-title">'+m.t+'</div><div class="pl"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div>'+
+      d.innerHTML='<div class="poster" style="background-image:url(posters/'+m.img+'.jpg);background-color:#15151c">'+
+        '<div class="pl"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div>'+
         '<div class="cinfo"><div class="t">'+m.t+'</div><div class="y"><span>'+m.y+'</span><span class="free">FREE · HD</span></div></div>';
       return d;
     }
@@ -131,6 +135,11 @@
     function loadFallback(){
       fill(document.getElementById('reelTrending'), FALLBACK, false);
       fill(document.getElementById('reelPopular'), FALLBACK.slice().reverse(), false);
+      // Feature a real title in the hero, using its poster as the backdrop.
+      var hero=FALLBACK[2]; heroT=hero.t;
+      document.getElementById('heroTitle').textContent=hero.t;
+      document.getElementById('heroOverview').textContent='Stream '+hero.t+' and thousands more full‑length films free in HD — no subscription, no card required. Just press play.';
+      document.getElementById('heroArt').style.backgroundImage='url(posters/'+hero.img+'.jpg)';
     }
     if(TMDB_KEY){
       Promise.all([

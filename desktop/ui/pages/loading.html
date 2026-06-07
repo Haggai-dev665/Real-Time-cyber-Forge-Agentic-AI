@@ -70,27 +70,53 @@ function inv(cmd, args){ return (T && T.core && T.core.invoke) ? T.core.invoke(c
 function preSet(key, payload){ try{ localStorage.setItem('cf_pre_'+key, JSON.stringify({ ts: Date.now(), payload: payload })); }catch(e){} }
 
 var OTX_API_KEY = 'd32e3deb37526ef9095320ed7976388981f9c5052b6e85f5c5b5adab9a87f15c';
-/* Warm every page's data while the logo plays. Order = priority: the data the
-   user lands on first (Threat Overview, then the Threat Globe) is fetched first.
-   Each result is cached in the Rust process AND stashed to localStorage so the
-   destination page shows it immediately, then refreshes live. */
+/* Warm the data behind the SIX Intelligence screens — the first six items in the
+   sidebar — so they are fully ready before the app opens. We don't navigate until
+   every one of these has finished (see authCheck below). Order = sidebar order:
+   1 Threat Overview · 2 Threat Globe · 3 Sandbox · 4 Browser Intelligence ·
+   5 AI Assistance · 6 Security Functions. Each result is cached in the Rust
+   process AND stashed to localStorage so the destination page shows it instantly,
+   then refreshes live. The trailing entries warm data for later pages too. */
 var WARM = [
-  { key:'status',   run:function(){ return inv('agent_status'); } },                       // overview + every header
-  { key:'threats',  run:function(){ return inv('get_threats'); } },                         // THREAT OVERVIEW
-  { key:'globe',    run:function(){ return inv('otx_fetch', { apiKey: OTX_API_KEY, limit: 50 }); } }, // THREAT GLOBE (slow → early)
-  { key:'sys',      run:function(){ return inv('get_system_stats'); } },
-  { key:'browsers', run:function(){ return inv('detect_browsers'); } },
-  { key:'history',  run:function(){ return inv('get_collected_history'); } },
-  { key:'memory',   run:function(){ return inv('memory_list', { limit: 80 }); } },
-  { key:'alerts',   run:function(){ return inv('agent_alerts'); } }
+  // ── 1 · Threat Overview (also feeds every header) ──
+  { key:'status',     run:function(){ return inv('agent_status'); } },
+  { key:'threats',    run:function(){ return inv('get_threats'); } },
+  // ── 2 · Threat Globe (slow network → early) ──
+  { key:'globe',      run:function(){ return inv('otx_fetch', { apiKey: OTX_API_KEY, limit: 50 }); } },
+  // ── 3 · Sandbox (idle until a scan; shares the ML status engines panel) ──
+  { key:'ml',         run:function(){ return inv('ml_status'); } },
+  // ── 4 · Browser Intelligence ──
+  { key:'browsers',   run:function(){ return inv('detect_browsers'); } },
+  { key:'history',    run:function(){ return inv('get_collected_history'); } },
+  // ── 5 · AI Assistance ──
+  { key:'hf',         run:function(){ return inv('hf_token_status'); } },
+  // ── 6 · Security Functions ──
+  { key:'policymeta', run:function(){ return inv('policy_meta'); } },
+  { key:'policylist', run:function(){ return inv('policy_list'); } },
+  { key:'policystats',run:function(){ return inv('policy_stats'); } },
+  { key:'blocked',    run:function(){ return inv('list_blocked'); } },
+  { key:'protected',  run:function(){ return inv('list_protected'); } },
+  { key:'allowed',    run:function(){ return inv('list_allowed'); } },
+  // ── background: data for later pages (not gated on, just pre-warmed) ──
+  { key:'sys',        run:function(){ return inv('get_system_stats'); } },
+  { key:'memory',     run:function(){ return inv('memory_list', { limit: 80 }); } },
+  { key:'alerts',     run:function(){ return inv('agent_alerts'); } }
 ];
+/* The first SIX screens are the first 13 WARM entries (indices 0–12, ending at
+   the last Security Functions entry). The app stays on the loading screen until
+   all of these settle. The remaining entries warm in the background. */
+var SCREEN6_COUNT = 13;
 function runWarm(t){ return t.run().then(function(r){ if(r) preSet(t.key, r); }).catch(function(){}); }
 
-/* rotating status + time-based progress over the ~15s warm-up */
+/* rotating status + time-based progress over the ~30s warm-up. The phrases walk
+   through the six Intelligence screens being pre-loaded, in sidebar order. */
 var PHRASES = ['Connecting to the agent core','Loading your threat overview','Mapping the global threat grid',
-  'Syncing browser intelligence','Warming the ML inference engine','Indexing local memory','Preparing your workspace'];
-var pi=0, statusTimer=setInterval(function(){ var e=document.getElementById('lstatus'); if(e) e.textContent=PHRASES[pi++%PHRASES.length]; }, 1900);
-var t0=Date.now(), WARM_MS=15000;
+  'Arming the sandbox scanner','Syncing browser intelligence','Waking the AI assistant',
+  'Loading your security functions','Warming the ML inference engine','Indexing local memory','Preparing your workspace'];
+var pi=0, statusTimer=setInterval(function(){ var e=document.getElementById('lstatus'); if(e) e.textContent=PHRASES[pi++%PHRASES.length]; }, 2400);
+/* WARM_MS = minimum time on the loading screen so the six screens have time to
+   load and the brand plays; HARD_CAP_MS = absolute ceiling so we never hang. */
+var t0=Date.now(), WARM_MS=30000, HARD_CAP_MS=45000;
 var progTimer=setInterval(function(){ var b=document.getElementById('lbar'); if(b) b.style.width=Math.min(96,(Date.now()-t0)/WARM_MS*100)+'%'; }, 80);
 
 /* persistent login: validate the keychain session (this also restores the Rust
@@ -110,11 +136,12 @@ function go(authed){
 
 authCheck.then(function(authed){
   if(!authed){ delay(1600).then(function(){ go(false); }); return; }
-  // Authenticated → warm all pages (priority first) for ~15s, then route.
+  // Authenticated → warm every page (sidebar order), but don't open the app
+  // until the first SIX screens are fully loaded AND the ~30s minimum elapses.
   var warms = WARM.map(runWarm);
-  var priority = Promise.allSettled(warms.slice(0,3));   // status + threats + globe ready
-  Promise.allSettled([priority, delay(WARM_MS)]).then(function(){ go(true); });
-  delay(20000).then(function(){ go(true); });            // hard cap
+  var screen6 = Promise.allSettled(warms.slice(0, SCREEN6_COUNT));  // all six Intelligence screens ready
+  Promise.allSettled([screen6, delay(WARM_MS)]).then(function(){ go(true); });
+  delay(HARD_CAP_MS).then(function(){ go(true); });                 // safety net — never hang
 });
 </script>
 </body>

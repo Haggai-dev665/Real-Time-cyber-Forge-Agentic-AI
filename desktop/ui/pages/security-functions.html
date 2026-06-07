@@ -148,7 +148,7 @@
 
             <!-- Response log -->
             <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 4-5"/></svg>Response Log<span class="right" id="logCount">0</span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 4-5"/></svg>Security Activity<span class="right" id="logCount">0</span></div>
               <div class="sf-log" id="logList"><div class="sf-empty">No response actions yet</div></div>
             </div>
 
@@ -242,6 +242,7 @@ fitWindow('win');
   function addBlock(){ var v=(ai.value||'').trim(); if(!v) return; ab.textContent='…';
     inv('block_site',{domain:v, reason:'Manually blocked'}).then(function(r){ ai.value=''; ab.textContent='Block';
       if(window.CF&&CF.toast) CF.toast((r&&r.enforced)?('Blocked '+(r.domain||v)+' system-wide'):('Listed — '+((r&&r.message)||'needs admin')), (r&&r.enforced)?'ok':'warn'); loadBlocked();
+      try{ window.dispatchEvent(new Event('cf:secaction')); }catch(_){}
     }).catch(function(){ ab.textContent='Block'; if(window.CF&&CF.toast) CF.toast('Block failed','error'); }); }
   ab&&ab.addEventListener('click',addBlock);
   ai&&ai.addEventListener('keydown',function(ev){ if(ev.key==='Enter') addBlock(); });
@@ -276,12 +277,31 @@ fitWindow('win');
   function catColor(c){ return c==='block'?'#ff7185':c==='secure'?'var(--cyan)':'var(--amber-2)'; }
   var METRIC_LABEL={ risk_score:'Risk Score', alert_count_24h:'Alerts / 24h', correlation_count:'Correlations', malicious_domains:'Malicious Domains', threat_severity:'Threat Severity' };
 
-  var META={ triggerMetrics:[], operators:[], actionTypes:{} };
+  // Static policy schema — mirrors the backend Policy Engine (policyEngineService.js).
+  // Used as an immediate fallback so the Add-Function dropdowns are always populated,
+  // even when /api/policy/meta is unreachable (offline / backend cold start / rate-limited).
+  // loadMeta() refreshes this from the server whenever it responds.
+  var META={
+    triggerMetrics:['risk_score','alert_count_24h','correlation_count','malicious_domains','threat_severity'],
+    operators:['>','>=','<','<=','==','!='],
+    actionTypes:{
+      alert_escalate:{ label:'Escalate Alert' },
+      notify_soc:{ label:'Notify SOC' },
+      log_response:{ label:'Log Response' },
+      soft_block:{ label:'Soft Block' },
+      session_restrict:{ label:'Restrict Session' },
+      weight_boost:{ label:'Boost Risk Weights' },
+      agent_task:{ label:'Dispatch Agent Task' },
+    },
+  };
   var POLICIES=[];
 
   /* ---- loaders (all real, via Rust → backend Policy Engine) ---- */
   async function loadMeta(){
-    try{ var r=await CF.invoke('policy_meta'); if(r&&r.data){ META=r.data; buildForm(); } }catch(e){}
+    buildForm(); // populate dropdowns immediately from the static fallback (don't wait on the network)
+    try{ var r=await CF.invoke('policy_meta');
+      if(r&&r.data&&Array.isArray(r.data.triggerMetrics)&&r.data.triggerMetrics.length){ META=r.data; buildForm(); }
+    }catch(e){}
   }
   async function loadPolicies(){
     try{ var r=await CF.invoke('policy_list'); POLICIES=(r&&r.policies)||[]; renderPolicies(r&&r.offline);
@@ -292,11 +312,30 @@ fitWindow('win');
     try{ var r=await CF.invoke('policy_stats'); var d=(r&&r.data)||{};
       set('kTotal', d.totalPolicies!=null?d.totalPolicies:POLICIES.length);
       set('kActive', d.enabledPolicies!=null?d.enabledPolicies:POLICIES.filter(function(p){return p.enabled;}).length);
-      set('kResp', d.totalResponseActions||0);
-    }catch(e){}
+    }catch(e){ set('kTotal', POLICIES.length); set('kActive', POLICIES.filter(function(p){return p.enabled;}).length); }
   }
+  /* Security activity comes primarily from the LOCAL memory store — every
+     block / protect / allow and every flagged scan is recorded there — merged
+     with any backend policy responses. This keeps the log full even offline. */
   async function loadLog(){
-    try{ var r=await CF.invoke('policy_response_log',{limit:40}); renderLog((r&&r.log)||[]); }catch(e){}
+    var mem=[], plog=[];
+    try{ var r=await CF.invoke('memory_list',{limit:160}); mem=(r&&r.data&&r.data.memories)||[]; }catch(e){}
+    try{ var pr=await CF.invoke('policy_response_log',{limit:40}); plog=(pr&&pr.log)||[]; }catch(e){}
+    var items=[], actions=0;
+    mem.forEach(function(m){
+      var cat=String(m.category||''), kind=null, color=null;
+      if(/^action-block/.test(cat)){ kind='BLOCK'; color='#ff7185'; actions++; }
+      else if(/^action-protect/.test(cat)){ kind='PROTECT'; color='var(--cyan)'; actions++; }
+      else if(/^action-allow/.test(cat)){ kind='ALLOW'; color='var(--green)'; actions++; }
+      else if(cat==='report'){ kind='REPORT'; color='var(--amber-2)'; }
+      else if(m.kind==='episodic' && m.risk!=null && +m.risk>=50){ kind='THREAT'; color='#ff7185'; }
+      else if(/otx/.test(cat) && m.kind==='semantic'){ return; }
+      else return;
+      items.push({ kind:kind, text:m.text, ts:(m.ts?m.ts*1000:Date.now()), color:color });
+    });
+    plog.forEach(function(a){ items.push({ kind:'POLICY', text:(a.policyName||'policy')+' — '+(a.actionType||'action'), ts:(new Date(a.timestamp).getTime()||Date.now()), color:'var(--amber-2)' }); });
+    items.sort(function(a,b){ return b.ts-a.ts; });
+    renderActivity(items, actions + plog.length);
   }
   async function loadMl(){
     try{ var r=await CF.invoke('ml_status'); renderMl(r); }
@@ -406,16 +445,22 @@ fitWindow('win');
     btn.disabled=false;
   });
 
-  /* ---- response log ---- */
-  function renderLog(list){
-    set('logCount', list.length);
+  /* ---- response log / security activity (memory-backed) ---- */
+  function cleanTxt(t){ return String(t||'')
+      .replace(/^User\s+/,'')
+      .replace(/^enabled protected access for\s+/i,'protected ')
+      .replace(/\s*\(marked trusted\)/i,'')
+      .replace(/^Scanned\s+/i,'scanned ')
+      .replace(/^Security report\s+/i,'report ').trim(); }
+  function renderActivity(items, respCount){
+    set('logCount', items.length);
+    if(respCount!=null) set('kResp', respCount);
     var box=document.getElementById('logList');
-    if(!list.length){ box.innerHTML='<div class="sf-empty">No response actions yet — trigger one with the simulator.</div>'; return; }
-    box.innerHTML=list.slice(0,40).map(function(a){
-      var c=catOf(a.actionType); var lbl=((META.actionTypes[a.actionType]||{}).label)||a.actionType;
-      return '<div class="sf-logrow"><span class="ldot" style="background:'+catColor(c)+';box-shadow:0 0 6px '+catColor(c)+'"></span>'+
-        '<span class="ln">'+esc(a.policyName||'policy')+' — '+esc(lbl)+'</span>'+
-        '<span class="lt">'+timeAgo(a.timestamp)+'</span></div>';
+    if(!items.length){ box.innerHTML='<div class="sf-empty">No security activity yet — block, protect or allow a site (or run a scan) and it appears here from memory.</div>'; return; }
+    box.innerHTML=items.slice(0,60).map(function(a){
+      return '<div class="sf-logrow"><span class="ldot" style="background:'+a.color+';box-shadow:0 0 6px '+a.color+'"></span>'+
+        '<span class="ln"><b style="color:'+a.color+';font-family:var(--mono);font-size:8.5px;letter-spacing:.5px;margin-right:6px">'+a.kind+'</b>'+esc(cleanTxt(a.text).slice(0,90))+'</span>'+
+        '<span class="lt">'+timeAgo(new Date(a.ts).toISOString())+'</span></div>';
     }).join('');
   }
 
@@ -442,7 +487,7 @@ fitWindow('win');
   loadMeta().then(function(){ refreshAll(); });
   // a live threat/alert may trigger policies server-side → refresh the log + stats
   var _lt; function bump(){ clearTimeout(_lt); _lt=setTimeout(function(){ loadLog(); loadStats(); },400); }
-  ['cf:threat','cf:alert','cf:scan'].forEach(function(n){ window.addEventListener(n, bump); });
+  ['cf:threat','cf:alert','cf:scan','cf:secaction'].forEach(function(n){ window.addEventListener(n, bump); });
   setInterval(function(){ loadStats(); loadLog(); }, 30000);
 })();
 </script>

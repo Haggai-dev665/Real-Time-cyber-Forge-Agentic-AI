@@ -116,10 +116,9 @@ brilliant guardian that's simply *always there* — watching, understanding, and
 
 {% embed https://youtu.be/d5GLapNKSKk %}
 
-> 📸 **When you publish on DEV:** each comparison below is a single side‑by‑side image — drag‑and‑drop
-> it into the editor and replace its `images/compare/...` path with the URL DEV gives you (just 6
-> images). Single images render reliably on DEV, unlike images placed inside tables. The `{% embed %}`
-> tag above renders as an inline YouTube player automatically.
+> 📸 **Publishing on DEV:** just paste this whole file — the comparison images load automatically
+> from the public GitHub repo (raw.githubusercontent.com URLs), so no manual upload is needed. The
+> `{% embed %}` tag above renders as an inline YouTube player.
 
 The story of this project is best told **side by side**. On the left is where each screen
 *started* — a convincing shell filled with mock data. On the right is where the Finish‑Up‑A‑Thon
@@ -127,7 +126,7 @@ took it — the same screen, now wired to live, on‑device functionality.
 
 ### Threat Overview — your situational dashboard
 
-![Threat Overview — before (left) vs after (right)](images/compare/threatoverview_compare.png)
+![Threat Overview — before (left) vs after (right)](https://raw.githubusercontent.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/main/images/compare/threatoverview_compare.png)
 
 *The dashboard once showed hard‑coded numbers. Now the threat counts, critical/high alerts and
 overall posture are computed from real scans of the pages you actually visit — the first place
@@ -135,7 +134,7 @@ you look to know whether everything is calm.*
 
 ### Threat Globe — live worldwide attacks
 
-![Threat Globe — before (left) vs after (right)](images/compare/threatglobe_compare.png)
+![Threat Globe — before (left) vs after (right)](https://raw.githubusercontent.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/main/images/compare/threatglobe_compare.png)
 
 *What used to be a decorative graphic is now a real, interactive 3‑D globe streaming genuine
 attacks from global threat‑intelligence feeds (AlienVault OTX) — and the agent learns from those
@@ -143,7 +142,7 @@ pulses into its memory.*
 
 ### Agent Core — agentic AI that decides and acts
 
-![Agent Core — before (left) vs after (right)](images/compare/agentcore_compare.png)
+![Agent Core — before (left) vs after (right)](https://raw.githubusercontent.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/main/images/compare/agentcore_compare.png)
 
 *The agent panel was scripted theatre. Now an autonomous agent reasons through each threat
 step‑by‑step and streams its thinking live, and the floating agent follows you onto every screen
@@ -151,14 +150,14 @@ to scan whatever page you're viewing.*
 
 ### Model Inference — the ML detection engines
 
-![Model Inference — before (left) vs after (right)](images/compare/modelinference_compare.png)
+![Model Inference — before (left) vs after (right)](https://raw.githubusercontent.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/main/images/compare/modelinference_compare.png)
 
 *The "models" were just labels on a page. Now this screen reports the real detection engines —
 phishing/URL classification, DGA detection and IOC scanning — and their live readiness.*
 
 ### Signal Pipeline — from page to verdict, in real time
 
-![Signal Pipeline — before (left) vs after (right)](images/compare/signalpipeline_compare.png)
+![Signal Pipeline — before (left) vs after (right)](https://raw.githubusercontent.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/main/images/compare/signalpipeline_compare.png)
 
 *A pretty flowchart became an actual pipeline: active‑tab capture → backend ML + local
 heuristics → DeepSeek confirmation → blended verdict → action, with each stage reflecting real
@@ -166,7 +165,7 @@ scans as they happen.*
 
 ### Sign‑in — secure, local‑first access
 
-![Authentication — before (left) vs after (right)](images/compare/auth_compare.png)
+![Authentication — before (left) vs after (right)](https://raw.githubusercontent.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/main/images/compare/auth_compare.png)
 
 *The login was a façade. Now it's a real authenticated session, with the token stored in the OS
 keychain and restored on launch so the on‑device intelligence is ready the moment you open the app.*

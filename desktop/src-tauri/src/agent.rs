@@ -904,6 +904,30 @@ pub async fn get_pending_threat(state: State<'_, SharedState>) -> Result<Value, 
     Ok(s.pending_threat.clone().unwrap_or(Value::Null))
 }
 
+/// Allowlist of popular, known-good domains. Matches the domain or any subdomain
+/// (e.g. `mail.google.com`, `gist.github.com`). These are forced clean so the
+/// scanner never false-positives on the sites people use every day.
+fn is_trusted_domain(host: &str) -> bool {
+    const TRUSTED: &[&str] = &[
+        "google.com", "gmail.com", "youtube.com", "googleapis.com", "gstatic.com",
+        "github.com", "githubusercontent.com", "githubassets.com", "gitlab.com", "bitbucket.org",
+        "dev.to", "stackoverflow.com", "stackexchange.com", "medium.com",
+        "microsoft.com", "office.com", "office365.com", "live.com", "outlook.com", "bing.com", "windows.net", "msn.com",
+        "apple.com", "icloud.com", "amazon.com", "amazonaws.com", "aws.amazon.com",
+        "cloudflare.com", "cloudflare.net", "akamai.com", "fastly.net",
+        "wikipedia.org", "wikimedia.org", "mozilla.org", "duckduckgo.com", "yahoo.com",
+        "npmjs.com", "python.org", "pypi.org", "rust-lang.org", "crates.io", "nodejs.org", "docker.com",
+        "linkedin.com", "x.com", "twitter.com", "facebook.com", "instagram.com", "whatsapp.com",
+        "reddit.com", "netflix.com", "spotify.com", "twitch.tv", "discord.com",
+        "paypal.com", "stripe.com", "dropbox.com", "slack.com", "zoom.us", "notion.so",
+        "atlassian.com", "jetbrains.com", "vercel.com", "netlify.com", "heroku.com", "digitalocean.com",
+        "wordpress.com", "adobe.com", "salesforce.com", "openai.com", "anthropic.com",
+        "huggingface.co", "kaggle.com", "cloudflarestream.com",
+    ];
+    let h = host.trim().trim_start_matches("www.").to_lowercase();
+    TRUSTED.iter().any(|d| h == *d || h.ends_with(&format!(".{}", d)))
+}
+
 /// Scan a URL through the backend agent pipeline and cache the result in state.
 #[tauri::command]
 pub async fn scan_url(
@@ -959,8 +983,16 @@ pub async fn scan_url(
         .unwrap_or("")
         .to_string();
 
-    // Local reinforcement (URL + page content + DeepSeek) blended in.
-    let (final_risk, final_cat, signals) = reinforce_scan(&url, backend_risk, &backend_cat).await;
+    // Allowlist: popular/known-good domains (github.com, google.com, dev.to, …)
+    // are forced clean so they never false-positive. The reinforcement (fetch +
+    // heuristics + DeepSeek) is skipped for them entirely.
+    let scan_host_l = scan_host(&url);
+    let trusted = is_trusted_domain(&scan_host_l);
+    let (final_risk, final_cat, signals) = if trusted {
+        (0_i64, "trusted".to_string(), vec!["allowlisted known-good domain".to_string()])
+    } else {
+        reinforce_scan(&url, backend_risk, &backend_cat).await
+    };
     let reinforced = final_risk > backend_risk || (final_cat != backend_cat && final_risk >= 50);
     if let Some(obj) = body.get_mut("data").and_then(|d| d.as_object_mut()) {
         obj.insert("riskScore".to_string(), json!(final_risk));
@@ -994,9 +1026,11 @@ pub async fn scan_url(
         obj.insert("related".to_string(), json!(related));
     }
 
-    // Pop an always-on-top alert over the browser when a real threat is flagged,
-    // deduped per host (10-minute window) so it never spams.
-    if final_risk >= 50 {
+    // Pop an always-on-top alert ONLY for a CONFIRMED phishing/malware verdict on
+    // a non-allowlisted domain — popular/trusted sites and generic "suspicious"
+    // scores never trigger the popup (keeps it from false-alerting). Deduped per
+    // host (10-minute window) so it never spams.
+    if !trusted && final_risk >= 50 && (final_cat.contains("phish") || final_cat.contains("mal")) {
         let host = scan_host(&url);
         let fire = {
             let mut s = state.lock().await;

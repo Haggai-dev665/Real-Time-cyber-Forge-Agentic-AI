@@ -213,5 +213,10 @@ __pycache__/
 #Ignore cursor AI rules
 .cursor/rules/codacy.mdc
 
-# Ignore all Markdown files (docs/notes) — kept locally, not versioned
+# Ignore Claude config + the thesis folder (kept locally, not versioned)
+.claude/
+thesis/
+
+# Ignore all Markdown files EXCEPT the root README (docs/notes kept locally)
 *.md
+!/README.md

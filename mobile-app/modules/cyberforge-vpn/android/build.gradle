@@ -1,0 +1,25 @@
+apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
+
+group = "io.cyberforge.vpn"
+version = "1.0.0"
+
+def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useCoreDependencies()
+useDefaultAndroidSdkVersions()
+useExpoPublishing()
+
+android {
+  namespace "io.cyberforge.vpn"
+  defaultConfig {
+    minSdkVersion safeExtGet("minSdkVersion", 24)
+  }
+}
+
+dependencies {
+  // BouncyCastle: generate the root CA + per-host leaf certs for the TLS MITM.
+  implementation "org.bouncycastle:bcpkix-jdk18on:1.78.1"
+  implementation "org.bouncycastle:bcprov-jdk18on:1.78.1"
+}

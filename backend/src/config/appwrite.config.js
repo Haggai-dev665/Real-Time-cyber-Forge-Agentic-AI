@@ -26,7 +26,9 @@ const APPWRITE_CONFIG = {
     agentTasks: process.env.APPWRITE_COLLECTION_AGENT_TASKS || 'agent_tasks',
     alerts: process.env.APPWRITE_COLLECTION_ALERTS || 'alerts',
     evidenceMetadata: process.env.APPWRITE_COLLECTION_EVIDENCE_METADATA || 'evidence_metadata',
-    browserIntelligence: process.env.APPWRITE_COLLECTION_BROWSER_INTELLIGENCE || 'browser_intelligence'
+    browserIntelligence: process.env.APPWRITE_COLLECTION_BROWSER_INTELLIGENCE || 'browser_intelligence',
+    // Network captures streamed from the mobile VPN engine (per user/device).
+    networkCaptures: process.env.APPWRITE_COLLECTION_NETWORK_CAPTURES || 'network_captures'
   }
 };
 

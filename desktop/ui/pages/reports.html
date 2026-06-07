@@ -4,9 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Reports</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/report-fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .rp-grid{display:grid;grid-template-columns:330px 1fr;gap:14px;height:calc(100% - 56px);min-height:0}
@@ -73,6 +72,45 @@
 .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
 .kpi{padding:13px 15px}.kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
 .kpi .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}.kpi .kd{font-size:10px;color:var(--faint);margin-top:2px}
+/* AI-written markdown report body (rendered inside .dsec) */
+.dsec .dsub{font-size:12.5px;font-weight:700;color:var(--text);margin:12px 0 5px}
+.dsec .dul{margin:5px 0 9px 4px;padding-left:18px}
+.dsec .dul li{font-size:12px;line-height:1.65;color:var(--dim);margin:3px 0}
+.dsec p strong,.dsec .dul strong{color:var(--text);font-weight:600}
+.dsec p code,.dsec li code{font-family:var(--mono);font-size:11px;color:var(--amber-2);background:var(--amber-dim);padding:1px 5px;border-radius:4px}
+.dsec p+p{margin-top:9px}
+/* "AI is writing" placeholder inside the document */
+.dwait{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:70px 20px;text-align:center}
+.dwait .dwspin{width:34px;height:34px;border-radius:50%;border:2.5px solid rgba(245,166,35,.22);border-top-color:var(--amber-2);animation:spin .8s linear infinite}
+.dwait .dwt{font-family:var(--mono);font-size:11.5px;color:var(--amber-2);letter-spacing:.4px}
+.dwait .dws{font-family:var(--mono);font-size:10px;color:var(--faint);max-width:320px;line-height:1.6}
+
+/* range picker modal (period selection on Generate) */
+@keyframes rgov{from{opacity:0}to{opacity:1}}
+@keyframes rgw{from{opacity:.4;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+.rg-ov{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(3,6,12,.66);backdrop-filter:blur(11px);animation:rgov .18s ease}
+.rg-w{width:560px;max-width:96vw;background:var(--surface-solid,#0d1320);border:1px solid var(--border-2);border-radius:18px;
+  box-shadow:0 50px 130px -28px rgba(0,0,0,.85);overflow:hidden;animation:rgw .24s cubic-bezier(.2,.9,.25,1)}
+.rg-h{display:flex;align-items:flex-start;gap:13px;padding:20px 22px;border-bottom:1px solid var(--border)}
+.rg-h .ri{width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;color:var(--amber-2);
+  border:1px solid rgba(245,166,35,.4);background:radial-gradient(circle at 50% 35%,#3a2a12,#140d04)}
+.rg-h .ri svg{width:20px;height:20px}
+.rg-h .rt{flex:1}.rg-h .rt b{font-size:16px;font-weight:600}
+.rg-h .rt span{display:block;font-size:11.5px;color:var(--faint);margin-top:3px;font-family:var(--sans)}
+.rg-h .rx{width:32px;height:32px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--dim);cursor:pointer;display:grid;place-items:center;flex:none}
+.rg-h .rx:hover{color:#ff7185;border-color:rgba(244,73,94,.4)} .rg-h .rx svg{width:14px;height:14px}
+.rg-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:18px 22px}
+.rg-opt{display:flex;align-items:center;gap:12px;padding:15px 14px;border-radius:12px;border:1px solid var(--border-2);
+  background:var(--surface-2);cursor:pointer;transition:.15s;text-align:left}
+.rg-opt:hover{border-color:rgba(245,166,35,.5);background:var(--amber-dim);transform:translateY(-1px)}
+.rg-opt .rc{width:36px;height:36px;border-radius:9px;flex:none;display:grid;place-items:center;color:var(--amber-2);
+  border:1px solid var(--border);background:var(--tile);font-family:var(--mono);font-size:12px;font-weight:700}
+.rg-opt .rl b{font-size:13.5px;font-weight:600;display:block}
+.rg-opt .rl span{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px;display:block}
+.rg-foot{padding:0 22px 18px;font-size:11px;color:var(--faint);line-height:1.6;font-family:var(--sans)}
+.rg-foot b{color:var(--amber-2);font-weight:600}
+/* Printable PDF styling is injected by ../scripts/cf-report.js (CFReport). */
 </style>
 </head>
 <body>
@@ -86,26 +124,26 @@
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div>
           <h1>Reports</h1>
           <div class="head-right">
-            <span id="rcount">12 reports</span>
+            <span id="rcount">0 reports</span>
             <button class="btn-gen" id="genBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Generate Report</button>
           </div>
         </div>
 
         <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Generated This Week</div><div class="kv" style="color:var(--amber-2)">12</div><div class="kd">3 scheduled</div></div>
-          <div class="card kpi"><div class="kl">Open Findings</div><div class="kv" style="color:#ff7185">7</div><div class="kd">2 critical</div></div>
-          <div class="card kpi"><div class="kl">Mean Time to Report</div><div class="kv" style="color:var(--green)">4.2<span style="font-size:13px;color:var(--faint)">s</span></div><div class="kd">AI-generated</div></div>
+          <div class="card kpi"><div class="kl">Reports Generated</div><div class="kv" style="color:var(--amber-2)">0</div><div class="kd">this session</div></div>
+          <div class="card kpi"><div class="kl">Open Findings</div><div class="kv" style="color:#ff7185">0</div><div class="kd">critical + high</div></div>
+          <div class="card kpi"><div class="kl">Threats Tracked</div><div class="kv" style="color:var(--green)">0</div><div class="kd">live</div></div>
         </div>
 
         <div class="rp-grid">
           <div class="card" style="display:flex;flex-direction:column;min-height:0">
-            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Report Library<span class="right" id="libCount">12</span></div>
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Report Library<span class="right" id="libCount">0</span></div>
             <div class="rlist" id="rlist"></div>
           </div>
 
           <div class="card" style="display:flex;flex-direction:column;min-height:0">
             <div class="gen-bar" style="border-bottom:1px solid var(--border)">
-              <div class="gtitle"><b id="pvTitle">Incident Report — RedLine Stealer Containment</b><span id="pvMeta">INC-2207 · generated by CyberForge Agent · just now</span></div>
+              <div class="gtitle"><b id="pvTitle">Threat Posture Report</b><span id="pvMeta">generated from live data</span></div>
               <div class="dtool" id="dtCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</div>
             </div>
             <div class="doc-wrap">
@@ -113,15 +151,15 @@
                 <div class="dscan"></div>
                 <div class="doc-head">
                   <div class="doc-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg></div>
-                  <div class="doc-title"><h2 id="docH2">Incident Report — RedLine Stealer Containment</h2><div class="dmeta">CyberForge AI Security · Confidential · TLP:AMBER</div></div>
-                  <div class="doc-id">INC-2207<br/>2026-05-29</div>
+                  <div class="doc-title"><h2 id="docH2">Threat Posture Report</h2><div class="dmeta">CyberForge AI Security · Confidential · TLP:AMBER</div></div>
+                  <div class="doc-id" id="docId">—</div>
                 </div>
                 <div id="docBody"></div>
               </div>
             </div>
             <div class="doc-tools">
-              <div class="dtool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export PDF</div>
-              <div class="dtool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM4 9h16"/></svg>Export CSV</div>
+              <div class="dtool" id="expPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export PDF</div>
+              <div class="dtool" id="expCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM4 9h16"/></svg>Export CSV</div>
               <div class="dtool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5 15.4 17.5M15.4 6.5 8.6 10.5"/></svg>Share</div>
               <div class="dtool" style="margin-left:auto;color:var(--amber-2);border-color:rgba(245,166,35,.3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>Ask Agent</div>
             </div>
@@ -140,25 +178,18 @@
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
+<script src="../scripts/cf-report.js"></script>
 <script>
 buildHeader({status:'REPORTING',cta:'New Report'});
 buildSidebar('reports');
-buildFooter({items:[{txt:'12 reports',cls:'sb-amber'},{txt:'7 open findings',cls:'sb-cyan'},{txt:'3 scheduled',cls:'sb-green'},{txt:'Ready',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'report engine',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'Ready',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
-const reports=[
-  ['Incident Report — RedLine Stealer Containment','INC-2207','crit','ready','2m ago'],
-  ['Weekly Threat Posture Summary','RPT-0912','info','ready','4h ago'],
-  ['Phishing Campaign Analysis — Q2','RPT-0911','high','ready','1d ago'],
-  ['Vulnerability Assessment — Fleet','RPT-0908','high','ready','2d ago'],
-  ['Compliance Audit — SOC 2','RPT-0904','info','ready','3d ago'],
-  ['DDoS Event Postmortem','INC-2188','crit','ready','4d ago'],
-  ['Endpoint Hygiene Report','RPT-0899','info','ready','5d ago'],
-  ['Threat Intel Feed Digest','RPT-0897','info','ready','6d ago']
-];
+const reports=[];   // real generated reports are prepended here (none synthetic)
 const docI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>';
 const rlist=document.getElementById('rlist');
 function renderList(sel){
+  if(!reports.length){ rlist.innerHTML='<div style="padding:26px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No reports yet<br><span style="font-size:9px">click Generate to build one from live data</span></div>'; return; }
   rlist.innerHTML=reports.map((r,i)=>
     '<div class="ritem'+(i===sel?' sel':'')+'" data-i="'+i+'"><div class="ri">'+docI+'</div>'+
     '<div class="rinfo"><div class="rt">'+r[0]+'</div><div class="rm"><span class="rsev '+r[2]+'">'+r[2].toUpperCase()+'</span><span>'+r[1]+'</span><span>'+r[4]+'</span><span class="rstatus '+r[3]+'">'+r[3].toUpperCase()+'</span></div></div></div>').join('');
@@ -166,25 +197,36 @@ function renderList(sel){
 }
 renderList(0);
 
-/* report document content (streams in section by section) */
-const sections=[
-  {h:'Executive Summary',type:'p',body:'On 2026-05-29 at 09:41 UTC, CyberForge detected a RedLine Stealer infection on endpoint WS-4471 originating from a phishing link (free-prizes-login.xyz). The agent autonomously detonated the payload in sandbox, confirmed credential-theft behavior, and recommended endpoint isolation. No lateral movement was observed. Containment completed in 4m 12s.'},
-  {h:'Key Metrics',type:'stats',body:[['87','Risk Score','#ff7185'],['4m12s','Time to Contain','var(--cyan)'],['1','Endpoints','var(--amber-2)'],['0','Spread','var(--green)']]},
-  {h:'Findings',type:'finds',body:[
-    ['crit','Credential access confirmed','svc_update.dll read Chrome Login Data store; tokens exfiltrated to C2.'],
-    ['high','C2 beacon established','POST to cdn-sync.duckdns.org /gate.php at 60s interval.'],
-    ['high','Registry persistence','HKCU\\...\\Run entry added for svc_update.'],
-    ['info','No lateral movement','Fleet sweep of 1,204 hosts found no secondary infections.']
-  ]},
-  {h:'Recommended Actions',type:'p',body:'1) Maintain isolation of WS-4471 pending reimage. 2) Force-rotate credentials for the affected user. 3) Add cdn-sync.duckdns.org and free-prizes-login.xyz to the blocklist. 4) Deploy updated YARA signature to the fleet (auto-pushed by Agent Core).'}
-];
+/* report document content — built LIVE from real threat data (buildDoc) */
+let sections=[];
 const sevColor={crit:'#ff7185',high:'var(--amber-2)',info:'var(--cyan)'};
 const sevBg={crit:'rgba(244,73,94,.12)',high:'var(--amber-dim)',info:'var(--cyan-dim)'};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var currentReport={title:'Threat Posture Report',id:'RPT-'+String(Date.now()).slice(-4),date:new Date().toISOString().slice(0,10)};
+function setDocHeader(){
+  var t=document.getElementById('pvTitle'); if(t)t.textContent=currentReport.title;
+  var m=document.getElementById('pvMeta'); if(m)m.textContent=currentReport.id+' · generated by CyberForge · '+currentReport.date;
+  var h2=document.getElementById('docH2'); if(h2)h2.textContent=currentReport.title;
+  var did=document.getElementById('docId'); if(did)did.innerHTML=esc(currentReport.id)+'<br>'+esc(currentReport.date);
+}
+/* lightweight markdown → safe HTML for AI-written report sections */
+function mdToDocHtml(raw){
+  var lines=esc(raw).split('\n'), out=[], inList=false;
+  function inline(t){ return t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>'); }
+  function closeList(){ if(inList){ out.push('</ul>'); inList=false; } }
+  for(var i=0;i<lines.length;i++){ var ln=lines[i];
+    var h=ln.match(/^#{1,6}\s+(.+)$/); if(h){ closeList(); out.push('<p class="dsub">'+inline(h[1])+'</p>'); continue; }
+    var li=ln.match(/^\s*(?:[-*•]|\d+[.)])\s+(.+)$/); if(li){ if(!inList){ out.push('<ul class="dul">'); inList=true; } out.push('<li>'+inline(li[1])+'</li>'); continue; }
+    closeList(); if(ln.trim()==='') continue; out.push('<p>'+inline(ln)+'</p>');
+  }
+  closeList(); return out.join('');
+}
 function buildSection(s){
-  let inner='<h3>'+s.h+'</h3>';
-  if(s.type==='p') inner+='<p>'+s.body+'</p>';
+  let inner='<h3>'+esc(s.h)+'</h3>';
+  if(s.type==='p') inner+='<p>'+String(s.body).replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')+'</p>';
+  if(s.type==='md') inner+=mdToDocHtml(s.body);
   if(s.type==='stats'){inner+='<div class="dstats">'+s.body.map(d=>'<div class="dstat"><b style="color:'+d[2]+'">'+d[0]+'</b><span>'+d[1]+'</span></div>').join('')+'</div>';}
-  if(s.type==='finds'){inner+=s.body.map(f=>'<div class="dfind"><span class="fb" style="background:'+sevColor[f[0]]+'"></span><div class="ft"><b>'+f[1]+'</b><p>'+f[2]+'</p></div><span class="fp" style="color:'+sevColor[f[0]]+';background:'+sevBg[f[0]]+'">'+f[0].toUpperCase()+'</span></div>').join('');}
+  if(s.type==='finds'){inner+=s.body.map(f=>'<div class="dfind"><span class="fb" style="background:'+sevColor[f[0]]+'"></span><div class="ft"><b>'+esc(f[1])+'</b><p>'+esc(f[2])+'</p></div><span class="fp" style="color:'+sevColor[f[0]]+';background:'+sevBg[f[0]]+'">'+f[0].toUpperCase()+'</span></div>').join('');}
   return '<div class="dsec">'+inner+'</div>';
 }
 function renderDoc(animated){
@@ -195,47 +237,139 @@ function renderDoc(animated){
     secs.forEach((s,i)=>setTimeout(()=>{s.classList.add('in'); if(i===secs.length-1)setTimeout(()=>document.getElementById('doc').classList.remove('gen'),500);}, 500+i*650));
   } else secs.forEach(s=>s.classList.add('in'));
 }
-renderDoc(true);
+async function buildDoc(){
+  const d=await reportData(); const arr=d.threats||[];
+  var ml=(d.medium||0)+(d.low||0);
+  var crit=d.critical||0, high=d.high||0, total=d.total||0;
+  // Detailed, explanatory executive summary (two paragraphs).
+  var posture = crit>0 ? 'ELEVATED' : (high>0 ? 'GUARDED' : 'NOMINAL');
+  var summary = (total
+    ? ('As of this report, CyberForge is actively tracking '+total+' threat'+(total>1?'s':'')+' across the monitored browsing surface, comprising '+crit+' critical, '+high+' high, and '+ml+' medium or low severity item'+((ml===1)?'':'s')+'. The overall security posture is assessed as '+posture+'. ')
+    : 'No active threats are currently being tracked across the monitored browsing surface. The overall security posture is assessed as NOMINAL, indicating that no URLs, domains, or page behaviours observed in the current window crossed the escalation threshold. ')
+    + 'These figures are produced live by the eight-agent orchestrator, which evaluates each browsed URL through machine-learning classification, indicator-of-compromise extraction, MITRE ATT&CK mapping, and external threat-intelligence enrichment before assigning a blended risk verdict.'
+    + '\n\n'
+    + (total
+      ? 'The findings below summarise the most significant detections, ranked by severity. Each item reflects the consolidated judgement of multiple specialist agents rather than a single model, which materially reduces the false-positive rate relative to signature-only tooling. Analysts should treat critical and high items as actionable and triage them first.'
+      : 'Continuous monitoring remains in effect. This report should be regenerated after any significant browsing activity or at the start of each working session to confirm that the posture remains nominal.');
 
-/* generate button → re-run animation */
+  var methodology = 'Every URL encountered during browsing is dispatched through a three-stage directed-acyclic-graph pipeline. Stage one classifies the URL string and domain (phishing model and domain-generation-algorithm heuristic); stage two scrapes and inspects the page content for indicators of compromise, risky behaviour, and ATT&CK techniques; stage three enriches any extracted indicators against AlienVault OTX threat intelligence. A reporter agent then blends the per-agent scores (weighted 60% average, 40% maximum) and applies a consensus-and-escalation rule so that a single high-confidence malicious indicator raises the verdict. All processing is performed on live data; no values in this report are synthetic.';
+
+  sections=[
+    {h:'Executive Summary',type:'p',body:summary},
+    {h:'Key Metrics',type:'stats',body:[[String(total),'Total','#b87800'],[String(crit),'Critical','#c2283b'],[String(high),'High','#b87800'],[String(ml),'Med / Low','#0a72b8']]},
+    {h:'Findings',type:'finds',body: arr.length ? arr.slice(0,8).map(function(x){ var s=String(x.severity||'medium').toLowerCase(); var c=s==='critical'?'crit':(s==='high'?'high':(s==='medium'?'med':'info')); var det=x.detection||{}; return [c,(x.title||x.type||x.indicator||x.url||'Threat detected'),(x.description||x.summary||x.category||det.source||('Risk score '+(x.riskScore!=null?x.riskScore:'—')+' — flagged by the orchestrator.'))]; }) : [['info','No findings','No threats were detected in the current window. No remediation is required at this time.']]},
+    {h:'Methodology',type:'p',body:methodology},
+    {h:'Recommended Actions',type:'p',body: arr.length
+      ? ('1. Review each critical and high finding above and confirm whether the indicator is present in your environment.\n2. Add confirmed malicious domains, URLs, and file hashes to the blocklist so future visits are intercepted automatically.\n3. Isolate any endpoint that interacted with a confirmed malicious resource and rotate any credentials that may have been exposed.\n4. Where CyberForge containment policies are configured, verify that the automatic response actions executed as expected.\n5. Re-run this report after remediation to confirm the affected items have cleared.')
+      : 'No immediate action is required. Maintain continuous monitoring and regenerate this report at the start of each session, or immediately after any high-risk browsing activity, to reconfirm the security posture.'}
+  ];
+}
+async function renderDocLive(animated){ await buildDoc(); setDocHeader(); renderDoc(animated); }
+renderDocLive(true);
+
+/* ===== report generation — pick a period → memories + history → DeepSeek ===== */
+async function reportData(){ try{ const r=await CF.invoke('get_threats'); return (r&&r.data)||{}; }catch(e){ return {}; } }
+
 const genBtn=document.getElementById('genBtn');
 attachRipple(genBtn);
-genBtn.addEventListener('click',()=>{
-  genBtn.classList.add('busy');
-  document.getElementById('docBody').innerHTML='';
-  setTimeout(()=>{renderDoc(true);genBtn.classList.remove('busy');},400);
-});
-document.getElementById('dtCopy').addEventListener('click',function(){const o=this.innerHTML;this.style.color='var(--green)';setTimeout(()=>this.style.color='',900);});
 
-// ===== REAL report generation from live threat data =====
-async function reportData(){ try{ const r=await CF.invoke('get_threats'); return (r&&r.data)||{}; }catch(e){ return {}; } }
-async function generateRealReport(){
-  const d=await reportData(); const arr=d.threats||[]; const now=new Date();
-  const payload={ generatedAt:now.toISOString(),
-    totals:{ total:d.total||0, critical:d.critical||0, high:d.high||0, medium:d.medium||0, low:d.low||0 },
-    threats:arr };
-  // download a real JSON artifact
-  try{ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download='cyberforge-threat-report-'+Date.now()+'.json'; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-  }catch(e){}
-  // prepend to the library list (reports[] = [title,id,sev,status,when])
-  reports.unshift(['Threat Report — '+now.toLocaleDateString(undefined,{month:'short',day:'numeric'}),
-    'RPT-'+String(Date.now()).slice(-4), (d.critical>0?'crit':(d.high>0?'high':'info')), 'ready', 'just now']);
-  renderList(0);
-  // refresh the live doc-preview stats from real totals
-  const ds=document.querySelectorAll('#docBody .dstat b');
-  if(ds.length>=4){ ds[0].textContent=(d.total||0); ds[1].textContent=(d.critical||0); ds[2].textContent=(d.high||0); ds[3].textContent=((d.medium||0)+(d.low||0)); }
-  if(CF.toast) CF.toast('Report generated from live data','ok');
+/* periods offered when the user clicks Generate */
+const RANGES=[
+  {k:'8h',  label:'Last 8 hours',  short:'8H',  sec:8*3600,   desc:'Recent session activity'},
+  {k:'24h', label:'Last 24 hours', short:'24H', sec:24*3600,  desc:'The past day'},
+  {k:'7d',  label:'Last 7 days',   short:'7D',  sec:7*86400,  desc:'This week'},
+  {k:'30d', label:'Last 30 days',  short:'30D', sec:30*86400, desc:'This month'}
+];
+const rgX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+const rgClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
+function openRangeModal(){
+  closeRangeModal();
+  const ov=document.createElement('div'); ov.className='rg-ov'; ov.id='rgModal';
+  ov.innerHTML='<div class="rg-w">'+
+      '<div class="rg-h"><div class="ri">'+rgClock+'</div><div class="rt"><b>Generate AI Security Report</b><span>Pick a period — CyberForge AI reads your scans, browsing history, actions and risks for that window and writes the report.</span></div><button class="rx" id="rgClose" title="Close">'+rgX+'</button></div>'+
+      '<div class="rg-grid">'+RANGES.map(function(r){ return '<button class="rg-opt" data-k="'+r.k+'"><span class="rc">'+r.short+'</span><span class="rl"><b>'+r.label+'</b><span>'+r.desc+'</span></span></button>'; }).join('')+'</div>'+
+      '<div class="rg-foot">The report is written by <b>DeepSeek</b> from your local CyberForge memory and browser history for the chosen period. Connect a Hugging Face token in <b>Settings → AI &amp; Models</b> for the full AI write-up.</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){ if(e.target===ov) closeRangeModal(); });
+  ov.querySelector('#rgClose').addEventListener('click',closeRangeModal);
+  ov.querySelectorAll('.rg-opt').forEach(function(b){ b.addEventListener('click',function(){ var r=RANGES.filter(function(x){return x.k===b.dataset.k;})[0]; closeRangeModal(); if(r) buildAiReport(r); }); });
+  if(!window.__rgEsc){ window.__rgEsc=true; document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeRangeModal(); }); }
 }
-document.getElementById('genBtn').addEventListener('click',generateRealReport);
+function closeRangeModal(){ var ov=document.getElementById('rgModal'); if(ov) ov.remove(); }
+genBtn.addEventListener('click',openRangeModal);
 
-// real KPI counts (Generated this week / Open findings / etc.)
+/* the period report is built by the shared CF.findingsReport engine
+   (memories + history + live threats → DeepSeek explains the findings in depth) */
+function setDocStatus(msg,sub){ var b=document.getElementById('docBody'); if(b) b.innerHTML='<div class="dwait"><div class="dwspin"></div><div class="dwt">'+esc(msg)+'</div>'+(sub?('<div class="dws">'+esc(sub)+'</div>'):'')+'</div>'; }
+
+async function buildAiReport(range){
+  genBtn.classList.add('busy');
+  const now=new Date();
+  currentReport={ title:'Security Report — '+range.label, id:'RPT-'+String(Date.now()).slice(-4), date:now.toISOString().slice(0,10), at:now, range:range.label };
+  setDocHeader();
+  document.getElementById('doc').classList.add('gen');
+  setDocStatus('Gathering '+range.label.toLowerCase()+' telemetry…','Reading your local scans, browsing history, threat-intel and actions for this period.');
+  const res=await CF.findingsReport({ rangeSec:range.sec, label:range.label, maxTokens:2200,
+    onData:function(d){ setDocStatus('CyberForge AI is writing your report…','Analysing '+d.histWin.length+' visits, '+d.scans.length+' scans and '+d.risks.length+' flagged risks for '+range.label.toLowerCase()+'.'); } });
+  const data=res.data; sections=res.sections;
+  if(!res.ok && CF.toast) CF.toast('DeepSeek not connected — built a data report. Add your HF token in Settings → AI & Models.','warn');
+  renderDoc(true);
+  reports.unshift([currentReport.title+' — '+now.toLocaleDateString(undefined,{month:'short',day:'numeric'}), currentReport.id, res.risk, 'ready', 'just now']);
+  renderList(0); reportsKpis();
+  if(CF.remember){
+    CF.remember('Security report '+currentReport.id+' ('+range.label+', '+currentReport.date+'): '+data.histWin.length+' visits, '+data.scans.length+' scans, '+data.risks.length+' flagged risks, '+data.actions.length+' actions over the period.',
+      {kind:'procedural', category:'report', risk:(res.risk==='crit'?80:(res.risk==='high'?60:30))});
+  }
+  setTimeout(function(){ genBtn.classList.remove('busy'); },500);
+  if(CF.toast) CF.toast('Report ready — Export PDF to save','ok');
+}
+
+document.getElementById('dtCopy').addEventListener('click',function(){
+  try{ navigator.clipboard.writeText(sections.map(function(s){
+    if(s.type==='p'||s.type==='md') return s.h+'\n'+s.body;
+    if(s.type==='finds') return s.h+'\n'+s.body.map(function(f){return '- ['+f[0]+'] '+f[1]+': '+f[2];}).join('\n');
+    return s.h+'\n'+s.body.map(function(x){return x[1]+': '+x[0];}).join('   ');
+  }).join('\n\n')); }catch(e){}
+  var c=this; c.style.color='var(--green)'; setTimeout(function(){c.style.color='';},900);
+});
+
+/* ---- Export PDF: branded, detailed report via the shared CFReport module ---- */
+function exportPDF(){
+  if(!sections.length){ if(CF.toast)CF.toast('Generate a report first','warn'); return; }
+  if(!window.CFReport){ if(CF.toast)CF.toast('Report module not loaded','error'); return; }
+  CFReport.export({
+    title: currentReport.title,
+    subtitle: currentReport.range ? ('CyberForge AI analysis · '+currentReport.range) : 'Threat posture report · generated from live telemetry',
+    id: currentReport.id,
+    classification: 'CONFIDENTIAL · TLP:AMBER',
+    sections: sections
+  }).then(function(){ if(CF.toast)CF.toast('Report ready — choose “Save as PDF” in the print dialog','ok'); });
+}
+document.getElementById('expPdf').addEventListener('click',exportPDF);
+
+/* ---- Export CSV: real threat rows ---- */
+async function exportCSV(){
+  const d=await reportData(); const arr=d.threats||[];
+  var rows=[['severity','type','indicator','riskScore','source','description']];
+  arr.forEach(function(x){ var det=x.detection||{}; rows.push([ x.severity||'', x.type||x.category||'',
+    x.indicator||x.url||'', (x.riskScore!=null?x.riskScore:''), (x.source||det.source||''), (x.description||x.summary||'') ]); });
+  var csv=rows.map(function(r){ return r.map(function(c){ return '"'+String(c==null?'':c).replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+  try{ var blob=new Blob([csv],{type:'text/csv'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='cyberforge-threats-'+Date.now()+'.csv'; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+    if(CF.toast)CF.toast('CSV exported ('+arr.length+' rows)','ok');
+  }catch(e){}
+}
+document.getElementById('expCsv').addEventListener('click',exportCSV);
+
+/* ---- live KPIs ---- */
 async function reportsKpis(){
   const d=await reportData(); const kv=document.querySelectorAll('.kpi .kv');
-  if(kv[1]) kv[1].textContent=(d.critical||0)+(d.high||0);   // Open Findings
-  const rc=document.getElementById('rcount'); if(rc) rc.textContent=reports.length+' reports';
+  if(kv[0]) kv[0].textContent=reports.length;                  // Reports Generated (this session)
+  if(kv[1]) kv[1].textContent=(d.critical||0)+(d.high||0);     // Open Findings
+  if(kv[2]) kv[2].textContent=(d.total||0);                    // Threats Tracked
+  const rc=document.getElementById('rcount'); if(rc) rc.textContent=reports.length+' report'+(reports.length===1?'':'s');
   const lc=document.getElementById('libCount'); if(lc) lc.textContent=reports.length;
 }
 reportsKpis(); setInterval(reportsKpis,30000);

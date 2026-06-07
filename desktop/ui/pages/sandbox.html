@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Sandbox</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .sb-grid{display:grid;grid-template-columns:1fr 360px;gap:14px;height:calc(100% - 56px)}
@@ -259,9 +257,9 @@
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
 <script>
-buildHeader({status:'READY',search:'Search submissions, hashes, verdicts…',chips:'<div class="tb-chip"><span class="dot" style="background:var(--cyan)"></span>VM-04</div><div class="tb-chip"><span class="dot" style="background:var(--green)"></span>ISOLATED</div>'});
+buildHeader({status:'READY',search:'Search submissions, hashes, verdicts…',chips:'<div class="tb-chip"><span class="dot" style="background:var(--cyan)"></span>Sandbox</div><div class="tb-chip"><span class="dot" style="background:var(--green)"></span>ISOLATED</div>'});
 buildSidebar('sandbox');
-buildFooter({items:[{txt:'VM-04 · isolated',cls:'sb-cyan'},{txt:'state: idle',id:'sbState'},{txt:'Sandbox ready',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'backend · isolated',cls:'sb-cyan'},{txt:'state: idle',id:'sbState'},{txt:'Sandbox ready',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 /* verdict gauge ring */
@@ -278,9 +276,9 @@ drawGauge(null);
 
 /* mode chips */
 const samples={
-  url:'http://free-prizes-login.xyz/account/verify',
-  file:'invoice_2026_Q1.xlsm',
-  hash:'9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+  url:'https://www.google.com',   // benign, reachable — a real detonation target to try
+  file:'',
+  hash:''
 };
 document.querySelectorAll('.tchip').forEach(c=>c.addEventListener('click',()=>{
   document.querySelectorAll('.tchip').forEach(x=>x.classList.remove('on'));

@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Signal Pipeline</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .pipe-hero{position:relative;padding:26px 22px 30px;overflow:hidden;margin-bottom:14px}
@@ -142,7 +140,7 @@
 <script>
 buildHeader({status:'STREAMING'});
 buildSidebar('pipeline');
-buildFooter({items:[{txt:'7 sources',cls:'sb-cyan'},{txt:'12.4k events/s',cls:'sb-amber'},{txt:'backlog 0',cls:'sb-green'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'signal pipeline',cls:'sb-cyan'},{txt:'local + backend',cls:'sb-amber'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 // stage utilization bars

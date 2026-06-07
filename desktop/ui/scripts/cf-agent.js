@@ -89,11 +89,61 @@
       frame.setAttribute('scrolling', 'no');
       frame.setAttribute('allowtransparency', 'true');
       host.appendChild(frame);
+      // Bridge the shared `cf-telemetry` event INTO the panel iframe via
+      // postMessage. The iframe reaches Rust through window.parent, which is
+      // unreliable for IPC/events in Tauri v2 — but the host page (main webview)
+      // receives the event fine, so we relay it. This is what makes the panel's
+      // CPU/RAM/browsers populate reliably.
+      try {
+        var T = window.__TAURI__;
+        if (T && T.event && T.event.listen) {
+          T.event.listen('cf-telemetry', function (e) {
+            if (frame && frame.contentWindow) {
+              try { frame.contentWindow.postMessage({ cf: 'telemetry', payload: e.payload }, '*'); } catch (_) {}
+            }
+          });
+        }
+      } catch (_) {}
+      // Immediate snapshot when the panel opens: invoke from the host window
+      // (which works reliably, unlike from inside the iframe) and relay it, so
+      // CPU/RAM/browsers show instantly instead of waiting for the next tick.
+      function pushSnapshot() {
+        try {
+          var T2 = window.__TAURI__;
+          if (!(T2 && T2.core && T2.core.invoke && frame && frame.contentWindow)) return;
+          Promise.all([
+            T2.core.invoke('get_system_stats').catch(function () { return null; }),
+            T2.core.invoke('detect_browsers').catch(function () { return null; })
+          ]).then(function (r) {
+            try { frame.contentWindow.postMessage({ cf: 'telemetry', payload: { sys: r[0], browsers: r[1] } }, '*'); } catch (_) {}
+          });
+        } catch (_) {}
+      }
+      frame.addEventListener('load', function () {
+        // The panel is a separate document — inherit the host's theme.
+        try {
+          var d = frame.contentDocument;
+          var t = (window.cfCurrentTheme && window.cfCurrentTheme()) || 'dark';
+          if (d && d.documentElement) {
+            if (t === 'light') d.documentElement.setAttribute('data-theme', 'light');
+            if (window.__cfThemeCSS && !d.getElementById('cf-theme-style')) {
+              var s = d.createElement('style'); s.id = 'cf-theme-style'; s.textContent = window.__cfThemeCSS;
+              (d.head || d.documentElement).appendChild(s);
+            }
+          }
+        } catch (e) {}
+        pushSnapshot(); setTimeout(pushSnapshot, 1500);
+      });
       // Panel asks to collapse via postMessage.
       window.addEventListener('message', function (e) {
         if (e.data && e.data.cf === 'agent-min') minimize();
       });
-      // Start minimized: the floating icon is visible, click to open.
+      // Start minimized: the floating icon is visible, click to open. We load
+      // the panel iframe eagerly (kept hidden) so its real-time active-tab
+      // scanner runs immediately — this is what flags a phishing site and pops
+      // the always-on-top alert even when the panel was never opened and the
+      // CyberForge window is minimized.
+      frame.setAttribute('src', '../components/agent-panel.html');
       fab.classList.remove('cf-hidden');
     }
 

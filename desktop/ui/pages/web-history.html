@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Browser History</title>
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.wh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.wh-stat{padding:14px 15px}
+.wh-stat .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.wh-stat .kv{font-family:var(--mono);font-size:24px;font-weight:600;margin-top:6px}
+.wh-stat .kd{font-size:10px;color:var(--faint);margin-top:2px}
+.wh-card{display:flex;flex-direction:column;min-height:0;height:calc(100% - 110px)}
+.wh-toolbar{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.wh-search{flex:1;display:flex;align-items:center;gap:9px;height:38px;padding:0 13px;border-radius:9px;border:1px solid var(--border-2);background:rgba(8,12,20,.6)}
+.wh-search svg{width:15px;height:15px;color:var(--faint)} .wh-search input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:var(--sans)}
+.wh-search input::placeholder{color:var(--faint)}
+.wh-refresh{height:38px;padding:0 14px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);font-family:var(--mono);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:7px}
+.wh-refresh:hover{color:var(--text);border-color:var(--border-3)} .wh-refresh svg{width:14px;height:14px}
+.wh-list{overflow-y:auto;min-height:0}
+.hrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);transition:background .15s}
+.hrow:hover{background:rgba(130,160,200,.05)}
+.hbadge{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;border:1px solid var(--border-2);background:var(--tile);color:var(--cyan);font-family:var(--mono);font-size:11px;font-weight:600}
+.hinfo{flex:1;min-width:0}
+.hinfo .ht{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hinfo .hu{font-family:var(--mono);font-size:9.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.hmeta{font-family:var(--mono);font-size:9px;color:var(--faint);flex:none;text-align:right}
+.hverdict{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 8px;border-radius:5px;flex:none;display:none}
+.hverdict.show{display:inline-block}
+.hscan{flex:none;height:28px;padding:0 12px;border-radius:7px;border:1px solid rgba(245,166,35,.4);background:var(--amber-dim);color:var(--amber-2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:.15s}
+.hscan:hover{background:rgba(245,166,35,.2)} .hscan.busy{opacity:.6;pointer-events:none}
+.wh-empty{padding:40px 20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:12px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Browser History" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg></div>
+          <h1>Browser History</h1>
+          <div class="head-right"><span id="whCount">— URLs</span></div>
+        </div>
+
+        <div class="wh-stats">
+          <div class="card wh-stat"><div class="kl">Total URLs</div><div class="kv" style="color:var(--cyan)" id="sTotal">0</div><div class="kd">collected on-device</div></div>
+          <div class="card wh-stat"><div class="kl">Browsers</div><div class="kv" style="color:var(--amber-2)" id="sBrowsers">0</div><div class="kd">with history</div></div>
+          <div class="card wh-stat"><div class="kl">Scanned</div><div class="kv" style="color:var(--green)" id="sScanned">0</div><div class="kd">this session</div></div>
+          <div class="card wh-stat"><div class="kl">Threats</div><div class="kv" style="color:#ff7185" id="sThreats">0</div><div class="kd">risk ≥ 50</div></div>
+        </div>
+
+        <div class="card wh-card">
+          <div class="wh-toolbar">
+            <div class="wh-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="whSearch" placeholder="Filter by site, title, or browser…" autocomplete="off" /></div>
+            <button class="wh-refresh" id="whRefresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Re-scan history</button>
+          </div>
+          <div class="wh-list" id="whList"><div class="wh-empty">Reading your browser history…</div></div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'HISTORY',search:'Filter browser history…'});
+buildSidebar('history');
+buildFooter({items:[{txt:'on-device history',cls:'sb-cyan'},{txt:'local-first',cls:'sb-amber'},{txt:'Collected',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+function cfInvoke(cmd,args){ try{ if(window.CF&&CF.invoke) return CF.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('Desktop runtime unavailable')); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function hostOf(u){ try{ return (String(u).split('://')[1]||String(u)).split('/')[0]; }catch(e){ return u; } }
+function ago(ts){ if(!ts) return ''; var s=Math.max(0,Math.floor(Date.now()/1000)-ts); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; }
+
+var ALL=[], scanned=0, threats=0;
+var listEl=document.getElementById('whList'), searchEl=document.getElementById('whSearch');
+
+function rowHtml(it,i){
+  var host=hostOf(it.url), badge=(it.browser||'?').slice(0,2).toUpperCase();
+  return '<div class="hrow" data-i="'+i+'" data-url="'+esc(it.url).replace(/"/g,'&quot;')+'">'+
+    '<div class="hbadge" title="'+esc(it.browser||'')+'">'+esc(badge)+'</div>'+
+    '<div class="hinfo"><div class="ht">'+esc(it.title||host||it.url)+'</div><div class="hu">'+esc(it.url)+'</div></div>'+
+    '<span class="hmeta">'+esc(it.browser||'')+(it.lastVisit?(' · '+ago(it.lastVisit)):'')+'</span>'+
+    '<span class="hverdict" data-verdict></span>'+
+    '<button class="hscan">Scan</button></div>';
+}
+function render(){
+  var q=(searchEl.value||'').trim().toLowerCase();
+  var list=ALL;
+  if(q) list=ALL.filter(function(it){ return ((it.url||'')+' '+(it.title||'')+' '+(it.browser||'')).toLowerCase().indexOf(q)>=0; });
+  if(!list.length){ listEl.innerHTML='<div class="wh-empty">'+(ALL.length?'No history matches “'+esc(q)+'”.':'No browser history found. Open a browser and visit a few sites, then re-scan.')+'</div>'; return; }
+  listEl.innerHTML=list.slice(0,400).map(function(it){ return rowHtml(it, ALL.indexOf(it)); }).join('');
+  if(list.length>400){ var more=document.createElement('div'); more.className='wh-empty'; more.textContent='Showing first 400 of '+list.length+' — refine your filter to see more.'; listEl.appendChild(more); }
+  bindRows();
+}
+function bindRows(){
+  listEl.querySelectorAll('.hscan').forEach(function(btn){
+    btn.addEventListener('click',function(e){ e.stopPropagation(); var row=btn.closest('.hrow'); scanRow(row, btn); });
+  });
+}
+function scanRow(row, btn){
+  var url=row.getAttribute('data-url'); if(!url) return;
+  btn.classList.add('busy'); btn.textContent='…';
+  cfInvoke('scan_url',{url:url}).then(function(r){
+    var d=(r&&r.data)||{}; var risk=+d.riskScore||0; var cat=d.category||d.verdict||'';
+    var col=risk>=70?'var(--red)':risk>=40?'var(--amber)':'var(--green)';
+    var bg=risk>=70?'rgba(244,73,94,.14)':risk>=40?'var(--amber-dim)':'rgba(67,224,138,.14)';
+    var v=row.querySelector('[data-verdict]');
+    v.textContent=(risk>=70?'THREAT ':risk>=40?'SUSPECT ':'CLEAN ')+risk;
+    v.style.color=col; v.style.background=bg; v.classList.add('show');
+    btn.textContent='Re-scan'; btn.classList.remove('busy');
+    scanned++; if(risk>=50) threats++;
+    document.getElementById('sScanned').textContent=scanned;
+    document.getElementById('sThreats').textContent=threats;
+  }).catch(function(e){
+    btn.textContent='Scan'; btn.classList.remove('busy');
+    var v=row.querySelector('[data-verdict]'); v.textContent='ERR'; v.style.color='var(--faint)'; v.style.background='rgba(130,160,200,.1)'; v.classList.add('show');
+  });
+}
+searchEl.addEventListener('input',render);
+
+function load(){
+  listEl.innerHTML='<div class="wh-empty">Reading your browser history…</div>';
+  cfInvoke('get_collected_history').then(function(r){
+    var d=(r&&r.data)||{}; ALL=d.history||[];
+    var total=d.totalUnique||d.count||ALL.length;
+    var byB=d.byBrowser||{}; var browsers=Object.keys(byB).filter(function(k){return byB[k]>0;}).length || new Set(ALL.map(function(x){return x.browser;})).size;
+    document.getElementById('sTotal').textContent=total.toLocaleString();
+    document.getElementById('sBrowsers').textContent=browsers;
+    document.getElementById('whCount').textContent=ALL.length.toLocaleString()+' URLs';
+    render();
+  }).catch(function(e){ listEl.innerHTML='<div class="wh-empty">Couldn\'t read history: '+esc(String((e&&e.message)||e))+'</div>'; });
+}
+document.getElementById('whRefresh').addEventListener('click',load);
+load();
+</script>
+</body>
+</html>

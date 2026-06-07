@@ -8,11 +8,13 @@
 
 mod agent;
 mod auth;
+mod blocking;
 mod commands;
 mod http;
 mod memory;
 mod metrics;
 mod ml;
+mod policy;
 mod state;
 mod system;
 
@@ -37,9 +39,23 @@ pub fn run() {
             // Floating agent panel — real local + backend telemetry
             system::get_system_stats,
             system::detect_browsers,
+            // Header IP search — resolve a website to its IP(s) via OS DNS
+            system::resolve_ip,
+            // Installation wizard — OS-aware profile + real PATH registration
+            system::get_system_profile,
+            system::get_path_status,
+            system::add_to_path,
+            // Real browser history → URLs to scan in real time
+            system::get_browser_history,
+            // Full background-collected history (all browsers, all profiles)
+            system::get_collected_history,
+            // One-time install gate
+            system::is_installed,
+            system::mark_installed,
             metrics::agent_status,
             // Agent Core + scanning (backend-connected)
             agent::scan_url,
+            agent::get_pending_threat,
             agent::get_active_urls,
             agent::get_last_scan,
             agent::agent_alerts,
@@ -47,6 +63,8 @@ pub fn run() {
             agent::auth_google,
             agent::browser_intel,
             agent::browser_intel_report,
+            // Threat Globe — live AlienVault OTX threat-intel pulses
+            agent::otx_fetch,
             // Local-first vector memory
             memory::memory_save,
             memory::memory_search,
@@ -59,6 +77,29 @@ pub fn run() {
             ml::ml_ioc_scan,
             ml::ml_url_enrich,
             ml::ml_status,
+            ml::set_hf_token,
+            ml::hf_token_status,
+            ml::hf_token_get,
+            // Security Functions — Policy Engine (what to do during a threat)
+            policy::policy_meta,
+            policy::policy_list,
+            policy::policy_stats,
+            policy::policy_response_log,
+            policy::policy_create,
+            policy::policy_update,
+            policy::policy_delete,
+            policy::policy_evaluate,
+            // Site blocking (hosts file) + protection (assistant Block/Protect)
+            blocking::block_site,
+            blocking::unblock_site,
+            blocking::list_blocked,
+            blocking::protect_site,
+            blocking::unprotect_site,
+            blocking::list_protected,
+            blocking::allow_site,
+            blocking::unallow_site,
+            blocking::list_allowed,
+            blocking::public_ip,
         ])
         .setup(|app| {
             // `Manager` provides `get_webview_window` (debug devtools) and
@@ -69,6 +110,11 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 window.open_devtools();
             }
+
+            // Prepare the per-user data directory + crucial editable files so
+            // everything the app needs exists right after installation
+            // (app-config dir, hf_config.json template, README). Idempotent.
+            crate::system::prepare_filesystem(&app.handle());
 
             // Real-time telemetry broadcaster: ONE poller for the whole app.
             // Every 3s it pushes a single `cf-telemetry` event (system stats +
@@ -100,6 +146,41 @@ pub fn run() {
                         }),
                     );
                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                }
+            });
+
+            // Background browser-history collector: as soon as the app opens it
+            // reads the FULL history of every detected browser — across all
+            // profiles, straight from the on-disk SQLite files — even when the
+            // browsers are closed. The snapshot is cached in shared state (so the
+            // UI loads it instantly), persisted locally to the app-config dir,
+            // and announced via a `cf-history` event. It then refreshes every few
+            // minutes to pick up newly visited pages. Reads run in parallel on
+            // the blocking pool, so this never stalls the UI or the telemetry
+            // poller above.
+            let hist_state = app.state::<Arc<Mutex<AppState>>>().inner().clone();
+            let hist_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                use tauri::Emitter;
+                // Small delay so the window mounts before the first heavy read.
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                loop {
+                    let snapshot = crate::system::refresh_history(&hist_state).await;
+                    crate::system::persist_history_snapshot(&hist_handle, &snapshot);
+                    // Announce a lightweight summary (counts only — not every URL).
+                    let _ = hist_handle.emit(
+                        "cf-history",
+                        serde_json::json!({
+                            "count": snapshot.pointer("/data/count"),
+                            "totalUnique": snapshot.pointer("/data/totalUnique"),
+                            "byBrowser": snapshot.pointer("/data/byBrowser"),
+                            "sources": snapshot.pointer("/data/sources"),
+                            "collectedAt": snapshot.pointer("/data/collectedAt"),
+                        }),
+                    );
+                    // Refresh cadence: often enough to stay current, rare enough
+                    // to keep disk/CPU cost negligible.
+                    tokio::time::sleep(std::time::Duration::from_secs(300)).await;
                 }
             });
 

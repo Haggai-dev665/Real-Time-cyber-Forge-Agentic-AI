@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Threat Globe</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .globe-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;height:calc(100% - 56px)}
@@ -95,9 +93,10 @@
               </div>
               <canvas class="world" id="world"></canvas>
               <div class="map-meta">
-                <div class="m"><b id="mTotal" class="sev-crit">318</b><span>Active threats</span></div>
-                <div class="m"><b id="mBlocked" style="color:var(--green)">2,041</b><span>Blocked today</span></div>
-                <div class="m"><b id="mNodes" style="color:var(--cyan)">7</b><span>Sensor nodes</span></div>
+                <div class="m"><b id="mTotal" class="sev-crit">—</b><span>Threat pulses</span></div>
+                <div class="m"><b id="mBlocked" style="color:var(--amber-2)">—</b><span>Origin IPs</span></div>
+                <div class="m"><b id="mNodes" style="color:var(--cyan)">—</b><span>Targeted countries</span></div>
+                <div class="m"><b id="mLearned" style="color:var(--green)">0</b><span>AI learned</span></div>
               </div>
             </div>
           </div>
@@ -135,326 +134,277 @@
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
 <script src="../scripts/cf-footer.js"></script>
+<!-- Real-geography globe: vendored locally (CSP blocks CDNs). d3-geo draws the
+     actual country polygons; topojson decodes the world atlas. -->
+<script src="../vendor/d3.min.js"></script>
+<script src="../vendor/topojson-client.min.js"></script>
+<script src="../vendor/countries-110m.js"></script>
 <script>
 buildHeader({status:'TRACKING',threats:'318'});
 buildSidebar('globe');
-buildFooter({items:[{txt:'7 nodes online',cls:'sb-cyan'},{txt:'318 threats',cls:'sb-amber'},{txt:'tracking 42/min'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'threat globe',cls:'sb-cyan'},{txt:'live threats',cls:'sb-amber'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
-/* ============ ANIMATED GLOBE + 2D MAP (canvas) ============ */
+/* ===================== REAL GLOBE (d3 + world atlas) + LIVE OTX INTEL =====================
+   Real Earth (vendored d3-geo + world atlas), live AlienVault OTX data fetched
+   through the Rust `otx_fetch` command (CSP blocks direct calls). OTX has no
+   attack-origin geography, so Rust geolocates the malicious IP indicators
+   (ip-api.com) → real ORIGINS; the pulse's targeted_countries are the
+   DESTINATIONS. Animated "missiles" travel origin → destination. The AI agent
+   learns each pulse into local memory via `memory_save`.
+   ======================================================================================= */
+const OTX_API_KEY = 'd32e3deb37526ef9095320ed7976388981f9c5052b6e85f5c5b5adab9a87f15c';
+
 (function(){
+  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
+  function prettyName(n){ return String(n||'').replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+  function ccToFlag(cc){ cc=String(cc||'').toUpperCase(); if(!/^[A-Z]{2}$/.test(cc)) return '🌐';
+    return String.fromCodePoint(0x1F1E6+cc.charCodeAt(0)-65, 0x1F1E6+cc.charCodeAt(1)-65); }
+
+  if(typeof d3==='undefined' || typeof topojson==='undefined' || !window.__WORLD110M){
+    console.warn('[globe] vendored d3/topojson/atlas not loaded'); return;
+  }
+
+  // ---- world geometry (real countries) ----
+  const world=window.__WORLD110M;
+  const countries=topojson.feature(world, world.objects.countries).features;
+  const borders=topojson.mesh(world, world.objects.countries, function(a,b){return a!==b;});
+  const graticule=d3.geoGraticule10();
+
+  const norm=function(s){ return String(s||'').toLowerCase().replace(/[^a-z]/g,''); };
+  // OTX uses long ISO names; map them onto the atlas' short names.
+  const ALIAS={ russianfederation:'russia', unitedkingdomofgreatbritainandnorthernireland:'unitedkingdom',
+    unitedstates:'unitedstatesofamerica', usa:'unitedstatesofamerica', us:'unitedstatesofamerica',
+    republicofkorea:'southkorea', koreasouth:'southkorea', democraticpeoplesrepublicofkorea:'northkorea',
+    koreanorth:'northkorea', iranislamicrepublicof:'iran', czechrepublic:'czechia', syrianarabrepublic:'syria',
+    taiwanprovinceofchina:'taiwan', boliviaplurinationalstateof:'bolivia', venezuelabolivarianrepublicof:'venezuela',
+    moldovarepublicof:'moldova', tanzaniaunitedrepublicof:'unitedrepublicoftanzania',
+    laopeoplesdemocraticrepublic:'laos', vietnam:'vietnam', uae:'unitedarabemirates', hongkong:'china' };
+  const centroidByName={};
+  countries.forEach(function(f){ var nm=norm(f.properties&&f.properties.name); if(nm){ centroidByName[nm]=d3.geoCentroid(f); } });
+  function resolveCentroid(name){ var k=norm(name); if(centroidByName[k]) return centroidByName[k];
+    if(ALIAS[k]&&centroidByName[ALIAS[k]]) return centroidByName[ALIAS[k]];
+    var hit=Object.keys(centroidByName).find(function(x){return x.length>4&&(x.indexOf(k)>=0||k.indexOf(x)>=0);});
+    return hit?centroidByName[hit]:null; }
+
+  // ---- canvas ----
   const cvs=document.getElementById('world'), ctx=cvs.getContext('2d');
   let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
-  function resize(){
-    const r=cvs.parentElement.getBoundingClientRect();
-    W=r.width; H=r.height;
-    cvs.width=W*dpr; cvs.height=H*dpr; cvs.style.width=W+'px'; cvs.style.height=H+'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-  }
+  function resize(){ var r=cvs.parentElement.getBoundingClientRect(); W=r.width;H=r.height;
+    cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); }
   resize(); window.addEventListener('resize',resize);
 
-  let mode='globe', yaw=0, CLOCK=0;
-  const TILT=23*Math.PI/180;
+  let mode='globe', yaw=0, heat=false;
+  let projection=d3.geoOrthographic(), path=d3.geoPath(projection,ctx);
+  function setProjection(){ var pad=14, R=Math.min(W,H)*0.46, cx=W/2, cy=H/2;
+    if(mode==='globe'){ projection=d3.geoOrthographic().clipAngle(90).scale(R).translate([cx,cy]).rotate([yaw,-16]); }
+    else { projection=d3.geoNaturalEarth1(); projection.fitExtent([[pad,pad],[W-pad,H-pad]],{type:'Sphere'}); }
+    path=d3.geoPath(projection,ctx); }
+  function viewCenter(){ var inv=projection.invert&&projection.invert([W/2,H/2]); return inv||[-yaw,16]; }
+  function visible(pt){ if(mode!=='globe') return true; return d3.geoDistance(pt, viewCenter())<Math.PI/2-0.02; }
+  function projVisible(pt){ if(!visible(pt)) return null; var p=projection(pt); return p||null; }
 
-  // ---- recognizable continents from an encoded land mask ----
-  // segments: [row, colStart, colEnd] on a 48×24 equirectangular grid
-  // row 0 = +90° lat (step −7.5°), col 0 = −180° lon (step +7.5°)
-  const segs=[
-    [1,13,16],[1,19,21],
-    [2,7,16],[2,18,21],[2,34,45],
-    [3,4,16],[3,18,20],[3,24,27],[3,28,45],
-    [4,3,16],[4,19,20],[4,23,28],[4,29,46],
-    [5,6,16],[5,23,29],[5,30,46],
-    [6,7,16],[6,24,29],[6,30,45],
-    [7,9,16],[7,24,30],[7,38,45],
-    [8,10,15],[8,23,33],[8,35,42],
-    [9,12,14],[9,22,33],[9,34,41],
-    [10,13,15],[10,22,31],[10,35,36],[10,39,42],
-    [11,15,17],[11,23,31],[11,40,43],
-    [12,15,18],[12,24,30],[12,40,43],
-    [13,16,19],[13,24,30],[13,41,43],
-    [14,16,19],[14,25,30],[14,40,44],
-    [15,16,19],[15,26,29],[15,39,44],
-    [16,16,18],[16,26,28],[16,40,43],
-    [17,16,18],[17,27,27],[17,41,43],[17,46,46],
-    [18,16,17],[18,46,46],
-    [19,16,16]
-  ];
-  const land=[];
-  segs.forEach(([row,c0,c1])=>{
-    for(let c=c0;c<=c1;c++){
-      const lat=90-row*7.5, lon=-180+c*7.5;
-      for(let dy=0;dy<2;dy++) for(let dx=0;dx<2;dx++){
-        land.push([lat-dy*3.75-1.6+(Math.random()*1.2-0.6), lon+dx*3.75-1.6+(Math.random()*1.2-0.6)]);
-      }
-    }
-  });
+  // ---- state from OTX ----
+  let intensity={}, maxInt=1;        // dest country intensity (choropleth)
+  let destMarkers=[], originMarkers=[], attacks=[], rings=[], pulses=[];
+  const SEVC={crit:'#f4495e', med:'#f5a623', low:'#2bd4ee'};
+  const baseLand='#23493a';
+  function intColor(k){ var v=(intensity[k]||0)/maxInt; if(v<=0) return baseLand;
+    return d3.interpolateRgb('#2f6d4a','#f4495e')(Math.min(1,(heat?0.15:0.25)+v*(heat?1:0.85))); }
 
-  const origins=[
-    {name:'Russia',flag:'🇷🇺',lat:60,lon:95},{name:'China',flag:'🇨🇳',lat:34,lon:105},
-    {name:'N. Korea',flag:'🇰🇵',lat:40,lon:127},{name:'Iran',flag:'🇮🇷',lat:32,lon:53},
-    {name:'Brazil',flag:'🇧🇷',lat:-10,lon:-52},{name:'Nigeria',flag:'🇳🇬',lat:9,lon:8},
-    {name:'USA',flag:'🇺🇸',lat:39,lon:-98},{name:'Ukraine',flag:'🇺🇦',lat:49,lon:32}
-  ];
-  const hubs=[[40,-74],[51,0],[50,8],[1,103],[35,139],[37,-122]]; // defender nodes
-  window.__origins=origins;
-
-  // ---- projections ----
-  function latlonToVec(lat,lon){const p=lat*Math.PI/180,l=lon*Math.PI/180;
-    return [Math.cos(p)*Math.sin(l), Math.sin(p), Math.cos(p)*Math.cos(l)];}
-  function geom(){const cx=W/2,cy=H/2,R=Math.max(2,Math.min(W,H)*0.42);return {cx,cy,R};}
-  function projVec(v,rf){ // rotate by yaw + tilt, orthographic
-    let [x,y,z]=v; const l=yaw*Math.PI/180;
-    const xr=x*Math.cos(l)+z*Math.sin(l); let zr=-x*Math.sin(l)+z*Math.cos(l);
-    const yr=y*Math.cos(TILT)-zr*Math.sin(TILT); const zr2=y*Math.sin(TILT)+zr*Math.cos(TILT);
-    const g=geom(); const r=g.R*(rf||1);
-    return {x:g.cx+xr*r, y:g.cy-yr*r, vis:zr2>0, z:zr2};
-  }
-  function projLL(lat,lon,rf){
-    if(mode==='globe') return projVec(latlonToVec(lat,lon),rf);
-    // equirectangular map
-    const g=geom(), mw=Math.min(W*0.92,H*1.7), mh=mw/2, mx=g.cx-mw/2, my=g.cy-mh/2;
-    return {x:mx+(lon+180)/360*mw, y:my+(90-lat)/180*mh, vis:true, z:1, mw, mh, mx, my};
-  }
-
-  // ---- attack arcs ----
-  let arcs=[];
-  function slerp(a,b,t){
-    let d=a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; d=Math.max(-1,Math.min(1,d));
-    const o=Math.acos(d); if(o<1e-4) return a;
-    const s=Math.sin(o), w1=Math.sin((1-t)*o)/s, w2=Math.sin(t*o)/s;
-    return [a[0]*w1+b[0]*w2, a[1]*w1+b[1]*w2, a[2]*w1+b[2]*w2];
-  }
-  const sevs=[['crit','#f4495e',0.22],['med','#f5a623',0.42],['low','#2bd4ee',1]];
-  function fireArc(o){
-    const tgt=hubs[Math.floor(Math.random()*hubs.length)];
-    const r=Math.random(); const sev=sevs.find(s=>r<=s[2]);
-    arcs.push({from:[o.lat,o.lon], to:tgt, color:sev[1], t0:CLOCK, dur:1100+Math.random()*500, sev:sev[0]});
-    return {o, sev:sev[0]};
-  }
-  window.__fireArc=()=>fireArc(origins[Math.floor(Math.random()*origins.length)]);
-
-  // impact rings
-  let rings=[];
-  function addRing(lat,lon,color){rings.push({lat,lon,color,t0:CLOCK});}
-
-  // twinkling stars behind globe
-  const stars=Array.from({length:70},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.3,p:Math.random()*Math.PI*2}));
-
-  function drawGlobe(now){
-    const g=geom();
-    // atmosphere glow
-    let ga=ctx.createRadialGradient(g.cx,g.cy,g.R*0.6,g.cx,g.cy,g.R*1.35);
-    ga.addColorStop(0,'rgba(43,212,238,0.10)'); ga.addColorStop(1,'rgba(43,212,238,0)');
-    ctx.fillStyle=ga; ctx.beginPath(); ctx.arc(g.cx,g.cy,g.R*1.35,0,7); ctx.fill();
-    // ocean sphere
-    let og=ctx.createRadialGradient(g.cx-g.R*0.3,g.cy-g.R*0.35,g.R*0.2,g.cx,g.cy,g.R);
-    og.addColorStop(0,'#10202f'); og.addColorStop(0.7,'#0a1622'); og.addColorStop(1,'#060d16');
-    ctx.fillStyle=og; ctx.beginPath(); ctx.arc(g.cx,g.cy,g.R,0,7); ctx.fill();
-    // graticule
-    ctx.strokeStyle='rgba(126,148,184,0.12)'; ctx.lineWidth=1;
-    for(let lat=-60;lat<=60;lat+=30){ ctx.beginPath(); let started=false;
-      for(let lon=-180;lon<=180;lon+=6){const p=projLL(lat,lon); if(p.vis){p.x&&(started?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));started=true;}else started=false;}
-      ctx.stroke();
-    }
-    for(let lon=-180;lon<180;lon+=30){ ctx.beginPath(); let started=false;
-      for(let lat=-90;lat<=90;lat+=6){const p=projLL(lat,lon); if(p.vis){started?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);started=true;}else started=false;}
-      ctx.stroke();
-    }
-    // land dots
-    for(const [lat,lon] of land){const p=projLL(lat,lon); if(!p.vis)continue;
-      const a=0.5+p.z*0.45; ctx.fillStyle='rgba(86,196,224,'+a.toFixed(2)+')';
-      ctx.beginPath(); ctx.arc(p.x,p.y,1.8,0,7); ctx.fill();
-    }
-    // rim light
-    ctx.strokeStyle='rgba(43,212,238,0.35)'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.arc(g.cx,g.cy,g.R,0,7); ctx.stroke();
-  }
-
-  function drawMap(now,heat){
-    const g=geom(), s=projLL(0,0); const mx=s.mx,my=s.my,mw=s.mw,mh=s.mh;
-    // panel
-    ctx.fillStyle='rgba(10,22,34,0.5)'; ctx.fillRect(mx,my,mw,mh);
-    // grid
-    ctx.strokeStyle='rgba(126,148,184,0.08)'; ctx.lineWidth=1;
-    for(let lon=-180;lon<=180;lon+=30){const x=mx+(lon+180)/360*mw;ctx.beginPath();ctx.moveTo(x,my);ctx.lineTo(x,my+mh);ctx.stroke();}
-    for(let lat=-90;lat<=90;lat+=30){const y=my+(90-lat)/180*mh;ctx.beginPath();ctx.moveTo(mx,y);ctx.lineTo(mx+mw,y);ctx.stroke();}
-    // land dots
-    for(const [lat,lon] of land){const p=projLL(lat,lon);
-      ctx.fillStyle='rgba(86,196,224,0.6)'; ctx.beginPath(); ctx.arc(p.x,p.y,1.7,0,7); ctx.fill();}
-    if(heat){ // heat blooms at origins
-      origins.forEach(o=>{const p=projLL(o.lat,o.lon); const rr=18+10*Math.sin(now/400+o.lon);
-        let hg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,rr);
-        hg.addColorStop(0,'rgba(244,73,94,0.5)');hg.addColorStop(1,'rgba(244,73,94,0)');
-        ctx.fillStyle=hg;ctx.beginPath();ctx.arc(p.x,p.y,rr,0,7);ctx.fill();});
-    }
-  }
+  function drawGC(a,t0,t1){ ctx.beginPath(); var started=false;
+    for(var t=t0;t<=t1+1e-4;t+=0.03){ var pt=a.interp(Math.min(1,Math.max(0,t))); if(!visible(pt)){started=false;continue;}
+      var p=projection(pt); if(!p){started=false;continue;} if(started)ctx.lineTo(p[0],p[1]); else ctx.moveTo(p[0],p[1]); started=true; }
+    ctx.stroke(); }
 
   function drawArcs(now){
-    // hubs
-    hubs.forEach(h=>{const p=projLL(h[0],h[1]); if(!p.vis)return;
-      ctx.fillStyle='#2bd4ee'; ctx.beginPath(); ctx.arc(p.x,p.y,2.6,0,7); ctx.fill();
-      const pr=(now/900)%1; ctx.strokeStyle='rgba(43,212,238,'+(1-pr).toFixed(2)+')'; ctx.lineWidth=1.2;
-      ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.1,2.6+pr*9),0,7); ctx.stroke();
-    });
-    arcs=arcs.filter(a=>{
-      const prog=(now-a.t0)/a.dur; if(prog>=1.25) return false;
-      const va=latlonToVec(a.from[0],a.from[1]), vb=latlonToVec(a.to[0],a.to[1]);
-      const head=Math.min(prog,1), tail=Math.max(0,prog-0.35);
-      ctx.strokeStyle=a.color; ctx.lineWidth=1.6; ctx.globalAlpha=prog<1?1:1-(prog-1)/0.25;
-      ctx.beginPath(); let started=false, lastPt=null;
-      for(let t=tail;t<=head;t+=0.04){
-        let pt, sx,sy,vis;
-        if(mode==='globe'){const v=slerp(va,vb,t); const rf=1+Math.sin(t*Math.PI)*0.28; const p=projVec(v,rf); sx=p.x;sy=p.y;vis=p.vis;}
-        else{ // 2D bezier arc
-          const pf=projLL(a.from[0],a.from[1]), pt2=projLL(a.to[0],a.to[1]);
-          const mxp=(pf.x+pt2.x)/2, myp=(pf.y+pt2.y)/2-Math.hypot(pt2.x-pf.x,pt2.y-pf.y)*0.32;
-          const u=1-t; sx=u*u*pf.x+2*u*t*mxp+t*t*pt2.x; sy=u*u*pf.y+2*u*t*myp+t*t*pt2.y; vis=true;
-        }
-        if(vis){started?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);started=true;lastPt=[sx,sy];}else started=false;
-      }
-      ctx.stroke();
-      // head glow
-      if(prog<=1 && lastPt){ctx.fillStyle=a.color;ctx.beginPath();ctx.arc(lastPt[0],lastPt[1],2.8,0,7);ctx.fill();
-        ctx.globalAlpha*=0.4;ctx.beginPath();ctx.arc(lastPt[0],lastPt[1],6,0,7);ctx.fill();}
+    attacks.forEach(function(a){
+      var phase=((((now-a.t0)/a.dur)%1)+1)%1;
+      if(phase < a.lastPhase){ rings.push({c:a.b, color:a.color, t0:now}); }   // missile arrived → impact ring
+      a.lastPhase=phase;
+      // faint full route
+      ctx.strokeStyle=a.color; ctx.globalAlpha=0.10; ctx.lineWidth=0.8; drawGC(a,0,1);
+      // bright travelling trail
+      ctx.globalAlpha=0.92; ctx.lineWidth=1.7; drawGC(a, Math.max(0,phase-0.16), phase);
+      // travelling head ("missile")
+      var hp=projVisible(a.interp(phase));
+      if(hp){ ctx.globalAlpha=1; ctx.fillStyle=a.color; ctx.beginPath(); ctx.arc(hp[0],hp[1],2.6,0,7); ctx.fill();
+        ctx.globalAlpha=0.35; ctx.beginPath(); ctx.arc(hp[0],hp[1],6,0,7); ctx.fill(); }
       ctx.globalAlpha=1;
-      if(prog>=1 && !a.hit){a.hit=true; addRing(a.to[0],a.to[1],a.color);}
-      return true;
     });
-    // impact rings
-    rings=rings.filter(r=>{const t=(now-r.t0)/650; if(t>=1)return false;
-      const p=projLL(r.lat,r.lon); if(!p.vis)return true;
-      ctx.strokeStyle=r.color; ctx.globalAlpha=1-t; ctx.lineWidth=1.6;
-      ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0.1,3+t*16),0,7); ctx.stroke(); ctx.globalAlpha=1; return true;});
+    rings=rings.filter(function(r){ var t=(now-r.t0)/700; if(t>=1)return false; var p=projVisible(r.c); if(!p)return true;
+      ctx.strokeStyle=r.color; ctx.globalAlpha=1-t; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(p[0],p[1],Math.max(0.1,3+t*16),0,7); ctx.stroke(); ctx.globalAlpha=1; return true; });
   }
 
-  function frame(now){
-    if(W<2||H<2){requestAnimationFrame(frame);return;}
-    CLOCK=now;
-    ctx.clearRect(0,0,W,H);
-    if(mode==='globe'){
-      // stars
-      stars.forEach(s=>{const a=0.3+0.5*Math.abs(Math.sin(now/700+s.p));ctx.fillStyle='rgba(140,170,210,'+a.toFixed(2)+')';
-        ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.r,0,7);ctx.fill();});
-      yaw+=0.12;
-      drawGlobe(now); drawArcs(now);
-    } else {
-      drawMap(now, mode==='heat'); drawArcs(now);
-    }
-    requestAnimationFrame(frame);
+  function drawScene(now){
+    setProjection(); ctx.clearRect(0,0,W,H);
+    var cx=W/2,cy=H/2,R=Math.min(W,H)*0.46;
+    if(mode==='globe'){ var ga=ctx.createRadialGradient(cx,cy,R*0.7,cx,cy,R*1.32);
+      ga.addColorStop(0,'rgba(43,212,238,.10)'); ga.addColorStop(1,'rgba(43,212,238,0)');
+      ctx.fillStyle=ga; ctx.beginPath(); ctx.arc(cx,cy,R*1.32,0,7); ctx.fill(); }
+    ctx.beginPath(); path({type:'Sphere'});
+    if(mode==='globe'){ var og=ctx.createRadialGradient(cx-R*0.3,cy-R*0.35,R*0.2,cx,cy,R);
+      og.addColorStop(0,'#16395a'); og.addColorStop(0.7,'#0b1f33'); og.addColorStop(1,'#06101c'); ctx.fillStyle=og; }
+    else ctx.fillStyle='#0b1f33';
+    ctx.fill();
+    ctx.beginPath(); path(graticule); ctx.strokeStyle='rgba(126,148,184,.10)'; ctx.lineWidth=0.6; ctx.stroke();
+    for(var i=0;i<countries.length;i++){ ctx.beginPath(); path(countries[i]);
+      ctx.fillStyle=intColor(norm(countries[i].properties&&countries[i].properties.name)); ctx.fill(); }
+    ctx.beginPath(); path(borders); ctx.strokeStyle='rgba(150,180,210,.18)'; ctx.lineWidth=0.5; ctx.stroke();
+    if(mode==='globe'){ ctx.beginPath(); path({type:'Sphere'}); ctx.strokeStyle='rgba(43,212,238,.35)'; ctx.lineWidth=1.2; ctx.stroke(); }
+
+    drawArcs(now);
+
+    // origin markers (malicious infra) — amber
+    originMarkers.forEach(function(m){ var p=projVisible(m.p); if(!p) return;
+      ctx.fillStyle='#f5a623'; ctx.beginPath(); ctx.arc(p[0],p[1],2.2,0,7); ctx.fill();
+      ctx.globalAlpha=0.3; ctx.beginPath(); ctx.arc(p[0],p[1],4.5,0,7); ctx.fill(); ctx.globalAlpha=1; });
+    // destination markers (targeted countries) — red rings
+    destMarkers.forEach(function(m){ var p=projVisible(m.p); if(!p) return;
+      var rr=3+Math.min(6,(m.count/maxInt)*6); var pr=((now/900)+(Math.abs(m.p[0])%7))%1;
+      ctx.strokeStyle='rgba(244,73,94,'+(1-pr).toFixed(2)+')'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(p[0],p[1],Math.max(0.1,rr+pr*12),0,7); ctx.stroke();
+      ctx.fillStyle='rgba(244,73,94,.30)'; ctx.beginPath(); ctx.arc(p[0],p[1],rr+3,0,7); ctx.fill();
+      ctx.fillStyle='#f4495e'; ctx.beginPath(); ctx.arc(p[0],p[1],rr,0,7); ctx.fill(); });
   }
+
+  function frame(now){ if(W<2||H<2){requestAnimationFrame(frame);return;}
+    if(mode==='globe') yaw+=0.09; drawScene(now); requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
 
-  // tabs
-  document.querySelectorAll('.gl-tab').forEach(t=>t.addEventListener('click',()=>{
-    document.querySelectorAll('.gl-tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active'); mode=t.dataset.mode;
-  }));
-})();
+  document.querySelectorAll('.gl-tab').forEach(function(t){ t.addEventListener('click',function(){
+    document.querySelectorAll('.gl-tab').forEach(function(x){x.classList.remove('active');}); t.classList.add('active');
+    heat=(t.dataset.mode==='heat'); mode=(t.dataset.mode==='globe')?'globe':'map'; }); });
 
-/* ============ LIVE ATTACK STREAM ============ */
-(function(){
-  const stream=document.getElementById('stream');
-  const types=['SQL Injection','DDoS Probe','Port Scan','Brute Force','XSS Attempt','Malware C2','Credential Stuffing','Ransomware'];
-  const targets=['api.acme-corp.io','login.medsys.health','vpn.gov-grid.io','mail.zeta-bank.com','sso.nimbus-cloud.dev'];
-  function rip(){return Math.floor(Math.random()*223+1)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255)+'.'+Math.floor(Math.random()*255);}
-  function clean(s){ return String(s==null?'':s).replace(/[<>]/g,''); }
-  function add(){
-    const a=window.__fireArc(); if(!a)return;
-    const rl=window.__realThreats;
-    const rt=(rl&&rl.length)?rl[Math.floor(Math.random()*Math.min(rl.length,12))]:null;
-    const label=rt?clean(rt.type||rt.category||'Threat'):types[Math.floor(Math.random()*types.length)];
-    const sev=rt?((rt.severity==='critical')?'crit':(rt.severity==='high'||rt.severity==='medium')?'med':'low'):a.sev;
-    const src=rt?clean(String(rt.source||(rt.detection&&rt.detection.source)||rt.url||a.o.name).slice(0,38)):(a.o.name+' · '+rip());
-    const tgt=rt?clean(String(rt.target||rt.url||targets[Math.floor(Math.random()*targets.length)]).slice(0,28)):targets[Math.floor(Math.random()*targets.length)];
-    const el=document.createElement('div');
-    el.className='atk '+sev;
-    el.innerHTML='<span class="edge"></span><span class="flag">'+a.o.flag+'</span>'+
-      '<div class="who"><b>'+label+' <span class="pill '+sev+'">'+sev.toUpperCase()+'</span></b>'+
-      '<span class="ip">'+src+' → '+tgt+'</span></div>'+
-      '<span class="when">now</span>';
-    stream.prepend(el);
-    [...stream.children].forEach((c,i)=>{const w=c.querySelector('.when'); if(i>0&&w)w.textContent=i+'s';});
-    while(stream.children.length>9) stream.lastChild.remove();
+  // ---- build attacks (origin→destination) from pulses + geolocated IPs ----
+  function ingest(results, ipGeo){
+    ipGeo=ipGeo||{};
+    intensity={}; destMarkers=[]; originMarkers=[]; attacks=[]; rings=[]; pulses=[];
+    var destMap={}, originMap={}, originCC={}, base=(window.performance&&performance.now())||Date.now();
+    function sevOf(p){ var s=(p.name||'')+' '+(p.tags||[]).join(' '); return /(ransom|apt|zero.?day|critical|wiper|exploit|c2|botnet)/i.test(s)?'crit':'med'; }
+    function addOrigin(g){ var key=g.lat.toFixed(1)+','+g.lon.toFixed(1); if(!originMap[key]) originMap[key]={p:[g.lon,g.lat],cc:g.cc,country:g.country,count:0}; originMap[key].count++;
+      if(g.country){ originCC[g.country]=originCC[g.country]||{cc:g.cc,n:0}; originCC[g.country].n++; } return originMap[key]; }
+    function addDest(name,c){ var k=norm(name); intensity[k]=(intensity[k]||0)+1; if(!destMap[k]) destMap[k]={name:name,p:c,count:0}; destMap[k].count++; return destMap[k]; }
+
+    // global pools for fallbacks (so single-sided pulses still animate from REAL points)
+    var globalDest=[], globalOrigin=[];
+    results.forEach(function(p){ (p.targeted_countries||[]).forEach(function(n){ var c=resolveCentroid(n); if(c) globalDest.push({name:n,p:c}); });
+      (p.indicators||[]).forEach(function(ind){ var g=ipGeo[ind.indicator]; if(g&&g.lat!=null) globalOrigin.push({p:[g.lon,g.lat],cc:g.cc,country:g.country}); }); });
+
+    results.forEach(function(p){
+      var sev=sevOf(p), col=SEVC[sev]||SEVC.med;
+      var origins=[]; (p.indicators||[]).forEach(function(ind){ var g=ipGeo[ind.indicator];
+        if(g&&g.lat!=null){ var o=addOrigin(g); origins.push(o); } });
+      var dests=[]; (p.targeted_countries||[]).forEach(function(n){ var c=resolveCentroid(n); if(c){ var dd=addDest(n,c); dests.push(dd); } });
+      var techniques=(p.attack_ids||[]).map(function(a){ return typeof a==='string'?a:(a&&(a.display_name||a.id)); }).filter(Boolean);
+      var malware=(p.malware_families||[]).map(function(m){ return (m&&(m.display_name||m.id))||m; }).filter(Boolean);
+      pulses.push({ name:p.name||'Untitled pulse', adversary:p.adversary||'', malware:malware, techniques:techniques,
+        tags:p.tags||[], origins:origins.map(function(o){return o.country;}), dests:dests.map(function(d){return d.name;}), sev:sev });
+
+      function arc(aPt,bPt){ if(attacks.length>=80) return; attacks.push({ interp:d3.geoInterpolate(aPt,bPt), a:aPt, b:bPt,
+        color:col, t0:base-Math.random()*1800, dur:1600+Math.random()*1400, lastPhase:0 }); }
+      if(origins.length && dests.length){ origins.forEach(function(o){ dests.slice(0,2).forEach(function(d){ arc(o.p,d.p); }); }); }
+      else if(origins.length && globalDest.length){ origins.forEach(function(o){ arc(o.p, globalDest[(Math.random()*globalDest.length)|0].p); }); }
+      else if(dests.length>=2){ for(var i=0;i<dests.length-1;i++) arc(dests[i].p, dests[i+1].p); }
+      else if(dests.length===1 && globalOrigin.length){ arc(globalOrigin[(Math.random()*globalOrigin.length)|0].p, dests[0].p); }
+    });
+
+    destMarkers=Object.keys(destMap).map(function(k){return destMap[k];});
+    originMarkers=Object.keys(originMap).map(function(k){return originMap[k];});
+    maxInt=Math.max.apply(null,[1].concat(Object.keys(intensity).map(function(k){return intensity[k];})));
+    window.__realThreats=pulses.map(function(p){ return { type:(p.malware[0]||p.techniques[0]||'threat'),
+      severity:p.sev==='crit'?'critical':'medium', source:p.origins[0]||p.adversary||'OTX', target:p.dests[0]||'', url:p.name }; });
+    renderPanels(originCC);
   }
-  for(let i=0;i<6;i++) setTimeout(add,i*180);
-  setInterval(add,1500);
 
-  // Real-time: prepend live ML scan / threat / alert events to the attack stream.
-  function liveAtk(label, sub, sev){
-    var cls=(sev==='high'||sev==='critical')?'crit':(sev==='low'?'low':'med');
+  function renderPanels(originCC){
+    // Top Origins = real attack-origin countries (geolocated malicious IPs)
+    var top=Object.keys(originCC).map(function(c){return {name:c, cc:originCC[c].cc, n:originCC[c].n};}).sort(function(a,b){return b.n-a.n;}).slice(0,6);
+    var max=top.length?top[0].n:1;
+    var o=document.getElementById('origins');
+    if(o) o.innerHTML= top.length? top.map(function(m,i){
+      return '<div class="origin'+(i?' row-div':'')+'"><span class="rank">'+(i+1)+'</span><span class="flag">'+ccToFlag(m.cc)+'</span>'+
+        '<span class="nm">'+esc(prettyName(m.name).slice(0,12))+'</span><span class="track"><i style="width:'+Math.round(m.n/max*100)+'%"></i></span>'+
+        '<span class="ct">'+m.n+'</span></div>'; }).join('')
+      : '<div style="padding:18px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">Loading OTX intel…</div>';
+
+    var counts={};
+    pulses.forEach(function(p){ var src=p.malware.length?p.malware:(p.techniques.length?p.techniques:p.tags);
+      (src||[]).slice(0,3).forEach(function(x){ var k=String(x).slice(0,18); counts[k]=(counts[k]||0)+1; }); });
+    var ent=Object.keys(counts).map(function(k){return [k,counts[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+    var tot=ent.reduce(function(s,e){return s+e[1];},0)||1;
+    var cols=['var(--red)','var(--amber)','var(--cyan)','var(--amber-2)','var(--sage)'];
+    var v=document.getElementById('vectors');
+    if(v) v.innerHTML= ent.length? ent.map(function(e,i){ var pc=Math.round(e[1]/tot*100);
+      return '<div class="typ'+(i?' row-div':'')+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'+
+        '<span class="nm">'+esc(e[0])+'</span><span class="bar"><i style="width:'+pc+'%;background:'+cols[i%5]+'"></i></span><span class="pc">'+pc+'%</span></div>'; }).join('') : '';
+
+    var mt=document.getElementById('mTotal'), mb=document.getElementById('mBlocked'), mn=document.getElementById('mNodes');
+    if(mt) mt.textContent=pulses.length; if(mb) mb.textContent=originMarkers.length; if(mn) mn.textContent=destMarkers.length;
+    var rate=document.getElementById('rate'); if(rate) rate.textContent=attacks.length+' live attacks';
+  }
+
+  // ---- live stream from real pulses ----
+  var stream=document.getElementById('stream'), si=0;
+  function streamNext(){ if(!pulses.length||!stream) return; var p=pulses[si++%pulses.length];
+    var origin=p.origins[0]||p.adversary||'', dest=p.dests[0]||''; var tech=p.techniques[0]||'';
+    var label=esc((p.malware[0]||p.name).slice(0,28));
+    var route=(origin?prettyName(origin):'?')+' → '+(dest?prettyName(dest):'multiple');
+    var sub=esc(((tech?(tech+' · '):'')+route).slice(0,46));
+    var cls=p.sev==='crit'?'crit':'med';
     var el=document.createElement('div'); el.className='atk '+cls;
-    el.innerHTML='<span class="edge"></span><span class="flag">🛰️</span>'+
-      '<div class="who"><b>'+clean(label)+' <span class="pill '+cls+'">'+cls.toUpperCase()+'</span></b>'+
-      '<span class="ip">'+clean(sub||'')+'</span></div><span class="when">now</span>';
-    stream.prepend(el); while(stream.children.length>9) stream.lastChild.remove();
-  }
+    el.innerHTML='<span class="edge"></span><span class="flag">🛰️</span><div class="who"><b>'+label+' <span class="pill '+cls+'">'+cls.toUpperCase()+'</span></b><span class="ip">'+sub+'</span></div><span class="when">live</span>';
+    stream.prepend(el); [].slice.call(stream.children).forEach(function(c,i){var w=c.querySelector('.when'); if(i>0&&w)w.textContent=i+'s';});
+    while(stream.children.length>9) stream.lastChild.remove(); }
+  setInterval(streamNext,1700);
+
+  function liveAtk(label,sub,sev){ if(!stream)return; var cls=(sev==='high'||sev==='critical')?'crit':(sev==='low'?'low':'med');
+    var el=document.createElement('div'); el.className='atk '+cls;
+    el.innerHTML='<span class="edge"></span><span class="flag">🛰️</span><div class="who"><b>'+esc(label)+' <span class="pill '+cls+'">'+cls.toUpperCase()+'</span></b><span class="ip">'+esc(sub||'')+'</span></div><span class="when">now</span>';
+    stream.prepend(el); while(stream.children.length>9) stream.lastChild.remove(); }
   window.addEventListener('cf:scan', function(e){ var d=e.detail||{}; liveAtk((d.verdict||'scan').toUpperCase()+' '+(d.category||''), d.url, d.riskScore>=70?'high':d.riskScore>=40?'med':'low'); });
   window.addEventListener('cf:threat', function(e){ var d=e.detail||{}; liveAtk('THREAT', d.indicator||d.url, d.severity); });
   window.addEventListener('cf:alert', function(e){ var d=e.detail||{}; liveAtk('ALERT', d.message||d.url, d.severity||'high'); });
-})();
 
-/* ============ ORIGINS + VECTORS ============ */
-(function(){
-  const data=[['🇷🇺','Russia',92],['🇨🇳','China',78],['🇰🇵','N. Korea',54],['🇮🇷','Iran',41],['🇧🇷','Brazil',27]];
-  const max=92;
-  document.getElementById('origins').innerHTML=data.map((d,i)=>
-    '<div class="origin'+(i?' row-div':'')+'"><span class="rank">'+(i+1)+'</span><span class="flag">'+d[0]+'</span>'+
-    '<span class="nm">'+d[1]+'</span><span class="track"><i data-w="'+(d[2]/max*100)+'"></i></span>'+
-    '<span class="ct">'+d[2]+'</span></div>').join('');
-  const vec=[['SQLi',34,'var(--red)'],['DDoS',26,'var(--amber)'],['Phishing',21,'var(--cyan)'],['Malware',19,'var(--amber-2)']];
-  document.getElementById('vectors').innerHTML=vec.map((v,i)=>
-    '<div class="typ'+(i?' row-div':'')+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'+
-    '<span class="nm">'+v[0]+'</span><span class="bar"><i data-w="'+v[1]+'" style="background:'+v[2]+'"></i></span><span class="pc">'+v[1]+'%</span></div>').join('');
-  setTimeout(()=>{document.querySelectorAll('[data-w]').forEach(i=>i.style.width=i.dataset.w+'%');},150);
-})();
+  // ---- AI agent learns OTX intel into local memory ----
+  function learn(){ if(!pulses.length) return;
+    var KEY='cf_otx_learned'; var learned={}; try{ learned=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+    var saved=0;
+    pulses.slice(0,12).forEach(function(p){ if(learned[p.name]) return;
+      var text='OTX threat pulse: '+p.name+'. '
+        +(p.adversary?('Attributed adversary: '+p.adversary+'. '):'')
+        +(p.origins.length?('Observed origin countries: '+p.origins.filter(Boolean).join(', ')+'. '):'')
+        +(p.dests.length?('Targeted countries: '+p.dests.join(', ')+'. '):'')
+        +(p.malware.length?('Malware families: '+p.malware.join(', ')+'. '):'')
+        +(p.techniques.length?('MITRE ATT&CK techniques (procedures): '+p.techniques.join(', ')+'.'):'');
+      cfInvoke('memory_save',{text:text, kind:'semantic', category:'otx-threat-intel', risk:(p.sev==='crit'?80:55)}).catch(function(){});
+      learned[p.name]=Date.now(); saved++; });
+    if(saved){ var topD=destMarkers.slice().sort(function(a,b){return b.count-a.count;}).slice(0,5).map(function(m){return prettyName(m.name);});
+      cfInvoke('memory_save',{text:'OTX intel digest: '+pulses.length+' active pulses, '+attacks.length+' origin→destination attack paths. Most-targeted countries: '+topD.join(', ')+'. Weight these regions and associated malware/TTPs higher when scoring new browser threats.', kind:'procedural', category:'otx-digest', risk:60}).catch(function(){}); }
+    try{ localStorage.setItem(KEY, JSON.stringify(learned)); }catch(e){}
+    var ml=document.getElementById('mLearned'); if(ml) ml.textContent=Object.keys(learned).length; }
 
-/* live counters — driven by real backend data (window.CFG via cf-telemetry) */
-(function(){
-  const t=document.getElementById('mTotal'),b=document.getElementById('mBlocked'),n=document.getElementById('mNodes'),
-        tb=document.getElementById('tbThreats'),sb=document.getElementById('sbThreats'),rate=document.getElementById('rate');
-  window.CFG=window.CFG||{total:0,blocked:0,nodes:0,rate:0};
-  function paint(){ var g=window.CFG;
-    if(t) t.textContent=g.total||0; if(b) b.textContent=(g.blocked||0).toLocaleString(); if(n) n.textContent=g.nodes||0;
-    if(rate) rate.textContent=(g.rate||0)+' attacks/min';
-    if(tb) tb.innerHTML=tb.innerHTML.replace(/\d[\d,]*\s*threats/,(g.total||0)+' threats');
-    if(sb) sb.textContent=(g.total||0)+' threats';
+  // ---- fetch OTX (CSP-safe via Rust), refresh periodically ----
+  function loadOTX(){
+    function note(msg){ var o=document.getElementById('origins'); if(o&&!destMarkers.length) o.innerHTML='<div style="padding:16px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:10.5px">'+esc(msg)+'</div>'; }
+    cfInvoke('otx_fetch',{apiKey:OTX_API_KEY, limit:50}).then(function(r){
+      if(r&&r.success&&Array.isArray(r.results)&&r.results.length){ ingest(r.results, r.ip_geo||{}); learn(); }
+      else { note('OTX: '+((r&&r.error)||'no pulses returned')); }
+    }).catch(function(e){ var m=String((e&&e.message)||e);
+      console.warn('[globe] otx_fetch failed', e);
+      // 'no tauri' = opened outside the desktop app; otherwise show the real error.
+      note(/no tauri/i.test(m) ? 'Open this inside the CyberForge desktop app (not a browser).' : ('OTX call failed: '+m));
+    });
   }
-  setInterval(paint,1500); paint();
-})();
-
-/* ===== Threat Globe — REAL data via the shared cf-telemetry event ===== */
-(function(){
-  function esc(s){ return String(s==null?'':s).replace(/[<>]/g,''); }
-  function renderVectors(list){
-    var vec=document.getElementById('vectors'); if(!vec||!list||!list.length) return;
-    var counts={}; list.forEach(function(t){ var ty=(t.type||t.category||'other'); counts[ty]=(counts[ty]||0)+1; });
-    var entries=Object.keys(counts).map(function(k){return [k,counts[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,4);
-    var total=entries.reduce(function(s,e){return s+e[1];},0)||1;
-    var cols=['var(--red)','var(--amber)','var(--cyan)','var(--amber-2)'];
-    vec.innerHTML=entries.map(function(e,i){ var pc=Math.round(e[1]/total*100);
-      return '<div class="typ'+(i?' row-div':'')+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'+
-        '<span class="nm">'+esc(String(e[0]).slice(0,16))+'</span><span class="bar"><i style="width:'+pc+'%;background:'+cols[i%4]+'"></i></span><span class="pc">'+pc+'%</span></div>';
-    }).join('');
-  }
-  function apply(p){
-    if(!p) return;
-    var th=(p.threats&&p.threats.data)||null, st=(p.status&&p.status.data)||null;
-    window.CFG=window.CFG||{};
-    if(th){
-      window.CFG.total=th.total||0;
-      var stats=th.stats||{};
-      window.CFG.blocked=(stats.resolved_threats!=null?stats.resolved_threats:(stats.total_threats||th.total||0));
-      window.__realThreats=th.threats||[];
-      renderVectors(th.threats||[]);
-    }
-    if(st){ window.CFG.nodes=st.agentCount||0; window.CFG.rate=Math.max(0,st.threatCount||0); }
-  }
-  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
-    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ apply(e.payload); });
-    if(T&&T.core&&T.core.invoke){ T.core.invoke('get_threats').then(function(r){ apply({threats:r}); }).catch(function(){});
-      T.core.invoke('agent_status').then(function(r){ apply({status:r}); }).catch(function(){}); }
-  }catch(e){}
+  // Instant paint from the loading-screen prewarm (otx_fetch + geolocation is
+  // slow) so the globe already has pulses when you navigate here; loadOTX then
+  // refreshes live.
+  try{ var _pg=JSON.parse(localStorage.getItem('cf_pre_globe')||'null');
+    if(_pg&&_pg.payload&&_pg.payload.success&&Array.isArray(_pg.payload.results)&&_pg.payload.results.length&&(Date.now()-_pg.ts)<1800000){
+      ingest(_pg.payload.results, _pg.payload.ip_geo||{});
+    } }catch(e){}
+  loadOTX(); setInterval(loadOTX, 180000);
+  var rb=document.querySelector('.btn-refresh'); if(rb) rb.addEventListener('click', loadOTX);
 })();
 </script>
 </body>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Threat Analyzer</title>
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.an-grid{display:grid;grid-template-columns:1fr 360px;gap:14px;height:calc(100% - 56px);min-height:0}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0}
+.an-input-card{padding:18px}
+.an-row{display:flex;gap:10px}
+.an-field{flex:1;display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:11px;border:1px solid var(--border-2);background:rgba(8,12,20,.7);transition:.2s}
+.an-field:focus-within{border-color:rgba(245,166,35,.5);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+.an-field svg{width:17px;height:17px;color:var(--faint);flex:none}
+.an-field input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:var(--mono)}
+.an-field input::placeholder{color:var(--faint);font-family:var(--sans)}
+.an-type{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:5px;color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(43,212,238,.3);flex:none}
+.an-go{height:48px;padding:0 22px;border:0;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;color:#1a1206;display:flex;align-items:center;gap:8px;
+  background:linear-gradient(180deg,#ffc15a,#f5a623);box-shadow:0 4px 16px -4px rgba(245,166,35,.6);transition:transform .15s}
+.an-go:hover{transform:translateY(-1px)} .an-go:active{transform:scale(.97)} .an-go svg{width:16px;height:16px}
+.an-go.busy{pointer-events:none;opacity:.7}
+.an-ex{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.an-ex .ex{font-family:var(--mono);font-size:10px;color:var(--dim);border:1px solid var(--border-2);background:var(--surface-2);border-radius:6px;padding:5px 10px;cursor:pointer;transition:.15s}
+.an-ex .ex:hover{color:var(--text);border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.05)}
+
+.result{padding:0}
+.res-top{display:flex;align-items:center;gap:18px;padding:20px 20px 6px}
+.gauge-wrap{position:relative;width:120px;height:120px;flex:none}
+.gauge-wrap .gv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge-wrap .gv b{font-family:var(--mono);font-size:30px;font-weight:600;line-height:1}
+.gauge-wrap .gv span{font-family:var(--mono);font-size:8.5px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;margin-top:3px}
+.res-meta{flex:1;min-width:0}
+.res-verdict{font-size:20px;font-weight:600;display:flex;align-items:center;gap:9px}
+.res-sub{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:5px;word-break:break-all}
+.res-pill{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:3px 9px;border-radius:5px;font-weight:700;text-transform:uppercase}
+.kvs{padding:12px 20px 18px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);background:var(--tile);border-radius:8px}
+.kv .k{font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+.kv .v{font-family:var(--mono);font-size:11.5px;color:var(--text);text-align:right;word-break:break-word}
+.res-empty{padding:30px 20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:12px}
+
+/* background analysis */
+@keyframes spin{to{transform:rotate(360deg)}}
+.bg-card{padding:15px}
+.bg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.bg-top .tt{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase}
+.bg-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.sw{width:38px;height:22px;border-radius:12px;background:rgba(130,160,200,.2);position:relative;transition:.2s;flex:none}
+.sw.on{background:rgba(67,224,138,.3)}
+.sw i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--faint);transition:.2s}
+.sw.on i{left:19px;background:var(--green)}
+.bg-prog{height:8px;border-radius:5px;background:rgba(130,160,200,.12);overflow:hidden;margin:12px 0 9px}
+.bg-prog i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,var(--amber),var(--amber-2));width:0;transition:width .5s}
+.bg-nums{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.bg-nums b{color:var(--text);font-size:13px}
+.bg-status{font-family:var(--mono);font-size:10px;color:var(--cyan);margin-top:11px;display:flex;align-items:center;gap:7px;min-height:14px}
+.bg-status .sp{width:9px;height:9px;border:1.5px solid rgba(43,212,238,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;display:none;flex:none}
+.bg-status.busy .sp{display:inline-block}
+
+.sites{overflow-y:auto;min-height:0}
+.srow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.srow:hover{background:rgba(130,160,200,.05)}
+.srow .sdot{width:8px;height:8px;border-radius:50%;flex:none}
+.srow .si{flex:1;min-width:0}
+.srow .si b{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .si span{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.srow .sv{font-family:var(--mono);font-size:10px;font-weight:700;flex:none}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Threat Analyzer" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+          <h1>Threat Analyzer</h1>
+          <div class="head-right"><span id="mlState">ML ready</span></div>
+        </div>
+
+        <div class="an-grid">
+          <div class="col">
+            <div class="card an-input-card">
+              <div class="an-row">
+                <div class="an-field">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                  <input id="anInput" placeholder="Enter a URL, domain, IP address, or file hash…" autocomplete="off" spellcheck="false" />
+                  <span class="an-type" id="anType">AUTO</span>
+                </div>
+                <button class="an-go" id="anGo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Analyze</button>
+              </div>
+              <div class="an-ex">
+                <span class="ex" data-v="https://example.com">https://example.com</span>
+                <span class="ex" data-v="kq3v9zlx8w2p1.com">kq3v9zlx8w2p1.com (DGA-like)</span>
+                <span class="ex" data-v="8.8.8.8">8.8.8.8</span>
+                <span class="ex" data-v="44d88612fea8a8f36de82e1278abb02f">eicar md5</span>
+              </div>
+            </div>
+
+            <div class="card result" id="result" style="flex:1;min-height:0;overflow-y:auto">
+              <div class="res-empty" id="resEmpty">Run an analysis above, or watch the background scan work through your browser history on the right.</div>
+              <div id="resBody"></div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="card bg-card">
+              <div class="bg-top">
+                <span class="tt">Background History Scan</span>
+                <div class="bg-toggle" id="bgToggle"><span class="sw on" id="bgSw"><i></i></span></div>
+              </div>
+              <div class="bg-prog"><i id="bgBar"></i></div>
+              <div class="bg-nums">
+                <span><b id="bgDone">0</b> / <span id="bgTotal">0</span> sites</span>
+                <span><b id="bgThreats" style="color:#ff7185">0</b> threats · <b id="bgQueued">0</b> queued</span>
+              </div>
+              <div class="bg-status" id="bgStatus"><span class="sp"></span><span id="bgStatusTxt">Loading browser history…</span></div>
+            </div>
+            <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Analyzed Sites<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="sites" id="sites"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script>
+buildHeader({status:'ANALYZER',search:'Analyze a URL, domain, IP or hash…'});
+buildSidebar('analyzer');
+buildFooter({items:[{txt:'ML stack',cls:'sb-cyan'},{txt:'BERT · DGA · IOC',cls:'sb-amber'},{txt:'Auto-scan',cls:'sb-green',spin:true}]});
+fitWindow('win');
+
+function cfInvoke(cmd,args){ try{ if(window.CF&&CF.invoke) return CF.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('Desktop runtime unavailable')); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function hostOf(u){ try{ var h=(String(u).split('://')[1]||String(u)).split('/')[0]; return h.split('?')[0]; }catch(e){ return u; } }
+function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+
+var input=document.getElementById('anInput'), typeEl=document.getElementById('anType'), goBtn=document.getElementById('anGo');
+
+/* ---------- manual analyzer ---------- */
+function detectType(v){
+  v=(v||'').trim();
+  if(!v) return {type:'auto',arg:null};
+  if(/^[a-fA-F0-9]{32}$|^[a-fA-F0-9]{40}$|^[a-fA-F0-9]{64}$/.test(v)) return {type:'hash',arg:{hash:v}};
+  if(/^(\d{1,3}\.){3}\d{1,3}$/.test(v)) return {type:'ip',arg:{ip:v}};
+  if(/^https?:\/\//i.test(v) || /\//.test(v)) return {type:'url',arg:{url:v}};
+  if(/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(v)) return {type:'domain',arg:{domain:v}};
+  return {type:'url',arg:{url:v}};
+}
+function refreshType(){ var d=detectType(input.value); typeEl.textContent=(d.type||'auto').toUpperCase(); }
+input.addEventListener('input',refreshType); refreshType();
+document.querySelectorAll('.an-ex .ex').forEach(function(e){ e.addEventListener('click',function(){ input.value=e.dataset.v; refreshType(); input.focus(); }); });
+
+function gauge(score,color){
+  var cx=60,cy=60,r=48,sw=12,C=2*Math.PI*r,frac=(score==null?0:Math.max(0,Math.min(100,score))/100);
+  return '<svg width="120" height="120" viewBox="0 0 120 120"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(126,148,184,.12)" stroke-width="'+sw+'"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+(C*frac).toFixed(1)+' '+C+'" transform="rotate(-90 60 60)" style="transition:stroke-dasharray 1s cubic-bezier(.3,.8,.3,1);filter:drop-shadow(0 0 6px '+color+')"/></svg>';
+}
+function num(x){ if(x==null) return null; var n=+x; if(isNaN(n)) return null; return n; }
+function pickRisk(d){ var keys=['riskScore','risk','fusedScore','score','confidence','probability']; for(var i=0;i<keys.length;i++){ var n=num(d[keys[i]]); if(n!=null) return n<=1?Math.round(n*100):Math.round(n); } return null; }
+function pickVerdict(d,risk){ var v=d.verdict||d.label||d.prediction||d.classification||d.category; if(v) return String(v); if(risk!=null) return risk>=70?'Malicious':(risk>=40?'Suspicious':'Likely clean'); return 'Analyzed'; }
+function scalarFields(obj,prefix,out){ out=out||[]; prefix=prefix||'';
+  Object.keys(obj||{}).forEach(function(k){ if(out.length>=14) return; var val=obj[k]; if(val==null) return;
+    if(typeof val==='object'){ if(!Array.isArray(val)) scalarFields(val,prefix?prefix+'.'+k:k,out); else if(val.length && typeof val[0]!=='object') out.push([prefix?prefix+'.'+k:k, val.slice(0,6).join(', ')]); }
+    else out.push([prefix?prefix+'.'+k:k, String(val)]); }); return out; }
+function sevOf(risk){ return risk==null?'info':(risk>=70?'crit':(risk>=40?'warn':'ok')); }
+function colOf(sev){ return sev==='crit'?'var(--red)':sev==='warn'?'var(--amber)':sev==='ok'?'var(--green)':'var(--cyan)'; }
+function renderResult(r,label){
+  var d=(r&&r.data)||r||{}; var risk=pickRisk(d); if(risk==null) risk=pickRisk(r||{});
+  var verdict=pickVerdict(d,risk), sev=sevOf(risk), color=colOf(sev);
+  var pillBg=sev==='crit'?'rgba(244,73,94,.14)':sev==='warn'?'var(--amber-dim)':sev==='ok'?'rgba(67,224,138,.14)':'var(--cyan-dim)';
+  var fields=scalarFields(d);
+  var h='<div class="res-top"><div class="gauge-wrap">'+gauge(risk,color)+'<div class="gv"><b style="color:'+color+'">'+(risk==null?'—':risk)+'</b><span>risk</span></div></div>'+
+    '<div class="res-meta"><div class="res-verdict">'+esc(verdict)+' <span class="res-pill" style="color:'+color+';background:'+pillBg+'">'+(sev==='crit'?'THREAT':sev==='warn'?'SUSPICIOUS':sev==='ok'?'CLEAN':'INFO')+'</span></div><div class="res-sub">'+esc(label)+'</div></div></div>';
+  if(fields.length) h+='<div class="kvs">'+fields.map(function(f){ return '<div class="kv"><span class="k">'+esc(f[0])+'</span><span class="v">'+esc(f[1]).slice(0,60)+'</span></div>'; }).join('')+'</div>';
+  else h+='<div class="res-empty">Analysis complete — no detailed fields returned.</div>';
+  document.getElementById('resBody').innerHTML=h;
+  document.getElementById('resEmpty').style.display='none';
+}
+function analyze(){
+  var v=(input.value||'').trim(); if(!v) return; var d=detectType(v); if(!d.arg) return;
+  goBtn.classList.add('busy'); goBtn.lastChild.textContent='Analyzing…';
+  document.getElementById('resEmpty').style.display='none'; document.getElementById('resBody').innerHTML='<div class="res-empty">Running '+d.type.toUpperCase()+' analysis…</div>';
+  cfInvoke('ml_ioc_scan', d.arg).then(function(r){ renderResult(r,v); })
+    .catch(function(e){ document.getElementById('resBody').innerHTML='<div class="res-empty">Analysis failed: '+esc(String((e&&e.message)||e))+'</div>'; })
+    .then(function(){ goBtn.classList.remove('busy'); goBtn.lastChild.textContent='Analyze'; });
+}
+goBtn.addEventListener('click',analyze);
+input.addEventListener('keydown',function(e){ if(e.key==='Enter') analyze(); });
+
+/* =========================================================================
+   BACKGROUND HISTORY SCANNER
+   Pulls all collected history, de-dupes to unique domains, and analyses them
+   one at a time in the background — throttled to respect the backend rate
+   limit, persisted (so it resumes, not restarts), with a pause toggle.
+   ========================================================================= */
+var SCANNED_KEY='cf_analyzer_scanned';
+var GAP=9000;              // ms between completed scans (≈ rate-limit safe)
+var scannedSet={}, queue=[], results=[], totalUnique=0, threatsFound=0, autoOn=true, paused=false;
+try{ scannedSet=JSON.parse(localStorage.getItem(SCANNED_KEY)||'{}'); }catch(e){ scannedSet={}; }
+function saveScanned(){ try{ localStorage.setItem(SCANNED_KEY, JSON.stringify(scannedSet)); }catch(e){} }
+
+function bgStatus(txt,busy){ var s=document.getElementById('bgStatus'); document.getElementById('bgStatusTxt').textContent=txt; if(busy) s.classList.add('busy'); else s.classList.remove('busy'); }
+function updateProgress(){
+  var done=Object.keys(scannedSet).length;
+  document.getElementById('bgDone').textContent=done;
+  document.getElementById('bgTotal').textContent=totalUnique;
+  document.getElementById('bgQueued').textContent=queue.length;
+  document.getElementById('bgThreats').textContent=threatsFound;
+  document.getElementById('bgBar').style.width=(totalUnique?Math.round(done/totalUnique*100):0)+'%';
+}
+function renderSites(){
+  var el=document.getElementById('sites');
+  if(!results.length){ el.innerHTML='<div class="res-empty">No sites analyzed yet — the background scan will populate this as it works through your history.</div>'; return; }
+  el.innerHTML=results.slice(0,80).map(function(s){
+    var sev=sevOf(s.risk), col=colOf(sev);
+    return '<div class="srow" data-url="'+esc(s.url||('https://'+s.host)).replace(/"/g,'&quot;')+'"><span class="sdot" style="background:'+col+'"></span>'+
+      '<div class="si"><b>'+esc(s.host)+'</b><span>'+esc((s.cat||'')||'analyzed')+(s.browser?(' · '+esc(s.browser)):'')+' · '+ago(s.ts)+'</span></div>'+
+      '<span class="sv" style="color:'+col+'">'+(s.risk==null?'—':s.risk)+'</span></div>';
+  }).join('');
+  el.querySelectorAll('.srow').forEach(function(rw){ rw.addEventListener('click',function(){ var u=rw.getAttribute('data-url'); if(u){ input.value=u; refreshType(); analyze(); document.getElementById('result').scrollTop=0; } }); });
+}
+
+function loadHistory(){
+  cfInvoke('get_collected_history').then(function(r){
+    var hist=(r&&r.data&&r.data.history)||[];
+    var byHost={};
+    hist.forEach(function(it){ var h=hostOf(it.url); if(h && !byHost[h]) byHost[h]={host:h,url:it.url,title:it.title,browser:it.browser}; });
+    var hosts=Object.keys(byHost).map(function(k){return byHost[k];});
+    totalUnique=hosts.length;
+    queue=hosts.filter(function(h){ return !scannedSet[h.host]; });
+    // seed the list with already-analysed sites (resume view)
+    results=Object.keys(scannedSet).map(function(h){ var s=scannedSet[h]; return {host:h,risk:s.risk,cat:s.cat,ts:s.ts,url:s.url,browser:s.browser}; }).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    threatsFound=results.filter(function(s){return (s.risk||0)>=50;}).length;
+    updateProgress(); renderSites();
+    bgStatus(queue.length? (queue.length+' new sites queued for analysis') : 'All known sites analyzed · idle', false);
+  }).catch(function(e){ bgStatus('Could not read history: '+esc(String((e&&e.message)||e)), false); });
+}
+
+function processNext(){
+  if(!autoOn){ bgStatus('Auto-scan paused', false); setTimeout(processNext, 3000); return; }
+  if(!queue.length){ bgStatus('All sites analyzed · watching for new history', false); setTimeout(function(){ loadHistory(); processNext(); }, 30000); return; }
+  var item=queue.shift(); updateProgress();
+  bgStatus('Analyzing '+item.host+' …', true);
+  cfInvoke('scan_url',{url:item.url}).then(function(r){
+    var d=(r&&r.data)||{}; var risk=+d.riskScore||0; var cat=d.category||d.verdict||'';
+    scannedSet[item.host]={risk:risk,cat:cat,ts:Math.floor(Date.now()/1000),url:item.url,browser:item.browser};
+    saveScanned();
+    results.unshift({host:item.host,risk:risk,cat:cat,ts:scannedSet[item.host].ts,url:item.url,browser:item.browser});
+    if(results.length>400) results.pop();
+    if(risk>=50) threatsFound++;
+    updateProgress(); renderSites();
+    bgStatus('Analyzed '+item.host+' · risk '+risk, false);
+    setTimeout(processNext, GAP);
+  }).catch(function(e){
+    var msg=String((e&&e.message)||e);
+    if(/rate|429|too many|backing off/i.test(msg)){ queue.unshift(item); bgStatus('Rate-limited — backing off…', false); setTimeout(processNext, 30000); }
+    else { bgStatus('Skipped '+item.host+' (unreachable)', false); setTimeout(processNext, GAP); }
+  });
+}
+
+/* toggle */
+document.getElementById('bgToggle').addEventListener('click',function(){
+  autoOn=!autoOn; document.getElementById('bgSw').classList.toggle('on',autoOn);
+  bgStatus(autoOn?'Auto-scan resumed':'Auto-scan paused', false);
+});
+
+loadHistory();
+setTimeout(processNext, 1500);   // start the background loop shortly after load
+
+/* ML status badge */
+cfInvoke('ml_status').then(function(r){ var ok=r&&(r.health||r.transformers); var b=document.getElementById('mlState'); if(b) b.textContent= ok?'ML online':'ML offline'; }).catch(function(){ var b=document.getElementById('mlState'); if(b)b.textContent='ML offline'; });
+</script>
+</body>
+</html>

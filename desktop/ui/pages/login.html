@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Sign In</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <link rel="stylesheet" href="../styles/cf-auth.css" />
 </head>
@@ -73,6 +71,12 @@
 fitWindow('win');
 forgeIllustration(document.getElementById('forge'),236);
 cfWordmark(document.getElementById('word'));
+
+/* Already signed in (valid keychain session)? Skip the form and enter the app.
+   Covers reaching this page straight from the installer or a direct link. */
+if(window.cfAuth && cfAuth.available()){
+  cfAuth.isAuthenticated().then(function(r){ if(r&&r.authenticated){ window.location.replace('threat-overview.html'); } }).catch(function(){});
+}
 
 document.getElementById('eye').addEventListener('click',function(){const pw=document.getElementById('pw');pw.type=pw.type==='password'?'text':'password';this.style.color=pw.type==='text'?'var(--amber-2)':'';});
 document.getElementById('remember').addEventListener('click',function(){this.querySelector('.cb').classList.toggle('on');});

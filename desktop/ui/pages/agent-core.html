@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Agent Core</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .ac-grid{display:grid;grid-template-columns:300px 1fr 320px;gap:14px;height:calc(100% - 56px)}
@@ -58,6 +56,19 @@
 .console-foot{border-top:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--dim)}
 .console-foot .cursor{width:7px;height:14px;background:var(--cyan);display:inline-block;animation:blink 1s step-end infinite}
 .console-foot .ops{margin-left:auto;color:var(--faint)}
+/* terminal input (chat with the agent) */
+.term-foot{padding:9px 12px}
+.term-foot .term-prompt{color:var(--cyan);font-family:var(--mono);font-size:15px;font-weight:700;flex:none}
+.term-foot input{flex:1;background:rgba(8,12,20,.55);border:1px solid var(--border-2);border-radius:8px;height:34px;padding:0 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none}
+.term-foot input:focus{border-color:rgba(43,212,238,.5);box-shadow:0 0 0 3px rgba(43,212,238,.1)}
+.term-foot button{width:34px;height:34px;border-radius:8px;border:1px solid rgba(43,212,238,.4);background:var(--cyan-dim);color:var(--cyan);cursor:pointer;display:grid;place-items:center;flex:none;transition:.15s}
+.term-foot button:hover{background:rgba(43,212,238,.22)} .term-foot button.busy{opacity:.6;pointer-events:none}
+.term-foot button svg{width:15px;height:15px}
+.cl.you .tag{color:var(--cyan)} .cl.you .msg{color:var(--text)}
+.cl .eqp{display:inline-flex;align-items:flex-end;gap:2px;height:11px;vertical-align:-1px;margin-right:5px}
+.cl .eqp i{width:2.5px;height:3px;border-radius:1px;background:var(--cyan);animation:eqp 1s ease-in-out infinite}
+.cl .eqp i:nth-child(2){animation-delay:.15s} .cl .eqp i:nth-child(3){animation-delay:.3s} .cl .eqp i:nth-child(4){animation-delay:.45s}
+@keyframes eqp{0%,100%{height:3px;opacity:.5}50%{height:11px;opacity:1}}
 
 /* reasoning chain */
 .chain{display:flex;align-items:center;gap:0;padding:13px 12px;overflow-x:auto}
@@ -177,7 +188,12 @@
             <div class="card console-card">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>Live Reasoning Console<span class="right"><span class="badge-live"><span class="dot"></span>STREAMING</span></span></div>
               <div class="console" id="console"></div>
-              <div class="console-foot"><span class="mini-bars" style="height:13px"><i></i><i></i><i></i><i></i><i></i></span>agent is reasoning<span class="cursor"></span><span class="ops" id="ops">1,204 tok/s</span></div>
+              <div class="console-foot term-foot">
+                <span class="term-prompt">&rsaquo;</span>
+                <input id="termInput" type="text" placeholder="chat with the agent — ask about a threat, scan, host, or action…" autocomplete="off" spellcheck="false" />
+                <button id="termSend" title="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></button>
+                <span class="ops" id="ops">live</span>
+              </div>
             </div>
           </div>
 
@@ -305,6 +321,38 @@ function pushLine(c,tag,msg){
 }
 pushLine('think','THINK','Agent core online — connecting to backend…');
 
+/* ============ AGENT TERMINAL — chat with the agent (grounded in memory) ============ */
+(function(){
+  var ti=document.getElementById('termInput'), tsend=document.getElementById('termSend');
+  if(!ti||!tsend) return;
+  var busy=false;
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
+  function pushHtml(c,tag,html){ var now=new Date(); var t=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+    var el=document.createElement('div'); el.className='cl '+c; el.innerHTML='<span class="ts">'+t+'</span><span class="tag">'+tag+'</span><span class="msg">'+html+'</span>';
+    con.appendChild(el); con.scrollTop=con.scrollHeight; while(con.children.length>60) con.firstChild.remove(); return el; }
+  function inv(cmd,args){ try{ if(window.CF&&CF.invoke) return CF.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
+  function ask(q){
+    if(busy||!q) return; busy=true; tsend.classList.add('busy'); ti.value='';
+    pushHtml('you','YOU', esc(q));
+    var thinking=pushHtml('think','AGENT','<span class="eqp"><i></i><i></i><i></i><i></i></span>reasoning…');
+    var memP=(window.CF&&CF.gatherMemory)?CF.gatherMemory(q):Promise.resolve([]);
+    memP.then(function(mems){
+      var query=(window.CF&&CF.augmentQuery)?CF.augmentQuery(q,mems):q;
+      return inv('ml_security_chat',{query:query, maxTokens:600}).then(function(body){ return {body:body, mems:mems}; });
+    }).then(function(o){
+      var d=(o.body&&o.body.data)||o.body||{}; var txt=d.response||d.answer||d.text||d.reply||(o.body&&o.body.message)||'No response.';
+      if(thinking&&thinking.parentNode) thinking.remove();
+      var rb=pushHtml('obs','AGENT', esc(txt).replace(/\n/g,'<br>'));
+      var threat=(window.CF&&CF.threatFromMemory)?CF.threatFromMemory(o.mems):null;
+      if(threat && window.CF&&CF.threatActions){ rb.querySelector('.msg').appendChild(CF.threatActions({host:threat.host, risk:threat.risk})); con.scrollTop=con.scrollHeight; }
+      busy=false; tsend.classList.remove('busy');
+    }).catch(function(e){ if(thinking&&thinking.parentNode) thinking.remove(); pushHtml('warn','ERROR', esc(String((e&&e.message)||e))); busy=false; tsend.classList.remove('busy'); });
+  }
+  tsend.addEventListener('click',function(){ ask((ti.value||'').trim()); });
+  ti.addEventListener('keydown',function(e){ if(e.key==='Enter') ask((ti.value||'').trim()); });
+  pushHtml('obs','AGENT','Terminal ready — ask me about threats, scans, hosts or actions. I read your CyberForge memory to answer, and can Block / Protect / Allow flagged sites.');
+})();
+
 /* ops counter — real backend latency */
 const ops=document.getElementById('ops');
 setInterval(()=>{ var d=window.CFA||{}; ops.textContent=(d.backendOk?('live · '+(d.latency||0)+'ms'):'offline'); },1000);
@@ -390,14 +438,31 @@ window.CFA={cpu:0,mem:0,ctx:0,latency:0,backendOk:false,agents:1,threats:0};
     pushLine('think','THINK','Analyzing <b>'+esc((d.url||'').replace(/^https?:\/\//,'').slice(0,40))+'</b> — scraping + ML classification.');
     setTimeout(function(){ pushLine('act','ACTION','ML models scored risk <b>'+(d.riskScore||0)+'/100</b> · category <b>'+esc(d.category||'unknown')+'</b>.'); },500);
     setTimeout(function(){ var risk=+d.riskScore||0;
-      if(risk>=50) pushLine('warn','ALERT','<b>'+esc((d.category||'threat').toUpperCase())+'</b> — '+esc((d.summary||'').slice(0,90)));
+      if(risk>=50){ pushLine('warn','ALERT','<b>'+esc((d.category||'threat').toUpperCase())+'</b> — '+esc((d.summary||'').slice(0,90)));
+        var host=(d.url||'').split('://')[1]; host=host?host.split('/')[0].replace(/^www\./,''):'';
+        if(host && window.CF&&CF.threatActions){ var line=document.createElement('div'); line.className='cl warn';
+          line.innerHTML='<span class="ts"></span><span class="tag">ACTION</span><span class="msg"></span>';
+          line.querySelector('.msg').appendChild(CF.threatActions({host:host, risk:risk})); con.appendChild(line); con.scrollTop=con.scrollHeight; }
+      }
       else pushLine('obs','OBSERVE','Clean — '+esc((d.summary||'no threats detected').slice(0,90))); },1000);
   }
   function pollScan(){ cfInvoke('get_last_scan').then(function(s){ if(s&&s.data) showScan(s.data); }).catch(function(){}); }
   window.runSweep=function(){
-    pushLine('act','ACTION','Dispatching threat sweep — scanning active browser tab…');
-    cfInvoke('get_active_urls').then(function(r){ var list=(r&&r.data&&r.data.urls)||[]; var url=(list[0]&&list[0].url)||'https://example.com';
-      return cfInvoke('scan_url',{url:url}); }).then(function(){ pollScan(); }).catch(function(){ pushLine('warn','ALERT','Sweep failed — backend unreachable or not signed in.'); });
+    pushLine('act','ACTION','Dispatching threat sweep — scanning a recent browser URL…');
+    function scan(url){
+      pushLine('act','ACTION','Scanning '+url.replace(/^https?:\/\//,'').slice(0,40)+' …');
+      return cfInvoke('scan_url',{url:url}).then(function(){ pollScan(); });
+    }
+    cfInvoke('get_active_urls').then(function(r){
+      var url=(((r&&r.data&&r.data.urls)||[])[0]||{}).url||'';
+      if(url) return scan(url);
+      // no live tab (extension) → scan the most recent real history URL
+      return cfInvoke('get_browser_history',{limit:1}).then(function(h){
+        var u=(((h&&h.data&&h.data.history)||[])[0]||{}).url||'';
+        if(u) return scan(u);
+        pushLine('warn','ALERT','No browser URL to scan yet — open a page and retry.');
+      });
+    }).catch(function(){ pushLine('warn','ALERT','Sweep failed — backend unreachable or not signed in.'); });
   };
 
   // REAL-TIME PUSH: one shared cf-telemetry event drives the screen + keeps it

@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Threat Overview</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <style>
 :root{
   --bg:#060911;
@@ -165,6 +163,7 @@ body{
   border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);cursor:pointer;font-family:var(--mono);font-size:11px}
 .btn-refresh:hover{color:var(--text)}
 .btn-refresh svg{width:13px;height:13px}
+.btn-refresh.busy svg{animation:spin .8s linear infinite}
 .next-ring{display:flex;align-items:center;gap:7px;color:var(--faint)}
 
 /* card */
@@ -509,9 +508,9 @@ body{
           <h1>Threat Overview</h1>
           <div class="head-right">
             <span class="live-ind"><span class="dot"></span>Live</span>
-            <span id="updated">Updated 9:34:07 AM</span>
+            <span id="updated">Connecting…</span>
             <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Refresh</button>
-            <span class="next-ring"><svg width="14" height="14" viewBox="0 0 36 36" id="countRing"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(130,160,200,.2)" stroke-width="3"/><circle id="countArc" cx="18" cy="18" r="15" fill="none" stroke="var(--cyan)" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.2" stroke-dashoffset="0" transform="rotate(-90 18 18)"/></svg><span id="nextIn">Next in 27s</span></span>
+            <span class="next-ring"><svg width="14" height="14" viewBox="0 0 36 36" id="countRing"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(130,160,200,.2)" stroke-width="3"/><circle id="countArc" cx="18" cy="18" r="15" fill="none" stroke="var(--cyan)" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.2" stroke-dashoffset="0" transform="rotate(-90 18 18)"/></svg><span id="nextIn">Next in 3s</span></span>
           </div>
         </div>
 
@@ -624,46 +623,49 @@ body{
 buildHeader({status:'CHECKING',threats:'—'});
 buildSidebar('overview');
 buildFooter({items:[{txt:'— agents'},{txt:'CPU 0%',cls:'sb-amber'},{txt:'MEM 0%',cls:'sb-cyan'},{txt:'1 browser',cls:'sb-cyan'},{txt:'Syncing…',cls:'sb-green',spin:true}]});
-/* ---------- scale window to fit viewport ---------- */
+/* ---------- scale window to fill the viewport (match every other screen) ----------
+   Scale so the height exactly fits (footer visible) and WIDEN the design so the
+   scaled width fills the viewport — no dark side bands. The window keeps its
+   centred model, so this works without touching the page's layout CSS. */
 function fit(){
   const w=document.getElementById('win');
-  const s=Math.min(window.innerWidth/1440, window.innerHeight/824);
-  w.style.transform='scale('+s+')';
+  const vw=window.innerWidth, vh=window.innerHeight, DW=1440, DH=824;
+  const sH=vh/DH;
+  if(vw/sH>=DW){ w.style.width=(vw/sH)+'px'; w.style.transform='scale('+sH+')'; }
+  else { w.style.width=DW+'px'; w.style.transform='scale('+(vw/DW)+')'; }
 }
 window.addEventListener('resize',fit); fit();
 
-/* ---------- threat volume chart ---------- */
-(function(){
-  const data=[.82,.85,.80,.86,.83,.80,.55,.12,.10,.45,.82,.85,.83];
-  const W=640,H=230,pad=12;
-  const n=data.length;
-  const x=i=>pad+i*(W-pad*2)/(n-1);
-  const y=v=>H-pad-v*(H-pad*2);
-  let line='', area='M'+x(0)+' '+y(data[0]);
-  data.forEach((v,i)=>{
-    const px=x(i),py=y(v);
-    if(i===0){line='M'+px+' '+py;}
-    else{
-      const ppx=x(i-1),ppy=y(data[i-1]);
-      const cx=(ppx+px)/2;
+/* ---------- threat volume chart — REAL live series (flat baseline when no threats) ---------- */
+var volSeries = new Array(24).fill(0);
+function renderVol(series){
+  var svg=document.getElementById('volChart'); if(!svg) return;
+  var W=640,H=230,pad=12,n=series.length;
+  var max=Math.max.apply(null,series.concat([1]));        // never divide by 0; flat line when all 0
+  var x=function(i){ return pad+i*(W-pad*2)/(n-1); };
+  var y=function(v){ return H-pad-(v/max)*(H-pad*2)*0.9; };
+  var line='',area='';
+  for(var i=0;i<n;i++){ var px=x(i),py=y(series[i]);
+    if(i===0){ line='M'+px+' '+py; area='M'+px+' '+py; }
+    else{ var ppx=x(i-1),ppy=y(series[i-1]),cx=(ppx+px)/2;
       line+=' C'+cx+' '+ppy+' '+cx+' '+py+' '+px+' '+py;
-      area+=' C'+cx+' '+ppy+' '+cx+' '+py+' '+px+' '+py;
-    }
-  });
+      area+=' C'+cx+' '+ppy+' '+cx+' '+py+' '+px+' '+py; }
+  }
   area+=' L'+x(n-1)+' '+H+' L'+x(0)+' '+H+' Z';
-  const svg=document.getElementById('volChart');
-  let grid='';
-  for(let g=0;g<=4;g++){const gy=pad+g*(H-pad*2)/4;grid+='<line x1="0" y1="'+gy+'" x2="'+W+'" y2="'+gy+'" stroke="rgba(126,148,184,.08)" stroke-width="1"/>';}
+  var grid='';
+  for(var g=0;g<=4;g++){ var gy=pad+g*(H-pad*2)/4; grid+='<line x1="0" y1="'+gy+'" x2="'+W+'" y2="'+gy+'" stroke="rgba(126,148,184,.08)" stroke-width="1"/>'; }
+  var hasData=series.some(function(v){ return v>0; });
   svg.innerHTML=
     '<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1">'+
     '<stop offset="0" stop-color="rgba(245,166,35,.34)"/>'+
     '<stop offset="1" stop-color="rgba(245,166,35,0)"/></linearGradient></defs>'+
     grid+
     '<path d="'+area+'" fill="url(#vg)"/>'+
-    '<path class="draw" d="'+line+'" fill="none" stroke="var(--amber)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'+
-    '<circle cx="'+x(n-1)+'" cy="'+y(data[n-1])+'" r="4.5" fill="var(--amber-2)" class="live-dot-anim" style="color:var(--amber)"/>'+
-    '<circle cx="'+x(n-1)+'" cy="'+y(data[n-1])+'" r="8" fill="none" stroke="var(--amber)" stroke-width="1" opacity=".4"/>';
-})();
+    '<path d="'+line+'" fill="none" stroke="var(--amber)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<circle cx="'+x(n-1)+'" cy="'+y(series[n-1])+'" r="4.5" fill="var(--amber-2)" class="live-dot-anim" style="color:var(--amber)"/>'+
+    (hasData?'':'<text x="320" y="120" text-anchor="middle" fill="var(--faint)" font-family="JetBrains Mono,monospace" font-size="11" opacity=".85">Awaiting threat activity — live</text>');
+}
+renderVol(volSeries);
 
 /* ---------- severity donut (empty state, soft track + thin rotating scan) ---------- */
 (function(){
@@ -676,23 +678,25 @@ window.addEventListener('resize',fit); fit();
       'stroke-dasharray="'+(C*0.12)+' '+(C*0.88)+'" stroke-linecap="round" opacity=".55"/>';
 })();
 
-/* ---------- live clock + countdown ---------- */
-(function(){
-  const updated=document.getElementById('updated');
-  const nextIn=document.getElementById('nextIn');
-  const arc=document.getElementById('countArc');
-  const total=30; let left=27; const C=94.2;
+/* ---------- countdown ring (matches the 3s telemetry cadence; reset on real data) ---------- */
+var cfCountdown=(function(){
+  var nextIn=document.getElementById('nextIn');
+  var arc=document.getElementById('countArc');
+  var total=3,left=3,C=94.2;
   function tick(){
-    const t=new Date();
-    const hh=((t.getHours()+11)%12)+1, mm=String(t.getMinutes()).padStart(2,'0'), ss=String(t.getSeconds()).padStart(2,'0');
-    const ap=t.getHours()<12?'AM':'PM';
-    updated.textContent='Updated '+hh+':'+mm+':'+ss+' '+ap;
-    nextIn.textContent='Next in '+left+'s';
-    arc.setAttribute('stroke-dashoffset', (C*(1-left/total)).toFixed(1));
-    left--; if(left<0)left=total;
+    if(nextIn) nextIn.textContent='Next in '+left+'s';
+    if(arc) arc.setAttribute('stroke-dashoffset',(C*(1-left/total)).toFixed(1));
+    left--; if(left<0) left=total;
   }
   tick(); setInterval(tick,1000);
+  return { reset:function(){ left=total; } };
 })();
+/* stamp the "Updated" label with the moment real telemetry actually arrives */
+function stampUpdated(){
+  var up=document.getElementById('updated'); if(!up) return;
+  var t=new Date(), hh=((t.getHours()+11)%12)+1, mm=String(t.getMinutes()).padStart(2,'0'), ss=String(t.getSeconds()).padStart(2,'0');
+  up.textContent='Updated '+hh+':'+mm+':'+ss+' '+(t.getHours()<12?'AM':'PM');
+}
 /* ===========================================================
    THREAT OVERVIEW — real data via the shared cf-telemetry event
    (stat cards, severity donut, live threat feed). Backend-backed,
@@ -721,13 +725,33 @@ window.addEventListener('resize',fit); fit();
     if(!feed){ feed=document.createElement('div'); feed.className='tfeed'; feed.style.cssText='overflow-y:auto;max-height:calc(100% - 46px)'; card.appendChild(feed); }
     feed.innerHTML=list.slice(0,14).map(function(t){
       var sev=(t.severity||'low'); var col=sev==='critical'?'var(--red)':sev==='high'?'var(--amber-2)':sev==='medium'?'var(--yellow)':'var(--blue)';
-      var name=t.type||t.title||(t.detection&&t.detection.source)||t.url||'threat';
+      var name=t.title||t.type||(t.detection&&t.detection.source)||t.source||t.url||'threat';
       var risk=(t.riskScore!=null?t.riskScore:(t.detection&&t.detection.riskScore));
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--border);font-size:12.5px">'+
         '<span style="width:8px;height:8px;border-radius:50%;background:'+col+';box-shadow:0 0 6px '+col+';flex:none"></span>'+
         '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(String(name).slice(0,48))+'</span>'+
         '<span class="pill '+(sev==='critical'||sev==='high'?'crit':'med')+'" style="font-size:9px">'+esc(sev)+((risk!=null&&risk!=='')?(' '+risk):'')+'</span></div>';
     }).join('');
+  }
+  function renderNodes(st){
+    var cards=document.querySelectorAll('.feeds .card'); var nh=cards[1]; if(!nh) return;
+    var ac=st.agentCount||0;
+    var cnt=nh.querySelector('.count'); if(cnt) cnt.textContent=ac+' / '+ac+' online';
+    var empty=nh.querySelector('.empty');
+    var list=nh.querySelector('.nhlist');
+    if(ac<=0){ if(list) list.remove(); if(empty) empty.style.display=''; return; }
+    if(empty) empty.style.display='none';
+    if(!list){ list=document.createElement('div'); list.className='nhlist'; list.style.cssText='padding:2px 0 6px'; nh.appendChild(list); }
+    function row(color,name,tag,tcol){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:1px solid var(--border);font-size:12.5px">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:'+color+';box-shadow:0 0 6px '+color+';flex:none"></span>'+
+        '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+name+'</span>'+
+        '<span style="font-family:var(--mono);font-size:10px;color:'+tcol+'">'+tag+'</span></div>';
+    }
+    var html =row('var(--green)','Local Agent · this device', st.agentRunning?'RUNNING':'IDLE','var(--green)');
+    html+=row(st.backendOk?'var(--cyan)':'var(--faint)','Backend API', st.backendOk?('ONLINE '+(st.latencyMs||0)+'ms'):'OFFLINE', st.backendOk?'var(--cyan)':'var(--faint)');
+    html+=row(st.mlOk?'var(--cyan)':'var(--faint)','ML Inference', st.mlOk?'HEALTHY':'DOWN', st.mlOk?'var(--cyan)':'var(--faint)');
+    list.innerHTML=html;
   }
   function applyThreats(p){
     if(!p) return;
@@ -746,20 +770,33 @@ window.addEventListener('resize',fit); fit();
       if(lv[3]) lv[3].textContent=th.low||0;
       drawDonut(th.critical||0,th.high||0,th.medium||0,th.low||0);
       renderFeed(th.threats||[]);
+      // genuine live volume: append the observed total, keep a 24-point rolling window
+      volSeries.push(th.total||0); if(volSeries.length>24) volSeries.shift();
+      renderVol(volSeries);
+      stampUpdated(); if(typeof cfCountdown!=='undefined'&&cfCountdown.reset) cfCountdown.reset();
     }
-    if(st && nums[3]) nums[3].textContent=st.agentCount||0; // ACTIVE NODES
+    if(st){
+      if(nums[3]) nums[3].textContent=st.agentCount||0; // ACTIVE NODES (registered agents + this device)
+      renderNodes(st);
+      stampUpdated();
+    }
   }
   try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
     if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyThreats(e.payload); });
-    if(T&&T.core&&T.core.invoke){
+    function pull(){ if(!(T&&T.core&&T.core.invoke)) return;
       T.core.invoke('get_threats').then(function(r){ applyThreats({threats:r}); }).catch(function(){});
       T.core.invoke('agent_status').then(function(r){ applyThreats({status:r}); }).catch(function(){});
-      // Real-time: re-pull threats the instant a live SSE event arrives.
-      var _lt; function cfLiveRefresh(){ clearTimeout(_lt); _lt=setTimeout(function(){
-        T.core.invoke('get_threats').then(function(r){ applyThreats({threats:r}); }).catch(function(){});
-      }, 300); }
-      ['cf:threat','cf:scan','cf:alert'].forEach(function(n){ window.addEventListener(n, cfLiveRefresh); });
     }
+    // Instant paint from the loading-screen prewarm so the page has data the
+    // moment you navigate to it (then pull() refreshes live without a flash).
+    try{ var _pt=JSON.parse(localStorage.getItem('cf_pre_threats')||'null'); if(_pt&&_pt.payload&&(Date.now()-_pt.ts)<600000) applyThreats({threats:_pt.payload}); }catch(e){}
+    try{ var _ps=JSON.parse(localStorage.getItem('cf_pre_status')||'null'); if(_ps&&_ps.payload&&(Date.now()-_ps.ts)<600000) applyThreats({status:_ps.payload}); }catch(e){}
+    pull(); // initial snapshot (telemetry keeps it live every 3s thereafter)
+    var _rb=document.querySelector('.btn-refresh');
+    if(_rb) _rb.addEventListener('click',function(){ _rb.classList.add('busy'); pull(); setTimeout(function(){ _rb.classList.remove('busy'); },700); });
+    // Real-time: re-pull the instant a live SSE event arrives.
+    var _lt; function cfLiveRefresh(){ clearTimeout(_lt); _lt=setTimeout(pull,300); }
+    ['cf:threat','cf:scan','cf:alert'].forEach(function(n){ window.addEventListener(n, cfLiveRefresh); });
   }catch(e){}
 })();
 </script>

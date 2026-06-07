@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Memory</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <link rel="stylesheet" href="../styles/cf-agent.css" />
 <style>
@@ -47,6 +45,11 @@
 .mrow .mt{font-size:12px;line-height:1.4}
 .mrow .mm{font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:3px;display:flex;gap:8px}
 .mrow .conf{font-family:var(--mono);font-size:10px;color:var(--amber-2);flex:none}
+.ai-note{display:flex;align-items:center;gap:8px;padding:8px 13px;font-family:var(--mono);font-size:9.5px;color:var(--cyan);background:var(--cyan-dim);border-bottom:1px solid var(--border)}
+.ai-note svg{width:12px;height:12px;flex:none}
+.msearch{padding:8px 12px;border-bottom:1px solid var(--border)}
+.msearch input{width:100%;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:rgba(8,12,20,.6);color:var(--text);font-size:12px;font-family:var(--sans);outline:none}
+.msearch input:focus{border-color:rgba(245,166,35,.5);box-shadow:0 0 0 3px rgba(245,166,35,.1)}
 .recall{padding:4px 0;overflow-y:auto}
 .mfilters{display:flex;gap:5px}
 .mchip{font-family:var(--mono);font-size:9px;letter-spacing:.5px;padding:3px 8px;border-radius:5px;cursor:pointer;
@@ -98,15 +101,17 @@
               </div>
             </div>
             <div class="card usage">
-              <div class="ul"><span>Memory Store — 6.8 / 16 GB</span><span>42%</span></div>
+              <div class="ul"><span>Memory Store</span><span id="memTotal">—</span></div>
               <div class="ubar"><i id="uEp" style="background:var(--amber);width:0"></i><i id="uSe" style="background:var(--cyan);width:0"></i><i id="uPr" style="background:var(--green);width:0"></i></div>
-              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Episodic 24%</span><span><span class="d" style="background:var(--cyan)"></span>Semantic 13%</span><span><span class="d" style="background:var(--green)"></span>Procedural 5%</span></div>
+              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Episodic <b id="legEp">0</b></span><span><span class="d" style="background:var(--cyan)"></span>Semantic <b id="legSe">0</b></span><span><span class="d" style="background:var(--green)"></span>Procedural <b id="legPr">0</b></span></div>
             </div>
           </div>
 
           <div class="col">
             <div class="card" style="flex:1.5;display:flex;flex-direction:column;min-height:0">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Recent Memories<span class="right mfilters" id="mfilters"><span class="mchip on" data-f="all">All</span><span class="mchip" data-f="episodic">Episodic</span><span class="mchip" data-f="semantic">Semantic</span><span class="mchip" data-f="procedural">Proc</span></span></div>
+              <div class="ai-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg>Your AI Assistant reads this memory to ground every answer — scans, threat-intel, reports &amp; analysis from every page.</div>
+              <div class="msearch"><input id="memSearch" placeholder="Search all memory — scans, intel, reports, analysis…" autocomplete="off" /></div>
               <div class="mems" id="mems"></div>
             </div>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
@@ -129,7 +134,7 @@
 <script>
 buildHeader({status:'MEMORY'});
 buildSidebar('memory');
-buildFooter({items:[{txt:'48.2k memories',cls:'sb-amber'},{txt:'store 42%',cls:'sb-cyan'},{txt:'recall 8ms',cls:'sb-green'},{txt:'Consolidating…',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'local vector store',cls:'sb-amber'},{txt:'synced',cls:'sb-cyan'},{txt:'recall <1ms',cls:'sb-green'},{txt:'Live',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 setTimeout(()=>{document.getElementById('uEp').style.width='24%';document.getElementById('uSe').style.width='13%';document.getElementById('uPr').style.width='5%';},150);
@@ -203,17 +208,20 @@ document.querySelectorAll('#mfilters .mchip').forEach(c=>c.addEventListener('cli
 
 /* recall activity */
 const recallEl=document.getElementById('recall');
-const queries=['"RedLine C2 indicators"','"isolation playbook"','"duckdns reputation"','"WS-4471 history"','"macro detonation steps"','"port 4444 patterns"','"phishing cluster xyz"','"brute force 193.43.*"'];
 function addRecall(){
+  // Only surface recalls of REAL stored memories — no synthetic queries.
+  if(!memData.length){ if(!recallEl.querySelector('.rc')) recallEl.innerHTML='<div style="padding:18px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No recall activity yet<br><span style="font-size:9px">memories are written as the agent scans URLs</span></div>'; return; }
+  var ph=recallEl.firstElementChild; if(ph && !ph.classList.contains('rc')) recallEl.innerHTML='';
   if(window.__memRecall)window.__memRecall();
   const el=document.createElement('div');el.className='rc';
   const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  var pick=memData[Math.floor(Math.random()*memData.length)];
   el.innerHTML='<svg class="rci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
-    '<span class="rcn">recall '+(memData.length?('"'+String(memData[Math.floor(Math.random()*memData.length)][1]).slice(0,38).replace(/[<>]/g,'')+'"'):queries[Math.floor(Math.random()*queries.length)])+'</span><span class="rct">'+ts+' · '+(1+Math.floor(Math.random()*3))+'ms</span>';
+    '<span class="rcn">recall "'+String(pick[1]).slice(0,38).replace(/[<>]/g,'')+'"</span><span class="rct">'+ts+'</span>';
   recallEl.prepend(el);while(recallEl.children.length>30)recallEl.lastChild.remove();
 }
-for(let i=0;i<5;i++)addRecall();
-setInterval(addRecall,1100);
+addRecall();
+setInterval(addRecall,1400);
 
 /* ===========================================================
    REAL vector memory — local Rust store (memory_list), synced to
@@ -222,16 +230,23 @@ setInterval(addRecall,1100);
 (function(){
   function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
   function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+  var searching=false, searchT=null;
+  function toRows(arr){ return (arr||[]).map(function(m){
+    var meta=(m.category||'scan')+' · '+ago(m.ts);
+    var conf=(m.risk!=null)?('risk '+m.risk):'';
+    return [(m.kind||'episodic'), m.text, meta, conf];
+  }); }
   function pollMemory(){
-    cfInvoke('memory_list',{limit:40}).then(function(r){
+    cfInvoke('memory_list',{limit:200}).then(function(r){
       var d=(r&&r.data)||{};
-      memData=(d.memories||[]).map(function(m){
-        var meta=(m.category||'scan')+' · '+ago(m.ts);
-        var conf=(m.risk!=null)?('risk '+m.risk):'';
-        return [(m.kind||'episodic'), m.text, meta, conf];
-      });
-      renderMems();
+      // While the user is searching, keep their results on screen but still
+      // refresh the counters below.
+      if(!searching){ memData=toRows(d.memories); renderMems(); }
       var total=d.total||0;
+      var mt=document.getElementById('memTotal'); if(mt) mt.textContent=total+(total===1?' mem':' mems');
+      var le=document.getElementById('legEp'); if(le) le.textContent=(d.episodic||0);
+      var ls=document.getElementById('legSe'); if(ls) ls.textContent=(d.semantic||0);
+      var lp=document.getElementById('legPr'); if(lp) lp.textContent=(d.procedural||0);
       var kMem=document.getElementById('kMem'); if(kMem) kMem.textContent=total.toLocaleString();
       var kEdge=document.getElementById('kEdge'); if(kEdge) kEdge.textContent=((d.episodic||0)+(d.semantic||0)+(d.procedural||0));
       var gNodes=document.getElementById('gNodes'); if(gNodes) gNodes.textContent=Math.min(total,240);
@@ -245,6 +260,26 @@ setInterval(addRecall,1100);
     }).catch(function(){});
   }
   pollMemory(); setInterval(pollMemory,5000);
+
+  // Search the FULL memory store (semantic recall via memory_search) so the user
+  // can find any scan / intel / report / analysis the AI can also see.
+  var searchEl=document.getElementById('memSearch');
+  if(searchEl){
+    searchEl.addEventListener('input',function(){
+      var q=searchEl.value.trim(); clearTimeout(searchT);
+      if(!q){ searching=false; pollMemory(); return; }
+      searching=true;
+      searchT=setTimeout(function(){
+        cfInvoke('memory_search',{query:q, topK:60}).then(function(r){
+          var res=(r&&r.data&&r.data.results)||[];
+          memData=toRows(res);
+          if(!memData.length) memData=[['episodic','No matching memory for “'+q.replace(/[<>]/g,'')+'”','try another term','']];
+          renderMems();
+        }).catch(function(){});
+      },220);
+    });
+  }
+
   cfInvoke('memory_sync').catch(function(){});
   setInterval(function(){ cfInvoke('memory_sync').catch(function(){}); },30000);
 })();

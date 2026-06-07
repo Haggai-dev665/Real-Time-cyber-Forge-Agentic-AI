@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Browser Intelligence</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .bi-grid{display:grid;grid-template-columns:1fr 330px;gap:14px;height:calc(100% - 56px);min-height:0}
@@ -162,36 +160,8 @@ fitWindow('win');
   requestAnimationFrame(frame);
 })();
 
-/* HTTP history stream */
-(function(){
-  const http=document.getElementById('http');
-  const methods=[['GET','get'],['GET','get'],['GET','get'],['POST','post'],['PUT','put'],['DELETE','del']];
-  const hosts=['acme-corp.io','google.com','cdn.cloudflare.net','okta.com','fonts.gstatic.com','api.acme-corp.io','duckdns.org'];
-  const paths=['/api/v2/user','/track','/auth/token','/assets/app.js','/gate.php','/search?q=','/static/css/main.css','/events/ingest','/.well-known/jwks'];
-  function add(){
-    const m=methods[Math.floor(Math.random()*methods.length)];
-    const r=Math.random();const st=r<0.82?['200','ok']:(r<0.92?['302','ok']:(r<0.97?['404','warn']:['503','err']));
-    const host=hosts[Math.floor(Math.random()*hosts.length)];const bad=host==='duckdns.org';
-    const path=paths[Math.floor(Math.random()*paths.length)];
-    const el=document.createElement('div');el.className='hr';
-    const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-    const sz=(Math.random()*40).toFixed(1)+'k';const dur=(8+Math.random()*180).toFixed(0);
-    el.innerHTML='<span class="hm '+m[1]+'">'+m[0]+'</span><span class="hu" style="'+(bad?'color:#ff7185':'')+'">'+host+path+'</span>'+
-      '<span class="hs '+st[1]+'">'+st[0]+'</span><span class="hsz">'+sz+'</span><span class="ht">'+ts+'</span>';
-    const det=document.createElement('div');det.className='hr-det';
-    det.innerHTML='<div class="dl"><span class="dk">'+m[0]+'</span> https://'+host+path+'</div>'+
-      '<div class="dl"><span class="dk">status</span> '+st[0]+' · '+sz+' · '+dur+'ms'+(bad?' · <span style="color:#ff7185">flagged: malware C2</span>':'')+'</div>'+
-      '<div class="dl"><span class="dk">req</span> accept:*/* · ua:Chrome/148 · tls:1.3</div>'+
-      '<div class="dl"><span class="dk">resp</span> content-type:application/json · cache:miss</div>'+
-      '<div class="timing"><i style="background:var(--cyan);width:'+(15+Math.random()*20)+'%"></i><i style="background:var(--amber);width:'+(20+Math.random()*30)+'%"></i><i style="background:var(--green);width:'+(15+Math.random()*25)+'%"></i></div>'+
-      '<div class="dl" style="color:var(--faint)">dns · connect · ttfb · download</div>';
-    el.addEventListener('click',()=>{el.classList.toggle('open');det.classList.toggle('open');});
-    http.prepend(det); http.prepend(el);
-    while(http.children.length>90){http.lastChild.remove();}
-  }
-  window.__httpAdd=add;            // exposed; real navigation events feed it
-  window.__httpEl=http;
-})();
+/* HTTP history stream is populated from REAL data only — live tabs (browser_intel)
+   and the user's actual browser history (get_browser_history) — wired below. */
 
 /* ===========================================================
    BROWSER INTELLIGENCE — real data via Rust (browser_intel:
@@ -218,14 +188,27 @@ fitWindow('win');
       '<span class="hs '+st[1]+'">'+st[0]+'</span><span class="hsz">page</span><span class="ht">'+ts+'</span>';
     httpEl.prepend(el); while(httpEl.children.length>90) httpEl.lastChild.remove();
   }
-  function renderSessions(sessions,browsers){
-    if(!sessions||!sessions.length){ sessEl.innerHTML='<div style="padding:20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No active browser tabs detected<br><span style="font-size:9px">(grant Automation permission, open a browser)</span></div>'; }
+  // Local browser detection (Rust detect_browsers, via the cf-telemetry event) —
+  // independent of the browser extension, so the page shows your real browsers
+  // even before any live tab/session is captured.
+  var localBrowsers=[], lastSessions=[];
+  function renderBrowserKpi(){
+    var running=localBrowsers.filter(function(b){return b.isRunning;}).length;
+    if(kd[0]) kd[0].textContent = localBrowsers.length ? (running+' running · '+localBrowsers.length+' detected') : '0 browsers';
+  }
+  function renderSessions(sessions){
+    lastSessions=sessions||[];
+    if(!sessions||!sessions.length){
+      var names=localBrowsers.map(function(b){return esc(b.name)+(b.isRunning?' <span style="color:var(--green)">(running)</span>':'');});
+      sessEl.innerHTML = names.length
+        ? '<div style="padding:14px;color:var(--dim);font-family:var(--mono);font-size:11px;line-height:1.8">Browsers detected on this device:<br>'+names.map(function(n){return '&nbsp;&nbsp;•&nbsp;'+n;}).join('<br>')+'<br><br><span style="color:var(--faint);font-size:9.5px">No live tabs yet — open a page (and connect the CyberForge browser extension) to capture sessions.</span></div>'
+        : '<div style="padding:20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No active browser tabs detected<br><span style="font-size:9px">(grant Automation permission, open a browser)</span></div>';
+    }
     else sessEl.innerHTML=sessions.map(function(s){
       return '<div class="sr"><span class="sav">'+USER+'</span><div class="sinfo"><div class="su">'+esc(s.browser)+'</div><div class="sm">'+esc(s.host||hostOf(s.url))+'</div></div><span class="sdot" style="'+(s.https?'':'background:var(--amber-2);box-shadow:0 0 5px var(--amber-2)')+'"></span></div>';
     }).join('');
-    const running=(browsers||[]).filter(function(b){return b.isRunning;}).length;
     if(kv[0]) kv[0].textContent=(sessions||[]).length;
-    if(kd[0]) kd[0].textContent=(running||0)+' browser'+(running===1?'':'s');
+    renderBrowserKpi();
   }
   var dgaCache={};          // domain -> {flagged,score} | null (in-flight)
   var lastDomainArr=[];
@@ -236,10 +219,13 @@ fitWindow('win');
     });
     if(window.__setDomains) window.__setDomains(out.length?out:[['no active tabs','#5d6c84']]);
   }
+  var histDomains=[];
   function renderDomains(domains,sessions){
     const arr=[];
     (sessions||[]).forEach(function(s){ var h=s.host||hostOf(s.url); if(h&&!arr.some(function(x){return x[0]===h;})) arr.push([h, s.https?'#43e08a':'#f4495e']); });
     (domains||[]).forEach(function(d){ if(d&&!arr.some(function(x){return x[0]===d;})) arr.push([d,'#2bd4ee']); });
+    histDomains.forEach(function(h){ if(h&&!arr.some(function(x){return x[0]===h;})) arr.push([h,'#2bd4ee']); });
+    if(!arr.length) return;   // nothing real yet — leave the graph rather than clobbering it
     lastDomainArr=arr; pushDomains();
     if(kv[1]) kv[1].textContent=arr.length;
     // DGA detection on real visited domains (cached, best-effort) — recolors flagged nodes live
@@ -266,17 +252,39 @@ fitWindow('win');
   function poll(){
     cfInvoke('browser_intel').then(function(r){
       const d=(r&&r.data)||{}; const sessions=d.sessions||[];
-      renderSessions(sessions,d.browsers); renderDomains(d.domains,sessions); renderIntercept(sessions);
+      renderSessions(sessions); renderDomains(d.domains,sessions); renderIntercept(sessions);
       sessions.forEach(function(s){ if(lastUrls[s.browser]!==s.url){ lastUrls[s.browser]=s.url; httpEntry('GET',s.url,s.host||hostOf(s.url),!!s.https); } });
     }).catch(function(){});
   }
-  function applyTel(p){ if(!p) return; var st=(p.status&&p.status.data)||null;
-    if(st){ if(kv[2]) kv[2].textContent=st.threatCount||0; if(document.getElementById('rpm')) document.getElementById('rpm').textContent=(st.threatCount||0)+' threats'; } }
+  function applyTel(p){ if(!p) return;
+    var st=(p.status&&p.status.data)||null;
+    if(st){ if(kv[2]) kv[2].textContent=st.threatCount||0; if(document.getElementById('rpm')) document.getElementById('rpm').textContent=(st.threatCount||0)+' threats'; }
+    var br=(p.browsers&&p.browsers.data)||null;
+    if(br){ localBrowsers=br.browsers||[]; renderBrowserKpi(); if(!lastSessions.length) renderSessions(lastSessions); }
+  }
+  // Telemetry may arrive via Tauri events or be relayed by the host page.
+  window.addEventListener('message', function(e){ if(e&&e.data&&e.data.cf==='telemetry') applyTel(e.data.payload); });
   try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
     if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyTel(e.payload); });
   }catch(e){}
 
+  // REAL browser history → HTTP stream + domain graph (works with no extension).
+  var histSeen={};
+  function pollHistory(){
+    cfInvoke('get_browser_history',{limit:30}).then(function(r){
+      var hist=(r&&r.data&&r.data.history)||[];
+      var doms=[]; hist.forEach(function(it){ var h=hostOf(it.url); if(h&&doms.indexOf(h)<0) doms.push(h); });
+      histDomains=doms.slice(0,12);
+      renderDomains(null, lastSessions);
+      hist.slice().reverse().forEach(function(it){
+        if(histSeen[it.url]) return; histSeen[it.url]=1;
+        httpEntry('GET', it.url, hostOf(it.url), /^https:/i.test(it.url));
+      });
+    }).catch(function(){});
+  }
+
   poll(); setInterval(poll,6000);
+  pollHistory(); setInterval(pollHistory,12000);
   cfInvoke('browser_intel_report').catch(function(){});
   setInterval(function(){ cfInvoke('browser_intel_report').catch(function(){}); },60000);
 })();

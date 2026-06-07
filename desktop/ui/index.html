@@ -2,11 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="refresh" content="0; url=pages/loading.html" />
 <title>CyberForge</title>
 <style>html,body{margin:0;height:100%;background:#03050a}</style>
 </head>
 <body>
-<script>window.location.replace('pages/loading.html');</script>
+<!-- Entry gate: on every launch (including `cargo tauri dev`) ask Rust whether
+     CyberForge has already been installed on this machine. Not installed → run
+     the one-time setup wizard; installed → boot the app via the loading screen.
+     In a plain browser (no desktop runtime) we skip the installer so the UI can
+     still be previewed. -->
+<script>
+(function(){
+  function go(url){ window.location.replace(url); }
+  try{
+    var T = window.__TAURI__;
+    if(T && T.core && typeof T.core.invoke === 'function'){
+      T.core.invoke('is_installed')
+        .then(function(r){ go(r && r.installed ? 'pages/loading.html' : 'pages/Installer.html'); })
+        .catch(function(){ go('pages/loading.html'); });
+      return;
+    }
+  }catch(e){}
+  go('pages/loading.html');
+})();
+</script>
 </body>
 </html>

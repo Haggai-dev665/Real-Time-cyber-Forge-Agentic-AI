@@ -1,0 +1,7 @@
+{
+  "_comment": "Hugging Face token for the AI Assistant (DeepSeek via HF Inference). Copy this file to hf_config.json and paste your token. To swap tokens, put the new one in `active` (or add it to the top of `tokens`). hf_config.json is gitignored — never commit a real token.",
+  "active": "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "tokens": [
+    "hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  ]
+}

@@ -34,6 +34,18 @@ pub struct AppState {
     pub sys_cache: Option<(Instant, Value)>,
     pub browsers_cache: Option<(Instant, Value)>,
     pub threats_cache: Option<(Instant, Value)>,
+    /// Latest full browser-history snapshot collected in the background (all
+    /// browsers, all profiles, read straight from the on-disk SQLite files even
+    /// while the browsers are closed). The startup collector task refreshes this;
+    /// UI commands serve from it so the history appears instantly. (timestamp,
+    /// payload).
+    pub history_cache: Option<(Instant, Value)>,
+    /// The latest threat the scanner flagged, read by the always-on-top threat
+    /// alert popup window (`get_pending_threat`).
+    pub pending_threat: Option<Value>,
+    /// Per-host throttle so the popup doesn't fire repeatedly for the same site
+    /// (host → last alerted time).
+    pub alerted_hosts: std::collections::HashMap<String, Instant>,
 }
 
 impl AppState {
@@ -49,6 +61,9 @@ impl AppState {
             sys_cache: None,
             browsers_cache: None,
             threats_cache: None,
+            history_cache: None,
+            pending_threat: None,
+            alerted_hosts: std::collections::HashMap::new(),
         }
     }
 

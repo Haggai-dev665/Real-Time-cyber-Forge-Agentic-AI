@@ -15,11 +15,12 @@
         "label": "main",
         "title": "CyberForge — AI Security Console",
         "url": "index.html",
-        "width": 1600,
-        "height": 1000,
-        "minWidth": 1200,
-        "minHeight": 800,
+        "width": 1440,
+        "height": 860,
+        "minWidth": 960,
+        "minHeight": 600,
         "center": true,
+        "maximized": true,
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
@@ -27,7 +28,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost asset: https://asset.localhost tauri:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: asset: http://asset.localhost; connect-src 'self' ipc: http://ipc.localhost"
+      "csp": "default-src 'self' ipc: http://ipc.localhost asset: https://asset.localhost tauri:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: asset: http://asset.localhost; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {
@@ -41,16 +42,36 @@
       "icons/icon.ico"
     ],
     "copyright": "Copyright © 2026 CyberForge",
-    "category": "DeveloperTool",
+    "category": "Utility",
     "shortDescription": "AI-Powered Cybersecurity Console",
     "longDescription": "CyberForge — AI Security Console. A standalone Tauri desktop shell for the CyberForge SOC interface: threat overview, agent core, sandbox, investigations, reports and more.",
+    "publisher": "CyberForge",
+    "homepage": "https://cyberforge-ddd97655464f.herokuapp.com",
+    "resources": [
+      "hf_config.example.json"
+    ],
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "dmg": {
+        "appPosition": { "x": 180, "y": 170 },
+        "applicationFolderPosition": { "x": 480, "y": 170 },
+        "windowSize": { "width": 660, "height": 400 }
+      }
+    },
+    "linux": {
+      "deb": {
+        "section": "utils"
+      }
     },
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
-      "timestampUrl": ""
+      "timestampUrl": "http://timestamp.digicert.com",
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico"
+      }
     }
   }
 }

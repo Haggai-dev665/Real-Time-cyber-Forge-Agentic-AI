@@ -47,59 +47,52 @@
 
   window.buildSidebar=function(active){
     let h='';
+    // Parent navigation only — child sub-items removed per design. Section
+    // headers carry no expand chevron because nothing nests under them now.
+
     // INTELLIGENCE
-    h+=secHead('INTELLIGENCE',I.shield,true);
+    h+=secHead('INTELLIGENCE',I.shield,false);
     h+=navItem({k:'overview',label:'Threat Overview',href:'threat-overview.html',icon:I.clock},active);
     h+=navItem({k:'globe',label:'Threat Globe',href:'threat-globe.html',icon:I.globe,tag:{t:'LIVE',c:'live'}},active);
     h+=navItem({k:'sandbox',label:'Sandbox',href:'sandbox.html',icon:I.box,tag:{t:'NEW',c:'new'}},active);
     h+=navItem({k:'browser',label:'Browser Intelligence',href:'browser-intelligence.html',icon:I.globe,tag:{t:'0',c:'zero'}},active);
     h+=navItem({k:'assistant',label:'AI Assistance',href:'ai-assistance.html',icon:I.spark,tag:{t:'AI',c:'ai'}},active);
-    h+=navItem({k:'orchestrator',label:'8-Agent Orchestrator',href:'#',icon:I.nodes,tag:{t:'8',c:'num'}},active);
+    h+=navItem({k:'security',label:'Security Functions',href:'security-functions.html',icon:I.shield,tag:{t:'LIVE',c:'live'}},active);
     h+=navItem({k:'pipeline',label:'Signal Pipeline',href:'signal-pipeline.html',icon:I.flow},active);
 
     // MODEL INFERENCE
     h+=secHead('MODEL INFERENCE',I.cpu,false);
-    h+='<div class="subnav">'+
-      sub('Active Models','model-inference.html',{on:true})+
-      sub('Training','model-inference.html')+
-      sub('Datasets','model-inference.html')+'</div>';
+    h+=navItem({k:'models',label:'Model Inference',href:'model-inference.html',icon:I.cpu},active);
 
     // AGENT SYSTEM
-    h+=secHead('AGENT SYSTEM',I.branch,true);
+    h+=secHead('AGENT SYSTEM',I.branch,false);
     h+=navItem({k:'agentcore',label:'Agent Core',href:'agent-core.html',icon:I.branch,tag:{t:'ACTIVE',c:'act'}},active);
-    h+=navItem({k:'tasks',label:'Active Tasks',href:'#',icon:I.check,tag:{t:'0',c:'zero'}},active);
+    h+=navItem({k:'analyzer',label:'Threat Analyzer',href:'analyzer.html',icon:I.search,tag:{t:'ML',c:'ai'}},active);
     h+=navItem({k:'scheduled',label:'Scheduled',href:'scheduled.html',icon:I.cal},active);
     h+=navItem({k:'memory',label:'Memory',href:'memory.html',icon:I.brain},active);
 
     // HTTP HISTORY
     h+=secHead('HTTP HISTORY',I.history,false);
-    h+='<div class="subnav">'+
-      sub('HTTP History','browser-intelligence.html')+
-      sub('WebSocket','browser-intelligence.html')+
-      sub('Intercept','browser-intelligence.html',{badge:'5'})+'</div>';
-    h+=navItem({k:'floating',label:'Floating Agent Center',href:'#',icon:I.sliders},active);
+    h+=navItem({k:'history',label:'Browser History',href:'web-history.html',icon:I.globe},active);
 
     // SECURITY OPERATIONS
-    h+=secHead('SECURITY OPERATIONS',I.bell,true);
+    h+=secHead('SECURITY OPERATIONS',I.bell,false);
     h+=navItem({k:'alerts',label:'Alerts & Evidence',href:'alerts-evidence.html',icon:I.bell,tag:{t:'0',c:'zero'}},active);
-    h+='<div class="subnav">'+
-      sub('Critical','alerts-evidence.html',{badge:'0'})+
-      sub('High','alerts-evidence.html')+
-      sub('Evidence','alerts-evidence.html')+'</div>';
     h+=navItem({k:'invest',label:'Investigations',href:'investigations.html',icon:I.search},active);
-    h+='<div class="subnav">'+sub('Active','investigations.html',{on:true})+sub('Closed','investigations.html')+'</div>';
     h+=navItem({k:'incident',label:'Incident Timeline',href:'incident-timeline.html',icon:I.timeline},active);
-    h+='<div class="subnav">'+sub('Today','incident-timeline.html',{on:true})+sub('This Week','incident-timeline.html')+'</div>';
 
     // REPORTS
-    h+=secHead('REPORTS',I.doc,true);
+    h+=secHead('REPORTS',I.doc,false);
     h+=navItem({k:'reports',label:'Reports',href:'reports.html',icon:I.doc,tag:{t:'12',c:'num'}},active);
-    h+='<div class="subnav">'+
-      sub('Generated','reports.html',{on:true})+
-      sub('Templates','reports.html')+
-      sub('Scheduled Reports','reports.html')+'</div>';
 
     const el=document.getElementById('sidebar');
-    if(el) el.innerHTML=h;
+    if(el){
+      el.innerHTML=h;
+      // Always an icon rail: it expands while the mouse is over it (CSS :hover)
+      // and collapses back to icons as soon as the mouse leaves. No button.
+      el.classList.add('collapsed');
+      const body=el.closest('.body');
+      if(body) body.classList.add('sidebar-collapsed');
+    }
   };
 })();

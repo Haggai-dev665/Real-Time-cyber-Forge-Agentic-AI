@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CyberForge — Model Inference</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
 .mi-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;height:calc(100% - 56px);min-height:0}
@@ -119,7 +117,7 @@
 <script>
 buildHeader({status:'SERVING'});
 buildSidebar('models');
-buildFooter({items:[{txt:'4 models serving',cls:'sb-amber'},{txt:'GPU 71%',cls:'sb-cyan'},{txt:'4.8k inf/s',cls:'sb-green'},{txt:'Healthy',cls:'sb-green',spin:true}]});
+buildFooter({items:[{txt:'5 models',cls:'sb-amber'},{txt:'HF Inference',cls:'sb-cyan'},{txt:'serverless',cls:'sb-green'},{txt:'Healthy',cls:'sb-green',spin:true}]});
 fitWindow('win');
 
 const brain='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg>';
@@ -154,16 +152,11 @@ function gauge(svg,pct,color){
     '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-linecap="round" '+
     'stroke-dasharray="'+(C*pct/100).toFixed(1)+' '+C+'" transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dasharray .9s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 4px '+color+')"/>';
 }
-const gpus=[['GPU 0 · A100',76,'62°','var(--amber)'],['GPU 1 · A100',71,'59°','var(--cyan)'],['GPU 2 · A100',68,'57°','var(--green)']];
-document.getElementById('gpus').innerHTML=gpus.map((g,i)=>
-  '<div class="gpu"><div class="gg"><svg width="52" height="52" viewBox="0 0 52 52" data-g="'+g[1]+'" data-c="'+g[3]+'"></svg><span class="val">'+g[1]+'%</span></div>'+
-  '<div class="gi"><div class="gl">'+g[0]+'</div><div class="gs">40 GB · batch 32</div></div><span class="gtemp">'+g[2]+'</span></div>').join('');
-const ggs=[...document.querySelectorAll('[data-g]')].map(s=>({svg:s,c:s.dataset.c,t:+s.dataset.g,val:s.parentElement.querySelector('.val')}));
-ggs.forEach(g=>gauge(g.svg,0,g.c)); setTimeout(()=>ggs.forEach(g=>gauge(g.svg,g.t,g.c)),100);
-setInterval(()=>ggs.forEach(g=>{let p=g.t+(Math.random()*12-6);p=Math.max(40,Math.min(96,p));g.t=p;gauge(g.svg,p,g.c);g.val.textContent=Math.round(p)+'%';}),2400);
+// Inference is serverless (HF Inference Providers / HF Space) — no local GPU.
+document.getElementById('gpus').innerHTML='<div style="padding:20px 14px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px;line-height:1.7">Inference runs on<br><b style="color:var(--amber-2)">Hugging Face Inference Providers</b><br>serverless — no local GPU</div>';
 
-// datasets
-const ds=[['Threat Intel Corpus','1.8 TB','var(--amber-2)'],['Network Flows 2026','920 GB','var(--cyan)'],['Malware Samples','640 GB','var(--green)'],['Phishing URLs','210 GB','var(--blue)'],['Endpoint Telemetry','480 GB','var(--amber-2)'],['Auth Events','180 GB','var(--cyan)']];
+// datasets (HF-hosted training corpora; sizes not exposed by the service)
+const ds=[['Threat Intel Corpus','—','var(--amber-2)'],['Network Flows','—','var(--cyan)'],['Malware Samples','—','var(--green)'],['Phishing URLs','—','var(--blue)'],['Endpoint Telemetry','—','var(--amber-2)'],['Auth Events','—','var(--cyan)']];
 document.getElementById('datasets').innerHTML=ds.map(d=>
   '<div class="ds"><svg class="di" viewBox="0 0 24 24" fill="none" stroke="'+d[2]+'" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6"/></svg>'+
   '<span class="dn">'+d[0]+'</span><span class="dsz">'+d[1]+'</span></div>').join('');

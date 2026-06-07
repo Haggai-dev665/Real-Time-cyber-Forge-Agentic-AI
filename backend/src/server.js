@@ -33,6 +33,7 @@ const otxRoutes = require('./routes/otx');
 const childPagesRoutes = require('./routes/child-pages');
 const agentRoutes = require('./routes/agentRoutes');
 const browserIntelligenceRoutes = require('./routes/browser-intelligence');
+const networkCaptureRoutes = require('./routes/network-capture');
 const distributedRoutes = require('./routes/distributed');
 const policyRoutes = require('./routes/policy');
 const auditRoutes = require('./routes/audit');
@@ -153,6 +154,7 @@ class CyberForgeServer {
     this.app.use('/api/otx', otxRoutes);           // OTX threat intelligence
     this.app.use('/api/agent', agentRoutes);       // TODO 1: Agent control and management
     this.app.use('/api/browser-intelligence', browserIntelligenceRoutes); // TODO 2: Browser Intelligence Engine
+    this.app.use('/api/network-capture', networkCaptureRoutes); // Mobile VPN capture sync
     this.app.use('/api/distributed', distributedRoutes); // TODO 4: Distributed Intelligence
     this.app.use('/api/policy', policyRoutes);           // TODO 5: Policy Engine
     this.app.use('/api/audit', auditRoutes);             // TODO 6: Audit Trail

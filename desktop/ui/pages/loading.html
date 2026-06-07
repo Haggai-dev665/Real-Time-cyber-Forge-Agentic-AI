@@ -3,46 +3,50 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Loading</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<title>CyberForge</title>
+<link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <link rel="stylesheet" href="../styles/cf-auth.css" />
 <style>
-.load-wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;position:relative;z-index:2}
-.load-word{margin-top:4px}
-.load-bar{width:420px;max-width:70vw}
-.load-bar .lb-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:9px}
-.load-bar .lb-top b{color:var(--amber-2)}
-.load-bar .track{height:6px;border-radius:4px;background:rgba(130,160,200,.12);overflow:hidden;position:relative}
-.load-bar .track i{display:block;height:100%;border-radius:4px;width:0;background:linear-gradient(90deg,var(--brand-orange),var(--amber-2));transition:width .4s ease;position:relative}
-.load-bar .track i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shimmer 1.3s linear infinite}
-.boot{width:420px;max-width:70vw;height:96px;font-family:var(--mono);font-size:11px;color:var(--faint);overflow:hidden;display:flex;flex-direction:column;gap:5px}
-.boot .bl{display:flex;gap:9px;opacity:0;animation:blin .3s ease forwards}
-@keyframes blin{to{opacity:1}}
-.boot .bl .ok{color:var(--sage)} .boot .bl .t{color:var(--cyan);opacity:.7}
-.enter{opacity:0;pointer-events:none;transition:opacity .5s;height:50px;display:flex;align-items:center;gap:10px;padding:0 30px;border-radius:11px;cursor:pointer;font-weight:600;font-size:14.5px;color:#1a1206;border:1px solid rgba(246,157,57,.5);background:linear-gradient(180deg,#ffc15a,#f69d39);box-shadow:0 8px 22px -8px rgba(246,157,57,.6);text-decoration:none}
-.enter.show{opacity:1;pointer-events:auto;animation:epop .5s cubic-bezier(.2,.9,.25,1)}
-@keyframes epop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-.enter svg{width:17px;height:17px}
-.enter:hover{transform:translateY(-1px)}
+/* brand palette (safety — the animated mark uses these vars) */
+:root{--cream:#efe9dd;--brand-orange:#f69d39;--sage:#869b7e}
+/* logo-only loader: nothing on screen but the brand, fully animating */
+.load-only{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;position:relative;z-index:2}
+.bw{text-align:center;opacity:0;transform:translateY(12px);animation:bwIn 1s 1.3s cubic-bezier(.2,.9,.25,1) forwards}
+@keyframes bwIn{to{opacity:1;transform:none}}
+.bw .bw-text{font-family:var(--sans);font-size:56px;font-weight:700;letter-spacing:.5px;color:var(--cream);line-height:1}
+.bw .bw-text .fg{color:var(--brand-orange)}
+.bw .bw-sub{font-family:var(--mono);font-size:11px;letter-spacing:7px;color:var(--dim);margin-top:11px;
+  opacity:0;animation:bwIn .8s 2s ease forwards}
+/* gentle ambient breathing on the whole logo group */
+.load-only{animation:loBreath 4.5s ease-in-out infinite}
+@keyframes loBreath{0%,100%{filter:drop-shadow(0 12px 30px rgba(0,0,0,.4))}50%{filter:drop-shadow(0 16px 54px rgba(246,157,57,.14))}}
+/* make the forge illustration larger + centred; enlarge the mark itself so the
+   logo reads big (not just the orbit rings) */
+#forge .forge{margin:0 auto}
+#forge .forge .forge-mark{width:58%;height:58%}
+/* warm-up progress (under the wordmark) */
+.lprog{opacity:0;animation:bwIn .8s 2.2s ease forwards;display:flex;flex-direction:column;align-items:center;gap:11px;margin-top:-8px}
+.lbar-track{width:260px;height:4px;border-radius:4px;background:rgba(239,233,221,.12);overflow:hidden}
+.lbar{height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--brand-orange),var(--cream));
+  box-shadow:0 0 12px rgba(246,157,57,.5);transition:width .25s ease}
+.lstatus{font-family:var(--mono);font-size:10.5px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;
+  min-height:13px;text-align:center}
 </style>
 </head>
 <body>
 <div class="stage">
   <div class="window" id="win">
-    <div class="bg-grid"></div>
-    <div class="bg-scan"></div>
-    <div class="load-wrap">
+    <div class="load-only">
       <div id="forge"></div>
-      <div class="wordmark load-word" id="word"></div>
-      <div class="load-bar">
-        <div class="lb-top"><span id="phase">Initializing secure runtime…</span><b id="pct">0%</b></div>
-        <div class="track"><i id="fill"></i></div>
+      <div class="bw">
+        <div class="bw-text">Cyber<span class="fg">Forge</span></div>
+        <div class="bw-sub">AI SECURITY</div>
       </div>
-      <div class="boot" id="boot"></div>
-      <a class="enter" id="enter" href="login.html">Enter Console<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <div class="lprog">
+        <div class="lbar-track"><div class="lbar" id="lbar"></div></div>
+        <div class="lstatus" id="lstatus">Preparing your workspace</div>
+      </div>
     </div>
   </div>
 </div>
@@ -51,45 +55,67 @@
 <script src="../scripts/cf-auth.js"></script>
 <script>
 fitWindow('win');
-forgeIllustration(document.getElementById('forge'),240);
-cfWordmark(document.getElementById('word'));
 
-/* persistent login: validate the keychain session while the loader runs */
-const authCheck = (window.cfAuth
-  ? cfAuth.isAuthenticated().then(r => !!(r && r.authenticated)).catch(() => false)
-  : Promise.resolve(false));
+/* the only thing on the page: the brand mark, fully animating */
+var forgeHost=document.getElementById('forge');
+forgeIllustration(forgeHost, 480);
+/* re-forge the mark periodically so it keeps animating while the app loads */
+setInterval(function(){ if(window.replayForge) replayForge(forgeHost); }, 5500);
 
-const steps=[
-  ['Mounting encrypted volumes','vault:ok'],
-  ['Connecting to 7 sensor nodes','7/7 online'],
-  ['Loading threat-intel corpus','48k IOCs'],
-  ['Warming inference models','4 served'],
-  ['Calibrating anomaly baselines','done'],
-  ['Spinning up Agent Core','agentic'],
-  ['Establishing secure channel','TLS 1.3']
+function delay(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+var T = window.__TAURI__;
+function inv(cmd, args){ return (T && T.core && T.core.invoke) ? T.core.invoke(cmd, args || {}) : Promise.reject(new Error('no-tauri')); }
+/* stash a command result so any page can render it instantly on navigate
+   (read by CF.preGet / direct localStorage). Format: {ts, payload}. */
+function preSet(key, payload){ try{ localStorage.setItem('cf_pre_'+key, JSON.stringify({ ts: Date.now(), payload: payload })); }catch(e){} }
+
+var OTX_API_KEY = 'd32e3deb37526ef9095320ed7976388981f9c5052b6e85f5c5b5adab9a87f15c';
+/* Warm every page's data while the logo plays. Order = priority: the data the
+   user lands on first (Threat Overview, then the Threat Globe) is fetched first.
+   Each result is cached in the Rust process AND stashed to localStorage so the
+   destination page shows it immediately, then refreshes live. */
+var WARM = [
+  { key:'status',   run:function(){ return inv('agent_status'); } },                       // overview + every header
+  { key:'threats',  run:function(){ return inv('get_threats'); } },                         // THREAT OVERVIEW
+  { key:'globe',    run:function(){ return inv('otx_fetch', { apiKey: OTX_API_KEY, limit: 50 }); } }, // THREAT GLOBE (slow → early)
+  { key:'sys',      run:function(){ return inv('get_system_stats'); } },
+  { key:'browsers', run:function(){ return inv('detect_browsers'); } },
+  { key:'history',  run:function(){ return inv('get_collected_history'); } },
+  { key:'memory',   run:function(){ return inv('memory_list', { limit: 80 }); } },
+  { key:'alerts',   run:function(){ return inv('agent_alerts'); } }
 ];
-const boot=document.getElementById('boot'),fill=document.getElementById('fill'),pct=document.getElementById('pct'),phase=document.getElementById('phase');
-let p=0,si=0;
-function line(txt,ok){
-  const now=new Date();const ts=String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-  const el=document.createElement('div');el.className='bl';
-  el.innerHTML='<span class="t">'+ts+'</span><span style="flex:1">'+txt+'</span><span class="ok">'+ok+'</span>';
-  boot.appendChild(el);while(boot.children.length>6)boot.firstChild.remove();
+function runWarm(t){ return t.run().then(function(r){ if(r) preSet(t.key, r); }).catch(function(){}); }
+
+/* rotating status + time-based progress over the ~15s warm-up */
+var PHRASES = ['Connecting to the agent core','Loading your threat overview','Mapping the global threat grid',
+  'Syncing browser intelligence','Warming the ML inference engine','Indexing local memory','Preparing your workspace'];
+var pi=0, statusTimer=setInterval(function(){ var e=document.getElementById('lstatus'); if(e) e.textContent=PHRASES[pi++%PHRASES.length]; }, 1900);
+var t0=Date.now(), WARM_MS=15000;
+var progTimer=setInterval(function(){ var b=document.getElementById('lbar'); if(b) b.style.width=Math.min(96,(Date.now()-t0)/WARM_MS*100)+'%'; }, 80);
+
+/* persistent login: validate the keychain session (this also restores the Rust
+   session so the warm-up commands below are authenticated). */
+var authCheck = (window.cfAuth && cfAuth.available())
+  ? cfAuth.isAuthenticated().then(function(r){ return !!(r && r.authenticated); }).catch(function(){ return false; })
+  : Promise.resolve(false);
+
+var navigated=false;
+function go(authed){
+  if(navigated) return; navigated=true;
+  clearInterval(statusTimer); clearInterval(progTimer);
+  var b=document.getElementById('lbar'); if(b) b.style.width='100%';
+  var e=document.getElementById('lstatus'); if(e) e.textContent='Ready';
+  setTimeout(function(){ window.location.replace(authed ? 'threat-overview.html' : 'login.html'); }, 340);
 }
-const iv=setInterval(()=>{
-  p+=Math.random()*9+5; if(p>100)p=100;
-  fill.style.width=p+'%'; pct.textContent=Math.round(p)+'%';
-  const idx=Math.min(steps.length-1,Math.floor(p/100*steps.length));
-  if(idx!==si||p>=100){ if(steps[si]){phase.textContent=steps[si][0]+'…'; line(steps[si][0],steps[si][1]);} si=idx; }
-  if(p>=100){clearInterval(iv); phase.textContent='Ready';
-    authCheck.then(function(authed){
-      if(authed){ line('Session restored','welcome back');
-        setTimeout(()=>{ window.location.href='threat-overview.html'; },650); }
-      else { line('System ready','enter');
-        setTimeout(()=>document.getElementById('enter').classList.add('show'),400); }
-    });
-  }
-},520);
+
+authCheck.then(function(authed){
+  if(!authed){ delay(1600).then(function(){ go(false); }); return; }
+  // Authenticated → warm all pages (priority first) for ~15s, then route.
+  var warms = WARM.map(runWarm);
+  var priority = Promise.allSettled(warms.slice(0,3));   // status + threats + globe ready
+  Promise.allSettled([priority, delay(WARM_MS)]).then(function(){ go(true); });
+  delay(20000).then(function(){ go(true); });            // hard cap
+});
 </script>
 </body>
 </html>

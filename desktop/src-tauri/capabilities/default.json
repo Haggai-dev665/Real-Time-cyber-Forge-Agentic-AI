@@ -1,9 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Core permission set granted to the main CyberForge window.",
-  "windows": ["main"],
+  "description": "Core permission set granted to the CyberForge windows (main + threat-alert popup).",
+  "windows": ["main", "cf-threat-alert"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-set-focus"
   ]
 }

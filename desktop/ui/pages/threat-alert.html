@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Security Alert</title>
+<link rel="stylesheet" href="../styles/fonts.css" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--red:#f4495e;--cyan:#2bd4ee;--green:#43e08a;--amber:#ffb84d}
+  html,body{height:100%;overflow:hidden;background:transparent}
+  body{font-family:'Space Grotesk',system-ui,Segoe UI,Arial,sans-serif;color:#e8eef8}
+  .card{height:100vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#141a27,#0c1119);
+    border:1px solid rgba(244,73,94,.4);border-radius:14px;overflow:hidden;
+    box-shadow:0 22px 60px -18px rgba(0,0,0,.8)}
+  .accent{height:4px;background:linear-gradient(90deg,#f4495e,#ff8a3d,#f4495e);background-size:200% 100%;animation:slide 2.4s linear infinite}
+  @keyframes slide{to{background-position:200% 0}}
+  .top{display:flex;align-items:flex-start;gap:12px;padding:16px 16px 6px}
+  .badge{width:42px;height:42px;border-radius:11px;flex:none;display:grid;place-items:center;color:#fff;
+    background:radial-gradient(circle at 50% 35%,#7a1020,#3a0a12);border:1px solid rgba(244,73,94,.5);position:relative}
+  .badge svg{width:23px;height:23px}
+  .badge::after{content:"";position:absolute;inset:-4px;border-radius:13px;border:2px solid rgba(244,73,94,.5);animation:pulse 1.5s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.25);opacity:0}}
+  .ttl{flex:1;min-width:0}
+  .ttl h1{font-size:15.5px;font-weight:700;line-height:1.2;display:flex;align-items:center;gap:8px}
+  .ttl .brand{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:#8a9ab2;margin-top:4px;text-transform:uppercase}
+  .x{width:24px;height:24px;border-radius:7px;border:1px solid rgba(130,160,200,.2);background:rgba(255,255,255,.03);
+    color:#8a9ab2;cursor:pointer;display:grid;place-items:center;flex:none;font-size:14px;line-height:1}
+  .x:hover{color:#fff;border-color:rgba(244,73,94,.5)}
+  .body{padding:4px 16px 12px;flex:1;display:flex;flex-direction:column}
+  .msg{font-size:13px;line-height:1.55;color:#cdd6e6}
+  .msg b{color:#fff}
+  .row{display:flex;align-items:center;gap:8px;margin:12px 0 2px}
+  .host{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#ffb3bf;background:rgba(244,73,94,.1);
+    border:1px solid rgba(244,73,94,.3);border-radius:6px;padding:4px 9px;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .risk{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#fff;
+    background:linear-gradient(180deg,#f4495e,#c2283b);border-radius:6px;padding:4px 10px}
+  .note{font-family:'JetBrains Mono',monospace;font-size:10px;color:#7f8ea6;margin-top:8px;min-height:14px;line-height:1.5}
+  .btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;padding:10px 16px 16px}
+  .btn{height:44px;border-radius:10px;border:1px solid;background:transparent;cursor:pointer;font-family:inherit;
+    font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.14s}
+  .btn small{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:500;opacity:.75;letter-spacing:.3px}
+  .btn:hover{transform:translateY(-1px)}.btn:disabled{opacity:.5;cursor:default;transform:none}
+  .blk{color:#ff7185;border-color:rgba(244,73,94,.5);background:rgba(244,73,94,.12)}
+  .blk:hover{background:rgba(244,73,94,.22)}
+  .prt{color:#2bd4ee;border-color:rgba(43,212,238,.45);background:rgba(43,212,238,.1)}
+  .prt:hover{background:rgba(43,212,238,.2)}
+  .alw{color:#90a0b8;border-color:rgba(130,160,200,.3);background:rgba(255,255,255,.03)}
+  .alw:hover{background:rgba(255,255,255,.07);color:#cdd6e6}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="accent"></div>
+    <div class="top">
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>
+      </div>
+      <div class="ttl"><h1>Security threat detected</h1><div class="brand">CyberForge · real-time protection</div></div>
+      <button class="x" id="closeBtn" title="Dismiss">&#10005;</button>
+    </div>
+    <div class="body">
+      <div class="msg" id="msg">CyberForge flagged the page you just opened as dangerous.</div>
+      <div class="row"><span class="host" id="host">—</span><span class="risk" id="risk">RISK —</span></div>
+      <div class="note" id="note"></div>
+    </div>
+    <div class="btns">
+      <button class="btn blk" id="btnBlock">Block<small>stop this site</small></button>
+      <button class="btn prt" id="btnProtect">Protect<small>open safely</small></button>
+      <button class="btn alw" id="btnAllow">Allow<small>trust it</small></button>
+    </div>
+  </div>
+
+  <script>
+    var T = window.__TAURI__;
+    function inv(cmd, args){ try{ return T.core.invoke(cmd, args||{}); }catch(e){ return Promise.reject(e); } }
+    function closeWin(){ try{ T.window.getCurrentWindow().close(); }catch(e){ try{ window.close(); }catch(_){} } }
+    var host = '';
+    var note = document.getElementById('note');
+
+    function esc(s){ return String(s==null?'':s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
+
+    inv('get_pending_threat').then(function(t){
+      if(!t || !t.host){ return; }
+      host = t.host;
+      document.getElementById('host').textContent = t.host;
+      document.getElementById('host').title = t.url || t.host;
+      document.getElementById('risk').textContent = 'RISK ' + (t.risk!=null?t.risk:'—');
+      if(t.message) document.getElementById('msg').innerHTML =
+        esc(t.message).replace(esc(t.host), '<b>'+esc(t.host)+'</b>');
+    }).catch(function(){});
+
+    function done(txt){ note.textContent = txt; ['btnBlock','btnProtect','btnAllow'].forEach(function(id){ document.getElementById(id).disabled=true; }); setTimeout(closeWin, 1600); }
+    function act(btn, cmd, ok){
+      if(!host){ closeWin(); return; }
+      btn.disabled = true; var orig = btn.firstChild.textContent; btn.firstChild.textContent = '…';
+      inv(cmd, {domain: host}).then(function(r){ done(ok(r)); })
+        .catch(function(){ btn.disabled=false; btn.firstChild.textContent=orig; note.textContent='Action unavailable — open CyberForge to retry.'; });
+    }
+    document.getElementById('btnBlock').addEventListener('click', function(){
+      act(this, 'block_site', function(r){ return (r&&r.enforced) ? (host+' is now blocked system-wide.') : (host+' added to the blocklist (needs admin to enforce).'); });
+    });
+    document.getElementById('btnProtect').addEventListener('click', function(){
+      act(this, 'protect_site', function(r){ return (r&&r.note) ? r.note : (host+' marked for protected access.'); });
+    });
+    document.getElementById('btnAllow').addEventListener('click', function(){
+      act(this, 'allow_site', function(r){ return host+' marked trusted'+((r&&r.wasUnblocked)?' and unblocked':'')+'.'; });
+    });
+    document.getElementById('closeBtn').addEventListener('click', closeWin);
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeWin(); });
+  </script>
+</body>
+</html>

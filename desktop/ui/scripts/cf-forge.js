@@ -47,7 +47,14 @@
   };
 
   function fit(id){const w=document.getElementById(id||'win');if(!w)return;
-    function f(){const s=Math.min(window.innerWidth/1440,window.innerHeight/824);w.style.transform='scale('+s+')';}
+    function f(){const vw=window.innerWidth, vh=window.innerHeight, DW=1440, DH=824;
+      const sH=vh/DH; w.style.transformOrigin='top left';
+      if(vw/sH>=DW){                                       // fill width fluidly → no side bands, footer visible
+        w.style.width=(vw/sH)+'px';w.style.transform='scale('+sH+')';w.style.left='0px';w.style.top='0px';
+      }else{                                               // narrow → fit width, centre vertically
+        const s=vw/DW;w.style.width=DW+'px';w.style.transform='scale('+s+')';
+        w.style.left='0px';w.style.top=Math.max(0,(vh-DH*s)/2)+'px';}
+      const stage=w.parentElement;if(stage)stage.style.height=vh+'px';}
     window.addEventListener('resize',f);f();}
-  window.fitWindow=window.fitWindow||fit;
+  window.fitWindow=fit;
 })();

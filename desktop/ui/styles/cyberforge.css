@@ -16,13 +16,17 @@
   --mono:'JetBrains Mono',ui-monospace,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{background:#000;font-family:var(--sans);color:var(--text);overflow:hidden;
-  -webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center}
-.stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:
+/* Responsive canvas: the 1440x824 design is scaled by fitWindow() to fill the
+   full viewport WIDTH (no side bands), anchored top-left. When the scaled height
+   is taller than the window the page scrolls vertically, so footer buttons and
+   bottom content are never clipped. */
+html{height:100%}
+body{height:100%;background:#03050a;font-family:var(--sans);color:var(--text);
+  overflow-x:hidden;overflow-y:auto;-webkit-font-smoothing:antialiased}
+.stage{position:relative;width:100%;min-height:100%;overflow-x:hidden;background:
   radial-gradient(1200px 700px at 70% -10%, #0c1726 0%, transparent 60%),
   radial-gradient(900px 600px at 10% 110%, #0a1320 0%, transparent 55%), #03050a}
-.window{position:relative;width:1440px;height:824px;flex:none;transform-origin:center center;
+.window{position:absolute;top:0;left:0;width:1440px;height:824px;transform-origin:top left;
   background:radial-gradient(1100px 800px at 78% 0%, rgba(245,166,35,0.05), transparent 55%),
     radial-gradient(900px 700px at 0% 100%, rgba(43,212,238,0.05), transparent 55%),
     linear-gradient(180deg,#080c15 0%, #060910 100%);
@@ -116,6 +120,32 @@ body{background:#000;font-family:var(--sans);color:var(--text);overflow:hidden;
 .subitem:hover{background:rgba(130,160,200,0.05);color:var(--dim)}
 .subitem .pip{width:5px;height:5px;border-radius:50%;background:var(--faint);flex:none}
 .subitem.on .pip{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+
+/* ---- sidebar: always an icon rail; expands on hover, collapses on mouse-leave ---- */
+.main{transition:margin-left .2s ease}
+/* pulled out of flow (absolute) with 56px reserved on .main, so expanding on
+   hover OVERLAYS the content instead of shoving it (no reflow on hover). */
+.sidebar.collapsed{position:absolute;left:0;top:0;bottom:0;width:56px;z-index:45;overflow-x:hidden;overflow-y:auto;
+  transition:width .2s ease, box-shadow .2s ease;
+  background:linear-gradient(180deg,rgba(10,14,23,0.97),rgba(7,10,17,0.98));backdrop-filter:blur(10px)}
+.sidebar.collapsed:hover{width:250px;box-shadow:8px 0 30px -8px rgba(0,0,0,0.7)}
+.body.sidebar-collapsed .main{margin-left:56px}
+/* hide the rail scrollbar so the icons stay perfectly centred in the 56px column */
+.sidebar.collapsed:not(:hover)::-webkit-scrollbar{width:0;height:0}
+/* icon-only rail while the mouse isn't over it: one tidy, centred column */
+.sidebar.collapsed:not(:hover){align-items:center}
+.sidebar.collapsed:not(:hover) .nav-item{width:40px;height:40px;padding:0;margin:2px auto;justify-content:center;border-radius:9px}
+.sidebar.collapsed:not(:hover) .nav-item svg{width:18px;height:18px;opacity:.9}
+.sidebar.collapsed:not(:hover) .nav-item.active svg{opacity:1}
+.sidebar.collapsed:not(:hover) .nav-item .lbl,
+.sidebar.collapsed:not(:hover) .nav-item .tag,
+.sidebar.collapsed:not(:hover) .nav-sec .chev,
+.sidebar.collapsed:not(:hover) .subnav,
+.sidebar.collapsed:not(:hover) .nav-item.active::before{display:none}
+/* section headers become a slim, centred divider between icon groups */
+.sidebar.collapsed:not(:hover) .nav-sec{width:24px;height:1px;min-height:1px;padding:0;margin:7px auto;background:var(--border);overflow:hidden;font-size:0;gap:0}
+.sidebar.collapsed:not(:hover) .nav-sec svg{display:none}
+.sidebar.collapsed:not(:hover) .nav-sec:first-child{margin:2px auto;background:transparent}
 
 /* ---- collapsed icon rail (Threat Globe) ---- */
 .rail{width:56px;flex:none;border-right:1px solid var(--border);

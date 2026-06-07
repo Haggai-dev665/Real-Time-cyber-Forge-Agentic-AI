@@ -7,6 +7,7 @@
 //! its `source()` chain. `error_chain` walks that chain so the UI shows the
 //! actual cause instead of the generic wrapper.
 
+use serde_json::Value;
 use std::error::Error;
 use std::time::Duration;
 
@@ -26,6 +27,34 @@ pub fn client_with_timeout(timeout: Duration) -> reqwest::Client {
 /// Standard client (20s timeout) for backend auth/agent calls.
 pub fn client() -> reqwest::Client {
     client_with_timeout(DEFAULT_TIMEOUT)
+}
+
+/// Read a response body as JSON, with a clear, actionable message when the
+/// server returns non-JSON — an HTML error page, a rate-limit notice, or an
+/// empty body — instead of reqwest's opaque "error decoding response body:
+/// expected value at line 1 column 1". Used by every command that expects JSON.
+pub async fn read_json(resp: reqwest::Response) -> Result<Value, String> {
+    let status = resp.status();
+    let text = resp.text().await.map_err(error_chain)?;
+    let body = text.trim_start_matches('\u{feff}').trim();
+    if body.starts_with('{') || body.starts_with('[') {
+        if let Ok(v) = serde_json::from_str::<Value>(body) {
+            return Ok(v);
+        }
+    }
+    Err(friendly_status(status, body.is_empty()))
+}
+
+/// Human-readable explanation for a non-JSON / error response.
+fn friendly_status(status: reqwest::StatusCode, empty: bool) -> String {
+    match status.as_u16() {
+        429 => "Too many requests — the server is rate-limiting this device. Please wait a minute and try again.".into(),
+        502 | 503 | 504 => format!("The server is temporarily unavailable (HTTP {}). Please try again shortly.", status.as_u16()),
+        500 => "The server encountered an internal error (HTTP 500).".into(),
+        401 | 403 => "Your session has expired or the credentials are invalid.".into(),
+        code if empty => format!("The server returned an empty response (HTTP {}).", code),
+        code => format!("The server returned an unexpected (non-JSON) response (HTTP {}).", code),
+    }
 }
 
 /// Flatten a `reqwest::Error` (and its `source()` chain) into a single readable

@@ -217,10 +217,11 @@ __pycache__/
 .claude/
 thesis/
 
-# Ignore all Markdown files EXCEPT the root README + the dev.to submission (kept locally)
+# Ignore all Markdown files EXCEPT the root README + the dev.to submission + the YouTube upload sheet
 *.md
 !/README.md
 !/submission.md
+!/youtube-upload.md
 
 # Demo videos — host on YouTube / GitHub Releases, never commit (GitHub rejects pushes >100MB)
 demo/*.mp4

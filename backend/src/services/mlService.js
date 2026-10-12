@@ -3,10 +3,12 @@
  * Handles communication with the ML/AI services
  */
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
+const { guardMLClient } = require('./mlCapabilities');
 
 class MLService {
     constructor() {
-        this.baseURL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+        this.baseURL = getMLServiceUrl();
         this.timeout = 30000; // 30 seconds
         this.axiosInstance = axios.create({
             baseURL: this.baseURL,
@@ -16,6 +18,8 @@ class MLService {
             }
         });
         
+        // Calls to endpoints the ML service does not have fail here, not on the network.
+        guardMLClient(this.axiosInstance);
         this.setupInterceptors();
     }
 

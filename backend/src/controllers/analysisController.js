@@ -7,6 +7,7 @@ const Analysis = require('../models/Analysis');
 const Threat = require('../models/Threat');
 const { validationResult } = require('express-validator');
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
 
 class AnalysisController {
   /**
@@ -46,7 +47,7 @@ class AnalysisController {
 
       // Trigger ML analysis
       try {
-        const mlResponse = await axios.post(`${process.env.ML_SERVICE_URL || 'http://localhost:8001'}/analyze-url`, {
+        const mlResponse = await axios.post(`${getMLServiceUrl()}/analyze-url`, {
           url,
           context: analysisType || 'security_analysis',
           analysis_id: analysis._id
@@ -158,27 +159,11 @@ class AnalysisController {
       } = req.query;
 
       // Build query
-      let query = {};
-      
-      // For authenticated users, filter by userId
-      if (req.user && req.user.userId) {
-        query.userId = req.user.userId;
-      } else if (req.isDesktopApp) {
-        // For desktop apps, return mock data or public analysis data
-        return res.json({
-          success: true,
-          data: {
-            analyses: [], // Empty array for now - can be populated with mock data
-            pagination: {
-              currentPage: parseInt(page),
-              totalPages: 0,
-              totalCount: 0,
-              hasNext: false,
-              hasPrev: false
-            }
-          }
-        });
+      if (!req.user?.userId) {
+        return res.status(401).json({ success: false, message: 'Authentication required' });
       }
+      // Analysis stores its owner in `user`, not in the JWT's `userId` field.
+      const query = { user: req.user.userId };
       
       if (status) query.status = status;
       if (analysisType) query.analysisType = analysisType;
@@ -500,7 +485,7 @@ class AnalysisController {
       setImmediate(async () => {
         for (const analysis of analyses) {
           try {
-            await axios.post(`${process.env.ML_SERVICE_URL || 'http://localhost:8001'}/analyze-url`, {
+            await axios.post(`${getMLServiceUrl()}/analyze-url`, {
               url: analysis.url,
               context: analysis.analysisType,
               analysis_id: analysis._id

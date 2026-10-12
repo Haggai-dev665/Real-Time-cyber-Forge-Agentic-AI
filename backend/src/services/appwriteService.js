@@ -7,6 +7,7 @@
 const { ID, Query, Permission, Role } = require('node-appwrite');
 const { initializeAppwriteServices, APPWRITE_CONFIG } = require('../config/appwrite.config');
 const logger = require('../utils/logger');
+const { assertPrivateDocumentPermissions } = require('./appwritePermissions');
 
 class AppwriteService {
   constructor() {
@@ -80,12 +81,13 @@ class AppwriteService {
           {
             role: normalizedRole,
             status
-          }
+          },
+          [Permission.read(Role.user(userId))]
         );
         return updated;
       }
 
-      const created = await this.createDocumentWithPermissionFallback(
+      const created = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.users,
         ID.unique(),
@@ -96,12 +98,8 @@ class AppwriteService {
           created_at: new Date().toISOString()
         },
         [
-          Permission.read(Role.user(userId)),
-          Permission.update(Role.user(userId)),
-          Permission.delete(Role.user(userId)),
-          Permission.read(Role.label('agent'))
-        ],
-        'users metadata upsert'
+          Permission.read(Role.user(userId))
+        ]
       );
 
       logger.info(`✅ Appwrite users metadata created for: ${userId}`);
@@ -167,54 +165,12 @@ class AppwriteService {
     }
   }
 
-  /**
-   * Detect Appwrite errors related to collection-level permission mode.
-   * Covers both "Permissions must be one of: (any, guests)" (user-scoped
-   * permissions rejected) and "No permissions provided for action 'create'"
-   * (empty permissions rejected).
-   */
-  isPermissionModeError(error) {
-    const raw = error?.response || error?.message || '';
-    const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
-    return (
-      /Permissions must be one of:\s*\(any,\s*guests\)/i.test(text) ||
-      /No permissions provided for action/i.test(text)
-    );
-  }
-
-  async createDocumentWithPermissionFallback(databaseId, collectionId, documentId, document, permissions = [], context = 'document') {
+  async createPrivateDocument(databaseId, collectionId, documentId, document, permissions = []) {
     this.ensureInitialized();
-
-    // Broad any/guests permissions for document-level access.
-    // Appwrite 1.8.x document permissions only accept: read, update, delete, write.
-    // "write" at document level covers update+delete. "create" is NOT valid for documents
-    // (it's a collection-level permission only).
-    const anyPermissions = [
-      Permission.read(Role.any()),
-      Permission.write(Role.any()),
-    ];
-
-    try {
-      return await this.services.databases.createDocument(
-        databaseId,
-        collectionId,
-        documentId,
-        document,
-        permissions?.length ? permissions : anyPermissions
-      );
-    } catch (error) {
-      if (this.isPermissionModeError(error)) {
-        logger.warn(`⚠️ Appwrite collection is in any/guests permission mode for ${context}; retrying with Role.any() permissions.`);
-        return this.services.databases.createDocument(
-          databaseId,
-          collectionId,
-          documentId,
-          document,
-          anyPermissions
-        );
-      }
-      throw error;
-    }
+    assertPrivateDocumentPermissions(permissions);
+    // Empty permissions deliberately mean backend-only access. A schema or
+    // permission error must propagate, never retry with broader permissions.
+    return this.services.databases.createDocument(databaseId, collectionId, documentId, document, permissions);
   }
 
   // ==================== DEVICE MANAGEMENT ====================
@@ -249,7 +205,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.devices,
         deviceDocumentId,
@@ -258,8 +214,7 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ],
-        'device registration'
+        ]
       );
       
       logger.info(`✅ Device registered: ${result.$id}`);
@@ -347,7 +302,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agents,
         generatedAgentId,
@@ -356,8 +311,7 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ],
-        'agent registration'
+        ]
       );
       
       logger.info(`✅ Agent registered: ${result.$id}`);
@@ -515,7 +469,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.agentTasks,
         taskDocId,
@@ -524,8 +478,7 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ] : [],
-        'agent task creation'
+        ] : []
       );
       
       logger.info(`✅ Agent task created: ${result.$id}`);
@@ -672,7 +625,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.alerts,
         alertDocId,
@@ -681,8 +634,7 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ] : [],
-        'alert creation'
+        ] : []
       );
       
       logger.info(`✅ Alert created: ${result.$id}`);
@@ -761,7 +713,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.browserIntelligence,
         docId,
@@ -770,8 +722,7 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ] : [],
-        'browser intelligence'
+        ] : []
       );
 
       logger.info(`✅ Browser intelligence saved: ${result.$id}`);
@@ -845,7 +796,7 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.evidenceMetadata,
         ID.unique(),
@@ -854,8 +805,7 @@ class AppwriteService {
           Permission.read(Role.user(userId)),
           Permission.update(Role.user(userId)),
           Permission.delete(Role.user(userId))
-        ],
-        'evidence metadata storage'
+        ]
       );
       
       logger.info(`✅ Evidence metadata stored: ${result.$id}`);
@@ -908,13 +858,12 @@ class AppwriteService {
     };
 
     try {
-      const result = await this.createDocumentWithPermissionFallback(
+      const result = await this.createPrivateDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.browserIntelligence,
         docId,
         document,
-        [],
-        'browser intelligence snapshot'
+        []
       );
 
       logger.info(`✅ Browser intelligence snapshot stored: ${result.$id}`);

@@ -8,8 +8,10 @@ import json
 import os
 from pathlib import Path
 
+from hf_env import get_hf_token
+
 # Configuration
-HF_TOKEN = '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'
+HF_TOKEN = get_hf_token()
 MODEL_REPO = 'Che237/cyberforge-models'
 
 api = HfApi(token=HF_TOKEN)

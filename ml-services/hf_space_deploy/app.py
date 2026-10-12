@@ -10,8 +10,11 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import re
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 from datetime import datetime
 import logging
@@ -33,13 +36,7 @@ from huggingface_hub import HfApi, hf_hub_download, upload_file
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-# Gemini AI  (new SDK: google-genai)
-try:
-    from google import genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
+from starlette.concurrency import run_in_threadpool
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,10 +57,22 @@ TRAINING_DATA_DIR = APP_DIR / "training_data"
 TRAINING_DATA_DIR.mkdir(exist_ok=True)
 
 # Environment
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 HF_MODEL_REPO = os.environ.get("HF_MODEL_REPO", "Che237/cyberforge-models")
+
+# Open-source chat model that runs inside this Space on CPU (llama.cpp, GGUF).
+# It replaces Gemini and needs no API key or credit. Any GGUF chat model can be
+# set here; on the free cpu-basic tier (2 vCPU) stay around 2B parameters or the
+# answers will not fit inside the callers' timeouts.
+LOCAL_LLM_REPO = os.environ.get("LOCAL_LLM_REPO", "unsloth/Qwen3.5-2B-GGUF")
+LOCAL_LLM_FILE = os.environ.get("LOCAL_LLM_FILE", "Qwen3.5-2B-Q4_K_M.gguf")
+LOCAL_LLM_CTX = int(os.environ.get("LOCAL_LLM_CTX", "4096"))
+LOCAL_LLM_THREADS = int(os.environ.get("LOCAL_LLM_THREADS", "2"))
+LOCAL_LLM_MAX_TOKENS = int(os.environ.get("LOCAL_LLM_MAX_TOKENS", "320"))
+LOCAL_LLM_TEMPERATURE = float(os.environ.get("LOCAL_LLM_TEMPERATURE", "0.3"))
+LOCAL_LLM_MAX_INPUT_CHARS = int(os.environ.get("LOCAL_LLM_MAX_INPUT_CHARS", "2400"))
+LOCAL_LLM_TIME_BUDGET_S = float(os.environ.get("LOCAL_LLM_TIME_BUDGET_S", "17"))
+LOCAL_LLM_QUEUE_TIMEOUT_S = float(os.environ.get("LOCAL_LLM_QUEUE_TIMEOUT_S", "5"))
 
 logger.info(f"APP_DIR: {APP_DIR}")
 logger.info(f"NOTEBOOKS_DIR: {NOTEBOOKS_DIR}")
@@ -86,136 +95,30 @@ SECURITY_TASKS = [
 
 
 # ============================================================================
-# GEMINI SERVICE  (for REST API)
+# REASONING SERVICE  (LLM-backed analysis for the REST API)
 # ============================================================================
 
-class GeminiService:
-    """Google Gemini AI for cybersecurity chat and analysis"""
+# "Risk Level: High", "**Risk Level:** High", "Risk - **Critical**", ...
+RISK_LINE = re.compile(r"risk(?:\s+level)?\W{0,6}(critical|high|medium|low)\b", re.IGNORECASE)
 
-    SYSTEM_PROMPT = """You are CyberForge AI, an advanced cybersecurity expert. You specialize in:
-- Real-time threat detection and analysis
-- Malware and phishing identification
-- Network security assessment
-- Browser security monitoring
-- Risk assessment and mitigation
 
-When analyzing security queries, provide:
-1. Risk Level (Critical/High/Medium/Low)
-2. Threat Types identified
-3. Confidence Score (0.0-1.0)
-4. Detailed technical analysis
-5. Specific actionable recommendations
+def stated_risk(text: str) -> Optional[str]:
+    """The risk level an LLM answer states for itself: "critical", "high",
+    "medium", "low", or None when it gives no risk line. The level word merely
+    appearing in the prose does not count: the small model mentions "critical"
+    far more often than it means it."""
+    m = RISK_LINE.search(text)
+    return m.group(1).lower() if m else None
 
-Always be precise, professional, and actionable."""
 
-    def __init__(self):
-        self.client = None
-        self.ready = False
-        self.custom_knowledge = {}
-        self.training_examples = []
+class ReasoningService:
+    """Structured cybersecurity analysis for the REST endpoints.
 
-    def initialize(self):
-        if not GEMINI_AVAILABLE:
-            logger.warning("google-genai not installed, Gemini unavailable")
-            return
-        if not GEMINI_API_KEY:
-            logger.warning("GEMINI_API_KEY not set, Gemini unavailable")
-            return
-        try:
-            self.client = genai.Client(api_key=GEMINI_API_KEY)
-            resp = self.client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents="Test. Respond with OK."
-            )
-            if resp.text:
-                self.ready = True
-                logger.info(f"✅ Gemini initialized (model: {GEMINI_MODEL})")
-            self._load_knowledge()
-        except Exception as e:
-            logger.error(f"❌ Gemini init failed: {e}")
-            self.ready = False
-
-    def _load_knowledge(self):
-        try:
-            for f in KNOWLEDGE_BASE_DIR.glob("*.json"):
-                with open(f) as fh:
-                    self.custom_knowledge[f.stem] = json.load(fh)
-            logger.info(f"Loaded {len(self.custom_knowledge)} knowledge files")
-        except Exception as e:
-            logger.warning(f"Knowledge load error: {e}")
-        try:
-            for f in TRAINING_DATA_DIR.glob("*.json"):
-                with open(f) as fh:
-                    data = json.load(fh)
-                    if isinstance(data, list):
-                        self.training_examples.extend(data)
-                    else:
-                        self.training_examples.append(data)
-            logger.info(f"Loaded {len(self.training_examples)} training examples")
-        except Exception as e:
-            logger.warning(f"Training data load error: {e}")
+    The text comes from TransformerModelLoader.security_chat, which asks the
+    open-source model running inside this Space. If it does not answer, the
+    ML/keyword heuristic in _fallback is used."""
 
     def analyze(self, query: str, context: Dict = None, history: List = None) -> Dict:
-        if not self.ready:
-            # Primary engine is DeepSeek (HF Inference Providers) now; Gemini retired.
-            return self._reasoning_analyze(query, context)
-        try:
-            knowledge_str = json.dumps(self.custom_knowledge, indent=1)[:2000] if self.custom_knowledge else "None"
-            examples_str = "\n".join(
-                f"Q: {ex.get('input','')}\nA: {ex.get('output','')}"
-                for ex in self.training_examples[-3:]
-            ) if self.training_examples else "None"
-            context_str = f"\nCONTEXT:\n{json.dumps(context, indent=1)[:3000]}\n" if context else ""
-
-            prompt = f"""{self.SYSTEM_PROMPT}
-
-KNOWLEDGE BASE (summary):
-{knowledge_str}
-
-TRAINING EXAMPLES:
-{examples_str}
-{context_str}
-USER QUERY:
-{query}
-
-Provide a comprehensive cybersecurity analysis:"""
-
-            response = self.client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt,
-                config={"temperature": 0.3, "max_output_tokens": 2048},
-            )
-            text = response.text if response.text else "No response generated"
-            text_lower = text.lower()
-            if "critical" in text_lower:
-                risk_level, risk_score = "Critical", 9.0
-            elif "high" in text_lower:
-                risk_level, risk_score = "High", 7.0
-            elif "medium" in text_lower:
-                risk_level, risk_score = "Medium", 5.0
-            else:
-                risk_level, risk_score = "Low", 3.0
-
-            return {
-                "response": text,
-                "confidence": 0.85,
-                "risk_level": risk_level,
-                "risk_score": risk_score,
-                "insights": [f"Analysis performed by Gemini ({GEMINI_MODEL})"],
-                "recommendations": [],
-                "model_used": GEMINI_MODEL,
-                "timestamp": datetime.utcnow().isoformat(),
-            }
-        except Exception as e:
-            logger.error(f"Gemini analysis error: {e}")
-            return self._reasoning_analyze(query, context)
-
-    def _reasoning_analyze(self, query: str, context: Dict = None) -> Dict:
-        """DeepSeek-backed structured analysis — the primary reasoning path now that
-        Gemini is retired. Delegates to TransformerLoader.security_chat (DeepSeek via
-        HF Inference Providers, Mistral fallback) and wraps the text into the
-        structured shape the REST endpoints expect. Falls back to the ML heuristic
-        (_fallback) only if the LLM is entirely unavailable."""
         tl = globals().get("transformer_loader")
         if tl is None:
             return self._fallback(query)
@@ -224,29 +127,25 @@ Provide a comprehensive cybersecurity analysis:"""
         text = llm.get("response")
         if not text or llm.get("error"):
             return self._fallback(query)
-        tlow = text.lower()
-        if "critical" in tlow:
-            risk_level, risk_score = "Critical", 9.0
-        elif "high" in tlow:
-            risk_level, risk_score = "High", 7.0
-        elif "medium" in tlow:
-            risk_level, risk_score = "Medium", 5.0
-        else:
-            risk_level, risk_score = "Low", 3.0
-        model_id = llm.get("model_id", "deepseek")
+        level = stated_risk(text) or "low"
+        risk_level, risk_score = {
+            "critical": ("Critical", 9.0), "high": ("High", 7.0),
+            "medium": ("Medium", 5.0), "low": ("Low", 3.0),
+        }[level]
+        model_id = llm.get("model_id", "llm")
         return {
             "response": text,
             "confidence": 0.82,
             "risk_level": risk_level,
             "risk_score": risk_score,
-            "insights": [f"Analysis by {model_id} via {llm.get('source', 'hf_inference_providers')}"],
+            "insights": [f"Analysis by {model_id} via {llm.get('source', 'llm')}"],
             "recommendations": [],
             "model_used": model_id,
             "timestamp": datetime.utcnow().isoformat(),
         }
 
     def _fallback(self, query: str) -> Dict:
-        """ML-powered analysis when Gemini is unavailable"""
+        """ML-powered analysis when no LLM is available"""
         import re
         global ml_loader
 
@@ -349,11 +248,11 @@ Provide a comprehensive cybersecurity analysis:"""
                     "- URL threat analysis (phishing, malware, web attacks)\n"
                     "- Network anomaly detection\n"
                     "- Real-time threat event monitoring\n\n"
-                    "*AI chat (Gemini) is currently unavailable. Provide a URL for full ML-based analysis.*"
+                    "*The AI chat model is currently unavailable. Provide a URL for full ML-based analysis.*"
                 )
             insights = [f"{n_loaded} ML models active"]
 
-        response_lines.append("\n---\n*Powered by CyberForge ML models — Gemini AI offline.*")
+        response_lines.append("\n---\n*Powered by CyberForge ML models — AI chat model offline.*")
 
         return {
             "response": "\n".join(response_lines),
@@ -368,7 +267,7 @@ Provide a comprehensive cybersecurity analysis:"""
 
 
 # Singleton
-gemini_service = GeminiService()
+reasoning_service = ReasoningService()
 
 
 # ============================================================================
@@ -416,8 +315,8 @@ class MLModelLoader:
                     loaded += 1
                     logger.info(f"✅ Loaded model from Hub: {name}")
                     continue
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Could not load {name} from the Hub: {type(e).__name__}: {str(e)[:200]}")
 
                 # 2. Try all local search directories
                 for sdir in search_dirs:
@@ -603,8 +502,156 @@ def extract_url_features(url: str) -> Dict:
 #
 # Loads pretrained BERT-based classifiers from the Hugging Face Hub.
 # Models are loaded lazily on first request to keep cold-start fast.
-# A 7B Security LLM is NOT loaded locally (too big for free tier) —
-# it's accessed via the HF Inference API on demand.
+# The chat LLM is separate: see LocalLLM below (runs in this Space) and
+# TransformerModelLoader.security_chat.
+
+class LocalLLM:
+    """Open-source chat model served from inside the Space with llama.cpp.
+
+    The GGUF file is downloaded from the Hub once and kept in memory. Generation
+    is serialized (a llama.cpp context is not thread-safe) and time-boxed, so a
+    slow CPU cannot hold a request past the callers' timeouts."""
+
+    SOURCE = "space_local_llamacpp"
+
+    def __init__(self):
+        self.llm = None
+        self.error: Optional[str] = None
+        self._chatml = False
+        self._prefill = ""
+        self._load_lock = threading.Lock()
+        self._gen_lock = threading.Lock()
+
+    @property
+    def ready(self) -> bool:
+        return self.llm is not None
+
+    def status(self) -> Dict:
+        return {
+            "repo": LOCAL_LLM_REPO,
+            "file": LOCAL_LLM_FILE,
+            "loaded": self.ready,
+            "loading": self._load_lock.locked(),
+            "error": self.error,
+        }
+
+    def load(self):
+        """Download and load the model. Safe to call repeatedly."""
+        with self._load_lock:
+            if self.llm is not None or self.error:
+                return self.llm
+            try:
+                from llama_cpp import Llama
+                try:
+                    path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, token=HF_TOKEN or None)
+                except Exception:
+                    # A stale HF_TOKEN must not block the download of a public model
+                    path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, token=False)
+                self._probe(path)
+                # n_threads_batch (prompt processing) defaults to the host's core
+                # count, which a Space container reports far above its 2 vCPUs.
+                llm = Llama(model_path=path, n_ctx=LOCAL_LLM_CTX, n_threads=LOCAL_LLM_THREADS,
+                            n_threads_batch=LOCAL_LLM_THREADS, verbose=False)
+                template = str((llm.metadata or {}).get("tokenizer.chat_template", ""))
+                self._chatml = "<|im_start|>" in template
+                # Qwen3.5 answers directly when the assistant turn opens with an
+                # empty think block; this is what its template emits for
+                # enable_thinking=False.
+                self._prefill = "<think>\n\n</think>\n\n" if "<think>" in template else ""
+                self.llm = llm
+                logger.info(f"✅ Local LLM loaded: {LOCAL_LLM_REPO}/{LOCAL_LLM_FILE}")
+            except Exception as e:
+                self.error = f"{type(e).__name__}: {str(e)[:300]}"
+                logger.error(f"❌ Local LLM unavailable: {self.error}")
+            return self.llm
+
+    @staticmethod
+    def _probe(path: str) -> None:
+        """Load the model once in a child process. A native crash there (for
+        example a CPU instruction the prebuilt wheel needs but this machine
+        lacks) raises here instead of killing the API process."""
+        code = (
+            "import sys; from llama_cpp import Llama; "
+            "m = Llama(model_path=sys.argv[1], n_ctx=256, n_threads=1, n_threads_batch=1, verbose=False); "
+            "m.create_completion('Hi', max_tokens=1)"
+        )
+        r = subprocess.run([sys.executable, "-c", code, path], capture_output=True, text=True, timeout=300)
+        if r.returncode != 0:
+            raise RuntimeError(f"llama.cpp probe exited with {r.returncode}: {(r.stderr or '')[-200:]}")
+
+    def chat(self, system: str, user: str, max_tokens: int = 512) -> Dict:
+        base = {"model": "local-llm", "source": self.SOURCE, "model_id": LOCAL_LLM_REPO}
+        if self.llm is None:
+            if self._load_lock.locked():
+                return {**base, "response": None, "error": "local LLM is still loading"}
+            self.load()
+        if self.llm is None:
+            return {**base, "response": None, "error": self.error or "local LLM not loaded"}
+        if not self._gen_lock.acquire(timeout=LOCAL_LLM_QUEUE_TIMEOUT_S):
+            return {**base, "response": None, "error": "local LLM is busy with another request"}
+        started = time.monotonic()
+        stream = None
+        try:
+            max_tokens = max(16, min(int(max_tokens), LOCAL_LLM_MAX_TOKENS))
+            # The chat markers are structural: drop them from untrusted text
+            system = system.replace("<|im_start|>", "").replace("<|im_end|>", "")
+            user = user.replace("<|im_start|>", "").replace("<|im_end|>", "")
+            if len(user) > LOCAL_LLM_MAX_INPUT_CHARS:
+                # Keep both ends: context sits at the start, the question at the end
+                half = LOCAL_LLM_MAX_INPUT_CHARS // 2
+                user = f"{user[:half]}\n[...]\n{user[-half:]}"
+            if self._chatml:
+                prompt = (
+                    f"<|im_start|>system\n{system}<|im_end|>\n"
+                    f"<|im_start|>user\n{user}<|im_end|>\n"
+                    f"<|im_start|>assistant\n{self._prefill}"
+                )
+                stream = self.llm.create_completion(
+                    prompt, max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, top_k=20,
+                    presence_penalty=1.5, stop=["<|im_end|>", "<|endoftext|>"], stream=True,
+                )
+                read = lambda c: c["choices"][0].get("text") or ""
+            else:
+                stream = self.llm.create_chat_completion(
+                    messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                    max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, stream=True,
+                )
+                read = lambda c: c["choices"][0].get("delta", {}).get("content") or ""
+            pieces: List[str] = []
+            truncated = False
+            for chunk in stream:
+                pieces.append(read(chunk))
+                if chunk["choices"][0].get("finish_reason") == "length":
+                    truncated = True
+                if time.monotonic() - started > LOCAL_LLM_TIME_BUDGET_S:
+                    truncated = True
+                    break
+            text = re.sub(r"<think>.*?</think>", "", "".join(pieces), flags=re.S).strip()
+            if truncated:
+                # Out of time or tokens: end on the last complete sentence. A dot
+                # after a digit is a list marker ("2."), not a sentence end.
+                ends = [m.end() for m in re.finditer(r"(?<!\d)[.!?][*_`\")\]]*(?=\s|$)", text)]
+                if ends and ends[-1] > len(text) * 0.4:
+                    text = text[:ends[-1]].strip()
+            if not text:
+                return {**base, "response": None, "error": "local LLM returned no text"}
+            return {
+                **base,
+                "response": text,
+                "tokens": len(pieces),
+                "elapsed_ms": round((time.monotonic() - started) * 1000),
+                "truncated": truncated,
+            }
+        except Exception as e:
+            return {**base, "response": None, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+        finally:
+            if stream is not None and hasattr(stream, "close"):
+                stream.close()
+            self._gen_lock.release()
+
+
+local_llm = LocalLLM()
+
 
 class TransformerModelLoader:
     """Loads pretrained Transformer classifiers from the HF Hub on demand."""
@@ -621,14 +668,6 @@ class TransformerModelLoader:
             "desc":  "BERT-based URL phishing/malware classifier",
         },
     }
-    # Primary reasoning engine: DeepSeek via HF Inference Providers (OpenAI-compatible
-    # router at router.huggingface.co/v1). Replaces Gemini. Override via REASONING_LLM_MODEL.
-    # Use DeepSeek-R1 for deep reasoning; DeepSeek-V3 for fast assist.
-    REASONING_LLM_REPO = os.environ.get("REASONING_LLM_MODEL", "deepseek-ai/DeepSeek-V3-0324")
-    # Fallback LLM via the free HF Inference API. Mistral-7B-Instruct-v0.3 is widely
-    # available and works well for cyber Q&A. Override via SECURITY_LLM_MODEL env var.
-    SECURITY_LLM_REPO = os.environ.get("SECURITY_LLM_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
-
     def __init__(self):
         self.pipelines = {}     # name → transformers.Pipeline (lazy-loaded)
         self.load_errors = {}   # name → last error message
@@ -733,91 +772,32 @@ class TransformerModelLoader:
             "inference_source": "entropy-heuristic",
         }
 
+    # The in-Space model is small and slow: ask for a short answer it can finish
+    # inside the time budget, and tell it not to fill gaps with invented detail.
+    # A risk line is requested only for a concrete indicator, because the REST
+    # risk fields are read from it (see stated_risk).
     SYSTEM_PROMPT = (
-        "You are CyberForge AI, a precise, professional cybersecurity analyst. "
-        "Give concise, technical, actionable answers. State a Risk Level "
-        "(Critical/High/Medium/Low) when assessing a threat, and cite CVE / MITRE "
-        "ATT&CK IDs where relevant."
+        "You are CyberForge AI, a cybersecurity analyst. Answer in at most 80 words, "
+        "as short bullet points. If the user gives a specific URL, file, alert or "
+        "incident to assess, begin with one line 'Risk Level: X', where X is Critical, "
+        "High, Medium or Low, chosen from the evidence given. For general questions, "
+        "do not include a risk level. Use only the information provided and "
+        "well-established security knowledge. If something has not been checked, "
+        "such as reputation, hashes or CVEs, say it is unverified instead of guessing."
     )
 
     def security_chat(self, query: str, max_tokens: int = 512) -> Dict:
-        """Cybersecurity Q&A. Primary: DeepSeek via HF Inference Providers
-        (OpenAI-compatible router). Fallback: Mistral-7B via the free HF
-        Inference API. Both require HF_TOKEN."""
-        if not HF_TOKEN:
-            return {
-                "model": "security-llm",
-                "response": None,
-                "error": "HF_TOKEN env var required to call the reasoning LLM",
-            }
-        import requests
-
-        # ── Path 1: DeepSeek via HF Inference Providers (OpenAI-compatible) ──
-        try:
-            r = requests.post(
-                "https://router.huggingface.co/v1/chat/completions",
-                headers={"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"},
-                json={
-                    "model": self.REASONING_LLM_REPO,
-                    "messages": [
-                        {"role": "system", "content": self.SYSTEM_PROMPT},
-                        {"role": "user", "content": query[:6000]},
-                    ],
-                    "max_tokens": max_tokens,
-                    "temperature": 0.3,
-                },
-                timeout=60,
-            )
-            if r.status_code == 200:
-                data = r.json()
-                text = data["choices"][0]["message"]["content"]
-                return {
-                    "model":    "deepseek",
-                    "source":   "hf_inference_providers",
-                    "response": text,
-                    "model_id": self.REASONING_LLM_REPO,
-                }
-            logger.warning(
-                f"DeepSeek provider HTTP {r.status_code}: {r.text[:160]} — falling back to Mistral"
-            )
-        except Exception as e:
-            logger.warning(f"DeepSeek provider error: {type(e).__name__}: {str(e)[:160]} — falling back to Mistral")
-
-        # ── Path 2 (fallback): Mistral-7B via the free HF Inference API ──
-        try:
-            url = f"https://api-inference.huggingface.co/models/{self.SECURITY_LLM_REPO}"
-            headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
-            payload = {
-                "inputs": f"{self.SYSTEM_PROMPT}\n\n{query[:2000]}",
-                "parameters": {"max_new_tokens": max_tokens, "temperature": 0.3, "return_full_text": False},
-                "options": {"wait_for_model": True},
-            }
-            r = requests.post(url, headers=headers, json=payload, timeout=45)
-            if r.status_code == 200:
-                data = r.json()
-                text = data[0].get("generated_text") if isinstance(data, list) and data else (data.get("generated_text") if isinstance(data, dict) else str(data))
-                return {
-                    "model":    "security-llm",
-                    "source":   "huggingface_inference_api",
-                    "response": text,
-                    "model_id": self.SECURITY_LLM_REPO,
-                }
-            return {
-                "model":  "security-llm",
-                "error":  f"HF Inference API HTTP {r.status_code}: {r.text[:200]}",
-            }
-        except Exception as e:
-            return {
-                "model":  "security-llm",
-                "error":  f"{type(e).__name__}: {str(e)[:200]}",
-            }
+        """Cybersecurity Q&A, answered by the open-source model running inside
+        this Space (free, no API key)."""
+        return local_llm.chat(self.SYSTEM_PROMPT, query, max_tokens=max_tokens)
 
     def status(self) -> Dict:
         return {
             "transformers_available": self.transformers_available,
             "loaded": list(self.pipelines.keys()),
-            "available": list(self.REGISTRY.keys()) + ["security_llm (via HF Inference API)"],
+            "available": list(self.REGISTRY.keys()) + ["reasoning_llm"],
             "load_errors": self.load_errors,
+            "reasoning_llm": {"local": local_llm.status()},
         }
 
     @staticmethod
@@ -1104,10 +1084,9 @@ async def api_health():
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "services": {
-            "reasoning_llm": "deepseek" if HF_TOKEN else None,
-            "reasoning_model": transformer_loader.REASONING_LLM_REPO if HF_TOKEN else None,
-            "fallback_llm": transformer_loader.SECURITY_LLM_REPO if HF_TOKEN else None,
-            "gemini": gemini_service.ready,  # retired — DeepSeek is the engine now (kept for backward-compat)
+            "reasoning_llm": "local" if local_llm.ready else None,
+            "reasoning_model": LOCAL_LLM_REPO,
+            "local_llm": local_llm.status(),
             "ml_models": ml_loader.ready,
             "models_loaded": list(ml_loader.models.keys()),
             "transformers": transformer_loader.transformers_available,
@@ -1133,7 +1112,7 @@ async def api_analyze(request: Request):
     query = body.get("query", "")
     context = body.get("context", {})
     history = body.get("conversation_history", [])
-    result = gemini_service.analyze(query, context, history)
+    result = await run_in_threadpool(reasoning_service.analyze, query, context, history)
     return result
 
 
@@ -1211,7 +1190,7 @@ async def api_scan_threats(request: Request):
     """Threat scanning – called by backend mlService.scanForThreats()"""
     body = await request.json()
     query = json.dumps(body.get("data", body), indent=1)[:3000]
-    result = gemini_service.analyze(f"Scan these indicators for threats:\n{query}")
+    result = await run_in_threadpool(reasoning_service.analyze, f"Scan these indicators for threats:\n{query}")
     return result
 
 
@@ -1221,7 +1200,7 @@ async def api_generate_insights(request: Request):
     body = await request.json()
     query = body.get("query", "")
     context = body.get("context", {})
-    result = gemini_service.analyze(query, context)
+    result = await run_in_threadpool(reasoning_service.analyze, query, context)
     return {
         "insights": result.get("response", ""),
         "confidence": result.get("confidence", 0),
@@ -1280,17 +1259,17 @@ async def api_v2_dga_detect(request: Request):
 
 @api.post("/api/v2/security-chat")
 async def api_v2_security_chat(request: Request):
-    """Cybersecurity Q&A via DeepSeek (HF Inference Providers), Mistral fallback.
+    """Cybersecurity Q&A, answered by the open-source model running in this Space.
     Body: { "query": "...", "max_tokens": 512 }"""
     body = await request.json()
     query = body.get("query", "").strip()
     if not query:
         return JSONResponse(status_code=400, content={"detail": "query required"})
     max_tokens = int(body.get("max_tokens", 512))
-    result = transformer_loader.security_chat(query, max_tokens=max_tokens)
-    # Last-resort: ML heuristic if both DeepSeek and Mistral are unavailable
+    result = await run_in_threadpool(transformer_loader.security_chat, query, max_tokens)
+    # Last resort: ML heuristic if no LLM answered
     if result.get("error"):
-        return gemini_service._fallback(query)
+        return reasoning_service._fallback(query)
     return result
 
 
@@ -1401,7 +1380,6 @@ async def api_v2_ioc_scan(request: Request):
         "domain": "example.com",           # optional
         "ip":     "1.2.3.4",              # optional
         "hash":   "abc123...",             # optional (future use)
-        "context": { ... }                 # optional — passed to Gemini if available
       }
 
     Response: per-indicator results with unified risk summary.
@@ -1409,7 +1387,6 @@ async def api_v2_ioc_scan(request: Request):
     body = await request.json()
     url     = body.get("url", "").strip()
     domain  = body.get("domain", "").strip()
-    context = body.get("context", {})
 
     ioc_results: Dict[str, Any] = {}
     all_scores: List[float] = []
@@ -1459,14 +1436,9 @@ async def api_v2_ioc_scan(request: Request):
     else:
         risk_level = "unknown"
 
-    # Optional LLM enrichment (DeepSeek via HF Inference Providers) when HF_TOKEN is set
+    # No LLM narrative: the in-Space model takes many seconds on CPU and this
+    # endpoint is called with short timeouts. The key stays for API compatibility.
     ai_analysis = None
-    if HF_TOKEN and (url or domain):
-        target = url or domain
-        ai_analysis = gemini_service.analyze(
-            f"Scan these IOC indicators for threats: url={target}, domain={effective_domain}",
-            context=context,
-        )
 
     return {
         "ioc_results": ioc_results,
@@ -1583,8 +1555,8 @@ async def api_v2_chat(request: Request):
          persistent vector store, which requires paid GPU on free tier).
       2. Translates raw ML signals / IOCs into plain human language when the
          user includes raw data and asks for an explanation.
-      3. Falls back to the Security LLM (Mistral-7B via HF Inference API)
-         or the ML-powered heuristic analyzer when Gemini is offline.
+      3. Uses the open-source model running in this Space, or the ML-powered
+         heuristic analyzer when that model is unavailable.
 
     NOTE ON REAL-TIME "LEARNING": HuggingFace Spaces cpu-basic does NOT
     support fine-tuning or persistent model updates at runtime. What this
@@ -1751,22 +1723,13 @@ async def api_v2_chat(request: Request):
         n_models = len(ml_loader.models)
         sources.append({"type": "ml_models", "label": "ML Models", "value": f"{n_models}/4 loaded"})
 
-    # ── LLM cascade: DeepSeek (HF Inference Providers) → Mistral → ML heuristic ──
-    # Path 1: DeepSeek is the primary reasoning engine. security_chat() calls
-    #         DeepSeek via the HF Inference Providers router, then transparently
-    #         falls back to Mistral-7B on the free HF Inference API. Gemini retired.
-    llm_result = transformer_loader.security_chat(enriched_message, max_tokens=600)
+    # The open-source model in this Space answers; if it cannot, the ML
+    # heuristic below does.
+    llm_result = await run_in_threadpool(transformer_loader.security_chat, enriched_message, 600)
     if llm_result.get("response") and not llm_result.get("error"):
         text = llm_result["response"]
-        text_lower = text.lower()
-        if "critical" in text_lower:
-            risk_level, risk_score = "critical", 85.0
-        elif "high" in text_lower:
-            risk_level, risk_score = "high", 70.0
-        elif "medium" in text_lower:
-            risk_level, risk_score = "medium", 45.0
-        else:
-            risk_level, risk_score = "low", 20.0
+        risk_level = stated_risk(text) or "low"
+        risk_score = {"critical": 85.0, "high": 70.0, "medium": 45.0, "low": 20.0}[risk_level]
         # Override with ML scan if stronger
         if detected_risk_score > 0:
             ml_score_100 = round(detected_risk_score * 100, 1)
@@ -1778,14 +1741,14 @@ async def api_v2_chat(request: Request):
             "confidence": 0.72,
             "risk_level": risk_level,
             "risk_score": risk_score,
-            "model_used": llm_result.get("model_id", transformer_loader.SECURITY_LLM_REPO),
+            "model_used": llm_result.get("model_id", LOCAL_LLM_REPO),
             "session_id": session_id,
             "sources": sources,
             "timestamp": datetime.utcnow().isoformat(),
         }
 
     # Path 3: ML heuristic fallback (always available)
-    fallback = gemini_service._fallback(enriched_message)
+    fallback = reasoning_service._fallback(enriched_message)
     # Override with ML scan risk if available
     if detected_risk_score > 0:
         ml_score_100 = round(detected_risk_score * 100, 1)
@@ -1802,8 +1765,9 @@ async def api_analyze_network(request: Request):
     """Network traffic analysis – called by backend mlService.analyzeNetworkTraffic()"""
     body = await request.json()
     traffic_data = body.get("traffic_data", {})
-    result = gemini_service.analyze(
-        f"Analyze this network traffic for security threats:\n{json.dumps(traffic_data, indent=1)[:3000]}"
+    result = await run_in_threadpool(
+        reasoning_service.analyze,
+        f"Analyze this network traffic for security threats:\n{json.dumps(traffic_data, indent=1)[:3000]}",
     )
     return result
 
@@ -1814,8 +1778,9 @@ async def api_execute_task(request: Request):
     body = await request.json()
     task_type = body.get("task_type", "")
     task_data = body.get("task_data", {})
-    result = gemini_service.analyze(
-        f"Execute cybersecurity task '{task_type}':\n{json.dumps(task_data, indent=1)[:3000]}"
+    result = await run_in_threadpool(
+        reasoning_service.analyze,
+        f"Execute cybersecurity task '{task_type}':\n{json.dumps(task_data, indent=1)[:3000]}",
     )
     return result
 
@@ -1825,8 +1790,9 @@ async def api_analyze_browser(request: Request):
     """Browser session analysis"""
     body = await request.json()
     session = body.get("session_data", body)
-    result = gemini_service.analyze(
-        f"Analyze this browser session for security threats:\n{json.dumps(session, indent=1)[:3000]}"
+    result = await run_in_threadpool(
+        reasoning_service.analyze,
+        f"Analyze this browser session for security threats:\n{json.dumps(session, indent=1)[:3000]}",
     )
     return result
 
@@ -1835,8 +1801,9 @@ async def api_analyze_browser(request: Request):
 async def api_analyze_threat_feed(request: Request):
     """Threat feed analysis"""
     body = await request.json()
-    result = gemini_service.analyze(
-        f"Analyze this threat feed:\n{json.dumps(body, indent=1)[:3000]}"
+    result = await run_in_threadpool(
+        reasoning_service.analyze,
+        f"Analyze this threat feed:\n{json.dumps(body, indent=1)[:3000]}",
     )
     return result
 
@@ -1937,9 +1904,9 @@ def create_interface():
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check — version, models, services |
-| POST | `/analyze` | AI chat / general analysis (Gemini or ML fallback) |
+| POST | `/analyze` | AI chat / general analysis (LLM or ML fallback) |
 | POST | `/analyze-url` | URL threat analysis — 4 ML models + risk factors |
-| POST | `/scan-threats` | Deep threat scan (Gemini or ML fallback) |
+| POST | `/scan-threats` | Deep threat scan (LLM or ML fallback) |
 | POST | `/api/insights/generate` | AI-generated security insights |
 | POST | `/api/models/predict` | Direct ML model prediction |
 | GET | `/models` | List loaded models with source info |
@@ -1955,7 +1922,7 @@ def create_interface():
 | POST | `/api/v2/ioc-scan` | Multi-IOC scanner: URL + domain + DGA + BERT |
 | POST | `/api/v2/url-enrich` | Enriched analysis: ML + BERT + DGA + explainability |
 | POST | `/api/v2/chat` | Security chatbot — context-grounded, RAG-lite, machine→human translation |
-| POST | `/api/v2/security-chat` | Security LLM Q&A (Mistral-7B via HF Inference API) |
+| POST | `/api/v2/security-chat` | Security LLM Q&A (open-source model running in this Space) |
 | GET | `/api/v2/status` | Transformer model load status |
 
 ### Quick Examples
@@ -1997,8 +1964,9 @@ curl -X POST https://che237-cyberforge.hf.space/api/v2/chat \\
 
 # Initialize services at startup
 logger.info("🚀 Initializing CyberForge AI services...")
-gemini_service.initialize()
 ml_loader.initialize()
+# Load the chat model in the background so the API answers health checks at once
+threading.Thread(target=local_llm.load, name="local-llm-loader", daemon=True).start()
 logger.info("✅ Services initialized")
 
 # Create Gradio app and mount it on FastAPI

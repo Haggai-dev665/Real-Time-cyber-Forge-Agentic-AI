@@ -10,8 +10,7 @@ const { auth } = require('../middleware/auth');
 const { 
   verifyFirebaseToken, 
   handleFirebaseSync, 
-  getCurrentUser,
-  optionalFirebaseAuth 
+  getCurrentUser
 } = require('../middleware/firebaseAuth');
 const rateLimit = require('express-rate-limit');
 
@@ -57,8 +56,8 @@ const registerValidation = [
     .withMessage('Last name is required and must be less than 50 characters'),
   body('role')
     .optional()
-    .isIn(['user', 'admin', 'analyst'])
-    .withMessage('Invalid role specified')
+    .isIn(['user'])
+    .withMessage('Public registration only supports the user role')
 ];
 
 const loginValidation = [
@@ -159,14 +158,11 @@ router.post('/refresh', authController.refreshToken);
 /**
  * @route   POST /api/auth/google
  * @desc    Authenticate with Google (Firebase token)
- * @access  Public
+ * @access  Private (verified Firebase Google identity)
  */
 router.post('/google',
   authLimiter,
-  [
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('uid').optional().notEmpty().withMessage('Firebase UID is required for new users')
-  ],
+  verifyFirebaseToken,
   authController.googleAuth
 );
 
@@ -209,10 +205,6 @@ router.get('/google/config', (req, res) => {
  */
 router.post('/firebase-sync', 
   authLimiter,
-  [
-    body('uid').notEmpty().withMessage('Firebase UID is required'),
-    body('email').isEmail().withMessage('Valid email is required')
-  ],
   verifyFirebaseToken,
   handleFirebaseSync
 );

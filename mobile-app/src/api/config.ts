@@ -1,14 +1,19 @@
 import Constants from 'expo-constants';
 
 /**
- * Backend base URL. Defaults to the deployed Heroku instance (same origin the
- * desktop app uses — see desktop/ui/scripts/cyberforge-shared.js). Override by
- * editing `extra.apiBaseUrl` in app.json, or set EXPO_PUBLIC_API_BASE_URL.
+ * Backend base URL. The default is `extra.apiBaseUrl` in app.json (the deployed
+ * backend); set EXPO_PUBLIC_API_BASE_URL to use another one. There is no third
+ * copy of the address here: a build without either is misconfigured.
  */
-export const API_BASE_URL: string =
+const configuredBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
-  (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl ||
-  'https://cyberforge-ddd97655464f.herokuapp.com';
+  (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl;
 
-/** Identifies this client to the backend (some routes relax auth for known UAs). */
+if (!configuredBaseUrl) {
+  throw new Error('Backend URL is not configured: set extra.apiBaseUrl in app.json or EXPO_PUBLIC_API_BASE_URL.');
+}
+
+export const API_BASE_URL: string = configuredBaseUrl.replace(/\/+$/, '');
+
+/** Identifies this client in backend logs. It grants no access. */
 export const USER_AGENT = 'cyberforge-mobile';

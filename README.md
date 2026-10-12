@@ -123,6 +123,11 @@ The desktop app works on its own (local detection, memory, hosts‑file enforcem
 adds cloud threat‑intel and cross‑device sync. Connect the AI assistant by pasting a Hugging Face
 token in **Settings → AI & Models** (stored locally, never committed).
 
+Backend startup requires a generated `JWT_SECRET`; see `backend/.env.example`. The staged
+implementation and current limitations are tracked in [plan-update.md](plan-update.md#12-milestones-dependencies-and-implementation-order).
+Run `npm --prefix backend ci` followed by `npm run validate:updates` from the repository root
+with Node 24 to check backend syntax and run the offline security and contract suites.
+
 ---
 
 ## 🛠️ Tech stack

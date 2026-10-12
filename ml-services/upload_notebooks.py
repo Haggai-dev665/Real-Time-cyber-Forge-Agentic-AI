@@ -4,8 +4,10 @@
 from huggingface_hub import HfApi, login
 from pathlib import Path
 
+from hf_env import get_hf_token
+
 # Login
-token = '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'
+token = get_hf_token()
 login(token=token)
 api = HfApi(token=token)
 

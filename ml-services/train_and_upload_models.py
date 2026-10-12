@@ -21,10 +21,12 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 from huggingface_hub import HfApi, create_repo, upload_file
 
+from hf_env import get_hf_token
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger(__name__)
 
-HF_TOKEN   = "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"
+HF_TOKEN   = get_hf_token()
 MODEL_REPO = "Che237/cyberforge-models"
 BASE_DIR   = Path(__file__).parent
 DATASETS   = BASE_DIR / "datasets"

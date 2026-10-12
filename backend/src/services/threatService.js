@@ -4,11 +4,13 @@
  */
 
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
+const { ownedThreatFilter } = require('./threatOwnership');
 const { cyberforgeML } = require('./cyberforgeMLService');
 
 class ThreatService {
   constructor() {
-    this.mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8001';
+    this.mlServiceUrl = getMLServiceUrl();
     this.threatPatterns = [
       // URL-based patterns
       {
@@ -195,16 +197,15 @@ class ThreatService {
   /**
    * Get threat statistics
    */
-  async getThreatStats(userId = null) {
+  async getThreatStats(userId) {
     try {
       const Threat = require('../models/Threat');
       
-      const query = {};
-      // If scoping by user, add query.user = userId, but Threat model might not have user?
+      const query = ownedThreatFilter(userId);
       
       const total_threats = await Threat.countDocuments(query);
       const active_threats = await Threat.countDocuments({ ...query, status: { $in: ['detected', 'investigating', 'confirmed'] } });
-      const resolved_threats = await Threat.countDocuments({ ...query, status: { $in: ['mitigated', 'false_positive'] } });
+      const resolved_threats = await Threat.countDocuments({ ...query, status: { $in: ['mitigated', 'false_positive', 'resolved', 'dismissed'] } });
       const high_severity = await Threat.countDocuments({ ...query, severity: { $in: ['high', 'critical'] } });
       
       const lastThreat = await Threat.findOne(query).sort({ 'detection.timestamp': -1 });
@@ -214,11 +215,11 @@ class ThreatService {
         active_threats,
         resolved_threats,
         high_severity,
-        last_scan: lastThreat?.detection?.timestamp || new Date().toISOString()
+        last_scan: lastThreat?.detection?.timestamp || null
       };
     } catch (error) {
       console.error('Error getting threat stats:', error);
-      return null;
+      throw error;
     }
   }
 

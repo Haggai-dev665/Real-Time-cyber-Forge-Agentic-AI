@@ -339,6 +339,13 @@ pub async fn auth_get_user(state: State<'_, SharedState>) -> Result<Value, Strin
     }
 }
 
+/// Backend base URL this app is configured to use. The UI asks for it instead
+/// of carrying its own copy of the address.
+#[tauri::command]
+pub async fn get_backend_url(state: State<'_, SharedState>) -> Result<String, String> {
+    Ok(state.lock().await.backend_url.clone())
+}
+
 #[tauri::command]
 pub async fn auth_is_authenticated(state: State<'_, SharedState>) -> Result<Value, String> {
     let restored_user = restore_session_from_storage(state.inner()).await?;

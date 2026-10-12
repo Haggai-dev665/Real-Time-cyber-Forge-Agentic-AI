@@ -8,54 +8,56 @@ class RedisService {
   constructor() {
     this.client = null;
     this.isConnected = false;
+    this.mode = 'not-started';
+    this.fallbackReason = null;
   }
 
   /**
    * Connect to Redis
    */
+  /**
+   * Connect to Redis, or fall back to an in-process cache.
+   *
+   * Redis only backs the memory service's per-domain cache, so the backend
+   * must start without it. A missing, malformed, unreachable or unauthorized
+   * Redis is reported through status() and /health instead of stopping startup.
+   */
   async connectRedis() {
+    let client = null;
     try {
-      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-
-      this.client = redis.createClient({
-        url: redisUrl,
-        retry_strategy: (options) => {
-          if (options.error && options.error.code === 'ECONNREFUSED') {
-            console.warn('Redis connection refused');
-            return Math.min(options.attempt * 100, 3000);
-          }
-          if (options.total_retry_time > 1000 * 60 * 60) {
-            console.error('Redis retry time exhausted');
-            return new Error('Retry time exhausted');
-          }
-          if (options.attempt > 10) {
-            return undefined;
-          }
-          return Math.min(options.attempt * 100, 3000);
+      client = redis.createClient({
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        socket: {
+          connectTimeout: 5000,
+          // Give up quickly at startup; later drops are retried with a short backoff.
+          reconnectStrategy: (retries) => (this.mode === 'redis' ? Math.min(retries * 200, 3000) : false)
         }
       });
-
-      this.client.on('error', (error) => {
-        console.error('Redis connection error:', error.message);
-        this.isConnected = false;
+      client.on('error', (error) => {
+        if (this.mode === 'redis') console.error('Redis connection error:', error.code || error.name);
       });
 
-      this.client.on('connect', () => {
-        this.isConnected = true;
-        console.log('✅ Redis connected successfully');
-      });
+      await client.connect();
+      await client.ping(); // an unauthorized connection fails here, not on first use
 
-      this.client.on('disconnect', () => {
-        this.isConnected = false;
-        console.log('⚠️ Redis disconnected');
-      });
-
-      await this.client.connect();
-
+      this.client = client;
+      this.isConnected = true;
+      this.mode = 'redis';
+      this.fallbackReason = null;
+      console.log('✅ Redis connected successfully');
     } catch (error) {
-      console.error('❌ Redis connection failed:', error.message);
-      throw new Error(`Redis connection failed: ${error.message}`);
+      if (client) client.disconnect().catch(() => {});
+      // The message can echo parts of the URL, so only its kind is kept.
+      this.fallbackReason = error.code || (/protocol|url/i.test(error.message) ? 'invalid REDIS_URL' : error.name || 'error');
+      this.setupMockRedis();
+      this.mode = 'memory';
+      console.warn(`⚠️ Redis unavailable (${this.fallbackReason}); caching in process memory instead. Cached data is lost on restart and not shared between instances.`);
     }
+  }
+
+  /** Which cache is in use: { mode: 'redis' | 'memory' | 'not-started', reason } */
+  status() {
+    return { mode: this.mode, reason: this.fallbackReason };
   }
 
   /**
@@ -72,7 +74,7 @@ class RedisService {
         mockStore.set(key, value);
         if (options && options.EX) {
           // Mock expiration
-          setTimeout(() => mockStore.delete(key), options.EX * 1000);
+          setTimeout(() => mockStore.delete(key), options.EX * 1000).unref();
         }
         return 'OK';
       },
@@ -80,7 +82,7 @@ class RedisService {
       exists: async (key) => mockStore.has(key) ? 1 : 0,
       expire: async (key, seconds) => {
         if (mockStore.has(key)) {
-          setTimeout(() => mockStore.delete(key), seconds * 1000);
+          setTimeout(() => mockStore.delete(key), seconds * 1000).unref();
           return 1;
         }
         return 0;
@@ -238,5 +240,6 @@ module.exports = {
   flushAll: () => redisService.flushAll(),
   close: () => redisService.close(),
   isReady: () => redisService.isReady(),
+  status: () => redisService.status(),
   client: redisService.client
 };

@@ -29,7 +29,7 @@ if (!admin.apps.length) {
             });
             console.log('✅ Firebase Admin SDK initialized');
         } else {
-            console.log('⚠️  Firebase credentials not found, using development mode');
+            console.log('⚠️  Firebase credentials not found; Firebase authentication is unavailable');
         }
     } catch (error) {
         console.error('❌ Firebase Admin SDK initialization failed:', error.message);
@@ -68,35 +68,35 @@ const verifyFirebaseToken = async (req, res, next) => {
 
         // Verify the Firebase ID token
         if (!admin.apps.length) {
-            // Fallback for development - basic validation
-            console.log('⚠️  Development mode: Skipping Firebase token verification');
-            req.user = {
-                uid: 'dev-user-123',
-                email: 'dev@cyberforge.ai',
-                email_verified: true,
-                name: 'Development User'
-            };
-            return next();
+            return res.status(503).json({
+                success: false,
+                message: 'Firebase authentication is not configured'
+            });
         }
 
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const decodedToken = await admin.auth().verifyIdToken(idToken, true);
+        if (!decodedToken.uid || !decodedToken.email || decodedToken.email_verified !== true) {
+            return res.status(401).json({ success: false, message: 'Verified email identity required' });
+        }
         
         // Get or create user in database
         const userData = {
             firebaseUid: decodedToken.uid,
-            email: decodedToken.email,
+            email: decodedToken.email.trim().toLowerCase(),
             emailVerified: decodedToken.email_verified,
             displayName: decodedToken.name || decodedToken.email.split('@')[0],
             photoURL: decodedToken.picture,
-            provider: decodedToken.firebase.sign_in_provider,
+            provider: decodedToken.firebase?.sign_in_provider || 'firebase',
             lastLoginAt: new Date()
         };
 
         const user = await syncFirebaseUser(userData);
+        req.firebaseIdentity = userData;
         
         // Add user info to request
         req.user = {
             id: user._id,
+            userId: user._id,
             firebaseUid: user.firebaseUid,
             email: user.email,
             displayName: user.displayName,
@@ -142,26 +142,35 @@ const syncFirebaseUser = async (userData) => {
         let user = await User.findOne({ firebaseUid: userData.firebaseUid });
         
         if (user) {
+            if (!user.isActive || user.isLocked()) {
+                throw new Error('Account unavailable');
+            }
+            if (user.email !== userData.email) {
+                throw new Error('Identity email changed; explicit account linking required');
+            }
             // Update existing user
-            user.email = userData.email;
             user.emailVerified = userData.emailVerified;
             user.displayName = userData.displayName;
             user.photoURL = userData.photoURL;
             user.lastLoginAt = userData.lastLoginAt;
-            user.isActive = true;
             
             await user.save();
         } else {
+            // Never attach a new provider subject to an existing account by
+            // caller-supplied or matching email; linking is a separate flow.
+            if (await User.findOne({ email: userData.email })) {
+                throw new Error('Account exists; explicit account linking required');
+            }
             // Create new user
             user = new User({
                 firebaseUid: userData.firebaseUid,
                 email: userData.email,
                 emailVerified: userData.emailVerified,
                 firstName: userData.displayName.split(' ')[0] || 'User',
-                lastName: userData.displayName.split(' ').slice(1).join(' ') || '',
+                lastName: userData.displayName.split(' ').slice(1).join(' ') || 'User',
                 displayName: userData.displayName,
                 photoURL: userData.photoURL,
-                provider: userData.provider,
+                provider: userData.provider === 'google.com' ? 'google.com' : 'firebase',
                 role: 'user',
                 isActive: true,
                 createdAt: new Date(),
@@ -188,26 +197,15 @@ const syncFirebaseUser = async (userData) => {
  */
 const handleFirebaseSync = async (req, res) => {
     try {
-        const { uid, email, displayName, photoURL, emailVerified } = req.body;
-        
-        if (!uid || !email) {
-            return res.status(400).json({
-                success: false,
-                message: 'Missing required user data'
-            });
+        if (!req.user?.userId || !req.firebaseIdentity) {
+            return res.status(401).json({ success: false, message: 'Verified Firebase identity required' });
         }
-
-        const userData = {
-            firebaseUid: uid,
-            email,
-            emailVerified: emailVerified || false,
-            displayName: displayName || email.split('@')[0],
-            photoURL,
-            provider: 'google.com',
-            lastLoginAt: new Date()
-        };
-
-        const user = await syncFirebaseUser(userData);
+        // Verification already synced the authenticated subject. Do not sync
+        // body.uid/body.email as a second, potentially different identity.
+        const user = await User.findById(req.user.userId);
+        if (!user || !user.isActive || user.isLocked()) {
+            return res.status(401).json({ success: false, message: 'Account unavailable' });
+        }
         
         res.json({
             success: true,
@@ -294,12 +292,13 @@ const optionalFirebaseAuth = async (req, res, next) => {
             return next();
         }
 
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const decodedToken = await admin.auth().verifyIdToken(idToken, true);
         const user = await User.findOne({ firebaseUid: decodedToken.uid });
         
-        if (user && user.isActive) {
+        if (user && user.isActive && !user.isLocked() && decodedToken.email_verified === true) {
             req.user = {
                 id: user._id,
+                userId: user._id,
                 firebaseUid: user.firebaseUid,
                 email: user.email,
                 displayName: user.displayName,

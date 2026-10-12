@@ -2,7 +2,9 @@
 # Combined Gradio UI + FastAPI REST API
 
 # Core ML
-scikit-learn>=1.5.0
+# Pinned: the .pkl files in Che237/cyberforge-models were saved with 1.8.0 and the
+# gradient-boosting ones do not load on 1.9+. Retrain and re-upload before raising it.
+scikit-learn==1.8.0
 pandas>=2.2.0
 numpy>=2.0.0
 joblib>=1.4.0
@@ -19,14 +21,19 @@ gradio>=5.20.0
 fastapi>=0.100.0
 uvicorn[standard]>=0.22.0
 
-# HF Hub (>=0.26 for Inference Providers / OpenAI-compatible router used by DeepSeek)
+# HF Hub (model downloads)
 huggingface_hub>=0.26.0
 
 # Feature Engineering
 tldextract>=5.1.0
 
-# Reasoning LLM: DeepSeek via HF Inference Providers (OpenAI-compatible router).
-# Called over plain HTTPS (requests) — no extra SDK needed. Gemini retired.
+# Reasoning LLM: an open-source GGUF chat model run in-process with llama.cpp.
+# The prebuilt CPU wheel is used so the image needs no compiler; --only-binary
+# makes the build fail fast instead of compiling from source if that wheel is
+# missing.
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+--only-binary llama-cpp-python
+llama-cpp-python==0.3.36
 
 # Notebook execution
 nbformat>=5.10.0

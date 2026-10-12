@@ -3,7 +3,7 @@
  * Handles JWT token verification and user authentication
  */
 
-const jwt = require('jsonwebtoken');
+const { verifySessionToken } = require('../services/sessionTokens');
 const User = require('../models/User');
 
 /**
@@ -40,7 +40,7 @@ const auth = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'cyber-forge-secret-key');
+    const decoded = verifySessionToken(token);
     
     // Get user from database
     const user = await User.findById(decoded.userId);
@@ -156,7 +156,7 @@ const optionalAuth = async (req, res, next) => {
       return next();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'cyber-forge-secret-key');
+    const decoded = verifySessionToken(token);
     const user = await User.findById(decoded.userId);
     
     if (user && user.isActive && !user.isLocked()) {

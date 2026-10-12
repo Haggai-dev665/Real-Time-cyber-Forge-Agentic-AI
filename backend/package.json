@@ -7,9 +7,17 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",
+    "test:security": "jest --runInBand tests/security",
+    "test:contracts": "jest --runInBand tests/contracts",
+    "check:syntax": "node scripts/check-syntax.js",
+    "check:scripts": "node scripts/check-workspace-scripts.js",
+    "check": "npm run check:syntax && npm run check:scripts && npm run test:security && npm run test:contracts",
     "lint": "eslint src/",
     "build": "echo 'No build step required'",
-    "appwrite:schema": "node scripts/setup-appwrite-schema.js"
+    "appwrite:schema": "node scripts/setup-appwrite-schema.js",
+    "appwrite:audit": "node scripts/audit-appwrite-permissions.js",
+    "heroku:config": "node scripts/push-heroku-config.js",
+    "heroku:deploy": "node scripts/deploy-heroku.js"
   },
   "keywords": [
     "cybersecurity",
@@ -20,6 +28,9 @@
   ],
   "author": "Haggai-dev665",
   "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "@pinecone-database/pinecone": "^6.1.2",
     "axios": "^1.11.0",

@@ -7,12 +7,12 @@
  */
 
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
 
 class CyberForgeMLService {
     constructor() {
-        // ML Service endpoints
-        this.localAPIUrl = process.env.AI_SERVICE_URL || 'http://localhost:8001';
-        this.hfSpaceUrl = 'https://che237-cyberforge.hf.space';
+        // Classic and transformer models use the same configured service.
+        this.hfSpaceUrl = getMLServiceUrl();
         
         // Model configurations from training
         this.models = {

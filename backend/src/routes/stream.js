@@ -16,23 +16,20 @@
 
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+const { verifySessionToken } = require('../services/sessionTokens');
 const logger = require('../utils/logger');
 const { bus } = require('../services/realtimeBus');
-
-// Resolve the JWT secret exactly like `middleware/auth.js` so a token issued by
-// the login flow verifies identically here. (There is no `src/config` index
-// module; auth uses the env + a dev fallback, so we mirror that.)
-const JWT_SECRET = process.env.JWT_SECRET || 'cyber-forge-secret-key';
 
 router.get('/', (req, res) => {
   // ── optional auth (query token, since EventSource can't set headers) ──
   let userId = null;
+  let expiresAt = 0;
   const token = req.query.token;
   if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      userId = decoded.userId || decoded.id || null;
+      const decoded = verifySessionToken(token);
+      userId = decoded.userId;
+      expiresAt = decoded.exp * 1000;
     } catch (_) {
       /* invalid/expired token → anonymous, global events only */
     }
@@ -60,7 +57,7 @@ router.get('/', (req, res) => {
     // Per-user scoping: if a payload is addressed to a specific user, only that
     // user's authenticated stream receives it; global events (no userId) go to all.
     const target = evt.data && evt.data.userId;
-    if (target && userId && target !== userId) return;
+    if (target != null && (!userId || Date.now() >= expiresAt || String(target) !== userId)) return;
     try {
       write(evt.type, evt);
     } catch (_) {

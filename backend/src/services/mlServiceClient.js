@@ -9,11 +9,12 @@
  */
 
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
 const logger = require('../utils/logger');
 
 class MLServiceClient {
   constructor() {
-    this.baseUrl = process.env.AI_SERVICE_URL || 'https://che237-cyberforge.hf.space';
+    this.baseUrl = getMLServiceUrl();
     this.timeout = 60000; // 60s — Gemini analysis can take time
     
     this.client = axios.create({

@@ -10,9 +10,10 @@
  */
 
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
 const { memoryService } = require('./memoryService');
 
-const HF_SPACE_URL = process.env.HF_SPACE_URL || 'https://che237-cyberforge.hf.space';
+const HF_SPACE_URL = getMLServiceUrl();
 const GEMINI_KEY   = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 

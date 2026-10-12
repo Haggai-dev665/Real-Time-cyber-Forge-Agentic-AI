@@ -7,9 +7,15 @@ const express = require('express');
 const { body, query, param } = require('express-validator');
 const { auth, authorize } = require('../middleware/auth');
 const { mlService } = require('../services/mlService');
+const { reportUnavailableMLCapability } = require('../services/mlCapabilities');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
+
+// Every route here depends on ML training endpoints. When the configured ML
+// service does not provide one, the failure is reported as 501 with the shared
+// CAPABILITY_UNAVAILABLE code instead of a generic 500.
+router.use(reportUnavailableMLCapability);
 
 // Rate limiting for training endpoints
 const trainingLimiter = rateLimit({

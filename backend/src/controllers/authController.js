@@ -4,7 +4,7 @@
  */
 
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { signSessionToken, verifySessionToken } = require('../services/sessionTokens');
 const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const { appwriteService } = require('../services/appwriteService');
@@ -24,7 +24,7 @@ class AuthController {
         });
       }
 
-      const { email, password, firstName, lastName, role } = req.body;
+      const { email, password, firstName, lastName } = req.body;
 
       if (!appwriteService?.isInitialized) {
         return res.status(503).json({
@@ -53,7 +53,7 @@ class AuthController {
           password,
           firstName,
           lastName,
-          role: role || 'user'
+          role: 'user'
         });
       } catch (appwriteError) {
         console.error('Appwrite registration error:', appwriteError);
@@ -70,7 +70,7 @@ class AuthController {
         appwriteUserId: appwriteAuthUser.$id,
         firstName,
         lastName,
-        role: role || 'user',
+        role: 'user',
         profile: {
           preferences: {
             theme: 'dark',
@@ -83,15 +83,7 @@ class AuthController {
       await user.save();
 
       // Generate JWT token
-      const token = jwt.sign(
-        { 
-          userId: user._id, 
-          email: user.email,
-          role: user.role 
-        },
-        process.env.JWT_SECRET || 'cyber-forge-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = signSessionToken(user);
 
       res.status(201).json({
         success: true,
@@ -143,6 +135,10 @@ class AuthController {
         });
       }
 
+      if (!user.isActive || user.isLocked()) {
+        return res.status(401).json({ success: false, message: 'Account unavailable' });
+      }
+
       // Verify password
       const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
       if (!isPasswordValid) {
@@ -157,15 +153,7 @@ class AuthController {
       await user.save();
 
       // Generate JWT token
-      const token = jwt.sign(
-        { 
-          userId: user._id, 
-          email: user.email,
-          role: user.role 
-        },
-        process.env.JWT_SECRET || 'cyber-forge-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = signSessionToken(user);
 
       res.json({
         success: true,
@@ -389,25 +377,12 @@ class AuthController {
       }
 
       try {
-        // Verify the token (allow expired tokens for refresh)
-        const decoded = jwt.verify(oldToken, process.env.JWT_SECRET || 'cyber-forge-secret-key', {
-          ignoreExpiration: true
-        });
-
-        // Check if token is not too old (max 7 days for refresh)
-        const tokenAge = Date.now() / 1000 - decoded.iat;
-        const maxRefreshAge = 7 * 24 * 60 * 60; // 7 days in seconds
-        
-        if (tokenAge > maxRefreshAge) {
-          return res.status(401).json({
-            success: false,
-            message: 'Token is too old to refresh. Please log in again.'
-          });
-        }
+        // Refresh accepts expired sessions only within the validated seven-day window.
+        const decoded = verifySessionToken(oldToken, { forRefresh: true });
 
         // Get user from database
         const user = await User.findById(decoded.userId);
-        if (!user || !user.isActive) {
+        if (!user || !user.isActive || user.isLocked()) {
           return res.status(401).json({
             success: false,
             message: 'User not found or inactive'
@@ -415,15 +390,7 @@ class AuthController {
         }
 
         // Generate new JWT token
-        const newToken = jwt.sign(
-          { 
-            userId: user._id, 
-            email: user.email,
-            role: user.role 
-          },
-          process.env.JWT_SECRET || 'cyber-forge-secret-key',
-          { expiresIn: '24h' }
-        );
+        const newToken = signSessionToken(user);
 
         res.json({
           success: true,
@@ -463,59 +430,17 @@ class AuthController {
    */
   async googleAuth(req, res) {
     try {
-      const { email, uid, displayName, photoURL, provider } = req.body;
-
-      if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email is required for Google authentication'
-        });
+      if (!req.user?.firebaseUid || req.firebaseIdentity?.provider !== 'google.com') {
+        return res.status(401).json({ success: false, message: 'Verified Google identity required' });
       }
 
-      // Check if user exists
-      let user = await User.findOne({ email });
-
-      if (user) {
-        // Update existing user with Google info
-        user.googleId = uid;
-        user.photoURL = photoURL;
-        user.lastLoginAt = new Date();
-        user.provider = provider || 'google.com';
-        await user.save();
-      } else {
-        // Create new user
-        const nameParts = (displayName || email.split('@')[0]).split(' ');
-        user = new User({
-          email,
-          googleId: uid,
-          firstName: nameParts[0] || 'User',
-          lastName: nameParts.slice(1).join(' ') || '',
-          role: 'user',
-          provider: provider || 'google.com',
-          photoURL,
-          emailVerified: true,
-          isActive: true,
-          profile: {
-            preferences: {
-              theme: 'dark',
-              notifications: true,
-              securityLevel: 'standard'
-            }
-          }
-        });
-        await user.save();
+      // The middleware maps the verified Firebase subject. Body identity fields
+      // never select an account or change an existing provider link.
+      const user = await User.findById(req.user.userId);
+      if (!user || !user.isActive || user.isLocked()) {
+        return res.status(401).json({ success: false, message: 'Account unavailable' });
       }
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { 
-          userId: user._id, 
-          email: user.email,
-          role: user.role 
-        },
-        process.env.JWT_SECRET || 'cyber-forge-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = signSessionToken(user);
 
       res.json({
         success: true,
@@ -526,7 +451,7 @@ class AuthController {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            displayName: displayName || `${user.firstName} ${user.lastName}`,
+            displayName: user.displayName || `${user.firstName} ${user.lastName}`,
             role: user.role,
             photoURL: user.photoURL,
             provider: user.provider
@@ -579,10 +504,17 @@ class AuthController {
 
       const googleUser = userInfoResponse.data;
 
+      if (!googleUser.id || !googleUser.email || googleUser.verified_email !== true) {
+        return res.status(401).json({ success: false, message: 'Verified Google email required' });
+      }
+
       // Find or create user
       let user = await User.findOne({ email: googleUser.email });
 
       if (user) {
+        if (!user.isActive || user.isLocked()) {
+          return res.status(401).json({ success: false, message: 'Account unavailable' });
+        }
         // Update existing user
         user.googleId = googleUser.id;
         user.photoURL = googleUser.picture;
@@ -599,7 +531,7 @@ class AuthController {
           role: 'user',
           provider: 'google.com',
           photoURL: googleUser.picture,
-          emailVerified: googleUser.verified_email || true,
+          emailVerified: true,
           isActive: true,
           profile: {
             preferences: {
@@ -613,15 +545,7 @@ class AuthController {
       }
 
       // Generate JWT token
-      const token = jwt.sign(
-        { 
-          userId: user._id, 
-          email: user.email,
-          role: user.role 
-        },
-        process.env.JWT_SECRET || 'cyber-forge-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = signSessionToken(user);
 
       res.json({
         success: true,

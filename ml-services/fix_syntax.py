@@ -46,7 +46,8 @@ print("Fixed notebook 03 - removed literal \\n characters")
 
 # Upload both
 from huggingface_hub import HfApi
-api = HfApi(token='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')
+from hf_env import get_hf_token
+api = HfApi(token=get_hf_token())
 
 api.upload_file(
     path_or_fileobj=str(nb_path),

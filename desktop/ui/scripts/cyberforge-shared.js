@@ -53,7 +53,6 @@ function attachRipple(el){
    an iframe (the floating agent panel) by walking to window.parent.
    ============================================================ */
 window.CF = window.CF || {};
-CF.API_BASE = CF.API_BASE || 'https://cyberforge-ddd97655464f.herokuapp.com';
 
 /* locate the Tauri bridge from this window or a parent frame */
 CF._tauri = function(){
@@ -74,6 +73,13 @@ CF.listen = function(evt, cb){
   var T = CF._tauri();
   if (T && T.event && T.event.listen) { try { return T.event.listen(evt, function(e){ cb(e.payload); }); } catch(e){} }
   return Promise.resolve(function(){});
+};
+
+/* backend base URL, from the native layer (CYBERFORGE_BACKEND_URL or its built-in
+   default) — resolves to null outside the app; used by cf-realtime SSE */
+CF.backendUrl = function(){
+  if (!CF._backendUrl) CF._backendUrl = CF.invoke('get_backend_url').catch(function(){ CF._backendUrl = null; return null; });
+  return CF._backendUrl;
 };
 
 /* current auth token (keychain-backed, via Rust) — used by cf-realtime SSE */

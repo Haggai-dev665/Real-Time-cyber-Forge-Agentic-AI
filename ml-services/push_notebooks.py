@@ -4,7 +4,9 @@
 from huggingface_hub import HfApi
 import os
 
-token = "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"
+from hf_env import get_hf_token
+
+token = get_hf_token()
 api = HfApi(token=token)
 repo_id = "Che237/cyberforge"
 

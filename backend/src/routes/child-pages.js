@@ -8,6 +8,7 @@ const { body, query, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { mlService } = require('../services/mlService');
+const { requireMLCapability } = require('../services/mlCapabilities');
 const { agentManager } = require('../agent/AgentManager');
 const logger = require('../utils/logger');
 
@@ -415,6 +416,10 @@ function simulateScanProgress(scanId) {
 // =========================================
 
 router.get('/threats/map', auth, asyncHandler(async (req, res) => {
+  // This handler is built on an ML endpoint. Without it the handler used to
+  // answer with placeholder data, so it now reports the capability as unavailable.
+  if (!requireMLCapability(res, 'GET', '/api/threat-map')) return;
+
   const { range = '24h' } = req.query;
   
   // Call ML service for threat data
@@ -641,6 +646,8 @@ router.get('/ai/agent/tasks', auth, asyncHandler(async (req, res) => {
 }));
 
 router.post('/ai/agent/tasks', auth, asyncHandler(async (req, res) => {
+  if (!requireMLCapability(res, 'POST', '/api/agent/task')) return;
+
   const { name, type, target, priority } = req.body;
   
   const task = {
@@ -672,6 +679,8 @@ router.post('/ai/agent/tasks', auth, asyncHandler(async (req, res) => {
 }));
 
 router.get('/ai/agent/threats', auth, asyncHandler(async (req, res) => {
+  if (!requireMLCapability(res, 'GET', '/api/agent/threats')) return;
+
   const userId = req.user.userId;
   
   // Get threats from ML service
@@ -703,6 +712,8 @@ router.post('/ai/agent/threats/:id/action', auth, asyncHandler(async (req, res) 
 }));
 
 router.get('/ai/agent/learning', auth, asyncHandler(async (req, res) => {
+  if (!requireMLCapability(res, 'GET', '/api/agent/learning')) return;
+
   // Get learning stats from ML service
   let learningData = null;
   try {
@@ -754,6 +765,8 @@ router.put('/ai/agent/settings', auth, asyncHandler(async (req, res) => {
 // =========================================
 
 router.get('/ai/models', auth, asyncHandler(async (req, res) => {
+  if (!requireMLCapability(res, 'GET', '/api/models')) return;
+
   // Get models from ML service
   let models = [];
   try {
@@ -804,6 +817,8 @@ router.get('/ai/models/training', auth, asyncHandler(async (req, res) => {
 }));
 
 router.post('/ai/models/training', auth, asyncHandler(async (req, res) => {
+  if (!requireMLCapability(res, 'POST', '/api/models/train')) return;
+
   const { modelId, dataset, epochs } = req.body;
   
   const job = {

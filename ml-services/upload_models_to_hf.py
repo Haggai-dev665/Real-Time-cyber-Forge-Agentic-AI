@@ -20,7 +20,9 @@ except ImportError:
     os.system(f"{sys.executable} -m pip install -q huggingface_hub")
     from huggingface_hub import HfApi, login, create_repo
 
-# Configuration
+# Configuration (HF_TOKEN comes from ml-services/.env or the environment)
+from hf_env import load_env
+load_env()
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 HF_REPO = os.environ.get("HF_MODEL_REPO", "Che237/cyberforge-models")
 

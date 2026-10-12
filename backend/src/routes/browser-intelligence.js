@@ -8,7 +8,12 @@
  */
 
 const express = require('express');
+const { verifiedUser } = require('../middleware/verifiedUser');
 const router = express.Router();
+
+// Every route below requires a signed-in user, and takes the user's identity
+// from the session rather than from the request.
+router.use(verifiedUser);
 const { appwriteService } = require('../services/appwriteService');
 const { wsManager } = require('../services/websocket');
 const logger = require('../utils/logger');

@@ -1,0 +1,26 @@
+name: Update pipeline - backend security
+
+on:
+  push:
+    paths: ['backend/**', 'package.json', '.github/workflows/update-pipeline.yml']
+  pull_request:
+    paths: ['backend/**', 'package.json', '.github/workflows/update-pipeline.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: backend
+      - run: npm run validate:updates

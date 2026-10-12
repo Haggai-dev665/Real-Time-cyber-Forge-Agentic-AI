@@ -1,0 +1,973 @@
+# =====================================================================
+# CyberForge ML service — manual test suite
+# =====================================================================
+# Target : Hugging Face Space  Che237/cyberforge  (Docker, FastAPI + Gradio)
+#          https://che237-cyberforge.hf.space
+# Tool   : VS Code "REST Client" extension (humao.rest-client).
+#          Click "Send Request" above any request; the response opens beside it.
+#
+# Token  : requests in section A read HF_TOKEN from ml-services/.env
+#          (git-ignored) through {{$dotenv HF_TOKEN}}. The token is NOT in this
+#          file. The Space itself is public, so sections B–O need no token.
+#
+# Waking : the Space sleeps after 48h idle. If A2 says "SLEEPING", send B1 and
+#          wait ~20s; the first request wakes it. The chat model then loads in
+#          the background for a minute or two (B1 shows local_llm.loaded).
+#
+# "Expect" lines are what the live Space returned on 2026-10-12 against the
+# deployed app.py (Space commit 27886c3, which replaced Gemini with an
+# open-source model running inside the Space). Scores from the trained
+# models are deterministic, so they should match until the models are
+# retrained. Text from the chat model is generated and differs on every run.
+# =====================================================================
+
+@space = https://che237-cyberforge.hf.space
+@hub = https://huggingface.co
+@spaceId = Che237/cyberforge
+@modelRepo = Che237/cyberforge-models
+@hfToken = {{$dotenv HF_TOKEN}}
+@json = application/json
+
+
+# =====================================================================
+# A. HUGGING FACE PLATFORM — token, Space runtime, model repo
+# =====================================================================
+
+### A1. Token is valid
+# Expect: HTTP 200
+# "name": "Che237", auth.accessToken.displayName "cyber", role "fineGrained".
+# 401 means the token was revoked or .env is not being read.
+# @name hfWhoami
+GET {{hub}}/api/whoami-v2
+Authorization: Bearer {{hfToken}}
+
+### A2. Space runtime status
+# Expect: HTTP 200
+# "stage": "RUNNING", hardware.current "cpu-basic".
+# Other stages: SLEEPING (send B1 to wake), BUILDING, RUNTIME_ERROR, PAUSED.
+# @name spaceRuntime
+GET {{hub}}/api/spaces/{{spaceId}}/runtime
+Authorization: Bearer {{hfToken}}
+
+### A3. Space metadata (sdk, last deploy time, commit)
+# Expect: HTTP 200
+# "sdk": "docker", "private": false, "lastModified" = last push to the Space.
+# @name spaceInfo
+GET {{hub}}/api/spaces/{{spaceId}}
+Authorization: Bearer {{hfToken}}
+
+### A4. Space secrets (names and update times only — values are never returned)
+# Expect: HTTP 200
+# Keys: GEMINI_API_KEY, GEMINI_MODEL, HF_TOKEN, HF_MODEL_REPO.
+# The two GEMINI_* secrets are no longer read by the app and can be deleted.
+# @name spaceSecrets
+GET {{hub}}/api/spaces/{{spaceId}}/secrets
+Authorization: Bearer {{hfToken}}
+
+### A5. Model repo the Space downloads its .pkl files from
+# Expect: HTTP 200
+# "id": "Che237/cyberforge-models", "siblings" lists 30 files.
+# @name modelRepoInfo
+GET {{hub}}/api/models/{{modelRepo}}
+Authorization: Bearer {{hfToken}}
+
+### A6. Files for one model (the Space needs best_model.pkl + scaler.pkl)
+# Expect: HTTP 200
+# Swap the last path segment for malware_detection, anomaly_detection or
+# web_attack_detection to check the others.
+# @name modelRepoFiles
+GET {{hub}}/api/models/{{modelRepo}}/tree/main/phishing_detection
+Authorization: Bearer {{hfToken}}
+
+### A7. Restart the Space (DISRUPTIVE: ~1–2 min downtime, reloads all models)
+# REST Client asks for confirmation before sending because of @note.
+# Not run during verification, so there is no recorded result for this one.
+# @note
+# @name spaceRestart
+POST {{hub}}/api/spaces/{{spaceId}}/restart
+Authorization: Bearer {{hfToken}}
+
+
+# =====================================================================
+# B. HEALTH AND STATUS
+# =====================================================================
+
+### B1. Health (also wakes a sleeping Space)
+# Expect: HTTP 200
+# status "healthy"; services.ml_models true; services.models_loaded = the 4
+# model names; services.transformers true;
+# services.local_llm = { repo "unsloth/Qwen3.5-2B-GGUF", loaded true, error null };
+# services.reasoning_llm "local" once that model has loaded (null while it is
+# still loading or if it failed); services.reasoning_model "unsloth/Qwen3.5-2B-GGUF".
+# If models_loaded lists fewer than 4, check the scikit-learn pin in
+# hf_space_deploy/requirements.txt against the version the .pkl files were
+# saved with.
+# @name health
+GET {{space}}/health
+
+### B2. Transformer status
+# Expect: HTTP 200
+# transformers_available true; "loaded" is [] until the first BERT call
+# (G1, I1 or J1), then ["url_phishing_bert"]; load_errors should stay {}.
+# reasoning_llm.local = { repo, file, loaded true, loading false, error null }.
+# @name v2Status
+GET {{space}}/api/v2/status
+
+### B3. Model registry
+# Expect: HTTP 200
+# total 4, loaded 4, every entry "source": "ml_model". Any entry showing
+# "heuristic" means its .pkl failed to download from the model repo.
+# @name modelsList
+GET {{space}}/api/models/list
+
+### B4. Model registry (alias route)
+# Expect: HTTP 200
+# Same body as B3.
+# @name modelsAlias
+GET {{space}}/models
+
+### B5. OpenAPI schema (machine-readable list of every route)
+# Expect: HTTP 200
+# @name openapi
+GET {{space}}/openapi.json
+
+### B6. Gradio UI is mounted at /
+# Expect: HTTP 200
+# Returns the Gradio HTML page (notebooks, training, inference tabs).
+# @name gradioUi
+GET {{space}}/
+
+
+# =====================================================================
+# C. RAW MODEL PREDICTION — POST /api/models/predict
+# =====================================================================
+# input_data must hold these 12 features IN THIS ORDER (the service passes
+# list(values()) straight to the scaler, so key order matters, names do not):
+#   url_length, hostname_length, path_length, is_https, has_ip_address,
+#   has_suspicious_tld, subdomain_count, has_port, query_params_count,
+#   has_at_symbol, has_double_slash, special_char_count
+
+### C1. phishing_detection — phishing-shaped features
+# Expect: HTTP 200
+# prediction 1, prediction_label "threat", threat_score 1.0,
+# inference_source "ml_model".
+# @name predictPhishingThreat
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "phishing_detection",
+  "input_data": {
+    "url_length": 78, "hostname_length": 12, "path_length": 32, "is_https": 0,
+    "has_ip_address": 1, "has_suspicious_tld": 0, "subdomain_count": 2,
+    "has_port": 0, "query_params_count": 2, "has_at_symbol": 1,
+    "has_double_slash": 0, "special_char_count": 6
+  }
+}
+
+### C2. phishing_detection — benign-shaped features (google.com search URL)
+# Expect: HTTP 200
+# prediction 0, prediction_label "benign", threat_score 0.0.
+# @name predictPhishingBenign
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "phishing_detection",
+  "input_data": {
+    "url_length": 45, "hostname_length": 14, "path_length": 7, "is_https": 1,
+    "has_ip_address": 0, "has_suspicious_tld": 0, "subdomain_count": 1,
+    "has_port": 0, "query_params_count": 1, "has_at_symbol": 0,
+    "has_double_slash": 0, "special_char_count": 3
+  }
+}
+
+### C3. malware_detection — phishing-shaped features
+# Expect: HTTP 200
+# prediction 1, prediction_label "threat", threat_score 1.0,
+# inference_source "ml_model".
+# @name predictMalware
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "malware_detection",
+  "input_data": {
+    "url_length": 78, "hostname_length": 12, "path_length": 32, "is_https": 0,
+    "has_ip_address": 1, "has_suspicious_tld": 0, "subdomain_count": 2,
+    "has_port": 0, "query_params_count": 2, "has_at_symbol": 1,
+    "has_double_slash": 0, "special_char_count": 6
+  }
+}
+
+### C4. web_attack_detection — phishing-shaped features
+# Expect: HTTP 200
+# prediction 1, prediction_label "threat", threat_score 1.0,
+# inference_source "ml_model".
+# @name predictWebAttack
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "web_attack_detection",
+  "input_data": {
+    "url_length": 78, "hostname_length": 12, "path_length": 32, "is_https": 0,
+    "has_ip_address": 1, "has_suspicious_tld": 0, "subdomain_count": 2,
+    "has_port": 0, "query_params_count": 2, "has_at_symbol": 1,
+    "has_double_slash": 0, "special_char_count": 6
+  }
+}
+
+### C5. anomaly_detection — benign-shaped features  (KNOWN ISSUE: labels inverted)
+# Expect: HTTP 200
+# The model is an IsolationForest: it returns 1 = normal, -1 = anomaly.
+# The service treats 1 as "threat", so a NORMAL url comes back as
+# prediction 1 / "threat" / threat_score 0.5, and an anomalous one as
+# prediction -1 / "benign". This is why every clean URL in section E scores
+# at least risk_score 50 ("medium").
+# @name predictAnomalyBenignInput
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "anomaly_detection",
+  "input_data": {
+    "url_length": 45, "hostname_length": 14, "path_length": 7, "is_https": 1,
+    "has_ip_address": 0, "has_suspicious_tld": 0, "subdomain_count": 1,
+    "has_port": 0, "query_params_count": 1, "has_at_symbol": 0,
+    "has_double_slash": 0, "special_char_count": 3
+  }
+}
+
+### C6. anomaly_detection — phishing-shaped features (inverted, see C5)
+# Expect: HTTP 200
+# prediction -1, prediction_label "benign".
+# @name predictAnomalyThreatInput
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "anomaly_detection",
+  "input_data": {
+    "url_length": 78, "hostname_length": 12, "path_length": 32, "is_https": 0,
+    "has_ip_address": 1, "has_suspicious_tld": 0, "subdomain_count": 2,
+    "has_port": 0, "query_params_count": 2, "has_at_symbol": 1,
+    "has_double_slash": 0, "special_char_count": 6
+  }
+}
+
+### C7. Empty input_data — falls back to the rule-based heuristic
+# Expect: HTTP 200
+# inference_source "heuristic", prediction 0, reasons [].
+# @name predictEmptyInput
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "malware_detection",
+  "input_data": {}
+}
+
+### C8. Unknown model name — heuristic, not an error
+# Expect: HTTP 200
+# inference_source "heuristic", prediction 1, threat_score 0.75,
+# reasons ["No HTTPS","IP address in URL","Suspicious TLD"].
+# @name predictUnknownModel
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "does_not_exist",
+  "input_data": { "is_https": 0, "has_ip_address": 1, "has_suspicious_tld": 1 }
+}
+
+### C9. No body fields at all — defaults to phishing_detection + heuristic
+# Expect: HTTP 200
+# model "phishing_detection", inference_source "heuristic".
+# @name predictDefaults
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{}
+
+
+# =====================================================================
+# D. EXPLAINABILITY — GET /api/v2/explain/{model_name}
+# =====================================================================
+
+### D1. phishing_detection
+# Expect: HTTP 200
+# method "gini_importance"; url_length 0.6632, special_char_count 0.3368,
+# every other feature 0.0 (the model only uses two features).
+# @name explainPhishing
+GET {{space}}/api/v2/explain/phishing_detection
+
+### D2. malware_detection
+# Expect: HTTP 200
+# method "gini_importance". The importances are IDENTICAL to D1
+# (url_length 0.6632, special_char_count 0.3368) — see the note on D3.
+# @name explainMalware
+GET {{space}}/api/v2/explain/malware_detection
+
+### D3. web_attack_detection
+# Expect: HTTP 200
+# Identical to D1 and D2 again. Three "different" detectors with the same
+# importances to four decimals means they were trained on the same data and
+# labels, so they behave as one model, not three independent signals.
+# @name explainWebAttack
+GET {{space}}/api/v2/explain/web_attack_detection
+
+### D4. anomaly_detection — IsolationForest has no importances
+# Expect: HTTP 200
+# method "not_available".
+# @name explainAnomaly
+GET {{space}}/api/v2/explain/anomaly_detection
+
+### D5. Unknown model
+# Expect: HTTP 200
+# {"error":"Model 'nope' not loaded","available":[...4 names...]}
+# (HTTP 200 with an error field, not a 404.)
+# @name explainUnknown
+GET {{space}}/api/v2/explain/nope
+
+
+# =====================================================================
+# E. URL ANALYSIS — POST /analyze-url   (4 sklearn models + risk factors)
+# =====================================================================
+
+### E1. Benign URL
+# Expect: HTTP 200
+# phishing/malware/web_attack predict 0. aggregate.risk_factors [].
+# aggregate.risk_score 50.0 / "medium" / models_flagged 1 — caused only by the
+# inverted anomaly model (C5); the true result should be low.
+# @name analyzeUrlBenign
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "https://www.google.com/search?q=cybersecurity" }
+
+### E2. Phishing URL (raw IP, no HTTPS, @ symbol)
+# Expect: HTTP 200
+# risk_score 100.0, overall_risk_level "critical", models_flagged 3 of 4,
+# risk_factors ["no_https","ip_in_url","at_symbol_in_url"].
+# @name analyzeUrlPhishing
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "http://192.168.10.5/secure-login/paypal.com/verify?account=1&session=abc@evil" }
+
+### E3. Suspicious TLD
+# Expect: HTTP 200
+# risk_score 57.4, overall_risk_level "medium", models_flagged 3,
+# risk_factors ["no_https","suspicious_tld"].
+# @name analyzeUrlSuspiciousTld
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "http://free-prizes.tk/win?id=1&ref=2" }
+
+### E4. Every risk factor at once (long URL, port, subdomains, //, special chars)
+# Expect: HTTP 200
+# risk_score 100.0, "critical". risk_factors lists all seven: no_https,
+# suspicious_tld, long_url, at_symbol_in_url, excessive_subdomains,
+# high_special_chars, double_slash_in_path.
+# features_analyzed: url_length 140, subdomain_count 4, has_port 1,
+# query_params_count 6, special_char_count 25.
+# @name analyzeUrlAllFactors
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "http://login.secure.account.update.example-bank.xyz:8080/a//b/verify.php?user=admin@corp&token=(abc)&redirect=[x];y=1&z=2&q=<script>&w=1,2,3" }
+
+### E5. Missing url
+# Expect: HTTP 400
+# {"detail":"URL required"}
+# @name analyzeUrlMissing
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{}
+
+
+# =====================================================================
+# F. BATCH URL ANALYSIS — POST /api/v2/batch-analyze   (max 20 URLs)
+# =====================================================================
+
+### F1. Mixed batch, including one empty entry
+# Expect: HTTP 200
+# total 4; results[2] is {"url":"","error":"empty url"}; the other three have
+# an "aggregate" block; "elapsed_ms" present.
+# @name batchMixed
+POST {{space}}/api/v2/batch-analyze
+Content-Type: {{json}}
+
+{
+  "urls": [
+    "https://github.com",
+    "http://10.0.0.1/admin@login",
+    "",
+    "http://free-prizes.tk/win?id=1&ref=2"
+  ]
+}
+
+### F2. Empty array
+# Expect: HTTP 400
+# {"detail":"urls array required"}
+# @name batchEmpty
+POST {{space}}/api/v2/batch-analyze
+Content-Type: {{json}}
+
+{ "urls": [] }
+
+### F3. 21 URLs — over the limit
+# Expect: HTTP 400
+# {"detail":"Maximum 20 URLs per batch"}
+# @name batchTooMany
+POST {{space}}/api/v2/batch-analyze
+Content-Type: {{json}}
+
+{
+  "urls": [
+    "https://e1.com", "https://e2.com", "https://e3.com", "https://e4.com",
+    "https://e5.com", "https://e6.com", "https://e7.com", "https://e8.com",
+    "https://e9.com", "https://e10.com", "https://e11.com", "https://e12.com",
+    "https://e13.com", "https://e14.com", "https://e15.com", "https://e16.com",
+    "https://e17.com", "https://e18.com", "https://e19.com", "https://e20.com",
+    "https://e21.com"
+  ]
+}
+
+
+# =====================================================================
+# G. BERT URL CLASSIFIER — POST /api/v2/url-classify
+#    (elftsdmr/malware-url-detect; first call after a restart takes ~5–20s
+#     while the model downloads, later calls are under 1s)
+# =====================================================================
+
+### G1. Malicious-looking URL
+# Expect: HTTP 200
+# prediction "MALWARE", is_threat true, confidence 98.73,
+# inference_source "huggingface_transformer".
+# @name urlClassifyMalicious
+POST {{space}}/api/v2/url-classify
+Content-Type: {{json}}
+
+{ "url": "http://paypal-secure-login.verify-account.xyz/update/password.php" }
+
+### G2. Benign URL
+# Expect: HTTP 200
+# prediction "BENIGN", is_threat false, confidence 94.6, threat_score 0.054.
+# @name urlClassifyBenign
+POST {{space}}/api/v2/url-classify
+Content-Type: {{json}}
+
+{ "url": "https://github.com/login" }
+
+### G3. Blank url
+# Expect: HTTP 400
+# {"detail":"url required"}
+# @name urlClassifyBlank
+POST {{space}}/api/v2/url-classify
+Content-Type: {{json}}
+
+{ "url": "   " }
+
+
+# =====================================================================
+# H. DGA DETECTOR — POST /api/v2/dga-detect   (entropy heuristic)
+# =====================================================================
+
+### H1. Legitimate domain
+# Expect: HTTP 200
+# prediction "legit", is_threat false, threat_score 0.0, features.entropy 1.918.
+# @name dgaLegit
+POST {{space}}/api/v2/dga-detect
+Content-Type: {{json}}
+
+{ "domain": "google.com" }
+
+### H2. Algorithmically generated domain
+# Expect: HTTP 200
+# prediction "dga", is_threat true, threat_score 0.9, features.entropy 4.0.
+# @name dgaGenerated
+POST {{space}}/api/v2/dga-detect
+Content-Type: {{json}}
+
+{ "domain": "xkq7zt9bwpl3vnm2.com" }
+
+### H3. Same DGA domain behind "www."  (KNOWN ISSUE: only the first label is scored)
+# Expect: HTTP 200
+# The detector analyses domain.split('.')[0], so it scores "www" and returns
+# "legit" for an obviously generated domain. Pass the bare domain (H2) to get a
+# real answer. I1 and J1 are affected the same way for URLs with subdomains.
+# @name dgaSubdomainBlindSpot
+POST {{space}}/api/v2/dga-detect
+Content-Type: {{json}}
+
+{ "domain": "www.xkq7zt9bwpl3vnm2.com" }
+
+### H4. Missing domain
+# Expect: HTTP 400
+# {"detail":"domain required"}
+# @name dgaMissing
+POST {{space}}/api/v2/dga-detect
+Content-Type: {{json}}
+
+{}
+
+
+# =====================================================================
+# I. ENRICHED URL ANALYSIS — POST /api/v2/url-enrich
+#    fused score = 60% sklearn max + 30% BERT + 10% DGA
+# =====================================================================
+
+### I1. Malicious URL
+# Expect: HTTP 200
+# risk_level "high", risk_score 75.8, components { ml_max 0.7119,
+# bert 0.9873, dga 0.35 }, risk_factors ["no_https","suspicious_tld",
+# "bert_flagged_malicious"]. Also returns ml_predictions, bert_classification,
+# dga_detection, explainability and features_analyzed.
+# @name urlEnrichMalicious
+POST {{space}}/api/v2/url-enrich
+Content-Type: {{json}}
+
+{ "url": "http://paypal-secure-login.verify-account.xyz/update/password.php" }
+
+### I2. Benign URL
+# Expect: HTTP 200
+# risk_level "low", risk_score 31.6, bert_classification.prediction "BENIGN",
+# risk_factors []. components.ml_max_threat_score is 0.5 only because of the
+# inverted anomaly model (C5).
+# @name urlEnrichBenign
+POST {{space}}/api/v2/url-enrich
+Content-Type: {{json}}
+
+{ "url": "https://github.com/login" }
+
+### I3. Missing url
+# Expect: HTTP 400
+# {"detail":"url required"}
+# @name urlEnrichMissing
+POST {{space}}/api/v2/url-enrich
+Content-Type: {{json}}
+
+{}
+
+
+# =====================================================================
+# J. IOC SCAN — POST /api/v2/ioc-scan
+#    Only "url" and "domain" are analysed. "ip" and "hash" are accepted but
+#    ignored by the deployed code.
+# =====================================================================
+
+### J1. URL + domain + ip + context
+# Expect: HTTP 200
+# ioc_results has "url" and "domain" (no "ip"); summary.overall_risk_level
+# "critical", risk_score 90.0, indicators_analyzed 2.
+# ai_analysis is always null: this endpoint is called with short timeouts, so
+# the in-Space chat model is not used for it. The key is kept for
+# compatibility. "context" in the body is accepted but no longer used.
+# @name iocScanFull
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{
+  "url": "http://xkq7zt9bwpl3vnm2.top/gate.php",
+  "domain": "xkq7zt9bwpl3vnm2.top",
+  "ip": "185.220.101.4",
+  "context": { "source": "rest-test" }
+}
+
+### J2. Domain only
+# Expect: HTTP 200
+# ioc_results has only "domain"; indicators_analyzed 1.
+# @name iocScanDomainOnly
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "domain": "xkq7zt9bwpl3vnm2.top" }
+
+### J3. URL only — the domain is derived from the URL's hostname
+# Expect: HTTP 200
+# ioc_results has "url" and "domain"; domain.value "github.com", DGA "legit".
+# summary says "medium" / risk_score 50.0 for github.com — anomaly-model
+# inversion again (C5).
+# @name iocScanUrlOnly
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "url": "https://github.com/login" }
+
+### J4. IP only — nothing is analysed
+# Expect: HTTP 200
+# ioc_results {}, overall_risk_level "unknown", indicators_analyzed 0.
+# @name iocScanIpOnly
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "ip": "185.220.101.4" }
+
+### J5. Hash only — nothing is analysed
+# Expect: HTTP 200
+# ioc_results {}, overall_risk_level "unknown".
+# @name iocScanHashOnly
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "hash": "44d88612fea8a8f36de82e1278abb02f" }
+
+
+# =====================================================================
+# K. SECURITY LLM — POST /api/v2/security-chat
+#    Answered by the open-source model running inside the Space
+#    (Qwen3.5-2B on CPU). No hosted or paid model is involved.
+# =====================================================================
+
+### K1. Ask the security LLM
+# Expect: HTTP 200
+# model "local-llm", source "space_local_llamacpp", model_id "unsloth/Qwen3.5-2B-GGUF",
+# "response" = generated text, plus tokens, elapsed_ms and truncated.
+# Takes about 7-18 s. The text is generated, so it differs on every run.
+# truncated true means the 17 s time limit or the token limit was reached and
+# the answer was trimmed to its last complete sentence (2026-10-12: 95 tokens,
+# truncated true).
+# If no LLM answers (busy, still loading, or failed), the body is the
+# rule-based fallback instead: model_used "cyberforge-ml-fallback".
+# @name securityChat
+POST {{space}}/api/v2/security-chat
+Content-Type: {{json}}
+
+{
+  "query": "Explain what a DGA domain is and how to detect one.",
+  "max_tokens": 200
+}
+
+### K2. Missing query
+# Expect: HTTP 400
+# {"detail":"query required"}
+# @name securityChatMissing
+POST {{space}}/api/v2/security-chat
+Content-Type: {{json}}
+
+{}
+
+
+# =====================================================================
+# L. CONTEXT-GROUNDED CHATBOT — POST /api/v2/chat
+#    The in-Space model answers, so "model_used" is "unsloth/Qwen3.5-2B-GGUF";
+#    the ML heuristic is the fallback.
+#    Watch "sources" to confirm the context was parsed. If a request arrives
+#    while the model is busy for more than 5 s, or still loading, the reply is
+#    the template fallback with model_used "cyberforge-ml-fallback".
+# =====================================================================
+
+### L1. Plain message with a URL
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; session_id echoed back; confidence 0.72;
+# sources contains an "ml_scan" entry and an "ml_models" entry ("4/4 loaded").
+# risk_level comes from the "Risk Level: X" line of the answer (2026-10-12:
+# "high" / 70.0), raised to the ML scan score when that is higher.
+# @name chatWithUrl
+POST {{space}}/api/v2/chat
+Content-Type: {{json}}
+
+{
+  "message": "Is http://paypal-secure-login.verify-account.xyz/update safe to open?",
+  "session_id": "rest-test-1"
+}
+
+### L2. Message with no URL
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; sources has only the "ml_models" entry.
+# A general how-to question: the answer should have no risk line, so
+# risk_level is "low" / 20.0 (the default when no risk line is present).
+# @name chatNoUrl
+POST {{space}}/api/v2/chat
+Content-Type: {{json}}
+
+{
+  "message": "How do I recognise a phishing email?",
+  "session_id": "rest-test-2"
+}
+
+### L3. Full live context (telemetry, scans, threats, behavioural alerts)
+# Expect: HTTP 200
+# sources types, in order: telemetry, scan_history, threats, behavioral,
+# ml_models. telemetry value "CPU 42%, RAM 67%, Net↓ 120 kbps".
+# The generated answer should mention the context that was sent (the
+# free-prizes.tk scan at 78/100, the credential-form alert).
+# @name chatFullContext
+POST {{space}}/api/v2/chat
+Content-Type: {{json}}
+
+{
+  "message": "Summarise my current security posture.",
+  "session_id": "rest-test-3",
+  "context": {
+    "telemetry": { "cpu": 42, "ram": 67, "net_in_kbps": 120 },
+    "recent_scans": [
+      { "url": "http://free-prizes.tk/win", "risk_score": 78, "category": "phishing" },
+      { "url": "https://github.com", "risk_score": 4, "category": "benign" }
+    ],
+    "active_threats": [
+      { "type": "phishing", "severity": "high", "source": "browser-monitor" }
+    ],
+    "behavioral_alerts": [
+      { "pattern": "credential form on new domain", "score": 0.9 }
+    ]
+  }
+}
+
+### L4. Translate mode (raw machine data -> plain language)
+# Expect: HTTP 200
+# sources contains a "raw_translation" entry whose value is the first 100
+# characters of raw_data. The answer should restate the DGA alert in plain
+# language. Check the wording: on 2026-10-12 it expanded DGA as "Distributed
+# Denial of Attack", which is wrong (Domain Generation Algorithm).
+# @name chatTranslate
+POST {{space}}/api/v2/chat
+Content-Type: {{json}}
+
+{
+  "message": "Explain this alert in plain English.",
+  "session_id": "rest-test-4",
+  "context": {
+    "translate": true,
+    "raw_data": "{\"model\":\"dga_detector\",\"prediction\":\"dga\",\"threat_score\":0.9,\"features\":{\"entropy\":4.0,\"vowel_ratio\":0.0}}"
+  }
+}
+
+### L5. Conversation history
+# Expect: HTTP 200
+# History is only folded into the prompt when a context block is also sent,
+# so this request includes telemetry. The answer should follow on from the
+# earlier turns (the suspicious email link).
+# @name chatHistory
+POST {{space}}/api/v2/chat
+Content-Type: {{json}}
+
+{
+  "message": "And what should I do about it?",
+  "session_id": "rest-test-5",
+  "conversation_history": [
+    { "role": "user", "content": "I clicked a link in a suspicious email." },
+    { "role": "assistant", "content": "That may be a phishing attempt." }
+  ],
+  "context": { "telemetry": { "cpu_percent": 12, "ram_percent": 40 } }
+}
+
+### L6. Missing message
+# Expect: HTTP 400
+# {"detail":"message required"}
+# @name chatMissing
+POST {{space}}/api/v2/chat
+Content-Type: {{json}}
+
+{ "session_id": "rest-test-6" }
+
+
+# =====================================================================
+# M. LEGACY ANALYSIS ENDPOINTS (called by backend mlService.js)
+#    All of these send a prompt to the in-Space LLM (Qwen3.5-2B) and wrap
+#    its text. Each takes about
+#    7-18 s. The model handles one request at a time. risk_score here is on a
+#    0–10 scale, not 0–100, and is read from the answer's "Risk Level: X" line.
+#    If no LLM answers, the reply is the ML/keyword fallback: model_used
+#    "cyberforge-ml-fallback", response ending "AI chat model offline".
+# =====================================================================
+
+### M1. /analyze — query containing a URL (runs phishing/malware/web-attack models)
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; confidence 0.82;
+# insights ["Analysis by unsloth/Qwen3.5-2B-GGUF via space_local_llamacpp"].
+# risk_level is read from the "Risk Level: X" line of the answer: Critical 9.0,
+# High 7.0, Medium 5.0, Low 3.0; Low when there is no such line.
+# 2026-10-12: "Critical" for this raw-IP PayPal look-alike URL.
+# @name analyzeWithUrl
+POST {{space}}/analyze
+Content-Type: {{json}}
+
+{
+  "query": "Check http://192.168.10.5/secure-login/paypal.com/verify?account=1&session=abc@evil",
+  "context": { "user": "rest-test" },
+  "conversation_history": []
+}
+
+### M2. /analyze — malware keyword branch
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; a generated list of response steps.
+# 2026-10-12: risk_level "Low" — the model wrote "Risk Level: Low (No evidence
+# of infection)" for a suspected-ransomware report. It now under-rates
+# unconfirmed incidents; read the steps, do not rely on the label.
+# @name analyzeMalwareKeyword
+POST {{space}}/analyze
+Content-Type: {{json}}
+
+{ "query": "I think my laptop has ransomware, what do I do?" }
+
+### M3. /analyze — phishing keyword branch
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; generated advice about the fake login page.
+# @name analyzePhishingKeyword
+POST {{space}}/analyze
+Content-Type: {{json}}
+
+{ "query": "I received an email with a fake login page asking for my credentials." }
+
+### M4. /analyze — "safe" keyword branch
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; says the vendor cannot be verified; risk_level "Low".
+# @name analyzeSafeKeyword
+POST {{space}}/analyze
+Content-Type: {{json}}
+
+{ "query": "Is this a legitimate and trusted vendor?" }
+
+### M5. /analyze — no keywords (capability summary)
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; a short description of what it can do; no risk line,
+# so risk_level "Low".
+# @name analyzeGeneric
+POST {{space}}/analyze
+Content-Type: {{json}}
+
+{ "query": "Hello, what can you do?" }
+
+### M6. /scan-threats
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF".
+# 2026-10-12: the answer still claimed the URL is a "known phishing domain".
+# Nothing was looked up: the model has no threat-intelligence data. Do not
+# treat such claims as findings.
+# @name scanThreats
+POST {{space}}/scan-threats
+Content-Type: {{json}}
+
+{
+  "data": {
+    "urls": ["http://free-prizes.tk/win"],
+    "hashes": ["44d88612fea8a8f36de82e1278abb02f"]
+  }
+}
+
+### M7. /api/insights/generate
+# Expect: HTTP 200
+# Body has exactly: insights (generated string), confidence 0.82, timestamp.
+# @name insightsGenerate
+POST {{space}}/api/insights/generate
+Content-Type: {{json}}
+
+{
+  "query": "Summarise phishing risk for http://192.168.1.50/login.php",
+  "context": { "org": "acme" }
+}
+
+### M8. /api/analysis/network
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF". The answer should pick out the internal source address
+# and the large upload to port 4444.
+# @name analysisNetwork
+POST {{space}}/api/analysis/network
+Content-Type: {{json}}
+
+{
+  "traffic_data": {
+    "src_ip": "10.0.0.12",
+    "dst_ip": "185.220.101.4",
+    "dst_port": 4444,
+    "bytes_out": 982331,
+    "protocol": "tcp"
+  }
+}
+
+### M9. /api/ai/execute-task
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; an assessment of the beacon to 185.220.101.4:4444.
+# @name executeTask
+POST {{space}}/api/ai/execute-task
+Content-Type: {{json}}
+
+{
+  "task_type": "threat_hunt",
+  "task_data": { "indicator": "trojan beacon to 185.220.101.4:4444" }
+}
+
+### M10. /api/browser/analyze
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; should flag the paypal look-alike tab URL.
+# @name browserAnalyze
+POST {{space}}/api/browser/analyze
+Content-Type: {{json}}
+
+{
+  "session_data": {
+    "tabs": [
+      { "url": "http://paypal-secure-login.verify-account.xyz/update", "title": "PayPal Login" }
+    ]
+  }
+}
+
+### M11. /api/threat-feeds/analyze
+# Expect: HTTP 200
+# model_used "unsloth/Qwen3.5-2B-GGUF"; a summary of the feed entry.
+# @name threatFeedsAnalyze
+POST {{space}}/api/threat-feeds/analyze
+Content-Type: {{json}}
+
+{
+  "feed": "otx",
+  "pulses": [
+    { "name": "Emotet campaign", "indicators": ["http://free-prizes.tk/win"] }
+  ]
+}
+
+
+# =====================================================================
+# N. DATASETS — POST /api/datasets/process   (stub: echoes the name)
+# =====================================================================
+
+### N1. Process dataset
+# Expect: HTTP 200
+# {"status":"processed","dataset_name":"phishing_detection","timestamp":"..."}
+# No processing happens; the endpoint only acknowledges.
+# @name datasetsProcess
+POST {{space}}/api/datasets/process
+Content-Type: {{json}}
+
+{ "dataset_name": "phishing_detection" }
+
+
+# =====================================================================
+# O. ERROR HANDLING
+# =====================================================================
+
+### O1. Malformed JSON body
+# Expect: HTTP 500
+# Plain-text "Internal Server Error" (the handlers do not catch JSON parse
+# errors; a 400/422 would be the correct response).
+# @name errMalformedJson
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{not json
+
+### O2. null where a string is expected
+# Expect: HTTP 500
+# "Internal Server Error" — None.strip() is not guarded.
+# @name errNullField
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "url": null }
+
+### O3. Wrong HTTP method
+# Expect: HTTP 404
+# {"detail":"Not Found"} — the Gradio mount at "/" answers instead of a 405.
+# @name errWrongMethod
+GET {{space}}/analyze-url
+
+### O4. Unknown route
+# Expect: HTTP 404
+# {"detail":"Not Found"}
+# @name errUnknownRoute
+GET {{space}}/api/v2/does-not-exist

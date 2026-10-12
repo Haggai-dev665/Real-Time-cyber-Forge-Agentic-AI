@@ -48,7 +48,8 @@ for nb_name in notebooks_to_fix:
 print("\nDone! Now uploading to HF...")
 
 from huggingface_hub import HfApi
-api = HfApi(token='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')
+from hf_env import get_hf_token
+api = HfApi(token=get_hf_token())
 
 for nb_name in notebooks_to_fix:
     nb_path = notebooks_dir / nb_name

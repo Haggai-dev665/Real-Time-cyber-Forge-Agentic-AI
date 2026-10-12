@@ -1046,7 +1046,7 @@ pub fn prepare_filesystem(app: &tauri::AppHandle) {
     seed(
         dir.join("config").join("integrations.json"),
         &serde_json::to_string_pretty(&serde_json::json!({
-            "backend": { "url": "https://cyberforge-ddd97655464f.herokuapp.com", "enabled": true },
+            "backend": { "url": crate::state::backend_url(), "enabled": true },
             "huggingface": { "provider": "DeepSeek via HF Inference", "configured": false },
             "threatIntel": { "provider": "AlienVault OTX", "enabled": true }
         }))

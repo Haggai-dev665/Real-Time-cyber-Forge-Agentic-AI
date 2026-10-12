@@ -101,13 +101,12 @@ router.post('/ingest', optionalAuth, async (req, res) => {
     if (APPWRITE_CONFIG.collections.networkCaptures) {
       for (const r of records) {
         try {
-          await appwriteService.createDocumentWithPermissionFallback(
+          await appwriteService.createPrivateDocument(
             APPWRITE_CONFIG.databaseId,
             APPWRITE_CONFIG.collections.networkCaptures,
             r.id,
             r,
-            [],
-            'network capture'
+            []
           );
           persisted += 1;
         } catch (e) {

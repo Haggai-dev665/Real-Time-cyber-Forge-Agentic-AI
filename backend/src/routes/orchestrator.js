@@ -15,8 +15,14 @@
  */
 
 const express = require('express');
+const { verifiedUser } = require('../middleware/verifiedUser');
 const router  = express.Router();
+
+// Every route below requires a signed-in user, and takes the user's identity
+// from the session rather than from the request.
+router.use(verifiedUser);
 const axios   = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
 const { agentOrchestrator } = require('../services/agentOrchestrator');
 const { memoryService }     = require('../services/memoryService');
 
@@ -115,7 +121,7 @@ router.get('/health', (req, res) => {
  * Response: { status, hfSpace, memory, agents, timestamp }
  */
 router.get('/health/deep', async (req, res) => {
-    const HF_URL = process.env.AI_SERVICE_URL || 'https://che237-cyberforge.hf.space';
+    const HF_URL = getMLServiceUrl();
     const stats  = agentOrchestrator.getStats();
 
     // Probe HF Space

@@ -1,6 +1,7 @@
 require('dotenv').config();
 
-const { Client, Databases, Permission, Role, AppwriteException } = require('node-appwrite');
+const { Client, Databases, AppwriteException } = require('node-appwrite');
+const { PRIVATE_COLLECTION_PERMISSIONS } = require('../src/services/appwritePermissions');
 
 const endpoint = process.env.APPWRITE_ENDPOINT || 'https://nyc.cloud.appwrite.io/v1';
 const projectId = process.env.APPWRITE_PROJECT_ID || '698d422300098f2baa8a';
@@ -20,12 +21,7 @@ const client = new Client()
 
 const databases = new Databases(client);
 
-const collectionPermissions = [
-  Permission.read(Role.users()),
-  Permission.create(Role.users()),
-  Permission.update(Role.users()),
-  Permission.delete(Role.users())
-];
+const collectionPermissions = PRIVATE_COLLECTION_PERMISSIONS;
 
 const schema = {
   users: {

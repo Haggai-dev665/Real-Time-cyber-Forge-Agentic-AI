@@ -1,8 +1,9 @@
 const axios = require('axios');
+const { getMLServiceUrl } = require('../config/ml.config');
 
 class AnalysisService {
   constructor() {
-    this.aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+    this.aiServiceUrl = getMLServiceUrl();
     this.threatDatabase = new Set([
       'malware.example.com',
       'phishing-site.com',

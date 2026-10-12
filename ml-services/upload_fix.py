@@ -4,7 +4,9 @@
 from huggingface_hub import upload_file
 import time
 
-token = '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'
+from hf_env import get_hf_token
+
+token = get_hf_token()
 repo = 'Che237/cyberforge'
 
 files_to_upload = [

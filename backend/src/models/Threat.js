@@ -6,6 +6,14 @@
 const mongoose = require('mongoose');
 
 const threatSchema = new mongoose.Schema({
+  // Legacy unowned rows remain unavailable to private APIs until a reviewed
+  // ownership migration. Every new threat must have an explicit owner.
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    immutable: true
+  },
   threatId: {
     type: String,
     required: true,
@@ -36,7 +44,7 @@ const threatSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['detected', 'investigating', 'confirmed', 'mitigated', 'false_positive'],
+    enum: ['detected', 'investigating', 'confirmed', 'mitigated', 'false_positive', 'dismissed', 'resolved'],
     default: 'detected'
   },
   source: {
@@ -129,6 +137,7 @@ const threatSchema = new mongoose.Schema({
 
 // Index for efficient queries
 threatSchema.index({ type: 1, severity: 1 });
+threatSchema.index({ user: 1, 'detection.timestamp': -1 });
 threatSchema.index({ 'detection.timestamp': -1 });
 threatSchema.index({ status: 1 });
 threatSchema.index({ 'source.domain': 1 });

@@ -3,38 +3,38 @@
  */
 
 const express = require('express');
-const { body, query, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { detectThreats, getThreatStats } = require('../services/threatService');
+const Threat = require('../models/Threat');
+const { ownedThreatFilter } = require('../services/threatOwnership');
 
 const router = express.Router();
 
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Validation failed', errors: errors.array() });
+  next();
+};
+const threatIdValidation = param('threatId').isString().isLength({ min: 1, max: 128 });
+const statusFilter = status => {
+  if (status === 'active') return { $in: ['detected', 'investigating', 'confirmed'] };
+  if (status === 'resolved') return { $in: ['resolved', 'mitigated', 'false_positive'] };
+  return status;
+};
+
 // Get all threats for user
 router.get('/',
-  // Optional auth - allow desktop apps to access basic threats
-  (req, res, next) => {
-    const userAgent = req.get('User-Agent') || '';
-    const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
-    
-    if (isDesktopApp && req.headers.authorization) {
-      return auth(req, res, next);
-    }
-
-    if (isDesktopApp) {
-      req.isDesktopApp = true;
-      return next();
-    }
-
-    return auth(req, res, next);
-  },
+  auth,
   [
-    query('page').optional().isInt({ min: 1 }),
-    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('severity').optional().isIn(['low', 'medium', 'high', 'critical']),
-    query('status').optional().isIn(['active', 'resolved', 'dismissed']),
-    query('type').optional().isString()
+    query('status').optional().isIn(['active', 'resolved', 'dismissed', 'detected', 'investigating', 'confirmed', 'mitigated', 'false_positive']),
+    query('type').optional().isString().isLength({ max: 100 })
   ],
+  validate,
   asyncHandler(async (req, res) => {
     try {
       const {
@@ -46,10 +46,9 @@ router.get('/',
       } = req.query;
 
       // Get real threat data from DB
-      const Threat = require('../models/Threat');
-      const query = {};
+      const query = ownedThreatFilter(req.user.userId);
       if (severity) query.severity = severity;
-      if (status) query.status = status;
+      if (status) query.status = statusFilter(status);
       if (type) query.type = type;
 
       const totalCount = await Threat.countDocuments(query);
@@ -85,48 +84,15 @@ router.get('/',
 
 // Get threat statistics
 router.get('/stats',
-  // Optional auth - allow desktop apps to access basic stats
-  (req, res, next) => {
-    const userAgent = req.get('User-Agent') || '';
-    const isDesktopApp = userAgent.includes('cyber-forge-desktop') || userAgent.includes('Electron');
-    
-    console.log('🔍 Threats Stats Auth Check:', { userAgent, isDesktopApp });
-    
-    if (isDesktopApp && req.headers.authorization) {
-      console.log('🔐 Desktop app with token, enforcing auth');
-      return auth(req, res, next);
-    }
-
-    if (isDesktopApp) {
-      req.isDesktopApp = true;
-      console.log('✅ Desktop app detected, skipping auth');
-      return next();
-    }
-
-    console.log('🔐 Web/mobile client, requiring auth');
-    return auth(req, res, next);
-  },
+  auth,
   asyncHandler(async (req, res) => {
     try {
-      let stats;
-      
-      if (req.isDesktopApp) {
-        // Return basic stats for desktop app
-        stats = await getThreatStats();
-      } else {
-        // Return user-specific stats for authenticated users
-        stats = await getThreatStats(req.user.userId);
-      }
+      const stats = await getThreatStats(req.user.userId);
+      if (!stats) throw new Error('Threat statistics unavailable');
       
       res.json({
         success: true,
-        data: stats || {
-          total_threats: 0,
-          active_threats: 0,
-          resolved_threats: 0,
-          high_severity: 0,
-          last_scan: new Date().toISOString()
-        }
+        data: stats
       });
 
     } catch (error) {
@@ -202,25 +168,14 @@ router.post('/scan',
 // Get specific threat details
 router.get('/:threatId',
   auth,
+  threatIdValidation,
+  validate,
   asyncHandler(async (req, res) => {
     try {
       const { threatId } = req.params;
 
-      // Mock threat details
-      const threat = {
-        id: threatId,
-        type: 'suspicious_url',
-        severity: 'medium',
-        description: 'Suspicious URL detected',
-        url: 'https://example.com',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        recommendations: [
-          'Avoid visiting this URL',
-          'Run antivirus scan',
-          'Check browser security settings'
-        ]
-      };
+      const threat = await Threat.findOne(ownedThreatFilter(req.user.userId, threatId));
+      if (!threat) return res.status(404).json({ success: false, message: 'Threat not found' });
 
       res.json({
         success: true,
@@ -239,23 +194,34 @@ router.get('/:threatId',
 // Dismiss/resolve threat
 router.put('/:threatId/dismiss',
   auth,
+  threatIdValidation,
   [
-    body('reason').optional().isString(),
-    body('notes').optional().isString()
+    body('reason').optional().isString().isLength({ max: 1000 }),
+    body('notes').optional().isString().isLength({ max: 4000 })
   ],
+  validate,
   asyncHandler(async (req, res) => {
     try {
       const { threatId } = req.params;
       const { reason, notes } = req.body;
 
-      // Mock dismissal
+      const timestamp = new Date();
+      const threat = await Threat.findOneAndUpdate(
+        ownedThreatFilter(req.user.userId, threatId),
+        {
+          $set: { status: 'dismissed' },
+          $push: { timeline: { timestamp, event: 'Threat dismissed by user', details: JSON.stringify({ reason, notes }), user: req.user.userId } }
+        },
+        { new: true, runValidators: true }
+      );
+      if (!threat) return res.status(404).json({ success: false, message: 'Threat not found' });
       res.json({
         success: true,
         message: 'Threat dismissed successfully',
         data: {
           threatId,
           status: 'dismissed',
-          dismissed_at: new Date().toISOString(),
+          dismissed_at: timestamp.toISOString(),
           reason,
           notes
         }
@@ -273,23 +239,34 @@ router.put('/:threatId/dismiss',
 // Mark threat as resolved
 router.put('/:threatId/resolve',
   auth,
+  threatIdValidation,
   [
-    body('resolution').optional().isString(),
-    body('notes').optional().isString()
+    body('resolution').optional().isString().isLength({ max: 1000 }),
+    body('notes').optional().isString().isLength({ max: 4000 })
   ],
+  validate,
   asyncHandler(async (req, res) => {
     try {
       const { threatId } = req.params;
       const { resolution, notes } = req.body;
 
-      // Mock resolution
+      const timestamp = new Date();
+      const threat = await Threat.findOneAndUpdate(
+        ownedThreatFilter(req.user.userId, threatId),
+        {
+          $set: { status: 'resolved' },
+          $push: { timeline: { timestamp, event: 'Threat resolved by user', details: JSON.stringify({ resolution, notes }), user: req.user.userId } }
+        },
+        { new: true, runValidators: true }
+      );
+      if (!threat) return res.status(404).json({ success: false, message: 'Threat not found' });
       res.json({
         success: true,
         message: 'Threat resolved successfully',
         data: {
           threatId,
           status: 'resolved',
-          resolved_at: new Date().toISOString(),
+          resolved_at: timestamp.toISOString(),
           resolution,
           notes
         }

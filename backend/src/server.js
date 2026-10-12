@@ -1,5 +1,11 @@
 require('dotenv').config();
 
+// Fail before importing services, opening connections, or starting timers.
+const { getJwtSecret } = require('./config/auth.config');
+getJwtSecret();
+const { getMLServiceUrl } = require('./config/ml.config');
+getMLServiceUrl();
+
 // Initialize Datadog tracer FIRST (before any other imports)
 const { initializeDatadog } = require('./config/datadog.config');
 initializeDatadog();
@@ -16,7 +22,7 @@ const path = require('path');
 
 const { setupWebSocketServer } = require('./services/websocket');
 const { connectDatabase } = require('./services/database');
-const { connectRedis } = require('./services/redis');
+const { connectRedis, status: cacheStatus } = require('./services/redis');
 const { appwriteService } = require('./services/appwriteService');
 const { datadogMetrics } = require('./services/datadogMetrics');
 const authRoutes = require('./routes/auth');
@@ -90,11 +96,9 @@ class CyberForgeServer {
       ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
       : [];
 
-    const productionOrigins = ['https://cyberforge-ddd97655464f.herokuapp.com'];
-
-    const allowedOrigins = process.env.NODE_ENV === 'production'
-      ? [...productionOrigins, ...configuredOrigins, ...defaultOrigins]
-      : [...defaultOrigins, ...configuredOrigins];
+    // Web origins, including this deployment's own public URL, come from
+    // ALLOWED_ORIGINS; no deployment address is written into the code.
+    const allowedOrigins = [...defaultOrigins, ...configuredOrigins];
 
     this.app.use(cors({
       origin: (origin, callback) => {
@@ -137,7 +141,9 @@ class CyberForgeServer {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         memory: process.memoryUsage(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        // 'redis', or 'memory' when Redis is unavailable and the cache is in-process
+        cache: cacheStatus().mode
       });
     });
 

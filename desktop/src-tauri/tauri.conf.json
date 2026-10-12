@@ -46,7 +46,7 @@
     "shortDescription": "AI-Powered Cybersecurity Console",
     "longDescription": "CyberForge — AI Security Console. A standalone Tauri desktop shell for the CyberForge SOC interface: threat overview, agent core, sandbox, investigations, reports and more.",
     "publisher": "CyberForge",
-    "homepage": "https://cyberforge-ddd97655464f.herokuapp.com",
+    "homepage": "https://cyberforge-f3249b5a0919.herokuapp.com",
     "resources": [
       "hf_config.example.json"
     ],

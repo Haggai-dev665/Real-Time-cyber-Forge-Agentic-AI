@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const { getMLServiceUrl } = require('../config/ml.config');
 const { body, query } = require('express-validator');
 const { auth, authorize } = require('../middleware/auth');
 const AIAnalysisService = require('../services/ai/AIAnalysisService');
@@ -1482,7 +1483,7 @@ router.post('/chat-context',
       const liveContext = await assembleLiveContext(req);
 
       // 2. Forward to HF Space /api/v2/chat
-      const HF_BASE = process.env.AI_SERVICE_URL || 'https://che237-cyberforge.hf.space';
+      const HF_BASE = getMLServiceUrl();
       const hfPayload = {
         message,
         session_id,

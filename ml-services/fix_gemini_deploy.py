@@ -4,7 +4,9 @@
 from huggingface_hub import HfApi
 import time
 
-TOKEN = "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"
+from hf_env import get_hf_token
+
+TOKEN = get_hf_token()
 SPACE = "Che237/cyberforge"
 api = HfApi(token=TOKEN)
 

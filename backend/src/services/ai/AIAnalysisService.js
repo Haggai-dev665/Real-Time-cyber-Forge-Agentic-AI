@@ -4,11 +4,14 @@
  */
 
 const axios = require('axios');
+const { getMLServiceUrl } = require('../../config/ml.config');
+const { unavailableMLResult } = require('../mlCapabilities');
 const { Analysis, Threat } = require('../../models');
+const { ownedThreatFilter } = require('../threatOwnership');
 
 class AIAnalysisService {
   constructor() {
-    this.mlServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+    this.mlServiceUrl = getMLServiceUrl();
     this.models = {
       threatDetection: 'threat-detector-v1',
       malwareAnalysis: 'malware-analyzer-v1',
@@ -21,6 +24,10 @@ class AIAnalysisService {
    * Analyze URL for threats
    */
   async analyzeUrl(url, userId, context = {}) {
+    // Refused before an Analysis record is created for work that cannot run.
+    const unavailable = unavailableMLResult('POST', '/analyze/url');
+    if (unavailable) return unavailable;
+
     try {
       // Create analysis record
       const analysis = new Analysis({
@@ -87,6 +94,9 @@ class AIAnalysisService {
    * Analyze file for malware
    */
   async analyzeFile(fileData, userId, context = {}) {
+    const unavailable = unavailableMLResult('POST', '/analyze/file');
+    if (unavailable) return unavailable;
+
     try {
       const analysis = new Analysis({
         type: 'file',
@@ -157,6 +167,9 @@ class AIAnalysisService {
    * Analyze network traffic patterns
    */
   async analyzeNetworkTraffic(networkData, userId) {
+    const unavailable = unavailableMLResult('POST', '/analyze/network');
+    if (unavailable) return unavailable;
+
     try {
       const analysis = new Analysis({
         type: 'network',
@@ -223,6 +236,7 @@ class AIAnalysisService {
   async createThreatFromAnalysis(analysis, results) {
     try {
       const threat = new Threat({
+        user: ownedThreatFilter(analysis.user).user,
         type: this.mapAnalysisToThreatType(analysis.type, results.threat_types),
         severity: this.mapRiskScoreToSeverity(results.risk_score),
         description: this.generateThreatDescription(analysis, results),

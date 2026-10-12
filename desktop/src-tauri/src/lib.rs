@@ -36,6 +36,7 @@ pub fn run() {
             commands::auth_get_user,
             commands::auth_is_authenticated,
             commands::auth_get_token,
+            commands::get_backend_url,
             // Floating agent panel — real local + backend telemetry
             system::get_system_stats,
             system::detect_browsers,

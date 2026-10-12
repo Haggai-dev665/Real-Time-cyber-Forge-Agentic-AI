@@ -7,6 +7,19 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Instant;
 
+/// The deployed backend. Set the `CYBERFORGE_BACKEND_URL` environment variable
+/// before launching to use a staging or local backend instead.
+pub const DEFAULT_BACKEND_URL: &str = "https://cyberforge-f3249b5a0919.herokuapp.com";
+
+/// Backend base URL for this process, without a trailing slash.
+pub fn backend_url() -> String {
+    std::env::var("CYBERFORGE_BACKEND_URL")
+        .ok()
+        .map(|value| value.trim().trim_end_matches('/').to_string())
+        .filter(|value| value.starts_with("https://") || value.starts_with("http://"))
+        .unwrap_or_else(|| DEFAULT_BACKEND_URL.to_string())
+}
+
 /// Authenticated user profile, normalized from the backend response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserInfo {
@@ -51,8 +64,7 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> Self {
         Self {
-            // Same backend the existing desktop-app authenticates against.
-            backend_url: "https://cyberforge-ddd97655464f.herokuapp.com".into(),
+            backend_url: backend_url(),
             auth_token: None,
             current_user: None,
             is_authenticated: false,

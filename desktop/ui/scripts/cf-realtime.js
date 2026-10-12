@@ -13,13 +13,12 @@
  *   window.addEventListener('cf:event',   e => …)   // e.detail = {type,data,ts}
  *   window.addEventListener('cf:stream-status', e => …) // {connected:boolean}
  *
- * Depends on `window.CF` (cyberforge-shared.js) for API_BASE + getToken().
+ * Depends on `window.CF` (cyberforge-shared.js) for backendUrl() + getToken().
  * Auto-reconnects with capped exponential backoff; re-reads the auth token on
  * every (re)connect so a fresh login is picked up without a page reload.
  */
 (function () {
   const CF = window.CF || {};
-  const API_BASE = CF.API_BASE || 'https://cyberforge-ddd97655464f.herokuapp.com';
 
   // backend event type -> CustomEvent name
   const EVENT_MAP = {
@@ -75,8 +74,10 @@
     if (stopped || typeof EventSource === 'undefined') return;
     clearTimeout(reconnectTimer);
 
+    const base = CF.backendUrl ? await CF.backendUrl() : null;
+    if (!base) { scheduleReconnect(); return; }
     const token = await getToken();
-    const url = `${API_BASE}/api/stream` + (token ? `?token=${encodeURIComponent(token)}` : '');
+    const url = `${base}/api/stream` + (token ? `?token=${encodeURIComponent(token)}` : '');
 
     try {
       es = new EventSource(url);

@@ -1,9 +1,9 @@
 {
   "name": "cyberforge-platform",
   "description": "CyberForge - AI-Powered Cybersecurity Platform",
-  "website": "https://cyberforge-ddd97655464f.herokuapp.com/",
+  "website": "https://cyberforge-f3249b5a0919.herokuapp.com/",
   "repository": "https://github.com/your-username/Real-Time-cyber-Forge-Agentic-AI",
-  "logo": "https://cyberforge-ddd97655464f.herokuapp.com/logo.png",
+  "logo": "https://cyberforge-f3249b5a0919.herokuapp.com/logo.png",
   "success_url": "/",
   "keywords": [
     "cybersecurity",
@@ -45,7 +45,7 @@
     },
     "ALLOWED_ORIGINS": {
       "description": "Comma-separated list of allowed CORS origins",
-      "value": "https://cyberforge-ddd97655464f.herokuapp.com"
+      "value": "https://cyberforge-f3249b5a0919.herokuapp.com"
     },
     "HUGGINGFACE_ML_URL": {
       "description": "HuggingFace ML service URL",

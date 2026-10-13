@@ -17,6 +17,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const { redactUrl } = require('./utils/redactUrl');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
@@ -124,6 +125,8 @@ class CyberForgeServer {
 
     // Compression and logging
     this.app.use(compression());
+    // Credentials that travel in a query string never reach the access log.
+    morgan.token('url', (req) => redactUrl(req.originalUrl || req.url));
     this.app.use(morgan('combined'));
 
     // Body parsing

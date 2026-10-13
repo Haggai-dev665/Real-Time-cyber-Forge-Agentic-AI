@@ -365,7 +365,7 @@ class CyberforgeAgent {
     );
 
     if (!scrapedData.success) {
-      throw new Error(`Web scraper failed: ${scrapedData.error}`);
+      throw new Error(`Rendered-page scan unavailable (${scrapedData.error_code}): ${scrapedData.error}`);
     }
 
     // Format data for analysis
@@ -379,13 +379,17 @@ class CyberforgeAgent {
       sourceType: 'web_scraper',
       targetUrl,
       evidenceType: 'security_scan',
-      summary: `Risk Score: ${analysisData.risk_score}/100 (${analysisData.risk_level})`,
+      summary: `Page evidence: ${analysisData.evidence_status}; ${analysisData.signals.length} signal(s); evidence score ${analysisData.risk_score === null ? 'none' : `${analysisData.risk_score}/100`}`,
       checksum: this.calculateChecksum(scrapedData),
       storageLocation: 'memory', // In production, this would be S3, etc.
       metadata: {
         riskScore: analysisData.risk_score,
         riskLevel: analysisData.risk_level,
-        securitySummary: analysisData.security_summary
+        securitySummary: analysisData.security_summary,
+        scanId: analysisData.scan_id,
+        evidenceStatus: analysisData.evidence_status,
+        coverageGaps: analysisData.coverage_gaps,
+        signalIds: analysisData.signals.map(signal => signal.id)
       }
     });
 

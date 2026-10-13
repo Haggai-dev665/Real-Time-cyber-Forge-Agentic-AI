@@ -54,11 +54,15 @@ router.get('/stats', auth, (req, res) => {
 router.get('/response-log', auth, (req, res) => {
   try {
     const { limit, nodeId, actionType, policyId } = req.query;
+    // Analysts and administrators see every response; other users see only the
+    // responses their own evaluations triggered.
+    const seesAll = ['analyst', 'admin'].includes(req.user.role);
     const result = policyEngineService.getResponseLog({
       limit: limit ? parseInt(limit) : 100,
       nodeId,
       actionType,
       policyId,
+      userId: seesAll ? undefined : String(req.user.userId),
     });
     res.json(result);
   } catch (err) {
@@ -159,13 +163,13 @@ router.delete('/:id', auth, authorize('admin'), (req, res) => {
  * Evaluate a risk event against all enabled policies.
  * Body: { nodeId, metrics: { risk_score, alert_count_24h, ... } }
  */
-router.post('/evaluate', (req, res) => {
+router.post('/evaluate', auth, (req, res) => {
   try {
     const { nodeId, metrics } = req.body;
     if (!nodeId || !metrics) {
       return res.status(400).json({ success: false, error: 'Missing nodeId or metrics' });
     }
-    const result = policyEngineService.evaluate({ nodeId, metrics });
+    const result = policyEngineService.evaluate({ nodeId, metrics, userId: String(req.user.userId) });
     res.json({ success: true, data: result });
   } catch (err) {
     logger.error(`[Policy] Evaluate error: ${err.message}`);

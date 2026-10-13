@@ -3,6 +3,7 @@
  */
 
 const { logActivity } = require('../utils/logger');
+const { redactUrl } = require('../utils/redactUrl');
 
 /**
  * Global error handler middleware
@@ -11,7 +12,7 @@ const errorHandler = (err, req, res, next) => {
   // Log the error
   logActivity('error', err.message, {
     stack: err.stack,
-    url: req.originalUrl,
+    url: redactUrl(req.originalUrl),
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent')
@@ -93,7 +94,7 @@ const errorHandler = (err, req, res, next) => {
  * 404 handler for undefined routes
  */
 const notFound = (req, res, next) => {
-  const error = new Error(`Not found - ${req.originalUrl}`);
+  const error = new Error(`Not found - ${redactUrl(req.originalUrl)}`);
   res.status(404);
   next(error);
 };

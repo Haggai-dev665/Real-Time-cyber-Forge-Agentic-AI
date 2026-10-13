@@ -65,10 +65,27 @@ afterAll(async () => {
 
 test('the supported manifest matches the routes the deployed ML service defines', () => {
   const service = fs.readFileSync(path.join(repoRoot, 'ml-services', 'hf_space_deploy', 'app.py'), 'utf8');
-  const defined = [...service.matchAll(/^@api\.(get|post|put|delete)\("([^"]+)"\)/gm)]
+  const all = [...service.matchAll(/^@api\.(get|post|put|delete)\("([^"]+)"\)/gm)]
     .map(match => key([match[1].toUpperCase(), match[2]]));
+  // Model training is maintenance by the Space's owner, with the owner's own
+  // Hugging Face token. The backend has no such token and must never call it.
+  const ownerOnly = all.filter(route => route.includes(' /api/admin/'));
+  const defined = all.filter(route => !ownerOnly.includes(route));
   expect(defined.length).toBeGreaterThan(0);
   expect(SUPPORTED_ML_ROUTES.map(key).sort()).toEqual([...new Set(defined)].sort());
+  expect(ownerOnly.sort()).toEqual(['GET /api/admin/train/status', 'POST /api/admin/train']);
+  expect(SUPPORTED_ML_ROUTES.map(key).filter(route => route.includes('/api/admin/'))).toEqual([]);
+});
+
+test('the ML service refuses its owner-only routes to anyone but the owner', () => {
+  const service = fs.readFileSync(path.join(repoRoot, 'ml-services', 'hf_space_deploy', 'app.py'), 'utf8');
+  for (const handler of ['api_admin_train', 'api_admin_train_status']) {
+    const start = service.indexOf(`async def ${handler}(`);
+    const body = service.slice(start, service.indexOf('\n\n\n', start));
+    expect(start).toBeGreaterThan(0);
+    expect(body).toContain('owner_token');
+    expect(body).toContain('status_code=403');
+  }
 });
 
 test('every unsupported ML call left in the backend is listed as retired, and nothing else is', () => {

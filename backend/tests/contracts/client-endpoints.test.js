@@ -77,3 +77,80 @@ test('every client default and the deploy manifest name the same backend', () =>
   expect(manifest.env.ALLOWED_ORIGINS.value).toBe(desktop);
   expect(manifest.website).toBe(`${desktop}/`);
 });
+
+// ---------------------------------------------------------------------------
+// The mobile app against the guarded backend (B03.2c). Every call it makes must
+// exist in the backend, and may go out without the session only where the
+// backend route is public.
+
+function mobileCalls() {
+  const source = read('mobile-app/src/api/endpoints.ts');
+  const starts = [...source.matchAll(/\bapi\.(get|post)\b/g)];
+  return starts.map((match, index) => {
+    const call = source.slice(match.index, index + 1 < starts.length ? starts[index + 1].index : source.length);
+    return {
+      method: match[1],
+      route: call.match(/[`'"](\/[^`'"$?]*)/)[1],
+      anonymous: /anonymous:\s*true/.test(call)
+    };
+  });
+}
+
+function backendDefines(method, route) {
+  const server = read('backend/src/server.js');
+  if (route === '/health') return method === 'get' && /this\.app\.get\('\/health'/.test(server);
+  const files = Object.fromEntries([...server.matchAll(/const (\w+) = require\('\.\/routes\/([\w-]+)'\)/g)].map(m => [m[1], m[2]]));
+  const mounts = [...server.matchAll(/this\.app\.use\('([^']+)',\s*(\w+)\)/g)]
+    .filter(m => files[m[2]] && (route === m[1] || route.startsWith(`${m[1]}/`)))
+    .sort((a, b) => b[1].length - a[1].length);
+  if (!mounts.length) return false;
+  const rest = route.slice(mounts[0][1].length) || '/';
+  const routes = read(`backend/src/routes/${files[mounts[0][2]]}.js`);
+  return [...routes.matchAll(/^router\.(\w+)\(\s*['"`]([^'"`]*)['"`]/gm)].some(match => match[1] === method && match[2] === rest);
+}
+
+test('every backend call the mobile app makes exists in the backend with that method', () => {
+  const calls = mobileCalls();
+  expect(calls.length).toBeGreaterThan(15);
+  expect(calls.filter(call => !backendDefines(call.method, call.route)).map(call => `${call.method} ${call.route}`)).toEqual([]);
+});
+
+test('the mobile app sends its session on every call except sign-in, registration and the health check', () => {
+  const tokenless = mobileCalls().filter(call => call.anonymous).map(call => call.route).sort();
+  expect(tokenless).toEqual(['/api/auth/login', '/api/auth/register', '/health']);
+});
+
+test('the mobile app makes requests only through its API client and calls no restricted control route', () => {
+  const files = [...sourceFiles('mobile-app/src', ['.ts', '.tsx']), ...sourceFiles('mobile-app/app', ['.ts', '.tsx'])];
+  const direct = files.filter(file => /\bfetch\(/.test(read(file))).map(file => file.split(path.sep).join('/'));
+  expect(direct).toEqual(['mobile-app/src/api/client.ts']);
+
+  const restricted = /\/api\/(otx\/(start|stop)-polling|distributed\/|audit\/|policy\b)/;
+  expect(files.filter(file => restricted.test(read(file)))).toEqual([]);
+});
+
+// The live feed (B04): the backend refuses a session token in the stream URL,
+// so each client has to authenticate the way the backend accepts.
+test('no client puts its session token in the live-feed URL', () => {
+  const clients = [
+    ...sourceFiles('mobile-app/src', ['.ts', '.tsx']),
+    ...sourceFiles('desktop/ui/scripts', ['.js'])
+  ];
+  const inUrl = clients.filter(file => /[?&]token=/.test(read(file))).map(file => file.split(path.sep).join('/'));
+  expect(inUrl).toEqual([]);
+
+  const mobile = read('mobile-app/src/api/sse.ts');
+  expect(mobile).toMatch(/headers:\s*token\s*\?\s*\{\s*Authorization:/);
+
+  const desktop = read('desktop/ui/scripts/cf-realtime.js');
+  expect(desktop).toContain('/api/stream/ticket');
+  expect(desktop).toMatch(/ticket=\$\{encodeURIComponent\(ticket\)\}/);
+  expect(desktop).toContain('lastEventId');
+});
+
+test('the backend offers the stream ticket the desktop asks for', () => {
+  const stream = read('backend/src/routes/stream.js');
+  expect(stream).toMatch(/router\.post\('\/ticket', auth,/);
+  expect(stream).toContain('req.query.ticket');
+  expect(stream).toContain('req.query.lastEventId');
+});

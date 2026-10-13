@@ -10,6 +10,10 @@ jest.mock('../../src/services/sandboxAnalysisService', () => require('../helpers
 jest.mock('../../src/services/cyberforgeMLService', () => require('../helpers/stub').anything());
 jest.mock('../../src/services/otx', () => require('../helpers/stub').anything());
 jest.mock('../../src/services/websocket', () => require('../helpers/stub').anything());
+jest.mock('../../src/services/policyEngineService', () => ({ policyEngineService: { evaluate: jest.fn(() => ({ triggered: [] })) } }));
+jest.mock('../../src/services/distributedIntelligenceService', () => ({
+  distributedIntelligenceService: { registerNode: jest.fn(() => ({ success: true, nodeId: 'node-1' })) }
+}));
 jest.mock('../../src/utils/logger', () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }));
 
 const fs = require('fs');
@@ -17,6 +21,8 @@ const path = require('path');
 const express = require('express');
 const User = require('../../src/models/User');
 const { appwriteService } = require('../../src/services/appwriteService');
+const { distributedIntelligenceService } = require('../../src/services/distributedIntelligenceService');
+const { policyEngineService } = require('../../src/services/policyEngineService');
 const { signSessionToken } = require('../../src/services/sessionTokens');
 const { bindVerifiedUser } = require('../../src/middleware/verifiedUser');
 const { serve } = require('../helpers/http');
@@ -60,6 +66,8 @@ beforeAll(async () => {
   const app = express();
   app.use(express.json());
   for (const [file, prefix] of Object.entries(GUARDED)) app.use(prefix, require(`../../src/routes/${file}`));
+  app.use('/api/policy', require('../../src/routes/policy'));
+  app.use('/api/distributed', require('../../src/routes/distributed'));
   client = await serve(app);
 });
 afterAll(async () => {
@@ -85,6 +93,50 @@ test.each(guardedRoutes.filter((route, index) => index % 6 === 0))(
     });
     expect(response.status).toBe(401);
   });
+
+// Routes in files that also hold public routes, guarded one by one (B03.2b).
+const INDIVIDUALLY_GUARDED = [
+  { method: 'POST', url: '/api/policy/evaluate' },
+  { method: 'POST', url: '/api/distributed/nodes/register' },
+  { method: 'POST', url: '/api/distributed/telemetry/sync' },
+  { method: 'GET', url: '/api/distributed/metrics/global' },
+  { method: 'GET', url: '/api/distributed/metrics/stats' },
+  { method: 'GET', url: '/api/distributed/weights' }
+];
+
+test.each(INDIVIDUALLY_GUARDED)('$method $url rejects a request with no session', async ({ method, url }) => {
+  const response = await client.request(url, {
+    method, body: method === 'GET' ? undefined : { nodeId: 'node-1', metrics: {}, nonce: 'n', sequenceId: 1 }
+  });
+  expect(response.status).toBe(401);
+  expect(policyEngineService.evaluate).not.toHaveBeenCalled();
+  expect(distributedIntelligenceService.registerNode).not.toHaveBeenCalled();
+});
+
+test('public routes in those two files are not behind the session check', async () => {
+  // Their services are stubbed here, so only the absence of a 401 is meaningful.
+  for (const route of ['/api/distributed/health', '/api/policy/meta']) {
+    const response = await fetch(`${client.url}${route}`);
+    expect({ route, unauthorized: response.status === 401 }).toEqual({ route, unauthorized: false });
+  }
+});
+
+test('a node is registered to the signed-in account, not to a header the caller chooses', async () => {
+  const response = await client.request('/api/distributed/nodes/register', {
+    method: 'POST', body: { nodeId: 'node-1' },
+    headers: { ...session(), 'x-node-id': otherAccount }
+  });
+  expect(response.status).toBe(200);
+  expect(distributedIntelligenceService.registerNode).toHaveBeenCalledWith({ nodeId: 'node-1' }, member._id);
+});
+
+test('policy evaluation runs for a signed-in user', async () => {
+  const response = await client.request('/api/policy/evaluate', {
+    method: 'POST', headers: session(), body: { nodeId: 'node-1', metrics: { riskScore: 10 } }
+  });
+  expect(response.status).toBe(200);
+  expect(policyEngineService.evaluate).toHaveBeenCalledTimes(1);
+});
 
 test('alerts are listed for the signed-in account, whatever userId the caller sends', async () => {
   const response = await client.request(`/api/agent/alerts?userId=${otherAccount}&limit=5`, { headers: session() });
@@ -142,18 +194,9 @@ const PUBLIC_BY_DESIGN = [
   'GET /api/stream' // authenticates per event; see stream.test.js
 ];
 
-// Known gaps, still to be closed under B03.2. Remove an entry when its route is protected.
-const STILL_OPEN = [
-  'POST /api/ai/chat',
-  'POST /api/ai/chat-context',
-  'POST /api/ai/scrape-website',
-  'GET /api/distributed/metrics/global',
-  'GET /api/distributed/metrics/stats',
-  'POST /api/distributed/nodes/register',
-  'POST /api/distributed/telemetry/sync',
-  'GET /api/distributed/weights',
-  'POST /api/policy/evaluate'
-];
+// Every gap the first inventory found has been closed. Keep this empty: a route
+// that genuinely must be public belongs in PUBLIC_BY_DESIGN with a reason.
+const STILL_OPEN = [];
 
 test('route inventory: no unauthenticated route exists outside the reviewed lists', () => {
   const server = fs.readFileSync(path.join(routesDirectory, '..', 'server.js'), 'utf8');

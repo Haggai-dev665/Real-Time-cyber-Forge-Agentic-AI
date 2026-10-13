@@ -26,7 +26,7 @@ HUB = "https://huggingface.co"
 BASE_DIR = Path(__file__).resolve().parent
 SOURCE_DIR = BASE_DIR / "hf_space_deploy"
 BACKUP_DIR = BASE_DIR / "hf_space_clone"
-FILES = ["Dockerfile", "requirements.txt", "app.py"]
+FILES = ["Dockerfile", "requirements.txt", "app.py", "url_features.py", "trainer.py"]
 DONE_STAGES = {"RUNNING", "BUILD_ERROR", "RUNTIME_ERROR", "CONFIG_ERROR", "NO_APP_FILE", "PAUSED", "STOPPED"}
 
 
@@ -54,6 +54,9 @@ def backup(token):
     dest.mkdir(parents=True, exist_ok=True)
     for name in FILES:
         status, data = request("GET", f"{HUB}/spaces/{SPACE}/resolve/main/{name}", token)
+        if status == 404:
+            print(f"  {name} is not on the Space yet; nothing to back up")
+            continue
         if status != 200:
             raise SystemExit(f"Could not back up {name} (HTTP {status}); nothing was pushed.")
         (dest / name).write_bytes(data)
@@ -64,6 +67,9 @@ def backup(token):
 def push(token, folder, message):
     lines = [json.dumps({"key": "header", "value": {"summary": message, "description": ""}})]
     for name in FILES:
+        if not (folder / name).exists():
+            # A backup taken before this file existed does not contain it.
+            continue
         content = (folder / name).read_bytes().replace(b"\r\n", b"\n")
         if token.encode() in content:
             raise SystemExit(f"{name} contains the HF token; refusing to push.")
@@ -143,7 +149,7 @@ def main():
     elif arg == "":
         backup(token)
         print(f"Pushing {SOURCE_DIR.name}/ to {SPACE}")
-        commit = push(token, SOURCE_DIR, "Replace Gemini with in-Space open-source LLM (Qwen3.5-2B via llama.cpp)")
+        commit = push(token, SOURCE_DIR, "Update the CyberForge ML service")
         wait_for_build(token, commit)
     else:
         raise SystemExit(__doc__)

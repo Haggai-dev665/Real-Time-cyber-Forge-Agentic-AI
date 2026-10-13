@@ -4,13 +4,45 @@ const { analyzePageData } = require('./analysisService');
 const { detectThreats } = require('./threatService');
 const { logActivity } = require('../utils/logger');
 const otxService = require('./otx');
+const { verifySessionToken } = require('./sessionTokens');
 
+// A socket that has not presented a valid session within this time is closed.
+const AUTH_DEADLINE_MS = 10 * 1000;
+// Close codes in the application range: 4401 not authenticated, 4403 session ended.
+const CLOSE_UNAUTHENTICATED = 4401;
+const CLOSE_SESSION_ENDED = 4403;
+
+/**
+ * Every socket belongs to one signed-in account. A client proves who it is with
+ * its session token, either in the Authorization header when it connects or in
+ * an `authenticate` message; nothing else is accepted from it until then, and
+ * nothing is sent to it that belongs to another account.
+ */
 class WebSocketManager {
   constructor() {
     this.clients = new Map();
     this.desktopClients = new Map();
     this.mobileClients = new Map();
     this.otxInitialized = false;
+    this.authDeadlineMs = AUTH_DEADLINE_MS;
+  }
+
+  isAuthenticated(client) {
+    return Boolean(client && client.userId) && Date.now() < client.expiresAt;
+  }
+
+  /** Bind a socket to the account its session token proves. False if it does not verify. */
+  bindSession(client, token) {
+    try {
+      const decoded = verifySessionToken(token);
+      client.userId = decoded.userId;
+      client.expiresAt = decoded.exp * 1000;
+      client.authenticated = true;
+      clearTimeout(client.authTimer);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   setupWebSocketServer(wss, clientsMap) {
@@ -22,13 +54,26 @@ class WebSocketManager {
         id: clientId,
         socket: ws,
         type: 'unknown',
+        userId: null,
+        expiresAt: 0,
         connectedAt: new Date(),
         lastActivity: new Date(),
         ip: request.socket.remoteAddress
       };
 
       this.clients.set(clientId, clientInfo);
-      
+
+      const header = request.headers.authorization;
+      if (typeof header === 'string' && header.startsWith('Bearer ') && !this.bindSession(clientInfo, header.slice(7))) {
+        this.clients.delete(clientId);
+        ws.close(CLOSE_UNAUTHENTICATED, 'invalid session');
+        return;
+      }
+      clientInfo.authTimer = setTimeout(() => {
+        if (!this.isAuthenticated(clientInfo)) ws.close(CLOSE_UNAUTHENTICATED, 'authentication required');
+      }, this.authDeadlineMs);
+      if (clientInfo.authTimer.unref) clientInfo.authTimer.unref();
+
       logActivity('info', `New WebSocket connection: ${clientId} from ${clientInfo.ip}`);
 
       // Send welcome message
@@ -57,6 +102,7 @@ class WebSocketManager {
       ws.on('close', (code, reason) => {
         const client = this.clients.get(clientId);
         if (client) {
+          clearTimeout(client.authTimer);
           if (client.type === 'desktop') {
             this.desktopClients.delete(clientId);
           } else if (client.type === 'mobile') {
@@ -83,8 +129,13 @@ class WebSocketManager {
       });
     });
 
-    // Health check interval
-    setInterval(() => {
+    // Health check interval. It also ends sockets whose session has run out.
+    const health = setInterval(() => {
+      this.clients.forEach((client) => {
+        if (client.userId && !this.isAuthenticated(client)) {
+          client.socket.close(CLOSE_SESSION_ENDED, 'session expired');
+        }
+      });
       wss.clients.forEach((ws) => {
         if (!ws.isAlive) {
           return ws.terminate();
@@ -93,6 +144,8 @@ class WebSocketManager {
         ws.ping();
       });
     }, 30000);
+    if (health.unref) health.unref();
+    wss.on('close', () => clearInterval(health));
 
     console.log('✅ WebSocket server initialized');
     
@@ -118,17 +171,34 @@ class WebSocketManager {
     console.log('✅ OTX threat streaming initialized');
   }
 
+  /**
+   * Send a threat event. Public OTX intelligence carries no account and goes to
+   * every signed-in client; a threat that names an account goes to that account.
+   */
   broadcastThreat(threatEvent) {
     const message = JSON.stringify({
       type: 'otx_threat',
       threat: threatEvent,
       timestamp: new Date().toISOString()
     });
+    const owner = threatEvent && threatEvent.userId != null ? String(threatEvent.userId) : null;
 
-    // Send to all connected clients
     this.clients.forEach((client) => {
+      if (!this.isAuthenticated(client) || (owner && client.userId !== owner)) return;
       if (client.socket.readyState === WebSocket.OPEN) {
         client.socket.send(message);
+      }
+    });
+  }
+
+  /** Send to one account's signed-in sockets in `group`. With no owner, to nobody. */
+  sendToOwner(group, message, userId) {
+    if (userId == null) return;
+    const owner = String(userId);
+    const payload = JSON.stringify(message);
+    group.forEach(client => {
+      if (client.userId === owner && this.isAuthenticated(client) && client.socket.readyState === WebSocket.OPEN) {
+        client.socket.send(payload);
       }
     });
   }
@@ -153,8 +223,22 @@ class WebSocketManager {
   async handleMessage(clientId, message) {
     const client = this.clients.get(clientId);
     if (!client) return;
+    if (!message || typeof message !== 'object' || typeof message.type !== 'string') {
+      throw new Error('A message must be an object with a type');
+    }
 
     client.lastActivity = new Date();
+
+    // Nothing is accepted from a socket before it has proved who it is.
+    if (message.type !== 'authenticate' && !this.isAuthenticated(client)) {
+      client.socket.send(JSON.stringify({
+        type: 'error',
+        code: 'unauthenticated',
+        message: 'Send an authenticate message with a valid session token first'
+      }));
+      if (client.userId) client.socket.close(CLOSE_SESSION_ENDED, 'session expired');
+      return;
+    }
 
     switch (message.type) {
       case 'identify':
@@ -216,12 +300,14 @@ class WebSocketManager {
 
   async handleIdentification(clientId, message) {
     const client = this.clients.get(clientId);
-    const clientType = message.client_type;
-    
+    const clientType = ['desktop', 'mobile'].includes(message.client_type) ? message.client_type : 'unknown';
+
     client.type = clientType;
     client.version = message.version;
     client.platform = message.platform;
 
+    this.desktopClients.delete(clientId);
+    this.mobileClients.delete(clientId);
     if (clientType === 'desktop') {
       this.desktopClients.set(clientId, client);
     } else if (clientType === 'mobile') {
@@ -240,20 +326,26 @@ class WebSocketManager {
 
   async handleAuthentication(clientId, message) {
     const client = this.clients.get(clientId);
-    
-    // Store authentication info
-    client.userId = message.userId;
-    client.token = message.token;
-    client.authenticated = true;
+
+    // The account is the one the token proves. A `userId` in the message is
+    // ignored, and the token itself is not kept.
+    if (!this.bindSession(client, message.token)) {
+      client.socket.send(JSON.stringify({
+        type: 'authentication_failed',
+        timestamp: new Date().toISOString()
+      }));
+      client.socket.close(CLOSE_UNAUTHENTICATED, 'invalid session');
+      return;
+    }
 
     // Send authentication confirmation
     client.socket.send(JSON.stringify({
       type: 'authentication_confirmed',
-      userId: message.userId,
+      userId: client.userId,
       timestamp: new Date().toISOString()
     }));
 
-    logActivity('info', `Client authenticated: ${clientId} as user ${message.userId}`);
+    logActivity('info', `Client authenticated: ${clientId} as user ${client.userId}`);
   }
 
   async handleDesktopConnection(clientId, message) {
@@ -277,7 +369,7 @@ class WebSocketManager {
     client.type = 'mobile';
     this.mobileClients.set(clientId, client);
 
-    // Notify desktop clients about mobile connection
+    // Notify this account's desktop clients about the mobile connection
     this.broadcastToDesktops({
       type: 'mobile_connected',
       data: {
@@ -285,12 +377,13 @@ class WebSocketManager {
         deviceInfo: message.device_info,
         timestamp: new Date().toISOString()
       }
-    });
+    }, client.userId);
   }
 
   async handlePageVisit(clientId, message) {
     const pageData = message.data;
-    
+    if (!pageData || typeof pageData !== 'object') return;
+
     try {
       // Analyze page for security threats
       const analysisResult = await analyzePageData(pageData);
@@ -312,7 +405,7 @@ class WebSocketManager {
         }));
       }
 
-      // Forward to mobile clients
+      // Forward to this account's mobile clients
       this.broadcastToMobiles({
         type: 'page_analyzed',
         data: {
@@ -320,7 +413,7 @@ class WebSocketManager {
           riskLevel: analysisResult.riskLevel,
           timestamp: pageData.timestamp
         }
-      });
+      }, client && client.userId);
 
       // Check for threats
       if (analysisResult.hasThreats) {
@@ -463,8 +556,8 @@ class WebSocketManager {
       client.socket.send(JSON.stringify(threatAlert));
     }
 
-    // Alert mobile clients
-    this.broadcastToMobiles(threatAlert);
+    // Alert this account's mobile clients
+    this.broadcastToMobiles(threatAlert, client && client.userId);
   }
 
   async handleHeartbeat(clientId, message) {
@@ -482,20 +575,14 @@ class WebSocketManager {
     }
   }
 
-  broadcastToDesktops(message) {
-    this.desktopClients.forEach(client => {
-      if (client.socket.readyState === WebSocket.OPEN) {
-        client.socket.send(JSON.stringify(message));
-      }
-    });
+  /** Send to the desktop clients of one account. */
+  broadcastToDesktops(message, userId) {
+    this.sendToOwner(this.desktopClients, message, userId);
   }
 
-  broadcastToMobiles(message) {
-    this.mobileClients.forEach(client => {
-      if (client.socket.readyState === WebSocket.OPEN) {
-        client.socket.send(JSON.stringify(message));
-      }
-    });
+  /** Send to the mobile clients of one account. */
+  broadcastToMobiles(message, userId) {
+    this.sendToOwner(this.mobileClients, message, userId);
   }
 
   getStats() {

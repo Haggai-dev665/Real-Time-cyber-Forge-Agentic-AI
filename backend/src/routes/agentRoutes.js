@@ -17,6 +17,40 @@ const { mlServiceClient } = require('../services/mlServiceClient');
 const realtimeBus = require('../services/realtimeBus');
 const logger = require('../utils/logger');
 
+// The hosting platform ends a request after 30 seconds, and the chat model
+// alone can take that long. A scan therefore answers inside a budget: the
+// rendered-page scan gets a share of it, the explanation gets what is left,
+// and whatever has not finished is reported as missing instead of awaited.
+const scanBudgetMs = () => Number(process.env.SCAN_BUDGET_MS) || 24000;
+const pageScanShareMs = () => Math.min(11000, Math.round(scanBudgetMs() * 0.45));
+
+/**
+ * The explanation for a scan, if the chat model answers within `budgetMs`.
+ * A late answer is not thrown away: `whenLate` receives it, and the caller
+ * publishes it to the owner's live feed. A failed explanation never fails the
+ * scan; the detection models' result stands on its own.
+ */
+async function explainWithinBudget(mlOutput, analysisData, budgetMs, whenLate) {
+  if (budgetMs < 2000) return mlServiceClient.unavailableExplanation('unavailable');
+  const pending = Promise.resolve().then(() => mlServiceClient.getExplanation(mlOutput, analysisData));
+  let timer;
+  const outOfTime = new Promise(resolve => { timer = setTimeout(() => resolve(null), budgetMs); });
+  try {
+    const explanation = await Promise.race([pending, outOfTime]);
+    if (explanation) return explanation;
+  } catch (error) {
+    logger.warn(`⚠️ Explanation failed: ${error.message}`);
+    return mlServiceClient.unavailableExplanation('unavailable');
+  } finally {
+    clearTimeout(timer);
+  }
+  pending.then(explanation => { if (explanation) whenLate(explanation); })
+    .catch(error => logger.warn(`⚠️ Late explanation failed: ${error.message}`));
+  return mlServiceClient.unavailableExplanation('pending');
+}
+
+const explanationStatus = explanation => (explanation.available === false ? explanation.status : 'complete');
+
 /**
  * Start an agent
  * POST /api/agent/start
@@ -66,7 +100,7 @@ router.post('/stop', async (req, res) => {
   try {
     const { agentName = 'default' } = req.body;
 
-    await agentManager.stopAgent(agentName);
+    await agentManager.stopAgent(agentName, req.user.userId);
 
     res.json({
       success: true,
@@ -91,7 +125,7 @@ router.get('/status/:agentName?', (req, res) => {
   try {
     const agentName = req.params.agentName || 'default';
 
-    const status = agentManager.getAgentStatus(agentName);
+    const status = agentManager.getAgentStatus(agentName, req.user.userId);
 
     res.json({
       success: true,
@@ -113,7 +147,7 @@ router.get('/status/:agentName?', (req, res) => {
  */
 router.get('/list', (req, res) => {
   try {
-    const agents = agentManager.listAgents();
+    const agents = agentManager.listAgents(req.user.userId);
 
     res.json({
       success: true,
@@ -144,6 +178,16 @@ router.post('/task/create', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'agentId, userId, taskType, and targetUrl are required'
+      });
+    }
+
+    // A task can only be queued for an agent that belongs to the signed-in
+    // account. Another account's agent is reported exactly like a missing one.
+    const agent = await appwriteService.getAgent(agentId).catch(() => null);
+    if (!agent || String(agent.user_id) !== String(req.user.userId)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Agent not found'
       });
     }
 
@@ -183,8 +227,17 @@ router.get('/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
 
-    // Get task from Appwrite using service method
-    const task = await appwriteService.getTask(taskId);
+    // Another account's task is reported exactly like a missing one.
+    const task = await appwriteService.getTask(taskId).catch(error => {
+      if (error?.code === 404) return null;
+      throw error;
+    });
+    if (!task || String(task.user_id) !== String(req.user.userId)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found'
+      });
+    }
 
     res.json({
       success: true,
@@ -252,7 +305,7 @@ router.get('/activity', async (req, res) => {
     const { userId } = req.query;
 
     let agents = [];
-    try { agents = agentManager.listAgents() || []; } catch (e) { agents = []; }
+    try { agents = agentManager.listAgents(req.user.userId) || []; } catch (e) { agents = []; }
 
     let alerts = [];
     if (userId) {
@@ -405,8 +458,7 @@ router.get('/browser-intelligence', async (req, res) => {
  * POST /api/agent/scan-url
  *
  * This is the endpoint the desktop app's URL monitor calls for every new URL
- * the user visits. No auth required (same as task/create) so the floating agent
- * can call it without a login token.
+ * the user visits. It requires a signed-in user, like every route in this file.
  */
 router.post('/scan-url', async (req, res) => {
   try {
@@ -418,34 +470,24 @@ router.post('/scan-url', async (req, res) => {
 
     logger.info(`🌐 Real-time URL scan requested: ${url} (browser: ${browser || 'unknown'})`);
 
-    // ── Step 1: Web Scraper ──────────────────────────────────────────
+    // ── Step 1: Rendered-page scan ───────────────────────────────────
+    // The scanner is one source of evidence. When it is unavailable the scan
+    // goes on with the URL models and reports the gap; it never stops with a
+    // zero score, and never calls the page clean.
+    const scanStart = Date.now();
+    const timeLeft = () => scanBudgetMs() - (Date.now() - scanStart);
     const scraperStart = Date.now();
-    const scrapedData = await webScraperAPIService.scrapeWebsite(url);
+    const scrapedData = await webScraperAPIService.scrapeWebsite(url, { budgetMs: pageScanShareMs() });
     const scraperDuration = Date.now() - scraperStart;
-
     if (!scrapedData.success) {
-      logger.warn(`⚠️ Scraper failed for ${url}: ${scrapedData.error}`);
-      return res.json({
-        success: true,
-        data: {
-          url,
-          scraperSuccess: false,
-          scraperError: scrapedData.error,
-          riskScore: 0,
-          riskLevel: 'unknown',
-          category: 'unreachable',
-          summary: `Could not scrape ${url}: ${scrapedData.error}`,
-          recommendations: ['Verify the URL is correct and accessible'],
-          scraperDuration
-        }
-      });
+      logger.warn(`⚠️ Rendered-page evidence unavailable (${scrapedData.error_code}): ${scrapedData.error}`);
     }
 
     // ── Step 2: Format for analysis ──────────────────────────────────
     const analysisData = webScraperAPIService.formatForAIAnalysis(scrapedData);
     const aiContext = webScraperAPIService.generateAIContext(analysisData);
 
-    logger.info(`📊 Scraper risk score for ${url}: ${analysisData.risk_score}/100 (${analysisData.risk_level})`);
+    logger.info(`📊 Page evidence: ${analysisData.evidence_status}; ${analysisData.signals.length} signal(s); evidence score ${analysisData.risk_score === null ? 'none' : analysisData.risk_score}`);
 
     // ── Step 3: ML Classification (no fallback — real HF ML models) ─
     const mlStart = Date.now();
@@ -453,10 +495,17 @@ router.post('/scan-url', async (req, res) => {
     logger.info(`🤖 ML classification for ${url}: ${mlOutput.category} (score: ${mlOutput.riskScore}, confidence: ${mlOutput.confidence})`);
     const mlDuration = Date.now() - mlStart;
 
-    // ── Step 4: Gemini Explanation (no fallback — real Gemini API) ────
+    // ── Step 4: Explanation, within what is left of the time budget ──
     const geminiStart = Date.now();
-    const geminiExplanation = await mlServiceClient.getExplanation(mlOutput, analysisData);
-    logger.info(`💡 Gemini explanation generated for ${url}`);
+    const geminiExplanation = await explainWithinBudget(mlOutput, analysisData, timeLeft() - 1500, late => {
+      realtimeBus.emit('scan:explanation', {
+        userId: userId || null, url,
+        summary: late.summary, fullAnalysis: late.fullAnalysis,
+        recommendations: late.recommendations, modelUsed: late.modelUsed,
+        scannedAt: new Date().toISOString()
+      });
+    });
+    logger.info(`💡 Explanation for ${url}: ${explanationStatus(geminiExplanation)}`);
     const geminiDuration = Date.now() - geminiStart;
 
     // ── Step 5: Store evidence + create alert if needed ──────────────
@@ -468,7 +517,7 @@ router.post('/scan-url', async (req, res) => {
           deviceId: 'desktop',
           severity: mlOutput.riskScore >= 70 ? 'critical' : mlOutput.riskScore >= 50 ? 'high' : 'medium',
           source: 'scraper',
-          description: `[${mlOutput.category}] ${geminiExplanation.summary || ''} — ${url}`.substring(0, 4096),
+          description: `[${mlOutput.category}] ${geminiExplanation.available === false ? '' : geminiExplanation.summary || ''} — ${url}`.substring(0, 4096),
           evidence: [
             `URL: ${url}`,
             `Category: ${mlOutput.category}`,
@@ -486,8 +535,10 @@ router.post('/scan-url', async (req, res) => {
     }
 
     // ── Push this scan to every live dashboard over SSE (real-time) ──
+    // A low score is only a clean result when the page was actually observed.
     const verdict = mlOutput.riskScore >= 70 ? 'malicious'
-      : mlOutput.riskScore >= 40 ? 'suspicious' : 'safe';
+      : mlOutput.riskScore >= 40 ? 'suspicious'
+      : analysisData.evidence_status === 'complete' ? 'safe' : 'unknown';
     realtimeBus.emit('scan:update', {
       url,
       browser: browser || 'unknown',
@@ -528,9 +579,21 @@ router.post('/scan-url', async (req, res) => {
         pageTitle: pageTitle || '',
         sessionId: sessionId || null,
 
-        // Scraper results
-        scraperSuccess: true,
+        // Rendered-page evidence. `scraperSuccess` is whether the scanner
+        // returned a scan; `evidenceStatus` is how much of the page it covers.
+        scraperSuccess: scrapedData.success,
+        scraperError: scrapedData.success ? null : scrapedData.error,
+        scraperErrorCode: scrapedData.error_code,
         scraperDuration,
+        scanId: analysisData.scan_id,
+        verdict,
+        evidenceStatus: analysisData.evidence_status,
+        coverage: analysisData.coverage,
+        coverageGaps: analysisData.coverage_gaps,
+        signals: analysisData.signals,
+        evidenceScore: analysisData.risk_score,
+        finalUrl: analysisData.final_url || null,
+        forms: analysisData.forms || [],
         securitySummary: analysisData.security_summary,
         networkSummary: analysisData.network_summary,
         performance: analysisData.performance,
@@ -547,7 +610,9 @@ router.post('/scan-url', async (req, res) => {
         modelPredictions: mlOutput.modelPredictions,
         mlDuration,
 
-        // Gemini analysis
+        // Explanation from the chat model. `explanationStatus` is 'complete',
+        // 'pending' (it will follow as a scan:explanation event) or 'unavailable'.
+        explanationStatus: explanationStatus(geminiExplanation),
         summary: geminiExplanation.summary,
         fullAnalysis: geminiExplanation.fullAnalysis,
         recommendations: geminiExplanation.recommendations,
@@ -598,19 +663,32 @@ router.post('/scan-url/batch', async (req, res) => {
     const cap = Math.max(1, Math.min(5, concurrency));
     logger.info(`📦 Batch URL scan: ${urls.length} URLs, concurrency=${cap}, userId=${userId || 'anon'}`);
 
-    // Process URLs in chunks to respect concurrency cap
+    // Process URLs in chunks to respect concurrency cap. The whole batch shares
+    // one time budget: a URL that cannot be started in time is reported as not
+    // scanned, and explanations are only waited for while time remains.
+    const batchStart = Date.now();
+    const timeLeft = () => scanBudgetMs() - (Date.now() - batchStart);
     const results = [];
     for (let i = 0; i < urls.length; i += cap) {
       const chunk = urls.slice(i, i + cap);
+      const chunksLeft = Math.ceil((urls.length - i) / cap);
+      const chunkShare = timeLeft() / chunksLeft;
       const chunkResults = await Promise.all(chunk.map(async (url) => {
+        if (timeLeft() < 1500) {
+          return { url, success: false, error: 'Not scanned: the batch ran out of time. Send fewer URLs per request.' };
+        }
         try {
-          const scrapedData = await webScraperAPIService.scrapeWebsite(url);
-          if (!scrapedData.success) {
-            return { url, success: false, error: scrapedData.error };
-          }
+          // As in /scan-url: a scanner failure is reported as missing coverage,
+          // and the URL is still classified by the URL models.
+          const scrapedData = await webScraperAPIService.scrapeWebsite(url, { budgetMs: Math.max(1000, Math.min(pageScanShareMs(), chunkShare * 0.5)) });
           const analysisData = webScraperAPIService.formatForAIAnalysis(scrapedData);
           const mlOutput = await mlServiceClient.classifyThreat(analysisData);
-          const geminiExplanation = await mlServiceClient.getExplanation(mlOutput, analysisData);
+          const geminiExplanation = await explainWithinBudget(mlOutput, analysisData, Math.min(timeLeft() - 1500, chunkShare * 0.5), late => {
+            realtimeBus.emit('scan:explanation', {
+              userId: userId || null, url, summary: late.summary, fullAnalysis: late.fullAnalysis,
+              recommendations: late.recommendations, modelUsed: late.modelUsed, scannedAt: new Date().toISOString()
+            });
+          });
 
           let alertCreated = false;
           try {
@@ -620,7 +698,7 @@ router.post('/scan-url/batch', async (req, res) => {
                 deviceId: 'desktop',
                 severity: mlOutput.riskScore >= 70 ? 'critical' : mlOutput.riskScore >= 50 ? 'high' : 'medium',
                 source: 'batch-scan',
-                description: `[${mlOutput.category}] ${geminiExplanation.summary || ''} — ${url}`.substring(0, 4096),
+                description: `[${mlOutput.category}] ${geminiExplanation.available === false ? '' : geminiExplanation.summary || ''} — ${url}`.substring(0, 4096),
                 evidence: [`URL: ${url}`, `Category: ${mlOutput.category}`, ...(geminiExplanation.recommendations || []).slice(0, 2)],
                 confidence: mlOutput.confidence || 0.5,
                 riskScore: mlOutput.riskScore
@@ -637,6 +715,15 @@ router.post('/scan-url/batch', async (req, res) => {
               riskLevel: analysisData.risk_level,
               category: mlOutput.category,
               confidence: mlOutput.confidence,
+              verdict: mlOutput.riskScore >= 70 ? 'malicious'
+                : mlOutput.riskScore >= 40 ? 'suspicious'
+                : analysisData.evidence_status === 'complete' ? 'safe' : 'unknown',
+              scraperSuccess: scrapedData.success,
+              scraperError: scrapedData.success ? null : scrapedData.error,
+              evidenceStatus: analysisData.evidence_status,
+              coverageGaps: analysisData.coverage_gaps,
+              signals: analysisData.signals.map(signal => ({ id: signal.id, severity: signal.severity, title: signal.title })),
+              explanationStatus: explanationStatus(geminiExplanation),
               summary: geminiExplanation.summary,
               recommendations: geminiExplanation.recommendations,
               modelPredictions: mlOutput.modelPredictions,

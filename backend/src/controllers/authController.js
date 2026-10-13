@@ -340,7 +340,9 @@ class AuthController {
    */
   async logout(req, res) {
     try {
-      // In a more advanced implementation, you might maintain a blacklist of tokens
+      // Session tokens are not revocable yet, but the account's open live
+      // streams end here rather than running on until the token expires.
+      require('../routes/stream').closeStreamsFor(req.user.userId, 'signed_out');
       res.json({
         success: true,
         message: 'Logout successful'

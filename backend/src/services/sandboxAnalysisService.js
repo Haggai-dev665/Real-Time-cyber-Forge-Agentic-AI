@@ -205,7 +205,7 @@ class SandboxAnalysisService {
     // ANALYSIS ORCHESTRATION
     // ────────────────────────────────────────────────────────────
 
-    async analyzeUrl(url, additionalFeatures = {}, metadata = {}) {
+    async analyzeUrl(url, additionalFeatures = {}, metadata = {}, ownerId = null) {
         const startedAt = Date.now();
         const id = uuidv4();
 
@@ -238,6 +238,7 @@ class SandboxAnalysisService {
             findings,
             timeline: this._buildTimeline('url', startedAt, Date.now()),
             metadata,
+            ownerId: ownerId == null ? null : String(ownerId),
             createdAt: new Date().toISOString(),
             durationMs: Date.now() - startedAt,
         };
@@ -247,7 +248,7 @@ class SandboxAnalysisService {
         return scan;
     }
 
-    async analyzeFile(filename, buffer, mimeType = '', metadata = {}) {
+    async analyzeFile(filename, buffer, mimeType = '', metadata = {}, ownerId = null) {
         const startedAt = Date.now();
         const id = uuidv4();
 
@@ -306,6 +307,7 @@ class SandboxAnalysisService {
             findings,
             timeline: this._buildTimeline('file', startedAt, Date.now()),
             metadata,
+            ownerId: ownerId == null ? null : String(ownerId),
             createdAt: new Date().toISOString(),
             durationMs: Date.now() - startedAt,
         };
@@ -352,22 +354,28 @@ class SandboxAnalysisService {
         }
     }
 
-    getScan(id) {
-        return this.scans.get(id) || null;
+    // Every read below is for one account. A scan stored without an owner, or
+    // a read that names no owner, matches nothing.
+    _ownedBy(scan, ownerId) {
+        return scan.ownerId != null && ownerId != null && scan.ownerId === String(ownerId);
     }
 
-    deleteScan(id) {
-        const ok = this.scans.delete(id);
-        if (ok) {
-            const idx = this.scanOrder.indexOf(id);
-            if (idx >= 0) this.scanOrder.splice(idx, 1);
-        }
-        return ok;
+    getScan(id, ownerId) {
+        const scan = this.scans.get(id);
+        return scan && this._ownedBy(scan, ownerId) ? scan : null;
     }
 
-    listHistory({ limit = 50, offset = 0, type = null, verdict = null } = {}) {
+    deleteScan(id, ownerId) {
+        if (!this.getScan(id, ownerId)) return false;
+        this.scans.delete(id);
+        const idx = this.scanOrder.indexOf(id);
+        if (idx >= 0) this.scanOrder.splice(idx, 1);
+        return true;
+    }
+
+    listHistory({ limit = 50, offset = 0, type = null, verdict = null, ownerId } = {}) {
         let ids = this.scanOrder;
-        let scans = ids.map(id => this.scans.get(id)).filter(Boolean);
+        let scans = ids.map(id => this.scans.get(id)).filter(scan => scan && this._ownedBy(scan, ownerId));
         if (type)    scans = scans.filter(s => s.type === type);
         if (verdict) scans = scans.filter(s => s.verdict === verdict);
         const total = scans.length;
@@ -386,12 +394,13 @@ class SandboxAnalysisService {
     }
 
     /**
-     * Aggregate IOCs across all stored scans, deduplicated.
+     * Aggregate IOCs across one account's stored scans, deduplicated.
      * Useful for the IOC tab/heatmap.
      */
-    aggregateIocs({ type = null, severity = null, limit = 200 } = {}) {
+    aggregateIocs({ type = null, severity = null, limit = 200, ownerId } = {}) {
         const counter = new Map(); // value → { type, value, severity, hits, lastSeen }
         for (const scan of this.scans.values()) {
+            if (!this._ownedBy(scan, ownerId)) continue;
             for (const ioc of scan.iocs) {
                 if (type && ioc.type !== type) continue;
                 if (severity && ioc.severity !== severity) continue;
@@ -413,11 +422,12 @@ class SandboxAnalysisService {
     }
 
     /**
-     * MITRE technique frequency across all scans — for heatmap UI.
+     * MITRE technique frequency across one account's scans — for heatmap UI.
      */
-    mitreHeatmap() {
+    mitreHeatmap({ ownerId } = {}) {
         const counter = new Map();
         for (const scan of this.scans.values()) {
+            if (!this._ownedBy(scan, ownerId)) continue;
             for (const t of scan.mitre.techniques) {
                 const e = counter.get(t.techniqueId) || { techniqueId: t.techniqueId, name: t.name, tactic: t.tactic, hits: 0 };
                 e.hits++;

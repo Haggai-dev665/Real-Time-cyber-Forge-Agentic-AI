@@ -1,0 +1,557 @@
+{
+  "success": true,
+  "data": {
+    "scan_id": "10ca872697b34f73990970f1e47c25c8",
+    "status": "completed",
+    "profile": "fast",
+    "schema_version": "1.0",
+    "requested_url": "http://login.bank.test:58579/credential-form",
+    "created_at": "2026-10-12T13:45:30.460Z",
+    "started_at": "2026-10-12T13:45:35.946Z",
+    "finished_at": "2026-10-12T13:45:41.387Z",
+    "duration_ms": 5441,
+    "partial": false,
+    "cache": {
+      "hit": false,
+      "age_seconds": null
+    },
+    "error": null,
+    "result": {
+      "page": {
+        "final_url": "http://login.bank.test:58579/credential-form",
+        "registrable_domain": "bank.test",
+        "status": 200,
+        "loaded": true,
+        "load_error": null,
+        "title": "PayPal - Log in",
+        "html_sha256": "15d3f27b6049314d91b5ddfd7ace538049244bea5cfb93b62eaae83005d107b8",
+        "html_bytes": 796,
+        "html_truncated": false,
+        "screenshot_sha256": "d0fc315a177a16f1bd414ddc51d4cc72895b1942090fc3f898d0d19cfcbdd7c0",
+        "url_flags": {
+          "userinfo": false,
+          "ip_literal": false,
+          "punycode": false
+        }
+      },
+      "redirects": [
+        {
+          "url": "http://login.bank.test:58579/credential-form",
+          "status": 200,
+          "kind": "initial",
+          "ip": "127.0.0.1"
+        }
+      ],
+      "tls": null,
+      "forms": [
+        {
+          "action": "http://collector.evil.test:58579/steal",
+          "method": "post",
+          "action_origin": "http://collector.evil.test:58579",
+          "action_registrable_domain": "evil.test",
+          "action_cross_origin": true,
+          "action_cross_site": true,
+          "action_insecure": true,
+          "input_types": [
+            "email",
+            "hidden",
+            "password",
+            "text"
+          ],
+          "password": true,
+          "otp": true,
+          "card": false,
+          "seed_phrase": false,
+          "hidden_input_count": 1,
+          "submit_text": "Log In"
+        }
+      ],
+      "iframes": [
+        {
+          "src": "http://tracker.evil.test:58579/plain",
+          "origin": "http://tracker.evil.test:58579",
+          "cross_origin": true,
+          "hidden": true,
+          "zero_sized": true,
+          "sandbox": null
+        }
+      ],
+      "scripts": [],
+      "network": {
+        "total_requests": 4,
+        "failed_requests": 0,
+        "transferred_bytes": 1183,
+        "third_party_domains": [
+          "evil.test"
+        ],
+        "insecure_requests": [
+          "http://login.bank.test:58579/credential-form",
+          "http://login.bank.test:58579/pixel.png",
+          "http://tracker.evil.test:58579/plain",
+          "http://login.bank.test:58579/favicon.ico"
+        ],
+        "insecure_request_count": 4,
+        "mixed_content": false,
+        "mixed_content_items": [],
+        "blocked_requests": [],
+        "cross_origin_posts": [],
+        "requests": [
+          {
+            "url": "http://login.bank.test:58579/credential-form",
+            "method": "GET",
+            "resource_type": "document",
+            "status": 200,
+            "bytes": 1076,
+            "ip": "127.0.0.1",
+            "third_party": false,
+            "failed": null,
+            "blocked_reason": null
+          },
+          {
+            "url": "http://login.bank.test:58579/pixel.png",
+            "method": "GET",
+            "resource_type": "image",
+            "status": 200,
+            "bytes": 237,
+            "ip": "127.0.0.1",
+            "third_party": false,
+            "failed": null,
+            "blocked_reason": null
+          },
+          {
+            "url": "http://tracker.evil.test:58579/plain",
+            "method": "GET",
+            "resource_type": "document",
+            "status": 200,
+            "bytes": null,
+            "ip": "127.0.0.1",
+            "third_party": true,
+            "failed": null,
+            "blocked_reason": null
+          },
+          {
+            "url": "http://login.bank.test:58579/favicon.ico",
+            "method": "GET",
+            "resource_type": "other",
+            "status": 200,
+            "bytes": 237,
+            "ip": "127.0.0.1",
+            "third_party": false,
+            "failed": null,
+            "blocked_reason": null
+          }
+        ]
+      },
+      "cookies": [
+        {
+          "name": "sessionid",
+          "domain": "login.bank.test",
+          "path": "/",
+          "secure": false,
+          "http_only": false,
+          "same_site": null,
+          "session": true,
+          "third_party": false
+        },
+        {
+          "name": "prefs",
+          "domain": "login.bank.test",
+          "path": "/",
+          "secure": false,
+          "http_only": true,
+          "same_site": "Strict",
+          "session": true,
+          "third_party": false
+        }
+      ],
+      "cookies_rejected": [],
+      "security_headers": {
+        "hsts": {
+          "present": false,
+          "value": null,
+          "issues": [],
+          "max_age": null,
+          "include_subdomains": false
+        },
+        "csp": {
+          "present": false,
+          "value": null,
+          "issues": [],
+          "report_only": false
+        },
+        "x_frame_options": {
+          "present": false,
+          "value": null,
+          "issues": []
+        },
+        "x_content_type_options": {
+          "present": false,
+          "value": null,
+          "issues": []
+        },
+        "referrer_policy": {
+          "present": false,
+          "value": null,
+          "issues": []
+        },
+        "permissions_policy": {
+          "present": false,
+          "value": null,
+          "issues": []
+        }
+      },
+      "response_headers": {
+        "connection": "keep-alive",
+        "date": "Mon, 12 Oct 2026 13:45:38 GMT",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked",
+        "content-type": "text/html; charset=utf-8",
+        "set-cookie": "[redacted]"
+      },
+      "iocs": {
+        "domains": [
+          {
+            "value": "login.bank.test",
+            "source": "request"
+          },
+          {
+            "value": "tracker.evil.test",
+            "source": "request"
+          },
+          {
+            "value": "collector.evil.test",
+            "source": "page"
+          }
+        ],
+        "ips": [],
+        "urls": [
+          {
+            "value": "http://tracker.evil.test:58579/plain",
+            "source": "request"
+          },
+          {
+            "value": "http://collector.evil.test:58579/steal",
+            "source": "page"
+          }
+        ],
+        "emails": [],
+        "hashes": [],
+        "crypto_addresses": []
+      },
+      "brand": {
+        "title": "PayPal - Log in",
+        "brands_detected": [
+          {
+            "name": "PayPal",
+            "where": [
+              "title",
+              "h1",
+              "logo",
+              "text"
+            ],
+            "domain_matches": false
+          }
+        ],
+        "favicon_sha256": "497790947d4666760ce38f3c00e852c71fdb66cae849bae8e9ede352719e1581",
+        "favicon_url": "http://login.bank.test:58579/favicon.ico",
+        "logo_alts": [
+          "PayPal logo"
+        ],
+        "domain_matches_brand": false
+      },
+      "timing": {
+        "ttfb_ms": 95,
+        "dom_content_loaded_ms": 694,
+        "load_ms": 1596,
+        "first_contentful_paint_ms": 904,
+        "largest_contentful_paint_ms": 904,
+        "cumulative_layout_shift": 0
+      },
+      "blocked_behaviours": {
+        "downloads": [],
+        "dialogs": [],
+        "popups": [],
+        "permission_requests": []
+      },
+      "console": {
+        "errors": 0,
+        "warnings": 0,
+        "sample": [
+          {
+            "level": "verbose",
+            "message": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+          }
+        ]
+      },
+      "cloaking": {
+        "markers": []
+      },
+      "limits_reached": []
+    },
+    "signals": [
+      {
+        "id": "password_field_on_http_page",
+        "severity": "high",
+        "title": "A password field is shown on a page served over plain HTTP",
+        "evidence": {
+          "final_url": "http://login.bank.test:58579/credential-form"
+        }
+      },
+      {
+        "id": "credential_form_cross_origin",
+        "severity": "high",
+        "title": "A form collecting credentials submits to a different site",
+        "evidence": {
+          "page_origin": "http://login.bank.test:58579",
+          "actions": [
+            "http://collector.evil.test:58579/steal"
+          ],
+          "action_domains": [
+            "evil.test"
+          ]
+        }
+      },
+      {
+        "id": "credential_form_insecure_action",
+        "severity": "high",
+        "title": "A form collecting credentials submits over plain HTTP",
+        "evidence": {
+          "actions": [
+            "http://collector.evil.test:58579/steal"
+          ]
+        }
+      },
+      {
+        "id": "no_tls",
+        "severity": "medium",
+        "title": "The page is served over plain HTTP",
+        "evidence": {
+          "final_url": "http://login.bank.test:58579/credential-form"
+        }
+      },
+      {
+        "id": "hidden_iframe",
+        "severity": "medium",
+        "title": "The page embeds a frame that is hidden or has no visible size",
+        "evidence": {
+          "frames": [
+            {
+              "src": "http://tracker.evil.test:58579/plain",
+              "cross_origin": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "brand_domain_mismatch",
+        "severity": "medium",
+        "title": "The page presents itself as PayPal but is served from bank.test",
+        "evidence": {
+          "brands": [
+            {
+              "name": "PayPal",
+              "where": [
+                "title",
+                "h1",
+                "logo",
+                "text"
+              ]
+            }
+          ],
+          "registrable_domain": "bank.test",
+          "asks_for_credentials": true
+        }
+      },
+      {
+        "id": "otp_field_present",
+        "severity": "low",
+        "title": "The page asks for a one-time or verification code",
+        "evidence": {
+          "forms": 1
+        }
+      },
+      {
+        "id": "cookie_missing_secure",
+        "severity": "low",
+        "title": "2 cookie(s) were set without the Secure attribute",
+        "evidence": {
+          "cookies": [
+            {
+              "name": "sessionid",
+              "domain": "login.bank.test"
+            },
+            {
+              "name": "prefs",
+              "domain": "login.bank.test"
+            }
+          ]
+        }
+      },
+      {
+        "id": "cookie_missing_httponly",
+        "severity": "low",
+        "title": "A session-style cookie is readable by page scripts (no HttpOnly attribute)",
+        "evidence": {
+          "cookies": [
+            {
+              "name": "sessionid",
+              "domain": "login.bank.test"
+            }
+          ]
+        }
+      },
+      {
+        "id": "csp_missing",
+        "severity": "low",
+        "title": "No enforced Content-Security-Policy header",
+        "evidence": {
+          "report_only": false
+        }
+      },
+      {
+        "id": "clickjacking_protection_missing",
+        "severity": "low",
+        "title": "Nothing prevents the page from being framed by another site",
+        "evidence": {
+          "x_frame_options": null
+        }
+      },
+      {
+        "id": "password_form_present",
+        "severity": "info",
+        "title": "The page asks for a password",
+        "evidence": {
+          "forms": 1,
+          "actions": [
+            "http://collector.evil.test:58579/steal"
+          ]
+        }
+      },
+      {
+        "id": "content_type_options_missing",
+        "severity": "info",
+        "title": "No X-Content-Type-Options: nosniff header",
+        "evidence": {
+          "value": null
+        }
+      },
+      {
+        "id": "referrer_policy_missing",
+        "severity": "info",
+        "title": "No Referrer-Policy header",
+        "evidence": {}
+      }
+    ],
+    "coverage": {
+      "target_validation": {
+        "status": "completed",
+        "reason": null
+      },
+      "navigation": {
+        "status": "completed",
+        "reason": null
+      },
+      "redirect_chain": {
+        "status": "completed",
+        "reason": null
+      },
+      "rebinding_protection": {
+        "status": "completed",
+        "reason": null
+      },
+      "tls": {
+        "status": "skipped",
+        "reason": "the page was served over plain HTTP"
+      },
+      "security_headers": {
+        "status": "completed",
+        "reason": null
+      },
+      "dom": {
+        "status": "completed",
+        "reason": null
+      },
+      "html_capture": {
+        "status": "completed",
+        "reason": null
+      },
+      "timing": {
+        "status": "completed",
+        "reason": null
+      },
+      "screenshot": {
+        "status": "completed",
+        "reason": null
+      },
+      "favicon_hash": {
+        "status": "completed",
+        "reason": null
+      },
+      "favicon_brand_match": {
+        "status": "unsupported",
+        "reason": "no reference set of brand favicon hashes is available"
+      },
+      "cookies": {
+        "status": "completed",
+        "reason": null
+      },
+      "scripts": {
+        "status": "completed",
+        "reason": null
+      },
+      "network": {
+        "status": "completed",
+        "reason": null
+      },
+      "mixed_content": {
+        "status": "skipped",
+        "reason": "the page was served over plain HTTP"
+      },
+      "forms": {
+        "status": "completed",
+        "reason": null
+      },
+      "iframes": {
+        "status": "completed",
+        "reason": null
+      },
+      "iocs": {
+        "status": "completed",
+        "reason": null
+      },
+      "brand": {
+        "status": "completed",
+        "reason": null
+      },
+      "cloaking_markers": {
+        "status": "completed",
+        "reason": null
+      },
+      "blocked_behaviours": {
+        "status": "completed",
+        "reason": null
+      }
+    },
+    "ai_context": "Rendered-page scan of http://login.bank.test:58579/credential-form: loaded http://login.bank.test:58579/credential-form with HTTP 200; registrable domain bank.test. Title: \"PayPal - Log in\". Observed 1 form(s), 0 script(s), 1 frame(s), 4 request(s) to 1 third-party domain(s), 2 cookie(s). Observations: [high] A password field is shown on a page served over plain HTTP. [high] A form collecting credentials submits to a different site. [high] A form collecting credentials submits over plain HTTP. [medium] The page is served over plain HTTP. [medium] The page embeds a frame that is hidden or has no visible size. [medium] The page presents itself as PayPal but is served from bank.test. [low] The page asks for a one-time or verification code. [low] 2 cookie(s) were set without the Secure attribute. [low] A session-style cookie is readable by page scripts (no HttpOnly attribute). [low] No enforced Content-Security-Policy header. [low] Nothing prevents the page from being framed by another site. [info] The page asks for a password. [info] No X-Content-Type-Options: nosniff header. [info] No Referrer-Policy header. Not checked: favicon_brand_match (unsupported: no reference set of brand favicon hashes is available). These are observations, not a verdict.",
+    "artifacts": [
+      {
+        "name": "page.html",
+        "content_type": "text/html; charset=utf-8",
+        "bytes": 796,
+        "sha256": "15d3f27b6049314d91b5ddfd7ace538049244bea5cfb93b62eaae83005d107b8",
+        "expires_at": "2026-10-13T13:45:41.477Z",
+        "url": "/api/v1/scans/10ca872697b34f73990970f1e47c25c8/artifacts/page.html"
+      },
+      {
+        "name": "screenshot.png",
+        "content_type": "image/png",
+        "bytes": 12987,
+        "sha256": "d0fc315a177a16f1bd414ddc51d4cc72895b1942090fc3f898d0d19cfcbdd7c0",
+        "expires_at": "2026-10-13T13:45:41.477Z",
+        "url": "/api/v1/scans/10ca872697b34f73990970f1e47c25c8/artifacts/screenshot.png"
+      }
+    ],
+    "expires_at": "2026-10-19T13:45:30.460Z"
+  },
+  "error": null
+}

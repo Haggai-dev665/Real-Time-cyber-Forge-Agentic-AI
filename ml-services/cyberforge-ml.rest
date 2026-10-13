@@ -14,11 +14,21 @@
 #          wait ~20s; the first request wakes it. The chat model then loads in
 #          the background for a minute or two (B1 shows local_llm.loaded).
 #
-# "Expect" lines are what the live Space returned on 2026-10-12 against the
-# deployed app.py (Space commit 27886c3, which replaced Gemini with an
-# open-source model running inside the Space). Scores from the trained
-# models are deterministic, so they should match until the models are
-# retrained. Text from the chat model is generated and differs on every run.
+# "Expect" lines are what the live Space returned on 2026-10-13 against Space
+# commit c823c6a, with the four detection models retrained that day from
+# public labelled data (see hf_space_deploy/trainer.py; each model's
+# metadata.json in Che237/cyberforge-models holds its full training report).
+# Scores from the trained models are deterministic, so they should match until
+# the models are retrained again. Text from the chat model is generated and
+# differs on every run.
+#
+# The models, briefly:
+#   phishing_detection    39 features; decision point set for 2% false positives
+#   malware_detection     39 features
+#   web_attack_detection  22 payload features (SQL injection and XSS)
+#   anomaly_detection     IsolationForest; its score is a margin, not a probability
+# Two are in service by the owner's decision although they flag some well-known
+# legitimate URLs; those cases are kept below as KNOWN FALSE POSITIVE (E7, E8).
 # =====================================================================
 
 @space = https://che237-cyberforge.hf.space
@@ -141,16 +151,25 @@ GET {{space}}/
 # =====================================================================
 # C. RAW MODEL PREDICTION — POST /api/models/predict
 # =====================================================================
-# input_data must hold these 12 features IN THIS ORDER (the service passes
-# list(values()) straight to the scaler, so key order matters, names do not):
+# Two ways to ask one model:
+#   { "model_type": "...", "url": "https://..." }   the service computes the
+#       model's features from the URL itself and the model answers (C13, C14).
+#   { "model_type": "...", "input_data": { name: number, ... } }   features by
+#       name. A model is only asked about a COMPLETE set of its own features.
+# The retrained models take 39 (or 22) features, so the twelve original ones
 #   url_length, hostname_length, path_length, is_https, has_ip_address,
 #   has_suspicious_tld, subdomain_count, has_port, query_params_count,
 #   has_at_symbol, has_double_slash, special_char_count
+# are no longer enough on their own: C1-C6 and C10 now get the rule-based
+# estimate ("inference_source": "heuristic") and a "missing_features" list.
+# A value that is not a number is rejected with HTTP 400 (C11).
 
-### C1. phishing_detection — phishing-shaped features
+### C1. phishing_detection — the twelve original features, phishing-shaped
 # Expect: HTTP 200
-# prediction 1, prediction_label "threat", threat_score 1.0,
-# inference_source "ml_model".
+# The twelve original features are not a complete set for the retrained model,
+# so the rule-based estimate answers: inference_source "heuristic", prediction 1,
+# threat_score 0.55, reasons ["No HTTPS","IP address in URL"], and
+# missing_features lists the model's 39 features. Send the URL instead (C13).
 # @name predictPhishingThreat
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -165,9 +184,10 @@ Content-Type: {{json}}
   }
 }
 
-### C2. phishing_detection — benign-shaped features (google.com search URL)
+### C2. phishing_detection — the twelve original features, benign-shaped
 # Expect: HTTP 200
-# prediction 0, prediction_label "benign", threat_score 0.0.
+# inference_source "heuristic", prediction 0, threat_score 0.0, reasons [],
+# missing_features lists 39 names.
 # @name predictPhishingBenign
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -182,10 +202,12 @@ Content-Type: {{json}}
   }
 }
 
-### C3. malware_detection — phishing-shaped features
+### C3. malware_detection — the twelve original features, phishing-shaped
 # Expect: HTTP 200
-# prediction 1, prediction_label "threat", threat_score 1.0,
-# inference_source "ml_model".
+# The twelve original features are not a complete set for the retrained model,
+# so the rule-based estimate answers: inference_source "heuristic", prediction 1,
+# threat_score 0.55, reasons ["No HTTPS","IP address in URL"], and
+# missing_features lists the model's 39 features. Send the URL instead (C13).
 # @name predictMalware
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -200,10 +222,12 @@ Content-Type: {{json}}
   }
 }
 
-### C4. web_attack_detection — phishing-shaped features
+### C4. web_attack_detection — the twelve original features, phishing-shaped
 # Expect: HTTP 200
-# prediction 1, prediction_label "threat", threat_score 1.0,
-# inference_source "ml_model".
+# The twelve original features are not a complete set for the retrained model,
+# so the rule-based estimate answers: inference_source "heuristic", prediction 1,
+# threat_score 0.55, reasons ["No HTTPS","IP address in URL"], and
+# missing_features lists the model's 22 features. Send the URL instead (C13).
 # @name predictWebAttack
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -218,13 +242,13 @@ Content-Type: {{json}}
   }
 }
 
-### C5. anomaly_detection — benign-shaped features  (KNOWN ISSUE: labels inverted)
+### C5. anomaly_detection — the twelve original features, benign-shaped
 # Expect: HTTP 200
-# The model is an IsolationForest: it returns 1 = normal, -1 = anomaly.
-# The service treats 1 as "threat", so a NORMAL url comes back as
-# prediction 1 / "threat" / threat_score 0.5, and an anomalous one as
-# prediction -1 / "benign". This is why every clean URL in section E scores
-# at least risk_score 50 ("medium").
+# inference_source "heuristic", prediction 0, threat_score 0.0;
+# missing_features lists 39 names. The anomaly model itself is reached through
+# the URL endpoints: there it returns a margin score with score_kind
+# "anomaly_margin" (threat_score = 0.5 minus the IsolationForest's decision
+# margin, kept within 0-1; 0.5 is the model's own boundary; NOT a probability).
 # @name predictAnomalyBenignInput
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -239,9 +263,10 @@ Content-Type: {{json}}
   }
 }
 
-### C6. anomaly_detection — phishing-shaped features (inverted, see C5)
+### C6. anomaly_detection — the twelve original features, phishing-shaped
 # Expect: HTTP 200
-# prediction -1, prediction_label "benign".
+# inference_source "heuristic", prediction 1, threat_score 0.55,
+# reasons ["No HTTPS","IP address in URL"].
 # @name predictAnomalyThreatInput
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -258,7 +283,8 @@ Content-Type: {{json}}
 
 ### C7. Empty input_data — falls back to the rule-based heuristic
 # Expect: HTTP 200
-# inference_source "heuristic", prediction 0, reasons [].
+# inference_source "heuristic", prediction 0, reasons [], and
+# missing_features listing all 39 of the model's feature names.
 # @name predictEmptyInput
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
@@ -283,12 +309,81 @@ Content-Type: {{json}}
 
 ### C9. No body fields at all — defaults to phishing_detection + heuristic
 # Expect: HTTP 200
-# model "phishing_detection", inference_source "heuristic".
+# model "phishing_detection", inference_source "heuristic", missing_features
+# lists 39.
 # @name predictDefaults
 POST {{space}}/api/models/predict
 Content-Type: {{json}}
 
 {}
+
+### C10. Same features as C1 in reverse order — same answer
+# Expect: HTTP 200
+# Same answer as C1 (heuristic, threat_score 0.55): features are matched by
+# name, so the order they are sent in makes no difference.
+# @name predictFeatureOrder
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "phishing_detection",
+  "input_data": {
+    "special_char_count": 6, "has_double_slash": 0, "has_at_symbol": 1,
+    "query_params_count": 2, "has_port": 0, "subdomain_count": 2,
+    "has_suspicious_tld": 0, "has_ip_address": 1, "is_https": 0,
+    "path_length": 32, "hostname_length": 12, "url_length": 78
+  }
+}
+
+### C11. A feature that is not a number
+# Expect: HTTP 400
+# {"detail":"Feature 'url_length' must be a number"}
+# @name predictNonNumericFeature
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "phishing_detection",
+  "input_data": {
+    "url_length": "long", "hostname_length": 12, "path_length": 32, "is_https": 0,
+    "has_ip_address": 1, "has_suspicious_tld": 0, "subdomain_count": 2,
+    "has_port": 0, "query_params_count": 2, "has_at_symbol": 1,
+    "has_double_slash": 0, "special_char_count": 6
+  }
+}
+
+### C12. Incomplete features for a loaded model — rule-based estimate, and it says so
+# Expect: HTTP 200
+# inference_source "heuristic", prediction 1, threat_score 0.75,
+# reasons ["No HTTPS","IP address in URL","Suspicious TLD"], missing_features
+# lists 39 names. The model is not asked to score values it was never given.
+# @name predictIncompleteFeatures
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{
+  "model_type": "malware_detection",
+  "input_data": { "is_https": 0, "has_ip_address": 1, "has_suspicious_tld": 1 }
+}
+
+### C13. One model, asked by URL — a phishing-shaped host
+# Expect: HTTP 200
+# inference_source "ml_model", prediction 1, prediction_label "threat",
+# threat_score 0.9952. The service computes the 39 features from the URL.
+# @name predictByUrlPhishing
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{ "model_type": "phishing_detection", "url": "http://paypal-secure-login.verify-account.xyz/update/password.php" }
+
+### C14. One model, asked by URL — a well-known site
+# Expect: HTTP 200
+# inference_source "ml_model", prediction 0, threat_score 0.0005.
+# @name predictByUrlBenign
+POST {{space}}/api/models/predict
+Content-Type: {{json}}
+
+{ "model_type": "malware_detection", "url": "https://www.wikipedia.org/" }
 
 
 # =====================================================================
@@ -297,23 +392,26 @@ Content-Type: {{json}}
 
 ### D1. phishing_detection
 # Expect: HTTP 200
-# method "gini_importance"; url_length 0.6632, special_char_count 0.3368,
-# every other feature 0.0 (the model only uses two features).
+# method "permutation_importance" (measured at training, by shuffling each
+# feature on held-out URLs); top_features begin domain_popularity, host_dots,
+# path_depth, host_vowel_ratio, path_longest_token. "trained_at" is present.
 # @name explainPhishing
 GET {{space}}/api/v2/explain/phishing_detection
 
 ### D2. malware_detection
 # Expect: HTTP 200
-# method "gini_importance". The importances are IDENTICAL to D1
-# (url_length 0.6632, special_char_count 0.3368) — see the note on D3.
+# method "permutation_importance"; top_features begin
+# has_executable_extension, domain_popularity, bare_length, bare_path_length.
+# Different from D1: the models are no longer copies of each other.
 # @name explainMalware
 GET {{space}}/api/v2/explain/malware_detection
 
 ### D3. web_attack_detection
 # Expect: HTTP 200
-# Identical to D1 and D2 again. Three "different" detectors with the same
-# importances to four decimals means they were trained on the same data and
-# labels, so they behave as one model, not three independent signals.
+# method "permutation_importance"; top_features begin payload_special_ratio,
+# payload_spaces, payload_equals_in_value, count_percent, payload_angle_brackets.
+# (Before 2026-10-13, D1, D2 and D3 returned identical importances over two
+# features, url_length and special_char_count: three copies of one model.)
 # @name explainWebAttack
 GET {{space}}/api/v2/explain/web_attack_detection
 
@@ -337,9 +435,9 @@ GET {{space}}/api/v2/explain/nope
 
 ### E1. Benign URL
 # Expect: HTTP 200
-# phishing/malware/web_attack predict 0. aggregate.risk_factors [].
-# aggregate.risk_score 50.0 / "medium" / models_flagged 1 — caused only by the
-# inverted anomaly model (C5); the true result should be low.
+# All four models predict 0. aggregate.risk_factors [], risk_score 39.7,
+# overall_risk_level "low", models_flagged 0. Phishing, malware and web-attack
+# score 0.0004, 0.0005 and 0.0003; the 39.7 is the anomaly model's margin score.
 # @name analyzeUrlBenign
 POST {{space}}/analyze-url
 Content-Type: {{json}}
@@ -349,7 +447,9 @@ Content-Type: {{json}}
 ### E2. Phishing URL (raw IP, no HTTPS, @ symbol)
 # Expect: HTTP 200
 # risk_score 100.0, overall_risk_level "critical", models_flagged 3 of 4,
-# risk_factors ["no_https","ip_in_url","at_symbol_in_url"].
+# risk_factors ["no_https","ip_in_url","at_symbol_in_url"]. Phishing 0.9985,
+# malware 0.9997, anomaly 0.5852. The web-attack model scores 0.0007: there is
+# no injected payload in this URL, and it no longer fires on everything.
 # @name analyzeUrlPhishing
 POST {{space}}/analyze-url
 Content-Type: {{json}}
@@ -358,8 +458,9 @@ Content-Type: {{json}}
 
 ### E3. Suspicious TLD
 # Expect: HTTP 200
-# risk_score 57.4, overall_risk_level "medium", models_flagged 3,
-# risk_factors ["no_https","suspicious_tld"].
+# risk_score 95.1, overall_risk_level "critical", models_flagged 1,
+# risk_factors ["no_https","suspicious_tld"]. Phishing 0.9506; malware 0.1936.
+# (Before the retraining this was 57.4 / "medium".)
 # @name analyzeUrlSuspiciousTld
 POST {{space}}/analyze-url
 Content-Type: {{json}}
@@ -368,11 +469,12 @@ Content-Type: {{json}}
 
 ### E4. Every risk factor at once (long URL, port, subdomains, //, special chars)
 # Expect: HTTP 200
-# risk_score 100.0, "critical". risk_factors lists all seven: no_https,
-# suspicious_tld, long_url, at_symbol_in_url, excessive_subdomains,
-# high_special_chars, double_slash_in_path.
+# risk_score 100.0, "critical", models_flagged 3. risk_factors lists all seven:
+# no_https, suspicious_tld, long_url, at_symbol_in_url, excessive_subdomains,
+# high_special_chars, double_slash_in_path. Phishing and web-attack fire (the
+# query carries a <script> tag); malware does not (0.30), there being no file.
 # features_analyzed: url_length 140, subdomain_count 4, has_port 1,
-# query_params_count 6, special_char_count 25.
+# query_params_count 6, special_char_count 25, plus the newer features.
 # @name analyzeUrlAllFactors
 POST {{space}}/analyze-url
 Content-Type: {{json}}
@@ -388,6 +490,61 @@ Content-Type: {{json}}
 
 {}
 
+### E6. Malware link on a raw IP address
+# Expect: HTTP 200
+# risk_score 100.0, "critical", models_flagged 3. malware 1.0, phishing 0.9988.
+# (The first models scored this 0.0 on malware and called it "medium".)
+# @name analyzeUrlMalwareLink
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "http://185.220.101.4:8080/bins/mips.sh" }
+
+### E7. KNOWN FALSE POSITIVE — a Google Drive file link
+# Expect: HTTP 200
+# risk_score 91.1, "critical", models_flagged 1: the malware model scores a
+# legitimate sharing link 0.9109. Collections of malware URLs contain many
+# file-sharing links and the benign data few, and the text of the link cannot
+# say whether the file is safe. Accepted by the owner on 2026-10-13 and
+# recorded in malware_detection/metadata.json (gate.accepted_by_owner).
+# @name analyzeUrlDriveFalsePositive
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "https://drive.google.com/file/d/1A2b3C4d5E6f7G8h9I0jKlMnOpQrStUv/view?usp=sharing" }
+
+### E8. KNOWN FALSE POSITIVE — the Microsoft sign-in page
+# Expect: HTTP 200
+# risk_score 84.6, "critical", models_flagged 2: malware 0.8462 and the
+# anomaly model 0.5263. Phishing is 0.4657, just under its decision point.
+# A real sign-in URL carries a long identifier and other parameters, which is
+# also what abuse looks like. Recorded with the model like E7.
+# @name analyzeUrlSignInFalsePositive
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=4765445b-32c6-49b0-83e6-1d93765276ca&response_type=code&scope=openid" }
+
+### E9. Cross-site scripting in a query value
+# Expect: HTTP 200
+# risk_score 100.0, "critical", models_flagged 1: web_attack 1.0, phishing
+# 0.013, malware 0.3127. Only the model built for it fires.
+# @name analyzeUrlXss
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "https://example.com/search?q=<script>alert(document.cookie)</script>" }
+
+### E10. KNOWN MISS — path traversal
+# Expect: HTTP 200
+# risk_score 38.3, "low", models_flagged 0; web_attack 0.001. The web-attack
+# model was trained on SQL-injection and XSS payloads only.
+# @name analyzeUrlTraversalMiss
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "https://example.com/download?file=../../../../etc/passwd" }
+
 
 # =====================================================================
 # F. BATCH URL ANALYSIS — POST /api/v2/batch-analyze   (max 20 URLs)
@@ -397,6 +554,9 @@ Content-Type: {{json}}
 # Expect: HTTP 200
 # total 4; results[2] is {"url":"","error":"empty url"}; the other three have
 # an "aggregate" block; "elapsed_ms" present.
+# results[0] (https://github.com) is 32.8 / "low" / models_flagged 0.
+# results[1] (http://10.0.0.1/admin@login) is 99.9 / "critical" / 3 flagged.
+# results[3] (the .tk URL) is 95.1 / "critical" / 1 flagged.
 # @name batchMixed
 POST {{space}}/api/v2/batch-analyze
 Content-Type: {{json}}
@@ -409,6 +569,17 @@ Content-Type: {{json}}
     "http://free-prizes.tk/win?id=1&ref=2"
   ]
 }
+
+### F4. A non-string entry and a URL with a bad port
+# Expect: HTTP 200
+# results[1] is {"url":42,"error":"url must be a string"}. results[2] is
+# analysed normally (risk_score 32.1) with features_analyzed.has_port 1: a port
+# that is not a number no longer makes the request fail.
+# @name batchBadEntries
+POST {{space}}/api/v2/batch-analyze
+Content-Type: {{json}}
+
+{ "urls": ["https://github.com", 42, "http://example.com:notaport/x"] }
 
 ### F2. Empty array
 # Expect: HTTP 400
@@ -479,7 +650,8 @@ Content-Type: {{json}}
 
 ### H1. Legitimate domain
 # Expect: HTTP 200
-# prediction "legit", is_threat false, threat_score 0.0, features.entropy 1.918.
+# prediction "legit", is_threat false, threat_score 0.0, features.entropy 1.918,
+# scored_label "google", labels_scored 1.
 # @name dgaLegit
 POST {{space}}/api/v2/dga-detect
 Content-Type: {{json}}
@@ -488,23 +660,44 @@ Content-Type: {{json}}
 
 ### H2. Algorithmically generated domain
 # Expect: HTTP 200
-# prediction "dga", is_threat true, threat_score 0.9, features.entropy 4.0.
+# prediction "dga", is_threat true, threat_score 0.9, features.entropy 4.0,
+# scored_label "xkq7zt9bwpl3vnm2".
 # @name dgaGenerated
 POST {{space}}/api/v2/dga-detect
 Content-Type: {{json}}
 
 { "domain": "xkq7zt9bwpl3vnm2.com" }
 
-### H3. Same DGA domain behind "www."  (KNOWN ISSUE: only the first label is scored)
+### H3. Same DGA domain behind "www."
 # Expect: HTTP 200
-# The detector analyses domain.split('.')[0], so it scores "www" and returns
-# "legit" for an obviously generated domain. Pass the bare domain (H2) to get a
-# real answer. I1 and J1 are affected the same way for URLs with subdomains.
+# prediction "dga", is_threat true, threat_score 0.9, scored_label
+# "xkq7zt9bwpl3vnm2", labels_scored 2. Every label except the top-level one is
+# scored and the most generated-looking one is reported.
+# (Before 2026-10-13 only "www" was scored and this returned "legit".)
 # @name dgaSubdomainBlindSpot
 POST {{space}}/api/v2/dga-detect
 Content-Type: {{json}}
 
 { "domain": "www.xkq7zt9bwpl3vnm2.com" }
+
+### H5. Generated label under a two-part suffix, behind a subdomain
+# Expect: HTTP 200
+# prediction "dga", threat_score 0.9, scored_label "xkq7zt9bwpl3vnm2",
+# labels_scored 3 ("cdn", the generated label and "co").
+# @name dgaTwoPartSuffix
+POST {{space}}/api/v2/dga-detect
+Content-Type: {{json}}
+
+{ "domain": "cdn.xkq7zt9bwpl3vnm2.co.uk" }
+
+### H6. Ordinary domain with a subdomain stays legitimate
+# Expect: HTTP 200
+# prediction "legit", threat_score 0.08, scored_label "python", labels_scored 2.
+# @name dgaOrdinarySubdomain
+POST {{space}}/api/v2/dga-detect
+Content-Type: {{json}}
+
+{ "domain": "docs.python.org" }
 
 ### H4. Missing domain
 # Expect: HTTP 400
@@ -523,7 +716,7 @@ Content-Type: {{json}}
 
 ### I1. Malicious URL
 # Expect: HTTP 200
-# risk_level "high", risk_score 75.8, components { ml_max 0.7119,
+# risk_level "critical", risk_score 92.8, components { ml_max 0.9952,
 # bert 0.9873, dga 0.35 }, risk_factors ["no_https","suspicious_tld",
 # "bert_flagged_malicious"]. Also returns ml_predictions, bert_classification,
 # dga_detection, explainability and features_analyzed.
@@ -535,9 +728,12 @@ Content-Type: {{json}}
 
 ### I2. Benign URL
 # Expect: HTTP 200
-# risk_level "low", risk_score 31.6, bert_classification.prediction "BENIGN",
-# risk_factors []. components.ml_max_threat_score is 0.5 only because of the
-# inverted anomaly model (C5).
+# risk_level "low", risk_score 23.1, bert_classification.prediction "BENIGN",
+# risk_factors []. components.ml_max_threat_score 0.3582 is the anomaly
+# model's margin score.
+# Note: the BERT classifier used here is NOT one of the retrained models. On a
+# set of 24 well-known legitimate URLs it called 8 "MALWARE" (a YouTube video
+# 0.997, an Amazon product page 0.99); treat its verdict with care.
 # @name urlEnrichBenign
 POST {{space}}/api/v2/url-enrich
 Content-Type: {{json}}
@@ -556,14 +752,18 @@ Content-Type: {{json}}
 
 # =====================================================================
 # J. IOC SCAN — POST /api/v2/ioc-scan
-#    Only "url" and "domain" are analysed. "ip" and "hash" are accepted but
-#    ignored by the deployed code.
+#    Only "url" and "domain" are scored. There is no reputation source here for
+#    IP addresses or file hashes, so "ip" and "hash" are described (address
+#    range; hash type by length), marked status "not_scored", and listed in
+#    summary.indicators_not_scored. They never change the risk level.
 # =====================================================================
 
 ### J1. URL + domain + ip + context
 # Expect: HTTP 200
-# ioc_results has "url" and "domain" (no "ip"); summary.overall_risk_level
-# "critical", risk_score 90.0, indicators_analyzed 2.
+# ioc_results has "url", "domain" and "ip". summary.overall_risk_level
+# "critical", risk_score 99.8 (the URL models), indicators_analyzed 2,
+# indicators_not_scored ["ip"]. ioc_results.ip is { valid true, version 4,
+# scope "public", status "not_scored" }.
 # ai_analysis is always null: this endpoint is called with short timeouts, so
 # the in-Space chat model is not used for it. The key is kept for
 # compatibility. "context" in the body is accepted but no longer used.
@@ -590,31 +790,53 @@ Content-Type: {{json}}
 ### J3. URL only — the domain is derived from the URL's hostname
 # Expect: HTTP 200
 # ioc_results has "url" and "domain"; domain.value "github.com", DGA "legit".
-# summary says "medium" / risk_score 50.0 for github.com — anomaly-model
-# inversion again (C5).
+# summary says "low" / risk_score 35.8.
 # @name iocScanUrlOnly
 POST {{space}}/api/v2/ioc-scan
 Content-Type: {{json}}
 
 { "url": "https://github.com/login" }
 
-### J4. IP only — nothing is analysed
+### J4. IP only — described, not scored
 # Expect: HTTP 200
-# ioc_results {}, overall_risk_level "unknown", indicators_analyzed 0.
+# ioc_results.ip { value "185.220.101.4", valid true, version 4, scope
+# "public", status "not_scored" }. overall_risk_level "unknown",
+# indicators_analyzed 0, indicators_not_scored ["ip"].
 # @name iocScanIpOnly
 POST {{space}}/api/v2/ioc-scan
 Content-Type: {{json}}
 
 { "ip": "185.220.101.4" }
 
-### J5. Hash only — nothing is analysed
+### J5. Hash only — described, not scored
 # Expect: HTTP 200
-# ioc_results {}, overall_risk_level "unknown".
+# ioc_results.hash { valid true, hash_type "md5", status "not_scored" }.
+# overall_risk_level "unknown", indicators_not_scored ["hash"].
 # @name iocScanHashOnly
 POST {{space}}/api/v2/ioc-scan
 Content-Type: {{json}}
 
 { "hash": "44d88612fea8a8f36de82e1278abb02f" }
+
+### J6. A private address and a string that is not a hash
+# Expect: HTTP 200
+# ioc_results.ip.scope "private"; ioc_results.hash { valid false, hash_type
+# null, note "Not an MD5, SHA-1, SHA-256 or SHA-512 hex digest." }.
+# @name iocScanPrivateIpBadHash
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "ip": "10.20.30.40", "hash": "not-a-hash" }
+
+### J7. Something that is not an address, and a SHA-256
+# Expect: HTTP 200
+# ioc_results.ip { valid false, note "Not a valid IPv4 or IPv6 address." };
+# ioc_results.hash.hash_type "sha256".
+# @name iocScanBadIpSha256
+POST {{space}}/api/v2/ioc-scan
+Content-Type: {{json}}
+
+{ "ip": "999.1.1.1", "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
 
 
 # =====================================================================
@@ -942,9 +1164,9 @@ Content-Type: {{json}}
 # =====================================================================
 
 ### O1. Malformed JSON body
-# Expect: HTTP 500
-# Plain-text "Internal Server Error" (the handlers do not catch JSON parse
-# errors; a 400/422 would be the correct response).
+# Expect: HTTP 400
+# {"detail":"Request body must be valid JSON"}
+# (Before 2026-10-13 this was HTTP 500, "Internal Server Error".)
 # @name errMalformedJson
 POST {{space}}/analyze-url
 Content-Type: {{json}}
@@ -952,8 +1174,10 @@ Content-Type: {{json}}
 {not json
 
 ### O2. null where a string is expected
-# Expect: HTTP 500
-# "Internal Server Error" — None.strip() is not guarded.
+# Expect: HTTP 200
+# A null field is treated as absent: ioc_results {}, overall_risk_level
+# "unknown", indicators_analyzed 0.
+# (Before 2026-10-13 this was HTTP 500.)
 # @name errNullField
 POST {{space}}/api/v2/ioc-scan
 Content-Type: {{json}}
@@ -971,3 +1195,79 @@ GET {{space}}/analyze-url
 # {"detail":"Not Found"}
 # @name errUnknownRoute
 GET {{space}}/api/v2/does-not-exist
+
+### O5. A number where a string is expected
+# Expect: HTTP 400
+# {"detail":"'url' must be a string"}
+# @name errWrongType
+POST {{space}}/api/v2/url-classify
+Content-Type: {{json}}
+
+{ "url": 12345 }
+
+### O6. Body is JSON, but not an object
+# Expect: HTTP 400
+# {"detail":"Request body must be a JSON object"}
+# @name errNotAnObject
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+["https://example.com"]
+
+### O7. A URL that cannot be parsed
+# Expect: HTTP 200
+# The unclosed "[" makes this an invalid URL. It is still scored from what
+# can be read: features_analyzed.hostname_length 0, risk_factors ["no_https"],
+# risk_score 47.1, "medium", models_flagged 0.
+# @name errUnparseableUrl
+POST {{space}}/analyze-url
+Content-Type: {{json}}
+
+{ "url": "http://[::1/login" }
+
+### O8. max_tokens that is not a number
+# Expect: HTTP 400
+# {"detail":"'max_tokens' must be a whole number"}
+# @name errBadMaxTokens
+POST {{space}}/api/v2/security-chat
+Content-Type: {{json}}
+
+{ "query": "What is phishing?", "max_tokens": "lots" }
+
+
+# =====================================================================
+# P. MODEL TRAINING — owner only   (see train_on_space.py)
+#    Training runs inside the Space. Both routes need the Hugging Face token
+#    of the account that owns the Space.
+# =====================================================================
+
+### P1. Start training without a token
+# Expect: HTTP 403
+# {"detail":"Only the owner of this Space can train its models"}
+# @name trainNoToken
+POST {{space}}/api/admin/train
+
+### P2. Read the training report without a token
+# Expect: HTTP 403
+# {"detail":"Only the owner of this Space can read the training report"}
+# @name trainStatusNoToken
+GET {{space}}/api/admin/train/status
+
+### P3. Read the training report as the owner
+# Expect: HTTP 200
+# "state" is "idle" after a restart, or "finished" with the full "reports"
+# (one per model: holdout results, known-legitimate URLs, gate) after a run.
+# @name trainStatusOwner
+GET {{space}}/api/admin/train/status
+Authorization: Bearer {{hfToken}}
+
+### P4. Dry run as the owner (takes about three minutes; changes nothing in service)
+# REST Client asks for confirmation before sending because of @note.
+# Not run during verification. Prefer: python train_on_space.py --dry-run
+# @note
+# @name trainDryRun
+POST {{space}}/api/admin/train
+Authorization: Bearer {{hfToken}}
+Content-Type: {{json}}
+
+{ "dry_run": true }

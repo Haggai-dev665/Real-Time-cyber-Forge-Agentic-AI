@@ -599,7 +599,7 @@ router.post('/ai/agent/status', auth, asyncHandler(async (req, res) => {
         data: { agentId: agent.agentId, deviceId: agent.deviceId, state: agent.state }
       });
     } else {
-      await agentManager.stopAgent('default');
+      await agentManager.stopAgent('default', userId);
       logger.info(`✅ AI Agent stopped for user ${userId}`);
       res.json({ success: true, message: 'AI Agent stopped' });
     }
@@ -622,7 +622,7 @@ router.post('/ai/agent/start', auth, asyncHandler(async (req, res) => {
 
 router.post('/ai/agent/stop', auth, asyncHandler(async (req, res) => {
   try {
-    await agentManager.stopAgent('default');
+    await agentManager.stopAgent('default', req.user.userId);
     res.json({ success: true, message: 'AI Agent stopped' });
   } catch (error) {
     logger.error('❌ AI Agent stop failed:', error.message);

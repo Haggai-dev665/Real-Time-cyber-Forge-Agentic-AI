@@ -7,6 +7,7 @@
  *
  *   window.addEventListener('cf:threat',  e => …)   // e.detail = threat
  *   window.addEventListener('cf:scan',    e => …)   // e.detail = scan result
+ *   window.addEventListener('cf:scan-explanation', e => …) // the explanation for a scan, when it arrives after the result
  *   window.addEventListener('cf:alert',   e => …)   // e.detail = alert
  *   window.addEventListener('cf:agent',   e => …)   // e.detail = activity item
  *   window.addEventListener('cf:metrics', e => …)   // e.detail = metrics
@@ -15,7 +16,8 @@
  *
  * Depends on `window.CF` (cyberforge-shared.js) for backendUrl() + getToken().
  * Auto-reconnects with capped exponential backoff; re-reads the auth token on
- * every (re)connect so a fresh login is picked up without a page reload.
+ * every (re)connect so a fresh login is picked up without a page reload. Each
+ * connection uses a fresh one-time ticket, so the token is never in the URL.
  */
 (function () {
   const CF = window.CF || {};
@@ -25,6 +27,7 @@
     'threat:new': 'cf:threat',
     'threat:update': 'cf:threat',
     'scan:update': 'cf:scan',
+    'scan:explanation': 'cf:scan-explanation',
     'alert:new': 'cf:alert',
     'agent:activity': 'cf:agent',
     'metrics:update': 'cf:metrics',
@@ -51,11 +54,33 @@
     if (name) window.dispatchEvent(new CustomEvent(name, { detail: evt.data }));
   }
 
+  // The ID of the last event received. It is sent on reconnect so the server
+  // replays what was missed, once, instead of losing or repeating alerts.
+  let lastEventId = null;
+
   function handleFrame(e) {
     try {
+      if (e.lastEventId) lastEventId = e.lastEventId;
       dispatch(JSON.parse(e.data));
     } catch (_) {
       /* ignore malformed frame */
+    }
+  }
+
+  // A browser EventSource cannot send headers, and a session token must never
+  // go in a URL. The session is exchanged for a ticket that opens one stream
+  // and stops working within a minute.
+  async function requestTicket(base, token) {
+    try {
+      const response = await fetch(`${base}/api/stream/ticket`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return null;
+      const body = await response.json();
+      return body && body.ticket ? body.ticket : null;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -77,7 +102,14 @@
     const base = CF.backendUrl ? await CF.backendUrl() : null;
     if (!base) { scheduleReconnect(); return; }
     const token = await getToken();
-    const url = `${base}/api/stream` + (token ? `?token=${encodeURIComponent(token)}` : '');
+    const query = [];
+    if (token) {
+      const ticket = await requestTicket(base, token);
+      if (!ticket) { scheduleReconnect(); return; }
+      query.push(`ticket=${encodeURIComponent(ticket)}`);
+    }
+    if (lastEventId) query.push(`lastEventId=${encodeURIComponent(lastEventId)}`);
+    const url = `${base}/api/stream` + (query.length ? `?${query.join('&')}` : '');
 
     try {
       es = new EventSource(url);

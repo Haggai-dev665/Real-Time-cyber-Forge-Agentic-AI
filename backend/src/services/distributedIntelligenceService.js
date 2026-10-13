@@ -60,6 +60,9 @@ class DistributedIntelligenceService {
     }
 
     const existing = this.nodes.get(nodeId);
+    if (existing && existing.userId !== userId) {
+      return { success: false, message: 'This node ID is registered to another account' };
+    }
     const now = new Date().toISOString();
 
     const nodeRecord = {
@@ -101,6 +104,14 @@ class DistributedIntelligenceService {
       }
     }
     return userNodes;
+  }
+
+  /**
+   * Whether a registered node belongs to the given account.
+   */
+  isNodeOwnedBy(nodeId, userId) {
+    const node = this.nodes.get(nodeId);
+    return Boolean(node) && userId != null && node.userId === String(userId);
   }
 
   /**
@@ -437,21 +448,22 @@ class DistributedIntelligenceService {
   // Periodic Tasks
   // ──────────────────────────────────────────────
 
+  // Housekeeping timers must not keep the process alive at shutdown.
   _startPeriodicTasks() {
     // Clean expired nonces every minute
     setInterval(() => {
       this.processedNonces.clear();
-    }, this.config.nonceExpiryMs);
+    }, this.config.nonceExpiryMs).unref();
 
     // Check node health every 30 seconds
     setInterval(() => {
       this._checkNodeHealth();
-    }, 30000);
+    }, 30000).unref();
 
     // Recompute global metrics every 30 seconds
     setInterval(() => {
       this.computeGlobalMetrics();
-    }, this.config.metricsUpdateIntervalMs);
+    }, this.config.metricsUpdateIntervalMs).unref();
   }
 
   /**

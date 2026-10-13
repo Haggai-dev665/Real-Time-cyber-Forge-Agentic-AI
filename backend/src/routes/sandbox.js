@@ -9,7 +9,9 @@ const { verifiedUser } = require('../middleware/verifiedUser');
 const router  = express.Router();
 
 // Every route below requires a signed-in user, and takes the user's identity
-// from the session rather than from the request.
+// from the session rather than from the request. Scans belong to the account
+// that ran them: history, IOCs and the heatmap cover that account's scans only,
+// and another account's scan ID answers as "not found".
 router.use(verifiedUser);
 const { sandboxAnalysisService } = require('../services/sandboxAnalysisService');
 
@@ -27,7 +29,7 @@ router.post('/analyze/url', async (req, res) => {
     try {
         const { url, features = {}, metadata = {} } = req.body;
         if (!url) return res.status(400).json({ error: 'url required' });
-        const scan = await sandboxAnalysisService.analyzeUrl(url, features, metadata);
+        const scan = await sandboxAnalysisService.analyzeUrl(url, features, metadata, req.user.userId);
         res.json({ success: true, scan });
     } catch (e) {
         console.error('[sandbox] analyze/url failed:', e);
@@ -50,7 +52,8 @@ router.post('/analyze/file', upload.single('file'), async (req, res) => {
             req.file.originalname,
             req.file.buffer,
             req.file.mimetype || '',
-            metadata
+            metadata,
+            req.user.userId
         );
         res.json({ success: true, scan });
     } catch (e) {
@@ -68,7 +71,7 @@ router.get('/history', (req, res) => {
         const offset  = parseInt(req.query.offset, 10) || 0;
         const type    = req.query.type    || null;
         const verdict = req.query.verdict || null;
-        const result  = sandboxAnalysisService.listHistory({ limit, offset, type, verdict });
+        const result  = sandboxAnalysisService.listHistory({ limit, offset, type, verdict, ownerId: req.user.userId });
         res.json({ success: true, ...result });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -79,7 +82,7 @@ router.get('/history', (req, res) => {
  * GET /api/sandbox/scan/:id   — full scan record with IOCs + MITRE chain
  */
 router.get('/scan/:id', (req, res) => {
-    const scan = sandboxAnalysisService.getScan(req.params.id);
+    const scan = sandboxAnalysisService.getScan(req.params.id, req.user.userId);
     if (!scan) return res.status(404).json({ error: 'scan not found' });
     res.json({ success: true, scan });
 });
@@ -88,21 +91,21 @@ router.get('/scan/:id', (req, res) => {
  * DELETE /api/sandbox/scan/:id
  */
 router.delete('/scan/:id', (req, res) => {
-    const ok = sandboxAnalysisService.deleteScan(req.params.id);
+    const ok = sandboxAnalysisService.deleteScan(req.params.id, req.user.userId);
     if (!ok) return res.status(404).json({ error: 'scan not found' });
     res.json({ success: true });
 });
 
 /**
  * GET /api/sandbox/iocs?type=&severity=&limit=
- *      → aggregated IOCs across all scans (with hit counts)
+ *      → aggregated IOCs across the caller's scans (with hit counts)
  */
 router.get('/iocs', (req, res) => {
     try {
         const type     = req.query.type     || null;
         const severity = req.query.severity || null;
         const limit    = Math.min(parseInt(req.query.limit, 10) || 200, 1000);
-        const iocs = sandboxAnalysisService.aggregateIocs({ type, severity, limit });
+        const iocs = sandboxAnalysisService.aggregateIocs({ type, severity, limit, ownerId: req.user.userId });
         res.json({ success: true, count: iocs.length, iocs });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -110,11 +113,11 @@ router.get('/iocs', (req, res) => {
 });
 
 /**
- * GET /api/sandbox/mitre/heatmap   — technique frequency across stored scans
+ * GET /api/sandbox/mitre/heatmap   — technique frequency across the caller's scans
  */
 router.get('/mitre/heatmap', (req, res) => {
     try {
-        const heatmap = sandboxAnalysisService.mitreHeatmap();
+        const heatmap = sandboxAnalysisService.mitreHeatmap({ ownerId: req.user.userId });
         res.json({ success: true, count: heatmap.length, techniques: heatmap });
     } catch (e) {
         res.status(500).json({ error: e.message });

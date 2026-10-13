@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifiedUser } = require('../middleware/verifiedUser');
+const { adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
 // Every route below requires a signed-in user, and takes the user's identity
@@ -126,7 +127,7 @@ router.get('/threats/recent', async (req, res) => {
  * POST /api/otx/start-polling
  * Start real-time threat polling (admin only)
  */
-router.post('/start-polling', async (req, res) => {
+router.post('/start-polling', adminOnly, async (req, res) => {
   try {
     const { interval = 30000 } = req.body;
     otxService.startPolling(interval);
@@ -150,7 +151,7 @@ router.post('/start-polling', async (req, res) => {
  * POST /api/otx/stop-polling
  * Stop real-time threat polling (admin only)
  */
-router.post('/stop-polling', async (req, res) => {
+router.post('/stop-polling', adminOnly, async (req, res) => {
   try {
     otxService.stopPolling();
     
@@ -179,7 +180,7 @@ router.get('/stats', async (req, res) => {
       data: {
         polling: !!otxService.pollingInterval,
         lastPulseTimestamp: otxService.lastPulseTimestamp,
-        apiKey: otxService.apiKey ? '***' + otxService.apiKey.slice(-4) : 'Not set'
+        apiKey: otxService.apiKey ? 'configured' : 'Not set'
       }
     });
   } catch (error) {

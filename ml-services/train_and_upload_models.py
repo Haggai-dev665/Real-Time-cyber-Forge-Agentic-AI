@@ -1,4 +1,13 @@
 """
+SUPERSEDED. Do not use this to produce models for the service.
+
+It fits the models to generated numbers in which "benign" URLs are 15-60
+characters long and "malicious" ones 60-300, so the phishing, malware and
+web-attack models it produces are three copies of "a long URL is a threat"
+(plan-update.md, finding F27). The models are now trained from public labelled
+data inside the Space: see hf_space_deploy/trainer.py and train_on_space.py.
+This file is kept only as the record of how the first models were made.
+
 CyberForge ML Model Trainer & Uploader
 Trains 4 sklearn models on real + synthetic cybersecurity data,
 then uploads them to Che237/cyberforge-models on HuggingFace.

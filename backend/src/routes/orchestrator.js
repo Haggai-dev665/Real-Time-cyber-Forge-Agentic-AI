@@ -19,12 +19,15 @@ const { verifiedUser } = require('../middleware/verifiedUser');
 const router  = express.Router();
 
 // Every route below requires a signed-in user, and takes the user's identity
-// from the session rather than from the request.
+// from the session rather than from the request. Reports and browsing sessions
+// belong to the account that produced them; a session ID names a session only
+// within that account.
 router.use(verifiedUser);
 const axios   = require('axios');
 const { getMLServiceUrl } = require('../config/ml.config');
 const { agentOrchestrator } = require('../services/agentOrchestrator');
 const { memoryService }     = require('../services/memoryService');
+const { webScraperAPIService } = require('../services/WebScraperAPIService');
 
 /**
  * POST /api/orchestrator/analyze
@@ -49,7 +52,7 @@ router.post('/analyze', async (req, res) => {
  */
 router.get('/recent', (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
-    res.json({ success: true, reports: agentOrchestrator.getRecentReports(limit) });
+    res.json({ success: true, reports: agentOrchestrator.getRecentReports(limit, req.user.userId) });
 });
 
 /**
@@ -57,7 +60,7 @@ router.get('/recent', (req, res) => {
  * Aggregated stats — verdict breakdown, average latency, agent roster, memory state.
  */
 router.get('/stats', (req, res) => {
-    res.json({ success: true, stats: agentOrchestrator.getStats() });
+    res.json({ success: true, stats: agentOrchestrator.getStats(req.user.userId) });
 });
 
 /**
@@ -74,6 +77,8 @@ router.get('/agents', (req, res) => {
 /**
  * GET /api/orchestrator/memory/domain/:host
  * Inspect what we know about a domain (visit count, prior verdicts, IOCs).
+ * Domain memory is shared reputation: it is built from every account's scans
+ * and records no account, so it is the one read here that is not per-account.
  */
 router.get('/memory/domain/:host', async (req, res) => {
     try {
@@ -90,13 +95,13 @@ router.get('/memory/domain/:host', async (req, res) => {
  * Session journey + per-session stats.
  */
 router.get('/memory/session/:sid', (req, res) => {
-    const session = memoryService.getSession(req.params.sid);
+    const session = memoryService.getSession(req.params.sid, req.user.userId);
     if (!session) return res.status(404).json({ error: 'no memory for session' });
     // Convert Set → array for JSON serialization
     res.json({
         success: true,
         session: { ...session, hosts: Array.from(session.hosts || []) },
-        stats:   memoryService.sessionStats(req.params.sid),
+        stats:   memoryService.sessionStats(req.params.sid, req.user.userId),
     });
 });
 
@@ -122,7 +127,7 @@ router.get('/health', (req, res) => {
  */
 router.get('/health/deep', async (req, res) => {
     const HF_URL = getMLServiceUrl();
-    const stats  = agentOrchestrator.getStats();
+    const stats  = agentOrchestrator.getStats(req.user.userId);
 
     // Probe HF Space
     let hfSpaceStatus = 'unknown';
@@ -138,14 +143,17 @@ router.get('/health/deep', async (req, res) => {
     // Probe Redis via memoryService.stats()
     const memStats = memoryService.stats();
 
+    const scraperStatus = webScraperAPIService.status();
+
     // Agent dependency check (lightweight, no actual HF calls)
     const agentDeps = {
         url_classifier:  { dep: 'hf-space /api/v2/url-classify',  status: hfSpaceStatus.startsWith('unreachable') ? 'degraded' : 'ok' },
         dga_detector:    { dep: 'hf-space /api/v2/dga-detect',     status: hfSpaceStatus.startsWith('unreachable') ? 'degraded' : 'ok' },
-        web_scraper:     { dep: 'webscrapper.live api',            status: 'ok' },
+        // Configuration only; this route does not call the scanner.
+        web_scraper:     { dep: 'webscrapper.live api v1',         status: scraperStatus.available ? 'configured (not probed)' : `unavailable: ${scraperStatus.reason}` },
         memory:          { dep: 'redis / in-process',              status: memStats.redisReady ? 'ok' : 'degraded-local-only' },
         ioc_extractor:   { dep: 'sandboxAnalysisService (local)',  status: 'ok' },
-        behavioral:      { dep: 'local html analysis',            status: 'ok' },
+        behavioral:      { dep: 'rendered-page scan evidence',     status: scraperStatus.available ? 'ok' : 'degraded-no-page-evidence' },
         mitre_mapper:    { dep: 'sandboxAnalysisService (local)',  status: 'ok' },
         threat_intel:    { dep: 'otx alienvault',                  status: process.env.OTX_API_KEY ? 'ok' : 'degraded-no-key' },
         reporter:        { dep: 'llmFallbackChain + appwrite',     status: 'ok' },
@@ -191,7 +199,7 @@ router.get('/reports/filter', (req, res) => {
         const { verdict, minScore, maxScore, limit: limitRaw, sessionId } = req.query;
         const limit = Math.min(parseInt(limitRaw, 10) || 50, 100);
 
-        let reports = agentOrchestrator.getRecentReports(100);
+        let reports = agentOrchestrator.getRecentReports(100, req.user.userId);
 
         if (verdict)   reports = reports.filter(r => r.verdict === verdict);
         if (sessionId) reports = reports.filter(r => r.sessionId === sessionId);
@@ -224,11 +232,11 @@ router.get('/reports/filter', (req, res) => {
 router.get('/session/:sid/summary', (req, res) => {
     try {
         const sid     = req.params.sid;
-        const session = memoryService.getSession(sid);
-        const sStats  = memoryService.sessionStats(sid);
+        const session = memoryService.getSession(sid, req.user.userId);
+        const sStats  = memoryService.sessionStats(sid, req.user.userId);
 
         // Pull matching in-memory reports for this session
-        const sessionReports = agentOrchestrator.getRecentReports(100).filter(r => r.sessionId === sid);
+        const sessionReports = agentOrchestrator.getRecentReports(100, req.user.userId).filter(r => r.sessionId === sid);
 
         // Verdict counts
         const verdictCounts = sessionReports.reduce((acc, r) => {

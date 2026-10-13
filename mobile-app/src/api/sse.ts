@@ -1,9 +1,10 @@
 /**
- * Server-Sent Events client for the backend live feed (GET /api/stream?token=).
+ * Server-Sent Events client for the backend live feed (GET /api/stream).
  *
- * EventSource can't set headers, so the JWT rides as a query param (matches the
- * backend contract in backend/src/routes/stream.js). The backend fans out named
- * events; we subscribe to the concrete types it emits.
+ * The session token is sent in the Authorization header, never in the URL,
+ * where proxies and access logs would record it (backend contract in
+ * backend/src/routes/stream.js). The backend fans out named events; we
+ * subscribe to the concrete types it emits.
  */
 import EventSource from 'react-native-sse';
 import { API_BASE_URL } from './config';
@@ -14,6 +15,7 @@ export const SSE_EVENTS = [
   'threat:new',
   'alert:new',
   'scan:update',
+  'scan:explanation',
   'agent:activity',
   'metrics:update',
 ] as const;
@@ -37,11 +39,8 @@ export interface StreamHandlers {
  * Returns a disposer that closes the connection.
  */
 export function openStream(token: string | null, handlers: StreamHandlers): () => void {
-  const url =
-    `${API_BASE_URL}/api/stream` +
-    (token ? `?token=${encodeURIComponent(token)}` : '');
-
-  const es = new EventSource<SseEventName>(url, {
+  const es = new EventSource<SseEventName>(`${API_BASE_URL}/api/stream`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     // Auto-reconnect ~5s after a drop; keep the request open indefinitely.
     pollingInterval: 5000,
     timeout: 0,

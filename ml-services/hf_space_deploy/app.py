@@ -21,6 +21,11 @@ import logging
 from typing import Dict, List, Any, Optional, Tuple
 from urllib.parse import urlparse
 
+# URL feature extraction is shared with the trainer, so training and serving
+# cannot drift apart.
+from url_features import (extract_url_features, popular_domains_loaded, rescale_score,
+                          set_popular_domains, split_url)
+
 # ML Libraries
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, IsolationForest
@@ -92,6 +97,77 @@ SECURITY_TASKS = [
     "Spam Detection", "Vulnerability Assessment", "DNS Tunneling Detection",
     "Cryptomining Detection",
 ]
+
+
+# ============================================================================
+# REQUEST INPUT
+# ============================================================================
+#
+# What a caller sends is checked here, so a wrong body is answered with
+# HTTP 400 and a reason instead of an unhandled error (HTTP 500).
+
+class BadRequest(ValueError):
+    """Input the caller got wrong. Answered with HTTP 400 and this message."""
+
+
+async def json_object(request) -> Dict:
+    """The request body as a JSON object."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise BadRequest("Request body must be valid JSON")
+    if not isinstance(body, dict):
+        raise BadRequest("Request body must be a JSON object")
+    return body
+
+
+def text_field(body: Dict, name: str) -> str:
+    """A string field, stripped. A missing or null field is the empty string."""
+    value = body.get(name)
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise BadRequest(f"'{name}' must be a string")
+    return value.strip()
+
+
+def object_field(body: Dict, name: str) -> Dict:
+    """An object field. A missing or null field is an empty object."""
+    value = body.get(name)
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise BadRequest(f"'{name}' must be an object")
+    return value
+
+
+def list_field(body: Dict, name: str) -> List:
+    """An array field. A missing or null field is an empty array."""
+    value = body.get(name)
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise BadRequest(f"'{name}' must be an array")
+    return value
+
+
+def int_field(body: Dict, name: str, default: int, low: int, high: int) -> int:
+    """A whole-number field, limited to low..high. Missing or null is the default."""
+    value = body.get(name)
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        raise BadRequest(f"'{name}' must be a whole number")
+    try:
+        number = int(value)
+    except (TypeError, ValueError, OverflowError):
+        raise BadRequest(f"'{name}' must be a whole number")
+    return max(low, min(high, number))
+
+
+def dicts_in(items: List) -> List[Dict]:
+    """The objects in a list; entries of any other type are dropped."""
+    return [item for item in items if isinstance(item, dict)]
 
 
 # ============================================================================
@@ -283,10 +359,58 @@ class MLModelLoader:
     def __init__(self):
         self.models: Dict[str, Any] = {}
         self.scalers: Dict[str, Any] = {}
+        # metadata.json of each model: which features it takes, in which order,
+        # whether it has a scaler, and how it did when it was trained.
+        self.metadata: Dict[str, Dict] = {}
         self.ready = False
+
+    def install(self, name: str, model, metadata: Optional[Dict] = None, scaler=None):
+        """Put a model into service together with what describes it."""
+        self.models[name] = model
+        self.metadata[name] = metadata or {}
+        if scaler is None:
+            self.scalers.pop(name, None)
+        else:
+            self.scalers[name] = scaler
+        self.ready = True
+
+    def feature_names(self, name: str) -> List[str]:
+        """The features a model takes, in order. Models trained before their
+        metadata listed them take the original twelve."""
+        names = self.metadata.get(name, {}).get("feature_names")
+        return list(names) if isinstance(names, list) and names else list(self.FEATURE_ORDER)
+
+    @staticmethod
+    def _hub_metadata(name: str) -> Dict:
+        try:
+            path = hf_hub_download(repo_id=HF_MODEL_REPO, filename=f"{name}/metadata.json",
+                                   token=HF_TOKEN or None, cache_dir=str(MODELS_DIR))
+            with open(path, encoding="utf-8") as handle:
+                metadata = json.load(handle)
+            return metadata if isinstance(metadata, dict) else {}
+        except Exception:
+            return {}
+
+    @staticmethod
+    def load_reputation() -> int:
+        """The most-visited-domains list that the retrained models' popularity
+        feature was computed with. It is stored beside the models."""
+        try:
+            path = hf_hub_download(repo_id=HF_MODEL_REPO, filename="reputation/popular_domains.txt",
+                                   token=HF_TOKEN or None, cache_dir=str(MODELS_DIR))
+            with open(path, encoding="utf-8") as handle:
+                set_popular_domains([line.strip() for line in handle if line.strip()])
+            logger.info(f"✅ Domain popularity list loaded: {popular_domains_loaded()} domains")
+        except Exception as e:
+            logger.info(f"No domain popularity list in the model repository yet ({type(e).__name__})")
+        return popular_domains_loaded()
+
+    def needs_reputation(self, name: str) -> bool:
+        return "domain_popularity" in self.feature_names(name)
 
     def initialize(self):
         loaded = 0
+        self.load_reputation()
         # All directories where models might exist (notebooks save to ../models)
         search_dirs = [
             MODELS_DIR,                          # trained_models/
@@ -306,12 +430,17 @@ class MLModelLoader:
                         repo_id=HF_MODEL_REPO, filename=model_file,
                         token=HF_TOKEN or None, cache_dir=str(MODELS_DIR),
                     )
-                    scaler_path = hf_hub_download(
-                        repo_id=HF_MODEL_REPO, filename=scaler_file,
-                        token=HF_TOKEN or None, cache_dir=str(MODELS_DIR),
-                    )
-                    self.models[name] = joblib.load(model_path)
-                    self.scalers[name] = joblib.load(scaler_path)
+                    metadata = self._hub_metadata(name)
+                    scaler = None
+                    # A model says in its metadata when it has no scaler; the
+                    # first models did not say, and always had one.
+                    if metadata.get("uses_scaler", True):
+                        scaler_path = hf_hub_download(
+                            repo_id=HF_MODEL_REPO, filename=scaler_file,
+                            token=HF_TOKEN or None, cache_dir=str(MODELS_DIR),
+                        )
+                        scaler = joblib.load(scaler_path)
+                    self.install(name, joblib.load(model_path), metadata, scaler)
                     loaded += 1
                     logger.info(f"✅ Loaded model from Hub: {name}")
                     continue
@@ -356,20 +485,94 @@ class MLModelLoader:
         self.ready = loaded > 0
         logger.info(f"ML Models: {loaded} loaded — {list(self.models.keys())}")
 
+    # The features the models were trained on, in training order
+    # (train_and_upload_models.py). Values are matched by name, never by position.
+    FEATURE_ORDER = [
+        "url_length", "hostname_length", "path_length", "is_https",
+        "has_ip_address", "has_suspicious_tld", "subdomain_count",
+        "has_port", "query_params_count", "has_at_symbol",
+        "has_double_slash", "special_char_count",
+    ]
+
+    @classmethod
+    def feature_vector(cls, features: Dict, names: Optional[List[str]] = None) -> Tuple[List[float], List[str]]:
+        """The named features as numbers in the model's training order, and the
+        names that were not supplied (0 in the vector). Raises BadRequest for a
+        value that is not a finite number."""
+        if not isinstance(features, dict):
+            raise BadRequest("input_data must be an object of feature names and numbers")
+        row, missing = [], []
+        for name in (names or cls.FEATURE_ORDER):
+            value = features.get(name)
+            if value is None:
+                missing.append(name)
+                row.append(0.0)
+                continue
+            if isinstance(value, bool):
+                value = int(value)
+            if not isinstance(value, (int, float)) or value != value or value in (float("inf"), float("-inf")):
+                raise BadRequest(f"Feature '{name}' must be a number")
+            row.append(float(value))
+        return row, missing
+
+    @staticmethod
+    def is_outlier_detector(model) -> bool:
+        """IsolationForest and the other scikit-learn outlier detectors: a
+        decision margin around a fitted offset, and no class probabilities."""
+        return (not hasattr(model, "predict_proba")
+                and hasattr(model, "decision_function") and hasattr(model, "offset_"))
+
     def predict(self, model_name: str, features: Dict) -> Dict:
-        if model_name not in self.models:
-            return self._heuristic_predict(model_name, features)
+        row, missing = self.feature_vector(features, self.feature_names(model_name))
+        # The rule-based estimate reads the twelve original features, whichever
+        # features the model itself takes, so those are checked as well: a value
+        # that is not a number is the caller's error wherever it would be used.
+        self.feature_vector(features, self.FEATURE_ORDER)
+        # A model is only asked about a complete feature set. With features
+        # missing it would be scoring zeros it was never given, so the rule-based
+        # estimate answers instead and says which features were absent.
+        if model_name not in self.models or missing:
+            result = self._heuristic_predict(model_name, features)
+            if missing and model_name in self.models:
+                result["missing_features"] = missing
+            return result
+        # A model trained with the popularity feature is not asked anything
+        # while the list is missing: every site would look unknown to it.
+        if self.needs_reputation(model_name) and not popular_domains_loaded():
+            result = self._heuristic_predict(model_name, features)
+            result["note"] = "the domain popularity list is not loaded, so the model was not used"
+            return result
         try:
             model = self.models[model_name]
             scaler = self.scalers.get(model_name)
-            X = np.array([list(features.values())])
-            if scaler:
+            # The retrained models were fitted to 32-bit feature tables. Given
+            # 64-bit values, a ratio that sits on a split boundary can fall on
+            # the other side, so they are served at the precision they learned.
+            metadata = self.metadata.get(model_name, {})
+            single = metadata.get("feature_dtype") == "float32" or "feature_set" in metadata
+            X = np.array([row], dtype=np.float32) if single else np.array([row])
+            if scaler is not None:
                 X = scaler.transform(X)
+            if self.is_outlier_detector(model):
+                return {
+                    "model": model_name,
+                    **anomaly_verdict(float(model.decision_function(X)[0])),
+                    "probabilities": {},
+                    "inference_source": "ml_model",
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
             prediction = int(model.predict(X)[0])
             confidence = 0.5
             probabilities = {}
             if hasattr(model, "predict_proba"):
-                proba = model.predict_proba(X)[0]
+                proba = [float(p) for p in model.predict_proba(X)[0]]
+                # A retrained classifier carries the decision point it was given
+                # at training. Its score is rescaled so that point reads as 0.5.
+                threshold = self.metadata.get(model_name, {}).get("decision_threshold")
+                if isinstance(threshold, (int, float)) and len(proba) == 2 and 0.5 < threshold < 1.0:
+                    threat = rescale_score(proba[1], float(threshold))
+                    proba = [1.0 - threat, threat]
+                    prediction = 1 if threat >= 0.5 else 0
                 confidence = float(max(proba))
                 probabilities = {str(i): round(float(p), 4) for i, p in enumerate(proba)}
             # Derive a consistent threat_score: probability of class-1 (threat)
@@ -396,15 +599,22 @@ class MLModelLoader:
 
     def feature_importance(self, model_name: str) -> Dict:
         """Return feature importances for tree-based models (explainability)."""
-        feature_names = [
-            "url_length", "hostname_length", "path_length", "is_https",
-            "has_ip_address", "has_suspicious_tld", "subdomain_count",
-            "has_port", "query_params_count", "has_at_symbol",
-            "has_double_slash", "special_char_count",
-        ]
+        feature_names = self.feature_names(model_name)
         if model_name not in self.models:
             return {"error": f"Model '{model_name}' not loaded", "available": list(self.models.keys())}
         model = self.models[model_name]
+        stored = self.metadata.get(model_name, {}).get("feature_importances")
+        if isinstance(stored, dict) and stored:
+            # Measured when the model was trained, by shuffling each feature on
+            # held-out URLs and seeing how much the model's ranking suffers.
+            pairs = sorted(stored.items(), key=lambda pair: -pair[1])
+            return {
+                "model": model_name,
+                "method": "permutation_importance",
+                "feature_importances": dict(pairs),
+                "top_features": [name for name, _ in pairs[:5]],
+                "trained_at": self.metadata[model_name].get("trained_at"),
+            }
         try:
             if hasattr(model, "feature_importances_"):
                 importances = model.feature_importances_
@@ -470,6 +680,27 @@ class MLModelLoader:
         }
 
 
+def anomaly_verdict(margin: float) -> Dict:
+    """Read an outlier detector's decision margin as a threat verdict.
+
+    scikit-learn outlier detectors (the anomaly model is an IsolationForest)
+    answer +1 for normal and -1 for an anomaly. Their decision margin is
+    positive for normal points, negative for anomalies and zero at the model's
+    own boundary. They have no class probabilities, so threat_score is that
+    margin re-centred on 0.5: below 0.5 the model calls the input normal, above
+    it anomalous. It is not a probability, and score_kind says so."""
+    is_threat = margin < 0
+    threat_score = min(1.0, max(0.0, 0.5 - margin))
+    return {
+        "prediction": 1 if is_threat else 0,
+        "prediction_label": "threat" if is_threat else "benign",
+        "confidence": round(max(threat_score, 1.0 - threat_score), 4),
+        "threat_score": round(threat_score, 4),
+        "anomaly_margin": round(margin, 4),
+        "score_kind": "anomaly_margin",
+    }
+
+
 ml_loader = MLModelLoader()
 
 
@@ -477,22 +708,50 @@ ml_loader = MLModelLoader()
 # URL FEATURE EXTRACTION
 # ============================================================================
 
-def extract_url_features(url: str) -> Dict:
-    parsed = urlparse(url)
-    hostname = parsed.hostname or ""
+# split_url and extract_url_features live in url_features.py (imported above).
+
+
+def describe_ip(value: str) -> Dict:
+    """What can be said about an IP address without a reputation source: whether
+    it is an address at all, and what kind of range it is in. It is not scored."""
+    import ipaddress
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return {"value": value, "valid": False, "status": "not_scored", "note": "Not a valid IPv4 or IPv6 address."}
+    if address.is_loopback:
+        scope = "loopback"
+    elif address.is_link_local:
+        scope = "link-local"
+    elif address.is_multicast:
+        scope = "multicast"
+    elif address.is_private:
+        scope = "private"
+    elif address.is_reserved or address.is_unspecified:
+        scope = "reserved"
+    else:
+        scope = "public"
     return {
-        "url_length": len(url),
-        "hostname_length": len(hostname),
-        "path_length": len(parsed.path or ""),
-        "is_https": 1 if parsed.scheme == "https" else 0,
-        "has_ip_address": 1 if all(p.isdigit() for p in hostname.split(".")) and len(hostname.split(".")) == 4 else 0,
-        "has_suspicious_tld": 1 if any(hostname.endswith(t) for t in [".xyz", ".tk", ".ml", ".ga", ".cf", ".top", ".buzz"]) else 0,
-        "subdomain_count": max(0, len(hostname.split(".")) - 2),
-        "has_port": 1 if parsed.port else 0,
-        "query_params_count": len(parsed.query.split("&")) if parsed.query else 0,
-        "has_at_symbol": 1 if "@" in url else 0,
-        "has_double_slash": 1 if "//" in (parsed.path or "") else 0,
-        "special_char_count": sum(1 for c in url if c in "!@#$%^&*()+={}[]|\\:;<>?,"),
+        "value": str(address), "valid": True, "version": address.version, "scope": scope,
+        "status": "not_scored",
+        "note": "This service has no IP reputation source, so the address is classified by range only.",
+    }
+
+
+HASH_TYPES = {32: "md5", 40: "sha1", 64: "sha256", 128: "sha512"}
+
+
+def describe_hash(value: str) -> Dict:
+    """What can be said about a file hash without a reputation source: which
+    algorithm its length matches. It is not scored."""
+    digest = value.lower()
+    is_hex = bool(digest) and all(c in "0123456789abcdef" for c in digest)
+    hash_type = HASH_TYPES.get(len(digest)) if is_hex else None
+    return {
+        "value": digest, "valid": hash_type is not None, "hash_type": hash_type,
+        "status": "not_scored",
+        "note": "This service has no file reputation source, so the hash is identified by length only."
+        if hash_type else "Not an MD5, SHA-1, SHA-256 or SHA-512 hex digest.",
     }
 
 
@@ -720,11 +979,24 @@ class TransformerModelLoader:
 
     def predict_dga(self, domain: str) -> Dict:
         """Detect DGA-generated domains using a Shannon-entropy + character-pattern heuristic.
-        Real DGA domains have high entropy, low pronounceability, no real word substrings."""
-        import math
-        d = domain.lower().strip().split('.')[0][:60]  # SLD only, ignore TLD
-        if not d:
+        Real DGA domains have high entropy, low pronounceability, no real word substrings.
+
+        Every label except the top-level one is scored and the most
+        generated-looking one is reported. The registered name is not always the
+        first label ("www.<generated>.com"), and without a public-suffix list it
+        cannot be picked out by position."""
+        labels = [label for label in domain.lower().strip().split('.') if label]
+        if not labels:
             return {"model": "dga_detector", "error": "empty domain"}
+        candidates = labels[:-1] if len(labels) > 1 else labels
+        result = max((self._score_dga_label(label[:60]) for label in candidates),
+                     key=lambda scored: scored["threat_score"])
+        result["labels_scored"] = len(candidates)
+        return result
+
+    @staticmethod
+    def _score_dga_label(d: str) -> Dict:
+        import math
         # Shannon entropy of character distribution
         from collections import Counter
         freq = Counter(d)
@@ -762,6 +1034,7 @@ class TransformerModelLoader:
             "is_threat":       is_dga,
             "confidence":      round(score * 100, 2) if is_dga else round((1 - score) * 100, 2),
             "threat_score":    round(score, 4),
+            "scored_label":    d,
             "features": {
                 "entropy":            round(entropy, 3),
                 "vowel_ratio":        round(vowel_ratio, 3),
@@ -1078,6 +1351,90 @@ api.add_middleware(
 )
 
 
+@api.exception_handler(BadRequest)
+async def bad_request(request: Request, error: BadRequest):
+    return JSONResponse(status_code=400, content={"detail": str(error)})
+
+
+# ---------------------------------------------------------------------------
+# Model training. It runs here, in the Space, in a background thread. Only the
+# Space's owner can start it or read its report.
+# ---------------------------------------------------------------------------
+
+TRAINING: Dict[str, Any] = {"state": "idle"}
+training_lock = threading.Lock()
+
+
+def owner_token(request: Request) -> Optional[str]:
+    """The caller's Hugging Face token, if it belongs to the account that owns
+    this Space. None otherwise."""
+    header = request.headers.get("authorization", "")
+    if not header.startswith("Bearer ") or len(header) < 20:
+        return None
+    token = header[7:].strip()
+    owner = os.environ.get("SPACE_AUTHOR_NAME") or HF_MODEL_REPO.split("/")[0]
+    try:
+        return token if HfApi(token=token).whoami().get("name") == owner else None
+    except Exception:
+        return None
+
+
+def _train_job(options: Dict, token: str):
+    def progress(step: str):
+        TRAINING["step"] = step
+        logger.info(f"Training: {step}")
+    try:
+        # Imported here: it pulls in the training half of scikit-learn, which
+        # serving requests never needs.
+        from trainer import run_training
+        result = run_training(options, token, HF_MODEL_REPO, progress)
+        if result.get("popular_domains"):
+            set_popular_domains(result["popular_domains"])
+        for name, model in result["models"].items():
+            ml_loader.install(name, model, result["reports"][name], None)
+        TRAINING.update({
+            "state": "finished", "finished_at": datetime.utcnow().isoformat() + "Z",
+            "dry_run": result["dry_run"], "reports": result["reports"], "uploaded": result["uploaded"],
+            "in_service": sorted(result["models"]),
+        })
+    except Exception as error:
+        logger.error(f"Training failed: {type(error).__name__}: {error}")
+        TRAINING.update({
+            "state": "failed", "finished_at": datetime.utcnow().isoformat() + "Z",
+            "error": f"{type(error).__name__}: {str(error)[:500]}",
+            "traceback": "".join(__import__("traceback").format_exception(type(error), error, error.__traceback__))[-4000:],
+        })
+
+
+@api.post("/api/admin/train")
+async def api_admin_train(request: Request):
+    """Retrain the detection models from public labelled data, here in the Space.
+    Owner only: send the owner's Hugging Face token as a bearer token.
+    Body (all optional): { "dry_run": true, "models": [...], and any setting in
+    trainer.DEFAULTS }. A dry run trains and measures but uploads nothing and
+    leaves the models in service as they are."""
+    token = await run_in_threadpool(owner_token, request)
+    if not token:
+        return JSONResponse(status_code=403, content={"detail": "Only the owner of this Space can train its models"})
+    options = await json_object(request) if request.headers.get("content-length", "0") not in ("", "0") else {}
+    with training_lock:
+        if TRAINING.get("state") == "running":
+            return JSONResponse(status_code=409, content={"detail": "A training run is already in progress", "step": TRAINING.get("step")})
+        TRAINING.clear()
+        TRAINING.update({"state": "running", "step": "starting", "started_at": datetime.utcnow().isoformat() + "Z",
+                         "options": {key: value for key, value in options.items() if key != "token"}})
+    threading.Thread(target=_train_job, args=(options, token), daemon=True).start()
+    return JSONResponse(status_code=202, content={"state": "running", "status": "/api/admin/train/status"})
+
+
+@api.get("/api/admin/train/status")
+async def api_admin_train_status(request: Request):
+    """Where the training run is, and its full report when it has finished. Owner only."""
+    if not await run_in_threadpool(owner_token, request):
+        return JSONResponse(status_code=403, content={"detail": "Only the owner of this Space can read the training report"})
+    return TRAINING
+
+
 @api.get("/health")
 async def api_health():
     return {
@@ -1089,6 +1446,8 @@ async def api_health():
             "local_llm": local_llm.status(),
             "ml_models": ml_loader.ready,
             "models_loaded": list(ml_loader.models.keys()),
+            "models_trained_at": {name: ml_loader.metadata.get(name, {}).get("trained_at") for name in ml_loader.models},
+            "popular_domains_loaded": popular_domains_loaded(),
             "transformers": transformer_loader.transformers_available,
             "transformer_models_loaded": list(transformer_loader.pipelines.keys()),
             "gradio_ui": True,
@@ -1108,10 +1467,11 @@ async def api_health():
 @api.post("/analyze")
 async def api_analyze(request: Request):
     """Main analysis endpoint – called by backend mlService.chatWithAI()"""
-    body = await request.json()
-    query = body.get("query", "")
-    context = body.get("context", {})
-    history = body.get("conversation_history", [])
+    body = await json_object(request)
+    query = text_field(body, "query")
+    # The context is only serialised into the prompt, so any JSON value is fine.
+    context = body.get("context")
+    history = body.get("conversation_history")
     result = await run_in_threadpool(reasoning_service.analyze, query, context, history)
     return result
 
@@ -1122,8 +1482,8 @@ async def api_analyze_url(request: Request):
     Returns per-model predictions + unified aggregate with risk_score (0-100).
     All models now consistently include threat_score (probability of class-1).
     """
-    body = await request.json()
-    url = body.get("url", "")
+    body = await json_object(request)
+    url = text_field(body, "url")
     if not url:
         return JSONResponse(status_code=400, content={"detail": "URL required"})
     features = extract_url_features(url)
@@ -1188,7 +1548,7 @@ async def api_analyze_url(request: Request):
 @api.post("/scan-threats")
 async def api_scan_threats(request: Request):
     """Threat scanning – called by backend mlService.scanForThreats()"""
-    body = await request.json()
+    body = await json_object(request)
     query = json.dumps(body.get("data", body), indent=1)[:3000]
     result = await run_in_threadpool(reasoning_service.analyze, f"Scan these indicators for threats:\n{query}")
     return result
@@ -1197,9 +1557,9 @@ async def api_scan_threats(request: Request):
 @api.post("/api/insights/generate")
 async def api_generate_insights(request: Request):
     """AI insights – called by backend mlService.getAIInsights()"""
-    body = await request.json()
-    query = body.get("query", "")
-    context = body.get("context", {})
+    body = await json_object(request)
+    query = text_field(body, "query")
+    context = body.get("context")
     result = await run_in_threadpool(reasoning_service.analyze, query, context)
     return {
         "insights": result.get("response", ""),
@@ -1211,9 +1571,12 @@ async def api_generate_insights(request: Request):
 @api.post("/api/models/predict")
 async def api_model_predict(request: Request):
     """Model prediction – called by backend mlService.getModelPrediction()"""
-    body = await request.json()
-    model_type = body.get("model_type", "phishing_detection")
-    input_data = body.get("input_data", {})
+    body = await json_object(request)
+    model_type = text_field(body, "model_type") or "phishing_detection"
+    # Either the URL, from which the service computes the model's features
+    # itself, or the features by name.
+    url = text_field(body, "url")
+    input_data = extract_url_features(url) if url else object_field(body, "input_data")
     result = ml_loader.predict(model_type, input_data)
     return result
 
@@ -1239,8 +1602,8 @@ async def api_list_models():
 async def api_v2_url_classify(request: Request):
     """URL phishing/malware classification using elftsdmr/malware-url-detect (BERT).
     Body: { "url": "https://..." }"""
-    body = await request.json()
-    url = body.get("url", "").strip()
+    body = await json_object(request)
+    url = text_field(body, "url")
     if not url:
         return JSONResponse(status_code=400, content={"detail": "url required"})
     return transformer_loader.predict_url_phishing(url)
@@ -1250,8 +1613,8 @@ async def api_v2_url_classify(request: Request):
 async def api_v2_dga_detect(request: Request):
     """DGA-generated domain detection using YangYang-Research/dga-detection.
     Body: { "domain": "abc123xyz.com" }"""
-    body = await request.json()
-    domain = body.get("domain", "").strip()
+    body = await json_object(request)
+    domain = text_field(body, "domain")
     if not domain:
         return JSONResponse(status_code=400, content={"detail": "domain required"})
     return transformer_loader.predict_dga(domain)
@@ -1261,11 +1624,11 @@ async def api_v2_dga_detect(request: Request):
 async def api_v2_security_chat(request: Request):
     """Cybersecurity Q&A, answered by the open-source model running in this Space.
     Body: { "query": "...", "max_tokens": 512 }"""
-    body = await request.json()
-    query = body.get("query", "").strip()
+    body = await json_object(request)
+    query = text_field(body, "query")
     if not query:
         return JSONResponse(status_code=400, content={"detail": "query required"})
-    max_tokens = int(body.get("max_tokens", 512))
+    max_tokens = int_field(body, "max_tokens", 512, 1, 2048)
     result = await run_in_threadpool(transformer_loader.security_chat, query, max_tokens)
     # Last resort: ML heuristic if no LLM answered
     if result.get("error"):
@@ -1292,8 +1655,8 @@ async def api_v2_batch_analyze(request: Request):
       { "results": [ { ...same shape as /analyze-url... }, ... ], "total": N, "elapsed_ms": N }
     """
     import time
-    body = await request.json()
-    urls = body.get("urls", [])
+    body = await json_object(request)
+    urls = list_field(body, "urls")
     if not urls:
         return JSONResponse(status_code=400, content={"detail": "urls array required"})
     if len(urls) > 20:
@@ -1302,7 +1665,10 @@ async def api_v2_batch_analyze(request: Request):
     t0 = time.time()
     results = []
     for url in urls:
-        url = str(url).strip()
+        if not isinstance(url, str):
+            results.append({"url": url, "error": "url must be a string"})
+            continue
+        url = url.strip()
         if not url:
             results.append({"url": url, "error": "empty url"})
             continue
@@ -1378,15 +1744,20 @@ async def api_v2_ioc_scan(request: Request):
       {
         "url":    "https://...",           # optional
         "domain": "example.com",           # optional
-        "ip":     "1.2.3.4",              # optional
-        "hash":   "abc123...",             # optional (future use)
+        "ip":     "1.2.3.4",              # optional, described but not scored
+        "hash":   "abc123...",             # optional, described but not scored
       }
 
-    Response: per-indicator results with unified risk summary.
+    Response: per-indicator results with unified risk summary. The summary is
+    built from the URL and domain only: there is no reputation source here for
+    IP addresses or file hashes, so they are reported under their own keys with
+    status "not_scored" and listed in summary.indicators_not_scored.
     """
-    body = await request.json()
-    url     = body.get("url", "").strip()
-    domain  = body.get("domain", "").strip()
+    body = await json_object(request)
+    url     = text_field(body, "url")
+    domain  = text_field(body, "domain")
+    ip      = text_field(body, "ip")
+    file_hash = text_field(body, "hash")
 
     ioc_results: Dict[str, Any] = {}
     all_scores: List[float] = []
@@ -1411,8 +1782,7 @@ async def api_v2_ioc_scan(request: Request):
     # --- Domain analysis ---
     effective_domain = domain
     if not effective_domain and url:
-        from urllib.parse import urlparse as _urlparse
-        effective_domain = _urlparse(url).hostname or ""
+        effective_domain = split_url(url)["hostname"]
 
     if effective_domain:
         dga_result = transformer_loader.predict_dga(effective_domain)
@@ -1422,6 +1792,14 @@ async def api_v2_ioc_scan(request: Request):
             "value": effective_domain,
             "dga_detection": dga_result,
         }
+
+    scored = len(ioc_results)
+
+    # --- IP and hash: described, never scored ---
+    if ip:
+        ioc_results["ip"] = describe_ip(ip)
+    if file_hash:
+        ioc_results["hash"] = describe_hash(file_hash)
 
     # --- Overall risk summary ---
     overall_score = max(all_scores) if all_scores else 0.0
@@ -1446,7 +1824,8 @@ async def api_v2_ioc_scan(request: Request):
             "overall_risk_level": risk_level,
             "overall_threat_score": round(overall_score, 3),
             "risk_score": round(overall_score * 100, 1),
-            "indicators_analyzed": len(ioc_results),
+            "indicators_analyzed": scored,
+            "indicators_not_scored": [kind for kind in ("ip", "hash") if kind in ioc_results],
         },
         "ai_analysis": ai_analysis,
         "timestamp": datetime.utcnow().isoformat(),
@@ -1461,8 +1840,8 @@ async def api_v2_url_enrich(request: Request):
 
     Body: { "url": "https://..." }
     """
-    body = await request.json()
-    url = body.get("url", "").strip()
+    body = await json_object(request)
+    url = text_field(body, "url")
     if not url:
         return JSONResponse(status_code=400, content={"detail": "url required"})
 
@@ -1478,8 +1857,7 @@ async def api_v2_url_enrich(request: Request):
     bert_score = bert_result.get("threat_score", 0.0) if not bert_result.get("error") else None
 
     # DGA check on hostname
-    from urllib.parse import urlparse as _urlparse
-    hostname = _urlparse(url).hostname or ""
+    hostname = split_url(url)["hostname"]
     dga_result = transformer_loader.predict_dga(hostname) if hostname else None
     dga_score = dga_result.get("threat_score", 0.0) if dga_result and not dga_result.get("error") else 0.0
 
@@ -1591,11 +1969,11 @@ async def api_v2_chat(request: Request):
         "timestamp": "..."
       }
     """
-    body = await request.json()
-    message = body.get("message", "").strip()
-    session_id = body.get("session_id", "")
-    history = body.get("conversation_history", [])
-    context = body.get("context", {})
+    body = await json_object(request)
+    message = text_field(body, "message")
+    session_id = text_field(body, "session_id")
+    history = dicts_in(list_field(body, "conversation_history"))
+    context = object_field(body, "context")
 
     if not message:
         return JSONResponse(status_code=400, content={"detail": "message required"})
@@ -1605,7 +1983,7 @@ async def api_v2_chat(request: Request):
     sources: List[Dict] = []
 
     # System telemetry
-    telemetry = context.get("telemetry", {})
+    telemetry = object_field(context, "telemetry")
     if telemetry:
         cpu = telemetry.get("cpu", telemetry.get("cpu_percent"))
         ram = telemetry.get("ram", telemetry.get("ram_percent"))
@@ -1622,7 +2000,7 @@ async def api_v2_chat(request: Request):
             sources.append({"type": "telemetry", "label": "System Telemetry", "value": ", ".join(telem_parts)})
 
     # Recent scan history
-    recent_scans = context.get("recent_scans", [])
+    recent_scans = dicts_in(list_field(context, "recent_scans"))
     if recent_scans:
         scan_summary = "; ".join(
             f"{s.get('url', 'unknown')} → {s.get('category', '?')} (score {s.get('risk_score', '?')}/100)"
@@ -1632,7 +2010,7 @@ async def api_v2_chat(request: Request):
         sources.append({"type": "scan_history", "label": "Recent Scans", "value": f"{len(recent_scans)} scans"})
 
     # Active threats
-    active_threats = context.get("active_threats", [])
+    active_threats = dicts_in(list_field(context, "active_threats"))
     if active_threats:
         threat_summary = "; ".join(
             f"{t.get('type', '?')} [{t.get('severity', '?')}] from {t.get('source', '?')}"
@@ -1642,7 +2020,7 @@ async def api_v2_chat(request: Request):
         sources.append({"type": "threats", "label": "Active Threats", "value": f"{len(active_threats)} active"})
 
     # Behavioral alerts
-    behavioral_alerts = context.get("behavioral_alerts", [])
+    behavioral_alerts = dicts_in(list_field(context, "behavioral_alerts"))
     if behavioral_alerts:
         alert_summary = "; ".join(
             f"'{a.get('pattern', a.get('type', '?'))}' (score {a.get('score', '?')})"
@@ -1671,7 +2049,7 @@ async def api_v2_chat(request: Request):
     conversation_instruction = ""
     if history:
         conversation_instruction = "\n\nCONVERSATION CONTEXT (recent turns):\n" + "\n".join(
-            f"{h.get('role','?').upper()}: {str(h.get('content',''))[:300]}"
+            f"{str(h.get('role') or '?').upper()}: {str(h.get('content',''))[:300]}"
             for h in history[-6:]
         )
 
@@ -1763,7 +2141,7 @@ async def api_v2_chat(request: Request):
 @api.post("/api/analysis/network")
 async def api_analyze_network(request: Request):
     """Network traffic analysis – called by backend mlService.analyzeNetworkTraffic()"""
-    body = await request.json()
+    body = await json_object(request)
     traffic_data = body.get("traffic_data", {})
     result = await run_in_threadpool(
         reasoning_service.analyze,
@@ -1775,8 +2153,8 @@ async def api_analyze_network(request: Request):
 @api.post("/api/ai/execute-task")
 async def api_execute_task(request: Request):
     """AI task execution – called by backend mlService.executeAITask()"""
-    body = await request.json()
-    task_type = body.get("task_type", "")
+    body = await json_object(request)
+    task_type = text_field(body, "task_type")
     task_data = body.get("task_data", {})
     result = await run_in_threadpool(
         reasoning_service.analyze,
@@ -1788,7 +2166,7 @@ async def api_execute_task(request: Request):
 @api.post("/api/browser/analyze")
 async def api_analyze_browser(request: Request):
     """Browser session analysis"""
-    body = await request.json()
+    body = await json_object(request)
     session = body.get("session_data", body)
     result = await run_in_threadpool(
         reasoning_service.analyze,
@@ -1800,7 +2178,7 @@ async def api_analyze_browser(request: Request):
 @api.post("/api/threat-feeds/analyze")
 async def api_analyze_threat_feed(request: Request):
     """Threat feed analysis"""
-    body = await request.json()
+    body = await json_object(request)
     result = await run_in_threadpool(
         reasoning_service.analyze,
         f"Analyze this threat feed:\n{json.dumps(body, indent=1)[:3000]}",
@@ -1810,7 +2188,7 @@ async def api_analyze_threat_feed(request: Request):
 
 @api.post("/api/datasets/process")
 async def api_process_dataset(request: Request):
-    body = await request.json()
+    body = await json_object(request)
     return {
         "status": "processed",
         "dataset_name": body.get("dataset_name", ""),

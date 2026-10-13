@@ -49,9 +49,10 @@ router.get('/catalog', (req, res) => {
 
 /**
  * GET /api/audit/stats
- * Get aggregate audit log statistics. Auth required.
+ * Get aggregate audit log statistics. They include the most active user IDs,
+ * so they need the same role as the log itself.
  */
-router.get('/stats', auth, (req, res) => {
+router.get('/stats', auth, authorize('analyst', 'admin'), (req, res) => {
   try {
     res.json({ success: true, data: auditLogService.getStats() });
   } catch (err) {

@@ -9,7 +9,7 @@
 const express = require('express');
 const router = express.Router();
 const { distributedIntelligenceService } = require('../services/distributedIntelligenceService');
-const { auth } = require('../middleware/auth');
+const { auth, adminOnly, analystOrAdmin } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 // ──────────────────────────────────────────────
@@ -33,26 +33,15 @@ router.get('/health', (req, res) => {
 /**
  * POST /api/distributed/nodes/register
  * Register a node with the distributed intelligence network.
- * Accepts both authenticated and unauthenticated requests (node-level auth via headers).
+ * Requires a signed-in user; the node is recorded as owned by that account.
  */
-router.post('/nodes/register', async (req, res) => {
+router.post('/nodes/register', auth, async (req, res) => {
   try {
     const registration = req.body;
-    
-    // Extract user ID from auth token if present, otherwise use node ID
-    let userId = 'anonymous';
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        // Attempt to verify token — non-blocking, graceful fallback
-        const { auth: authMiddleware } = require('../middleware/auth');
-        // Simple extraction — the auth middleware handles full verification
-        userId = req.headers['x-node-id'] || 'authenticated-user';
-      } catch (e) {
-        // Use node ID as fallback user ID
-        userId = registration.nodeId || 'unknown';
-      }
-    }
+
+    // The node belongs to the signed-in account. Node signatures are still not
+    // verified (finding F06), so this is an ownership record, not device trust.
+    const userId = String(req.user.userId);
 
     const nodeSignature = req.headers['x-node-signature'];
     const nodeTimestamp = req.headers['x-node-timestamp'];
@@ -80,7 +69,7 @@ router.post('/nodes/register', async (req, res) => {
  */
 router.get('/nodes', auth, (req, res) => {
   try {
-    const userId = req.user?.id || req.user?._id || 'unknown';
+    const userId = String(req.user.userId);
     const nodes = distributedIntelligenceService.getNodesForUser(userId);
     res.json({
       success: true,
@@ -99,7 +88,7 @@ router.get('/nodes', auth, (req, res) => {
  * GET /api/distributed/nodes/all
  * List all nodes across all users (admin endpoint).
  */
-router.get('/nodes/all', auth, (req, res) => {
+router.get('/nodes/all', auth, adminOnly, (req, res) => {
   try {
     const allNodes = distributedIntelligenceService.getAllNodes();
     res.json({
@@ -123,7 +112,7 @@ router.get('/nodes/all', auth, (req, res) => {
  * POST /api/distributed/telemetry/sync
  * Ingest telemetry summary from a node.
  */
-router.post('/telemetry/sync', (req, res) => {
+router.post('/telemetry/sync', auth, (req, res) => {
   try {
     const summary = req.body;
 
@@ -133,6 +122,12 @@ router.post('/telemetry/sync', (req, res) => {
         success: false,
         error: 'Missing required fields: nodeId, nonce, sequenceId',
       });
+    }
+
+    // Telemetry is accepted only for a node registered to the signed-in
+    // account. Another account's node answers exactly like an unregistered one.
+    if (!distributedIntelligenceService.isNodeOwnedBy(summary.nodeId, req.user.userId)) {
+      return res.status(400).json({ success: false, error: 'Unknown node. Register first.' });
     }
 
     const result = distributedIntelligenceService.ingestTelemetry(summary);
@@ -160,6 +155,10 @@ router.post('/telemetry/sync', (req, res) => {
 router.get('/telemetry/:nodeId', auth, (req, res) => {
   try {
     const { nodeId } = req.params;
+    // A node's telemetry is for its owner and administrators.
+    if (req.user.role !== 'admin' && !distributedIntelligenceService.isNodeOwnedBy(nodeId, req.user.userId)) {
+      return res.status(404).json({ success: false, message: 'Node not found' });
+    }
     const limit = parseInt(req.query.limit) || 50;
     const store = distributedIntelligenceService.telemetryStore.get(nodeId) || [];
     
@@ -183,9 +182,10 @@ router.get('/telemetry/:nodeId', auth, (req, res) => {
 
 /**
  * GET /api/distributed/correlations
- * Get cross-node correlation results.
+ * Get cross-node correlation results. They name the nodes of every account
+ * that reported a domain, so they are for analysts and administrators.
  */
-router.get('/correlations', auth, (req, res) => {
+router.get('/correlations', auth, analystOrAdmin, (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const correlations = distributedIntelligenceService.getCorrelations(limit);
@@ -211,7 +211,7 @@ router.get('/correlations', auth, (req, res) => {
  * GET /api/distributed/metrics/global
  * Get aggregated global metrics across all nodes.
  */
-router.get('/metrics/global', (req, res) => {
+router.get('/metrics/global', auth, (req, res) => {
   try {
     const metrics = distributedIntelligenceService.getGlobalMetrics();
     res.json({
@@ -228,7 +228,7 @@ router.get('/metrics/global', (req, res) => {
  * GET /api/distributed/metrics/stats
  * Get service-level statistics.
  */
-router.get('/metrics/stats', (req, res) => {
+router.get('/metrics/stats', auth, (req, res) => {
   try {
     const stats = distributedIntelligenceService.getServiceStats();
     res.json({
@@ -249,7 +249,7 @@ router.get('/metrics/stats', (req, res) => {
  * GET /api/distributed/weights
  * Get the current global risk weight table.
  */
-router.get('/weights', (req, res) => {
+router.get('/weights', auth, (req, res) => {
   try {
     const table = distributedIntelligenceService.getRiskWeightTable();
     res.json({
@@ -264,9 +264,9 @@ router.get('/weights', (req, res) => {
 
 /**
  * PUT /api/distributed/weights
- * Update the global risk weight table (admin/auth required).
+ * Update the global risk weight table (administrators only).
  */
-router.put('/weights', auth, (req, res) => {
+router.put('/weights', auth, adminOnly, (req, res) => {
   try {
     const updates = req.body;
     const table = distributedIntelligenceService.updateRiskWeightTable(updates);
@@ -301,7 +301,7 @@ router.get('/broadcast/weights', auth, (req, res) => {
  * GET /api/distributed/broadcast/nodes
  * Get a node status broadcast message.
  */
-router.get('/broadcast/nodes', auth, (req, res) => {
+router.get('/broadcast/nodes', auth, adminOnly, (req, res) => {
   try {
     const broadcast = distributedIntelligenceService.buildNodeStatusBroadcast();
     res.json({ success: true, data: broadcast });

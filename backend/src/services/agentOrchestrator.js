@@ -5,7 +5,7 @@
  *   Stage 1 (parallel, no deps):
  *     • URLClassifierAgent  — BERT phishing/malware classifier (HF)
  *     • DGADetectorAgent    — entropy heuristic (HF)
- *     • WebScraperAgent     — webscrapper.live → DOM/network/headers
+ *     • WebScraperAgent     — webscrapper.live v1 → signals, coverage, forms, network
  *     • MemoryAgent         — load domain history + session context
  *   Stage 2 (uses scraper output):
  *     • IOCExtractorAgent    — regex extract IOCs from scraped text
@@ -99,26 +99,42 @@ class DGADetectorAgent extends AgentBase {
 }
 
 class WebScraperAgent extends AgentBase {
-    constructor() { super('web_scraper', 'Page scraper — DOM, network, headers'); }
+    constructor() { super('web_scraper', 'Rendered-page scan — forms, scripts, network, TLS, signals'); }
     async _run({ url }) {
         const r = await webScraperAPIService.scrapeWebsite(url);
-        if (!r.success) throw new Error(r.error || 'scrape failed');
-        const d = r.data || {};
+        // A scanner that is unavailable fails this agent. The reporter then
+        // records the gap; it must not be read as "nothing found".
+        if (!r.success) throw new Error(`${r.error_code}: ${r.error}`);
+        const analysis = webScraperAPIService.formatForAIAnalysis(r);
+        const d = r.data;
         return {
-            networkRequests: (d.network_requests || []).length,
-            consoleLogs:     (d.console_logs || []).length,
-            isHttps:         d.security_report?.is_https,
-            mixedContent:    d.security_report?.mixed_content,
-            missingHeaders:  d.security_report?.missing_security_headers || [],
-            htmlSize:        (d.html_content || '').length,
+            scanId:          d.scan_id,
+            pageLoaded:      d.page.loaded,
+            loadError:       d.page.load_error,
+            evidenceStatus:  analysis.evidence_status,
+            coverageGaps:    analysis.coverage_gaps,
+            signals:         d.signals,
+            evidenceScore:   analysis.risk_score,
+            aiContext:       d.ai_context,
+            finalUrl:        d.page.final_url,
+            networkRequests: d.performance_metrics.total_requests,
+            consoleLogs:     d.console_logs.length,
+            // undefined, not false, when the page was not observed
+            isHttps:         d.security_report.is_https ?? undefined,
+            mixedContent:    d.security_report.mixed_content ?? undefined,
+            missingHeaders:  d.security_report.missing_security_headers,
+            htmlSize:        d.page.html_bytes ?? 0,
             scrapedAt:       d.scraped_at,
-            // Keep slices accessible to downstream agents
+            // Structured evidence for downstream agents
             _raw: {
-                html_content:     d.html_content?.slice(0, 50000) || '',
-                network_requests: d.network_requests || [],
-                console_logs:     d.console_logs || [],
-                response_headers: d.response_headers || {},
-                security_report:  d.security_report || {},
+                forms:            d.result.forms || [],
+                scripts:          (d.result.scripts || []).map(script => ({ src: script.src, inline: script.inline, third_party: script.third_party, obfuscation: script.obfuscation })),
+                cookies:          d.result.cookies || [],
+                redirects:        d.result.redirects || [],
+                iocs:             d.result.iocs || null,
+                network_requests: d.network_requests.slice(0, 100),
+                response_headers: d.response_headers,
+                security_report:  d.security_report,
             },
         };
     }
@@ -126,11 +142,11 @@ class WebScraperAgent extends AgentBase {
 
 class MemoryAgent extends AgentBase {
     constructor() { super('memory', 'Domain history + session context loader'); }
-    async _run({ url, sessionId }) {
+    async _run({ url, sessionId, userId }) {
         let host;
         try { host = new URL(url).hostname; } catch { host = url; }
         const domain    = await memoryService.getDomainMemory(host);
-        const session   = memoryService.sessionStats(sessionId);
+        const session   = memoryService.sessionStats(sessionId, userId);
         const similar   = await memoryService.findSimilarVisits(url, 3);
         return {
             host,
@@ -154,8 +170,19 @@ class IOCExtractorAgent extends AgentBase {
     async _run({ url, scraperResult }) {
         const iocs = [];
         iocs.push(...sandboxAnalysisService.extractIOCsFromUrl(url));
-        const html = scraperResult?._raw?.html_content || '';
-        if (html) iocs.push(...sandboxAnalysisService.extractIOCsFromText(html, 'page-html'));
+        // Indicators the rendered-page scan found in the page, its scripts and its requests
+        const scanned = scraperResult?._raw?.iocs;
+        if (scanned) {
+            const add = (type, value, source, severityType = type) => iocs.push({
+                type, value, source: `page-scan:${source}`, severity: sandboxAnalysisService._iocSeverity(severityType, value),
+            });
+            for (const e of scanned.domains || [])          add('domain', e.value, e.source);
+            for (const e of scanned.ips || [])              add('ip', e.value, e.source, 'ipv4');
+            for (const e of scanned.urls || [])             add('url', e.value, e.source);
+            for (const e of scanned.emails || [])           add('email', e.value, e.source);
+            for (const e of scanned.hashes || [])           add(e.algorithm, e.value, e.source);
+            for (const e of scanned.crypto_addresses || []) add(e.currency === 'bitcoin' ? 'btcAddr' : 'ethAddr', e.value, e.source, 'btcAddr');
+        }
         // Also pull IOCs from network request URLs
         const reqs = scraperResult?._raw?.network_requests || [];
         for (const req of reqs.slice(0, 50)) {
@@ -197,45 +224,47 @@ class MITREMapperAgent extends AgentBase {
 }
 
 class BehavioralAgent extends AgentBase {
-    constructor() { super('behavioral', 'JS APIs, forms, cookies, redirect chains'); }
+    constructor() { super('behavioral', 'Forms, script APIs, cookies, redirect chain'); }
     async _run({ scraperResult }) {
-        const html = scraperResult?._raw?.html_content || '';
-        const headers = scraperResult?._raw?.response_headers || {};
-        const network = scraperResult?._raw?.network_requests || [];
+        // Reads the structured evidence of the rendered-page scan. With no page
+        // there is nothing to inspect, and saying so beats returning zeros.
+        if (!scraperResult || !scraperResult.pageLoaded) throw new Error('no rendered page to inspect');
+        const raw = scraperResult._raw || {};
+        const forms = raw.forms || [];
+        const scripts = raw.scripts || [];
+        const network = raw.network_requests || [];
 
         const findings = [];
-        // Forms
-        const formCount = (html.match(/<form\b/gi) || []).length;
-        const passwordFields = (html.match(/type=["']?password["']?/gi) || []).length;
-        if (passwordFields > 0 && !scraperResult.isHttps) findings.push('Password input on non-HTTPS page');
-        if (formCount > 5) findings.push(`${formCount} forms detected — possible phishing kit`);
-        // Suspicious JS APIs
+        // Forms: what the page asks for, and where it sends it
+        const passwordFields = forms.filter(f => f.password).length;
+        const credentialForms = forms.filter(f => f.password || f.otp || f.card || f.seed_phrase);
+        if (passwordFields > 0 && scraperResult.isHttps === false) findings.push('Password input on non-HTTPS page');
+        if (credentialForms.some(f => f.action_cross_site)) findings.push('Credential form submits to a different site');
+        if (credentialForms.some(f => f.action_insecure)) findings.push('Credential form submits over plain HTTP');
+        if (forms.some(f => f.seed_phrase)) findings.push('Form asks for a wallet recovery phrase or private key');
+        if (forms.length > 5) findings.push(`${forms.length} forms on one page`);
+        // Script APIs, counted in the scripts that actually ran
+        const total = key => scripts.reduce((sum, script) => sum + ((script.obfuscation && script.obfuscation[key]) || 0), 0);
         const suspiciousApis = [];
-        if (/eval\s*\(/.test(html)) suspiciousApis.push('eval()');
-        if (/atob\s*\(/.test(html)) suspiciousApis.push('atob() — base64 decode');
-        if (/document\.write\s*\(/.test(html)) suspiciousApis.push('document.write()');
-        if (/Function\s*\(['"`]/.test(html)) suspiciousApis.push('Function() constructor');
-        if (/crypto\.subtle/.test(html)) suspiciousApis.push('Web Crypto API');
-        if (suspiciousApis.length) findings.push(`Suspicious JS APIs: ${suspiciousApis.join(', ')}`);
-        // Cookies
-        const setCookies = headers['set-cookie'] || headers['Set-Cookie'];
-        const cookieCount = Array.isArray(setCookies) ? setCookies.length : (setCookies ? 1 : 0);
-        if (cookieCount > 8) findings.push(`${cookieCount} cookies set — heavy tracking`);
-        // External requests
-        let externalCount = 0;
-        try {
-            const baseHost = new URL(scraperResult?._raw?.security_report?.url || '').hostname;
-            externalCount = network.filter(r => {
-                try { return new URL(r.url).hostname !== baseHost; } catch { return false; }
-            }).length;
-        } catch { /* ignore */ }
-        // Redirect chain
-        const redirects = network.filter(r => r.status >= 300 && r.status < 400).length;
-        if (redirects > 2) findings.push(`${redirects} redirects detected`);
+        if (total('eval_count') > 0) suspiciousApis.push('eval() / Function()');
+        if (total('atob_count') > 0) suspiciousApis.push('atob() — base64 decode');
+        if (total('fromcharcode_count') >= 10) suspiciousApis.push('String.fromCharCode() used heavily');
+        const obfuscated = scripts.filter(script => script.obfuscation && script.obfuscation.indicators.some(i => ['eval_of_decoded_data', 'char_code_heavy', 'escape_dense'].includes(i))).length;
+        if (obfuscated) findings.push(`${obfuscated} script(s) with obfuscation indicators`);
+        else if (suspiciousApis.length > 1) findings.push(`Script APIs in use: ${suspiciousApis.join(', ')}`);
+        // Cookies, from the browser's cookie jar
+        const cookieCount = (raw.cookies || []).length;
+        if (cookieCount > 8) findings.push(`${cookieCount} cookies set`);
+        // Requests to other sites, and the redirect chain
+        const externalCount = network.filter(r => r.third_party).length;
+        const redirects = Math.max(0, (raw.redirects || []).length - 1);
+        if (redirects > 2) findings.push(`${redirects} redirects before the final page`);
         return {
-            forms: formCount,
+            forms: forms.length,
             passwordFields,
+            credentialForms: credentialForms.length,
             suspiciousApis,
+            obfuscatedScripts: obfuscated,
             cookies: cookieCount,
             externalRequests: externalCount,
             redirects,
@@ -295,14 +324,10 @@ class ReportAgent extends AgentBase {
         const signals = [];
         if (urlClass)     signals.push((urlClass.score || 0) * 100 * 0.30);          // 30% weight
         if (dga?.verdict === 'dga')         signals.push((dga.score || 0) * 100 * 0.10);
-        if (scraper) {
-            let s = 0;
-            // Only flag HTTP if scraper EXPLICITLY reported isHttps:false (not just undefined)
-            if (scraper.isHttps === false) s += 8;
-            if (scraper.mixedContent)      s += 5;
-            if ((scraper.missingHeaders?.length || 0) > 3) s += 4;
-            signals.push(s);
-        }
+        // Rendered-page evidence: the heuristic summary of the scanner's
+        // signals (WebScraperAPIService.evidenceScore), weighted at 35%. It is
+        // null, and contributes nothing, when the page was not observed.
+        if (scraper && typeof scraper.evidenceScore === 'number') signals.push(scraper.evidenceScore * 0.35);
         if (behavioral) {
             let s = 0;
             if (behavioral.passwordFields && scraper?.isHttps === false) s += 12;
@@ -319,23 +344,38 @@ class ReportAgent extends AgentBase {
         const riskScore = Math.min(100, Math.round(baseScore));
 
         // Verdict tiers
+        // How much of the page the verdict rests on. Missing page evidence
+        // can never produce "clean": the lowest tier is then "unknown".
+        const scraperFailure = agents.web_scraper?.status === 'ok' ? null : (agents.web_scraper?.error || 'the rendered-page scan did not run');
+        const evidenceStatus = scraper ? scraper.evidenceStatus : 'unavailable';
+        const coverage = {
+            rendered_page: evidenceStatus,
+            reason: scraperFailure || (scraper && !scraper.pageLoaded ? scraper.loadError : null),
+            gaps: scraper ? scraper.coverageGaps : [],
+            agents_failed: Object.keys(agents).filter(name => agents[name].status !== 'ok'),
+        };
         const verdict = riskScore >= 65 ? 'malicious'
                       : riskScore >= 35 ? 'suspicious'
                       : riskScore >= 15 ? 'low-risk'
-                      : 'clean';
+                      : evidenceStatus === 'complete' ? 'clean' : 'unknown';
 
         // Build human-readable findings list
         const findings = [];
         if (urlClass?.verdict === 'malicious') findings.push(`URL classifier: malicious (${urlClass.confidence}% confidence)`);
         if (dga?.verdict === 'dga')             findings.push(`DGA detector: looks generated (${dga.confidence}% confidence)`);
-        if (scraper?.isHttps === false)        findings.push('Site does not use HTTPS');
-        if (scraper?.mixedContent)              findings.push('Mixed HTTP/HTTPS content');
+        // The scanner's own observations, most severe first
+        for (const signal of (scraper?.signals || []).filter(sig => sig.severity === 'high' || sig.severity === 'medium').slice(0, 8)) {
+            findings.push(signal.title);
+        }
+        if (evidenceStatus !== 'complete') {
+            findings.push(`Page evidence ${evidenceStatus}: ${coverage.reason || coverage.gaps.slice(0, 3).join('; ') || 'some checks did not run'}`);
+        }
         if (behavioral?.findings?.length)       findings.push(...behavioral.findings);
         if (threatIntel?.flagged > 0)           findings.push(`${threatIntel.flagged} IOCs known to OTX threat intel`);
         if (memory?.lastVerdict === 'malicious') findings.push(`Domain previously flagged malicious (${memory.visitCount} visits)`);
 
         // LLM summary (chained: Gemini → ZySec → heuristic)
-        const llmContextKey = sessionId ? `session:${sessionId}` : null;
+        const llmContextKey = sessionId ? `session:${userId == null ? '' : userId}:${sessionId}` : null;
         const llm = await llmFallbackChain.explainThreat({
             target: url,
             riskScore,
@@ -351,6 +391,9 @@ class ReportAgent extends AgentBase {
             userId,
             verdict,
             riskScore,
+            evidenceStatus,
+            coverage,
+            signals:    scraper?.signals || [],
             summary:    llm.text,
             llmSource:  llm.source,
             findings,
@@ -364,6 +407,9 @@ class ReportAgent extends AgentBase {
                 isHttps:         scraper.isHttps,
                 missingHeaders:  scraper.missingHeaders,
                 htmlSize:        scraper.htmlSize,
+                scanId:          scraper.scanId,
+                finalUrl:        scraper.finalUrl,
+                evidenceScore:   scraper.evidenceScore,
             } : null,
             createdAt: new Date().toISOString(),
         };
@@ -400,7 +446,7 @@ class ReportAgent extends AgentBase {
             });
         }
         if (sessionId) {
-            memoryService.recordUrlInSession(sessionId, { url, verdict, host: memory?.host });
+            memoryService.recordUrlInSession(sessionId, { url, verdict, host: memory?.host, ownerId: userId });
         }
         // Best-effort vector store
         memoryService.storeVisitVector({
@@ -450,7 +496,7 @@ class AgentOrchestrator {
             this.agents.url_classifier.execute({ url }),
             this.agents.dga_detector.execute({ url }),
             this.agents.web_scraper.execute({ url }),
-            this.agents.memory.execute({ url, sessionId }),
+            this.agents.memory.execute({ url, sessionId, userId }),
         ]);
         const s1 = Object.fromEntries(stage1.map(r => [r.agent, r]));
 
@@ -482,6 +528,7 @@ class AgentOrchestrator {
 
         // Track for status endpoint
         this._track({
+            ownerId: userId == null ? null : String(userId), sessionId: sessionId || null,
             id: finalReport.id, url, verdict: finalReport.verdict, riskScore: finalReport.riskScore,
             durationMs: Date.now() - startedAt, createdAt: finalReport.createdAt || new Date().toISOString(),
         });
@@ -506,12 +553,23 @@ class AgentOrchestrator {
         return summary;
     }
 
-    getRecentReports(limit = 20) { return this.recentReports.slice(0, limit); }
+    // Reports are always read for one account; a read that names no account,
+    // and a report tracked without one, match nothing.
+    _reportsOf(ownerId) {
+        if (ownerId == null) return [];
+        const owner = String(ownerId);
+        return this.recentReports.filter(report => report.ownerId === owner);
+    }
 
-    getStats() {
-        const recent = this.recentReports.slice(0, 50);
+    getRecentReports(limit = 20, ownerId) {
+        return this._reportsOf(ownerId).slice(0, limit).map(({ ownerId: _owner, ...report }) => report);
+    }
+
+    getStats(ownerId) {
+        const own = this._reportsOf(ownerId);
+        const recent = own.slice(0, 50);
         return {
-            totalReports: this.recentReports.length,
+            totalReports: own.length,
             avgDurationMs: recent.length ? Math.round(recent.reduce((a, r) => a + r.durationMs, 0) / recent.length) : 0,
             verdictBreakdown: recent.reduce((acc, r) => { acc[r.verdict || 'unknown'] = (acc[r.verdict || 'unknown'] || 0) + 1; return acc; }, {}),
             agents: Object.keys(this.agents).map(k => ({ name: k, role: this.agents[k].role })),

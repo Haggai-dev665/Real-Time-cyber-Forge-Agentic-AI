@@ -26,73 +26,26 @@ threatMonitoringService.startMonitoring();
  * Helper function to build security findings from scraped data
  */
 function buildSecurityFindings(scrapedData) {
-  const findings = [];
-  const ss = scrapedData.security_summary || {};
-  
-  // HTTPS check
-  if (!ss.is_https) {
+  // Findings are the scanner's own signals: each is something it observed,
+  // with a stable id. Nothing is inferred from a missing value.
+  const findings = (scrapedData.signals || [])
+    .filter(signal => signal.severity !== 'info')
+    .map(signal => ({
+      id: signal.id,
+      title: signal.title,
+      description: `Observed by the rendered-page scan (${signal.id}).`,
+      severity: signal.severity
+    }));
+
+  if (scrapedData.evidence_status && scrapedData.evidence_status !== 'complete') {
     findings.push({
-      title: 'No HTTPS',
-      description: 'Website is not using HTTPS encryption. All data is transmitted in plain text.',
-      severity: 'critical'
-    });
-  }
-  
-  // Mixed content
-  if (ss.has_mixed_content) {
-    findings.push({
-      title: 'Mixed Content',
-      description: 'Website loads some resources over insecure HTTP connections.',
-      severity: 'high'
-    });
-  }
-  
-  // Insecure cookies
-  if (ss.has_insecure_cookies) {
-    findings.push({
-      title: 'Insecure Cookies',
-      description: 'Some cookies are not marked as Secure or HttpOnly.',
-      severity: 'medium'
-    });
-  }
-  
-  // Missing security headers
-  const missingHeaders = ss.missing_security_headers || scrapedData.missing_headers || [];
-  missingHeaders.forEach(header => {
-    findings.push({
-      title: `Missing ${header}`,
-      description: `The ${header} security header is not set.`,
-      severity: 'medium'
-    });
-  });
-  
-  // Suspicious requests
-  if (ss.suspicious_requests_count > 0) {
-    findings.push({
-      title: 'Suspicious Network Requests',
-      description: `${ss.suspicious_requests_count} potentially suspicious requests detected.`,
-      severity: 'high'
-    });
-  }
-  
-  // External domains
-  if (ss.external_domains_count > 20) {
-    findings.push({
-      title: 'Excessive External Domains',
-      description: `Website connects to ${ss.external_domains_count} external domains.`,
-      severity: 'low'
-    });
-  }
-  
-  // Console errors
-  if (ss.console_errors_count > 0) {
-    findings.push({
-      title: 'JavaScript Errors',
-      description: `${ss.console_errors_count} JavaScript errors detected on the page.`,
+      id: 'incomplete_coverage',
+      title: scrapedData.evidence_status === 'unavailable' ? 'The page was not observed' : 'The scan is incomplete',
+      description: (scrapedData.coverage_gaps || []).join('; ') || 'Some checks did not run.',
       severity: 'info'
     });
   }
-  
+
   return findings;
 }
 
@@ -918,6 +871,7 @@ router.post('/execute-task-ml',
  * @access Public
  */
 router.post('/chat',
+  auth,
   aiAnalysisLimiter,
   [
     body('message').notEmpty().withMessage('Message is required'),
@@ -955,14 +909,13 @@ router.post('/chat',
           // Call the web scraper API
           const scrapeResult = await webScraperAPIService.scrapeWebsite(targetUrl);
           
+          // Format the scan for the model. This also works for a failed scan:
+          // the context then states that the page was not observed.
+          const analysisData = webScraperAPIService.formatForAIAnalysis(scrapeResult);
+          const aiContext = webScraperAPIService.generateAIContext(analysisData);
+
           if (scrapeResult.success) {
-            // Format the scraped data for AI analysis
-            const analysisData = webScraperAPIService.formatForAIAnalysis(scrapeResult);
-            const aiContext = webScraperAPIService.generateAIContext(analysisData);
-            
-            console.log(`✅ Website scraped successfully. Risk Score: ${analysisData.risk_score}/100`);
-            console.log(`   📊 Network requests: ${scrapeResult.data?.network_requests?.length || 0}`);
-            console.log(`   📋 Console logs: ${scrapeResult.data?.console_logs?.length || 0}`);
+            console.log(`✅ Rendered-page scan: ${analysisData.evidence_status}, ${analysisData.signals.length} signal(s)`);
             
             // Add scraped data to context for AI (include raw data for frontend)
             websiteContext = {
@@ -978,7 +931,9 @@ router.post('/chat',
               type: 'website_security_scan',
               url: targetUrl,
               error: scrapeResult.error,
-              formatted_context: `Website scraping failed for ${targetUrl}: ${scrapeResult.error}. Provide general security advice.`
+              error_code: scrapeResult.error_code,
+              coverage: analysisData.coverage,
+              formatted_context: `${aiContext}\n\nThe page could not be scanned, so do not describe it as safe or as malicious. Say that it was not observed and give general advice.`
             };
           }
         } catch (scrapeError) {
@@ -987,7 +942,7 @@ router.post('/chat',
             type: 'website_security_scan',
             url: targetUrl,
             error: scrapeError.message,
-            formatted_context: `Unable to scrape ${targetUrl}. Error: ${scrapeError.message}. Provide general security analysis advice.`
+            formatted_context: `The page ${targetUrl} could not be scanned, so nothing was observed about it. Do not describe it as safe or as malicious; give general advice.`
           };
         }
       }
@@ -1019,8 +974,12 @@ router.post('/chat',
             url: websiteContext.url,
             title: sd.title || websiteContext.url,
             description: sd.description || sd.meta_description || '',
-            risk_score: sd.risk_score || 0,
-            risk_level: sd.risk_level || 'low',
+            // Null when the page was not observed; never defaulted to zero or "low".
+            risk_score: sd.risk_score ?? null,
+            risk_level: sd.risk_level || 'unknown',
+            evidence_status: sd.evidence_status,
+            coverage_gaps: sd.coverage_gaps || [],
+            signals: sd.signals || [],
             scanned: !websiteContext.error,
             summary: sd.summary || `Security analysis of ${websiteContext.url}`,
             
@@ -1031,13 +990,14 @@ router.post('/chat',
               hsts: sd.security_summary.missing_security_headers?.includes('Strict-Transport-Security') ? null : 'Present',
               xFrameOptions: sd.security_summary.missing_security_headers?.includes('X-Frame-Options') ? null : 'Present',
               xContentType: sd.security_summary.missing_security_headers?.includes('X-Content-Type-Options') ? null : 'Present',
-              xssProtection: sd.security_summary.missing_security_headers?.includes('X-XSS-Protection') ? null : 'Present',
+              // The scanner does not evaluate this deprecated header.
+              xssProtection: 'Not checked',
               referrerPolicy: sd.security_summary.missing_security_headers?.includes('Referrer-Policy') ? null : 'Present'
             } : {},
             ssl: {
-              valid: sd.security_summary?.is_https || false,
-              issuer: sd.ssl_issuer || null,
-              expires: sd.ssl_expires || null
+              valid: sd.tls ? !sd.tls.certificate_error : false,
+              issuer: sd.tls?.issuer || null,
+              expires: sd.tls?.valid_to || null
             },
             
             // Technologies (extracted from network requests)
@@ -1332,6 +1292,7 @@ router.post('/execute-task',
  * @access Public
  */
 router.post('/scrape-website',
+  auth,
   aiAnalysisLimiter,
   [
     body('url').isURL().withMessage('Valid URL is required')
@@ -1345,10 +1306,11 @@ router.post('/scrape-website',
       // Call the web scraper API
       const scrapeResult = await webScraperAPIService.scrapeWebsite(url);
       
+      // Format the scan for analysis (also describes a failed scan)
+      const analysisData = webScraperAPIService.formatForAIAnalysis(scrapeResult);
+      const aiContext = webScraperAPIService.generateAIContext(analysisData);
+
       if (scrapeResult.success) {
-        // Format the scraped data for analysis
-        const analysisData = webScraperAPIService.formatForAIAnalysis(scrapeResult);
-        const aiContext = webScraperAPIService.generateAIContext(analysisData);
         
         res.json({
           success: true,
@@ -1357,18 +1319,23 @@ router.post('/scrape-website',
             analysis: analysisData,
             formatted_report: aiContext,
             raw_data: {
-              network_requests_count: scrapeResult.data.network_requests.length,
+              network_requests_count: analysisData.network_summary.total_requests,
               console_logs_count: scrapeResult.data.console_logs.length,
-              html_size: scrapeResult.data.html_content.length
+              html_size: analysisData.html_size_bytes
             }
           },
           source: 'webscrapper_api'
         });
       } else {
-        res.status(500).json({
+        // The provider is unavailable or declined the target; that is not a
+        // fault in this server. The coverage says what is missing.
+        res.status(scrapeResult.status === 'refused' ? 422 : 503).json({
           success: false,
-          message: 'Website scraping failed',
+          message: 'Website scan unavailable',
           error: scrapeResult.error,
+          error_code: scrapeResult.error_code,
+          evidence_status: analysisData.evidence_status,
+          coverage: analysisData.coverage,
           url: url
         });
       }
@@ -1427,7 +1394,7 @@ async function assembleLiveContext(req) {
   // Pull recent scan reports from orchestrator (in-memory ring buffer)
   try {
     const { agentOrchestrator } = require('../services/agentOrchestrator');
-    const reports = agentOrchestrator.getRecentReports(15);
+    const reports = agentOrchestrator.getRecentReports(15, req.user?.userId);
     ctx.recent_scans = reports.map(r => ({
       url:        r.url  || r.target || '',
       risk_score: r.riskScore || r.risk_score || r.score || 0,
@@ -1459,6 +1426,7 @@ async function assembleLiveContext(req) {
  *   }
  */
 router.post('/chat-context',
+  auth,
   aiAnalysisLimiter,
   [
     body('message').notEmpty().withMessage('message is required'),

@@ -47,7 +47,10 @@ class MLServiceClient {
   async classifyThreat(analysisData) {
     const { url, risk_score, risk_level, security_summary, missing_headers, suspicious_requests } = analysisData;
 
-    logger.info(`🔬 ML classifying: ${url} (scraper risk: ${risk_score}/${risk_level})`);
+    // `risk_score` is the heuristic summary of the page signals, and is null
+    // when the page was not observed. Null contributes nothing below; it is
+    // never read as zero risk, and the caller reports the coverage gap.
+    logger.info(`🔬 ML classifying: ${url} (page evidence score: ${risk_score === null || risk_score === undefined ? 'none' : `${risk_score}/${risk_level}`})`);
 
     // Call /analyze-url — returns per-model predictions
     const response = await this.client.post('/analyze-url', {
@@ -112,6 +115,30 @@ class MLServiceClient {
    * @param {Object} analysisData - Original analysis data for context
    * @returns {Promise<Object>} Gemini explanation
    */
+  /**
+   * What a scan carries when it has no explanation. `status` is 'pending' when
+   * the explanation is still being written and will follow on the live feed,
+   * and 'unavailable' when there will not be one. The scores are unaffected:
+   * they come from the detection models, not from the explanation.
+   */
+  unavailableExplanation(status = 'unavailable') {
+    return {
+      available: false,
+      status,
+      summary: status === 'pending'
+        ? 'The explanation is still being written and will follow on the live feed.'
+        : 'No explanation is available for this scan.',
+      fullAnalysis: '',
+      recommendations: [],
+      riskLevel: 'unknown',
+      geminiRiskScore: null,
+      geminiConfidence: 0,
+      modelUsed: null,
+      technicalDetails: '',
+      timestamp: new Date().toISOString()
+    };
+  }
+
   async getExplanation(mlOutput, analysisData) {
     logger.info(`💡 Requesting Gemini explanation for: ${mlOutput.category} (risk: ${mlOutput.riskScore})`);
 
@@ -124,6 +151,10 @@ class MLServiceClient {
       category: mlOutput.category,
       confidence: mlOutput.confidence,
       security_summary: analysisData?.security_summary || {},
+      // What the rendered-page scan observed, in its own words, and how
+      // complete it was. The explanation must not go beyond this.
+      page_evidence_status: analysisData?.evidence_status || 'unavailable',
+      page_evidence: (analysisData?.ai_context || '').slice(0, 1500),
       model_predictions: mlOutput.modelPredictions || {},
       indicators: mlOutput.indicators || [],
       features_analyzed: mlOutput.featuresAnalyzed || {}
@@ -141,6 +172,7 @@ class MLServiceClient {
       : this.extractRecommendations(result.response || '');
 
     const explanation = {
+      available: true,
       summary: this.extractSummary(result.response || '', mlOutput),
       fullAnalysis: result.response || '',
       recommendations,
@@ -163,10 +195,20 @@ class MLServiceClient {
     if (!responseText) {
       return `${mlOutput.category} threat detected with ${Math.round(mlOutput.confidence * 100)}% confidence`;
     }
-    // Take first 2-3 sentences or up to 300 chars
-    const sentences = responseText.split(/[.!]\s+/).filter(s => s.trim().length > 10);
-    const summary = sentences.slice(0, 3).join('. ').trim();
-    return summary.length > 300 ? summary.substring(0, 297) + '...' : summary + '.';
+    // The first two or three statements, up to 300 characters. The model often
+    // answers in short bullet points, so lines count as statements too, and a
+    // "Risk Level: X" line is not part of the summary. If nothing qualifies,
+    // the answer itself is used rather than an empty summary.
+    const statements = responseText
+      .split(/(?:[.!]\s+|\n+)/)
+      .map(part => part.replace(/^[\s\-*•>#]+/, '').replace(/\*\*/g, '').trim())
+      .filter(part => part.length > 10 && !/^risk(\s+level)?\W{0,6}(critical|high|medium|low)\W*$/i.test(part));
+    const summary = (statements.length ? statements.slice(0, 3).join('. ') : responseText.replace(/\s+/g, ' ')).trim();
+    if (!summary) {
+      return `${mlOutput.category} threat detected with ${Math.round(mlOutput.confidence * 100)}% confidence`;
+    }
+    const text = summary.length > 300 ? summary.substring(0, 297) + '...' : summary;
+    return /[.!?…]$/.test(text) ? text : text + '.';
   }
 
   /**

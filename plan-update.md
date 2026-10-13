@@ -698,8 +698,8 @@ The execution pipeline below uses the existing task IDs. A passing local gate do
 | Stage | Tasks | Exit gate | Current state |
 | --- | --- | --- | --- |
 | 1. Authentication prerequisites | B01; signing configuration from B05; immediately related provider-identity and SSE fixes | Credential-independent HTTP/token/stream regression suite and backend syntax check | Implemented locally; see Section 16.3 |
-| 2. Connectivity and access boundaries | B00a–B00c, B09; B02, B03 and remaining B05 identity mapping | Configurable client/service endpoints, reproducible startup, ML contract inventory, route/permission matrix and cross-user REST tests | In progress; individual completed subtasks and checks are recorded in Section 16.4 onward |
-| 3. Complete the secure baseline | B00d, B00e, remaining B04, B06–B08 | Verified realtime routing, credential migration, truthful detection/actions and packaged desktop checks | Pending; depends on the relevant Stage 2 contracts |
+| 2. Connectivity and access boundaries | B00a–B00c, B09; B02, B03 and remaining B05 identity mapping | Configurable client/service endpoints, reproducible startup, ML contract inventory, route/permission matrix and cross-user REST tests | In progress; individual completed subtasks and checks are recorded in Section 16.4 onward. B00a–B00c and B03 are complete as of October 13. B02 is complete as well (Section 16.27). Remaining: B09.2 and B05 identity mapping |
+| 3. Complete the secure baseline | B00d, B00e, remaining B04, B06–B08 | Verified realtime routing, credential migration, truthful detection/actions and packaged desktop checks | In progress. B00e and B04 complete and live (Sections 16.23–16.25). Remaining: B00d, B06–B08 |
 | 4. Durable foundation | B10 and remaining M1 work | Workspace repositories, schema migrations and restart/recovery tests | Pending; requires M0 security gate |
 | 5. Product slices | M2 device lifecycle → M3 agent builder → M4 verified response | Enrollment, durable runs, approval and enforcement receipts pass end to end | Pending; requires Stage 4 |
 | 6. Release gates | M5; M6 as a separate Android capture release | Supported-platform, packaging, privacy, accessibility and recovery acceptance | Pending |
@@ -713,23 +713,24 @@ npm run validate:updates
 
 `validate:updates` checks backend JavaScript syntax, checks that every root `package.json` script points at an existing directory, package script or file, then runs deterministic Jest security and contract tests. Tests use a generated signing key, loopback HTTP/SSE, and mocked database/provider adapters; they do not load live credentials. `.github/workflows/update-pipeline.yml` runs the same gate for backend changes. Extend this gate with each implemented stage; the historical live-provider scripts are not part of this offline suite.
 
-- [ ] **B00a / F21, F22:** deploy the backend (backend-only push) with reachable MongoDB and Redis, a generated `JWT_SECRET`, and the Appwrite settings; confirm `/health`. **Deployed but not running:** release v5 built and deployed on October 12, and the process exits at startup because MongoDB Atlas refuses the connection from Heroku; every path returns HTTP 503 (Section 16.14).
+- [x] **B00a / F21, F22:** deploy the backend (backend-only push) with reachable MongoDB and Redis, a generated `JWT_SECRET`, and the Appwrite settings; confirm `/health`. **Deployed but not running:** release v5 built and deployed on October 12, and the process exits at startup because MongoDB Atlas refuses the connection from Heroku; every path returns HTTP 503 (Section 16.14). **Done October 12:** the code deployed as release v6 (`0efa27f1`) is running under release v7 and `/health` answers 200; Section 16.18.
 - [x] **B00b / F21:** replace the hard-coded backend URL with one configurable value in the desktop (Rust state and the two UI scripts), the mobile app, and the backend CORS allow-list. Completed locally October 12 with the new address as the default; 5 contract tests pass and the desktop crate type-checks; Section 16.10.
-- [ ] **B00c / F23, F24:** use a single ML service setting that defaults to the deployed Space; retire, port, or separately deploy each of the 29 calls that have no target, starting with the `ml-training` routes.
+- [x] **B00c / F23, F24:** use a single ML service setting that defaults to the deployed Space; retire, port, or separately deploy each of the 29 calls that have no target, starting with the `ml-training` routes. **Done October 12:** both subtasks complete and the deployed backend reaches the ML service; Section 16.18.
   - [x] **B00c.1 / F23:** centralize every backend ML destination on validated `ML_SERVICE_URL`; 12 offline contract tests pass. Completed locally October 12; Section 16.4.
   - [x] **B00c.2 / F24:** retire or port unsupported ML calls and add endpoint-contract coverage; URL consolidation alone does not make these endpoints available. All 29 calls retired behind a tested capability guard; 8 contract tests pass. Completed locally October 12; Section 16.8. Live backend-to-ML acceptance still needs the deployment in B00a.
 - [ ] **B00d / F26:** move the desktop live feed into the native layer and confirm it connects in a packaged build.
-- [ ] **B00e / F27:** fix the anomaly-score inversion and the unguarded input handling in the ML service; record before-and-after results with the `.rest` suite.
+- [x] **B00e / F27:** fix the anomaly-score inversion and the unguarded input handling in the ML service; record before-and-after results with the `.rest` suite. **Done October 13:** live as Space commit `555859a`; also covers the DGA first-label blind spot and the ignored `ip` and `hash` fields. Before and after recorded, and the updated suite passes 85 requests against the live Space; Section 16.23. The three duplicate models still need retraining (F27).
 - [x] **B01 / SEC-01:** prevent public role elevation and add regression coverage. Remove the `User-Agent` access path (F25) in the same change. Implemented and locally tested October 12; Section 16.3.
-- [ ] **B02 / SEC-01:** remove Appwrite public permission fallback; inventory/migrate affected permissions in a controlled environment.
+- [x] **B02 / SEC-01:** remove Appwrite public permission fallback; inventory/migrate affected permissions in a controlled environment. **Done October 13:** all three subtasks complete; Section 16.27.
   - [x] **B02.1:** remove public retries, keep empty grants backend-only, reject broad document grants, and correct new-collection defaults; 21 regression tests pass, including capture ingestion. Completed locally October 12; Section 16.5.
   - [x] **B02.2:** prepare and verify a read-only permissions inventory tool; 14 tests pass, including real SDK HTTP method checks. Completed locally October 12; Section 16.6.
-  - [ ] **B02.3:** run the inventory in the intended controlled environment, review owner mappings and migrate existing collection/document permissions with rollback evidence.
-- [ ] **B03 / SEC-01:** protect agent, memory, orchestrator, sandbox, browser-intelligence, OTX, ML proxy, policy evaluation, and internal ML control routes (F03); derive ownership from verified principals, and update the desktop calls that pass `userId` in the same change.
+  - [x] **B02.3:** run the inventory in the intended controlled environment, review owner mappings and migrate existing collection/document permissions with rollback evidence. **Done October 13:** the backend was pointed at the owner's own project, which was provisioned from a corrected schema script and inventoried: ten collections, no documents, no issues, nothing to migrate. The earlier project is outside this account and was not inventoried. Section 16.27.
+- [x] **B03 / SEC-01:** protect agent, memory, orchestrator, sandbox, browser-intelligence, OTX, ML proxy, policy evaluation, and internal ML control routes (F03); derive ownership from verified principals, and update the desktop calls that pass `userId` in the same change. **Done locally October 13:** all four subtasks complete. The desktop still sends `userId`; the backend ignores it in favour of the session, so no desktop change was needed. Live in release v9 (Section 16.25).
   - [x] **B03.1:** isolate `/api/threats` listing, counts, details and status updates by verified owner; 19 new tests plus 22 existing route tests pass. Completed locally October 12; Section 16.7.
   - [x] **B03.2a / F03:** require a signed-in user on the seven open route groups (59 routes), take identity from the session instead of the request, and pin a route inventory in the gate; 74 tests pass. Completed locally October 12; Section 16.15.
-  - [ ] **B03.2b:** close the nine routes the inventory lists as still open (`/api/ai/chat`, `/api/ai/chat-context`, `/api/ai/scrape-website`, `/api/policy/evaluate`, and five `/api/distributed` routes), add per-object ownership checks (agent tasks and agents by name, sandbox scans, orchestrator sessions), restrict OTX polling control to administrators, and confirm the mobile client against the guarded routes.
-- [ ] **B04 / SEC-02:** fix SSE private-event filtering, verify WebSocket credentials, and replace unscoped capture broadcasts. **Partial:** addressed SSE events now require a matching, unexpired session; WebSocket, visibility, ticket and revocation work remains.
+  - [x] **B03.2b:** require a session on the nine routes the inventory listed as open (`/api/ai/chat`, `/api/ai/chat-context`, `/api/ai/scrape-website`, `/api/policy/evaluate`, and five `/api/distributed` routes) and record distributed nodes under the verified account (F08); 9 further tests pass and the inventory's open list is empty. Completed locally October 12; Section 16.19.
+  - [x] **B03.2c:** add per-object ownership checks (agent tasks and agents by name, sandbox scans, orchestrator sessions, policy and audit records), restrict OTX polling control and distributed weights to administrators, and confirm the mobile client against the guarded routes. Also closed: memory overwrite by ID, and browser-intelligence writes and reads that named their own owner; 35 further tests pass and the mobile app's two tokenless ML calls are fixed. Completed October 13 and live in release v9; Section 16.22.
+- [x] **B04 / SEC-02:** fix SSE private-event filtering, verify WebSocket credentials, and replace unscoped capture broadcasts. **Done locally October 13:** explicit event visibility, header or one-time-ticket stream authentication, expiry and revocation, replay on reconnect, verified and account-scoped WebSockets; 32 tests pass. Device-scoped visibility waits for M2. Live in release v9; Sections 16.24 and 16.25.
 - [ ] **B05 / SEC-01:** require production signing configuration and validate identity mappings. **Partial:** shared signing configuration and token validation implemented; Google/Firebase body-identity bypasses removed. Full provider/account linking and workspace mapping remain.
 - [ ] **B06 / SEC-03:** stop plaintext credential copies and provide a tested migration.
 - [ ] **B07 / SEC-06:** remove forced-clean trusted-domain overrides; add unknown/partial verdicts.
@@ -1141,3 +1142,480 @@ The connection string configured on Heroku was tested from the development machi
 **Validation:** `tests/contracts/redis-optional.test.js` passes **6 tests**: a working Redis is used and reported; an invalid URL, an unreachable host, and refused credentials each fall back to a working in-memory cache without stopping startup and without leaving a client retrying; no address or password appears in logs or status; and `/health` exposes the mode. `npm run validate:updates` passed syntax checks for **97 JavaScript files** and **250 tests across fourteen suites** (211 security, 39 contract).
 
 **Not deployed.** The running release is still the earlier push, which exits on the Redis error. The next deploy carries this change together with 16.15. **B00a remains open** until `/health` answers.
+
+### 16.18 October 12, 2026 — B00a and B00c complete: the backend is deployed and reaches the ML service
+
+**Verified against the live deployment** at `https://cyberforge-f3249b5a0919.herokuapp.com`, with read-only requests:
+
+- `/health` returns 200 with `status: "healthy"`, `environment: "production"`, and `cache: "memory"`. The process had been up for over twelve hours when checked, so it is not restart-looping. `cache: "memory"` is the Redis fallback from 16.17 working as intended. `REDIS_URL` was changed again in release v7, and the startup log still reports `Redis unavailable (ERR_INVALID_URL)`, so the new value is also not a valid URL; a password containing characters such as `@`, `:`, `/` or `#` must be percent-encoded.
+- `/api/ai/ml-health` returns the ML service's own health through the backend: four models loaded and the in-Space language model loaded. This is the live backend-to-ML check that B00c was waiting for.
+- Eight routes sampled across the guarded groups (`/api/cyberforge-ml/health`, `/api/agent/list`, `/api/memory`, `/api/otx/stats`, `/api/sandbox/history`, `/api/orchestrator/recent`, `/api/ml/datasets`, `/api/threats/stats`) each return 401 without a session, including when sent with the desktop `User-Agent`. So B01's removal of that access path and B03.2a are live.
+- The landing page is served at `/`, and a CORS preflight from `tauri://localhost` is accepted.
+
+**Observed and not fixed:** a preflight from an origin that is not allowed is answered with HTTP 500 rather than a 403. The request is still refused, but the status is misleading and will show up as server errors in monitoring.
+
+**Not verified:** no account was created or signed in on the live deployment, so sign-in, a real URL scan, and the desktop app against this backend are still untested end to end. Those are the remaining M0a exit checks.
+
+**Also present in the working tree and not part of this entry:** uncommitted changes that rewrite `backend/src/services/WebScraperAPIService.js` against a new scraper contract, with `config/scraper.config.js` and two contract test files. They pass the gate. The scraper service they target currently answers `CAPABILITY_UNAVAILABLE` because its browser does not start, so that integration cannot work live yet.
+
+### 16.19 October 12, 2026 — B03.2b complete: the nine remaining open routes require a session
+
+**Implemented and verified before starting the next task.**
+
+- `/api/ai/chat`, `/api/ai/chat-context`, and `/api/ai/scrape-website` now require a session before their rate limiter and validators run. No desktop or mobile code calls them, and the mobile API client attaches its session token by default.
+- `/api/policy/evaluate` requires a session. The desktop is its only caller and already sends its session headers (`policy.rs`).
+- `/api/distributed/nodes/register`, `/telemetry/sync`, `/metrics/global`, `/metrics/stats`, and `/weights` require a session. Registration previously took its owner from an `x-node-id` header, or the literal `authenticated-user`, without verifying anything; it now records the verified account. The node listing read `req.user.id`, which the session never sets (F08); it now reads the verified ID, so a user's listing can match the nodes they registered.
+
+**Validation:** `tests/security/route-guards.test.js` now passes **83 tests**. The six policy and distributed routes are exercised over HTTP with the real session check: each rejects a request with no session, registration records the signed-in account whatever `x-node-id` says, and the two public routes in those files are still reachable. The three AI routes are covered by the route inventory, whose "still open" list is now empty: every mounted route outside `/api/auth` either has authentication in its chain or is one of five routes listed as public by design. `npm run validate:updates` passed syntax checks for **100 JavaScript files** and **306 tests across sixteen suites** (220 security, 86 contract).
+
+**Not covered, and now B03.2c:** authentication is not authorization. Node signatures are still unverified (F06), so a signed-in user can register and report telemetry for any node name. Any signed-in user can change global weights or start and stop OTX polling. Agent tasks, sandbox scans, and orchestrator sessions can still be read by ID across accounts. These changes are not deployed.
+
+### 16.20 October 13, 2026 — F22 closed for this deployment: the backend uses Redis
+
+**Tested before changing anything.** The Redis Cloud URL was checked from a development machine with the backend's own `redis` client: connect and authenticate in about 1.2 seconds, `PING`, then a write, read, expiry check and delete on a throwaway key. All passed (Redis 8.6.2, standalone, eviction policy `volatile-lru`, database empty). `services/redis.js` run against the same URL reported `mode: "redis"`.
+
+**Cause of the earlier failures.** Neither stored value was a URL. `backend/.env` held a bare `host:port` (the `Invalid protocol` error in 16.17). The Heroku value set in release v7 was the whole `redis-cli -u redis://…` command line, so it began with the command name instead of a scheme; that is the `ERR_INVALID_URL` recorded in 16.18. The note there about percent-encoding the password does not apply: the password has no reserved characters.
+
+**Change.** `REDIS_URL` now holds the URL alone in `backend/.env` (ignored by git) and on the Heroku app (release v8). No code changed.
+
+**Verified live:** the startup log for release v8 reads `Redis connected successfully`, and `/health` returns `cache: "redis"`. The memory service's per-domain cache now survives restarts.
+
+**Also seen in the same log and not addressed:** OTX polling fails repeatedly with HTTP 504 from the upstream service.
+
+### 16.21 October 13, 2026 — B02.3 attempted: the Appwrite API key is rejected
+
+**The inventory did not run.** `npm --prefix backend run appwrite:audit -- --env-file .env` exited with status 1 (incomplete): every one of the ten collections returned 401, no document was examined, and no issue count means anything. This is not a clean result and no existing permission is claimed to be safe.
+
+**Diagnosis, with read-only requests:**
+
+- The endpoint and project exist: a request with no key gets Appwrite's normal guest answer (`general_unauthorized_scope`), where a non-existent project ID gets `project_not_found`.
+- Every request that sends the key, including the simplest health call, is refused with `api_key_invalid`. A missing scope would produce a different error, so this is the key itself and not its permissions.
+- The stored key is `standard_` followed by 255 hexadecimal characters. A standard Appwrite key carries 256, and a hexadecimal encoding of bytes always has an even length, so the stored value is one character short. The most likely cause is a character lost when it was copied. A deleted or expired key would give the same error and cannot be ruled out from here.
+- The Heroku app holds the identical value, with the same project, endpoint and database settings.
+
+**Consequences for the live backend.** Every Appwrite call fails: alert storage and listing, device and browser records, agent records, evidence metadata. Because writes fail closed (B02.1), nothing is written with public permissions; the features do not work. The startup line `Appwrite service initialized successfully` is misleading: initialization builds the client and makes no request, so it prints whether or not the key works.
+
+**Needed to unblock (owner action):** create a new API key in the Appwrite console for this project, copy it with the console's copy button, and replace `APPWRITE_API_KEY` in `backend/.env` and on Heroku. The backend constructs the Databases, Users, Storage, Functions and Account clients, so the key needs the database read and write scopes at minimum, and `users.read` for the inventory's owner mapping. Then re-run the inventory. No permission was changed or migrated.
+
+**Follow-up worth doing with it (UX-03):** verify Appwrite with one real request at startup and report the result in `/health`, as 16.17 did for Redis.
+
+### 16.22 October 13, 2026 — B03.2c complete: each account reaches only its own objects
+
+**Implemented and verified before starting the next task.** B03.2a and B03.2b made every route require a session. This subtask covers what a signed-in account can then reach. Before it, the in-memory stores behind these routes were shared by every account.
+
+**Owned records.** Each now carries the verified account, and every read, change and delete is for that account only. Another account's object answers exactly like a missing one.
+
+- **Sandbox scans:** stored with their owner. A scan by ID, its deletion, the history, the indicator list and the technique heatmap cover the caller's scans.
+- **Orchestrator reports:** tracked with their owner and session. The recent list, statistics, filtered list and session summary are per account. Reports were previously tracked without a session ID, so the session filter and the session summary could never match anything; they now work.
+- **Browsing sessions:** a session ID is chosen by the client, so the same ID under two accounts used to be one shared session. It is now a separate session per account, and the unused chat-context key is scoped the same way.
+- **Agents:** the registry was keyed by name alone, so a second account starting `default` was handed the first account's running agent and could stop it. It is now one registry per account: start, stop, status and list act on the caller's agents.
+- **Agent tasks:** a task is read only by its owner, and can be queued only for an agent that belongs to the caller.
+- **Distributed nodes:** a node ID registered to one account cannot be re-registered by another; telemetry is accepted only from the node's owner and read by the owner or an administrator.
+- **Policy responses:** recorded for the account whose evaluation triggered them. A user sees their own; analysts and administrators see all. Cooldowns are kept per account, so one account naming another's node can no longer suppress that node's policies.
+- **Memories:** saving under an ID that another account uses no longer replaces that account's entry.
+- **Browser intelligence:** behavioural alerts and session snapshots took their owner from a `user_id` field in the request body, which the session binding did not cover; they are now stored under the sender. The snapshot read returned whichever account wrote last and is now the caller's own.
+
+**Restricted to roles.** OTX polling start and stop, the global risk weights, the list of every node and the node broadcast are for administrators. Cross-node correlations and audit statistics name other accounts' nodes or users and are for analysts and administrators. The OTX statistics no longer show the last four characters of the API key.
+
+**Mobile client confirmed, with one fix.** Every backend call the mobile app makes exists in the backend with that method, all go through its one API client, and it calls no restricted control route. Its ML status screen sent two calls (`/api/cyberforge-ml/health` and `/models`) deliberately without the session, and both have needed one since 16.15, so the screen was receiving 401. They now send it. The desktop's calls in these groups (agent status and list, policy, browser intelligence) keep working: they act on the signed-in account.
+
+**Validation:** `tests/security/object-ownership.test.js` passes **32 tests** with two ordinary accounts, an analyst and an administrator against the real routes, session check and stores. Five ownership checks were then removed one at a time; the suite failed each time and passed again once restored. `tests/contracts/client-endpoints.test.js` gains **3 tests** for the mobile client. `npm run validate:updates` passed syntax checks for **101 JavaScript files** and **341 tests across seventeen suites** (252 security, 89 contract).
+
+**Decisions recorded:**
+
+- Domain memory (`/api/orchestrator/memory/domain/:host`) stays shared. It is reputation built from every account's scans and records no account.
+- Policies themselves stay global and readable by any signed-in user; only analysts and administrators change them, as before.
+- Global metrics and the weight table remain readable by any signed-in user; they are aggregates.
+
+**Not covered:**
+
+- Node signatures are still unverified (F06). Ownership now stops takeover of a registered node ID, but the first account to register an ID owns it.
+- Live broadcasts from browser intelligence still go to every connected client (B04).
+- All of these stores except tasks, alerts and snapshots are in process memory and are lost on restart (F12).
+- Task, alert and snapshot checks run against Appwrite, which is not reachable until the key in 16.21 is replaced; they are tested here against a stand-in.
+- Deployed in release v9; Section 16.25.
+
+### 16.23 October 13, 2026 — B00e complete: ML scoring and input handling
+
+**State of the Space first.** The live Space is at commit `9b1cc8f`, and its three deployed files are byte-for-byte the committed ones. So the hosted-model removal that 16.1 listed as an open deploy is live, and the change below is the only difference a deploy will make (`app.py` only).
+
+**Changes in `ml-services/hf_space_deploy/app.py`:**
+
+- **Anomaly model read the right way round.** It is an IsolationForest, which answers +1 for normal and −1 for an anomaly and has no class probabilities; the service treated 1 as a threat and gave every input a score of 0.5. It now takes the model's decision margin: negative is a threat, positive is benign, and `threat_score` is that margin re-centred on 0.5 and clamped to 0–1. The response says the score is a margin, not a probability (`score_kind`, `anomaly_margin`). No threshold was tuned.
+- **Features matched by name.** Values were passed to the model in whatever order the request listed them. They are now placed in training order by name. A model is asked only about a complete feature set; with features missing, the rule-based estimate answers and lists them (`missing_features`).
+- **Wrong input is a 400 with a reason.** Malformed JSON, a non-object body, a null or wrong-typed field, a non-numeric feature and a non-numeric `max_tokens` were unhandled errors (HTTP 500). URLs that do not parse (an unclosed bracket, a non-numeric port) no longer raise anywhere, including URLs found in chat text.
+- **DGA check finds the generated label.** It scored only the first DNS label, so `www.<generated>.com` passed. It now scores every label except the top-level one and reports the highest (`scored_label`).
+- **`ip` and `hash` in `/api/v2/ioc-scan` are no longer silently ignored.** There is no reputation source for them in this service, so they are described (address range; hash type by length), marked `not_scored`, and listed in `summary.indicators_not_scored`. They do not affect the risk level.
+
+**Not changed:** the phishing, malware and web-attack models are still three copies of one two-feature signal (F27). That needs retraining and is not part of this item.
+
+**Checked without running a model locally.** 84 logic checks run the service's own functions and all 17 POST endpoints against stand-ins for the models and the web framework: the scoring direction and bounds, feature ordering, the DGA cases, and about 5,800 malformed bodies, none of which may produce anything but a normal answer or a 400 with a reason. The checks found one defect in the change itself (a body parser that called itself), fixed before this entry. They live outside the repository, as in 16.1.
+
+**Deployed and measured.** The change went live as Space commit `555859a`; the file being served is byte-for-byte the working copy, and all four models and the chat model loaded. The manual suite was run against the live Space before the deploy (at `9b1cc8f`, 73 requests) and after it. Of the 73, 51 answers are identical and 22 changed, every one in the way intended; the 17 chat-model requests took 9–18 seconds (median 13).
+
+| Request | Before | After |
+| --- | --- | --- |
+| Anomaly model, benign-shaped input | prediction 1, "threat", score 0.5 | prediction 0, "benign", score 0.3514 (margin 0.1486) |
+| Anomaly model, phishing-shaped input | prediction −1, "benign", score 0.5 | prediction 1, "threat", score 0.5437 (margin −0.0437) |
+| `/analyze-url`, `https://www.google.com/search?q=cybersecurity` | risk 50.0, "medium", 1 of 4 models flag it | risk 35.1, "low", 0 of 4 |
+| `/analyze-url`, phishing URL on a raw IP | risk 100.0, "critical", 3 of 4 | risk 100.0, "critical", 4 of 4 |
+| `/api/v2/dga-detect`, `www.xkq7zt9bwpl3vnm2.com` | "legit", score 0.04 | "dga", score 0.9, scored label named |
+| `/api/v2/url-enrich`, `https://github.com/login` | sklearn component 0.5, risk 31.6 | sklearn component 0.3834, risk 24.6 |
+| `/api/v2/ioc-scan`, `https://github.com/login` | "medium", risk 50.0 | "low", risk 38.3 |
+| `/api/v2/ioc-scan`, IP only or hash only | empty result | indicator described, `not_scored`, risk still "unknown" |
+| Malformed JSON | HTTP 500 | HTTP 400, "Request body must be valid JSON" |
+| `null` where a string belongs | HTTP 500 | HTTP 200, treated as absent |
+
+`ml-services/cyberforge-ml.rest` now describes commit `555859a`: 22 expectations updated and 12 cases added (feature order, non-numeric and incomplete features, DGA under a two-part suffix, private and invalid IP, wrong types, a non-object body, an unparseable URL). The updated suite was run in full against the live Space: **85 requests, 0 problems**.
+
+**What the measurements show about the models (for DET-01, not fixed here):**
+
+- **The anomaly model separates, but only just.** Eleven ordinary URLs had margins of 0.06 to 0.15 (scores 0.35 to 0.44); four suspicious ones had 0.04, 0.01, −0.04 and −0.08. The direction is now right, but the whole range spans about 0.2, so a short clean URL can land just above the 0.40 line where "medium" starts: `https://github.com` scores 41.7 and `http://example.com/` 43.8 while every model calls them benign. No threshold was moved to hide this.
+- **The three duplicate models call long legitimate URLs malicious.** A Google sign-in URL scores 1.0 ("critical", 100), a Stack Overflow question 0.71 ("high"), an Amazon product page 0.57 ("medium"). They respond to URL length and special-character count and little else. This is the larger error in what users see, and it needs retraining or replacement (F27).
+
+**Seen while reading the callers, not addressed:** `backend/src/services/cyberforgeMLService.js` posts single predictions to `/predict` on the Space, a route that does not exist, so that path always falls back to the backend's local rule-based score.
+
+### 16.24 October 13, 2026 — B04 complete: private realtime transport
+
+**Implemented and verified before starting the next task.**
+
+**What was open.** No client uses the WebSocket endpoint, but it accepted anyone: a socket could call itself a desktop and receive every account's browsing-session snapshots, behavioural alerts and network-capture summaries, because those were broadcast to all "desktop" and "mobile" sockets. Its `authenticate` message stored whatever `userId` it was given. On the event stream, the session token travelled in the URL, where the access log recorded it; a threat event published without an owner went to every subscriber, guests included; and an invalid token silently became a guest.
+
+**Event visibility is explicit (`services/realtimeBus.js`).** Each event is `public_intelligence` (anyone), `authenticated` (any signed-in subscriber; only the service heartbeat) or `workspace` (the account in `userId`). A type nobody classified is `workspace`, and a `workspace` event with no owner is delivered to nobody. One function, `canReceive`, decides delivery for every transport. Threat scans now publish with the account that asked for them.
+
+**Event stream (`routes/stream.js`).**
+
+- The session is sent in the `Authorization` header. A browser `EventSource` cannot set one, so it first exchanges its session for a ticket (`POST /api/stream/ticket`) that works once, for one minute, and only opens a stream.
+- A session token in the URL is refused, even a valid one. Credentials that do not verify get 401; they are no longer downgraded to a guest. A guest's stream carries public events only.
+- A stream is closed when its session expires, when the account signs out, and when a five-minute check finds the account deleted, deactivated or locked. A database error during that check closes nothing.
+- Events carry an ID. A client that reconnects with the last ID it saw is sent what it missed once, from a two-minute window of at most 200 events, filtered for the account that is reconnecting. The client is told to wait five seconds before retrying.
+- A subscriber that stops reading is dropped once 1 MiB is queued for it.
+- Credential query parameters are removed from URLs before they reach the access log or the error log.
+
+**WebSocket (`services/websocket.js`).** A socket is bound to the account its session token proves, from the `Authorization` header at connect or an `authenticate` message; a `userId` in a message is ignored and the token is not kept. Nothing else is accepted before that, and a socket that has not authenticated within ten seconds is closed. Desktop and mobile broadcasts take an owner and reach only that account's sockets; with no owner they reach nobody. Public OTX intelligence goes to every signed-in socket. A socket whose session has run out stops receiving and is closed.
+
+**Clients.** The mobile app sends its session in the header. The desktop script requests a ticket for each connection and sends the last event ID on reconnect.
+
+**Validation:** `tests/security/stream.test.js` (rewritten, **18 tests**) and `tests/security/websocket.test.js` (new, **14 tests**, real sockets on a loopback server) cover a guest, forged and expired credentials, two accounts, an ownerless event, tickets, expiry, sign-out, revocation, and reconnection. Six checks were then removed one at a time and the suites failed each time. Two contract tests keep the clients on the accepted methods. `npm run validate:updates` passed syntax checks for **103 JavaScript files** and **369 tests across eighteen suites** (278 security, 91 contract).
+
+**Not covered:**
+
+- `device` visibility and "revoked device" subscribers need device records, which do not exist until M2. Workspaces are single accounts until B10.
+- The desktop's live feed still does not connect in a packaged build (F26): its content-security policy blocks both the stream and the ticket request. B00d moves it into the native layer, where the header can be used.
+- The replay window is in process memory, so it is empty after a restart.
+- Several WebSocket handlers still answer with invented numbers (`analysis_request`, `threat_scan`, `request_data`). That is B08.
+- Deployed in release v9 and checked live; Section 16.25.
+
+### 16.25 October 13, 2026 — Release v9 deployed and checked live
+
+**Backend release v9** (commit `78ab72b`) carries 16.19 (the nine remaining open routes), 16.22 (object ownership) and 16.24 (private realtime transport). It started cleanly: MongoDB and Redis connected, `/health` returns 200 with `cache: "redis"`.
+
+**Checked against the live deployment, without an account:**
+
+- Eight routes across the newly restricted groups (`/api/otx/start-polling`, `/api/distributed/weights`, `/api/sandbox/history`, `/api/orchestrator/recent`, `/api/agent/list`, `/api/audit/stats`, `/api/ai/chat`, `/api/policy/evaluate`) each return 401 without a session.
+- Event stream: a guest connection opens; a token in the URL is refused with the explanatory message; a forged header and a ticket request without a session return 401.
+- WebSocket: an unauthenticated socket that tries to identify, request threats and submit a page visit gets three `unauthenticated` errors and nothing else; a forged token is answered with `authentication_failed` and close code 4401; a forged header is closed at once with no greeting; a silent socket is closed after ten seconds.
+- The application's access log shows `GET /api/stream?token=[redacted]`.
+
+**One thing the application cannot fix.** Heroku's own router log records the full request path, query string included, before the request reaches the application. That log line showed the test value in `?token=`. A real session token sent that way would have been recorded there too, which is the reason it is now refused. A stream ticket in the URL is also recorded by the router, but it works once and for one minute.
+
+**Not checked live:** anything that needs a signed-in account. No account has been created on the live deployment, so sign-in, the per-account ownership checks, a real URL scan and the desktop against this backend are verified by the local suites only. The mobile app's changed files were not type-checked, because its dependencies are not installed on this machine.
+
+**Still blocking:** Appwrite rejects the configured API key (16.21), re-checked after this deploy.
+
+### 16.26 October 13, 2026 — B02.3 still blocked: a second Appwrite key does not belong to the configured project
+
+A replacement key was supplied and stored in `backend/.env` (ignored by git). Unlike the first, it is well-formed: `standard_` and 256 hexadecimal characters. Appwrite still answers `api_key_invalid` for it, with the message that the key must belong to "this project, organization or account".
+
+**What was ruled out, with read-only requests:**
+
+- **A malformed key.** The length and character set are right.
+- **The wrong region.** The configured project exists on the `nyc` endpoint; the other six endpoints refuse the project outright (`general_access_forbidden`), so `nyc` is where it lives.
+- **An account-level or organization-level key.** The same key is rejected against the console scope.
+- **The wrong header.** Sent as a development key or a bearer token it is simply ignored and the request is treated as a guest's.
+
+**What that leaves:** the key was created in a different Appwrite project from the one in `APPWRITE_PROJECT_ID`, or it has been deleted since. The repository names only one project ID (in `backend/.env`, `.env.example`, `appwrite.config.json` and `scripts/setup-appwrite-schema.js`), and a project key cannot be used to look up which project it belongs to.
+
+**Needed (owner):** the Project ID and API endpoint shown on the settings page of the project where this key was created. Neither is a secret. The Heroku configuration was left unchanged, since replacing one rejected key with another changes nothing.
+
+### 16.27 October 13, 2026 — B02 complete: Appwrite connected to the right project, provisioned and inventoried
+
+**Cause found.** The owner's Appwrite account holds one project, created that day, with a different ID from the one the repository had been using. The old ID belongs to a project outside that account, so no key the owner creates can work against it. Both rejected keys in 16.21 and 16.26 are explained by this.
+
+**Configuration.** `APPWRITE_PROJECT_ID` now names the owner's project, in `backend/.env` and on Heroku (release v10); the endpoint (`nyc`) was already right. All fifteen `APPWRITE_*` settings are identical in both places.
+
+**Key scopes.** The key carried the newer table, column and row scopes but not the `collections`, `attributes` and `documents` scopes that the backend's Databases API calls are checked against. Those six were added to the existing key through the owner's authorized console connection; its name, expiry and other scopes are unchanged.
+
+**The project was empty, and the schema script could not have provisioned it correctly** (`backend/scripts/setup-appwrite-schema.js`):
+
+- It defined six of the ten collections the backend uses. `agents`, `evidence_metadata`, `browser_intelligence` and `network_captures` were missing.
+- `agent_tasks` lacked `agent_id` and `user_id`, which the backend writes and which the ownership check in 16.22 reads. Appwrite refuses a document with an undeclared field, so task creation would have failed.
+- There were no indexes on several attributes the backend filters or sorts on.
+- It fell back to the old project ID when none was configured.
+
+The script now defines all ten collections from the fields the backend actually sends, indexes every filtered or sorted attribute, and refuses to run without an explicit endpoint, project and key. It was run against the project (it is safe to re-run; two attempts were cut short by dropped connections and the third completed). Collections are created with no collection-level permissions and with document security on, as B02.1 requires.
+
+**Verified with the backend's own service code against the live project:** all ten collections exist with every attribute and index available; user metadata, device, agent, agent task, alert, both kinds of browser-intelligence record, evidence metadata and a network-capture record are each accepted in the shape the backend sends; a task stores its owner and agent; alerts and the latest snapshot are returned only for the owning account; and an alert's document permissions name only its owner. Nine checks passed, and the ten temporary documents they wrote were deleted, leaving the database empty.
+
+**B02.3 inventory.** `npm --prefix backend run appwrite:audit -- --env-file .env` now completes with status 0: ten collections read, no documents, no issues. There was nothing to migrate, because the project is new. The old project cannot be inventoried or migrated from this account; if it held data that matters, that needs whoever owns it.
+
+**Also changed:** `backend/.env.example` no longer carries a real project ID and says which scopes a key needs; `backend/appwrite.config.json` names the current project.
+
+**Not addressed:**
+
+- The key is far broader than the backend needs (it includes project, key-management and function scopes). That was accepted for development; a production key should be limited to the database and user scopes.
+- The backend still logs "Appwrite service initialized successfully" without making a request (16.21 follow-up).
+- The backend uses Appwrite's older Databases API; the newer tables API is not adopted.
+- No signed-in request has been made against the live backend yet, so alert storage there is confirmed by these service-level checks, not by a real scan.
+
+### 16.28 October 13, 2026 — Live end-to-end check with two accounts, and the scan time limit it found
+
+**What was run.** With the owner's agreement, two throwaway accounts were registered on the live backend (release v10) and 38 checks were made in 38 requests. Their passwords and tokens were never stored or printed. Afterwards the two accounts and everything stored under them were deleted by exact ID: two Appwrite auth users, two user-metadata records and three alerts, and two of the ten MongoDB user records. The other eight users were not touched, and the Appwrite database is empty again.
+
+**Confirmed live (36 checks):**
+
+- Registering with `role: "admin"` is refused; both accounts register as ordinary users; a wrong password is refused; sign-in and the profile return the right account.
+- An ordinary user gets 403 from OTX polling control, the global risk weights, audit statistics and the all-nodes list.
+- The event stream opens with the header for one account and with a one-time ticket for the other, and the ticket cannot be used twice.
+- Sandbox scans: the other account cannot read or delete a scan and its history is empty; the owner can do both.
+- Memories: saving under the same ID from the second account does not replace the first account's entry.
+- Alerts reach Appwrite through the deployed backend, under the sender's account even when the body names the other one. The owner lists the alert; the other account does not, even when it asks for the owner's ID.
+- The owner's WebSocket receives the alert broadcast.
+- Policy responses are per account.
+- An orchestrator analysis is recorded for its owner (23.6 seconds); recent reports are per account; the same session ID is the owner's session and "not found" for the other account.
+- Signing out closes that account's stream and leaves the other open.
+
+**Not confirmed:** the second account's WebSocket never reached the server in that run, so "the other account's socket received nothing" was not a real test. Twelve simultaneous connections made afterwards all succeeded, so the missed one looks like a dropped connection from the test machine, whose link to both services was dropping about three requests in ten. Socket scoping between two accounts therefore rests on the local suite (16.24) plus the one live positive.
+
+**Defect found: a URL scan takes as long as the platform allows.** `/api/agent/scan-url` answered in 29.4 seconds, 29 of them waiting for the chat model's explanation. Heroku ends a request at 30 seconds, and the rendered-page scan was not even running; with it, the two steps were allowed 20 and 60 seconds one after the other. The desktop treats a failed scan as an empty result, so this would have shown up as scans that quietly return nothing.
+
+**Fix (`routes/agentRoutes.js`, `services/mlServiceClient.js`):**
+
+- A scan has a 24-second budget. The rendered-page scan gets up to 11 seconds of it and the explanation gets what is left.
+- An explanation that is not ready in time no longer holds the scan. The response says `explanationStatus: "pending"`, and when the explanation arrives it is published to the owner's live feed as `scan:explanation`. The desktop script and the mobile app now know that event.
+- A failed explanation no longer fails the scan. The detection models' result is returned with `explanationStatus: "unavailable"`; before, the whole scan returned HTTP 500.
+- The alert text no longer includes a placeholder when there is no explanation.
+- A batch shares one budget. A URL that cannot be started in time is reported as not scanned instead of the whole request being cut off.
+
+**Validation:** six new tests in `tests/contracts/scraper-contract.test.js` (47 in that suite): an in-time explanation, a slow one that returns later on the live feed, a failed one, the alert text, and two batch cases. `npm run validate:updates` passed **375 tests across eighteen suites** (278 security, 97 contract).
+
+**Scanner configuration.** The same log showed the rendered-page scanner switched off on Heroku because `WEBSCRAPER_API_URL` was a plain-HTTP address for a different host. It now names the deployed scanner over HTTPS, locally and on Heroku (release v11). Two things still keep the scanner off, and both need the owner: Heroku has no `WEBSCRAPER_API_KEY` and the one in `backend/.env` is rejected by the scanner, and the scanner's own browser still does not start.
+
+**Also seen:** the chat model rated the phishing-shaped test URL "Low" while the detection models scored it 89. That is the answer-quality limit recorded in 16.1.
+
+**Not deployed:** the scan budget change. Release v11 is a configuration change only.
+
+### 16.29 October 13, 2026 — F27: retraining built, waiting for the Space deploy
+
+**Why the three models were one model.** `ml-services/train_and_upload_models.py` fits the phishing, malware and web-attack models to the same two generators: "benign" URLs of 15 to 60 characters and "malicious" ones of 60 to 300, with the threat type ignored. Where it reads a real file, it maps unrelated columns onto URL features (a file's size becomes the URL length) and fills the rest with random numbers. Each model therefore learned that a long URL is a threat, which is what 16.23 measured: a Google sign-in URL scored 100. That file is now marked superseded and kept only as a record.
+
+**What replaces it.** Training runs inside the Space, from public labelled data, and never on a developer machine.
+
+| Model | Learns from |
+| --- | --- |
+| `phishing_detection` | benign URLs against reported phishing URLs |
+| `malware_detection` | benign URLs against URLs that served malware |
+| `web_attack_detection` | ordinary URLs against URLs carrying real SQL-injection and XSS payloads |
+| `anomaly_detection` | an IsolationForest fitted to benign URLs only |
+
+**Data, all from the Hugging Face Hub:** `bgspaditya/byt-malicious-url-treatment` (about 640,000 URLs labelled benign, phishing, malware or defacement; defacement is not used), `pirocheto/phishing-url` (11,000 balanced full URLs, CC-BY-4.0, with its own test split, which is never trained on) and `shengqin/web-attacks` (SQL-injection and XSS payloads and normal strings). The revision of each is written into every model's metadata.
+
+**Design decisions:**
+
+- **Features are computed without the URL scheme** (`hf_space_deploy/url_features.py`, used by both training and serving). In the large collection benign URLs are mostly listed without `http://` and malicious ones with it; a model given the scheme would learn how the list was written. Whether a page uses HTTPS is still reported as a risk factor.
+- **Each model has its own feature list**, stored in its `metadata.json`: 37 host-and-path features for phishing, malware and anomaly, and 22 payload features for web attacks. The twelve original features are still returned in every response, unchanged.
+- **Sites are kept together when the data is split**, so a model is measured on sites it never saw.
+- **Attack examples are real payloads placed on benign sites** as a query value or path segment, encoded or not. Normal strings are placed the same way among the negatives, so the model cannot learn the placement itself.
+- **The acceptance gate was fixed before any result existed** (`trainer.py`): held-out AUC of at least 0.90, a held-out false-positive rate of at most 5%, and none of 24 well-known legitimate URLs scoring 0.5 or more. That list includes the long URLs the old models called critical. A model that fails is not uploaded and the one in service stays. The anomaly model must flag at most 5% of held-out benign URLs and flag malicious ones more often than benign ones.
+- **Results on the independent phishing test split are reported but do not decide the gate.**
+
+**In the service (`app.py`):** models load their feature list and optional scaler from metadata, so old and retrained models work side by side; `/api/models/predict` accepts a `url` as well as named features; the explain endpoint returns importances measured at training; `/health` shows when each model was trained. Training is started with `POST /api/admin/train` and read with `GET /api/admin/train/status`, both restricted to the Space owner's Hugging Face token. `ml-services/train_on_space.py` starts a run and follows it; `--dry-run` trains and measures without uploading or changing what is in service.
+
+**Checked without training anything locally:** the feature extraction is plain string processing and was run on sample URLs, including malformed ones. 106 stand-in checks cover the service (22 of them new: per-model feature lists, scaler removal, prediction from a URL, owner-only training, a dry run that changes nothing, a failed run that changes nothing, and only gate-passing models going into service). 13 more cover the trainer's URL cleaning and composing. The training code itself, which uses scikit-learn, has not run anywhere yet. The backend's route contract now states that the two training routes are owner-only and not part of what the backend may call; `npm run validate:updates` passes **376 tests across eighteen suites** (278 security, 98 contract).
+
+**To finish:** deploy with `python deploy_space.py` from `ml-services/` (it now also pushes `url_features.py` and `trainer.py`), run a dry run, read the report, and only then run for real. F27 stays open until the retrained models are in service and measured with the `.rest` suite.
+
+**Risks stated in advance:**
+
+- The gate may reject a model. The benign examples in the large collection are older and shorter than modern URLs, so long legitimate URLs are the likely failure. A rejection will be reported as such, not worked around.
+- The large collection is known to contain mislabelled rows.
+- With retrained models the twelve original features alone no longer reach a model through `/api/models/predict`; such a request gets the rule-based estimate and a list of the missing features. Sending the URL is the supported way.
+
+### 16.30 October 13, 2026 — F27: first training run on the Space; the gate rejected two models
+
+**The training pipeline works.** The Space (commit `7414180`) was deployed with the new code and kept serving the old models with identical answers. A dry run then trained all four models inside the Space in 92 seconds and uploaded nothing. The training endpoints return 403 without the owner's token.
+
+**Results of the dry run, on sites held out from training:**
+
+| Model | Gate | Held-out result | Known-legitimate URLs flagged |
+| --- | --- | --- | --- |
+| `web_attack_detection` | passed | AUC 0.9997, precision 0.986, recall 0.994, false positives 0.7% | 0 of 24 |
+| `anomaly_detection` | passed | flags 1.6% of benign URLs and 1.8% of malicious ones | 0 of 24 |
+| `malware_detection` | rejected | AUC 0.965, precision 0.954, recall 0.882, false positives 0.4% | 1 of 24 (a Google Drive file link, 0.74) |
+| `phishing_detection` | rejected | AUC 0.936, recall 0.875, false positives 16.2% | 14 of 24 |
+
+**What the phishing result means.** On the independent test split (`pirocheto/phishing-url`) its AUC was 0.71 with 41% false positives, so what it learned did not transfer. Its strongest feature by a wide margin was path length, followed by the number of dots in the host. In the collection it was trained on, benign URLs are deep links from a crawl listed without `www.`, and phishing URLs are mostly short. The model learned how the two lists were gathered: `bbc.co.uk/news` scored 0.96 and `paypal.com/signin` 0.97. This is the same kind of failure as the original models, caught this time before anything was put into service.
+
+**Two things the gate did not catch, corrected in the code:**
+
+- The anomaly model passed while flagging malicious URLs barely more often than benign ones (1.8% against 1.6%), because its gate only asked for "more". It now has to flag at least 10% of malicious URLs and at least three times the benign rate.
+- The web-attack model scores a path-traversal URL at 0.001. Its training payloads are SQL injection and cross-site scripting only, so it does not cover traversal. This is a limit of the data and is stated in its report; it is not a gate failure.
+
+**Changes for the next run (`trainer.py`, `url_features.py`):**
+
+- **Phishing and benign examples come from a different collection**, `Mitake/PhishingURLsANDBenignURLs` (886,000 URLs, CC-BY-SA-4.0), whose benign rows include bare domains and short addresses as well as deep links and whose phishing rows are recent. Its card gives no provenance; that is recorded as a limitation. The older collection is kept for its malware URLs and a smaller share of benign ones.
+- **Landing pages of popular sites are added as benign examples**, from one small file of `phl-ldm/tranco_top_million` (a July 2026 crawl of the top million sites, CC-BY-4.0). These are the short, modern, legitimate URLs the benign set lacked.
+- **A leading `www.` is removed before features are computed**, for the same reason as the scheme.
+- **Held-out results are broken down by source**, so a good overall figure cannot hide a source that fails.
+- **A run can leave features out or change regularisation** through its options, so alternatives can be measured on the Space without another deploy.
+
+The gate for the three classifiers is unchanged.
+
+**State:** nothing retrained is in service. The old models are still serving, with the defects recorded in 16.23. The revised trainer needs one more Space deploy before the next dry run.
+
+### 16.31 October 13, 2026 — Scan time limit confirmed live; second training run; why URL text is not enough
+
+**Scan time limit (16.28) confirmed on release v12.** With one throwaway account, a URL scan on the live backend answered in 23.4 seconds with the detection models' result (risk 89, malicious), `explanationStatus: "pending"`, and an alert stored. The explanation arrived on that account's live feed 22 seconds later. Before the fix the same request was cut off at 30 seconds. The account and its records were deleted afterwards; eight users remain and Appwrite is empty.
+
+**Fixed after that check:** the late explanation's summary was a single full stop. The summary is cut from the chat model's answer by sentence, and an answer made of short bullet points left nothing. Lines now count as statements, the "Risk Level" line is left out, and an answer too short to cut is used whole (`extractSummary` in `services/mlServiceClient.js`; 9 tests in `tests/contracts/explanation-summary.test.js`). Not deployed.
+
+**Second dry run on the Space (commit `95a33f2`, 165 seconds, nothing uploaded):**
+
+| Model | Gate | Held-out sites | Independent test | Known-legitimate flagged |
+| --- | --- | --- | --- | --- |
+| `web_attack_detection` | passed | AUC 0.9997, false positives 0.2%, recall 0.995 | | 0 of 24 |
+| `malware_detection` | rejected | AUC 0.984, false positives 0.6% (0.2% on popular sites), recall 0.890 | | 1 (a Google Drive file link, 0.82) |
+| `phishing_detection` | rejected | AUC 0.939, false positives 15.0%, recall 0.874 | AUC 0.934, false positives 14.3% | 10 |
+| `anomaly_detection` | rejected | flags 1.9% of benign and 9.4% of malicious | | 2 |
+
+**What changed from the first run.** The phishing model now transfers: its AUC on the independent test rose from 0.71 to 0.93, and its strongest features are properties of the host and path instead of path length. By source, it wrongly flags 6% of popular-site landing pages and 18 to 20% of the other benign sets.
+
+**What did not, and why.** The legitimate URLs it still flags are mostly real sign-in pages with long query strings: `login.microsoftonline.com` (0.95), `accounts.google.com` (0.86), `paypal.com/signin` (0.79). From the text of a URL alone, a real sign-in page and a copy of one look the same. What tells them apart is who the site is, and no lexical feature carries that.
+
+**The Space's existing BERT URL classifier has the same weakness.** Run on the same 24 legitimate URLs, `url_phishing_bert` calls 8 of them "MALWARE": a YouTube video (0.997), an Amazon product page (0.99), a Zoom link (0.998), a Google Drive link (0.9985). That classifier feeds the orchestrator's URL agent and 30% of the enriched scan today. It is not changed here and is recorded as part of F27.
+
+**Changes for the third run (`url_features.py`, `trainer.py`, `app.py`):**
+
+- **Domain popularity as a feature.** `domain_popularity` is how high the URL's registered domain ranks in the public Tranco list of most-visited sites (permanent list `PYGVJ`, the one the popular-sites crawl was built from), from 1.0 at the top to 0.0 for a domain not on it. The top 300,000 are used. A look-alike host that merely contains a popular name scores 0.
+- **Free-hosting and user-content platforms do not lend their rank.** A page on `github.io`, `sites.google.com`, `herokuapp.com` and about fifty similar hosts is its author's, so those hosts count as unknown and are marked with `is_user_content_host`.
+- **The list travels with the models.** It is saved in the model repository when a model that uses it is accepted, and the service loads it at start. A model that needs the list is not used while the list is missing; the rule-based estimate answers and says why. A training run uses its own copy and cannot change the list the service is scoring with.
+- **Each classifier's decision point is chosen at a target false-positive rate** (2% by default), measured on a tenth of the training sites set aside for that purpose; the held-out test sites take no part in it. Scores are rescaled so that the chosen point reads as 0.5, like every other model. The point is never moved below 0.5.
+
+**What this does and does not claim.** The gate is unchanged. With the popularity feature, the well-known legitimate URLs are expected to pass because of who they are, so that check now mostly confirms the feature works. The measure of the models themselves is the held-out false-positive rate by source, which includes many sites that are on no popularity list. A phishing page hosted on a popular domain that is not a known hosting platform will be scored as that domain; the report includes three hosted-phishing examples so the behaviour is visible.
+
+**Validation:** 127 stand-in checks for the service (21 new: popularity lookup, look-alike hosts, hosting platforms, rescaling, a model held back while its list is missing, the list installed with a model put into service) and 13 for the trainer's plain-Python parts. `npm run validate:updates` passes **385 tests across nineteen suites** (278 security, 107 contract). The new training code has not run yet.
+
+**State:** the old models are still in service. The Space needs one more deploy for the third dry run.
+
+### 16.32 October 13, 2026 — Third training run: close to the gate, and a decision for the owner
+
+**Third dry run on the Space (commit with the popularity feature, 173 seconds, nothing uploaded).** The Tranco list was fetched inside the Space (300,000 domains). Backend release v13 carries the summary fix from 16.31.
+
+| Model | Gate | Held-out sites | Independent test | Known-legitimate flagged |
+| --- | --- | --- | --- | --- |
+| `web_attack_detection` | passed | AUC 0.9998, false positives 0.14%, recall 0.995 | | 0 of 24 |
+| `anomaly_detection` | passed | flags 1.8% of benign and 13.4% of malicious | | 2 (reported; not part of its gate) |
+| `phishing_detection` | rejected on one rule | AUC 0.956, false positives 2.1%, precision 0.952, recall 0.677 | AUC 0.958, false positives 1.4% | 1 (Google sign-in, 0.56) |
+| `malware_detection` | rejected on one rule | AUC 0.988, false positives 0.96%, precision 0.892, recall 0.905 | | 3 (Google sign-in 0.61, Microsoft sign-in 0.85, a Google Drive file link 0.91) |
+
+Both rejected models pass the two measured rules (AUC and held-out false-positive rate) and fail only the rule that none of the 24 well-known legitimate URLs may score 0.5 or more.
+
+**What changed.** Domain popularity became the phishing model's strongest feature and its held-out false positives fell from 15% to 2.1%; by source, 0.9% on popular-site landing pages and 1.5% to 6.6% on the other benign sets. Its decision point was placed at a raw score of 0.86 to meet the 2% target, which costs recall: it catches 68% of held-out phishing URLs where the 0.5 point caught 88% at 12% false positives. Hosted phishing examples score 0.94 (`github.io`), 0.76 (`storage.googleapis.com`) and 0.34 (`sites.google.com`, missed).
+
+**Why the last URLs remain.** The Drive link scores 0.91 on the malware model although `google.com` is the most popular domain there is. The likely reason is in the labels: collections of malware URLs contain many file-sharing links, and the benign sets contain few, so "a long file identifier on a sharing service" is evidence of malware as far as the data goes. The two sign-in URLs carry another address inside a parameter, which is also how redirect abuse looks. Neither can be settled from the text of a URL.
+
+**The models in service, measured the same way** (live Space, same 24 legitimate URLs and the hostile examples):
+
+| | In service now | Retrained |
+| --- | --- | --- |
+| Legitimate URLs flagged by the phishing model | 4, three of them at 1.0 | 1, at 0.56 |
+| Legitimate URLs flagged by the malware model | 6, three of them at 1.0 | 3, at 0.61 to 0.91 |
+| Legitimate URLs flagged by the web-attack model | 4, three of them at 1.0 | 0 |
+| Malware links on raw IP addresses (`…/bins/mips.sh`, `…/setup.exe`) | malware model scores 0.0 | 1.0 |
+| Overall level given to the 24 legitimate URLs | 11 are medium, high or critical | not yet measured in service |
+| Held-out false-positive rate | never measured | 0.14% to 2.1% |
+
+The models in service flag more legitimate URLs, at higher scores, and miss real malware links entirely.
+
+**The gate was not changed.** Continuing to adjust the training until the last URLs pass would be fitting the models to a list of 24 addresses, which is what the list exists to detect. Instead the choice is put to the owner, and the trainer gains one explicit mechanism for it: `accept_despite_gate` (`train_on_space.py --accept name="reason"`). It applies only to a classifier whose measured rules passed and whose only failure is the well-known-legitimate rule, it requires a reason, and the reason, the date and the exact URLs excepted are written into that model's `metadata.json`. Any other failure cannot be overridden.
+
+**Open decision (owner):** put all four retrained models into service with the exceptions recorded; or only the two that passed outright; or keep the current models until all four pass. Recommendation: all four, because each is better than the model it replaces on every measure taken, and the exceptions are specific and visible. F27 would then stay open for sign-in and file-sharing links and for the BERT classifier's false positives (16.31).
+
+**Validation:** 127 stand-in checks and 13 trainer checks pass with the override code in place. The override path itself runs only on the Space.
+
+### 16.33 October 13, 2026 — F27: four retrained models in service, by owner decision
+
+**Decision.** The owner chose to put all four retrained models into service, accepting the known false positives of two of them (16.32). The gate was not changed. The phishing and malware models are recorded as having failed one rule and as accepted by owner decision, with the reason, the date and the exact URLs excepted, in their `metadata.json` in the model repository.
+
+**The run** (Space commit `b3db328`, 171 seconds) produced the same figures as the third dry run and uploaded four models and the popularity list to `Che237/cyberforge-models`. The repository revision before the run was `c46314b`, which is what to restore if the models have to be rolled back.
+
+| Model | Status | Held-out sites |
+| --- | --- | --- |
+| `web_attack_detection` | passed its gate | AUC 0.9998, false positives 0.14%, recall 0.995 |
+| `anomaly_detection` | passed its gate | flags 1.8% of benign and 13.4% of malicious URLs |
+| `phishing_detection` | accepted by owner decision; 1 known false positive | AUC 0.956, false positives 2.1%, recall 0.677; independent test AUC 0.958, false positives 1.4% |
+| `malware_detection` | accepted by owner decision; 3 known false positives | AUC 0.988, false positives 0.96%, recall 0.905 |
+
+**Verified on the live Space:** `/health` shows all four trained on October 13 and 300,000 popular domains loaded. The model repository holds one model file and one metadata file per model, without the old scalers, plus the popularity list. Scores served for the 24 legitimate URLs match the training report, which confirms that training and serving compute the same features.
+
+**Measured in service, same URLs as 16.32:**
+
+| | Before | Now |
+| --- | --- | --- |
+| Legitimate URLs flagged: phishing / malware / web-attack model | 4 / 6 / 4 | 1 / 3 / 0 |
+| Overall level given to the 24 legitimate URLs | 13 low, 5 medium, 3 high, 3 critical | 18 low, 3 medium, 1 high, 2 critical |
+| Malware links on raw IP addresses | malware model 0.0 | 1.0 |
+| Phishing-shaped hosts (`paypal-secure-login.verify-account.xyz`) | phishing model 0.43 | 0.995 |
+| SQL-injection and XSS URLs | all three models 1.0, identically | web-attack model 1.0, the others low |
+
+The models now answer as four detectors instead of three copies: the web-attack model no longer fires on a plain phishing URL, and the malware model no longer fires on a long phishing URL with no file in it.
+
+**Known false positives and misses, all visible in the reports:**
+
+- The Google sign-in URL (phishing 0.56, malware 0.61, anomaly 0.55), the Microsoft sign-in URL (malware 0.85, anomaly 0.53) and a Google Drive file link (malware 0.91). The last two are given "critical" overall, because the overall level takes the highest model score.
+- The phishing model catches 68% of held-out phishing URLs at its 2% false-positive setting.
+- A phishing page on `sites.google.com` scores 0.34 and is missed.
+- The web-attack model does not cover path traversal (0.001); its training payloads are SQL injection and XSS.
+
+**Found by the manual suite after the switch, fixed, not yet deployed:**
+
+- A non-numeric value in one of the twelve original features returned HTTP 500 for a retrained model. The value is no longer among the model's own features, so it was not checked before reaching the rule-based estimate. The original features are now checked for every model.
+- One served score differed slightly from the training report (0.6152 against 0.6077). Training keeps features as 32-bit numbers and the service passed 64-bit ones, so a value on a split boundary could fall either way. The service now uses the precision the model was trained with.
+
+**Interface change for callers:** `/api/models/predict` with only the twelve original features now gets the rule-based estimate and a list of missing features, because the models take more. Sending `url` instead is supported and gets the model's answer. The backend's main path, `/analyze-url`, is unaffected.
+
+**Validation:** 135 stand-in checks for the service and 13 for the trainer. The manual suite against the live Space: 84 of 85 requests matched their expected status; the one that did not is the HTTP 500 above.
+
+**F27 is not closed.** Remaining: the false positives on sign-in and file-sharing links, the BERT classifier's false positives (16.31), deploying the two fixes above, and bringing `cyberforge-ml.rest` in line with the retrained models.
+
+### 16.34 October 13, 2026 — F27: retraining verified after a restart; test suite brought up to date
+
+**Deployed** (Space commit `c823c6a`): the two fixes from 16.33. No retraining was needed.
+
+**Verified on the live Space:**
+
+- **The models survive a restart.** This deploy restarted the Space, which then loaded the four retrained models, their feature lists and the 300,000-domain popularity list from the model repository. `/health` shows all four trained on October 13.
+- **The HTTP 500 is gone.** A non-numeric value in an original feature returns 400 with the feature named.
+- **Served scores equal the training report.** Sixteen scores for the legitimate and hostile example URLs were compared with the report written at training; none differs. Before the precision fix one did.
+
+**Manual suite (`ml-services/cyberforge-ml.rest`).** Its expectations now describe the retrained models: 22 rewritten and 11 requests added, 97 in all. New cases cover asking one model by URL, a malware link on a raw IP address, the two accepted false positives (marked KNOWN FALSE POSITIVE, with the reason), an XSS URL that only the web-attack model flags, path traversal (marked KNOWN MISS), and the owner-only training routes. Run in full against the live Space: **95 requests sent, 0 problems**; the two not sent would restart the Space or start a training run.
+
+**State of F27:**
+
+| Defect recorded in F27 | State |
+| --- | --- |
+| Anomaly model read backwards | fixed (16.23); the model has since been retrained |
+| Phishing, malware and web-attack models identical, using two features | fixed: three models trained on different data, with different feature importances |
+| DGA check scores only the first DNS label | fixed (16.23) |
+| `ioc-scan` ignores `ip` and `hash` | fixed (16.23): described and marked not scored |
+| Malformed input returns HTTP 500 | fixed (16.23, and again here for retrained models) |
+
+**Still open under F27:**
+
+- False positives on sign-in pages and file-sharing links (Google sign-in, Microsoft sign-in, a Google Drive link). They need benign examples of those kinds of URL, which the public collections used here do not contain.
+- The BERT URL classifier, which is not one of the retrained models, calls 8 of 24 well-known legitimate URLs "MALWARE" and still feeds the orchestrator's URL agent and the enriched scan (16.31).
+- The overall risk level takes the highest model score, so one model's false positive becomes "critical" for the whole URL. How four different detectors should be combined is a DET-01 question.
+- The phishing collection's dataset card gives no provenance.
+- The backend's `cyberforgeMLService.js` still posts to a route the Space does not have and falls back to its own rule-based score (16.23).
+
+**Not affected:** the backend. `npm run validate:updates` passes **385 tests across nineteen suites**.

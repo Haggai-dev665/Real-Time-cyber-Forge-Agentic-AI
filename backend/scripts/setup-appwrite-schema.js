@@ -3,14 +3,18 @@ require('dotenv').config();
 const { Client, Databases, AppwriteException } = require('node-appwrite');
 const { PRIVATE_COLLECTION_PERMISSIONS } = require('../src/services/appwritePermissions');
 
-const endpoint = process.env.APPWRITE_ENDPOINT || 'https://nyc.cloud.appwrite.io/v1';
-const projectId = process.env.APPWRITE_PROJECT_ID || '698d422300098f2baa8a';
+// The project is never assumed: a key only works in the project it was created
+// in, so a default ID here would silently point the setup at someone else's.
+const endpoint = process.env.APPWRITE_ENDPOINT;
+const projectId = process.env.APPWRITE_PROJECT_ID;
 const apiKey = process.env.APPWRITE_API_KEY;
 const databaseId = process.env.APPWRITE_DATABASE_ID || 'cyberforge';
 const databaseName = process.env.APPWRITE_DATABASE_NAME || 'cyberforge';
 
-if (!apiKey) {
-  console.error('❌ Missing APPWRITE_API_KEY. Set it in backend/.env or pass it inline.');
+const missing = Object.entries({ APPWRITE_ENDPOINT: endpoint, APPWRITE_PROJECT_ID: projectId, APPWRITE_API_KEY: apiKey })
+  .filter(([, value]) => !value).map(([name]) => name);
+if (missing.length) {
+  console.error(`❌ Missing ${missing.join(', ')}. Set them in backend/.env or pass them inline.`);
   process.exit(1);
 }
 
@@ -23,6 +27,11 @@ const databases = new Databases(client);
 
 const collectionPermissions = PRIVATE_COLLECTION_PERMISSIONS;
 
+// Every collection the backend reads or writes, with exactly the fields it
+// sends (services/appwriteService.js, routes/network-capture.js). Appwrite
+// refuses a document that carries a field its collection does not declare, so
+// this has to stay in step with those writes. Each attribute the backend
+// filters or sorts on has an index.
 const schema = {
   users: {
     name: 'users',
@@ -32,7 +41,9 @@ const schema = {
       { type: 'string', key: 'status', size: 64, required: true },
       { type: 'datetime', key: 'created_at', required: true }
     ],
-    indexes: []
+    indexes: [
+      { key: 'idx_users_user_id', type: 'key', attributes: ['user_id'] }
+    ]
   },
   devices: {
     name: 'devices',
@@ -98,7 +109,30 @@ const schema = {
       { type: 'string', key: 'device_id', size: 128, required: true },
       { type: 'datetime', key: 'created_at', required: true }
     ],
-    indexes: []
+    indexes: [
+      { key: 'idx_alerts_user_id', type: 'key', attributes: ['user_id'] },
+      { key: 'idx_alerts_severity', type: 'key', attributes: ['severity'] },
+      { key: 'idx_alerts_created_at', type: 'key', attributes: ['created_at'] }
+    ]
+  },
+  agents: {
+    name: 'agents',
+    attributes: [
+      { type: 'string', key: 'device_id', size: 128, required: true },
+      { type: 'string', key: 'user_id', size: 128, required: true },
+      { type: 'string', key: 'agent_type', size: 128, required: true },
+      { type: 'string', key: 'agent_version', size: 64, required: true },
+      { type: 'string', key: 'capabilities', size: 4096, required: false },
+      { type: 'string', key: 'state', size: 32, required: true },
+      { type: 'string', key: 'status', size: 32, required: true },
+      { type: 'integer', key: 'error_count', required: false },
+      { type: 'datetime', key: 'last_heartbeat', required: true },
+      { type: 'datetime', key: 'created_at', required: true }
+    ],
+    indexes: [
+      { key: 'idx_agents_device_id', type: 'key', attributes: ['device_id'] },
+      { key: 'idx_agents_user_id', type: 'key', attributes: ['user_id'] }
+    ]
   },
   agent_tasks: {
     name: 'agent_tasks',
@@ -109,9 +143,92 @@ const schema = {
       { type: 'integer', key: 'priority', required: true },
       { type: 'integer', key: 'retries', required: true },
       { type: 'datetime', key: 'created_at', required: true },
-      { type: 'datetime', key: 'updated_at', required: true }
+      { type: 'datetime', key: 'updated_at', required: true },
+      // The agent the task is queued for and the account that owns it. A task
+      // is read back only by its owner, so both must be stored.
+      { type: 'string', key: 'agent_id', size: 128, required: false },
+      { type: 'string', key: 'user_id', size: 128, required: false }
     ],
-    indexes: []
+    indexes: [
+      { key: 'idx_tasks_agent_id', type: 'key', attributes: ['agent_id'] },
+      { key: 'idx_tasks_user_id', type: 'key', attributes: ['user_id'] },
+      { key: 'idx_tasks_status', type: 'key', attributes: ['status'] },
+      { key: 'idx_tasks_priority', type: 'key', attributes: ['priority'] }
+    ]
+  },
+  // Two kinds of record share this collection: an installed-browser inventory
+  // (saveBrowserIntelligence) and a behavioural session snapshot
+  // (createBrowserIntelligenceSnapshot). Only the fields both carry are required.
+  browser_intelligence: {
+    name: 'browser_intelligence',
+    attributes: [
+      { type: 'string', key: 'user_id', size: 128, required: true },
+      { type: 'string', key: 'device_id', size: 128, required: false },
+      { type: 'datetime', key: 'created_at', required: true },
+      { type: 'string', key: 'os', size: 64, required: false },
+      { type: 'string', key: 'os_display', size: 128, required: false },
+      { type: 'string', key: 'default_browser', size: 128, required: false },
+      { type: 'string', key: 'browsers_json', size: 16384, required: false },
+      { type: 'integer', key: 'installed_count', required: false },
+      { type: 'integer', key: 'running_count', required: false },
+      { type: 'string', key: 'scan_timestamp', size: 64, required: false },
+      { type: 'string', key: 'snapshot_id', size: 128, required: false },
+      { type: 'integer', key: 'session_count', required: false },
+      { type: 'integer', key: 'total_domains', required: false },
+      { type: 'integer', key: 'total_alerts', required: false },
+      { type: 'float', key: 'average_risk', required: false },
+      { type: 'string', key: 'sessions_json', size: 16384, required: false }
+    ],
+    indexes: [
+      { key: 'idx_intel_user_id', type: 'key', attributes: ['user_id'] },
+      { key: 'idx_intel_created_at', type: 'key', attributes: ['created_at'] }
+    ]
+  },
+  evidence_metadata: {
+    name: 'evidence_metadata',
+    attributes: [
+      { type: 'string', key: 'userId', size: 128, required: false },
+      { type: 'string', key: 'agentId', size: 128, required: false },
+      { type: 'string', key: 'taskId', size: 128, required: false },
+      { type: 'string', key: 'sourceType', size: 64, required: false },
+      { type: 'string', key: 'targetUrl', size: 2048, required: false },
+      { type: 'string', key: 'evidenceType', size: 64, required: false },
+      { type: 'string', key: 'summary', size: 4096, required: false },
+      { type: 'string', key: 'checksum', size: 128, required: false },
+      { type: 'string', key: 'storageLocation', size: 1024, required: false },
+      { type: 'string', key: 'metadata', size: 16384, required: false },
+      { type: 'datetime', key: 'collectedAt', required: true }
+    ],
+    indexes: [
+      { key: 'idx_evidence_user', type: 'key', attributes: ['userId'] }
+    ]
+  },
+  network_captures: {
+    name: 'network_captures',
+    attributes: [
+      { type: 'string', key: 'id', size: 64, required: true },
+      { type: 'string', key: 'user_id', size: 128, required: true },
+      { type: 'string', key: 'device_id', size: 64, required: true },
+      { type: 'datetime', key: 'created_at', required: true },
+      { type: 'string', key: 'host', size: 255, required: false },
+      { type: 'string', key: 'url', size: 2048, required: false },
+      { type: 'string', key: 'method', size: 16, required: false },
+      { type: 'string', key: 'scheme', size: 16, required: false },
+      { type: 'string', key: 'ip', size: 64, required: false },
+      { type: 'integer', key: 'port', required: false },
+      { type: 'integer', key: 'status', required: false },
+      { type: 'string', key: 'mime', size: 128, required: false },
+      { type: 'string', key: 'app', size: 255, required: false },
+      { type: 'boolean', key: 'decrypted', required: false },
+      { type: 'string', key: 'flags', size: 64, required: false, array: true },
+      { type: 'float', key: 'req_bytes', required: false },
+      { type: 'float', key: 'resp_bytes', required: false },
+      { type: 'float', key: 'duration_ms', required: false }
+    ],
+    indexes: [
+      { key: 'idx_captures_user_id', type: 'key', attributes: ['user_id'] },
+      { key: 'idx_captures_created_at', type: 'key', attributes: ['created_at'] }
+    ]
   }
 };
 

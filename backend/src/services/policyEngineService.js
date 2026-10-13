@@ -210,8 +210,11 @@ class PolicyEngineService {
 
     if (!nodeId) return { triggered: [], suppressed: 0, error: 'Missing nodeId' };
 
+    // Cooldowns are kept per account, so one account naming another's node
+    // cannot suppress that node's policies.
+    const cacheKey = `${riskEvent.userId == null ? '' : riskEvent.userId}:${nodeId}`;
     const now = Date.now();
-    const nodeCache = this.evaluationCache.get(nodeId) || {};
+    const nodeCache = this.evaluationCache.get(cacheKey) || {};
 
     // Global suppression window check (prevent action storm)
     if (nodeCache.suppressUntil && now < nodeCache.suppressUntil) {
@@ -257,7 +260,7 @@ class PolicyEngineService {
       nodeCache.suppressUntil = now + this.config.suppressionWindowMs;
     }
 
-    this.evaluationCache.set(nodeId, nodeCache);
+    this.evaluationCache.set(cacheKey, nodeCache);
 
     if (triggered.length > 0) {
       logger.info(`[PolicyEngine] ${triggered.length} policies triggered for node ${nodeId}`);
@@ -297,6 +300,7 @@ class PolicyEngineService {
         actualValue: triggeredValue,
       },
       nodeId: riskEvent.nodeId,
+      userId: riskEvent.userId == null ? null : String(riskEvent.userId),
       timestamp: new Date().toISOString(),
       status: 'executed',
     };
@@ -311,9 +315,10 @@ class PolicyEngineService {
     }
   }
 
-  getResponseLog({ limit = 100, nodeId, actionType, policyId } = {}) {
+  getResponseLog({ limit = 100, nodeId, actionType, policyId, userId } = {}) {
     let log = [...this.responseLog].reverse(); // newest first
 
+    if (userId !== undefined) log = log.filter(e => e.userId != null && e.userId === String(userId));
     if (nodeId)     log = log.filter(e => e.nodeId === nodeId);
     if (actionType) log = log.filter(e => e.actionType === actionType);
     if (policyId)   log = log.filter(e => e.policyId === policyId);

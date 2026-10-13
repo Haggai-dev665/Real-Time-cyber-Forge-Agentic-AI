@@ -30,8 +30,7 @@ router.post('/session', async (req, res) => {
       total_domains_tracked,
       total_alerts,
       average_risk,
-      device_id,
-      user_id
+      device_id
     } = req.body;
 
     if (!sessions || !Array.isArray(sessions)) {
@@ -41,7 +40,8 @@ router.post('/session', async (req, res) => {
       });
     }
 
-    // ── Broadcast live session update to all connected dashboards ──
+    // ── Broadcast the live session update to this account's dashboards ──
+    const owner = String(req.user.userId);
     wsManager.broadcastToDesktops({
       type: 'session_update',
       data: {
@@ -51,7 +51,7 @@ router.post('/session', async (req, res) => {
         average_risk: average_risk || 0,
         timestamp: new Date().toISOString()
       }
-    });
+    }, owner);
 
     wsManager.broadcastToMobiles({
       type: 'session_update',
@@ -61,7 +61,7 @@ router.post('/session', async (req, res) => {
         average_risk: average_risk || 0,
         timestamp: new Date().toISOString()
       }
-    });
+    }, owner);
 
     // ── Persist snapshot to Appwrite ──
     let persistedId = null;
@@ -73,7 +73,7 @@ router.post('/session', async (req, res) => {
         average_risk: average_risk || 0,
         sessions_json: JSON.stringify(sessions).substring(0, 16384),
         device_id: device_id || 'unknown',
-        user_id: user_id || 'system',
+        user_id: String(req.user.userId),
         created_at: new Date().toISOString()
       };
 
@@ -120,7 +120,6 @@ router.post('/alert', async (req, res) => {
       risk_score,
       flags,
       details,
-      user_id,
       device_id
     } = req.body;
 
@@ -131,7 +130,7 @@ router.post('/alert', async (req, res) => {
       });
     }
 
-    // ── Broadcast behavioral alert to all connected clients ──
+    // ── Broadcast the behavioral alert to this account's clients ──
     const alertPayload = {
       type: 'behavioral_alert',
       data: {
@@ -147,8 +146,8 @@ router.post('/alert', async (req, res) => {
       }
     };
 
-    wsManager.broadcastToDesktops(alertPayload);
-    wsManager.broadcastToMobiles(alertPayload);
+    wsManager.broadcastToDesktops(alertPayload, req.user.userId);
+    wsManager.broadcastToMobiles(alertPayload, req.user.userId);
 
     // ── Persist alert to Appwrite alerts collection ──
     let alertDocId = null;
@@ -159,7 +158,7 @@ router.post('/alert', async (req, res) => {
       else if (risk_score >= 40) severity = 'medium';
 
       const result = await appwriteService.createAlert({
-        userId: user_id || 'system',
+        userId: String(req.user.userId),
         deviceId: device_id || 'unknown',
         severity,
         source: 'browser',
@@ -219,7 +218,7 @@ router.post('/risk-update', async (req, res) => {
         alert_count: alert_count || 0,
         timestamp: new Date().toISOString()
       }
-    });
+    }, req.user.userId);
 
     res.json({
       success: true,
@@ -237,14 +236,14 @@ router.post('/risk-update', async (req, res) => {
 
 // ──────────────────────────────────────────────────────
 // GET /api/browser-intelligence/snapshot
-// Returns latest intelligence data for dashboard polling
+// Returns the signed-in account's latest intelligence data for dashboard polling
 // ──────────────────────────────────────────────────────
 router.get('/snapshot', async (req, res) => {
   try {
     // Try to get latest snapshot from Appwrite
     let latestSnapshot = null;
     try {
-      latestSnapshot = await appwriteService.getLatestBrowserIntelligence();
+      latestSnapshot = await appwriteService.getLatestBrowserIntelligence(req.user.userId);
     } catch (err) {
       logger.warn('Could not fetch latest intelligence snapshot:', err.message);
     }

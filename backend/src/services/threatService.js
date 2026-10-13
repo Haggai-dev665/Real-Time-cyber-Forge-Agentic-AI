@@ -61,7 +61,10 @@ class ThreatService {
           severity: t.severity,
           riskScore: rs,
           confidence: t.confidence,
-          source: 'threat-scan'
+          source: 'threat-scan',
+          // The scan belongs to whoever asked for it; without an owner the
+          // event is not delivered to anyone.
+          userId: data.userId
         }));
       } catch (_) { /* realtime is best-effort */ }
 

@@ -8,7 +8,14 @@ const logger = require('../utils/logger');
 
 class AgentManager {
   constructor() {
+    // Agents are held per owning account: owner ID -> (agent name -> agent).
+    // Two accounts can each run an agent called 'default' without seeing,
+    // reusing or stopping the other's.
     this.agents = new Map();
+  }
+
+  _ownedBy(userId) {
+    return this.agents.get(String(userId)) || new Map();
   }
 
   /**
@@ -16,17 +23,21 @@ class AgentManager {
    */
   async startAgent(config) {
     const { userId, agentName = 'default' } = config;
+    if (!userId) throw new Error('An agent needs an owning user');
 
-    if (this.agents.has(agentName)) {
+    const running = this.getAgent(agentName, userId);
+    if (running) {
       logger.warn(`⚠️  Agent '${agentName}' is already running`);
-      return this.agents.get(agentName);
+      return running;
     }
 
     try {
       const agent = new CyberforgeAgent(config);
       await agent.start();
 
-      this.agents.set(agentName, agent);
+      const owner = String(userId);
+      if (!this.agents.has(owner)) this.agents.set(owner, new Map());
+      this.agents.get(owner).set(agentName, agent);
 
       logger.info(`✅ Agent '${agentName}' started and registered`);
 
@@ -40,8 +51,8 @@ class AgentManager {
   /**
    * Stop an agent
    */
-  async stopAgent(agentName) {
-    const agent = this.agents.get(agentName);
+  async stopAgent(agentName, userId) {
+    const agent = this.getAgent(agentName, userId);
 
     if (!agent) {
       logger.warn(`⚠️  Agent '${agentName}' not found`);
@@ -50,7 +61,9 @@ class AgentManager {
 
     try {
       await agent.stop();
-      this.agents.delete(agentName);
+      const owned = this._ownedBy(userId);
+      owned.delete(agentName);
+      if (owned.size === 0) this.agents.delete(String(userId));
 
       logger.info(`✅ Agent '${agentName}' stopped`);
     } catch (error) {
@@ -63,13 +76,16 @@ class AgentManager {
    * Stop all agents
    */
   async stopAllAgents() {
-    const agentNames = Array.from(this.agents.keys());
+    const running = [];
+    for (const [owner, owned] of this.agents) {
+      for (const agentName of owned.keys()) running.push([agentName, owner]);
+    }
 
-    logger.info(`🛑 Stopping ${agentNames.length} agent(s)...`);
+    logger.info(`🛑 Stopping ${running.length} agent(s)...`);
 
-    for (const agentName of agentNames) {
+    for (const [agentName, owner] of running) {
       try {
-        await this.stopAgent(agentName);
+        await this.stopAgent(agentName, owner);
       } catch (error) {
         logger.error(`❌ Failed to stop agent '${agentName}':`, error);
       }
@@ -79,17 +95,17 @@ class AgentManager {
   }
 
   /**
-   * Get agent by name
+   * Get one of an account's agents by name
    */
-  getAgent(agentName) {
-    return this.agents.get(agentName);
+  getAgent(agentName, userId) {
+    return this._ownedBy(userId).get(agentName);
   }
 
   /**
-   * List all running agents
+   * List an account's running agents
    */
-  listAgents() {
-    return Array.from(this.agents.entries()).map(([name, agent]) => ({
+  listAgents(userId) {
+    return Array.from(this._ownedBy(userId).entries()).map(([name, agent]) => ({
       name,
       agentId: agent.agentId,
       deviceId: agent.deviceId,
@@ -102,8 +118,8 @@ class AgentManager {
   /**
    * Get agent status
    */
-  getAgentStatus(agentName) {
-    const agent = this.agents.get(agentName);
+  getAgentStatus(agentName, userId) {
+    const agent = this.getAgent(agentName, userId);
 
     if (!agent) {
       return { exists: false };

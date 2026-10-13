@@ -75,12 +75,9 @@ export const endpoints = {
     api.get<Envelope<Record<string, unknown>>>('/api/browser-intelligence/snapshot'),
 
   /* ---------------- ML inference ---------------- */
-  mlHealth: () =>
-    api.get<Record<string, unknown>>('/api/cyberforge-ml/health', { anonymous: true }),
+  mlHealth: () => api.get<Record<string, unknown>>('/api/cyberforge-ml/health'),
   mlModels: () =>
-    api.get<Envelope<unknown[]> & { models?: unknown[] }>('/api/cyberforge-ml/models', {
-      anonymous: true,
-    }),
+    api.get<Envelope<unknown[]> & { models?: unknown[] }>('/api/cyberforge-ml/models'),
 
   /* ---------------- AI assistant ---------------- */
   securityChat: (query: string) =>

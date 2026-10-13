@@ -877,8 +877,9 @@ class AppwriteService {
   /**
    * Get the latest browser intelligence snapshot
    */
-  async getLatestBrowserIntelligence() {
+  async getLatestBrowserIntelligence(userId) {
     this.ensureInitialized();
+    if (!userId) throw new Error('A snapshot is read for one account; userId is required');
 
     try {
       const { Query } = require('node-appwrite');
@@ -886,6 +887,7 @@ class AppwriteService {
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.browserIntelligence,
         [
+          Query.equal('user_id', String(userId)),
           Query.orderDesc('created_at'),
           Query.limit(1)
         ]

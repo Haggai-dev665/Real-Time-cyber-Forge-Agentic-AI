@@ -98,18 +98,26 @@ class MemoryService {
     // SESSION MEMORY — current browsing session (URLs, dwell, journey)
     // ────────────────────────────────────────────────────────────
 
-    getSession(sid) {
-        if (!sid) return null;
-        return this.sessionCache.get(sid) || null;
+    // A session ID is chosen by the client, so it is only meaningful within one
+    // account. Sessions recorded without an owner sit under an empty owner and
+    // cannot be reached by naming an account.
+    _sessionKey(sid, ownerId) {
+        return `${ownerId == null ? '' : ownerId}:${sid}`;
     }
 
-    recordUrlInSession(sid, { url, verdict, host }) {
+    getSession(sid, ownerId) {
+        if (!sid) return null;
+        return this.sessionCache.get(this._sessionKey(sid, ownerId)) || null;
+    }
+
+    recordUrlInSession(sid, { url, verdict, host, ownerId }) {
         if (!sid) return null;
         const now = new Date().toISOString();
-        let s = this.sessionCache.get(sid);
+        const key = this._sessionKey(sid, ownerId);
+        let s = this.sessionCache.get(key);
         if (!s) {
             s = { sessionId: sid, started: now, urls: [], hosts: new Set() };
-            this.sessionCache.set(sid, s);
+            this.sessionCache.set(key, s);
         }
         s.lastActivity = now;
         s.urls.unshift({ url, host, verdict, at: now });
@@ -123,8 +131,8 @@ class MemoryService {
         return s;
     }
 
-    sessionStats(sid) {
-        const s = this.getSession(sid);
+    sessionStats(sid, ownerId) {
+        const s = this.getSession(sid, ownerId);
         if (!s) return { urls: 0, hosts: 0, threats: 0 };
         return {
             urls: s.urls.length,

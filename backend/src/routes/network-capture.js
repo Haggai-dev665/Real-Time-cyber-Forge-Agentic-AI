@@ -92,8 +92,8 @@ router.post('/ingest', optionalAuth, async (req, res) => {
       type: 'network_capture',
       data: { userId, deviceId: device, count: records.length, flows: records.slice(0, 50) }
     };
-    try { wsManager.broadcastToDesktops(summary); } catch (_) {}
-    try { wsManager.broadcastToMobiles(summary); } catch (_) {}
+    try { wsManager.broadcastToDesktops(summary, userId); } catch (_) {}
+    try { wsManager.broadcastToMobiles(summary, userId); } catch (_) {}
 
     // Best-effort durable persistence (skipped cleanly if the collection isn't
     // provisioned — mirrors the browser-intelligence route's behaviour).

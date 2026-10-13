@@ -63,7 +63,9 @@ router.post('/save', (req, res) => {
       ts: ts || Math.floor(Date.now() / 1000),
       emb: embed(text),
     };
-    const ix = store.findIndex((m) => m.id === mem.id);
+    // An ID names a memory only within its own account, so saving under an ID
+    // that another account uses adds a new entry instead of replacing theirs.
+    const ix = store.findIndex((m) => m.id === mem.id && m.userId === mem.userId);
     if (ix >= 0) store[ix] = mem;
     else store.push(mem);
     if (store.length > MAX) store.splice(0, store.length - MAX);

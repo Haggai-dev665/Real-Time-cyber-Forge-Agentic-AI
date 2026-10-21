@@ -6,7 +6,7 @@
  * out to that user's other connected clients (desktop + mobile) over WebSocket,
  * and persists them best-effort to Appwrite so they are readable across devices.
  *
- * A small per-user in-memory ring buffer is the always-available source for GET,
+ * A small per-user in-memory buffer (services/networkCaptureBuffer.js) is the always-available source for GET,
  * so the desktop and mobile apps share captures even before/independent of the
  * Appwrite collection being provisioned. NO mock data — an empty buffer returns
  * an honest empty list.
@@ -19,17 +19,8 @@ const { appwriteService } = require('../services/appwriteService');
 const { APPWRITE_CONFIG } = require('../config/appwrite.config');
 const { wsManager } = require('../services/websocket');
 const logger = require('../utils/logger');
-
-// Per-user ring buffer: userId -> array of capture records (newest first).
-const RING = new Map();
-const RING_MAX = 1000;
-
-function pushRing(userId, records) {
-  const cur = RING.get(userId) || [];
-  const next = records.concat(cur);
-  if (next.length > RING_MAX) next.length = RING_MAX;
-  RING.set(userId, next);
-}
+const { redactUrl } = require('../utils/redactUrl');
+const captureBuffer = require('../services/networkCaptureBuffer');
 
 function requireUser(req, res) {
   const userId = req.user && req.user.userId;
@@ -45,7 +36,8 @@ function toRecord(f, userId, deviceId) {
   return {
     id: String(f.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
     host: f.host || null,
-    url: f.url || null,
+    // credentials in the address are removed before it is stored or sent on (SEC-07)
+    url: f.url ? redactUrl(String(f.url).slice(0, 2048)) : null,
     method: f.method || null,
     scheme: f.scheme || null,
     ip: f.ip || null,
@@ -85,7 +77,7 @@ router.post('/ingest', optionalAuth, async (req, res) => {
     const records = flows.slice(0, 500).map((f) => toRecord(f, userId, device));
 
     // Always-available shared store for cross-device reads.
-    pushRing(userId, records.slice().reverse()); // keep newest-first ordering
+    captureBuffer.push(userId, records.slice().reverse()); // keep newest-first ordering
 
     // Live fan-out to this user's connected clients (desktop dashboards + mobile).
     const summary = {
@@ -136,7 +128,7 @@ router.get('/', optionalAuth, async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
     const host = (req.query.host || '').toString().toLowerCase();
 
-    let flows = RING.get(userId) || [];
+    let flows = captureBuffer.get(userId);
     if (host) flows = flows.filter((f) => (f.host || '').toLowerCase().includes(host));
     flows = flows.slice(0, limit);
 

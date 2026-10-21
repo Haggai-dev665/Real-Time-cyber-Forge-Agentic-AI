@@ -3,9 +3,16 @@
  *
  * Owns the connection to the native capture engine (src/native/vpn.ts): it
  * subscribes to live flows + status, keeps a capped in-memory buffer for the
- * Capture screen, and — for a signed-in user — batches captured flows up to the
- * backend so they are saved to the database and become readable from the
- * desktop app and the user's other devices.
+ * Capture screen, and — for a signed-in user who turned on "Sync captures to
+ * your account" — batches captured flows up to the backend so they are saved
+ * and become readable from the desktop app and the user's other devices.
+ *
+ * Privacy (SEC-07, src/context/PrivacyContext.tsx): capture starts only when
+ * "Capture network traffic" is on; flows are sent only while sync is on, and
+ * turning sync off drops everything waiting to be sent. Addresses have sign-in
+ * codes and tokens removed before they leave the phone (src/utils/redact.ts;
+ * the backend removes them again). The native engine is not given the session
+ * token: it never sends anything itself.
  *
  * When the native engine isn't in the build (Expo Go / web / iOS), everything
  * still works: `supported` is false and the screen shows an honest "needs a dev
@@ -22,10 +29,11 @@ import React, {
 } from 'react';
 import { endpoints } from '../api/endpoints';
 import { API_BASE_URL } from '../api/config';
-import { getItem, TOKEN_KEY } from '../api/storage';
 import { vpn, isSupported, type NetworkFlow, type VpnState } from '../native/vpn';
 import type { NetworkCaptureRecord } from '../api/types';
 import { useAuth } from './AuthContext';
+import { usePrivacy } from './PrivacyContext';
+import { redactUrl } from '../utils/redact';
 
 const MAX_BUFFER = 300; // live flows kept in memory for the UI
 const FLUSH_EVERY_MS = 8000; // batch-push cadence
@@ -35,8 +43,10 @@ interface VpnContextValue {
   supported: boolean;
   state: VpnState;
   flows: NetworkFlow[];
-  /** Cleared count of flows pushed to the backend this session. */
+  /** Count of flows pushed to the backend this session. */
   syncedCount: number;
+  /** Whether captures are being sent to the account (the privacy control). */
+  syncing: boolean;
   start: () => Promise<void>;
   stop: () => Promise<void>;
   installCa: () => Promise<void>;
@@ -50,6 +60,9 @@ const INITIAL: VpnState = { status: isSupported ? 'idle' : 'unsupported', flowCo
 
 export function VpnProvider({ children }: { children: React.ReactNode }) {
   const { token, user, isGuest } = useAuth();
+  const privacy = usePrivacy();
+  // the latest choices, for the flush timer and the native callbacks
+  const allowsNow = privacy.allowsNow;
   const [state, setState] = useState<VpnState>(INITIAL);
   const [flows, setFlows] = useState<NetworkFlow[]>([]);
   const [syncedCount, setSyncedCount] = useState(0);
@@ -87,8 +100,9 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
   // Periodic batched push of queued captures to the backend.
   const flush = useCallback(async () => {
     const { token: tok, userId, isGuest: guest } = auth.current;
-    // Only signed-in (non-guest) users get a server-side, cross-device copy.
-    if (guest || !tok || !userId) {
+    // Only signed-in (non-guest) users who turned sync on get a server-side,
+    // cross-device copy; otherwise what is waiting is dropped, not kept for later.
+    if (guest || !tok || !userId || !allowsNow('capture_sync')) {
       queue.current = [];
       return;
     }
@@ -100,10 +114,16 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
       const stored = res?.data?.stored ?? records.length;
       setSyncedCount((n) => n + stored);
     } catch {
-      // On failure, drop the batch rather than growing unbounded — the native
-      // engine also persists locally, so nothing is truly lost.
+      // On failure, drop the batch rather than growing unbounded. The native
+      // engine keeps no copy, so those flows are not sent later.
     }
-  }, []);
+  }, [allowsNow]);
+
+  // Turning sync off drops the flows waiting to be sent.
+  const syncing = privacy.allows('capture_sync');
+  useEffect(() => {
+    if (!syncing) queue.current = [];
+  }, [syncing]);
 
   useEffect(() => {
     if (!isSupported) return;
@@ -113,6 +133,10 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
 
   const start = useCallback(async () => {
     if (!isSupported) return;
+    if (!allowsNow('capture')) {
+      setState((s) => ({ ...s, status: 'idle', error: 'Capture is off in Settings › Privacy.' }));
+      return;
+    }
     setState((s) => ({ ...s, status: 'preparing', error: undefined }));
     try {
       const granted = await vpn.prepare();
@@ -120,13 +144,19 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
         setState((s) => ({ ...s, status: 'idle', error: 'VPN permission was not granted.' }));
         return;
       }
-      const tok = await getItem(TOKEN_KEY);
-      await vpn.start({ backendUrl: API_BASE_URL, token: tok, userId: auth.current.userId });
+      // no session token: the native engine sends nothing itself
+      await vpn.start({ backendUrl: API_BASE_URL, token: null, userId: null });
       // Native will emit the authoritative 'running' state via onState.
     } catch (e) {
       setState((s) => ({ ...s, status: 'error', error: e instanceof Error ? e.message : String(e) }));
     }
-  }, []);
+  }, [allowsNow]);
+
+  // Turning capture off stops a running capture.
+  const captureAllowed = privacy.allows('capture');
+  useEffect(() => {
+    if (!captureAllowed && privacy.ready && (state.status === 'running' || state.status === 'preparing')) void vpn.stop();
+  }, [captureAllowed, privacy.ready, state.status]);
 
   const stop = useCallback(async () => {
     if (!isSupported) return;
@@ -155,8 +185,8 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
   const clear = useCallback(() => setFlows([]), []);
 
   const value = useMemo<VpnContextValue>(
-    () => ({ supported: isSupported, state, flows, syncedCount, start, stop, installCa, refreshCa, clear }),
-    [state, flows, syncedCount, start, stop, installCa, refreshCa, clear]
+    () => ({ supported: isSupported, state, flows, syncedCount, syncing, start, stop, installCa, refreshCa, clear }),
+    [state, flows, syncedCount, syncing, start, stop, installCa, refreshCa, clear]
   );
 
   return <VpnCtx.Provider value={value}>{children}</VpnCtx.Provider>;
@@ -173,7 +203,7 @@ function toRecord(f: NetworkFlow): NetworkCaptureRecord {
   return {
     id: f.id,
     host: f.host,
-    url: f.url,
+    url: f.url ? redactUrl(f.url) : f.url,
     method: f.method,
     scheme: f.scheme,
     ip: f.ip,

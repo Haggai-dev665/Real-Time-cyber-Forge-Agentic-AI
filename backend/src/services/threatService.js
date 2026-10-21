@@ -121,7 +121,8 @@ class ThreatService {
       // Check each model's prediction
       if (analysis.model_predictions) {
         for (const [modelName, prediction] of Object.entries(analysis.model_predictions)) {
-          if (prediction.is_threat && prediction.threat_score >= 0.4) {
+          // a model that did not answer has no score and is not a finding
+          if (prediction.available !== false && prediction.is_threat && prediction.threat_score >= 0.4) {
             threats.push({
               type: modelName.replace('_detection', ''),
               severity: prediction.threat_score >= 0.8 ? 'high' : 
@@ -207,7 +208,7 @@ class ThreatService {
       const query = ownedThreatFilter(userId);
       
       const total_threats = await Threat.countDocuments(query);
-      const active_threats = await Threat.countDocuments({ ...query, status: { $in: ['detected', 'investigating', 'confirmed'] } });
+      const active_threats = await Threat.countDocuments({ ...query, status: { $in: ['detected', 'acknowledged', 'investigating', 'confirmed'] } });
       const resolved_threats = await Threat.countDocuments({ ...query, status: { $in: ['mitigated', 'false_positive', 'resolved', 'dismissed'] } });
       const high_severity = await Threat.countDocuments({ ...query, severity: { $in: ['high', 'critical'] } });
       

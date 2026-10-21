@@ -68,12 +68,17 @@ const auth = async (req, res, next) => {
     }
 
     // Add user to request object
+    // The verified principal. `workspaceId` is the account's own personal
+    // workspace, or null for an account that has not been given one yet
+    // (middleware/workspace.js creates it on first use). It comes from the
+    // account record and never from the request.
     req.user = {
       userId: user._id,
       email: user.email,
       role: user.role,
       firstName: user.firstName,
-      lastName: user.lastName
+      lastName: user.lastName,
+      workspaceId: user.defaultWorkspaceId ? String(user.defaultWorkspaceId) : null
     };
 
     // Update last active time

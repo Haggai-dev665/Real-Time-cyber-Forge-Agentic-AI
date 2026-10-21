@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Threat Globe</title>
+<title>CyberForge — Threat Intelligence</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
@@ -15,6 +15,8 @@
 .map-meta{position:absolute;left:16px;bottom:14px;display:flex;gap:22px;font-family:var(--mono);z-index:5}
 .map-meta .m b{display:block;font-size:24px;font-weight:600;line-height:1}
 .map-meta .m span{font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+.map-note{position:absolute;left:16px;right:16px;bottom:56px;font-family:var(--mono);font-size:9.5px;line-height:1.45;color:var(--faint);z-index:5;max-width:560px}
+.own-empty{padding:12px 6px;font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.5}
 .map-legend{position:absolute;right:16px;top:14px;display:flex;flex-direction:column;gap:7px;z-index:5}
 .map-legend .row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--dim)}
 .map-legend .sw{width:9px;height:9px;border-radius:50%}
@@ -53,11 +55,18 @@
 .typ .bar i{display:block;height:100%;border-radius:3px;width:0;transition:width 1.1s ease}
 .typ .pc{font-family:var(--mono);font-size:10px;color:var(--dim);width:30px;text-align:right}
 .row-div{border-top:1px solid var(--border)}
+.intel-feed .globe-grid{display:block;overflow-y:auto}.intel-feed .map-card{display:none}.intel-feed .side-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}.intel-feed .feed-card:first-child{grid-column:1/-1;min-height:300px}.intel-feed .attack-stream{max-height:400px;overflow-y:auto}.intel-feed .atk .who b{white-space:normal}.workspace-tabs input{background:var(--tile);color:var(--text);border:1px solid var(--border);padding:6px}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Threat Globe" id="win">
+  <div class="window" data-screen-label="Threat Intelligence" id="win">
     <!-- TOP BAR -->
     <div class="topbar" id="topbar"></div>
 
@@ -66,17 +75,19 @@
       <aside class="sidebar" id="sidebar"></aside>
 
       <!-- MAIN -->
-      <main class="main">
+      <main class="main intel-feed">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg></div>
-          <h1>Threat Globe</h1>
+          <h1>Threat Intelligence</h1>
           <div class="head-right">
-            <span class="live-ind"><span class="dot"></span>Live</span>
-            <span id="rate">42 attacks/min</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Replay</button>
+            <span class="live-ind" title="Pulses published by the AlienVault OTX community. They are not activity seen on your devices.">Public intelligence · AlienVault OTX</span>
+            <span id="rate">loading…</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Refresh</button>
           </div>
         </div>
 
+        <nav class="workspace-tabs" aria-label="Intelligence views"><button class="nav-item active" id="intelFeed" aria-pressed="true">Public feed</button><button class="nav-item" id="intelMap" aria-pressed="false">Globe / map</button><label class="cf-context-note">Search pulses <input id="intelSearch" type="search" placeholder="Malware, country or technique"></label><button class="nav-item" id="saveIntel">Save visible pulses to context</button><span id="intelSaveStatus" class="cf-context-note" aria-live="polite"></span></nav>
+        <p class="cf-context-note">Public intelligence is reference material, separate from device findings. Saving it creates local context; it does not retrain models or change protection policies.</p>
         <div class="globe-grid">
           <!-- MAP -->
           <div class="card map-card">
@@ -87,16 +98,16 @@
                 <div class="gl-tab" data-mode="heat">HEATMAP</div>
               </div>
               <div class="map-legend">
-                <div class="row"><span class="sw" style="background:var(--red)"></span>Critical</div>
-                <div class="row"><span class="sw" style="background:var(--amber)"></span>Medium</div>
-                <div class="row"><span class="sw" style="background:var(--cyan)"></span>Low / probe</div>
+                <div class="row" title="The pulse's name or tags mention ransomware, APT, zero-day, wiper, exploit, C2 or botnet"><span class="sw" style="background:var(--red)"></span>Severe keywords</div>
+                <div class="row"><span class="sw" style="background:var(--amber)"></span>Other pulses</div>
               </div>
               <canvas class="world" id="world"></canvas>
+              <div class="map-note" id="mapNote">Public threat-intelligence pulses, not activity on your devices. Positions are approximate: an origin is where an IP a pulse lists is geolocated, a target is the centre of a country the pulse names. An arc joins the two only when one pulse names both.</div>
               <div class="map-meta">
                 <div class="m"><b id="mTotal" class="sev-crit">—</b><span>Threat pulses</span></div>
-                <div class="m"><b id="mBlocked" style="color:var(--amber-2)">—</b><span>Origin IPs</span></div>
+                <div class="m"><b id="mBlocked" style="color:var(--amber-2)">—</b><span>Indicator locations</span></div>
                 <div class="m"><b id="mNodes" style="color:var(--cyan)">—</b><span>Targeted countries</span></div>
-                <div class="m"><b id="mLearned" style="color:var(--green)">0</b><span>AI learned</span></div>
+                <div class="m"><b id="mLearned" style="color:var(--green)">0</b><span>Saved this session</span></div>
               </div>
             </div>
           </div>
@@ -104,15 +115,19 @@
           <!-- SIDE COLUMN -->
           <div class="side-col">
             <div class="card feed-card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Live Attack Stream<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>Recent pulses<span class="right" id="pulseAge"></span></div>
               <div class="attack-stream" id="stream"></div>
             </div>
+            <div class="card feed-card">
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>On your devices<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="attack-stream" id="ownStream"><div class="own-empty">Scans, threats and alerts from your own devices appear here as they happen. Nothing yet in this session.</div></div>
+            </div>
             <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>Top Origins</div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>Top indicator origins</div>
               <div id="origins"></div>
             </div>
             <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>Attack Vectors</div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>Malware and techniques named</div>
               <div id="vectors"></div>
             </div>
           </div>
@@ -128,284 +143,20 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-realtime.js"></script>
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
 <!-- Real-geography globe: vendored locally (CSP blocks CDNs). d3-geo draws the
      actual country polygons; topojson decodes the world atlas. -->
 <script src="../vendor/d3.min.js"></script>
 <script src="../vendor/topojson-client.min.js"></script>
 <script src="../vendor/countries-110m.js"></script>
-<script>
-buildHeader({status:'TRACKING',threats:'318'});
-buildSidebar('globe');
-buildFooter({items:[{txt:'threat globe',cls:'sb-cyan'},{txt:'live threats',cls:'sb-amber'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-/* ===================== REAL GLOBE (d3 + world atlas) + LIVE OTX INTEL =====================
-   Real Earth (vendored d3-geo + world atlas), live AlienVault OTX data fetched
-   through the Rust `otx_fetch` command (CSP blocks direct calls). OTX has no
-   attack-origin geography, so Rust geolocates the malicious IP indicators
-   (ip-api.com) → real ORIGINS; the pulse's targeted_countries are the
-   DESTINATIONS. Animated "missiles" travel origin → destination. The AI agent
-   learns each pulse into local memory via `memory_save`.
-   ======================================================================================= */
-const OTX_API_KEY = 'd32e3deb37526ef9095320ed7976388981f9c5052b6e85f5c5b5adab9a87f15c';
-
-(function(){
-  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
-  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
-  function prettyName(n){ return String(n||'').replace(/\b\w/g,function(c){return c.toUpperCase();}); }
-  function ccToFlag(cc){ cc=String(cc||'').toUpperCase(); if(!/^[A-Z]{2}$/.test(cc)) return '🌐';
-    return String.fromCodePoint(0x1F1E6+cc.charCodeAt(0)-65, 0x1F1E6+cc.charCodeAt(1)-65); }
-
-  if(typeof d3==='undefined' || typeof topojson==='undefined' || !window.__WORLD110M){
-    console.warn('[globe] vendored d3/topojson/atlas not loaded'); return;
-  }
-
-  // ---- world geometry (real countries) ----
-  const world=window.__WORLD110M;
-  const countries=topojson.feature(world, world.objects.countries).features;
-  const borders=topojson.mesh(world, world.objects.countries, function(a,b){return a!==b;});
-  const graticule=d3.geoGraticule10();
-
-  const norm=function(s){ return String(s||'').toLowerCase().replace(/[^a-z]/g,''); };
-  // OTX uses long ISO names; map them onto the atlas' short names.
-  const ALIAS={ russianfederation:'russia', unitedkingdomofgreatbritainandnorthernireland:'unitedkingdom',
-    unitedstates:'unitedstatesofamerica', usa:'unitedstatesofamerica', us:'unitedstatesofamerica',
-    republicofkorea:'southkorea', koreasouth:'southkorea', democraticpeoplesrepublicofkorea:'northkorea',
-    koreanorth:'northkorea', iranislamicrepublicof:'iran', czechrepublic:'czechia', syrianarabrepublic:'syria',
-    taiwanprovinceofchina:'taiwan', boliviaplurinationalstateof:'bolivia', venezuelabolivarianrepublicof:'venezuela',
-    moldovarepublicof:'moldova', tanzaniaunitedrepublicof:'unitedrepublicoftanzania',
-    laopeoplesdemocraticrepublic:'laos', vietnam:'vietnam', uae:'unitedarabemirates', hongkong:'china' };
-  const centroidByName={};
-  countries.forEach(function(f){ var nm=norm(f.properties&&f.properties.name); if(nm){ centroidByName[nm]=d3.geoCentroid(f); } });
-  function resolveCentroid(name){ var k=norm(name); if(centroidByName[k]) return centroidByName[k];
-    if(ALIAS[k]&&centroidByName[ALIAS[k]]) return centroidByName[ALIAS[k]];
-    var hit=Object.keys(centroidByName).find(function(x){return x.length>4&&(x.indexOf(k)>=0||k.indexOf(x)>=0);});
-    return hit?centroidByName[hit]:null; }
-
-  // ---- canvas ----
-  const cvs=document.getElementById('world'), ctx=cvs.getContext('2d');
-  let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
-  function resize(){ var r=cvs.parentElement.getBoundingClientRect(); W=r.width;H=r.height;
-    cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); }
-  resize(); window.addEventListener('resize',resize);
-
-  let mode='globe', yaw=0, heat=false;
-  let projection=d3.geoOrthographic(), path=d3.geoPath(projection,ctx);
-  function setProjection(){ var pad=14, R=Math.min(W,H)*0.46, cx=W/2, cy=H/2;
-    if(mode==='globe'){ projection=d3.geoOrthographic().clipAngle(90).scale(R).translate([cx,cy]).rotate([yaw,-16]); }
-    else { projection=d3.geoNaturalEarth1(); projection.fitExtent([[pad,pad],[W-pad,H-pad]],{type:'Sphere'}); }
-    path=d3.geoPath(projection,ctx); }
-  function viewCenter(){ var inv=projection.invert&&projection.invert([W/2,H/2]); return inv||[-yaw,16]; }
-  function visible(pt){ if(mode!=='globe') return true; return d3.geoDistance(pt, viewCenter())<Math.PI/2-0.02; }
-  function projVisible(pt){ if(!visible(pt)) return null; var p=projection(pt); return p||null; }
-
-  // ---- state from OTX ----
-  let intensity={}, maxInt=1;        // dest country intensity (choropleth)
-  let destMarkers=[], originMarkers=[], attacks=[], rings=[], pulses=[];
-  const SEVC={crit:'#f4495e', med:'#f5a623', low:'#2bd4ee'};
-  const baseLand='#23493a';
-  function intColor(k){ var v=(intensity[k]||0)/maxInt; if(v<=0) return baseLand;
-    return d3.interpolateRgb('#2f6d4a','#f4495e')(Math.min(1,(heat?0.15:0.25)+v*(heat?1:0.85))); }
-
-  function drawGC(a,t0,t1){ ctx.beginPath(); var started=false;
-    for(var t=t0;t<=t1+1e-4;t+=0.03){ var pt=a.interp(Math.min(1,Math.max(0,t))); if(!visible(pt)){started=false;continue;}
-      var p=projection(pt); if(!p){started=false;continue;} if(started)ctx.lineTo(p[0],p[1]); else ctx.moveTo(p[0],p[1]); started=true; }
-    ctx.stroke(); }
-
-  function drawArcs(now){
-    attacks.forEach(function(a){
-      var phase=((((now-a.t0)/a.dur)%1)+1)%1;
-      if(phase < a.lastPhase){ rings.push({c:a.b, color:a.color, t0:now}); }   // missile arrived → impact ring
-      a.lastPhase=phase;
-      // faint full route
-      ctx.strokeStyle=a.color; ctx.globalAlpha=0.10; ctx.lineWidth=0.8; drawGC(a,0,1);
-      // bright travelling trail
-      ctx.globalAlpha=0.92; ctx.lineWidth=1.7; drawGC(a, Math.max(0,phase-0.16), phase);
-      // travelling head ("missile")
-      var hp=projVisible(a.interp(phase));
-      if(hp){ ctx.globalAlpha=1; ctx.fillStyle=a.color; ctx.beginPath(); ctx.arc(hp[0],hp[1],2.6,0,7); ctx.fill();
-        ctx.globalAlpha=0.35; ctx.beginPath(); ctx.arc(hp[0],hp[1],6,0,7); ctx.fill(); }
-      ctx.globalAlpha=1;
-    });
-    rings=rings.filter(function(r){ var t=(now-r.t0)/700; if(t>=1)return false; var p=projVisible(r.c); if(!p)return true;
-      ctx.strokeStyle=r.color; ctx.globalAlpha=1-t; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(p[0],p[1],Math.max(0.1,3+t*16),0,7); ctx.stroke(); ctx.globalAlpha=1; return true; });
-  }
-
-  function drawScene(now){
-    setProjection(); ctx.clearRect(0,0,W,H);
-    var cx=W/2,cy=H/2,R=Math.min(W,H)*0.46;
-    if(mode==='globe'){ var ga=ctx.createRadialGradient(cx,cy,R*0.7,cx,cy,R*1.32);
-      ga.addColorStop(0,'rgba(43,212,238,.10)'); ga.addColorStop(1,'rgba(43,212,238,0)');
-      ctx.fillStyle=ga; ctx.beginPath(); ctx.arc(cx,cy,R*1.32,0,7); ctx.fill(); }
-    ctx.beginPath(); path({type:'Sphere'});
-    if(mode==='globe'){ var og=ctx.createRadialGradient(cx-R*0.3,cy-R*0.35,R*0.2,cx,cy,R);
-      og.addColorStop(0,'#16395a'); og.addColorStop(0.7,'#0b1f33'); og.addColorStop(1,'#06101c'); ctx.fillStyle=og; }
-    else ctx.fillStyle='#0b1f33';
-    ctx.fill();
-    ctx.beginPath(); path(graticule); ctx.strokeStyle='rgba(126,148,184,.10)'; ctx.lineWidth=0.6; ctx.stroke();
-    for(var i=0;i<countries.length;i++){ ctx.beginPath(); path(countries[i]);
-      ctx.fillStyle=intColor(norm(countries[i].properties&&countries[i].properties.name)); ctx.fill(); }
-    ctx.beginPath(); path(borders); ctx.strokeStyle='rgba(150,180,210,.18)'; ctx.lineWidth=0.5; ctx.stroke();
-    if(mode==='globe'){ ctx.beginPath(); path({type:'Sphere'}); ctx.strokeStyle='rgba(43,212,238,.35)'; ctx.lineWidth=1.2; ctx.stroke(); }
-
-    drawArcs(now);
-
-    // origin markers (malicious infra) — amber
-    originMarkers.forEach(function(m){ var p=projVisible(m.p); if(!p) return;
-      ctx.fillStyle='#f5a623'; ctx.beginPath(); ctx.arc(p[0],p[1],2.2,0,7); ctx.fill();
-      ctx.globalAlpha=0.3; ctx.beginPath(); ctx.arc(p[0],p[1],4.5,0,7); ctx.fill(); ctx.globalAlpha=1; });
-    // destination markers (targeted countries) — red rings
-    destMarkers.forEach(function(m){ var p=projVisible(m.p); if(!p) return;
-      var rr=3+Math.min(6,(m.count/maxInt)*6); var pr=((now/900)+(Math.abs(m.p[0])%7))%1;
-      ctx.strokeStyle='rgba(244,73,94,'+(1-pr).toFixed(2)+')'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(p[0],p[1],Math.max(0.1,rr+pr*12),0,7); ctx.stroke();
-      ctx.fillStyle='rgba(244,73,94,.30)'; ctx.beginPath(); ctx.arc(p[0],p[1],rr+3,0,7); ctx.fill();
-      ctx.fillStyle='#f4495e'; ctx.beginPath(); ctx.arc(p[0],p[1],rr,0,7); ctx.fill(); });
-  }
-
-  function frame(now){ if(W<2||H<2){requestAnimationFrame(frame);return;}
-    if(mode==='globe') yaw+=0.09; drawScene(now); requestAnimationFrame(frame); }
-  requestAnimationFrame(frame);
-
-  document.querySelectorAll('.gl-tab').forEach(function(t){ t.addEventListener('click',function(){
-    document.querySelectorAll('.gl-tab').forEach(function(x){x.classList.remove('active');}); t.classList.add('active');
-    heat=(t.dataset.mode==='heat'); mode=(t.dataset.mode==='globe')?'globe':'map'; }); });
-
-  // ---- build attacks (origin→destination) from pulses + geolocated IPs ----
-  function ingest(results, ipGeo){
-    ipGeo=ipGeo||{};
-    intensity={}; destMarkers=[]; originMarkers=[]; attacks=[]; rings=[]; pulses=[];
-    var destMap={}, originMap={}, originCC={}, base=(window.performance&&performance.now())||Date.now();
-    function sevOf(p){ var s=(p.name||'')+' '+(p.tags||[]).join(' '); return /(ransom|apt|zero.?day|critical|wiper|exploit|c2|botnet)/i.test(s)?'crit':'med'; }
-    function addOrigin(g){ var key=g.lat.toFixed(1)+','+g.lon.toFixed(1); if(!originMap[key]) originMap[key]={p:[g.lon,g.lat],cc:g.cc,country:g.country,count:0}; originMap[key].count++;
-      if(g.country){ originCC[g.country]=originCC[g.country]||{cc:g.cc,n:0}; originCC[g.country].n++; } return originMap[key]; }
-    function addDest(name,c){ var k=norm(name); intensity[k]=(intensity[k]||0)+1; if(!destMap[k]) destMap[k]={name:name,p:c,count:0}; destMap[k].count++; return destMap[k]; }
-
-    // global pools for fallbacks (so single-sided pulses still animate from REAL points)
-    var globalDest=[], globalOrigin=[];
-    results.forEach(function(p){ (p.targeted_countries||[]).forEach(function(n){ var c=resolveCentroid(n); if(c) globalDest.push({name:n,p:c}); });
-      (p.indicators||[]).forEach(function(ind){ var g=ipGeo[ind.indicator]; if(g&&g.lat!=null) globalOrigin.push({p:[g.lon,g.lat],cc:g.cc,country:g.country}); }); });
-
-    results.forEach(function(p){
-      var sev=sevOf(p), col=SEVC[sev]||SEVC.med;
-      var origins=[]; (p.indicators||[]).forEach(function(ind){ var g=ipGeo[ind.indicator];
-        if(g&&g.lat!=null){ var o=addOrigin(g); origins.push(o); } });
-      var dests=[]; (p.targeted_countries||[]).forEach(function(n){ var c=resolveCentroid(n); if(c){ var dd=addDest(n,c); dests.push(dd); } });
-      var techniques=(p.attack_ids||[]).map(function(a){ return typeof a==='string'?a:(a&&(a.display_name||a.id)); }).filter(Boolean);
-      var malware=(p.malware_families||[]).map(function(m){ return (m&&(m.display_name||m.id))||m; }).filter(Boolean);
-      pulses.push({ name:p.name||'Untitled pulse', adversary:p.adversary||'', malware:malware, techniques:techniques,
-        tags:p.tags||[], origins:origins.map(function(o){return o.country;}), dests:dests.map(function(d){return d.name;}), sev:sev });
-
-      function arc(aPt,bPt){ if(attacks.length>=80) return; attacks.push({ interp:d3.geoInterpolate(aPt,bPt), a:aPt, b:bPt,
-        color:col, t0:base-Math.random()*1800, dur:1600+Math.random()*1400, lastPhase:0 }); }
-      if(origins.length && dests.length){ origins.forEach(function(o){ dests.slice(0,2).forEach(function(d){ arc(o.p,d.p); }); }); }
-      else if(origins.length && globalDest.length){ origins.forEach(function(o){ arc(o.p, globalDest[(Math.random()*globalDest.length)|0].p); }); }
-      else if(dests.length>=2){ for(var i=0;i<dests.length-1;i++) arc(dests[i].p, dests[i+1].p); }
-      else if(dests.length===1 && globalOrigin.length){ arc(globalOrigin[(Math.random()*globalOrigin.length)|0].p, dests[0].p); }
-    });
-
-    destMarkers=Object.keys(destMap).map(function(k){return destMap[k];});
-    originMarkers=Object.keys(originMap).map(function(k){return originMap[k];});
-    maxInt=Math.max.apply(null,[1].concat(Object.keys(intensity).map(function(k){return intensity[k];})));
-    window.__realThreats=pulses.map(function(p){ return { type:(p.malware[0]||p.techniques[0]||'threat'),
-      severity:p.sev==='crit'?'critical':'medium', source:p.origins[0]||p.adversary||'OTX', target:p.dests[0]||'', url:p.name }; });
-    renderPanels(originCC);
-  }
-
-  function renderPanels(originCC){
-    // Top Origins = real attack-origin countries (geolocated malicious IPs)
-    var top=Object.keys(originCC).map(function(c){return {name:c, cc:originCC[c].cc, n:originCC[c].n};}).sort(function(a,b){return b.n-a.n;}).slice(0,6);
-    var max=top.length?top[0].n:1;
-    var o=document.getElementById('origins');
-    if(o) o.innerHTML= top.length? top.map(function(m,i){
-      return '<div class="origin'+(i?' row-div':'')+'"><span class="rank">'+(i+1)+'</span><span class="flag">'+ccToFlag(m.cc)+'</span>'+
-        '<span class="nm">'+esc(prettyName(m.name).slice(0,12))+'</span><span class="track"><i style="width:'+Math.round(m.n/max*100)+'%"></i></span>'+
-        '<span class="ct">'+m.n+'</span></div>'; }).join('')
-      : '<div style="padding:18px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">Loading OTX intel…</div>';
-
-    var counts={};
-    pulses.forEach(function(p){ var src=p.malware.length?p.malware:(p.techniques.length?p.techniques:p.tags);
-      (src||[]).slice(0,3).forEach(function(x){ var k=String(x).slice(0,18); counts[k]=(counts[k]||0)+1; }); });
-    var ent=Object.keys(counts).map(function(k){return [k,counts[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-    var tot=ent.reduce(function(s,e){return s+e[1];},0)||1;
-    var cols=['var(--red)','var(--amber)','var(--cyan)','var(--amber-2)','var(--sage)'];
-    var v=document.getElementById('vectors');
-    if(v) v.innerHTML= ent.length? ent.map(function(e,i){ var pc=Math.round(e[1]/tot*100);
-      return '<div class="typ'+(i?' row-div':'')+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>'+
-        '<span class="nm">'+esc(e[0])+'</span><span class="bar"><i style="width:'+pc+'%;background:'+cols[i%5]+'"></i></span><span class="pc">'+pc+'%</span></div>'; }).join('') : '';
-
-    var mt=document.getElementById('mTotal'), mb=document.getElementById('mBlocked'), mn=document.getElementById('mNodes');
-    if(mt) mt.textContent=pulses.length; if(mb) mb.textContent=originMarkers.length; if(mn) mn.textContent=destMarkers.length;
-    var rate=document.getElementById('rate'); if(rate) rate.textContent=attacks.length+' live attacks';
-  }
-
-  // ---- live stream from real pulses ----
-  var stream=document.getElementById('stream'), si=0;
-  function streamNext(){ if(!pulses.length||!stream) return; var p=pulses[si++%pulses.length];
-    var origin=p.origins[0]||p.adversary||'', dest=p.dests[0]||''; var tech=p.techniques[0]||'';
-    var label=esc((p.malware[0]||p.name).slice(0,28));
-    var route=(origin?prettyName(origin):'?')+' → '+(dest?prettyName(dest):'multiple');
-    var sub=esc(((tech?(tech+' · '):'')+route).slice(0,46));
-    var cls=p.sev==='crit'?'crit':'med';
-    var el=document.createElement('div'); el.className='atk '+cls;
-    el.innerHTML='<span class="edge"></span><span class="flag">🛰️</span><div class="who"><b>'+label+' <span class="pill '+cls+'">'+cls.toUpperCase()+'</span></b><span class="ip">'+sub+'</span></div><span class="when">live</span>';
-    stream.prepend(el); [].slice.call(stream.children).forEach(function(c,i){var w=c.querySelector('.when'); if(i>0&&w)w.textContent=i+'s';});
-    while(stream.children.length>9) stream.lastChild.remove(); }
-  setInterval(streamNext,1700);
-
-  function liveAtk(label,sub,sev){ if(!stream)return; var cls=(sev==='high'||sev==='critical')?'crit':(sev==='low'?'low':'med');
-    var el=document.createElement('div'); el.className='atk '+cls;
-    el.innerHTML='<span class="edge"></span><span class="flag">🛰️</span><div class="who"><b>'+esc(label)+' <span class="pill '+cls+'">'+cls.toUpperCase()+'</span></b><span class="ip">'+esc(sub||'')+'</span></div><span class="when">now</span>';
-    stream.prepend(el); while(stream.children.length>9) stream.lastChild.remove(); }
-  window.addEventListener('cf:scan', function(e){ var d=e.detail||{}; liveAtk((d.verdict||'scan').toUpperCase()+' '+(d.category||''), d.url, d.riskScore>=70?'high':d.riskScore>=40?'med':'low'); });
-  window.addEventListener('cf:threat', function(e){ var d=e.detail||{}; liveAtk('THREAT', d.indicator||d.url, d.severity); });
-  window.addEventListener('cf:alert', function(e){ var d=e.detail||{}; liveAtk('ALERT', d.message||d.url, d.severity||'high'); });
-
-  // ---- AI agent learns OTX intel into local memory ----
-  function learn(){ if(!pulses.length) return;
-    var KEY='cf_otx_learned'; var learned={}; try{ learned=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
-    var saved=0;
-    pulses.slice(0,12).forEach(function(p){ if(learned[p.name]) return;
-      var text='OTX threat pulse: '+p.name+'. '
-        +(p.adversary?('Attributed adversary: '+p.adversary+'. '):'')
-        +(p.origins.length?('Observed origin countries: '+p.origins.filter(Boolean).join(', ')+'. '):'')
-        +(p.dests.length?('Targeted countries: '+p.dests.join(', ')+'. '):'')
-        +(p.malware.length?('Malware families: '+p.malware.join(', ')+'. '):'')
-        +(p.techniques.length?('MITRE ATT&CK techniques (procedures): '+p.techniques.join(', ')+'.'):'');
-      cfInvoke('memory_save',{text:text, kind:'semantic', category:'otx-threat-intel', risk:(p.sev==='crit'?80:55)}).catch(function(){});
-      learned[p.name]=Date.now(); saved++; });
-    if(saved){ var topD=destMarkers.slice().sort(function(a,b){return b.count-a.count;}).slice(0,5).map(function(m){return prettyName(m.name);});
-      cfInvoke('memory_save',{text:'OTX intel digest: '+pulses.length+' active pulses, '+attacks.length+' origin→destination attack paths. Most-targeted countries: '+topD.join(', ')+'. Weight these regions and associated malware/TTPs higher when scoring new browser threats.', kind:'procedural', category:'otx-digest', risk:60}).catch(function(){}); }
-    try{ localStorage.setItem(KEY, JSON.stringify(learned)); }catch(e){}
-    var ml=document.getElementById('mLearned'); if(ml) ml.textContent=Object.keys(learned).length; }
-
-  // ---- fetch OTX (CSP-safe via Rust), refresh periodically ----
-  function loadOTX(){
-    function note(msg){ var o=document.getElementById('origins'); if(o&&!destMarkers.length) o.innerHTML='<div style="padding:16px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:10.5px">'+esc(msg)+'</div>'; }
-    cfInvoke('otx_fetch',{apiKey:OTX_API_KEY, limit:50}).then(function(r){
-      if(r&&r.success&&Array.isArray(r.results)&&r.results.length){ ingest(r.results, r.ip_geo||{}); learn(); }
-      else { note('OTX: '+((r&&r.error)||'no pulses returned')); }
-    }).catch(function(e){ var m=String((e&&e.message)||e);
-      console.warn('[globe] otx_fetch failed', e);
-      // 'no tauri' = opened outside the desktop app; otherwise show the real error.
-      note(/no tauri/i.test(m) ? 'Open this inside the CyberForge desktop app (not a browser).' : ('OTX call failed: '+m));
-    });
-  }
-  // Instant paint from the loading-screen prewarm (otx_fetch + geolocation is
-  // slow) so the globe already has pulses when you navigate here; loadOTX then
-  // refreshes live.
-  try{ var _pg=JSON.parse(localStorage.getItem('cf_pre_globe')||'null');
-    if(_pg&&_pg.payload&&_pg.payload.success&&Array.isArray(_pg.payload.results)&&_pg.payload.results.length&&(Date.now()-_pg.ts)<1800000){
-      ingest(_pg.payload.results, _pg.payload.ip_geo||{});
-    } }catch(e){}
-  loadOTX(); setInterval(loadOTX, 180000);
-  var rb=document.querySelector('.btn-refresh'); if(rb) rb.addEventListener('click', loadOTX);
-})();
-</script>
+<script src="../scripts/pages/threat-globe.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

@@ -1,122 +1,109 @@
 /**
- * CyberForge Audit Log Routes
- * TODO 6: Enterprise Multi-Tenancy — Immutable Audit Trail
+ * The audit trail, mounted at /api/audit.
  *
- * ISOLATION: New route file. Does NOT modify any existing route.
- * Mounted at /api/audit in server.js
+ * A member reads the events of their own workspace. A platform administrator
+ * can also read everything, by asking for `?scope=platform`; nobody else can.
+ * (Before, any analyst could read every account's events, and the events were
+ * a list in memory that a restart emptied.)
+ *
+ * There is no route that changes or deletes an event. `GET /integrity` checks
+ * the trail against its signed checkpoints (SEC-08).
  */
-
 const express = require('express');
-const router = express.Router();
-const { auditLogService } = require('../services/auditLogService');
-const { auth, authorize } = require('../middleware/auth');
+const audit = require('../services/auditLogService');
+const integrity = require('../services/auditIntegrityService');
+const { auth } = require('../middleware/auth');
+const { requireWorkspace } = require('../middleware/workspace');
 const logger = require('../utils/logger');
 
-// ── Internal helper used by other route files ─────────────────────────────────
+const router = express.Router();
 
-/**
- * Middleware factory — attaches auditLog helper to req so any route can call
- * req.auditLog({ action, resource, details, outcome }) without importing the service.
- */
-router.use((req, res, next) => {
-  req.auditLog = (entry) => {
-    try {
-      auditLogService.append({
-        ...entry,
-        userId: req.user?.userId || req.user?.email || 'anonymous',
-        ipAddress: req.ip || req.headers['x-forwarded-for'] || null,
-        orgId: req.user?.orgId || null,
-      });
-    } catch (e) {
-      // Audit failures must never break request flow
-      logger.warn(`[Audit] Failed to log event: ${e.message}`);
-    }
-  };
-  next();
-});
+/** `?scope=platform` is for platform administrators; anyone else asking is refused, not quietly narrowed. */
+function wantsPlatform(req, res) {
+  if (req.query.scope !== 'platform') return false;
+  if (req.user.role !== 'admin') {
+    res.status(403).json({ success: false, code: 'FORBIDDEN', message: 'The platform audit trail is for administrators.' });
+    return null;
+  }
+  return true;
+}
 
-// ── Action catalog ────────────────────────────────────────────────────────────
-
-/**
- * GET /api/audit/catalog
- * Return all known audit action codes and labels.
- */
+/** GET /api/audit/catalog — the actions the trail knows, with labels. */
 router.get('/catalog', (req, res) => {
-  res.json({ success: true, data: auditLogService.getActionCatalog() });
+  res.json({ success: true, data: audit.getActionCatalog() });
 });
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
-
-/**
- * GET /api/audit/stats
- * Get aggregate audit log statistics. They include the most active user IDs,
- * so they need the same role as the log itself.
- */
-router.get('/stats', auth, authorize('analyst', 'admin'), (req, res) => {
+/** GET /api/audit/stats — counts over the last day for this workspace (or, for an administrator, the platform). */
+router.get('/stats', auth, requireWorkspace, async (req, res) => {
+  const platform = wantsPlatform(req, res);
+  if (platform === null) return undefined;
   try {
-    res.json({ success: true, data: auditLogService.getStats() });
-  } catch (err) {
-    logger.error(`[Audit] Stats error: ${err.message}`);
-    res.status(500).json({ success: false, error: 'Failed to get audit stats' });
+    const data = platform ? await audit.platformStats() : await audit.workspaceStats(req.user);
+    return res.json({ success: true, scope: platform ? 'platform' : 'workspace', data });
+  } catch (error) {
+    logger.error(`[Audit] Stats error: ${error.message}`);
+    return res.status(500).json({ success: false, error: 'Failed to get audit stats' });
   }
 });
 
-// ── Log Query ─────────────────────────────────────────────────────────────────
-
 /**
- * GET /api/audit/logs
- * Query audit log entries with optional filters.
- * Query params: userId, action, outcome, orgId, resource, since, until, limit, offset
- * Requires analyst or admin role.
+ * GET /api/audit/logs — events, newest first.
+ * Query: action (exact, or a prefix ending in "."), outcome, origin, since, until, limit (≤ 200), offset.
  */
-router.get('/logs', auth, authorize('analyst', 'admin'), (req, res) => {
+router.get('/logs', auth, requireWorkspace, async (req, res) => {
+  const platform = wantsPlatform(req, res);
+  if (platform === null) return undefined;
   try {
-    const { userId, action, outcome, orgId, resource, since, until, limit, offset } = req.query;
-    const result = auditLogService.query({
-      userId,
-      action,
-      outcome,
-      orgId,
-      resource,
-      since,
-      until,
-      limit: limit ? parseInt(limit) : 100,
-      offset: offset ? parseInt(offset) : 0,
-    });
-    res.json(result);
-  } catch (err) {
-    logger.error(`[Audit] Query error: ${err.message}`);
-    res.status(500).json({ success: false, error: 'Failed to query audit logs' });
+    const result = platform ? await audit.queryPlatform(req.query) : await audit.queryWorkspace(req.user, req.query);
+    return res.json({ success: true, scope: platform ? 'platform' : 'workspace', ...result });
+  } catch (error) {
+    logger.error(`[Audit] Query error: ${error.message}`);
+    return res.status(500).json({ success: false, error: 'Failed to query audit logs' });
   }
 });
 
-// ── Manual log entry (for SOC dashboard / client-side events) ─────────────────
+/**
+ * GET /api/audit/integrity — the trail of this workspace (or, for an
+ * administrator, the platform) checked against its signed checkpoints. It
+ * writes a fresh checkpoint first, so the answer covers everything up to a
+ * minute ago.
+ */
+router.get('/integrity', auth, requireWorkspace, async (req, res) => {
+  const platform = wantsPlatform(req, res);
+  if (platform === null) return undefined;
+  try {
+    const data = platform ? await integrity.verify('platform', null) : await integrity.verify('workspace', req.user.workspaceId);
+    return res.status(data.available ? 200 : 501).json({ success: data.available, scope: platform ? 'platform' : 'workspace', data });
+  } catch (error) {
+    logger.error(`[Audit] Integrity check error: ${error.message}`);
+    return res.status(500).json({ success: false, error: 'Failed to check the audit trail' });
+  }
+});
 
 /**
- * POST /api/audit/log
- * Append a client-reported audit event (e.g. SOC acknowledgement).
- * Auth required — userId is taken from token, not body.
+ * POST /api/audit/log — an event reported by a client (for example, an alert
+ * acknowledged on a dashboard). It is kept in the caller's workspace and marked
+ * as client-reported; the actor is the session, never the body.
  */
-router.post('/log', auth, (req, res) => {
-  try {
-    const { action, resource, details, outcome } = req.body;
-    if (!action) {
-      return res.status(400).json({ success: false, error: 'Missing action' });
-    }
-    const entry = auditLogService.append({
-      action,
-      userId: req.user?.userId || req.user?.email || 'anonymous',
-      resource: resource || 'client',
-      details: details || {},
-      outcome: outcome || 'success',
-      ipAddress: req.ip || null,
-      orgId: req.user?.orgId || null,
-    });
-    res.status(201).json({ success: true, entry });
-  } catch (err) {
-    logger.error(`[Audit] Manual log error: ${err.message}`);
-    res.status(500).json({ success: false, error: 'Failed to append audit entry' });
+router.post('/log', auth, requireWorkspace, async (req, res) => {
+  const { action, resource, details, outcome } = req.body || {};
+  if (typeof action !== 'string' || !/^[a-z][a-z_]*(\.[a-z][a-z_]*)+$/.test(action) || action.length > 64) {
+    return res.status(400).json({ success: false, error: 'action must look like "area.verb"' });
   }
+  if (['auth.', 'policy.', 'system.', 'evidence.', 'device.', 'agent.', 'account.', 'finding.', 'alert.', 'report.'].some(prefix => action.startsWith(prefix))) {
+    return res.status(400).json({ success: false, error: 'This action is recorded by the server and cannot be reported by a client' });
+  }
+  const event = await audit.record({
+    principal: req.user,
+    action,
+    resource: typeof resource === 'string' ? resource : 'client',
+    outcome: ['success', 'failure', 'warning'].includes(outcome) ? outcome : 'success',
+    details,
+    origin: 'client',
+    req
+  });
+  if (!event) return res.status(500).json({ success: false, error: 'The event was not recorded' });
+  return res.status(201).json({ success: true, entry: { id: String(event._id), action: event.action, origin: event.origin } });
 });
 
 module.exports = router;

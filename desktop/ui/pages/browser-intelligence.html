@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Browser Intelligence</title>
+<title>CyberForge — Browser Activity</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
@@ -56,52 +56,61 @@
 .ibtn:hover{filter:brightness(1.25)} .ibtn:active{transform:scale(.96)}
 .alert-row{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--border);font-size:12px}
 .alert-row .ai{width:14px;height:14px;flex:none}
+.hm{width:80px;overflow:hidden;text-overflow:ellipsis}.hs{width:55px}.ht{width:140px}.bi-grid .col{min-width:0}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Browser Intelligence" id="win">
+  <div class="window" data-screen-label="Browser Activity" id="win">
     <div class="topbar" id="topbar"></div>
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg></div>
-          <h1>Browser Intelligence</h1>
+          <h1>Browser Activity</h1>
           <div class="head-right">
-            <span class="live-ind"><span class="dot"></span>Monitoring</span>
-            <span id="rpm">1,240 req/min</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Clear</button>
+            <span class="live-ind">Browsers on this computer</span>
+            <span id="rpm">—</span>
+            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Clear visible list</button>
           </div>
         </div>
 
+        <p class="cf-context-note">This computer’s observed pages and recent history. Request methods, response codes and transfer sizes are not captured. <button type="button" id="browserPrivacy" class="btn-refresh">Collection &amp; cloud privacy</button></p>
+        <div id="browserCollection" class="cf-context-note" aria-live="polite">Checking separate collection and cloud consent…</div>
         <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Active Sessions</div><div class="kv" style="color:var(--cyan)">3</div><div class="kd">1 browser</div></div>
-          <div class="card kpi"><div class="kl">Requests / min</div><div class="kv" style="color:var(--amber-2)" id="kReq">1.2k</div><div class="kd">across all tabs</div></div>
-          <div class="card kpi"><div class="kl">Behavioral Alerts</div><div class="kv" style="color:var(--green)">0</div><div class="kd">last 24h</div></div>
-          <div class="card kpi"><div class="kl">Intercept Queue</div><div class="kv" style="color:var(--red)" id="kIntc">5</div><div class="kd">awaiting action</div></div>
+          <div class="card kpi"><div class="kl">Active tabs</div><div class="kv" style="color:var(--cyan)">—</div><div class="kd">checking browsers…</div></div>
+          <div class="card kpi"><div class="kl">Domains seen</div><div class="kv" style="color:var(--amber-2)" id="kReq">—</div><div class="kd">active tabs and recent history</div></div>
+          <div class="card kpi"><div class="kl">Threats</div><div class="kv" style="color:var(--green)">—</div><div class="kd">on your account</div></div>
+          <div class="card kpi"><div class="kl">Insecure tabs</div><div class="kv" style="color:var(--red)" id="kIntc">—</div><div class="kd">open over plain HTTP</div></div>
         </div>
 
         <div class="bi-grid">
           <div class="col">
-            <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5 11 16M16.5 7.5 13 16M8 6h8"/></svg>Domain Graph<span class="right"><span class="badge-cyan"><span class="dot"></span>LIVE</span></span></div>
-              <div class="dgraph"><canvas id="dgraph"></canvas></div>
-            </div>
+            <details class="card">
+              <summary class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5 11 16M16.5 7.5 13 16M8 6h8"/></svg>Domain Graph<span class="right"><span class="badge-cyan"><span class="dot"></span>LIVE</span></span></summary>
+              <p class="cf-context-note">Links group observed domains around this browser; they do not represent network traffic.</p><div class="dgraph"><canvas id="dgraph"></canvas></div>
+            </details>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>HTTP History<span class="right"><span class="badge-live"><span class="dot"></span>CAPTURING</span></span></div>
-              <div class="hhead"><span class="hm">METHOD</span><span class="hu">URL</span><span class="hs">ST</span><span class="hsz">SIZE</span><span class="ht">TIME</span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Observed pages<span class="right"><span class="badge-live"><span class="dot"></span>LOCAL OBSERVATIONS</span></span></div>
+              <div class="hhead"><span class="hm">BROWSER</span><span class="hu">URL</span><span class="hs">SCHEME</span><span class="ht">VISITED / OBSERVED</span></div>
               <div class="http" id="http"></div>
             </div>
           </div>
 
           <div class="col">
             <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/></svg>Active Sessions</div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/></svg>Observed tabs/pages</div>
               <div class="sess" id="sess"></div>
             </div>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="M12 8v4M12 16h.01"/></svg>Intercept Queue<span class="right" id="intcCount">5 held</span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="M12 8v4M12 16h.01"/></svg>Insecure tabs<span class="right" id="intcCount">—</span></div>
               <div style="overflow-y:auto;min-height:0" id="intercept"></div>
             </div>
           </div>
@@ -113,181 +122,13 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
-<script>
-buildHeader({status:'INTERCEPTING'});
-buildSidebar('browser');
-buildFooter({items:[{txt:'3 sessions',cls:'sb-cyan'},{txt:'1.2k req/min',cls:'sb-amber'},{txt:'5 intercepts',cls:'sb-amber'},{txt:'Capturing…',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-/* domain graph */
-(function(){
-  const cvs=document.getElementById('dgraph'),ctx=cvs.getContext('2d');
-  let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
-  function resize(){const r=cvs.parentElement.getBoundingClientRect();W=r.width;H=r.height;
-    cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
-  resize();window.addEventListener('resize',resize);
-  // center = browser, ring of domains
-  let domains=[['scanning…','#5d6c84']];
-  window.__setDomains=function(a){ domains=(a&&a.length)?a:[['no active tabs','#5d6c84']]; };
-  let pulses=[];
-  function frame(t){
-    if(W<2){requestAnimationFrame(frame);return;}
-    ctx.clearRect(0,0,W,H);
-    const cx=W/2,cy=H/2,R=Math.min(W,H)*0.34;
-    const pos=domains.map((d,i)=>{const a=i/domains.length*Math.PI*2 + t*0.0001;return [cx+Math.cos(a)*R,cy+Math.sin(a)*R];});
-    // edges
-    pos.forEach((p,i)=>{ctx.strokeStyle='rgba(126,148,184,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p[0],p[1]);ctx.stroke();});
-    // pulses
-    if(Math.random()<0.18){const i=Math.floor(Math.random()*domains.length);pulses.push({i,t:0,out:Math.random()<0.5});}
-    pulses=pulses.filter(p=>{p.t+=0.04;if(p.t>=1)return false;const tt=p.out?p.t:1-p.t;
-      const x=cx+(pos[p.i][0]-cx)*tt,y=cy+(pos[p.i][1]-cy)*tt;
-      ctx.fillStyle=domains[p.i][1];ctx.shadowColor=domains[p.i][1];ctx.shadowBlur=7;ctx.beginPath();ctx.arc(x,y,2.6,0,7);ctx.fill();ctx.shadowBlur=0;return true;});
-    // domain nodes
-    pos.forEach((p,i)=>{const c=domains[i][1];
-      ctx.fillStyle=c;ctx.beginPath();ctx.arc(p[0],p[1],4,0,7);ctx.fill();
-      ctx.fillStyle='rgba(200,215,235,.7)';ctx.font='9px JetBrains Mono, monospace';ctx.textAlign=p[0]<cx?'right':'left';
-      ctx.fillText(domains[i][0], p[0]+(p[0]<cx?-8:8), p[1]+3);});
-    // center browser
-    ctx.fillStyle='#0d1320';ctx.strokeStyle='rgba(245,166,35,.5)';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(cx,cy,15,0,7);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#ffb84d';ctx.font='10px JetBrains Mono';ctx.textAlign='center';ctx.fillText('⚿',cx,cy+3);
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-})();
-
-/* HTTP history stream is populated from REAL data only — live tabs (browser_intel)
-   and the user's actual browser history (get_browser_history) — wired below. */
-
-/* ===========================================================
-   BROWSER INTELLIGENCE — real data via Rust (browser_intel:
-   running browsers + active tabs + visited domains) + cf-telemetry
-   (behavioral alerts = backend threats). Reports to the backend
-   via browser_intel_report.
-   =========================================================== */
-(function(){
-  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function hostOf(u){ try{ return new URL(u).hostname; }catch(e){ return String(u||''); } }
-  const USER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
-  const kv=document.querySelectorAll('.kpi .kv'), kd=document.querySelectorAll('.kpi .kd');
-  const sessEl=document.getElementById('sess'), httpEl=document.getElementById('http'),
-        intcEl=document.getElementById('intercept');
-  let lastUrls={};
-
-  function httpEntry(method,url,host,https){
-    if(!httpEl) return;
-    const el=document.createElement('div'); el.className='hr'; el.title=url;
-    const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-    const st=https?['200','ok']:['—','warn'];
-    el.innerHTML='<span class="hm get">'+method+'</span><span class="hu" style="'+(!https?'color:var(--amber-2)':'')+'">'+esc(host)+'</span>'+
-      '<span class="hs '+st[1]+'">'+st[0]+'</span><span class="hsz">page</span><span class="ht">'+ts+'</span>';
-    httpEl.prepend(el); while(httpEl.children.length>90) httpEl.lastChild.remove();
-  }
-  // Local browser detection (Rust detect_browsers, via the cf-telemetry event) —
-  // independent of the browser extension, so the page shows your real browsers
-  // even before any live tab/session is captured.
-  var localBrowsers=[], lastSessions=[];
-  function renderBrowserKpi(){
-    var running=localBrowsers.filter(function(b){return b.isRunning;}).length;
-    if(kd[0]) kd[0].textContent = localBrowsers.length ? (running+' running · '+localBrowsers.length+' detected') : '0 browsers';
-  }
-  function renderSessions(sessions){
-    lastSessions=sessions||[];
-    if(!sessions||!sessions.length){
-      var names=localBrowsers.map(function(b){return esc(b.name)+(b.isRunning?' <span style="color:var(--green)">(running)</span>':'');});
-      sessEl.innerHTML = names.length
-        ? '<div style="padding:14px;color:var(--dim);font-family:var(--mono);font-size:11px;line-height:1.8">Browsers detected on this device:<br>'+names.map(function(n){return '&nbsp;&nbsp;•&nbsp;'+n;}).join('<br>')+'<br><br><span style="color:var(--faint);font-size:9.5px">No live tabs yet — open a page (and connect the CyberForge browser extension) to capture sessions.</span></div>'
-        : '<div style="padding:20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No active browser tabs detected<br><span style="font-size:9px">(grant Automation permission, open a browser)</span></div>';
-    }
-    else sessEl.innerHTML=sessions.map(function(s){
-      return '<div class="sr"><span class="sav">'+USER+'</span><div class="sinfo"><div class="su">'+esc(s.browser)+'</div><div class="sm">'+esc(s.host||hostOf(s.url))+'</div></div><span class="sdot" style="'+(s.https?'':'background:var(--amber-2);box-shadow:0 0 5px var(--amber-2)')+'"></span></div>';
-    }).join('');
-    if(kv[0]) kv[0].textContent=(sessions||[]).length;
-    renderBrowserKpi();
-  }
-  var dgaCache={};          // domain -> {flagged,score} | null (in-flight)
-  var lastDomainArr=[];
-  function pushDomains(){
-    var out=lastDomainArr.slice(0,10).map(function(x){
-      var c=dgaCache[x[0]];
-      return (c&&c.flagged) ? [x[0]+' ⚠dga', '#f4495e'] : x;
-    });
-    if(window.__setDomains) window.__setDomains(out.length?out:[['no active tabs','#5d6c84']]);
-  }
-  var histDomains=[];
-  function renderDomains(domains,sessions){
-    const arr=[];
-    (sessions||[]).forEach(function(s){ var h=s.host||hostOf(s.url); if(h&&!arr.some(function(x){return x[0]===h;})) arr.push([h, s.https?'#43e08a':'#f4495e']); });
-    (domains||[]).forEach(function(d){ if(d&&!arr.some(function(x){return x[0]===d;})) arr.push([d,'#2bd4ee']); });
-    histDomains.forEach(function(h){ if(h&&!arr.some(function(x){return x[0]===h;})) arr.push([h,'#2bd4ee']); });
-    if(!arr.length) return;   // nothing real yet — leave the graph rather than clobbering it
-    lastDomainArr=arr; pushDomains();
-    if(kv[1]) kv[1].textContent=arr.length;
-    // DGA detection on real visited domains (cached, best-effort) — recolors flagged nodes live
-    arr.slice(0,10).forEach(function(x){
-      var dom=x[0]; if(dom in dgaCache) return; if(!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(dom)) return;
-      dgaCache[dom]=null;
-      cfInvoke('ml_detect_dga',{domain:dom}).then(function(r){
-        dgaCache[dom]={flagged:!!(r&&(r.is_threat||r.prediction==='dga')), score:(r&&r.threat_score)||0};
-        if(dgaCache[dom].flagged) pushDomains();
-      }).catch(function(){ dgaCache[dom]={flagged:false}; });
-    });
-  }
-  function renderIntercept(sessions){
-    const flagged=(sessions||[]).filter(function(s){ return !s.https; });
-    intcEl.innerHTML = flagged.length ? flagged.map(function(s){
-      return '<div class="intc"><div class="ih"><span class="hm get">HTTP</span><span class="iurl">'+esc(s.host||hostOf(s.url))+'</span></div>'+
-        '<div class="iact"><button class="ibtn fwd" data-u="'+esc(s.url)+'">SCAN</button><button class="ibtn drop">DISMISS</button></div></div>';
-    }).join('') : '<div style="padding:24px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No insecure tabs — all sessions HTTPS</div>';
-    document.getElementById('intcCount').textContent=flagged.length+' flagged';
-    document.getElementById('kIntc').textContent=flagged.length;
-    intcEl.querySelectorAll('.ibtn.drop').forEach(function(b){ b.addEventListener('click',function(){ b.closest('.intc').remove(); }); });
-    intcEl.querySelectorAll('.ibtn.fwd').forEach(function(b){ b.addEventListener('click',function(){ var u=b.getAttribute('data-u'); b.textContent='SCANNING…'; cfInvoke('scan_url',{url:u}).then(function(r){ var d=(r&&r.data)||{}; b.textContent='RISK '+(d.riskScore||0); }).catch(function(){ b.textContent='ERR'; }); }); });
-  }
-  function poll(){
-    cfInvoke('browser_intel').then(function(r){
-      const d=(r&&r.data)||{}; const sessions=d.sessions||[];
-      renderSessions(sessions); renderDomains(d.domains,sessions); renderIntercept(sessions);
-      sessions.forEach(function(s){ if(lastUrls[s.browser]!==s.url){ lastUrls[s.browser]=s.url; httpEntry('GET',s.url,s.host||hostOf(s.url),!!s.https); } });
-    }).catch(function(){});
-  }
-  function applyTel(p){ if(!p) return;
-    var st=(p.status&&p.status.data)||null;
-    if(st){ if(kv[2]) kv[2].textContent=st.threatCount||0; if(document.getElementById('rpm')) document.getElementById('rpm').textContent=(st.threatCount||0)+' threats'; }
-    var br=(p.browsers&&p.browsers.data)||null;
-    if(br){ localBrowsers=br.browsers||[]; renderBrowserKpi(); if(!lastSessions.length) renderSessions(lastSessions); }
-  }
-  // Telemetry may arrive via Tauri events or be relayed by the host page.
-  window.addEventListener('message', function(e){ if(e&&e.data&&e.data.cf==='telemetry') applyTel(e.data.payload); });
-  try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__);
-    if(T&&T.event&&T.event.listen) T.event.listen('cf-telemetry', function(e){ applyTel(e.payload); });
-  }catch(e){}
-
-  // REAL browser history → HTTP stream + domain graph (works with no extension).
-  var histSeen={};
-  function pollHistory(){
-    cfInvoke('get_browser_history',{limit:30}).then(function(r){
-      var hist=(r&&r.data&&r.data.history)||[];
-      var doms=[]; hist.forEach(function(it){ var h=hostOf(it.url); if(h&&doms.indexOf(h)<0) doms.push(h); });
-      histDomains=doms.slice(0,12);
-      renderDomains(null, lastSessions);
-      hist.slice().reverse().forEach(function(it){
-        if(histSeen[it.url]) return; histSeen[it.url]=1;
-        httpEntry('GET', it.url, hostOf(it.url), /^https:/i.test(it.url));
-      });
-    }).catch(function(){});
-  }
-
-  poll(); setInterval(poll,6000);
-  pollHistory(); setInterval(pollHistory,12000);
-  cfInvoke('browser_intel_report').catch(function(){});
-  setInterval(function(){ cfInvoke('browser_intel_report').catch(function(){}); },60000);
-})();
-</script>
+<script src="../scripts/pages/browser-intelligence.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

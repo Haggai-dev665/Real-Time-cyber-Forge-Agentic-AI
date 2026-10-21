@@ -1,0 +1,477 @@
+{
+  "reviewDate": "2026-10-18",
+  "originalSHA256": "7d67cd2c99f7108e4521a4813f27e6fcfcac5ccc618368b6924372a7721134eb",
+  "revisedSHA256": "44eab043d9f12606be5c9068000868e448563ff558c7d273c998c22727719177",
+  "paragraphRevisions": [
+    {
+      "bodyIndex": 39,
+      "replacement": "CyberForge is a web-threat analysis and user-protection research system that combines specialised analysers, contextual evidence and human-readable explanations. The original prototype coordinated eight specialist agents through a three-stage directed acyclic graph, followed by a Reporter. Its reported evaluation on 300 URLs (150 benign and 150 harmful) yielded 94.7% accuracy, 97.9% precision, 91.3% recall and a 2.0% false-positive rate, with mean end-to-end latency of 4.05 seconds. These are retained as historical prototype results, not measurements of the revised implementation. A source review dated 18 October 2026 identifies the current implementation as a Tauri 2/Rust desktop, a Node.js 24/Express backend, a FastAPI Hugging Face service, a shared Rust core, a scoped CLI and a grant-controlled stdio MCP adapter. The ML service combines supervised gradient-boosted URL classifiers, unsupervised IsolationForest scoring, externally pretrained BERT and Qwen inference, and explicit heuristic fallbacks. Current controls include consent-based collection, authenticated workspace access, device enrollment and signed commands, evidence records, and capability-aware status reporting. Memory supplies retrieval context; it does not update model weights. The current implementation requires fresh held-out evaluation and packaged/live-service acceptance before historical performance can be attributed to it."
+    },
+    {
+      "bodyIndex": 43,
+      "replacement": "CyberForge est un système de recherche consacré à l’analyse des menaces web et à la protection des utilisateurs. Le prototype initial coordonnait huit agents spécialisés dans un graphe orienté acyclique en trois étapes, suivi d’un agent rapporteur. L’évaluation historique de 300 URL (150 légitimes et 150 malveillantes) rapporte une exactitude de 94,7 %, une précision de 97,9 %, un rappel de 91,3 %, un taux de faux positifs de 2,0 % et une latence moyenne de 4,05 secondes. Ces résultats ne constituent pas une nouvelle évaluation du système révisé. La revue du code du 18 octobre 2026 identifie un client Tauri 2/Rust, un backend Node.js 24/Express, un service FastAPI sur Hugging Face, un noyau Rust partagé, une interface en ligne de commande et un adaptateur MCP stdio soumis à autorisation. Le service ML associe classification supervisée, détection non supervisée d’anomalies, inférence avec BERT et Qwen préentraînés et heuristiques explicitement identifiées. La collecte dépend du consentement; les actions et les données sont soumises à des contrôles d’accès. La mémoire conserve du contexte sans réentraîner les modèles. Une nouvelle évaluation indépendante et des essais de la version installée restent nécessaires avant de généraliser les résultats historiques à cette version."
+    },
+    {
+      "bodyIndex": 159,
+      "replacement": "Historical observations are retained as contextual evidence for later analysis. This memory and retrieval mechanism is distinct from learning model parameters. Current collection and cloud processing are independently consent-gated. The original URL experiment is reported in Chapter 4; the October 2026 source revision is documented in Chapter 3 and Appendix C and has not been assigned new detection-performance figures."
+    },
+    {
+      "bodyIndex": 165,
+      "replacement": "CyberForge addresses these problems through specialist analysis, inspectable evidence and controlled sharing of results. The original eight-agent analysis workflow remains distinguishable from the newer durable agent-run framework: the latter currently exposes URL Analyst and Device Health templates with bounded tools, while broader autonomous planning remains future work."
+    },
+    {
+      "bodyIndex": 184,
+      "replacement": "Academically, the contribution is the integration and orchestration of complementary evidence sources rather than a claim that every component is a trained AI model. The current system includes supervised URL classifiers, an unsupervised anomaly detector, pretrained language/URL models and deterministic extraction rules. Their outputs, failure states and provenance must be distinguished. Reproducibility depends on recording source revisions, dataset splits, feature definitions and model metadata, not merely publishing application code."
+    },
+    {
+      "bodyIndex": 185,
+      "replacement": "The historical development study identified and removed an additive +0.5 risk-score offset. Its small calibration set is distinct from the 300-URL evaluation. Neither a model confidence value nor successful calibration of a few selected URLs establishes calibrated probability or out-of-sample performance. The revised implementation explicitly labels unavailable engines and heuristic responses."
+    },
+    {
+      "bodyIndex": 186,
+      "replacement": "The system uses modular client, backend, inference and persistence services. The backend configuration supports a configured deployment origin and the ML_SERVICE_URL inference destination; the Hugging Face deployment source is ml-services/hf_space_deploy. Heroku and Appwrite remain present in project configuration, alongside MongoDB control-plane persistence. This source review does not certify current provider availability, hosting capacity or production deployment parity."
+    },
+    {
+      "bodyIndex": 189,
+      "replacement": "The scope is URL and web-context security: analysing submitted or consent-collected addresses, examining available page signals, retrieving intelligence and presenting evidence-based warnings. Supported domain-blocking actions are mediated by native permissions or approved signed device commands. A request being queued or delivered is not proof that blocking was applied."
+    },
+    {
+      "bodyIndex": 191,
+      "replacement": "The analysis workspace presents available URL, page and threat-intelligence evidence. It is not a virtual-machine malware detonation environment and does not establish arbitrary binary analysis or comprehensive endpoint protection. Observation coverage depends on supported sensors, permissions, consent and service availability."
+    },
+    {
+      "bodyIndex": 194,
+      "replacement": "Evaluation is separated into historical detection measurements, current source-level implementation evidence and future release acceptance. The 300-URL experiment remains the only detection-performance dataset summarised here. No new commercial comparison, cross-platform benchmark, production uptime measurement or model-quality result is inferred from the current code."
+    },
+    {
+      "bodyIndex": 196,
+      "replacement": "Agent (software). A component that executes a bounded task and returns a structured result. In this system, specialist URL-analysis agents and durable user-configured agent runs are different abstractions. The available durable templates execute fixed authorised tools; they do not yet establish unrestricted LLM-selected tool use (Wooldridge, 2009)."
+    },
+    {
+      "bodyIndex": 199,
+      "replacement": "Appwrite. A backend service used for selected persisted records and integrations. The current system also uses MongoDB/Mongoose for workspace-scoped devices, agent definitions and runs, findings-related workflow and audit/control-plane records; Appwrite is not the sole system of record."
+    },
+    {
+      "bodyIndex": 204,
+      "replacement": "Evidence record. A stored account/workspace-scoped analytic or action record. Current findings, derived incidents and deterministic evidence reports support explicit provenance. Legacy in-process recent-report buffers are caches, not durable audit history."
+    },
+    {
+      "bodyIndex": 208,
+      "replacement": "Hugging Face Spaces. The configured hosting destination for the canonical FastAPI ML service, including detector loading, inference and owner-authorised training. Service-to-service authentication and per-capability readiness are distinct from public health availability."
+    },
+    {
+      "bodyIndex": 212,
+      "replacement": "Memory layer. Local and backend stores that retain prior observations for retrieval and context. Optional vector-store adapters and cache code do not by themselves establish that those services are provisioned. Stored history does not constitute online learning, reinforcement learning or automatic weight updates."
+    },
+    {
+      "bodyIndex": 219,
+      "replacement": "Risk score. A model output or rule-based estimate used by a named decision policy. Rescaling a score at a decision threshold is not probability calibration; the versioned analysis contract currently leaves calibrated probability unset."
+    },
+    {
+      "bodyIndex": 224,
+      "replacement": "Vector store. A similarity-search component used when its adapter and service are configured. Pinecone/Chroma dependencies exist in the backend, while desktop memory is local-first. Availability must be established through actual configuration and responses, rather than inferred from a library dependency."
+    },
+    {
+      "bodyIndex": 254,
+      "replacement": "Buczak and Guven (2016) review classical machine learning for cybersecurity and describe practical concerns such as concept drift, imbalance and generalisation. These concerns motivate multi-source evidence and held-out evaluation in CyberForge. The current source contains offline fitting and decision-threshold selection; it does not implement continuous online retraining or establish calibrated probability outputs."
+    },
+    {
+      "bodyIndex": 257,
+      "replacement": "URLNet (Le et al., 2018) and Transformer-based representations illustrate learning directly from URL text. CyberForge retains an externally pretrained BERT URL-classification path (elftsdmr/malware-url-detect); the active trainer does not fine-tune it. The current implementation additionally trains three HistGradientBoostingClassifier models for phishing, malware-serving URLs and web-attack payloads, plus an IsolationForest on benign examples. The dissertation contribution remains system integration and evaluation, not a claim of novel Transformer training."
+    },
+    {
+      "bodyIndex": 311,
+      "replacement": "Language models generate advisory explanations from supplied context. The current Space defaults to a pretrained Qwen3.5-2B GGUF model through llama.cpp. Backend provider routes and a separate user-key desktop path may also produce answers. Responses must retain their engine attribution; fluent reasoning text is not independent detector evidence or proof of an executed action."
+    },
+    {
+      "bodyIndex": 312,
+      "replacement": "The original prototype used a Gemini-to-Mistral-to-template explanation fallback. Current routing includes the in-Space Qwen model and configured backend or user-key providers. Missing, busy or failed models must be reported honestly, with any rule-based summary identified explicitly. The original provider ordering is retained only as historical experimental context."
+    },
+    {
+      "bodyIndex": 326,
+      "replacement": "The current repository contains a Tauri desktop client and a React Native/Expo companion, alongside a shared-core CLI and a stdio MCP adapter. These interfaces expose different implemented subsets rather than guaranteed feature parity. Native mobile capture and platform release readiness require separate acceptance testing."
+    },
+    {
+      "bodyIndex": 327,
+      "replacement": "MongoDB control-plane records, selected Appwrite integrations, local stores and native authenticated event streaming support persistence and updates. Ownership is derived from verified principals and workspace membership. The current console reports backend, stream and ML states separately instead of equating a successful HTTP response with full protection."
+    },
+    {
+      "bodyIndex": 332,
+      "replacement": "Gap 2: Handling model and service failure. The current implementation exposes versioned capability readiness and unavailable/unknown states, with explicitly attributed fallback text where applicable. This builds on the historical multi-provider explanation design but does not imply that a failed model still produces a verified threat verdict."
+    },
+    {
+      "bodyIndex": 334,
+      "replacement": "Gap 4: Reusing historical context. Memory can supply prior observations and reduce repeated work (Park et al., 2023). In CyberForge this is retrieval and caching, not online weight learning. Whether historical context improves detection quality requires a controlled comparison; it cannot be inferred merely from the existence of a memory store."
+    },
+    {
+      "bodyIndex": 348,
+      "replacement": "The current architecture separates clients, native services, authenticated backend control, ML inference and storage. This chapter distinguishes the original eight-specialist research workflow from the later source implementation reviewed on 18 October 2026. Implementation evidence does not establish deployed availability or reproduce the historical experiment."
+    },
+    {
+      "bodyIndex": 349,
+      "replacement": "An address enters through manual submission or a supported consent-enabled observation path. The native layer applies privacy and session controls before contacting the backend. Backend routes select the appropriate analysis or durable-run service, and the user receives a source-labelled result with coverage and failure information."
+    },
+    {
+      "bodyIndex": 351,
+      "replacement": "Client layer: Tauri 2 desktop; React Native/Expo companion; scoped Rust CLI and grant-controlled MCP stdio tools."
+    },
+    {
+      "bodyIndex": 352,
+      "replacement": "Native and backend control layer: shared Rust services, OS keyring and local ownership controls; Node.js 24/Express authentication, workspace membership, device and agent workflows."
+    },
+    {
+      "bodyIndex": 353,
+      "replacement": "Inference layer: canonical FastAPI Hugging Face service with trained URL models, BERT, DGA rules, Qwen explanation inference and versioned capability/analysis contracts."
+    },
+    {
+      "bodyIndex": 354,
+      "replacement": "Persistence and intelligence layer: MongoDB control-plane records, selected Appwrite integrations, local stores and configured caches/vector adapters, plus OTX and page-fetch services."
+    },
+    {
+      "bodyIndex": 358,
+      "replacement": "Figure 3.1: Revised source architecture (18 October 2026). Implemented interfaces and service boundaries are distinguished from production deployment acceptance."
+    },
+    {
+      "bodyIndex": 360,
+      "replacement": "The client layer includes the Tauri desktop UI and native Rust commands. History access, active-tab observation, cloud scanning, LLM processing and synchronisation each have independent consent controls that are off until enabled. Manual analysis and permitted background observation must not be described as unconditional surveillance of every visited URL."
+    },
+    {
+      "bodyIndex": 361,
+      "replacement": "The backend is Node.js 24 with Express 4. It authenticates requests, derives ownership from the verified account and workspace, routes analyses and manages durable device/agent workflows. Mongoose models store control-plane entities; the backend does not assume that all persistence resides in Appwrite."
+    },
+    {
+      "bodyIndex": 362,
+      "replacement": "The retained specialist orchestrator launches URL classification, DGA analysis, page acquisition and memory retrieval in Stage 1; IOC extraction, behavioural rules and MITRE mapping follow in Stage 2; OTX enrichment follows available IOCs in Stage 3. A Reporter combines the resulting evidence. Separately, the durable agent framework offers the available URL Analyst and Device Health templates, with budgets, run states, schedules and proposals. These are not eight independently configurable autonomous agents."
+    },
+    {
+      "bodyIndex": 363,
+      "replacement": "The canonical ML service is ml-services/hf_space_deploy/app.py. It serves FastAPI routes and loads three supervised gradient-boosted URL classifiers, an unsupervised IsolationForest, an optional pretrained BERT classifier and a pretrained GGUF language model. DGA detection uses entropy and character-pattern rules. A capability report identifies loaded, loading, failed or unavailable components; unavailable models are not presented as successful inference."
+    },
+    {
+      "bodyIndex": 364,
+      "replacement": "Current explanations can use in-Space Qwen inference, configured backend providers or a separate desktop user-key route. Engine attribution and failure states are carried into responses. Reasoning endpoints do not execute the actions they describe, and deterministic signed evidence exports remain distinct from AI-written narratives."
+    },
+    {
+      "bodyIndex": 365,
+      "replacement": "MongoDB stores workspace-scoped control-plane entities and audit/workflow data. Appwrite remains used by selected legacy and capture/alert integrations. Desktop memory is local-first; Redis and vector-store adapters require configuration and are not assumed live. OTX supplies reputation enrichment when available, while page acquisition is bounded by the scraper integration. Sensitive addresses must be redacted before remote transmission."
+    },
+    {
+      "bodyIndex": 366,
+      "replacement": "The revised architecture also exposes a terminal interface and MCP stdio adapter through a shared operation registry. Current MCP tools are status, model status and URL analysis under explicit grants; a complete autonomous AI CLI, broad action tools and loopback HTTP MCP service are not established by this source slice."
+    },
+    {
+      "bodyIndex": 367,
+      "replacement": "This separation supports inspectable evidence and bounded authority. Detection, proposal, approval, command delivery and verified application are separate events. Current header/footer telemetry reports service and data freshness independently, avoiding fabricated healthy states."
+    },
+    {
+      "bodyIndex": 370,
+      "replacement": "The client displays evidence and requests explicitly supported local actions through native permissions."
+    },
+    {
+      "bodyIndex": 371,
+      "replacement": "The backend enforces verified scope, coordinates analysis and persists supported workflows."
+    },
+    {
+      "bodyIndex": 372,
+      "replacement": "The ML layer returns attributed model/rule outputs and advisory reasoning text."
+    },
+    {
+      "bodyIndex": 373,
+      "replacement": "Storage and external services provide retained context and available intelligence; their availability is reported."
+    },
+    {
+      "bodyIndex": 378,
+      "replacement": "The original prototype measured approximately four seconds per URL. The revised implementation needs fresh latency measurements on a named deployment and workload; modularity alone does not prove real-time performance."
+    },
+    {
+      "bodyIndex": 380,
+      "replacement": "The principal use case is analysing a submitted URL or an address obtained from a permitted sensor. The original use-case diagram follows Cockburn (2001); the current implementation adds explicit consent, authenticated scope, capability checks and approval boundaries."
+    },
+    {
+      "bodyIndex": 384,
+      "replacement": "The primary actor is an authenticated user who may submit an address manually or enable supported collection. The user separately controls reading history, observing active tabs, sending addresses to the backend, LLM processing and synchronisation."
+    },
+    {
+      "bodyIndex": 385,
+      "replacement": "The desktop is a Tauri 2 application with Rust commands and a static HTML/CSS/JavaScript renderer. Supported browser observations depend on OS capability and privacy settings. The renderer displays actual native/backend responses rather than assuming a scan or protective action succeeded."
+    },
+    {
+      "bodyIndex": 386,
+      "replacement": "For the specialist analysis route, an accepted URL is dispatched to the retained orchestrator. For the versioned URL-analysis route used by the shared CLI/MCP operation, the backend requests a checked ML analysis record. These paths are related but do not have identical aggregation or execution semantics."
+    },
+    {
+      "bodyIndex": 390,
+      "replacement": "The retained Reporter combines available specialist findings into a risk score and evidence report. Its score policy is not interchangeable with the newer trained_models_v1 analysis policy. Consumers must retain the originating policy and treat missing coverage as missing evidence."
+    },
+    {
+      "bodyIndex": 391,
+      "replacement": "Where enabled and available, an attributed language model turns supplied findings into advisory text. A failure or template response is labelled accordingly. No language-model explanation proves that a detector ran or an operating-system action was applied."
+    },
+    {
+      "bodyIndex": 392,
+      "replacement": "Persisted findings and memory provide context for later requests. This reuse does not modify model weights; current detector retraining is a separate owner-authorised offline procedure. Data retention and synchronisation follow the applicable account scope and privacy controls."
+    },
+    {
+      "bodyIndex": 393,
+      "replacement": "The client presents the reported verdict, evidence and limitations. Supported protective actions are requested explicitly or proposed through the agent workflow, approved where required, and evaluated through actual receipts. The system does not guarantee it can prevent interaction with every page before content loads."
+    },
+    {
+      "bodyIndex": 397,
+      "replacement": "Figure 3.3: Revised decision flow: consent and authentication, selected analysis path, source-labelled evidence, explicit action approval and verified receipts. Cached context is not a guaranteed safe verdict."
+    },
+    {
+      "bodyIndex": 399,
+      "replacement": "Analysis begins with a manually submitted URL or an observation permitted by the user. Browser-history and foreground observation are platform-dependent, so complete capture of all browsing is not assumed."
+    },
+    {
+      "bodyIndex": 400,
+      "replacement": "Native commands validate privacy choices and use the authenticated backend session. Sensitive address components are redacted before transmission. If required consent or capability is absent, the request reports that limitation."
+    },
+    {
+      "bodyIndex": 401,
+      "replacement": "The backend derives account/workspace scope from authentication and selects the requested service. Cached observations may reduce repeated work where the configured path supports them, but freshness and model provenance must remain visible."
+    },
+    {
+      "bodyIndex": 402,
+      "replacement": "A cached result is historical evidence and must be identified as such. The original experiment reported repeat responses below 100 ms; this source revision does not remeasure cache latency or assert that every client uses the same cache."
+    },
+    {
+      "bodyIndex": 403,
+      "replacement": "An allow-list or popularity reference must not force an unexamined URL to be classified clean. Current design distinguishes domain popularity features, user exceptions and security verdicts. Hosted phishing can occur on a popular platform, so allow-list membership is not proof of safety."
+    },
+    {
+      "bodyIndex": 404,
+      "replacement": "The selected analysis path runs only its supported components. The retained three-stage specialist DAG and the newer versioned detector-analysis endpoint are distinct; a CLI URL scan does not implicitly execute the entire page-scraping DAG."
+    },
+    {
+      "bodyIndex": 405,
+      "replacement": "Within the specialist DAG, Stage 1 includes the BERT URL classifier, DGA heuristic, Web Scraper and Memory Reader. The first two consume the address/domain; the others collect content and prior context. Stage 1 tasks can run concurrently."
+    },
+    {
+      "bodyIndex": 409,
+      "replacement": "Behavioural rules inspect the page signals returned by the scraper, such as scripts, forms, redirects and network metadata. They do not establish arbitrary browser execution, full-system malware detonation or a trained network-intrusion detector."
+    },
+    {
+      "bodyIndex": 412,
+      "replacement": "The current ReportAgent uses a weighted evidence sum: URL score (30%), DGA contribution (10%), rendered-page evidence (35%), behavioural contributions, reputation/IOC/ATT&CK additions and a domain-history multiplier, capped at 100. Separately, the versioned trained_models_v1 endpoint reports threat if an answering trained detector flags, benign if answering trained detectors agree on benign, and unknown when no trained detector answers. Heuristic outputs remain contextual estimates. These policies require independent evaluation and must not be conflated."
+    },
+    {
+      "bodyIndex": 413,
+      "replacement": "A verdict is interpreted with the named policy, detector coverage and uncertainty. Scores are not presented as calibrated probabilities. A service responding successfully does not imply that every model is ready."
+    },
+    {
+      "bodyIndex": 414,
+      "replacement": "A benign result is an assessment under the available evidence, not a guarantee of safety. Unknown, missing-coverage and failed states remain explicit. Retention of the result is subject to the relevant store and consent policy."
+    },
+    {
+      "bodyIndex": 415,
+      "replacement": "A threat result can trigger a displayed warning and, in supported workflows, an action proposal. Approval, queueing, delivery and application remain distinct states. A queued command is never recorded as an applied block merely because the server accepted it."
+    },
+    {
+      "bodyIndex": 416,
+      "replacement": "When permitted, the explanation path produces attributed advisory text. The current default Space model is Qwen; Gemini and Mistral observations in Chapter 4 belong to the original experiment. An explanation does not independently validate the threat or perform remediation."
+    },
+    {
+      "bodyIndex": 417,
+      "replacement": "Supported records are written to their designated account/workspace stores. Local memory and optional caches retain context where configured. Consent withdrawal prevents further restricted collection or sharing; retention and deletion controls must be assessed separately."
+    },
+    {
+      "bodyIndex": 418,
+      "replacement": "The revised flow makes the boundaries of collection, inference, evidence, consent and action visible. It preserves the original modular research design while avoiding claims of universal capture, unconditional safety, guaranteed model availability or autonomous remediation."
+    },
+    {
+      "bodyIndex": 421,
+      "replacement": "Figure 3.4: Original specialist-orchestrator conceptual class diagram. The current shared Rust core, device/agent control plane and CLI/MCP adapters are additional modules described in Appendix C; this figure is not a complete class diagram of the revised system."
+    },
+    {
+      "bodyIndex": 431,
+      "replacement": "Reporter Agent. The terminal specialist-reporting component combines available evidence, obtains an attributed explanation and stores the result. The original dissertation described the following blended score, retained here as a historical formulation rather than a specification of the current ReportAgent:"
+    },
+    {
+      "bodyIndex": 433,
+      "replacement": "Here the first term is the mean available agent threat score and the second is the maximum. Equation 3.1 is retained as the historical blend described by the original thesis. Current ReportAgent source instead implements a weighted evidence sum with coverage checks; the 60/40 blend appears in another ML-service aggregation path. It is not a calibrated probability and is not the decision rule of the newer versioned URL-analysis endpoint. Evidence escalation and explanation remain separate from approved device execution."
+    },
+    {
+      "bodyIndex": 435,
+      "replacement": "MemoryService, LLMFallbackChain and AppwriteService are shared specialist-workflow services. Memory retains context, LLMFallbackChain selects configured explanation sources and AppwriteService handles its designated records. Current MongoDB control-plane services and the shared Rust core are additional modules, not classes represented by the original conceptual diagram."
+    },
+    {
+      "bodyIndex": 438,
+      "replacement": "The original dissertation reports development on an Apple-silicon MacBook with 16 GB RAM and macOS Sonoma 14.6. This is retained as historical hardware context. The current source revision was inspected in a Windows workspace, but no new hardware benchmark or deployed CPU/GPU specification was measured for this revision. Model hosting configuration must not be treated as proof of current hardware capacity."
+    },
+    {
+      "bodyIndex": 440,
+      "replacement": "Platforms. The current desktop is a Tauri 2/Rust application; platform-specific observation and enforcement code must be validated on each declared OS. Backend and ML deployment sources use container/cloud configurations. The existence of a build target does not certify a packaged release on that platform."
+    },
+    {
+      "bodyIndex": 441,
+      "replacement": "Languages. Rust 2021 for native/shared-core/CLI/MCP code; JavaScript and HTML/CSS for the desktop renderer and Express backend; Python for the FastAPI service and trainer; TypeScript/React Native for the mobile companion."
+    },
+    {
+      "bodyIndex": 442,
+      "replacement": "Runtimes. backend/package.json declares Node.js 24.x. The desktop Cargo manifest declares Tauri 2 with a Rust minimum of 1.77.2; the actual dependency graph/toolchain may impose additional constraints. Python container/runtime configuration and pinned ML dependencies determine service compatibility. Electron 28 is not the current desktop runtime."
+    },
+    {
+      "bodyIndex": 443,
+      "replacement": "Frameworks. Express 4, Tauri 2, FastAPI and React Native 0.81.5 with Expo 54. The canonical Space is a REST service and no longer includes a Gradio UI. The mobile source exists; full native-capture and platform-release acceptance are separate from source availability."
+    },
+    {
+      "bodyIndex": 449,
+      "replacement": "scikit-learn 1.8.0 (pinned for stored model compatibility), pandas, NumPy and joblib for feature-based training and inference; torch 2.2+ for Transformer support."
+    },
+    {
+      "bodyIndex": 450,
+      "replacement": "huggingface_hub 0.26+ for model/data artefacts; llama-cpp-python 0.3.36 for in-process GGUF language-model inference."
+    },
+    {
+      "bodyIndex": 455,
+      "replacement": "Backend hosting. The backend is configured by its deployment environment and origin; Heroku configuration remains in the repository. This revision does not assert the current hosting tier or uptime."
+    },
+    {
+      "bodyIndex": 456,
+      "replacement": "Hugging Face Spaces. Canonical FastAPI inference and owner-triggered training source; backend requests use ML_SERVICE_URL and service authentication. Training currently shares the serving process rather than an isolated durable worker."
+    },
+    {
+      "bodyIndex": 457,
+      "replacement": "Persistence. MongoDB/Mongoose for workspace control-plane records and selected findings/workflow data; Appwrite for selected existing integrations; local native stores and optional Redis/vector adapters."
+    },
+    {
+      "bodyIndex": 460,
+      "replacement": "Explanation inference. Default in-Space Qwen3.5-2B-Q4_K_M GGUF through llama.cpp; configured backend providers may also be used."
+    },
+    {
+      "bodyIndex": 461,
+      "replacement": "Additional explanation paths. The desktop has a separate user-key provider path. Current response attribution, rather than an assumed Gemini/Mistral order, identifies the engine that answered."
+    },
+    {
+      "bodyIndex": 464,
+      "replacement": "Externally pretrained artefacts: elftsdmr/malware-url-detect for the BERT path and unsloth/Qwen3.5-2B-GGUF for default Space reasoning. They are used for inference; the active trainer does not fine-tune these models."
+    },
+    {
+      "bodyIndex": 467,
+      "replacement": "Current trainer data sources include Mitake/PhishingURLsANDBenignURLs, bgspaditya/byt-malicious-url-treatment, pirocheto/phishing-url, phl-ldm/tranco_top_million and shengqin/web-attacks. They serve different benign, phishing, malware-URL, popularity and SQL-injection/XSS-payload purposes. These training sources must not be confused with the original 300-URL evaluation set."
+    },
+    {
+      "bodyIndex": 470,
+      "replacement": "The original prototype followed seven deployable iterations, retained below as development history. Later changes add consent/authentication, durable device and agent workflows, versioned ML contracts, Tauri/shared Rust code, a limited CLI/MCP surface and live-source console controls. These additions are source-reviewed in Appendix C and are not retrospectively part of the original evaluation."
+    },
+    {
+      "bodyIndex": 478,
+      "replacement": "The original development narrative reports deployment and representative-URL checks after each iteration. No such deployment is performed by the present document revision, and historical checks do not certify the current working tree."
+    },
+    {
+      "bodyIndex": 480,
+      "replacement": "The original risk-score calibration used seven researcher-labelled URLs (Appendix A), removed the +0.5 offset and adjusted thresholds. This is a small development calibration exercise, not held-out evidence of generalisation. The current feature-based trainer instead separates domains for fitting, threshold selection and evaluation and records model-specific thresholds; historical and current aggregation paths remain different policies."
+    },
+    {
+      "bodyIndex": 482,
+      "replacement": "The original DGA calibration used 30 legitimate and generated-looking labels with an empirical 0.45 threshold. The current DGA endpoint still uses explicit entropy and character-pattern heuristics rather than a fitted sequence model. Its reported score or confidence must not be interpreted as calibrated maliciousness probability. A larger held-out DGA corpus remains necessary."
+    },
+    {
+      "bodyIndex": 484,
+      "replacement": "The original prototype exercised Gemini exhaustion, Mistral fallback and a rule-based final response. These are historical verification observations. Current tests must instead exercise the actual configured Qwen/backend/user-key paths, busy/time-budget behaviour and unavailable states, while checking engine attribution and preventing advisory text from being labelled as executed work."
+    },
+    {
+      "bodyIndex": 486,
+      "replacement": "The retained specialist pipeline has eight analysers plus a final Reporter. It analyses accepted inputs rather than guaranteeing analysis of every browser event. Its decomposition supports complementary evidence; an ablation study would be needed to quantify improvement over a single-model baseline."
+    },
+    {
+      "bodyIndex": 496,
+      "replacement": "This pipeline integrates complementary evidence into an inspectable report. The current versioned detector endpoint and fixed-template durable agent framework coexist with it and have narrower, explicit contracts. Neither memory retrieval nor fixed tool sequences establishes online learning or unconstrained autonomous planning."
+    },
+    {
+      "bodyIndex": 503,
+      "replacement": "Chapter 4 retains the original measurements. The supplied thesis does not include a complete raw per-URL result log, a reproducible split manifest or a controlled single-model ablation. Consequently, the revision does not claim to reproduce those measurements or establish statistical superiority. Source-contract tests of current features are evidence of implementation behaviour, not replacement detection experiments."
+    },
+    {
+      "bodyIndex": 506,
+      "replacement": "This chapter preserves results reported for the original research prototype. It does not present a new evaluation of the October 2026 source revision. The figures and screenshots are historical artefacts; current client layouts, engine routing and feature availability have changed."
+    },
+    {
+      "bodyIndex": 510,
+      "replacement": "The original application screenshots are retained as historical interface illustrations, not proof that their displayed counters were measured in the 300-URL experiment or that every control was operational. Current claims are grounded in the source inventory in Appendix C. New end-to-end and held-out measurements are required for the revised system."
+    },
+    {
+      "bodyIndex": 512,
+      "replacement": "The original timing table reports a 4,050 ms mean end-to-end analysis. This is approximately four seconds but exceeds the strict 4,000 ms warm target by 50 ms. The latency tables group page acquisition into content analysis, whereas the architectural DAG launches scraping in Stage 1; their grouping should not be mistaken for a revised dependency graph."
+    },
+    {
+      "bodyIndex": 519,
+      "replacement": "The original report states cached repeat responses below 100 ms. This claim is retained as historical and is not remeasured in the present source review. Per-agent means cannot be summed to reconstruct parallel stage timing without the underlying request traces."
+    },
+    {
+      "bodyIndex": 521,
+      "replacement": "Figure 4.1 is the original desktop dashboard screenshot. The revised console now obtains scoped counts, backend/stream state and per-capability ML readiness from actual responses, with freshness and unavailable/stale labels. Screenshot counters are not additional experimental observations."
+    },
+    {
+      "bodyIndex": 534,
+      "replacement": "From Table 4.3, the binary counts are TP=137, TN=147, FP=3 and FN=13. These yield the rounded metrics in Table 4.4 and a false-positive rate of 3/150=2.0%. Malware/DGA category detection is 45/50=90.0%, with five false negatives. The aggregate table does not identify which detector caused individual errors, so attributing most false positives to DGA requires a separate error analysis."
+    },
+    {
+      "bodyIndex": 536,
+      "replacement": "The historical alert screenshot shows Block, Protect and Allow controls. In the current implementation, only supported adapters and returned execution outcomes establish what an action actually did. Displaying a control or warning does not by itself prove enforcement."
+    },
+    {
+      "bodyIndex": 546,
+      "replacement": "These are reported agent return-success rates from the historical test period, not classification accuracies or newly measured service-level guarantees. The supplied document does not specify all denominators or observation windows. External dependencies can reduce coverage; degraded scans should retain explicit missing-source information."
+    },
+    {
+      "bodyIndex": 553,
+      "replacement": "The historical explanation experiment used Gemini with Mistral and rule-based fallback. The current Space uses Qwen by default and retains engine-labelled alternative paths. Table 4.6 therefore evaluates the former explanation setup and must not be assigned to the current model."
+    },
+    {
+      "bodyIndex": 554,
+      "replacement": "The original text reports manual 1-to-10 ratings. It does not specify the number of raters, inter-rater agreement or a blinded evaluation protocol. The scores are descriptive assessments rather than independently established user-study evidence."
+    },
+    {
+      "bodyIndex": 564,
+      "replacement": "Table 4.7 retains the original reported service-availability figures. The supplied thesis does not provide the measurement window, probe schedule or raw outage log, so these figures are not a current uptime guarantee and have not been independently reproduced in this revision."
+    },
+    {
+      "bodyIndex": 574,
+      "replacement": "The historical interfaces illustrate policies, domain actions and reporting. Current supported enforcement includes permission-mediated native domain controls and signed device commands with receipts; generic policy rollback and broader guarded automatic response are not assumed. Deterministic signed evidence reports are distinct from AI-written report narratives. Authentication and ownership checks are described in Appendix C."
+    },
+    {
+      "bodyIndex": 586,
+      "replacement": "The historical 300-URL experiment supports a reported 94.7% accuracy and 2.0% false-positive rate on that selected set. The architecture combines several inspectable signals, but no controlled single-model comparison establishes superiority or the smallest sufficient agent set. The 4.05-second mean is close to, but above, the original strict four-second warm target."
+    },
+    {
+      "bodyIndex": 587,
+      "replacement": "Future work should examine the 13 false negatives and three false positives with per-detector evidence, validate on larger temporally held-out samples and benchmark the current deployment. The present revision also documents implemented access and privacy controls; their packaged/live acceptance and adversarial assurance remain separate tasks."
+    },
+    {
+      "bodyIndex": 590,
+      "replacement": "This dissertation presents the design and historical evaluation of CyberForge and a source-grounded revision of its current implementation. Eight specialist analyses and reporting provide the research architecture; later work adds Tauri/Rust clients, authenticated workspace control, durable agent/device workflows, a private ML service and limited CLI/MCP integration. These implementation changes do not retroactively change the original experimental baseline."
+    },
+    {
+      "bodyIndex": 591,
+      "replacement": "The original experiment reports 284 correct classifications among 300 URLs, with 137 harmful URLs detected, 13 missed and three benign URLs falsely flagged. Mean latency was 4.05 seconds. These results motivate further study of an integrated, explainable workflow but do not prove superiority to a single model, universal protection or current production performance."
+    },
+    {
+      "bodyIndex": 592,
+      "replacement": "The current source implements many controls recommended after the original prototype, including verified identity/workspace checks, independent privacy choices, service authentication, device signing and explicit action states. Remaining work is to demonstrate those controls in packaged releases and live services, evaluate detector quality on independent data and close the feature gaps identified in Appendix C."
+    },
+    {
+      "bodyIndex": 595,
+      "replacement": "Security assurance. Extend verification of existing session, workspace, per-window native permissions, service credentials and signed-device-command controls. Exercise account switching, grant revocation, hostile input, replay protection, expiry and UAC denial/approval in the packaged product; source existence alone is not enterprise assurance."
+    },
+    {
+      "bodyIndex": 596,
+      "replacement": "Privacy and retention. Validate the five existing consent categories, URL redaction, local-store deletion/retention and synchronisation withdrawal across clients. Audit all external recipients, including MCP clients, rather than proposing consent and redaction as wholly absent features."
+    },
+    {
+      "bodyIndex": 597,
+      "replacement": "Model quality and training. Expand temporal/domain-held-out evaluation, measure false positives on legitimate login and shared-hosting sites, and isolate training from inference with durable jobs and controlled model promotion. User feedback should enter a reviewed labelled dataset; automatic online retraining is not currently implemented and should not ingest untrusted feedback unchecked."
+    },
+    {
+      "bodyIndex": 598,
+      "replacement": "Action and integration scope. Extend the supported, approved device-action workflow with verified rollback before enabling broader guarded automatic response. Complete the planned AI CLI and MCP operation families only when their permission, evidence, cancellation and recovery contracts are implemented. Current queued/delivered receipts must remain distinct from applied outcomes."
+    },
+    {
+      "bodyIndex": 600,
+      "replacement": "Future research should run longer deployments with raw measurement logs, compare agent ablations, test current models on independent regional and hosted-phishing corpora, and evaluate explanation quality with a defined blinded protocol. Product work includes isolated training, richer grounded AI CLI operations, broader MCP transports/tools, packaged mobile/native-capture acceptance and optional integration with a genuine dynamic-execution sandbox. The existing companion and limited stdio MCP/CLI source should not be described as either wholly absent or fully complete."
+    }
+  ],
+  "appendixParagraphs": 21,
+  "historicalResultsPreserved": true
+}

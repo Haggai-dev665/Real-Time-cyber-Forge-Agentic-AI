@@ -7,16 +7,31 @@
 //! them via `window.__TAURI__.core.invoke(...)`.
 
 mod agent;
+mod account_api;
+mod finding_api;
+mod oauth;
+mod agents_api;
 mod auth;
 mod blocking;
 mod commands;
+mod device;
 mod http;
+mod input;
 mod memory;
+mod integrations;
+mod outbox;
+mod ownership;
+mod session_renewal;
 mod metrics;
 mod ml;
+mod console;
 mod policy;
+mod privacy;
 mod state;
+mod stream;
 mod system;
+#[cfg(test)]
+mod acl_tests;
 
 use state::AppState;
 use std::sync::Arc;
@@ -35,8 +50,13 @@ pub fn run() {
             commands::auth_logout,
             commands::auth_get_user,
             commands::auth_is_authenticated,
-            commands::auth_get_token,
+            commands::credential_storage_status,
+            stream::stream_status,
             commands::get_backend_url,
+            integrations::cli_status,
+            integrations::mcp_grants,
+            integrations::mcp_grant_create,
+            integrations::mcp_grant_revoke,
             // Floating agent panel — real local + backend telemetry
             system::get_system_stats,
             system::detect_browsers,
@@ -78,6 +98,7 @@ pub fn run() {
             ml::ml_ioc_scan,
             ml::ml_url_enrich,
             ml::ml_status,
+            console::console_snapshot,
             ml::set_hf_token,
             ml::hf_token_status,
             ml::hf_token_get,
@@ -101,6 +122,34 @@ pub fn run() {
             blocking::unallow_site,
             blocking::list_allowed,
             blocking::public_ip,
+            // This computer as a device of the workspace (DEV-01/02)
+            device::device_status,
+            device::device_enroll_this,
+            device::device_claim_code,
+            device::device_enrollment_create,
+            device::devices_list,
+            device::device_approve,
+            device::device_rename,
+            device::device_revoke,
+            device::device_heartbeat,
+            device::device_rotate_key,
+            device::device_command_send,
+            device::device_commands_list,
+            // Agents page (AGT-02/04/05/07)
+            agents_api::agents_call,
+            account_api::account_call,
+            finding_api::finding_state,
+            finding_api::finding_exception,
+            finding_api::incidents_list,
+            finding_api::incident_resolve,
+            finding_api::alert_state,
+            finding_api::incident_evidence,
+            finding_api::evidence_report,
+            // What the app may collect and send (SEC-07)
+            privacy::privacy_get,
+            privacy::privacy_set,
+            privacy::privacy_clear_history,
+            privacy::privacy_clear_memory,
         ])
         .setup(|app| {
             // `Manager` provides `get_webview_window` (debug devtools) and
@@ -116,6 +165,23 @@ pub fn run() {
             // everything the app needs exists right after installation
             // (app-config dir, hf_config.json template, README). Idempotent.
             crate::system::prepare_filesystem(&app.handle());
+
+            // One owner per user of this computer's state (ownership.rs). Only the
+            // owner runs the device loop: two would reuse device sequence numbers.
+            let ownership = crate::ownership::claim();
+            eprintln!("CyberForge: local state owner: {:?}", ownership);
+
+            // Signed device heartbeats, once this computer is enrolled (device.rs).
+            let device_state = app.state::<Arc<Mutex<AppState>>>().inner().clone();
+            if crate::ownership::is_owner_or_unenforced() {
+                crate::device::start_heartbeats(device_state);
+            } else {
+                crate::ownership::take_over_when_free(move || {
+                    // Read what the previous owner saved before writing anything.
+                    crate::memory::reload_from_disk();
+                    crate::device::start_heartbeats(device_state);
+                });
+            }
 
             // Real-time telemetry broadcaster: ONE poller for the whole app.
             // Every 3s it pushes a single `cf-telemetry` event (system stats +
@@ -149,6 +215,17 @@ pub fn run() {
                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
                 }
             });
+
+            // The live feed: one connection for the whole app, held here and
+            // forwarded to every window as `cf-stream` (see stream.rs). A page
+            // cannot open it itself; the content security policy forbids it.
+            crate::stream::start(
+                app.handle().clone(),
+                app.state::<Arc<Mutex<AppState>>>().inner().clone(),
+            );
+
+            // Renew the 24-hour session before it expires (session_renewal.rs).
+            crate::session_renewal::start(app.state::<Arc<Mutex<AppState>>>().inner().clone());
 
             // Background browser-history collector: as soon as the app opens it
             // reads the FULL history of every detected browser — across all

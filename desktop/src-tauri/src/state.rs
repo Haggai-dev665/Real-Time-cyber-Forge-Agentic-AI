@@ -9,7 +9,7 @@ use std::time::Instant;
 
 /// The deployed backend. Set the `CYBERFORGE_BACKEND_URL` environment variable
 /// before launching to use a staging or local backend instead.
-pub const DEFAULT_BACKEND_URL: &str = "https://cyberforge-f3249b5a0919.herokuapp.com";
+pub use cyberforge_core::origin::DEFAULT_BACKEND_URL;
 
 /// Backend base URL for this process, without a trailing slash.
 pub fn backend_url() -> String {

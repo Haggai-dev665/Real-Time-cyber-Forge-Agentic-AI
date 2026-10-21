@@ -3,15 +3,11 @@
  */
 
 const express = require('express');
-const { body, query, validationResult } = require('express-validator');
-const { 
-  createAnalysis, 
-  getAnalysis, 
-  getUserAnalyses,
-  getAnalysisStats,
-  deleteAnalysis
-} = require('../controllers/analysisController');
+const { query } = require('express-validator');
+const { getAnalysis, getUserAnalyses, deleteAnalysis } = require('../controllers/analysisController');
 const { auth } = require('../middleware/auth');
+const { notCarriedOut } = require('../middleware/notImplemented');
+const Analysis = require('../models/Analysis');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 const router = express.Router();
@@ -21,13 +17,21 @@ router.get('/stats',
   auth,
   asyncHandler(async (req, res) => {
     try {
-      // Mock stats for now
+      // Counted from this account's stored analyses (the owner is in `user`).
+      // These five figures used to be fixed zeros whatever was stored.
+      const owner = { user: req.user.userId };
+      const [total, completed, pending, highRisk] = await Promise.all([
+        Analysis.countDocuments(owner),
+        Analysis.countDocuments({ ...owner, status: 'completed' }),
+        Analysis.countDocuments({ ...owner, status: { $in: ['pending', 'processing'] } }),
+        // results.risk_score runs from 0 to 10 in this model
+        Analysis.countDocuments({ ...owner, 'results.risk_score': { $gte: 7 } })
+      ]);
       const stats = {
-        total_analyses: 0,
-        completed_analyses: 0,
-        pending_analyses: 0,
-        high_risk_found: 0,
-        last_analysis: null
+        total_analyses: total,
+        completed_analyses: completed,
+        pending_analyses: pending,
+        high_risk_found: highRisk
       };
 
       res.json({
@@ -56,17 +60,11 @@ router.get('/history',
   asyncHandler(getUserAnalyses)
 );
 
-// Create new analysis
-router.post('/url',
-  auth,
-  [
-    body('url').isURL().withMessage('Valid URL is required'),
-    body('analysisType').optional().isString(),
-    body('priority').optional().isIn(['low', 'medium', 'high', 'critical']),
-    body('metadata').optional().isObject()
-  ],
-  asyncHandler(createAnalysis)
-);
+// Creating analyses here is retired (16.67): the handler wrote fields the model
+// does not have, so every save failed, and then called an ML endpoint that does
+// not exist. The scan routes below are the ones that analyse an address.
+const CREATE_RETIRED = 'Creating analyses here is not available. Scan an address with POST /api/sandbox/analyze/url or POST /api/agent/scan-url.';
+router.post('/url', auth, notCarriedOut(CREATE_RETIRED));
 
 // Get specific analysis
 router.get('/:analysisId',
@@ -80,56 +78,7 @@ router.delete('/:analysisId',
   asyncHandler(deleteAnalysis)
 );
 
-// Bulk analysis
-router.post('/bulk',
-  auth,
-  [
-    body('urls').isArray({ min: 1, max: 10 }).withMessage('URLs array required (max 10)'),
-    body('urls.*').isURL().withMessage('All URLs must be valid'),
-    body('analysisType').optional().isString(),
-    body('priority').optional().isIn(['low', 'medium', 'high', 'critical'])
-  ],
-  asyncHandler(async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors: errors.array()
-        });
-      }
-
-      const { urls, analysisType, priority } = req.body;
-      const analysisPromises = urls.map(url => 
-        createAnalysis({
-          ...req,
-          body: { url, analysisType, priority }
-        }, res, true) // Pass true to indicate bulk operation
-      );
-
-      const results = await Promise.allSettled(analysisPromises);
-      
-      res.json({
-        success: true,
-        message: 'Bulk analysis initiated',
-        data: {
-          total: urls.length,
-          results: results.map((result, index) => ({
-            url: urls[index],
-            status: result.status,
-            ...(result.status === 'fulfilled' ? { data: result.value } : { error: result.reason })
-          }))
-        }
-      });
-
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Bulk analysis failed'
-      });
-    }
-  })
-);
+// Bulk creation is retired with single creation (16.67).
+router.post('/bulk', auth, notCarriedOut(CREATE_RETIRED));
 
 module.exports = router;

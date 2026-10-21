@@ -79,7 +79,7 @@ export default function Login() {
           {/* mode switch */}
           <View style={styles.segment}>
             {(['login', 'register'] as Mode[]).map((m) => (
-              <Pressable key={m} style={[styles.segItem, mode === m && styles.segItemOn]} onPress={() => { setMode(m); setError(''); }}>
+              <Pressable accessibilityRole="button" key={m} style={[styles.segItem, mode === m && styles.segItemOn]} onPress={() => { setMode(m); setError(''); }}>
                 <Text style={[styles.segText, mode === m && styles.segTextOn]}>
                   {m === 'login' ? 'Sign in' : 'Register'}
                 </Text>
@@ -111,7 +111,7 @@ export default function Login() {
             secureTextEntry={!showPw}
             autoCapitalize="none"
             trailing={
-              <Pressable onPress={() => setShowPw((s) => !s)} hitSlop={10}>
+              <Pressable accessibilityRole="button" accessibilityLabel={showPw ? 'Hide password' : 'Show password'} onPress={() => setShowPw((s) => !s)} hitSlop={10}>
                 <Icon name={showPw ? 'eyeoff' : 'eye'} size={18} color={colors.faint} />
               </Pressable>
             }
@@ -124,7 +124,7 @@ export default function Login() {
             </View>
           ) : null}
 
-          <Pressable onPress={submit} disabled={busy}>
+          <Pressable accessibilityRole="button" onPress={submit} disabled={busy}>
             <LinearGradient colors={[colors.orange, '#d97f25']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.primaryBtn}>
               {busy ? (
                 <ActivityIndicator color="#1a1206" />
@@ -143,7 +143,7 @@ export default function Login() {
             <View style={styles.divider} />
           </View>
 
-          <Pressable style={styles.ghostBtn} onPress={guest}>
+          <Pressable accessibilityRole="button" style={styles.ghostBtn} onPress={guest}>
             <Icon name="eye" size={16} color={colors.text} />
             <Text style={styles.ghostText}>Continue as guest</Text>
           </Pressable>

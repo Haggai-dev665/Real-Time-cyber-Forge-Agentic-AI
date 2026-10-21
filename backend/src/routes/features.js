@@ -7,6 +7,7 @@ const express = require('express');
 const { body, query, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { notCarriedOut } = require('../middleware/notImplemented');
 const mongoose = require('mongoose');
 
 const router = express.Router();
@@ -99,33 +100,8 @@ router.post('/requests', auth, asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: request });
 }));
 
-router.post('/requests/:requestId/replay', auth, asyncHandler(async (req, res) => {
-  const original = stores.requests.get(req.params.requestId);
-  if (!original || original.userId !== req.user.userId) {
-    return res.status(404).json({ success: false, message: 'Request not found' });
-  }
-  
-  const { modifications = {} } = req.body;
-  
-  // Create replay request
-  const replay = {
-    id: generateId(),
-    userId: req.user.userId,
-    ...original,
-    ...modifications,
-    originalId: original.id,
-    timestamp: new Date().toISOString(),
-    isReplay: true
-  };
-  
-  // Simulate making the request (in production, actually make the HTTP request)
-  replay.status = 200;
-  replay.response = { headers: {}, body: 'Replayed successfully' };
-  
-  stores.requests.set(replay.id, replay);
-  
-  res.json({ success: true, data: replay });
-}));
+// Replay used to store a copy marked as answered with status 200 without sending anything.
+router.post('/requests/:requestId/replay', auth, notCarriedOut('Requests are not replayed: nothing sends the request.'));
 
 router.delete('/requests/:requestId', auth, asyncHandler(async (req, res) => {
   const request = stores.requests.get(req.params.requestId);
@@ -359,23 +335,8 @@ router.delete('/automations/:automationId', auth, asyncHandler(async (req, res) 
   res.json({ success: true, message: 'Automation deleted' });
 }));
 
-router.post('/automations/:automationId/run', auth, asyncHandler(async (req, res) => {
-  const automation = stores.automations.get(req.params.automationId);
-  if (!automation || automation.userId !== req.user.userId) {
-    return res.status(404).json({ success: false, message: 'Automation not found' });
-  }
-  
-  automation.status = 'running';
-  automation.lastRun = new Date().toISOString();
-  automation.runCount++;
-  
-  // Simulate automation run
-  setTimeout(() => {
-    automation.status = 'completed';
-  }, 2000);
-  
-  res.json({ success: true, data: automation, message: 'Automation started' });
-}));
+// Run used to mark the automation "running", then "completed" two seconds later, with nothing executed.
+router.post('/automations/:automationId/run', auth, notCarriedOut('Automations are not run: nothing executes their actions.'));
 
 router.post('/automations/:automationId/pause', auth, asyncHandler(async (req, res) => {
   const automation = stores.automations.get(req.params.automationId);
@@ -388,21 +349,7 @@ router.post('/automations/:automationId/pause', auth, asyncHandler(async (req, r
   res.json({ success: true, data: automation });
 }));
 
-router.get('/automations/:automationId/logs', auth, asyncHandler(async (req, res) => {
-  const automation = stores.automations.get(req.params.automationId);
-  if (!automation || automation.userId !== req.user.userId) {
-    return res.status(404).json({ success: false, message: 'Automation not found' });
-  }
-  
-  // Return simulated logs
-  const logs = [
-    { timestamp: new Date().toISOString(), level: 'info', message: 'Automation started' },
-    { timestamp: new Date().toISOString(), level: 'info', message: 'Trigger conditions met' },
-    { timestamp: new Date().toISOString(), level: 'success', message: 'Actions completed' }
-  ];
-  
-  res.json({ success: true, data: { logs } });
-}));
+router.get('/automations/:automationId/logs', auth, notCarriedOut('There are no automation logs: automations are not run.'));
 
 // =========================================
 // WORKFLOWS
@@ -781,56 +728,10 @@ router.get('/exports', auth, asyncHandler(async (req, res) => {
   res.json({ success: true, data: { exports } });
 }));
 
-router.post('/exports', auth, [
-  body('name').notEmpty(),
-  body('format').isIn(['pdf', 'json', 'har', 'csv', 'html'])
-], asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ success: false, errors: errors.array() });
-  }
-  
-  const { name, format, filters, includeRequests, includeFindings } = req.body;
-  
-  const exportItem = {
-    id: generateId(),
-    userId: req.user.userId,
-    name,
-    format,
-    filters: filters || {},
-    includeRequests: includeRequests !== false,
-    includeFindings: includeFindings !== false,
-    status: 'processing',
-    size: null,
-    downloadUrl: null,
-    createdAt: new Date().toISOString()
-  };
-  
-  stores.exports.set(exportItem.id, exportItem);
-  
-  // Simulate export generation
-  setTimeout(() => {
-    exportItem.status = 'completed';
-    exportItem.size = Math.floor(Math.random() * 10000000) + 100000;
-    exportItem.downloadUrl = `/api/exports/${exportItem.id}/download`;
-  }, 2000);
-  
-  res.status(201).json({ success: true, data: exportItem });
-}));
+// Export used to report "completed" with a random file size and a download link to nothing.
+router.post('/exports', auth, notCarriedOut('Exports are not generated: no file is produced.'));
 
-router.get('/exports/:exportId/download', auth, asyncHandler(async (req, res) => {
-  const exportItem = stores.exports.get(req.params.exportId);
-  if (!exportItem || exportItem.userId !== req.user.userId) {
-    return res.status(404).json({ success: false, message: 'Export not found' });
-  }
-  
-  if (exportItem.status !== 'completed') {
-    return res.status(400).json({ success: false, message: 'Export not ready' });
-  }
-  
-  // In production, stream the actual file
-  res.json({ success: true, message: 'Download would start here', data: exportItem });
-}));
+router.get('/exports/:exportId/download', auth, notCarriedOut('There is nothing to download: exports are not generated.'));
 
 router.delete('/exports/:exportId', auth, asyncHandler(async (req, res) => {
   const exportItem = stores.exports.get(req.params.exportId);

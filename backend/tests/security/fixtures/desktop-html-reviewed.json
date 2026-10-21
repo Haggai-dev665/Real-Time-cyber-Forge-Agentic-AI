@@ -1,0 +1,283 @@
+{
+  "scripts/cf-agent.js": [
+    "AGENT_ICON"
+  ],
+  "scripts/cf-forge.js": [
+    "markSVG('forge-mark')",
+    "markSVG()",
+    "rings",
+    "size"
+  ],
+  "scripts/cf-header.js": [
+    "MARK",
+    "appVersion()",
+    "body",
+    "btns",
+    "cfNotes.length",
+    "cls",
+    "eyeOff",
+    "eyeOn",
+    "globeI",
+    "html",
+    "icClose",
+    "icShield",
+    "log",
+    "moon",
+    "rows",
+    "s.ic",
+    "s.k",
+    "s.label",
+    "searchI",
+    "srow('AI clients','Approve, list and revoke clients of the MCP server',code(['cyberforge mcp grant create --name \"Claude Desktop\"','cyberforge mcp grant list','cyberforge mcp config --grant <id>']))",
+    "srow('Active agents','Registered agents + this device','<span class=\"rv\" id=\"cfCAg\">\u2014</span>')",
+    "srow('Acts as','The CLI\\'s current profile and its sign-in, separate from this app\\'s','<span class=\"rv\" id=\"cfMcpProfile\">\u2014</span>')",
+    "srow('Address analysis','Also let it send web addresses to your server for analysis (credentials are removed first)','<input type=\"checkbox\" id=\"cfMcpScan\"/>')",
+    "srow('Allowed sites','Unblocked by you; still scanned','<span class=\"rv\" id=\"cfSecA\">\u2014</span>')",
+    "srow('Analysis Agents','Phishing & IOC detection models','<span class=\"cf-badge d\" id=\"cfCMl\">checking\u2026</span>')",
+    "srow('Analysis Agents','What the agents can do now, and a versioned check of one address',code(['cyberforge models status','cyberforge scan url https://example.com']))",
+    "srow('Answers come from','The Analysis Agents\\' open-source model, or DeepSeek directly if you save your own token below. Each answer names its agent.','<span class=\"rv\">Analysis Agents by default</span>')",
+    "srow('Blocked sites','Resolved to localhost via the hosts file','<span class=\"rv\" id=\"cfSecB\">\u2014</span>')",
+    "srow('Check the setup','Server, credential store, sign-in and which program owns this computer\\'s state',code(['cyberforge status']))",
+    "srow('Clear browser history copy','The history this app read from your browsers','<button class=\"cf-btn dng\" id=\"cfPrivHist\">Clear</button>')",
+    "srow('Clear local memory','What the assistant recalls on this computer; copies already synced to your account are not affected','<button class=\"cf-btn dng\" id=\"cfPrivMem\">Clear</button>')",
+    "srow('Client name','How you will recognise it here later','<input class=\"cf-input\" id=\"cfMcpName\" maxlength=\"60\" placeholder=\"Claude Desktop\" autocomplete=\"off\" spellcheck=\"false\" style=\"width:220px\"/>')",
+    "srow('Color theme','Dark or light surfaces, app-wide','<div class=\"cf-seg\" id=\"cfThemeSeg\"><button data-theme=\"dark\" class=\"'+(t==='dark'?'on':'')+'\">'+moon+'Dark</button><button data-theme=\"light\" class=\"'+(t==='light'?'on':'')+'\">'+sun+'Light</button></div>')",
+    "srow('Credential storage','Where the sign-in session and the AI token are kept','<span class=\"rv\" id=\"cfSecStore\">checking\u2026</span>')",
+    "srow('CyberForge on PATH','Run <code>cyberforge</code> from any terminal','<span class=\"cf-badge d\" id=\"cfSyPath\">checking\u2026</span>')",
+    "srow('Data residency','Where your data goes, from your Privacy choices','<span class=\"rv\" id=\"cfAbRes\">checking\u2026</span>')",
+    "srow('Delete synced data','Removes that kind of data from your account; the account stays','<div class=\"cf-inrow\"><select class=\"cf-input\" id=\"cfAcScope\" style=\"width:auto\"></select><button class=\"cf-btn dng\" id=\"cfAcDel\">Delete</button></div>')",
+    "srow('Device coverage','Enrollment, connection and verified action outcomes','<a class=\"cf-btn\" href=\"devices.html\">Open Devices</a>')",
+    "srow('Edition','Local-first AI security workspace','<span class=\"rv\">Desktop</span>')",
+    "srow('Event stream','Events received by this window and server round trip','<a class=\"cf-btn\" href=\"signal-pipeline.html\">Open events</a>')",
+    "srow('Expires after','It must be approved again then','<select class=\"cf-input\" id=\"cfMcpDays\" style=\"width:auto\"><option value=\"30\">30 days</option><option value=\"90\" selected>90 days</option><option value=\"365\">365 days</option></select>')",
+    "srow('Export your data','Everything kept about your account, saved as a JSON file in Downloads','<button class=\"cf-btn\" id=\"cfAcExp\">Export</button>')",
+    "srow('Floating monitor','Inspect the existing background monitor','<button class=\"cf-btn\" id=\"cfOpenRuntime\">Open monitor</button>')",
+    "srow('For AI clients','An approved client starts it as cyberforge mcp serve and gets only the tools you grant it','<span class=\"cf-badge d\" id=\"cfMcpState\">checking\u2026</span>')",
+    "srow('Hostname','','<span class=\"rv\" id=\"cfSyHost\">\u2014</span>')",
+    "srow('Installed','The cyberforge command, installed beside this app','<span class=\"cf-badge d\" id=\"cfCliInstalled\">checking\u2026</span>')",
+    "srow('Local runtime','Monitoring, resource use and console','<a class=\"cf-btn\" href=\"agent-core.html\">Open runtime</a>')",
+    "srow('Location','Where it is installed','<span class=\"rv\" id=\"cfCliPath\">\u2014</span>')",
+    "srow('Memory','','<span class=\"rv\" id=\"cfSyMem\">\u2014</span>')",
+    "srow('Model capabilities','Reported model and heuristic readiness, sources and limitations','<a class=\"cf-btn\" href=\"model-inference.html\">Open models</a>')",
+    "srow('On PATH','Whether a new terminal finds it as cyberforge','<span class=\"rv\" id=\"cfCliOnPath\">\u2014</span>')",
+    "srow('Open threats','Across your workspace','<span class=\"rv\" id=\"cfCTh\">\u2014</span>')",
+    "srow('Operating system','','<span class=\"rv\" id=\"cfSyOs\">loading\u2026</span>')",
+    "srow('Processor','','<span class=\"rv\" id=\"cfSyCpu\">\u2014</span>')",
+    "srow('Profiles','Named servers, each with its own sign-in',code(['cyberforge profile list','cyberforge config set origin https://\u2026']))",
+    "srow('Public IP','Your current outbound address','<span class=\"rv\" id=\"cfSecIp\">checking\u2026</span>')",
+    "srow('Read-only tools','Server status and what the Analysis Agents can do now. Always included','<span class=\"rv\">cyberforge_status, cyberforge_model_status</span>')",
+    "srow('Reduce motion','Minimise animations and transitions','<div class=\"cf-sw'+(rm?' on':'')+'\" id=\"cfRmSw\" role=\"switch\" tabindex=\"0\"></div>')",
+    "srow('Runtime','Desktop application','<span class=\"rv\">Tauri + Rust</span>')",
+    "srow('Saved sites','A list only: nothing is enforced for them','<span class=\"rv\" id=\"cfSecP\">\u2014</span>')",
+    "srow('Scripts and CI','One JSON answer and a fixed exit code; a verdict exits 0 unless asked',code(['cyberforge --json scan url https://example.com --fail-on threat']))",
+    "srow('Server API','Cloud sync & threat intelligence','<span class=\"cf-badge d\" id=\"cfCBe\">checking\u2026</span>')",
+    "srow('Sign in','Its own session, separate from this app\\'s; the password is never an argument',code(['cyberforge auth login','cyberforge auth status','cyberforge auth logout']))",
+    "srow('Sign out','End this session \u2014 your local data is kept','<button class=\"cf-btn dng\" id=\"cfPfOut\">'+icOut+'Sign out</button>')",
+    "srow('Status','Local session on this device','<span class=\"cf-badge d\" id=\"cfPfStatus\">checking\u2026</span>')",
+    "srow('Storage','','<span class=\"rv\" id=\"cfSySto\">\u2014</span>')",
+    "srow('This computer\\'s state','Which CyberForge program owns it',code(['cyberforge broker status']))",
+    "srow('Version','As the installed command reports it','<span class=\"rv\" id=\"cfCliVersion\">\u2014</span>')",
+    "srow('Your token (optional)','Sends questions straight to DeepSeek on Hugging Face','<span class=\"cf-badge d\" id=\"cfAiStat\">checking\u2026</span>')",
+    "sun"
+  ],
+  "scripts/cf-live.js": [
+    "r.kind",
+    "timeAgo(e.ts)"
+  ],
+  "scripts/cf-report.js": [
+    "buildHtml(opts || {}, user)"
+  ],
+  "scripts/cf-sidebar.js": [
+    "I.chev",
+    "I.gear",
+    "label",
+    "link(item,active)",
+    "link(item,parent)"
+  ],
+  "scripts/components/agent-panel.js": [
+    "C",
+    "I.globe",
+    "VI[cls]",
+    "W",
+    "color",
+    "cx",
+    "cy",
+    "pts",
+    "r",
+    "rows.length",
+    "sw",
+    "t.icon",
+    "t.name",
+    "ts",
+    "txt"
+  ],
+  "scripts/installer.js": [
+    "cfMarkSVG()",
+    "cfMarkSVG().replace('<svg ','<svg x=\"128\" y=\"128\" width=\"44\" height=\"44\" ')",
+    "cls",
+    "dot",
+    "forgeMark()",
+    "icon",
+    "k",
+    "label",
+    "name",
+    "node(220,84,'var(--sage)','M4 17 8 5l4 12M14 9l3 8 3-8')",
+    "node(224,216,'var(--blue)','M4 6h16v10H4zM9 20h6')",
+    "node(76,216,'var(--brand-orange)','M5 7h14M5 12h14M5 17h9')",
+    "node(80,84,'var(--cyan)','M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18')",
+    "r[0]",
+    "r[1]",
+    "ringCol",
+    "s.badge",
+    "s.body",
+    "s.h",
+    "s.p",
+    "s.rail",
+    "s.rd",
+    "shown",
+    "ts"
+  ],
+  "scripts/pages/agent-core.js": [
+    "C",
+    "chainHtml",
+    "color",
+    "cx",
+    "cy",
+    "h.length",
+    "html",
+    "msg",
+    "pts",
+    "r",
+    "sw",
+    "t",
+    "t.state",
+    "tag",
+    "ts"
+  ],
+  "scripts/pages/agents.js": [
+    "formHtml(t)",
+    "formHtml(t, agent.config)",
+    "options"
+  ],
+  "scripts/pages/ai-assistance.js": [
+    "botAv",
+    "c.id",
+    "html",
+    "mdToHtml(m.text)",
+    "orig",
+    "s[0]",
+    "s[0].replace(/\"/g,'&quot;')",
+    "s[1]",
+    "text",
+    "userAv"
+  ],
+  "scripts/pages/alerts-evidence.js": [
+    "evIco[e[3]]",
+    "gi",
+    "sevIco[a.sev]"
+  ],
+  "scripts/pages/analyzer.js": [
+    "(d.type||'auto').toUpperCase()",
+    "h"
+  ],
+  "scripts/pages/browser-intelligence.js": [
+    "USER",
+    "n",
+    "st[0]",
+    "st[1]"
+  ],
+  "scripts/pages/incident-timeline.js": [
+    "seed.map(evRow).join('')"
+  ],
+  "scripts/pages/investigations.js": [
+    "entIco[n[0]]",
+    "i",
+    "stepIco[s[0]]"
+  ],
+  "scripts/pages/login.js": [
+    "original"
+  ],
+  "scripts/pages/memory.js": [
+    "list.map(memRow).join('')",
+    "ms",
+    "ts"
+  ],
+  "scripts/pages/model-inference.js": [
+    "grid",
+    "v",
+    "word"
+  ],
+  "scripts/pages/register.js": [
+    "original"
+  ],
+  "scripts/pages/reports.js": [
+    "docI",
+    "i",
+    "r.desc",
+    "r.k",
+    "r.label",
+    "r.short",
+    "rgClock",
+    "rgX",
+    "sections.map(buildSection).join('')"
+  ],
+  "scripts/pages/scheduled.js": [
+    "C",
+    "color",
+    "cx",
+    "cy",
+    "i",
+    "r",
+    "sw"
+  ],
+  "scripts/pages/security-functions.js": [
+    "a.color",
+    "a.kind",
+    "ago(b.ts)",
+    "ago(p.ts)",
+    "c",
+    "catColor(c)",
+    "catLabel(c)",
+    "catLabel(catOf(k))",
+    "st.color",
+    "timeAgo(new Date(a.ts).toISOString())",
+    "timeAgo(p.lastTriggered)"
+  ],
+  "scripts/pages/signal-pipeline.js": [
+    "stageK",
+    "{ingest:'AGENT',analyze:'SCAN',reason:'FINDING / ALERT'}[stageK]"
+  ],
+  "scripts/pages/threat-alert.js": [
+    "esc(t.message).replace(esc(t.host), function(){ return '<b>'+esc(t.host)+'</b>'; })"
+  ],
+  "scripts/pages/threat-globe.js": [
+    "ccToFlag(m.cc)",
+    "cls",
+    "cls.toUpperCase()",
+    "cols[i%5]",
+    "i",
+    "m.n",
+    "pc"
+  ],
+  "scripts/pages/threat-overview.js": [
+    "area",
+    "bar",
+    "col",
+    "encodeURIComponent(id)",
+    "grid",
+    "html",
+    "icon",
+    "line",
+    "lines.join('')",
+    "lx",
+    "ly",
+    "padT",
+    "r.icon",
+    "runCls(x.state)",
+    "sev",
+    "verdictChip(live.scan.verdict,live.scan.riskScore)"
+  ],
+  "scripts/pages/web-history.js": [
+    "rowHtml(it, ALL.indexOf(it))"
+  ]
+}

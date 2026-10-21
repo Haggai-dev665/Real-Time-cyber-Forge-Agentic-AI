@@ -374,7 +374,7 @@ class ReportAgent extends AgentBase {
         if (threatIntel?.flagged > 0)           findings.push(`${threatIntel.flagged} IOCs known to OTX threat intel`);
         if (memory?.lastVerdict === 'malicious') findings.push(`Domain previously flagged malicious (${memory.visitCount} visits)`);
 
-        // LLM summary (chained: Gemini → ZySec → heuristic)
+        // Summary from the backend's language-model order (llmFallbackChain.js); the report says which engine wrote it
         const llmContextKey = sessionId ? `session:${userId == null ? '' : userId}:${sessionId}` : null;
         const llm = await llmFallbackChain.explainThreat({
             target: url,
@@ -396,6 +396,7 @@ class ReportAgent extends AgentBase {
             signals:    scraper?.signals || [],
             summary:    llm.text,
             llmSource:  llm.source,
+            summaryEngine: llm.engine || null,
             findings,
             agents,                 // raw agent reports for transparency
             iocs:        (ioc?.iocs || []).slice(0, 50),

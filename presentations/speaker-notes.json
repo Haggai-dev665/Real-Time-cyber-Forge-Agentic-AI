@@ -1,0 +1,92 @@
+[
+  {
+    "slide": 1,
+    "title": "CyberForge",
+    "source": "The University of Bamenda  /  COLTECH  /  Computer Engineering",
+    "notes": "Introduce the study title and candidate. Supervisor: Prof. Onabid Mathias Akong. Registration UBA24PP134. The original dissertation is dated June 2026; this presentation incorporates the source review of 18 October 2026. Distinguish the historical experiment from current implementation evidence throughout."
+  },
+  {
+    "slide": 2,
+    "title": "Brief introduction",
+    "source": "Thesis §§1.1, 1.6; revised §3.2",
+    "notes": "Explain phishing, malicious domains, redirects and credential theft as web-context risks. The system aims to connect evidence with a usable explanation. Current monitoring is consent-based and platform-dependent; do not claim every page is captured or blocked before it loads. This is not a full endpoint or network intrusion-detection suite."
+  },
+  {
+    "slide": 3,
+    "title": "Problem statement",
+    "source": "Thesis §1.2; original calibration described in §3.7.2",
+    "notes": "The original scoring baseline added +0.5 and overflagged safe calibration examples. Present this as a development defect on a small set, not a population-wide model result. The other problems are unexplained classifier output and fragmented context. Enterprise SOAR motivates integration but this study does not benchmark commercial suites."
+  },
+  {
+    "slide": 4,
+    "title": "Research questions",
+    "source": "Thesis §1.3; validity qualifications in revised §§3.9 and 4.9",
+    "notes": "State the four specific questions in sequence. The first asks about the smallest sufficient agent set; the thesis does not supply an ablation that resolves minimality. Memory reuse is implemented context, not evidence that model weights learn online. The evaluation supports an initial integrated-system result rather than complete answers to every causal question."
+  },
+  {
+    "slide": 5,
+    "title": "Research objectives",
+    "source": "Thesis §1.4; source-reviewed boundaries in Appendix C",
+    "notes": "Present the general objective, then four specific objectives: coordinated tasks; multiple analytical perspectives; false-positive-aware aggregation; contextual external intelligence. Historical context is a supporting capability. Avoid claiming complete cross-platform protection or fully autonomous planning: current interfaces have different supported subsets."
+  },
+  {
+    "slide": 6,
+    "title": "Brief literature review",
+    "source": "Thesis Chapter 2; full bibliographic details are in the speaker notes",
+    "notes": "Literature: Khonji, Iraqi & Jones (2013), Phishing detection: A literature survey, IEEE Communications Surveys & Tutorials 15(4), 2091–2121. Le, Pham, Sahoo & Hoi (2018), URLNet, arXiv:1802.03162. Devlin et al. (2019), BERT, NAACL-HLT, 4171–4186. Strom et al. (2018), MITRE ATT&CK: Design and philosophy. Wooldridge (2009), An introduction to multiagent systems, 2nd ed. Yao et al. (2023), ReAct, ICLR. Sommer & Paxson (2010), Outside the Closed World, IEEE S&P, 305–316. These sources motivate design; they do not prove CyberForge outperforms those systems."
+  },
+  {
+    "slide": 7,
+    "title": "Methods and materials used",
+    "source": "Revised §3.2 and Appendix C; Cargo.toml, backend/package.json, hf_space_deploy/",
+    "notes": "The desktop is Tauri 2/Rust, not Electron. Backend runtime is Node.js 24/Express 4; the canonical Space container uses Python 3.11/FastAPI with no Gradio UI. Shared core serves a limited CLI and grant-scoped stdio MCP surface. MongoDB owns control-plane records, while Appwrite and local/optional stores have separate roles. Mobile source is React Native/Expo; native-capture release acceptance is not asserted. These are source specifications, not a deployment availability certificate."
+  },
+  {
+    "slide": 8,
+    "title": "Methods and materials used",
+    "source": "Thesis Table 3.1; backend/src/services/agentOrchestrator.js",
+    "notes": "Stage 1 launches four tasks: classifier, DGA, scraper and memory. Stage 2 consumes collected page evidence for IOC extraction, behavioural rules and MITRE mapping. Stage 3 enriches IOCs through OTX. The Reporter follows the eight specialists, so it is not counted among the eight. Multiple agents produce evidence, but the original study does not contain an ablation proving the smallest effective set. The CLI/MCP versioned detector operation does not automatically run this entire page DAG."
+  },
+  {
+    "slide": 9,
+    "title": "Methods and materials used",
+    "source": "Revised Appendix C.3–C.4; hf_space_deploy/trainer.py, app.py, url_features.py",
+    "notes": "Three HistGradientBoostingClassifier models learn supervised URL labels for phishing, malware-serving URLs and web-attack payloads. IsolationForest is fitted on benign examples for unsupervised anomaly scoring. BERT and Qwen are externally pretrained inference, not locally fine-tuned here. DGA and IOC logic are rules. Trainer phases: collect/clean; shared features and domain-grouped split; fit; threshold selection and held-out acceptance; publish accepted artefacts. Defaults include 20% domain-held-out test and a further 10% of training for threshold choice. Training shares the serving process, so isolation, durable jobs and release rollback remain work. No reinforcement learning is established."
+  },
+  {
+    "slide": 10,
+    "title": "Methods and materials used",
+    "source": "Thesis §§3.7–3.9, Table 4.3; revised Appendix C.5",
+    "notes": "Original development used seven calibration URLs and 30 DGA-style/legitimate labels. The reported evaluation used 300 URLs: 150 benign, 100 phishing and 50 malware/DGA. The thesis describes 100 consecutive requests as its latency protocol but supplies no raw traces here. Do not imply that current training corpus sizes were the historical evaluation size. New source tests validate permissions and contracts, not current detection accuracy. No comparative ablation, confidence intervals or reproducible per-URL manifest are supplied in the original document."
+  },
+  {
+    "slide": 11,
+    "title": "Results",
+    "source": "Thesis Tables 4.3–4.4; confusion matrix derived directly from Table 4.3",
+    "notes": "Actual harmful URLs: 137 detected and 13 missed. Actual benign URLs: 147 correctly left alone and three false alarms. Accuracy=(137+147)/300=94.7%; precision=137/140=97.9%; recall=137/150=91.3%; specificity=147/150=98.0%; F1=274/290=94.5%; false-positive rate=3/150=2.0%. The counts support these metrics but not a causal claim that the multi-agent design is superior to a single-model baseline. Category-level detection is 92/100 phishing and 45/50 malware/DGA."
+  },
+  {
+    "slide": 12,
+    "title": "Results",
+    "source": "Thesis Tables 4.1–4.2 and §4.6; original warm target in §3.9",
+    "notes": "Means: URL/context 850 ms; content 1,200; intelligence 600; reporter 1,400; total 4,050. The reporter is the largest listed stage. The strict original warm target is 4,000 ms, so the mean misses it by 50 ms; the later summary used a looser approximately five-second target. The slides retain the stricter interpretation. Scraping is grouped under content in the timing table but launches in Stage 1 in the architectural DAG. Cached repeats below 100 ms and about 15% repeated queries are historical claims, not new measurements. No distribution/p95 can be derived from the supplied mean."
+  },
+  {
+    "slide": 13,
+    "title": "Results",
+    "source": "Thesis Table 4.6 and Fig. 4.3 (original alert screenshot)",
+    "notes": "Historical manual ratings: factual accuracy 9.5/10, readability 9.0 and usefulness of advice 8.8. The original document does not state rater count, blinding or agreement, so call these descriptive ratings. They evaluated the former Gemini/Mistral setup, not current Qwen quality. The alert screenshot is reproduced from the supplied thesis and is an interface illustration, not additional performance evidence. Current actions must distinguish proposals, approvals and applied receipts."
+  },
+  {
+    "slide": 14,
+    "title": "Results",
+    "source": "Thesis Table 4.8, checked against Tables 4.3–4.6 and §3.9",
+    "notes": "Summarise what was demonstrated and where the evidence is limited. The architecture implements coordinated specialist analysis, but no ablation proves the minimum sufficient agent set. Accuracy, false positives and response time come from the original experiment. The 4.05-second mean is 0.05 seconds above the strict four-second warm target. Explanation readability is a descriptive manual rating, not a blinded user study. These are historical outcomes; the current system requires fresh performance evaluation."
+  },
+  {
+    "slide": 15,
+    "title": "Conclusion",
+    "source": "Thesis Chapter 5; revised Appendix C  /  Thank you — Questions",
+    "notes": "Conclude with three contributions: an integrated specialist workflow; evidence-focused interpretation; and a current implementation with stronger scope, privacy and action boundaries. Historical results are promising on the selected set, but do not establish a benchmark for the revised source. Priorities: independent detector/error evaluation, controlled training/release and packaged/live verification. Invite questions on agent orchestration, evaluation limits, privacy, current MCP scope and training types. The original title remains unchanged; this is an updated system description, not fabricated experimental work."
+  }
+]

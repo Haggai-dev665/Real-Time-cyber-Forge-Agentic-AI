@@ -10,7 +10,7 @@ export function SubHeader({ title, sub, live }: { title: string; sub?: string; l
   const router = useRouter();
   return (
     <View style={styles.bar}>
-      <Pressable style={styles.back} onPress={() => router.back()} hitSlop={8}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Back" style={styles.back} onPress={() => router.back()} hitSlop={8}>
         <Icon name="chevL" size={18} color={colors.text} />
       </Pressable>
       <View style={{ flex: 1 }}>

@@ -70,9 +70,25 @@ fi
 if [ "$KEEP_DATA" = "1" ]; then
   echo "Keeping data directory: $DATA_DIR"
 elif [ -d "$DATA_DIR" ]; then
-  if confirm "Delete all CyberForge data (scans, memory, blocklists, token) in $DATA_DIR?"; then
+  if confirm "Delete all CyberForge data (scans, memory, site lists, cached profile) in $DATA_DIR?"; then
     rm -rf "$DATA_DIR"
     echo "Removed data directory."
+  fi
+fi
+
+# 5) Remove the sign-in session and the AI token from the system credential
+#    store. They are kept there, not in the data directory.
+if [ "$KEEP_DATA" != "1" ]; then
+  for entry in auth_token hf_token; do
+    if [ "$OS" = "Darwin" ]; then
+      security delete-generic-password -s com.cyberforge.console -a "$entry" >/dev/null 2>&1 \
+        && echo "Removed credential: $entry" || true
+    elif command -v secret-tool >/dev/null 2>&1; then
+      secret-tool clear service com.cyberforge.console username "$entry" >/dev/null 2>&1 || true
+    fi
+  done
+  if [ "$OS" != "Darwin" ] && ! command -v secret-tool >/dev/null 2>&1; then
+    echo "secret-tool is not installed: remove the com.cyberforge.console entries from your keyring by hand."
   fi
 fi
 

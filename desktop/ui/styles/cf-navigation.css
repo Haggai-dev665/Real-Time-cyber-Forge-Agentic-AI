@@ -1,0 +1,117 @@
+/* Explicit sidebar preference: reserves space at both widths, never overlays content. */
+.sidebar{overflow:hidden;padding-bottom:8px;min-height:0}
+.nav-links{overflow-y:auto;overflow-x:hidden;min-height:0;flex:1}
+.nav-toggle,.nav-settings{border:0;background:transparent;text-align:left;font:inherit;flex-shrink:0}
+/* A page's own centred layout must not reach the navigation. */
+.sidebar{text-align:left}
+.nav-settings{margin-top:8px}
+.nav-toggle .chev{transform:rotate(90deg)}
+.sidebar.collapsed{width:56px}
+.sidebar.collapsed .nav-toggle .chev{transform:rotate(-90deg)}
+.sidebar.collapsed .nav-item{width:40px;height:40px;padding:0;margin:2px auto;justify-content:center}
+.sidebar.collapsed .nav-item .lbl{display:none}
+.sidebar.collapsed .nav-sec{height:1px;padding:0;margin:9px 16px;background:var(--border);overflow:hidden;font-size:0}
+.nav-item:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.nav-item{text-decoration:none}
+.workspace-tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--border);padding:0 0 10px;flex-shrink:0}
+.workspace-tabs .nav-item{margin:0;font-size:12px;border:1px solid var(--border);background:transparent}
+.workspace-tabs .active{border-color:var(--amber);color:var(--amber-2)}
+.workspace-tabs .active::before{display:none}
+.cf-context-note{font-size:12px;color:var(--dim);line-height:1.6;padding:12px}
+.cf-context-note a{color:var(--cyan)}
+[hidden]{display:none!important}
+
+.sidebar{width:250px;flex-shrink:0;display:flex;flex-direction:column}.sidebar.collapsed{width:56px}.nav-toggle,.nav-settings{width:calc(100% - 16px)}
+
+/* One viewport shell for every workspace, including Overview's legacy styles.
+   Only the navigation and content scroll; the header/footer never leave view. */
+html.cf-desktop-shell{--cream:#efe9dd;--sage:#869b7e;--brand-orange:#f69d39}
+html.cf-desktop-shell, .cf-desktop-shell body{width:100%;height:100%;margin:0;overflow:hidden}
+.cf-desktop-shell body{display:block}
+.cf-desktop-shell .stage{position:fixed;inset:0;width:100%;height:100%;min-height:0;display:block;overflow:hidden}
+.cf-desktop-shell .window{position:absolute;inset:0;width:100%;height:100%;min-width:0;transform:none;border-radius:0;display:flex;flex-direction:column}
+.cf-desktop-shell .body{flex:1;min-width:0;min-height:0;overflow:hidden}
+.cf-desktop-shell .main{container-type:inline-size;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:auto;padding:20px 22px 24px;scrollbar-gutter:stable}
+.cf-desktop-shell .main> *{flex-shrink:0;min-width:0}
+.cf-desktop-shell .main-head{flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.cf-desktop-shell .main-head .ico{flex:none}
+.cf-desktop-shell .head-right{flex-wrap:wrap;gap:10px}
+.cf-desktop-shell .workspace-tabs{margin-bottom:16px}
+.cf-desktop-shell .topbar{height:56px;min-height:56px;flex:none;gap:10px;padding:0 16px}
+.cf-desktop-shell .topbar> *{flex-shrink:0}
+.cf-desktop-shell .topbar .brand{flex:none;white-space:nowrap}
+.cf-desktop-shell .logo-mark,.cf-desktop-shell .cf-mark{display:block;width:32px;height:32px;flex:none}
+.cf-desktop-shell .topbar .search{flex:1;min-width:100px;max-width:none}
+.cf-desktop-shell .topbar .tb-group:empty{display:none}
+.cf-desktop-shell .statusbar{flex:none;height:30px;min-height:30px;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+.cf-desktop-shell .statusbar> *{flex-shrink:0}
+.cf-desktop-shell .statusbar .sb-item:last-child{margin-left:auto}
+/* above the footer (36-40px tall), so the agent icon does not cover its buttons */
+.cf-desktop-shell .agent-fab,.cf-desktop-shell .cf-fab{right:18px;bottom:52px}
+.cf-desktop-shell .cf-agent-frame{max-width:calc(100% - 24px)}
+.cf-desktop-shell #cfPrivBanner{flex-shrink:0;flex-wrap:wrap}
+
+/* Panels consume the space left after headings, tabs and KPIs, rather than
+   subtracting a fixed heading height that no longer matches the page. */
+.cf-desktop-shell :is(.ag-grid,.ai-grid,.ae-grid,.inv-grid,.mem-grid,.mi-grid,.rp-grid,.bi-grid,.sch-grid,.an-grid,.tl-grid,.globe-grid,.cols3,.wh-card){height:auto;flex:1;min-height:460px}
+.cf-desktop-shell :is(.ag-grid,.ai-grid,.ae-grid,.inv-grid,.mem-grid,.mi-grid,.rp-grid,.bi-grid,.sch-grid,.an-grid,.tl-grid,.globe-grid,.cols3,.ac-grid,.sf-grid)> *{min-width:0}
+.cf-desktop-shell :is(.col,.ag-col,.side-col,.card,.chat,.bubble,.inputbar .field,.an-field){min-width:0}
+.cf-desktop-shell :is(.inputbar input,.an-field input){min-width:0}
+.cf-desktop-shell :is(.stats,.kpi-row,.sf-kpis,.wh-stats){grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.cf-desktop-shell .ag-grid,.cf-desktop-shell .rp-grid{grid-template-columns:minmax(240px,300px) minmax(0,1fr)}
+.cf-desktop-shell .inv-grid{grid-template-columns:minmax(240px,300px) minmax(0,1fr)}
+.cf-desktop-shell :is(.ai-grid,.ae-grid,.mem-grid,.mi-grid,.bi-grid,.sch-grid,.an-grid,.tl-grid,.globe-grid){grid-template-columns:minmax(0,1fr) minmax(250px,300px)}
+.cf-desktop-shell .cd-body{grid-template-columns:minmax(0,1fr) minmax(180px,240px)}
+.cf-desktop-shell .chat-card{min-height:460px}
+.cf-desktop-shell .doc{margin:16px;padding:24px;overflow-wrap:anywhere}
+.cf-desktop-shell .panel-head{flex-wrap:wrap}
+
+@media(max-width:1150px){
+  .cf-desktop-shell .topbar .tb-status,.cf-desktop-shell .topbar .pill-threats{display:none}
+  .cf-desktop-shell .sidebar:not(.collapsed){width:220px}
+}
+@media(max-width:760px){
+  .cf-desktop-shell .topbar{height:auto;min-height:56px;flex-wrap:wrap;padding:10px 12px;gap:8px}
+  .cf-desktop-shell .topbar .search{order:10;flex-basis:100%;margin:0}
+  .cf-desktop-shell .topbar .brand{margin-right:auto}
+  .cf-desktop-shell .main{padding:14px 12px 24px}
+  .cf-desktop-shell .head-right{width:100%;margin-left:0}
+  .cf-desktop-shell .statusbar{padding:0 8px;font-size:10px}
+  .cf-desktop-shell .statusbar .sb-item{padding:0 8px}
+}
+@container(max-width:900px){
+  .ac-grid{grid-template-columns:minmax(0,1fr)!important}
+  .ac-grid .col{overflow:visible}
+  .cd-body{grid-template-columns:minmax(0,1fr)!important}
+  .viz{grid-template-columns:minmax(0,1fr)!important}
+}
+@container(max-width:720px){
+  .stats,.kpi-row,.sf-kpis,.wh-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .ag-grid,.ai-grid,.ae-grid,.inv-grid,.mem-grid,.mi-grid,.rp-grid,.bi-grid,.sch-grid,.an-grid,.tl-grid,.globe-grid,.cols3,.sf-grid,.dv-grid,.feeds{grid-template-columns:minmax(0,1fr)!important;min-height:0!important;flex:none!important}
+  .ag-col,.col,.side-col{overflow:visible}
+  .ag-grid> *,.rp-grid> *,.inv-grid> *{min-height:220px}
+  .chat-card{height:560px;flex:none!important}
+  .intel-feed .side-col{grid-template-columns:minmax(0,1fr)!important}
+  .dv-row{grid-template-columns:repeat(2,minmax(0,1fr));overflow-wrap:anywhere}
+  .doc{margin:10px!important;padding:16px!important}
+  .dstats,.stage-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .an-row,.gen-bar{flex-wrap:wrap}
+  .an-field{flex-basis:100%}
+  .sf-row2,.sf-row3{grid-template-columns:minmax(0,1fr)}
+  .wh-card{min-height:400px!important}
+}
+
+/* Page to page: a short crossfade of the content while the top bar, sidebar and
+   footer stay where they are (cross-document view transitions; where they are not
+   supported, navigation is simply instant). */
+@view-transition{navigation:auto}
+.cf-desktop-shell #topbar{view-transition-name:cf-topbar}
+.cf-desktop-shell #sidebar{view-transition-name:cf-sidebar}
+.cf-desktop-shell #statusbar{view-transition-name:cf-statusbar}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.16s}
+::view-transition-group(cf-topbar),::view-transition-group(cf-sidebar),::view-transition-group(cf-statusbar),
+::view-transition-old(cf-topbar),::view-transition-new(cf-topbar),
+::view-transition-old(cf-sidebar),::view-transition-new(cf-sidebar),
+::view-transition-old(cf-statusbar),::view-transition-new(cf-statusbar){animation:none}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+:root[data-motion="reduce"]::view-transition-old(root),:root[data-motion="reduce"]::view-transition-new(root){animation:none}

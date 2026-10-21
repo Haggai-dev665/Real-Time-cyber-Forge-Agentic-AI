@@ -7,6 +7,7 @@
      .cf-fab if the page doesn't have one).
    • Minimize / close inside the panel  ->  hide panel, show the floating icon.
    • Click the floating icon            ->  reopen the panel.
+   • Settings > Diagnostics             ->  opens the same panel.
 
    On the Threat Overview page (which already renders a native #agent panel)
    it wires that panel to the same behavior instead of injecting a second one.
@@ -52,6 +53,7 @@
       host.appendChild(fab);
     }
 
+    fab.title='CyberForge Agent';fab.setAttribute('aria-label','Open the CyberForge Agent panel');
     // A page may already have the native panel (Threat Overview).
     var native = document.getElementById('agent');
     var frame = null;
@@ -81,7 +83,7 @@
       // Native panel is shown by default -> keep the icon hidden.
       fab.classList.add('cf-hidden');
     } else {
-      // Inject the isolated panel iframe (loaded lazily on first open).
+      // Inject the isolated panel iframe for background monitoring.
       frame = document.createElement('iframe');
       frame.className = 'cf-agent-frame cf-hidden';
       frame.title = 'CyberForge Agent';
@@ -138,6 +140,10 @@
       window.addEventListener('message', function (e) {
         if (e.data && e.data.cf === 'agent-min') minimize();
       });
+      // Escape puts the panel away, back to its icon.
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && frame && !frame.classList.contains('cf-hidden')) minimize();
+      });
       // Start minimized: the floating icon is visible, click to open. We load
       // the panel iframe eagerly (kept hidden) so its real-time active-tab
       // scanner runs immediately — this is what flags a phishing site and pops
@@ -147,6 +153,8 @@
       fab.classList.remove('cf-hidden');
     }
 
+    // The floating icon opens the agent panel; Settings > Diagnostics opens it too.
     fab.addEventListener('click', open);
+    window.addEventListener('cf:open-runtime-monitor', open);
   });
 })();

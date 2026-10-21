@@ -165,7 +165,9 @@ describe('proving who is subscribing', () => {
 
 describe('when a session ends', () => {
   test('the stream is closed at the moment the session expires', async () => {
-    const shortLived = jwt.sign({ userId: userA._id }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: 1 });
+    // `exp` is in whole seconds, so `expiresIn: 1` can leave less than a moment to
+    // connect under load; 2 leaves at least one second, and still ends quickly.
+    const shortLived = jwt.sign({ userId: userA._id }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: 2 });
     const stream = await subscribe('/stream', { Authorization: `Bearer ${shortLived}` });
     const received = await stream.ended();
     expect(received).toContain('event: closed');

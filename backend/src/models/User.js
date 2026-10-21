@@ -19,6 +19,13 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     index: true
   },
+  // The account's personal workspace (models/Workspace.js). A convenience
+  // pointer so a request does not need a second query; the Membership
+  // collection, not this field, is what grants access.
+  defaultWorkspaceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Workspace'
+  },
   passwordHash: {
     type: String,
     required: false, // Made optional for Firebase auth

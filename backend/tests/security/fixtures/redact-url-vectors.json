@@ -1,0 +1,26 @@
+{
+  "_comment": "Address redaction examples shared by the backend (src/utils/redactUrl.js) and the phone (mobile-app/src/utils/redact.ts); and the Rust redact_url in crates/cyberforge-core/src/redact.rs (used by the desktop and the CLI), whose tests read this file.",
+  "redacted": [
+    ["https://accounts.example.com/signin/oauth?client_id=abc&code=4/0AfJohXkabc&state=xyz123&hl=en", "https://accounts.example.com/signin/oauth?client_id=abc&code=[redacted]&state=[redacted]&hl=en"],
+    ["https://app.example.com/reset?_autologintoken=abcdef123456&next=/home", "https://app.example.com/reset?_autologintoken=[redacted]&next=/home"],
+    ["https://api.example.com/v1/items?api_key=K1&session_id=S2&csrfToken=C3&page=2", "https://api.example.com/v1/items?api_key=[redacted]&session_id=[redacted]&csrfToken=[redacted]&page=2"],
+    ["https://example.com/open?t=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U", "https://example.com/open?t=[redacted]"],
+    ["https://example.com/verify/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U/done", "https://example.com/verify/[redacted]/done"],
+    ["https://example.com/cb#access_token=ya29.a0AfH6SMBx&token_type=Bearer&expires_in=3599", "https://example.com/cb#access_token=[redacted]&token_type=[redacted]&expires_in=3599"],
+    ["https://example.com/dl?ref=a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6", "https://example.com/dl?ref=[redacted]"],
+    ["https://alice:s3cret@intranet.example.com/wiki?page=1", "https://intranet.example.com/wiki?page=1"],
+    ["/api/stream?ticket=abc123&lastEventId=9", "/api/stream?ticket=[redacted]&lastEventId=9"],
+    ["/x?a=1&api_key=k&b=2#frag", "/x?a=1&api_key=[redacted]&b=2#frag"]
+  ],
+  "unchanged": [
+    "https://example.com/",
+    "https://example.com/docs/getting-started#install",
+    "https://www.google.com/search?q=how+to+rotate+an+api+key+in+2026+without+downtime+for+users&hl=en",
+    "https://shop.example.com/products?category=laptops&sort=price&page=3",
+    "https://github.com/rust-lang/rust/issues/12345",
+    "http://192.168.1.1/admin/index.html",
+    "chrome://settings/",
+    "mailto:someone@example.com",
+    "/api/threats?limit=5"
+  ]
+}

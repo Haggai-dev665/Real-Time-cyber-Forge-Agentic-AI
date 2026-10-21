@@ -29,14 +29,14 @@ export default function AlertDetail() {
 
   return (
     <View style={styles.root}>
-      <Pressable style={styles.scrim} onPress={close} />
+      <Pressable accessibilityRole="button" accessibilityLabel="Close" style={styles.scrim} onPress={close} />
       <SafeAreaView edges={['bottom']} style={styles.sheetWrap}>
         <View style={styles.sheet}>
           <View style={styles.grab} />
           {!alert ? (
             <View style={{ padding: 24 }}>
               <EmptyState icon="alert" title="Alert not found" hint="It may have rolled out of the live window." />
-              <Pressable style={styles.closeBtn} onPress={close}>
+              <Pressable accessibilityRole="button" style={styles.closeBtn} onPress={close}>
                 <Text style={styles.closeText}>Close</Text>
               </Pressable>
             </View>
@@ -97,13 +97,13 @@ export default function AlertDetail() {
                   </Card>
                 ) : (
                   <View style={styles.actions}>
-                    <Pressable style={styles.actBtn} onPress={() => setResolved('Acknowledged')}>
+                    <Pressable accessibilityRole="button" style={styles.actBtn} onPress={() => setResolved('Acknowledged')}>
                       <LinearGradient colors={[colors.red, '#c43146']} style={styles.actGrad}>
                         <Icon name="shield" size={15} color="#fff" />
                         <Text style={styles.actText}>Acknowledge</Text>
                       </LinearGradient>
                     </Pressable>
-                    <Pressable style={[styles.actBtn, styles.dismissBtn]} onPress={close}>
+                    <Pressable accessibilityRole="button" style={[styles.actBtn, styles.dismissBtn]} onPress={close}>
                       <Text style={[styles.actText, { color: colors.text }]}>Dismiss</Text>
                     </Pressable>
                   </View>

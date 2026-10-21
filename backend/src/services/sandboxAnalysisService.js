@@ -12,6 +12,19 @@ const { v4: uuidv4 } = require('uuid');
 const { cyberforgeML } = require('./cyberforgeMLService');
 const IOCAnalysisService = require('./IOCAnalysisService');
 const MITREAttackService = require('./MITREAttackService');
+const SandboxScan = require('../models/SandboxScan');
+const { workspaceRepository } = require('../repositories/workspaceRepository');
+const { workspaceIdFor } = require('./workspaceService');
+const audit = require('./auditLogService');
+const { safeFilename, describeContent } = require('./uploadPolicy');
+const { integritySigner, verifySignature } = require('./integrityKey');
+const { hashOf } = require('../utils/canonical');
+const AuditEvent = require('../models/AuditEvent');
+
+const MANIFEST_FORMAT = 'cyberforge-evidence-manifest-v1';
+const manifestMessage = manifestHash => `${MANIFEST_FORMAT}\n${manifestHash}`;
+
+const scans = workspaceRepository(SandboxScan);
 
 // Regex patterns for IOC extraction from arbitrary text
 const IOC_PATTERNS = {
@@ -61,14 +74,27 @@ const MITRE_SIGNALS = [
     { pattern: /(cryptominer|coin\s*miner|monero|xmr)/i,         techniqueId: 'T1496',     name: 'Resource Hijacking',       tactic: 'Impact', confidence: 0.9 },
 ];
 
+// canonical(): the same evidence always gives the same hash (utils/canonical.js)
+const { canonical } = require('../utils/canonical');
+
+const EVIDENCE_FIELDS = ['scanId', 'type', 'target', 'verdict', 'mlReport', 'iocs', 'mitre', 'findings', 'timeline', 'metadata', 'fileSize', 'mimeType', 'durationMs', 'ownerId', 'createdAt'];
+
+/** SHA-256 of the evidence fields of a scan, in canonical form. */
+function evidenceHashOf(scan) {
+    const evidence = {};
+    for (const field of EVIDENCE_FIELDS) evidence[field] = scan[field] === undefined ? null : scan[field];
+    return crypto.createHash('sha256').update(JSON.stringify(canonical(evidence))).digest('hex');
+}
+
+const MAX_LISTED = 200;
+
 class SandboxAnalysisService {
     constructor() {
         this.iocService    = new IOCAnalysisService();
         this.mitreService  = new MITREAttackService();
-        // Evidence locker — in-memory ring buffer of recent scans
-        this.scans         = new Map();    // id → scan record
-        this.scanOrder     = [];           // insertion order for pagination
-        this.MAX_SCANS     = 200;
+        // The evidence locker is the database (models/SandboxScan.js), one
+        // workspace at a time. Until October 2026 it was a ring of 200 scans
+        // in this process's memory, gone after every restart.
     }
 
     // ────────────────────────────────────────────────────────────
@@ -205,7 +231,7 @@ class SandboxAnalysisService {
     // ANALYSIS ORCHESTRATION
     // ────────────────────────────────────────────────────────────
 
-    async analyzeUrl(url, additionalFeatures = {}, metadata = {}, ownerId = null) {
+    async analyzeUrl(url, additionalFeatures = {}, metadata = {}, principal = null) {
         const startedAt = Date.now();
         const id = uuidv4();
 
@@ -238,19 +264,22 @@ class SandboxAnalysisService {
             findings,
             timeline: this._buildTimeline('url', startedAt, Date.now()),
             metadata,
-            ownerId: ownerId == null ? null : String(ownerId),
             createdAt: new Date().toISOString(),
             durationMs: Date.now() - startedAt,
         };
 
-        // 5. Persist
-        this._store(scan);
-        return scan;
+        // 5. Keep it in the caller's workspace
+        return this._store(scan, principal);
     }
 
-    async analyzeFile(filename, buffer, mimeType = '', metadata = {}, ownerId = null) {
+    async analyzeFile(rawFilename, buffer, mimeType = '', metadata = {}, principal = null) {
         const startedAt = Date.now();
         const id = uuidv4();
+        // The name and claimed type come from the uploader: cleaned before use,
+        // and the type is read from the content (SEC-04).
+        const filename = safeFilename(rawFilename);
+        mimeType = String(mimeType || '').replace(/[^\w.+\/-]/g, '').slice(0, 100);
+        const content = describeContent(filename, buffer, mimeType);
 
         // 1. IOC extraction (hash + text scan)
         const iocs = this.extractIOCsFromFile(filename, buffer, mimeType);
@@ -266,6 +295,7 @@ class SandboxAnalysisService {
             file: filename,
             size: buffer.length,
             mimeType,
+            detectedType: content.detected.type,
             aggregate: {
                 blended_threat_score: mlPrediction.threat_score,
                 overall_risk_level:   mlPrediction.risk_level,
@@ -276,7 +306,7 @@ class SandboxAnalysisService {
 
         // 3. MITRE mapping — include actual file text content (capped) so keyword
         //    matching can fire on suspicious payloads even when ML metadata is clean.
-        const findings = this._fileFindings(filename, buffer, iocs);
+        const findings = [...this._fileFindings(filename, buffer, iocs), ...content.findings];
         let textSample = '';
         try {
             textSample = buffer.toString('utf-8').slice(0, 100000);
@@ -307,13 +337,11 @@ class SandboxAnalysisService {
             findings,
             timeline: this._buildTimeline('file', startedAt, Date.now()),
             metadata,
-            ownerId: ownerId == null ? null : String(ownerId),
             createdAt: new Date().toISOString(),
             durationMs: Date.now() - startedAt,
         };
 
-        this._store(scan);
-        return scan;
+        return this._store(scan, principal);
     }
 
     /**
@@ -344,76 +372,195 @@ class SandboxAnalysisService {
     // EVIDENCE LOCKER
     // ────────────────────────────────────────────────────────────
 
-    _store(scan) {
-        this.scans.set(scan.id, scan);
-        this.scanOrder.unshift(scan.id);
-        // Cap at MAX_SCANS — drop oldest
-        while (this.scanOrder.length > this.MAX_SCANS) {
-            const oldId = this.scanOrder.pop();
-            this.scans.delete(oldId);
+    /**
+     * Keep a scan in the caller's workspace, with a fingerprint of its
+     * evidence. Returns the scan as the API presents it. A scan with no
+     * signed-in account behind it, or that cannot be stored, is an error:
+     * evidence that was not kept is not reported as kept.
+     */
+    async _store(scan, principal) {
+        const workspaceId = await workspaceIdFor(principal);
+        if (!workspaceId) throw new Error('A scan needs a signed-in account with a workspace to be kept');
+        const record = { ...scan, scanId: scan.id, ownerId: String(principal.userId) };
+        delete record.id;
+        record.evidenceHash = evidenceHashOf(record);
+        const stored = await scans.create({ userId: principal.userId, workspaceId }, { ...record, createdAt: new Date(record.createdAt) });
+        return this._present(stored);
+    }
+
+    /** A stored scan as the API returns it, with the result of checking its fingerprint. */
+    _present(doc) {
+        const record = {};
+        for (const field of EVIDENCE_FIELDS) record[field] = doc[field];
+        record.createdAt = new Date(doc.createdAt).toISOString();
+        const recomputed = evidenceHashOf({ ...record, createdAt: record.createdAt });
+        const { scanId, ...rest } = record;
+        return {
+            id: scanId,
+            ...rest,
+            integrity: { algorithm: 'sha256', evidenceHash: doc.evidenceHash, intact: recomputed === doc.evidenceHash },
+        };
+    }
+
+    /** The scan, or null when it is not in the caller's workspace. */
+    async getScan(id, principal) {
+        const doc = await scans.findOne(principal, { scanId: String(id) });
+        return doc ? this._present(doc) : null;
+    }
+
+    /**
+     * Delete a scan of the caller's workspace. The evidence goes; a minimal
+     * audit event stays, naming what was deleted, by whom, and its fingerprint.
+     */
+    async deleteScan(id, principal) {
+        const doc = await scans.findOne(principal, { scanId: String(id) });
+        if (!doc) return false;
+        const removed = await scans.deleteOne(principal, { scanId: String(id) });
+        if (removed) {
+            await audit.record({
+                principal, action: 'evidence.delete', resource: `sandbox scan ${doc.scanId}`,
+                details: { type: doc.type, target: doc.target, verdict: doc.verdict, evidenceHash: doc.evidenceHash, collectedAt: new Date(doc.createdAt).toISOString() },
+            });
         }
+        return removed;
     }
 
-    // Every read below is for one account. A scan stored without an owner, or
-    // a read that names no owner, matches nothing.
-    _ownedBy(scan, ownerId) {
-        return scan.ownerId != null && ownerId != null && scan.ownerId === String(ownerId);
+    /**
+     * Export evidence with a signed manifest (SEC-08): the chosen scans (or the
+     * latest MAX_LISTED) as stored, and a manifest naming each one's ID, source,
+     * collection time and fingerprint, signed with the server's key. Items are
+     * exported exactly as stored, so the manifest records no transformation.
+     */
+    async exportEvidence(principal, ids = null) {
+        const workspaceId = await workspaceIdFor(principal);
+        if (!workspaceId) throw new Error('An export needs a signed-in account with a workspace');
+        let docs;
+        if (Array.isArray(ids) && ids.length) {
+            docs = [];
+            for (const id of ids.slice(0, MAX_LISTED)) {
+                const doc = await scans.findOne(principal, { scanId: String(id) });
+                if (doc) docs.push(doc);
+            }
+        } else {
+            docs = await scans.find(principal, {}, { limit: MAX_LISTED, sort: { createdAt: -1 } });
+        }
+        const items = docs.map(doc => this._present(doc));
+        const manifest = {
+            format: MANIFEST_FORMAT,
+            workspaceId: String(workspaceId),
+            exportedAt: new Date().toISOString(),
+            hashAlgorithm: 'sha256',
+            hashedFields: EVIDENCE_FIELDS,
+            transformations: [],
+            items: items.map(item => ({
+                id: item.id,
+                kind: 'sandbox_scan',
+                source: `sandbox ${item.type} analysis`,
+                collectedAt: item.createdAt,
+                evidenceHash: item.integrity.evidenceHash,
+                intactAtExport: item.integrity.intact,
+            })),
+            requested: Array.isArray(ids) && ids.length ? ids.slice(0, MAX_LISTED).map(String) : null,
+        };
+        const manifestHash = hashOf(manifest);
+        const signer = integritySigner();
+        const signature = signer ? { keyId: signer.keyId, publicKey: signer.publicKey, value: signer.sign(manifestMessage(manifestHash)) } : null;
+        await audit.record({ principal, action: 'evidence.export', resource: `${items.length} sandbox scans`, details: { manifestHash, items: items.length, signed: Boolean(signature) } });
+        return { manifest, manifestHash, signature, items, note: signature ? null : 'No signing key is configured, so the manifest is not signed.' };
     }
 
-    getScan(id, ownerId) {
-        const scan = this.scans.get(id);
-        return scan && this._ownedBy(scan, ownerId) ? scan : null;
+    /**
+     * Check an exported manifest: its signature, and each item against what is
+     * stored now — intact, changed since export, deleted (with the time of its
+     * deletion record) or missing without a deletion record.
+     */
+    async verifyExport(principal, { manifest, signature } = {}) {
+        const workspaceId = await workspaceIdFor(principal);
+        if (!manifest || manifest.format !== MANIFEST_FORMAT || !Array.isArray(manifest.items)) {
+            return { valid: false, reason: 'not an evidence manifest' };
+        }
+        const manifestHash = hashOf(manifest);
+        const signer = integritySigner();
+        let signed = 'unsigned';
+        if (signature && signature.value) {
+            signed = !signer || signature.keyId !== signer.keyId ? 'other_key'
+                : verifySignature(signer.publicKey, manifestMessage(manifestHash), signature.value) ? 'valid' : 'invalid';
+        }
+        if (String(manifest.workspaceId) !== String(workspaceId)) {
+            return { valid: false, signature: signed, manifestHash, reason: 'the manifest is for another workspace; its items are not looked up' };
+        }
+        const deletions = (await AuditEvent.find({ workspaceId, action: 'evidence.delete' }).lean());
+        const items = [];
+        for (const entry of manifest.items.slice(0, MAX_LISTED)) {
+            const doc = await scans.findOne(principal, { scanId: String(entry.id) });
+            if (doc) {
+                const now = this._present(doc);
+                const same = now.integrity.evidenceHash === entry.evidenceHash && now.integrity.intact;
+                items.push({ id: entry.id, state: same ? 'intact' : 'changed', storedHash: now.integrity.evidenceHash, recomputedIntact: now.integrity.intact });
+                continue;
+            }
+            const deletion = deletions.find(e => e.resource === `sandbox scan ${entry.id}`);
+            items.push(deletion
+                ? { id: entry.id, state: 'deleted', deletedAt: new Date(deletion.createdAt).toISOString(), deletionHashMatches: deletion.details && deletion.details.evidenceHash === entry.evidenceHash }
+                : { id: entry.id, state: 'missing' });
+        }
+        return {
+            valid: signed === 'valid' && items.every(i => i.state === 'intact'),
+            signature: signed,
+            manifestHash,
+            items,
+            counts: items.reduce((c, i) => ({ ...c, [i.state]: (c[i.state] || 0) + 1 }), {}),
+            keyId: signer ? signer.keyId : null,
+            publicKey: signer ? signer.publicKey : null,
+        };
     }
 
-    deleteScan(id, ownerId) {
-        if (!this.getScan(id, ownerId)) return false;
-        this.scans.delete(id);
-        const idx = this.scanOrder.indexOf(id);
-        if (idx >= 0) this.scanOrder.splice(idx, 1);
-        return true;
-    }
-
-    listHistory({ limit = 50, offset = 0, type = null, verdict = null, ownerId } = {}) {
-        let ids = this.scanOrder;
-        let scans = ids.map(id => this.scans.get(id)).filter(scan => scan && this._ownedBy(scan, ownerId));
-        if (type)    scans = scans.filter(s => s.type === type);
-        if (verdict) scans = scans.filter(s => s.verdict === verdict);
-        const total = scans.length;
-        const page = scans.slice(offset, offset + limit).map(s => ({
-            id: s.id,
+    /** A page of the caller's scans, newest first. */
+    async listHistory({ limit = 50, offset = 0, type = null, verdict = null } = {}, principal) {
+        const filter = {};
+        if (type === 'url' || type === 'file') filter.type = type;
+        if (SandboxScan.VERDICTS.includes(verdict)) filter.verdict = verdict;
+        const [found, total] = await Promise.all([
+            scans.find(principal, filter, { limit, skip: offset }),
+            scans.count(principal, filter),
+        ]);
+        const page = found.map(s => ({
+            id: s.scanId,
             type: s.type,
             target: s.target,
             verdict: s.verdict,
             risk: s.mlReport?.aggregate?.overall_risk_level,
-            iocCount: s.iocs.length,
-            mitreCount: s.mitre.techniques.length,
-            createdAt: s.createdAt,
+            iocCount: (s.iocs || []).length,
+            mitreCount: ((s.mitre && s.mitre.techniques) || []).length,
+            createdAt: new Date(s.createdAt).toISOString(),
             durationMs: s.durationMs,
         }));
         return { total, limit, offset, scans: page };
     }
 
+    /** The caller's latest scans, for the summaries below (at most MAX_LISTED). */
+    async _latest(principal) {
+        return scans.find(principal, {}, { limit: MAX_LISTED });
+    }
+
     /**
-     * Aggregate IOCs across one account's stored scans, deduplicated.
+     * Aggregate IOCs across the caller's latest scans (up to 200), deduplicated.
      * Useful for the IOC tab/heatmap.
      */
-    aggregateIocs({ type = null, severity = null, limit = 200, ownerId } = {}) {
+    async aggregateIocs({ type = null, severity = null, limit = 200 } = {}, principal) {
         const counter = new Map(); // value → { type, value, severity, hits, lastSeen }
-        for (const scan of this.scans.values()) {
-            if (!this._ownedBy(scan, ownerId)) continue;
-            for (const ioc of scan.iocs) {
+        for (const scan of await this._latest(principal)) {
+            const seenAt = new Date(scan.createdAt).toISOString();
+            for (const ioc of scan.iocs || []) {
                 if (type && ioc.type !== type) continue;
                 if (severity && ioc.severity !== severity) continue;
                 const key = `${ioc.type}:${ioc.value}`;
                 if (counter.has(key)) {
                     const e = counter.get(key);
                     e.hits++;
-                    if (scan.createdAt > e.lastSeen) e.lastSeen = scan.createdAt;
+                    if (seenAt > e.lastSeen) e.lastSeen = seenAt;
                 } else {
-                    counter.set(key, {
-                        type: ioc.type, value: ioc.value, severity: ioc.severity,
-                        hits: 1, lastSeen: scan.createdAt,
-                    });
+                    counter.set(key, { type: ioc.type, value: ioc.value, severity: ioc.severity, hits: 1, lastSeen: seenAt });
                 }
             }
         }
@@ -421,20 +568,22 @@ class SandboxAnalysisService {
         return list.slice(0, limit);
     }
 
-    /**
-     * MITRE technique frequency across one account's scans — for heatmap UI.
-     */
-    mitreHeatmap({ ownerId } = {}) {
+    /** MITRE technique frequency across the caller's latest scans (up to 200) — for the heatmap. */
+    async mitreHeatmap(principal) {
         const counter = new Map();
-        for (const scan of this.scans.values()) {
-            if (!this._ownedBy(scan, ownerId)) continue;
-            for (const t of scan.mitre.techniques) {
+        for (const scan of await this._latest(principal)) {
+            for (const t of (scan.mitre && scan.mitre.techniques) || []) {
                 const e = counter.get(t.techniqueId) || { techniqueId: t.techniqueId, name: t.name, tactic: t.tactic, hits: 0 };
                 e.hits++;
                 counter.set(t.techniqueId, e);
             }
         }
         return Array.from(counter.values()).sort((a, b) => b.hits - a.hits);
+    }
+
+    /** How many scans the caller's workspace holds. */
+    async countScans(principal) {
+        return scans.count(principal, {});
     }
 
     // ────────────────────────────────────────────────────────────
@@ -446,7 +595,9 @@ class SandboxAnalysisService {
         const action = aggregate.recommended_action;
         if (action === 'block') return 'malicious';
         if (action === 'warn')  return 'suspicious';
-        return 'clean';
+        if (action === 'allow') return 'clean';
+        // no model answered, or an action this does not know: no verdict, not "clean"
+        return 'unknown';
     }
 
     _urlFeatureFindings(url, features) {
@@ -477,10 +628,7 @@ class SandboxAnalysisService {
         if (buffer.length >= 4 && buffer[0] === 0x7F && buffer[1] === 0x45 && buffer[2] === 0x4C && buffer[3] === 0x46) {
             findings.push('Linux ELF executable detected.');
         }
-        // ZIP / Office docs
-        if (buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4B) {
-            findings.push('ZIP container detected — possible Office document or archive.');
-        }
+        // ZIP and other archives are reported by describeContent (uploadPolicy)
         const urlIocs = iocs.filter(i => i.type === 'url');
         if (urlIocs.length > 5) findings.push(`File embeds ${urlIocs.length} URLs — possible callback or downloader.`);
         return findings;

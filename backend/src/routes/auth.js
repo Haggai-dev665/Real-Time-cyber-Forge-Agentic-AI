@@ -175,7 +175,8 @@ router.post('/google/token',
   authLimiter,
   [
     body('code').notEmpty().withMessage('Authorization code is required'),
-    body('redirect_uri').notEmpty().withMessage('Redirect URI is required')
+    body('redirect_uri').notEmpty().withMessage('Redirect URI is required'),
+    body('code_verifier').isString().isLength({ min: 43, max: 128 }).withMessage('A PKCE code_verifier is required')
   ],
   authController.exchangeGoogleToken
 );

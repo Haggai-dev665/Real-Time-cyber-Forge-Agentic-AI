@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "threat-alert",
+  "description": "The threat-alert popup: read the flagged threat, act on its one host (block, save, allow), and close itself. No other app command, and no Tauri defaults: in particular it cannot emit events that the main window listens to.",
+  "windows": [
+    "cf-threat-alert"
+  ],
+  "permissions": [
+    "core:window:allow-close",
+    "allow-get-pending-threat",
+    "allow-block-site",
+    "allow-protect-site",
+    "allow-allow-site"
+  ]
+}

@@ -9,7 +9,7 @@
  */
 
 const axios = require('axios');
-const { getMLServiceUrl } = require('../config/ml.config');
+const { getMLServiceUrl, attachMLServiceKey } = require('../config/ml.config');
 const logger = require('../utils/logger');
 
 class MLServiceClient {
@@ -24,6 +24,7 @@ class MLServiceClient {
         'Content-Type': 'application/json'
       }
     });
+    attachMLServiceKey(this.client);
 
     logger.info(`🤖 ML Service Client initialized → ${this.baseUrl}`);
   }

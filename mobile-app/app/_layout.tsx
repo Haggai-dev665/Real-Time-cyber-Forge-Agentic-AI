@@ -22,6 +22,7 @@ import { AuthProvider } from '../src/context/AuthContext';
 import { LiveFeedProvider } from '../src/context/LiveFeedContext';
 import { AlertsProvider } from '../src/context/AlertsContext';
 import { VpnProvider } from '../src/context/VpnContext';
+import { PrivacyProvider } from '../src/context/PrivacyContext';
 import { colors } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -49,6 +50,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaProvider>
         <AuthProvider>
+          <PrivacyProvider>
           <LiveFeedProvider>
             <AlertsProvider>
             <VpnProvider>
@@ -73,6 +75,7 @@ export default function RootLayout() {
             </VpnProvider>
             </AlertsProvider>
           </LiveFeedProvider>
+          </PrivacyProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

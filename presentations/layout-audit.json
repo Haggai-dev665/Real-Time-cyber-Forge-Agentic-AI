@@ -1,0 +1,1938 @@
+[
+  {
+    "slide": 1,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  MASTER’S THESIS DEFENCE"
+  },
+  {
+    "slide": 1,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "01 / 15"
+  },
+  {
+    "slide": 1,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "The University of Bamenda  /  COLTECH  /  Computer Engineering"
+  },
+  {
+    "slide": 1,
+    "x": 0.75,
+    "y": 1.5,
+    "w": 10,
+    "h": 1.25,
+    "text": "CyberForge"
+  },
+  {
+    "slide": 1,
+    "x": 0.8,
+    "y": 3.0,
+    "w": 9.7,
+    "h": 1.7,
+    "text": "A Real-Time Agentic AI System\nfor Web Threat Detection\nand User Protection"
+  },
+  {
+    "slide": 1,
+    "x": 0.8,
+    "y": 5.5,
+    "w": 9,
+    "h": 1,
+    "text": "CHE HAGGAI NGHA KANG"
+  },
+  {
+    "slide": 1,
+    "x": 0.8,
+    "y": 6.15,
+    "w": 9,
+    "h": 1.1,
+    "text": "UBA24PP134  •  Master’s in Computer Engineering\nInformation Technology and Cyber Security"
+  },
+  {
+    "slide": 1,
+    "x": 0.8,
+    "y": 7.42,
+    "w": 10,
+    "h": 0.5,
+    "text": "Supervisor: Prof. ONABID MATHIAS AKONG"
+  },
+  {
+    "slide": 1,
+    "x": 10.8,
+    "y": 7.2,
+    "w": 4.3,
+    "h": 0.7,
+    "text": "RESEARCH + CURRENT SYSTEM\nSource review · 18 October 2026"
+  },
+  {
+    "slide": 2,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  01 / BRIEF INTRODUCTION"
+  },
+  {
+    "slide": 2,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "02 / 15"
+  },
+  {
+    "slide": 2,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Brief introduction"
+  },
+  {
+    "slide": 2,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "CyberForge: real-time web-threat detection through cooperating specialist agents."
+  },
+  {
+    "slide": 2,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis §§1.1, 1.6; revised §3.2"
+  },
+  {
+    "slide": 2,
+    "x": 0.95,
+    "y": 3.3600000000000003,
+    "w": 2.95,
+    "h": 0.42,
+    "text": "Observe"
+  },
+  {
+    "slide": 2,
+    "x": 0.95,
+    "y": 3.8600000000000003,
+    "w": 2.95,
+    "h": 1.25,
+    "text": "Submitted URL or permitted browsing signal"
+  },
+  {
+    "slide": 2,
+    "x": 4.8,
+    "y": 3.3600000000000003,
+    "w": 2.95,
+    "h": 0.42,
+    "text": "Analyse"
+  },
+  {
+    "slide": 2,
+    "x": 4.8,
+    "y": 3.8600000000000003,
+    "w": 2.95,
+    "h": 1.25,
+    "text": "Models + page signals + historical context"
+  },
+  {
+    "slide": 2,
+    "x": 8.649999999999999,
+    "y": 3.3600000000000003,
+    "w": 2.95,
+    "h": 0.42,
+    "text": "Explain"
+  },
+  {
+    "slide": 2,
+    "x": 8.649999999999999,
+    "y": 3.8600000000000003,
+    "w": 2.95,
+    "h": 1.25,
+    "text": "Verdict, supporting evidence and limitations"
+  },
+  {
+    "slide": 2,
+    "x": 12.5,
+    "y": 3.3600000000000003,
+    "w": 2.95,
+    "h": 0.42,
+    "text": "Respond"
+  },
+  {
+    "slide": 2,
+    "x": 12.5,
+    "y": 3.8600000000000003,
+    "w": 2.95,
+    "h": 1.25,
+    "text": "Warning or supported, approved action"
+  },
+  {
+    "slide": 2,
+    "x": 0.8,
+    "y": 6.1,
+    "w": 13.6,
+    "h": 1.3,
+    "text": "Research idea: combine specialised analysers\ninto one inspectable security workflow."
+  },
+  {
+    "slide": 3,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  02 / PROBLEM STATEMENT"
+  },
+  {
+    "slide": 3,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "03 / 15"
+  },
+  {
+    "slide": 3,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Problem statement"
+  },
+  {
+    "slide": 3,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "Existing approaches struggle with false alarms, unclear verdicts and fragmented context."
+  },
+  {
+    "slide": 3,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis §1.2; original calibration described in §3.7.2"
+  },
+  {
+    "slide": 3,
+    "x": 0.98,
+    "y": 3.1500000000000004,
+    "w": 4.14,
+    "h": 0.3,
+    "text": "01 / TRUST"
+  },
+  {
+    "slide": 3,
+    "x": 0.98,
+    "y": 3.67,
+    "w": 4.14,
+    "h": 0.9,
+    "text": "Too many false alarms"
+  },
+  {
+    "slide": 3,
+    "x": 0.98,
+    "y": 4.73,
+    "w": 4.14,
+    "h": 2.5500000000000003,
+    "text": "Biased scores interrupt safe browsing and encourage alert fatigue."
+  },
+  {
+    "slide": 3,
+    "x": 5.930000000000001,
+    "y": 3.1500000000000004,
+    "w": 4.14,
+    "h": 0.3,
+    "text": "02 / EVIDENCE"
+  },
+  {
+    "slide": 3,
+    "x": 5.930000000000001,
+    "y": 3.67,
+    "w": 4.14,
+    "h": 0.9,
+    "text": "A score without a story"
+  },
+  {
+    "slide": 3,
+    "x": 5.930000000000001,
+    "y": 4.73,
+    "w": 4.14,
+    "h": 2.5500000000000003,
+    "text": "A single verdict does not explain indicators, behaviour or attack techniques."
+  },
+  {
+    "slide": 3,
+    "x": 10.88,
+    "y": 3.1500000000000004,
+    "w": 4.14,
+    "h": 0.3,
+    "text": "03 / CONTINUITY"
+  },
+  {
+    "slide": 3,
+    "x": 10.88,
+    "y": 3.67,
+    "w": 4.14,
+    "h": 0.9,
+    "text": "Disconnected context"
+  },
+  {
+    "slide": 3,
+    "x": 10.88,
+    "y": 4.73,
+    "w": 4.14,
+    "h": 2.5500000000000003,
+    "text": "Past observations and threat intelligence are difficult to reuse consistently."
+  },
+  {
+    "slide": 4,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  03 / RESEARCH QUESTIONS"
+  },
+  {
+    "slide": 4,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "04 / 15"
+  },
+  {
+    "slide": 4,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Research questions"
+  },
+  {
+    "slide": 4,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "General question: real-time, explainable web-threat analysis across interfaces."
+  },
+  {
+    "slide": 4,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis §1.3; validity qualifications in revised §§3.9 and 4.9"
+  },
+  {
+    "slide": 4,
+    "x": 0.8,
+    "y": 2.92,
+    "w": 0.8,
+    "h": 0.65,
+    "text": "01"
+  },
+  {
+    "slide": 4,
+    "x": 1.9,
+    "y": 2.92,
+    "w": 3,
+    "h": 0.5,
+    "text": "Decomposition"
+  },
+  {
+    "slide": 4,
+    "x": 5.1,
+    "y": 2.92,
+    "w": 9.8,
+    "h": 0.85,
+    "text": "How should URL analysis be divided, and what agent set is sufficient?"
+  },
+  {
+    "slide": 4,
+    "x": 0.8,
+    "y": 4.14,
+    "w": 0.8,
+    "h": 0.65,
+    "text": "02"
+  },
+  {
+    "slide": 4,
+    "x": 1.9,
+    "y": 4.14,
+    "w": 3,
+    "h": 0.5,
+    "text": "Integration"
+  },
+  {
+    "slide": 4,
+    "x": 5.1,
+    "y": 4.14,
+    "w": 9.8,
+    "h": 0.85,
+    "text": "How can URL, content, IOC, ATT&CK and reputation signals agree?"
+  },
+  {
+    "slide": 4,
+    "x": 0.8,
+    "y": 5.359999999999999,
+    "w": 0.8,
+    "h": 0.65,
+    "text": "03"
+  },
+  {
+    "slide": 4,
+    "x": 1.9,
+    "y": 5.359999999999999,
+    "w": 3,
+    "h": 0.5,
+    "text": "Decision"
+  },
+  {
+    "slide": 4,
+    "x": 5.1,
+    "y": 5.359999999999999,
+    "w": 9.8,
+    "h": 0.85,
+    "text": "How can aggregation reduce false alarms without hiding strong threats?"
+  },
+  {
+    "slide": 4,
+    "x": 0.8,
+    "y": 6.58,
+    "w": 0.8,
+    "h": 0.65,
+    "text": "04"
+  },
+  {
+    "slide": 4,
+    "x": 1.9,
+    "y": 6.58,
+    "w": 3,
+    "h": 0.5,
+    "text": "Context"
+  },
+  {
+    "slide": 4,
+    "x": 5.1,
+    "y": 6.58,
+    "w": 9.8,
+    "h": 0.85,
+    "text": "How can past browsing observations support future assessment?"
+  },
+  {
+    "slide": 5,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  04 / RESEARCH OBJECTIVES"
+  },
+  {
+    "slide": 5,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "05 / 15"
+  },
+  {
+    "slide": 5,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Research objectives"
+  },
+  {
+    "slide": 5,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "Build and evaluate an explainable, multi-platform web-security system."
+  },
+  {
+    "slide": 5,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis §1.4; source-reviewed boundaries in Appendix C"
+  },
+  {
+    "slide": 5,
+    "x": 0.95,
+    "y": 3.1100000000000003,
+    "w": 6.6499999999999995,
+    "h": 0.42,
+    "text": "Coordinate agents"
+  },
+  {
+    "slide": 5,
+    "x": 0.95,
+    "y": 3.6100000000000003,
+    "w": 6.6499999999999995,
+    "h": 1.2999999999999998,
+    "text": "Decompose URL analysis into ordered, parallel tasks."
+  },
+  {
+    "slide": 5,
+    "x": 8.45,
+    "y": 3.1100000000000003,
+    "w": 6.6499999999999995,
+    "h": 0.42,
+    "text": "Unify evidence"
+  },
+  {
+    "slide": 5,
+    "x": 8.45,
+    "y": 3.6100000000000003,
+    "w": 6.6499999999999995,
+    "h": 1.2999999999999998,
+    "text": "Combine model, structural, content and behavioural signals."
+  },
+  {
+    "slide": 5,
+    "x": 0.95,
+    "y": 5.5600000000000005,
+    "w": 6.6499999999999995,
+    "h": 0.42,
+    "text": "Control false alerts"
+  },
+  {
+    "slide": 5,
+    "x": 0.95,
+    "y": 6.0600000000000005,
+    "w": 6.6499999999999995,
+    "h": 1.2999999999999998,
+    "text": "Balance aggregated evidence with strong threat indicators."
+  },
+  {
+    "slide": 5,
+    "x": 8.45,
+    "y": 5.5600000000000005,
+    "w": 6.6499999999999995,
+    "h": 0.42,
+    "text": "Add threat context"
+  },
+  {
+    "slide": 5,
+    "x": 8.45,
+    "y": 6.0600000000000005,
+    "w": 6.6499999999999995,
+    "h": 1.2999999999999998,
+    "text": "Link findings with attack techniques and external intelligence."
+  },
+  {
+    "slide": 6,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  05 / BRIEF LITERATURE REVIEW"
+  },
+  {
+    "slide": 6,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "06 / 15"
+  },
+  {
+    "slide": 6,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Brief literature review"
+  },
+  {
+    "slide": 6,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "Prior work motivates hybrid detection, structured explanations and agent coordination."
+  },
+  {
+    "slide": 6,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Chapter 2; full bibliographic details are in the speaker notes"
+  },
+  {
+    "slide": 6,
+    "x": 0.95,
+    "y": 3.2,
+    "w": 2.95,
+    "h": 0.65,
+    "text": "Khonji et al. · 2013"
+  },
+  {
+    "slide": 6,
+    "x": 0.95,
+    "y": 4.1,
+    "w": 2.95,
+    "h": 1,
+    "text": "Hybrid signals"
+  },
+  {
+    "slide": 6,
+    "x": 0.95,
+    "y": 5.15,
+    "w": 2.95,
+    "h": 1.4,
+    "text": "URL, page content and reputation offer complementary evidence."
+  },
+  {
+    "slide": 6,
+    "x": 4.8,
+    "y": 3.2,
+    "w": 2.95,
+    "h": 0.65,
+    "text": "Le · 2018 / Devlin · 2019"
+  },
+  {
+    "slide": 6,
+    "x": 4.8,
+    "y": 4.1,
+    "w": 2.95,
+    "h": 1,
+    "text": "Learned representations"
+  },
+  {
+    "slide": 6,
+    "x": 4.8,
+    "y": 5.15,
+    "w": 2.95,
+    "h": 1.4,
+    "text": "URLNet and BERT reduce reliance on manually selected patterns."
+  },
+  {
+    "slide": 6,
+    "x": 8.649999999999999,
+    "y": 3.2,
+    "w": 2.95,
+    "h": 0.65,
+    "text": "Strom et al. · 2018"
+  },
+  {
+    "slide": 6,
+    "x": 8.649999999999999,
+    "y": 4.1,
+    "w": 2.95,
+    "h": 1,
+    "text": "Structured explanation"
+  },
+  {
+    "slide": 6,
+    "x": 8.649999999999999,
+    "y": 5.15,
+    "w": 2.95,
+    "h": 1.4,
+    "text": "ATT&CK gives findings a shared vocabulary of attack techniques."
+  },
+  {
+    "slide": 6,
+    "x": 12.5,
+    "y": 3.2,
+    "w": 2.95,
+    "h": 0.65,
+    "text": "Wooldridge · 2009\nYao et al. · 2023"
+  },
+  {
+    "slide": 6,
+    "x": 12.5,
+    "y": 4.1,
+    "w": 2.95,
+    "h": 1,
+    "text": "Agent coordination"
+  },
+  {
+    "slide": 6,
+    "x": 12.5,
+    "y": 5.15,
+    "w": 2.95,
+    "h": 1.4,
+    "text": "Specialisation and tool-based reasoning motivate modular workflows."
+  },
+  {
+    "slide": 6,
+    "x": 0.8,
+    "y": 7.2,
+    "w": 14.4,
+    "h": 0.8,
+    "text": "Research gap: reproducible integration, meaningful failures and usable evidence."
+  },
+  {
+    "slide": 7,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  06 / METHODS AND MATERIALS USED"
+  },
+  {
+    "slide": 7,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "07 / 15"
+  },
+  {
+    "slide": 7,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Methods and materials used"
+  },
+  {
+    "slide": 7,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "1 of 4 · Software materials and system architecture"
+  },
+  {
+    "slide": 7,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Revised §3.2 and Appendix C; Cargo.toml, backend/package.json, hf_space_deploy/"
+  },
+  {
+    "slide": 7,
+    "x": 0.95,
+    "y": 3.09,
+    "w": 1.7,
+    "h": 0.4,
+    "text": "CLIENTS"
+  },
+  {
+    "slide": 7,
+    "x": 3.3000000000000003,
+    "y": 3.0100000000000002,
+    "w": 11.6,
+    "h": 0.42,
+    "text": "Tauri 2 desktop  •  Rust CLI  •  MCP stdio  •  Expo companion"
+  },
+  {
+    "slide": 7,
+    "x": 0.95,
+    "y": 4.23,
+    "w": 1.7,
+    "h": 0.4,
+    "text": "CONTROL"
+  },
+  {
+    "slide": 7,
+    "x": 3.3000000000000003,
+    "y": 4.15,
+    "w": 11.6,
+    "h": 0.42,
+    "text": "Rust core + keyring + consent  →  Node.js 24 / Express APIs"
+  },
+  {
+    "slide": 7,
+    "x": 0.95,
+    "y": 5.37,
+    "w": 1.7,
+    "h": 0.4,
+    "text": "ANALYSIS"
+  },
+  {
+    "slide": 7,
+    "x": 3.3000000000000003,
+    "y": 5.29,
+    "w": 11.6,
+    "h": 0.42,
+    "text": "Specialist DAG / durable runs  →  Python 3.11 / FastAPI on Hugging Face"
+  },
+  {
+    "slide": 7,
+    "x": 0.95,
+    "y": 6.51,
+    "w": 1.7,
+    "h": 0.4,
+    "text": "DATA"
+  },
+  {
+    "slide": 7,
+    "x": 3.3000000000000003,
+    "y": 6.43,
+    "w": 11.6,
+    "h": 0.42,
+    "text": "MongoDB  •  Appwrite integrations  •  local context  •  configured OTX / caches"
+  },
+  {
+    "slide": 7,
+    "x": 0.85,
+    "y": 7.7,
+    "w": 14.4,
+    "h": 0.45,
+    "text": "Identity, consent and evidence cross every layer; model availability is reported separately."
+  },
+  {
+    "slide": 8,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  06 / METHODS AND MATERIALS USED"
+  },
+  {
+    "slide": 8,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "08 / 15"
+  },
+  {
+    "slide": 8,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Methods and materials used"
+  },
+  {
+    "slide": 8,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "2 of 4 · Eight-agent analysis pipeline and coordination method"
+  },
+  {
+    "slide": 8,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Table 3.1; backend/src/services/agentOrchestrator.js"
+  },
+  {
+    "slide": 8,
+    "x": 1.0,
+    "y": 2.75,
+    "w": 4,
+    "h": 0.4,
+    "text": "STAGE 1 · COLLECT"
+  },
+  {
+    "slide": 8,
+    "x": 5.3,
+    "y": 2.75,
+    "w": 4,
+    "h": 0.4,
+    "text": "STAGE 2 · INSPECT"
+  },
+  {
+    "slide": 8,
+    "x": 9.5,
+    "y": 2.75,
+    "w": 4,
+    "h": 0.4,
+    "text": "STAGE 3 · ENRICH"
+  },
+  {
+    "slide": 8,
+    "x": 1.05,
+    "y": 3.5100000000000002,
+    "w": 3.1,
+    "h": 0.42,
+    "text": "URL classifier · BERT"
+  },
+  {
+    "slide": 8,
+    "x": 1.05,
+    "y": 4.38,
+    "w": 3.1,
+    "h": 0.42,
+    "text": "DGA detector · rules"
+  },
+  {
+    "slide": 8,
+    "x": 1.05,
+    "y": 5.25,
+    "w": 3.1,
+    "h": 0.42,
+    "text": "Web scraper"
+  },
+  {
+    "slide": 8,
+    "x": 1.05,
+    "y": 6.12,
+    "w": 3.1,
+    "h": 0.42,
+    "text": "Memory reader"
+  },
+  {
+    "slide": 8,
+    "x": 5.25,
+    "y": 3.96,
+    "w": 3.2,
+    "h": 0.42,
+    "text": "IOC extractor"
+  },
+  {
+    "slide": 8,
+    "x": 5.25,
+    "y": 5.0,
+    "w": 3.2,
+    "h": 0.42,
+    "text": "Behavioural analyser"
+  },
+  {
+    "slide": 8,
+    "x": 5.25,
+    "y": 6.04,
+    "w": 3.2,
+    "h": 0.42,
+    "text": "MITRE ATT&CK mapper"
+  },
+  {
+    "slide": 8,
+    "x": 9.6,
+    "y": 4.41,
+    "w": 2.1,
+    "h": 0.42,
+    "text": "Threat intel"
+  },
+  {
+    "slide": 8,
+    "x": 9.6,
+    "y": 4.91,
+    "w": 2.1,
+    "h": 0.8500000000000001,
+    "text": "OTX reputation"
+  },
+  {
+    "slide": 8,
+    "x": 12.85,
+    "y": 4.41,
+    "w": 2.1,
+    "h": 0.42,
+    "text": "Reporter"
+  },
+  {
+    "slide": 8,
+    "x": 12.85,
+    "y": 4.91,
+    "w": 2.1,
+    "h": 0.8500000000000001,
+    "text": "Verdict + evidence"
+  },
+  {
+    "slide": 8,
+    "x": 4.1,
+    "y": 7.65,
+    "w": 8.2,
+    "h": 0.4,
+    "text": "Persisted context supports later visits — it does not retrain the models."
+  },
+  {
+    "slide": 9,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  06 / METHODS AND MATERIALS USED"
+  },
+  {
+    "slide": 9,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "09 / 15"
+  },
+  {
+    "slide": 9,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Methods and materials used"
+  },
+  {
+    "slide": 9,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "3 of 4 · Learning techniques and model-training phases"
+  },
+  {
+    "slide": 9,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Revised Appendix C.3–C.4; hf_space_deploy/trainer.py, app.py, url_features.py"
+  },
+  {
+    "slide": 9,
+    "x": 1.0,
+    "y": 3.1100000000000003,
+    "w": 4.199999999999999,
+    "h": 0.42,
+    "text": "SUPERVISED"
+  },
+  {
+    "slide": 9,
+    "x": 1.0,
+    "y": 3.6100000000000003,
+    "w": 4.199999999999999,
+    "h": 1.1,
+    "text": "3 gradient-boosted\nURL classifiers"
+  },
+  {
+    "slide": 9,
+    "x": 6.0,
+    "y": 3.1100000000000003,
+    "w": 4.199999999999999,
+    "h": 0.42,
+    "text": "UNSUPERVISED"
+  },
+  {
+    "slide": 9,
+    "x": 6.0,
+    "y": 3.6100000000000003,
+    "w": 4.199999999999999,
+    "h": 1.1,
+    "text": "IsolationForest\ntrained on benign URLs"
+  },
+  {
+    "slide": 9,
+    "x": 11.0,
+    "y": 3.1100000000000003,
+    "w": 4.199999999999999,
+    "h": 0.42,
+    "text": "PRETRAINED + RULES"
+  },
+  {
+    "slide": 9,
+    "x": 11.0,
+    "y": 3.6100000000000003,
+    "w": 4.199999999999999,
+    "h": 1.1,
+    "text": "BERT / Qwen inference\nDGA / IOC heuristics"
+  },
+  {
+    "slide": 9,
+    "x": 0.97,
+    "y": 5.72,
+    "w": 2.26,
+    "h": 0.8,
+    "text": "Collect\n& clean"
+  },
+  {
+    "slide": 9,
+    "x": 3.95,
+    "y": 5.72,
+    "w": 2.26,
+    "h": 0.8,
+    "text": "Features\n& split"
+  },
+  {
+    "slide": 9,
+    "x": 6.93,
+    "y": 5.72,
+    "w": 2.26,
+    "h": 0.8,
+    "text": "Fit\nmodels"
+  },
+  {
+    "slide": 9,
+    "x": 9.909999999999998,
+    "y": 5.72,
+    "w": 2.26,
+    "h": 0.8,
+    "text": "Evaluate\n& gate"
+  },
+  {
+    "slide": 9,
+    "x": 12.889999999999999,
+    "y": 5.72,
+    "w": 2.26,
+    "h": 0.8,
+    "text": "Publish\naccepted"
+  },
+  {
+    "slide": 9,
+    "x": 0.85,
+    "y": 7.25,
+    "w": 14.3,
+    "h": 0.7,
+    "text": "Domain-held-out evaluation  •  Shared training/serving features  •  No automatic online weight updates"
+  },
+  {
+    "slide": 10,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  06 / METHODS AND MATERIALS USED"
+  },
+  {
+    "slide": 10,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "10 / 15"
+  },
+  {
+    "slide": 10,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Methods and materials used"
+  },
+  {
+    "slide": 10,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "4 of 4 · Evaluation data, calibration and testing procedure"
+  },
+  {
+    "slide": 10,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis §§3.7–3.9, Table 4.3; revised Appendix C.5"
+  },
+  {
+    "slide": 10,
+    "x": 0.85,
+    "y": 2.9,
+    "w": 5,
+    "h": 1.1,
+    "text": "300 URLs"
+  },
+  {
+    "slide": 10,
+    "x": 0.9,
+    "y": 4.05,
+    "w": 4.4,
+    "h": 1.25,
+    "text": "Historical classification\nevaluation set"
+  },
+  {
+    "slide": 10,
+    "x": 6.2,
+    "y": 3.03,
+    "w": 1.4,
+    "h": 0.55,
+    "text": "150"
+  },
+  {
+    "slide": 10,
+    "x": 8,
+    "y": 3.03,
+    "w": 6,
+    "h": 0.55,
+    "text": "benign"
+  },
+  {
+    "slide": 10,
+    "x": 6.2,
+    "y": 4.09,
+    "w": 1.4,
+    "h": 0.55,
+    "text": "100"
+  },
+  {
+    "slide": 10,
+    "x": 8,
+    "y": 4.09,
+    "w": 6,
+    "h": 0.55,
+    "text": "phishing"
+  },
+  {
+    "slide": 10,
+    "x": 6.2,
+    "y": 5.15,
+    "w": 1.4,
+    "h": 0.55,
+    "text": "50"
+  },
+  {
+    "slide": 10,
+    "x": 8,
+    "y": 5.15,
+    "w": 6,
+    "h": 0.55,
+    "text": "malware / DGA"
+  },
+  {
+    "slide": 10,
+    "x": 1.1,
+    "y": 6.5,
+    "w": 6.7,
+    "h": 0.8,
+    "text": "Development calibration\n7 URL examples + 30 domain labels"
+  },
+  {
+    "slide": 10,
+    "x": 8.1,
+    "y": 6.5,
+    "w": 6.7,
+    "h": 0.8,
+    "text": "Current source verification\nContracts, access, failure and UI behaviour"
+  },
+  {
+    "slide": 11,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  07 / RESULTS"
+  },
+  {
+    "slide": 11,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "11 / 15"
+  },
+  {
+    "slide": 11,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Results"
+  },
+  {
+    "slide": 11,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "1 of 4 · Detection performance: 284 of 300 URLs classified correctly"
+  },
+  {
+    "slide": 11,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Tables 4.3–4.4; confusion matrix derived directly from Table 4.3"
+  },
+  {
+    "slide": 11,
+    "x": 1.0,
+    "y": 2.85,
+    "w": 2.9,
+    "h": 0.4,
+    "text": "PREDICTED THREAT"
+  },
+  {
+    "slide": 11,
+    "x": 4.15,
+    "y": 2.85,
+    "w": 2.9,
+    "h": 0.4,
+    "text": "PREDICTED BENIGN"
+  },
+  {
+    "slide": 11,
+    "x": 1.2,
+    "y": 3.6500000000000004,
+    "w": 2.5,
+    "h": 0.8,
+    "text": "137"
+  },
+  {
+    "slide": 11,
+    "x": 1.2,
+    "y": 4.67,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "True positives"
+  },
+  {
+    "slide": 11,
+    "x": 4.3500000000000005,
+    "y": 3.6500000000000004,
+    "w": 2.5,
+    "h": 0.8,
+    "text": "13"
+  },
+  {
+    "slide": 11,
+    "x": 4.3500000000000005,
+    "y": 4.67,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "False negatives"
+  },
+  {
+    "slide": 11,
+    "x": 1.2,
+    "y": 5.8500000000000005,
+    "w": 2.5,
+    "h": 0.8,
+    "text": "3"
+  },
+  {
+    "slide": 11,
+    "x": 1.2,
+    "y": 6.87,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "False positives"
+  },
+  {
+    "slide": 11,
+    "x": 4.3500000000000005,
+    "y": 5.8500000000000005,
+    "w": 2.5,
+    "h": 0.8,
+    "text": "147"
+  },
+  {
+    "slide": 11,
+    "x": 4.3500000000000005,
+    "y": 6.87,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "True negatives"
+  },
+  {
+    "slide": 11,
+    "x": 1.05,
+    "y": 3.2,
+    "w": 5.8,
+    "h": 0.22,
+    "text": "ACTUAL HARMFUL"
+  },
+  {
+    "slide": 11,
+    "x": 1.05,
+    "y": 5.37,
+    "w": 5.8,
+    "h": 0.22,
+    "text": "ACTUAL BENIGN"
+  },
+  {
+    "slide": 11,
+    "x": 8.2,
+    "y": 3.3,
+    "w": 3.4,
+    "h": 0.92,
+    "text": "94.7%"
+  },
+  {
+    "slide": 11,
+    "x": 8.2,
+    "y": 4.3,
+    "w": 3.4,
+    "h": 0.6,
+    "text": "Accuracy"
+  },
+  {
+    "slide": 11,
+    "x": 11.899999999999999,
+    "y": 3.3,
+    "w": 3.4,
+    "h": 0.92,
+    "text": "97.9%"
+  },
+  {
+    "slide": 11,
+    "x": 11.899999999999999,
+    "y": 4.3,
+    "w": 3.4,
+    "h": 0.6,
+    "text": "Precision"
+  },
+  {
+    "slide": 11,
+    "x": 8.2,
+    "y": 5.52,
+    "w": 3.4,
+    "h": 0.92,
+    "text": "91.3%"
+  },
+  {
+    "slide": 11,
+    "x": 8.2,
+    "y": 6.52,
+    "w": 3.4,
+    "h": 0.6,
+    "text": "Recall"
+  },
+  {
+    "slide": 11,
+    "x": 11.899999999999999,
+    "y": 5.52,
+    "w": 3.4,
+    "h": 0.92,
+    "text": "2.0%"
+  },
+  {
+    "slide": 11,
+    "x": 11.899999999999999,
+    "y": 6.52,
+    "w": 3.4,
+    "h": 0.6,
+    "text": "False-positive rate"
+  },
+  {
+    "slide": 12,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  07 / RESULTS"
+  },
+  {
+    "slide": 12,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "12 / 15"
+  },
+  {
+    "slide": 12,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Results"
+  },
+  {
+    "slide": 12,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "2 of 4 · Processing speed: 4.05-second mean end-to-end analysis"
+  },
+  {
+    "slide": 12,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Tables 4.1–4.2 and §4.6; original warm target in §3.9"
+  },
+  {
+    "slide": 12,
+    "x": 0.85,
+    "y": 3.0,
+    "w": 3.5,
+    "h": 0.5,
+    "text": "URL / context"
+  },
+  {
+    "slide": 12,
+    "x": 11.3,
+    "y": 3.0,
+    "w": 1.8,
+    "h": 0.5,
+    "text": "850"
+  },
+  {
+    "slide": 12,
+    "x": 0.85,
+    "y": 4.02,
+    "w": 3.5,
+    "h": 0.5,
+    "text": "Content analysis"
+  },
+  {
+    "slide": 12,
+    "x": 11.3,
+    "y": 4.02,
+    "w": 1.8,
+    "h": 0.5,
+    "text": "1,200"
+  },
+  {
+    "slide": 12,
+    "x": 0.85,
+    "y": 5.04,
+    "w": 3.5,
+    "h": 0.5,
+    "text": "Threat intelligence"
+  },
+  {
+    "slide": 12,
+    "x": 11.3,
+    "y": 5.04,
+    "w": 1.8,
+    "h": 0.5,
+    "text": "600"
+  },
+  {
+    "slide": 12,
+    "x": 0.85,
+    "y": 6.0600000000000005,
+    "w": 3.5,
+    "h": 0.5,
+    "text": "Reporter"
+  },
+  {
+    "slide": 12,
+    "x": 11.3,
+    "y": 6.0600000000000005,
+    "w": 1.8,
+    "h": 0.5,
+    "text": "1,400"
+  },
+  {
+    "slide": 12,
+    "x": 13.2,
+    "y": 3.0,
+    "w": 2.1,
+    "h": 1,
+    "text": "4.05 s"
+  },
+  {
+    "slide": 12,
+    "x": 13.2,
+    "y": 4.1,
+    "w": 2.1,
+    "h": 1.7,
+    "text": "Mean total\n\n<100 ms\ncached repeat"
+  },
+  {
+    "slide": 12,
+    "x": 1.1,
+    "y": 7.4,
+    "w": 13.8,
+    "h": 0.4,
+    "text": "Strict warm target: 4.00 s  →  measured mean: 0.05 s above target."
+  },
+  {
+    "slide": 13,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  07 / RESULTS"
+  },
+  {
+    "slide": 13,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "13 / 15"
+  },
+  {
+    "slide": 13,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Results"
+  },
+  {
+    "slide": 13,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "3 of 4 · Explanation quality and the user-facing alert"
+  },
+  {
+    "slide": 13,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Table 4.6 and Fig. 4.3 (original alert screenshot)"
+  },
+  {
+    "slide": 13,
+    "x": 0.9,
+    "y": 3.15,
+    "w": 6,
+    "h": 0.45,
+    "text": "Factual accuracy"
+  },
+  {
+    "slide": 13,
+    "x": 7.55,
+    "y": 3.15,
+    "w": 2,
+    "h": 0.6,
+    "text": "9.5/10"
+  },
+  {
+    "slide": 13,
+    "x": 0.9,
+    "y": 4.33,
+    "w": 6,
+    "h": 0.45,
+    "text": "Readability"
+  },
+  {
+    "slide": 13,
+    "x": 7.55,
+    "y": 4.33,
+    "w": 2,
+    "h": 0.6,
+    "text": "9.0/10"
+  },
+  {
+    "slide": 13,
+    "x": 0.9,
+    "y": 5.51,
+    "w": 6,
+    "h": 0.45,
+    "text": "Useful advice"
+  },
+  {
+    "slide": 13,
+    "x": 7.55,
+    "y": 5.51,
+    "w": 2,
+    "h": 0.6,
+    "text": "8.8/10"
+  },
+  {
+    "slide": 13,
+    "x": 0.9,
+    "y": 7.0,
+    "w": 8.5,
+    "h": 0.85,
+    "text": "Human-rated, descriptive results.\nNot a blinded user study or a current-model score."
+  },
+  {
+    "slide": 13,
+    "x": 10.25,
+    "y": 7.55,
+    "w": 4.5,
+    "h": 0.5,
+    "text": "Original thesis interface illustration"
+  },
+  {
+    "slide": 14,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  07 / RESULTS"
+  },
+  {
+    "slide": 14,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "14 / 15"
+  },
+  {
+    "slide": 14,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Results"
+  },
+  {
+    "slide": 14,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "4 of 4 · Findings in relation to the research objectives"
+  },
+  {
+    "slide": 14,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Table 4.8, checked against Tables 4.3–4.6 and §3.9"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 2.93,
+    "w": 4.3,
+    "h": 0.4,
+    "text": "RESEARCH AIM"
+  },
+  {
+    "slide": 14,
+    "x": 5.6,
+    "y": 2.93,
+    "w": 4.5,
+    "h": 0.4,
+    "text": "REPORTED FINDING"
+  },
+  {
+    "slide": 14,
+    "x": 10.55,
+    "y": 2.93,
+    "w": 4.4,
+    "h": 0.4,
+    "text": "INTERPRETATION"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 3.55,
+    "w": 4.3,
+    "h": 0.52,
+    "text": "Coordinate specialist analysis"
+  },
+  {
+    "slide": 14,
+    "x": 5.6,
+    "y": 3.55,
+    "w": 4.5,
+    "h": 0.52,
+    "text": "Eight specialists + reporter"
+  },
+  {
+    "slide": 14,
+    "x": 10.55,
+    "y": 3.55,
+    "w": 4.4,
+    "h": 0.52,
+    "text": "Implemented architecture"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 4.33,
+    "w": 4.3,
+    "h": 0.52,
+    "text": "Classify URLs accurately"
+  },
+  {
+    "slide": 14,
+    "x": 5.6,
+    "y": 4.33,
+    "w": 4.5,
+    "h": 0.52,
+    "text": "94.7% accuracy"
+  },
+  {
+    "slide": 14,
+    "x": 10.55,
+    "y": 4.33,
+    "w": 4.4,
+    "h": 0.52,
+    "text": "284 / 300 correct"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 5.109999999999999,
+    "w": 4.3,
+    "h": 0.52,
+    "text": "Reduce false alarms"
+  },
+  {
+    "slide": 14,
+    "x": 5.6,
+    "y": 5.109999999999999,
+    "w": 4.5,
+    "h": 0.52,
+    "text": "2.0% false-positive rate"
+  },
+  {
+    "slide": 14,
+    "x": 10.55,
+    "y": 5.109999999999999,
+    "w": 4.4,
+    "h": 0.52,
+    "text": "3 / 150 benign URLs flagged"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 5.89,
+    "w": 4.3,
+    "h": 0.52,
+    "text": "Provide timely feedback"
+  },
+  {
+    "slide": 14,
+    "x": 5.6,
+    "y": 5.89,
+    "w": 4.5,
+    "h": 0.52,
+    "text": "4.05 s mean response"
+  },
+  {
+    "slide": 14,
+    "x": 10.55,
+    "y": 5.89,
+    "w": 4.4,
+    "h": 0.52,
+    "text": "0.05 s above warm target"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 6.67,
+    "w": 4.3,
+    "h": 0.52,
+    "text": "Explain decisions clearly"
+  },
+  {
+    "slide": 14,
+    "x": 5.6,
+    "y": 6.67,
+    "w": 4.5,
+    "h": 0.52,
+    "text": "9.0 / 10 readability"
+  },
+  {
+    "slide": 14,
+    "x": 10.55,
+    "y": 6.67,
+    "w": 4.4,
+    "h": 0.52,
+    "text": "Descriptive manual rating"
+  },
+  {
+    "slide": 14,
+    "x": 0.95,
+    "y": 7.68,
+    "w": 14,
+    "h": 0.4,
+    "text": "Historical evaluation findings; no new benchmark is claimed for the revised implementation."
+  },
+  {
+    "slide": 15,
+    "x": 0.7,
+    "y": 0.32,
+    "w": 12,
+    "h": 0.3,
+    "text": "CYBERFORGE  /  08 / CONCLUSION"
+  },
+  {
+    "slide": 15,
+    "x": 14,
+    "y": 0.32,
+    "w": 1.3,
+    "h": 0.3,
+    "text": "15 / 15"
+  },
+  {
+    "slide": 15,
+    "x": 0.7,
+    "y": 1.12,
+    "w": 14.1,
+    "h": 0.8,
+    "text": "Conclusion"
+  },
+  {
+    "slide": 15,
+    "x": 0.73,
+    "y": 2.02,
+    "w": 14,
+    "h": 0.55,
+    "text": "CyberForge integrates threat analysis, supporting evidence and understandable warnings."
+  },
+  {
+    "slide": 15,
+    "x": 0.7,
+    "y": 8.48,
+    "w": 13.6,
+    "h": 0.3,
+    "text": "Thesis Chapter 5; revised Appendix C  /  Thank you — Questions"
+  },
+  {
+    "slide": 15,
+    "x": 0.9,
+    "y": 3.25,
+    "w": 9.7,
+    "h": 1.1,
+    "text": "94.7% accuracy  /  2.0% false alarms"
+  },
+  {
+    "slide": 15,
+    "x": 0.95,
+    "y": 4.25,
+    "w": 9.5,
+    "h": 0.5,
+    "text": "Reported on the original 300-URL evaluation."
+  },
+  {
+    "slide": 15,
+    "x": 0.95,
+    "y": 5.1,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "Contribution"
+  },
+  {
+    "slide": 15,
+    "x": 3.55,
+    "y": 5.1,
+    "w": 7.4,
+    "h": 0.65,
+    "text": "Specialised analysis + structured evidence + usable explanations"
+  },
+  {
+    "slide": 15,
+    "x": 0.95,
+    "y": 5.949999999999999,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "Next validation"
+  },
+  {
+    "slide": 15,
+    "x": 3.55,
+    "y": 5.949999999999999,
+    "w": 7.4,
+    "h": 0.65,
+    "text": "Independent data, per-detector errors and controlled comparisons"
+  },
+  {
+    "slide": 15,
+    "x": 0.95,
+    "y": 6.8,
+    "w": 2.5,
+    "h": 0.4,
+    "text": "Next delivery"
+  },
+  {
+    "slide": 15,
+    "x": 3.55,
+    "y": 6.8,
+    "w": 7.4,
+    "h": 0.65,
+    "text": "Verified releases, training isolation and bounded AI integrations"
+  }
+]

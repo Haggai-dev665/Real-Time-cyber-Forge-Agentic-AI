@@ -1,104 +1,54 @@
-version: '3.8'
+# The CyberForge backend with its own MongoDB and Redis, for local development.
+#
+#   1. cp backend/.env.example backend/.env   and set JWT_SECRET (32+ random bytes;
+#      the backend refuses to start on a placeholder) and the keys you use.
+#   2. docker compose up --build
+#   3. http://localhost:8000/health
+#
+# NOT RUN YET: written on a machine without Docker. A test checks that every
+# path this file names exists (backend/tests/contracts/compose.test.js); the
+# containers themselves have not been started. Treat the first run as the test.
+#
+# What is deliberately not here:
+#   - The ML service. The backend calls the hosted one (ML_SERVICE_URL in
+#     backend/.env, or the built-in default). ML code is not run locally.
+#   - The desktop and mobile apps. They are built natively: see desktop/BUILD.md.
+#   - A reverse proxy and TLS. This is for development, not for deployment;
+#     the deployed backend runs on Heroku (backend/scripts/deploy-heroku.js).
+#
+# The previous version of this file described a different system: PostgreSQL
+# (the backend uses MongoDB), a backend Dockerfile, a landing-page folder and an
+# nginx configuration that did not exist, and a signing secret the backend rejects.
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: cyberforge
-      POSTGRES_USER: cyberforge
-      POSTGRES_PASSWORD: cyberforge_password
+  mongo:
+    image: mongo:7
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - cyberforge_network
+      - mongo_data:/data/db
+    restart: unless-stopped
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - cyberforge_network
+    restart: unless-stopped
 
-  # Backend Services
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      # These three replace whatever backend/.env says, so the container talks
+      # to the two services above and not to a hosted database.
+      PORT: "8000"
+      DATABASE_URL: mongodb://mongo:27017/cyberforge
+      REDIS_URL: redis://redis:6379
     ports:
       - "8000:8000"
-    environment:
-      - NODE_ENV=production
-      - PORT=8000
-      - DATABASE_URL=postgresql://cyberforge:cyberforge_password@postgres:5432/cyberforge
-      - REDIS_URL=redis://redis:6379
-      - AI_SERVICE_URL=http://ml-services:8001
-      - JWT_SECRET=your-production-jwt-secret
     depends_on:
-      - postgres
+      - mongo
       - redis
-    networks:
-      - cyberforge_network
-    restart: unless-stopped
-
-  # ML/AI Services
-  ml-services:
-    build:
-      context: ./ml-services
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8001"
-    environment:
-      - PORT=8001
-      - DATABASE_URL=postgresql://cyberforge:cyberforge_password@postgres:5432/cyberforge
-      - REDIS_URL=redis://redis:6379
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - cyberforge_network
-    restart: unless-stopped
-
-  # Landing Page
-  landing-page:
-    build:
-      context: ./landing-page
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-    networks:
-      - cyberforge_network
-    restart: unless-stopped
-
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - backend
-      - ml-services
-      - landing-page
-    networks:
-      - cyberforge_network
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data:
-
-networks:
-  cyberforge_network:
-    driver: bridge
+  mongo_data:

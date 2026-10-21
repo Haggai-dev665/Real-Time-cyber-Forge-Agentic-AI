@@ -17,7 +17,8 @@
     "appwrite:schema": "node scripts/setup-appwrite-schema.js",
     "appwrite:audit": "node scripts/audit-appwrite-permissions.js",
     "heroku:config": "node scripts/push-heroku-config.js",
-    "heroku:deploy": "node scripts/deploy-heroku.js"
+    "heroku:deploy": "node scripts/deploy-heroku.js",
+    "migrate": "node scripts/migrate.js"
   },
   "keywords": [
     "cybersecurity",

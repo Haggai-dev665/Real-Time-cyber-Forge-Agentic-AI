@@ -1,0 +1,23 @@
+[package]
+name = "cyberforge-mcp"
+version = "1.0.0"
+description = "CyberForge's MCP server: the registry's MCP operations for approved AI clients"
+authors = ["CyberForge"]
+license = "MIT"
+edition = "2021"
+# rmcp 3.5 needs Rust 1.88.
+rust-version = "1.88"
+workspace = "../../desktop/src-tauri"
+
+[dependencies]
+cyberforge-core = { path = "../cyberforge-core" }
+# The official Rust MCP SDK, pinned: it speaks protocol 2026-07-28 and the
+# earlier initialize-based versions back to 2024-11-05.
+rmcp = { version = "=3.5.1", default-features = false, features = ["server", "transport-io"] }
+serde_json = "1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt", "macros", "io-std", "sync", "time"] }
+reqwest = { version = "0.12", default-features = false }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros", "io-std", "sync", "time", "io-util", "process", "net"] }

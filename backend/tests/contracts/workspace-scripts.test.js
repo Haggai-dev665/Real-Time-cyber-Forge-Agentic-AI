@@ -65,3 +65,28 @@ test('a checkout without a workspace package.json is skipped, not failed', () =>
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('the root package declares only what something here uses', () => {
+  const root = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+  // heroku: the fallback command-line tool for scripts/push-heroku-config.js
+  expect(Object.keys(root.dependencies || {})).toEqual(['heroku']);
+  expect(root.devDependencies).toBeUndefined();
+  expect(fs.readFileSync(path.join(repoRoot, 'backend', 'scripts', 'push-heroku-config.js'), 'utf8')).toContain('npx --no-install heroku');
+});
+
+test('every document the README links to in this repository exists', () => {
+  const readme = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
+  const linked = [...readme.matchAll(/\]\((?!https?:|#|mailto:)([^)#\s]+)/g)].map(match => match[1]);
+  const named = [...readme.matchAll(/`((?:desktop|backend|ml-services|mobile-app|docs)\/[A-Za-z0-9_./-]+\.(?:md|yml|json|example))`/g)].map(match => match[1]);
+  const missing = [...new Set([...linked, ...named])].filter(file => !fs.existsSync(path.join(repoRoot, file)));
+  expect(missing).toEqual([]);
+  expect(fs.existsSync(path.join(repoRoot, 'desktop', 'BUILD.md'))).toBe(true);
+
+  // A file can exist here and still never reach a clone: this repository
+  // ignores Markdown by default, which is how the build guide went missing.
+  const { spawnSync } = require('child_process');
+  if (spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: repoRoot }).status !== 0) return;
+  const ignored = [...new Set([...linked, ...named])]
+    .filter(file => spawnSync('git', ['check-ignore', '-q', file], { cwd: repoRoot }).status === 0);
+  expect(ignored).toEqual([]);
+});

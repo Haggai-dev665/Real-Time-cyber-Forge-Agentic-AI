@@ -45,7 +45,7 @@ function pathDoneText(){
   if(!state.path) return 'PATH registration skipped';
   if(pathResult&&pathResult.success) return pathResult.alreadyPresent?'CLI already on system PATH':'CLI added to system PATH';
   if(pathResult&&!pathResult.success) return 'PATH not updated — add the bin folder manually';
-  return 'CLI registered on system PATH';
+  return 'PATH registration: no result';
 }
 
 /* Detailed, plain-language license & privacy terms — local-first, no cloud. */
@@ -159,7 +159,7 @@ const check='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const steps=[
   {key:'welcome',rail:'Welcome',rd:'introduction',illus:'welcome',badge:'CyberForge Installer',
    h:'Install <span class="fg">CyberForge</span> on this machine',
-   p:'CyberForge is an AI-native threat intelligence platform. Its agentic core continuously watches your endpoints, browsers, and network — detecting, detonating, and containing threats in real time. This wizard will configure the agent, set up monitoring, and connect your local data sources.'},
+   p:'CyberForge is an AI-native threat intelligence platform. It scans the links you visit, analyses suspicious pages without opening them on your computer, and blocks a site on this computer when you approve it. This wizard will configure the agent, set up monitoring, and connect your local data sources.'},
   {key:'license',rail:'License & Terms',rd:'local-first',illus:'license',badge:'Step 1 · License & Privacy',
    h:'Review the <span class="fg">CyberForge</span> license &amp; privacy terms',
    p:'CyberForge runs entirely on this device. Please read the terms below — they explain, in plain language, what is read from your machine, that it is processed locally, and that your system, browser and history data are never stored in the cloud.',
@@ -348,8 +348,7 @@ function runScan(){
     ['<path d="M4 7h6l2 2h8v9H4z"/>','Storage',pr.storage.label||'on-device'],
     ['<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/>','Network interfaces',netValue],
     ['<path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/>','Installed browsers',brValue],
-    ['<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>','Browser history sources',histCount+(histCount===1?' source':' sources')+' · on-device'],
-    ['<rect x="4" y="4" width="16" height="16" rx="2"/>','Security baseline','calibrated']
+    ['<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>','Browser history sources',histCount+(histCount===1?' source':' sources')+' · on-device']
   ];
   const list=document.getElementById('scanList');
   list.innerHTML=rows.map((r,k)=>`<div class="sysrow ${k===0?'':'wait'}" data-k="${k}"><svg class="sr-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${r[0]}</svg><span class="sr-l">${r[1]}</span><span class="sr-v" data-v>scanning…</span><span class="sr-st"><span class="sp"></span><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span></div>`).join('');
@@ -368,44 +367,48 @@ let instComplete=false;
 function runInstall(){
   instComplete=false;updateNext(steps[i]);
   const pr=P();
-  // Real action: register CyberForge on the user PATH (Rust add_to_path). Fire it
-  // once at the start; its result feeds the log line + the final summary row.
-  pathResult=null;
-  if(state.path){
-    INV('add_to_path',{installDir:state.installDir||''})
-      .then(r=>{pathResult=r;})
-      .catch(e=>{pathResult={success:false,error:String((e&&e.message)||e)};});
-  }
-  const pathBin=binOf(state.installDir)||pr.install.bin;
-  const phases=[
-    ['Extracting program files','1,842 files'],
-    ['Registering CyberForge Sentinel service','service ok'],
-    state.path?['Adding CyberForge to your '+(pr.install.kind==='windows'?'user PATH':'shell PATH'),pathBin]:['Skipping PATH registration','skipped'],
-    ['Provisioning local threat database','48k IOCs'],
-    ['Initializing browser vulnerability monitor',state.alert.length+' channels'],
-    ['Scheduling report engine',state.report],
-    ['Linking local sync sources',state.sync.length+' sources'],
-    ['Starting agent core','agentic mode'],
-    ['Verifying installation integrity','SHA-256 ok']
-  ];
   const fill=document.getElementById('instFill'),pct=document.getElementById('instPct'),phaseEl=document.getElementById('instPhase'),log=document.getElementById('instLog');
-  let p=0,k=0;log.innerHTML='';
+  log.innerHTML='';
   clearInterval(instTimer);
-  instTimer=setInterval(()=>{
-    p+=Math.random()*7+6;if(p>100)p=100;
-    fill.style.width=p+'%';pct.textContent=Math.round(p)+'%';
-    const idx=Math.min(phases.length-1,Math.floor(p/100*phases.length));
-    while(k<=idx&&k<phases.length){
-      phaseEl.textContent=phases[k][0]+'…';
-      const now=new Date();const ts=String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-      const el=document.createElement('div');el.className='il';
-      el.innerHTML='<span class="t">'+ts+'</span><span style="color:var(--dim)">'+phases[k][0]+'</span><span class="ok">'+phases[k][1]+'</span>';
-      log.appendChild(el);while(log.children.length>6)log.firstChild.remove();k++;
+  const pathBin=binOf(state.installDir)||pr.install.bin;
+  // Setup does two things, and this list is those two with what each returned.
+  // (Nine phases used to be played on a timer with a random step: extracting
+  // files, registering a service, provisioning a threat database, verifying
+  // integrity. None of them was carried out.)
+  pathResult=null;
+  const jobs=[];
+  if(state.path){
+    jobs.push({label:'Adding CyberForge to your '+(pr.install.kind==='windows'?'user PATH':'shell PATH'),
+      run:()=>INV('add_to_path',{installDir:state.installDir||''}).then(r=>{
+        pathResult=r||{success:false,error:'no answer'};
+        if(!pathResult.success) throw new Error(pathResult.error||'PATH not updated');
+        return pathResult.alreadyPresent?'already present':pathBin;
+      },e=>{ pathResult={success:false,error:String((e&&e.message)||e)}; throw e; })});
+  }
+  jobs.push({label:'Recording that setup is complete',   // one-time gate: the wizard does not run again
+    run:()=>INV('mark_installed',{installDir:state.installDir||''}).then(()=>'saved')});
+  let done=0;
+  function show(){ const p=Math.round(done/jobs.length*100); fill.style.width=p+'%'; pct.textContent=p+'%'; }
+  function line(label,result,ok){
+    const now=new Date();const ts=String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+    const el=document.createElement('div');el.className='il';
+    el.innerHTML='<span class="t">'+ts+'</span><span style="color:var(--dim)"></span><span'+(ok?' class="ok"':' style="color:var(--red)"')+'></span>';
+    el.children[1].textContent=label; el.children[2].textContent=result;
+    log.appendChild(el);
+  }
+  show();
+  (async()=>{
+    let failures=0;
+    for(const job of jobs){
+      phaseEl.textContent=job.label+'…';
+      try{ line(job.label, await job.run(), true); }
+      catch(e){ failures++; line(job.label,'failed: '+String((e&&e.message)||e), false); }
+      done++; show();
     }
-    if(p>=100){clearInterval(instTimer);phaseEl.textContent='Installation complete';instComplete=true;updateNext(steps[i]);
-      INV('mark_installed',{installDir:state.installDir||''}).catch(()=>{});   // one-time gate: never run the wizard again
-      setTimeout(()=>{if(steps[i].key==='install'){go(1);}},700);}
-  },360);
+    phaseEl.textContent=failures?('Setup finished with '+failures+' step'+(failures===1?'':'s')+' not done'):'Setup complete';
+    instComplete=true;updateNext(steps[i]);
+    setTimeout(()=>{if(steps[i].key==='install'){go(1);}},failures?2500:700);
+  })();
 }
 
 /* ===== navigation ===== */

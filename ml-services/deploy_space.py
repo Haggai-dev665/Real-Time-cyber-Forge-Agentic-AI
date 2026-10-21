@@ -6,6 +6,9 @@ Deploy hf_space_deploy/ to the Hugging Face Space, with a backup and rollback.
     python deploy_space.py --rollback   push the most recent backup back
     python deploy_space.py --status     show the Space's current state
     python deploy_space.py --dry-run    list what would be pushed, change nothing
+    ... | python deploy_space.py --set-secret NAME
+                                        set a Space secret to the value on standard
+                                        input; it is never printed or put on a command line
 
 Uses only the standard library. The token comes from ml-services/.env (HF_TOKEN).
 Backups of the live files are written to hf_space_clone/<commit>/ before a push.
@@ -13,6 +16,7 @@ Backups of the live files are written to hf_space_clone/<commit>/ before a push.
 
 import base64
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -130,6 +134,20 @@ def wait_for_build(token, commit, limit_s=1800):
     return last
 
 
+def set_secret(token, name):
+    """Set a Space secret from standard input. The Space restarts to pick it up."""
+    if not re.fullmatch(r"[A-Z][A-Z0-9_]{1,63}", name or ""):
+        raise SystemExit("A secret name is upper-case letters, digits and underscores.")
+    value = sys.stdin.read().strip()
+    if not value:
+        raise SystemExit("Nothing on standard input; no secret was changed.")
+    status, data = request("POST", f"{HUB}/api/spaces/{SPACE}/secrets", token,
+                           body=json.dumps({"key": name, "value": value}).encode("utf-8"))
+    if status >= 300:
+        raise SystemExit(f"Setting {name} failed (HTTP {status}); no secret was changed.")
+    print(f"Set the Space secret {name} ({len(value)} characters). The Space restarts to read it.")
+
+
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
     if arg == "--dry-run":
@@ -140,6 +158,8 @@ def main():
     token = get_hf_token()
     if arg == "--status":
         print(json.dumps(runtime(token), indent=2))
+    elif arg == "--set-secret":
+        set_secret(token, sys.argv[2] if len(sys.argv) > 2 else "")
     elif arg == "--rollback":
         backups = sorted((d for d in BACKUP_DIR.iterdir() if d.is_dir()), key=lambda d: d.stat().st_mtime)
         if not backups:

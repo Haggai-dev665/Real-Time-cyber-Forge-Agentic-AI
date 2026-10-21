@@ -27,6 +27,7 @@ test('the retired backend address is gone from client, backend and manifest sour
   const files = [
     ...sourceFiles('backend/src', ['.js']),
     ...sourceFiles('desktop/src-tauri/src', ['.rs']),
+    ...sourceFiles('crates', ['.rs']),
     ...sourceFiles('desktop/ui', ['.js', '.html']),
     ...sourceFiles('mobile-app/src', ['.ts', '.tsx']),
     'desktop/src-tauri/tauri.conf.json', 'mobile-app/app.json', 'app.json', 'ml-services/deploy_hf_space.sh'
@@ -35,12 +36,16 @@ test('the retired backend address is gone from client, backend and manifest sour
   expect(files.filter(file => read(file).includes(DEAD_HOST))).toEqual([]);
 });
 
+// The native default lives once, in the shared core, for the desktop and the CLI (V2-01).
+const NATIVE_DEFAULT = 'crates/cyberforge-core/src/origin.rs';
+
 test('the desktop has one default backend address, overridable at launch, and the UI asks the native layer for it', () => {
-  const literals = hostLiterals(sourceFiles('desktop/src-tauri/src', ['.rs']));
+  const literals = hostLiterals([...sourceFiles('desktop/src-tauri/src', ['.rs']), ...sourceFiles('crates', ['.rs'])]);
   expect(literals).toHaveLength(1);
-  expect(literals[0]).toMatch(/^desktop\/src-tauri\/src\/state\.rs: pub const DEFAULT_BACKEND_URL: &str = "https:\/\/[a-z0-9-]+\.herokuapp\.com";$/);
+  expect(literals[0]).toMatch(/^crates\/cyberforge-core\/src\/origin\.rs: pub const DEFAULT_BACKEND_URL: &str = "https:\/\/[a-z0-9-]+\.herokuapp\.com";$/);
 
   const state = read('desktop/src-tauri/src/state.rs');
+  expect(state).toContain('pub use cyberforge_core::origin::DEFAULT_BACKEND_URL;');
   expect(state).toContain('std::env::var("CYBERFORGE_BACKEND_URL")');
   expect(state).toContain('backend_url: backend_url(),');
   expect(read('desktop/src-tauri/src/system.rs')).toContain('crate::state::backend_url()');
@@ -49,9 +54,9 @@ test('the desktop has one default backend address, overridable at launch, and th
 
   expect(hostLiterals(sourceFiles('desktop/ui', ['.js', '.html']))).toEqual([]);
   expect(read('desktop/ui/scripts/cyberforge-shared.js')).toContain("CF.invoke('get_backend_url')");
-  const realtime = read('desktop/ui/scripts/cf-realtime.js');
-  expect(realtime).toContain('await CF.backendUrl()');
-  expect(realtime).not.toContain('API_BASE');
+  // The live feed is opened by the native layer, at the same address as every other call.
+  expect(read('desktop/src-tauri/src/stream.rs')).toMatch(/s\.backend_url\.clone\(\)/);
+  expect(read('desktop/ui/scripts/cf-realtime.js')).not.toContain('API_BASE');
 });
 
 test('the mobile app takes its backend address from configuration only', () => {
@@ -70,7 +75,7 @@ test('the backend holds no deployment address; web origins come from ALLOWED_ORI
 });
 
 test('every client default and the deploy manifest name the same backend', () => {
-  const desktop = read('desktop/src-tauri/src/state.rs').match(/DEFAULT_BACKEND_URL: &str = "([^"]+)"/)[1];
+  const desktop = read(NATIVE_DEFAULT).match(/DEFAULT_BACKEND_URL: &str = "([^"]+)"/)[1];
   const manifest = JSON.parse(read('app.json'));
   expect(JSON.parse(read('mobile-app/app.json')).expo.extra.apiBaseUrl).toBe(desktop);
   expect(JSON.parse(read('desktop/src-tauri/tauri.conf.json')).bundle.homepage).toBe(desktop);
@@ -88,12 +93,22 @@ function mobileCalls() {
   const starts = [...source.matchAll(/\bapi\.(get|post)\b/g)];
   return starts.map((match, index) => {
     const call = source.slice(match.index, index + 1 < starts.length ? starts[index + 1].index : source.length);
+    // a simple `${value}` in the path is a parameter, read as `:param`; any other
+    // `${…}` (such as an optional query string) ends the path, as does `?`
+    const literal = call.match(/[`'"](\/[^`'"?]*)/)[1];
     return {
       method: match[1],
-      route: call.match(/[`'"](\/[^`'"$?]*)/)[1],
+      route: literal.replace(/\$\{\s*[\w.()]+\s*\}/g, ':param').split('${')[0],
       anonymous: /anonymous:\s*true/.test(call)
     };
   });
+}
+
+/** Whether a client path (with `:param` for its parameters) is the backend route pattern. */
+function samePath(client, backend) {
+  const a = client.split('/');
+  const b = backend.split('/');
+  return a.length === b.length && a.every((part, i) => part === b[i] || (part === ':param' && b[i].startsWith(':')));
 }
 
 function backendDefines(method, route) {
@@ -105,8 +120,11 @@ function backendDefines(method, route) {
     .sort((a, b) => b[1].length - a[1].length);
   if (!mounts.length) return false;
   const rest = route.slice(mounts[0][1].length) || '/';
-  const routes = read(`backend/src/routes/${files[mounts[0][2]]}.js`);
-  return [...routes.matchAll(/^router\.(\w+)\(\s*['"`]([^'"`]*)['"`]/gm)].some(match => match[1] === method && match[2] === rest);
+  // several routers can share a prefix (/api/v1 has devices and agents): any of them may define the route
+  return mounts.filter(m => m[1] === mounts[0][1]).some(m => {
+    const routes = read(`backend/src/routes/${files[m[2]]}.js`);
+    return [...routes.matchAll(/^router\.(\w+)\(\s*['"`]([^'"`]*)['"`]/gm)].some(match => match[1] === method && samePath(rest, match[2]));
+  });
 }
 
 test('every backend call the mobile app makes exists in the backend with that method', () => {
@@ -142,14 +160,43 @@ test('no client puts its session token in the live-feed URL', () => {
   const mobile = read('mobile-app/src/api/sse.ts');
   expect(mobile).toMatch(/headers:\s*token\s*\?\s*\{\s*Authorization:/);
 
-  const desktop = read('desktop/ui/scripts/cf-realtime.js');
-  expect(desktop).toContain('/api/stream/ticket');
-  expect(desktop).toMatch(/ticket=\$\{encodeURIComponent\(ticket\)\}/);
-  expect(desktop).toContain('lastEventId');
+  // The desktop's feed is read natively: the session goes in a header, and the
+  // position to resume from in another. Neither is in the address.
+  const native = read('desktop/src-tauri/src/stream.rs');
+  expect(native).toMatch(/\.get\(format!\("\{\}\/api\/stream", base\)\)/);
+  expect(native).toMatch(/\.header\("Authorization", format!\("Bearer \{\}", token\)\)/);
+  expect(native).toMatch(/\.header\("Last-Event-ID", id\)/);
 });
 
-test('the backend offers the stream ticket the desktop asks for', () => {
+test('a desktop page opens no connection of its own and is never given the session token', () => {
+  // The app's content security policy lets a page talk only to the app, so a
+  // feed opened from a page is refused in a built app (finding F26).
+  const csp = JSON.parse(read('desktop/src-tauri/tauri.conf.json')).app.security.csp;
+  expect(csp).toMatch(/connect-src 'self' ipc: http:\/\/ipc\.localhost(;|$)/);
+  const pages = sourceFiles('desktop/ui', ['.js', '.html']); // vendored libraries are already left out
+  const direct = pages.filter(file => /\bfetch\(|new EventSource|new WebSocket|XMLHttpRequest/.test(read(file))).map(file => file.split(path.sep).join('/'));
+  expect(direct).toEqual([]);
+
+  const realtime = read('desktop/ui/scripts/cf-realtime.js');
+  expect(realtime).toMatch(/listen\('cf-stream'/);
+  expect(realtime).toMatch(/listen\('cf-stream-status'/);
+  expect(realtime).toMatch(/invoke\('stream_status'\)/);
+
+  // nothing hands the token to a page
+  const commands = read('desktop/src-tauri/src/commands.rs') + read('desktop/src-tauri/src/agent.rs');
+  expect(commands).not.toMatch(/auth_get_token/);
+  expect(commands).not.toMatch(/"token": tok(en)?\b/);
+  expect(read('desktop/src-tauri/src/lib.rs')).not.toMatch(/auth_get_token/);
+  expect(pages.filter(file => /getToken\s*\(|auth_get_token|res\.token/.test(read(file))).map(file => file.split(path.sep).join('/'))).toEqual([]);
+  expect(read('desktop/src-tauri/src/lib.rs')).toMatch(/stream::stream_status,/);
+  expect(read('desktop/src-tauri/src/lib.rs')).toMatch(/crate::stream::start\(/);
+});
+
+test('the backend accepts the session and the resume position the way each client sends them', () => {
   const stream = read('backend/src/routes/stream.js');
+  // headers: the desktop's native reader and the mobile app
+  expect(stream).toContain("req.headers['last-event-id']");
+  // a one-time ticket, for a client that can only use an address (no client does today)
   expect(stream).toMatch(/router\.post\('\/ticket', auth,/);
   expect(stream).toContain('req.query.ticket');
   expect(stream).toContain('req.query.lastEventId');

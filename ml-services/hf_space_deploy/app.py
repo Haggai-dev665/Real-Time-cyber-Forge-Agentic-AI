@@ -1,12 +1,13 @@
 """
-CyberForge AI - ML Training & Inference Platform
-Hugging Face Spaces deployment with:
-  1) Gradio UI for notebook execution, training, and inference
-  2) FastAPI REST endpoints for the Heroku backend (mlService.js)
+CyberForge AI - ML inference service
+Hugging Face Spaces deployment: FastAPI REST endpoints for the CyberForge
+backend. Every route except / and /health needs the service key
+(ML_SERVICE_KEY), which only the backend holds; the two training routes need
+the Space owner's Hugging Face token instead. Nothing here runs uploaded code,
+notebooks or uploaded models.
 """
 
-import gradio as gr
-import pandas as pd
+import hmac
 import numpy as np
 import json
 import os
@@ -15,6 +16,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from pathlib import Path
 from datetime import datetime
 import logging
@@ -26,12 +28,8 @@ from urllib.parse import urlparse
 from url_features import (extract_url_features, popular_domains_loaded, rescale_score,
                           set_popular_domains, split_url)
 
-# ML Libraries
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, IsolationForest
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+# Models are loaded only from the model repository (ml_loader below), never
+# from a caller: loading a joblib/pickle file can run code.
 import joblib
 
 # Hugging Face Hub
@@ -40,7 +38,7 @@ from huggingface_hub import HfApi, hf_hub_download, upload_file
 # FastAPI for REST endpoints
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 logging.basicConfig(level=logging.INFO)
@@ -55,7 +53,6 @@ MODELS_DIR = APP_DIR / "trained_models"
 MODELS_DIR.mkdir(exist_ok=True)
 DATASETS_DIR = APP_DIR / "datasets"
 DATASETS_DIR.mkdir(exist_ok=True)
-NOTEBOOKS_DIR = APP_DIR / "notebooks"
 KNOWLEDGE_BASE_DIR = APP_DIR / "knowledge_base"
 KNOWLEDGE_BASE_DIR.mkdir(exist_ok=True)
 TRAINING_DATA_DIR = APP_DIR / "training_data"
@@ -77,26 +74,26 @@ LOCAL_LLM_MAX_TOKENS = int(os.environ.get("LOCAL_LLM_MAX_TOKENS", "320"))
 LOCAL_LLM_TEMPERATURE = float(os.environ.get("LOCAL_LLM_TEMPERATURE", "0.3"))
 LOCAL_LLM_MAX_INPUT_CHARS = int(os.environ.get("LOCAL_LLM_MAX_INPUT_CHARS", "2400"))
 LOCAL_LLM_TIME_BUDGET_S = float(os.environ.get("LOCAL_LLM_TIME_BUDGET_S", "17"))
+# A caller with a longer timeout of its own may ask for more time, up to this.
+# Reading the prompt counts: on this CPU a 2,000-character prompt alone takes
+# most of the default budget.
+LOCAL_LLM_MAX_TIME_BUDGET_S = float(os.environ.get("LOCAL_LLM_MAX_TIME_BUDGET_S", "50"))
+# How long a question someone is waiting for may wait for the model; the rest
+# of its time budget is for answering. Background work never waits this long.
+LOCAL_LLM_INTERACTIVE_WAIT_S = float(os.environ.get("LOCAL_LLM_INTERACTIVE_WAIT_S", "25"))
 LOCAL_LLM_QUEUE_TIMEOUT_S = float(os.environ.get("LOCAL_LLM_QUEUE_TIMEOUT_S", "5"))
 
 logger.info(f"APP_DIR: {APP_DIR}")
-logger.info(f"NOTEBOOKS_DIR: {NOTEBOOKS_DIR}")
-logger.info(f"NOTEBOOKS_DIR exists: {NOTEBOOKS_DIR.exists()}")
+# Calls to every route except / and /health must carry this key in the
+# X-CyberForge-Service-Key header. It is a Space secret; the backend holds the
+# same value. Without it set, those routes answer 503 rather than run open.
+ML_SERVICE_KEY = os.environ.get("ML_SERVICE_KEY", "").strip()
+SERVICE_KEY_HEADER = "x-cyberforge-service-key"
+# The largest request body accepted, in bytes. Larger ones get HTTP 413.
+ML_MAX_BODY_BYTES = int(os.environ.get("ML_MAX_BODY_BYTES", str(256 * 1024)))
 
-# Model types available for training
-MODEL_TYPES = {
-    "Random Forest": RandomForestClassifier,
-    "Gradient Boosting": GradientBoostingClassifier,
-    "Logistic Regression": LogisticRegression,
-    "Isolation Forest (Anomaly)": IsolationForest,
-}
-
-SECURITY_TASKS = [
-    "Malware Detection", "Phishing Detection", "Network Intrusion Detection",
-    "Anomaly Detection", "Botnet Detection", "Web Attack Detection",
-    "Spam Detection", "Vulnerability Assessment", "DNS Tunneling Detection",
-    "Cryptomining Detection",
-]
+logger.info(f"APP_DIR: {APP_DIR}")
+logger.info(f"Service key {'set' if ML_SERVICE_KEY else 'NOT set: inference routes will answer 503'}")
 
 
 # ============================================================================
@@ -114,6 +111,9 @@ async def json_object(request) -> Dict:
     """The request body as a JSON object."""
     try:
         body = await request.json()
+    except BodyTooLarge:
+        # Raised by ServiceGate while the body streams in; it answers 413.
+        raise
     except Exception:
         raise BadRequest("Request body must be valid JSON")
     if not isinstance(body, dict):
@@ -769,7 +769,12 @@ class LocalLLM:
 
     The GGUF file is downloaded from the Hub once and kept in memory. Generation
     is serialized (a llama.cpp context is not thread-safe) and time-boxed, so a
-    slow CPU cannot hold a request past the callers' timeouts."""
+    slow CPU cannot hold a request past the callers' timeouts.
+
+    Interactive requests (a person waiting on the assistant) come first: one
+    waits for the model longer, a background request (a scan's explanation)
+    does not start while one is waiting, and a running background generation
+    stops at its next chunk so the waiting question gets the model."""
 
     SOURCE = "space_local_llamacpp"
 
@@ -780,6 +785,8 @@ class LocalLLM:
         self._prefill = ""
         self._load_lock = threading.Lock()
         self._gen_lock = threading.Lock()
+        self._waiting_lock = threading.Lock()
+        self._interactive_waiting = 0
 
     @property
     def ready(self) -> bool:
@@ -838,16 +845,39 @@ class LocalLLM:
         if r.returncode != 0:
             raise RuntimeError(f"llama.cpp probe exited with {r.returncode}: {(r.stderr or '')[-200:]}")
 
-    def chat(self, system: str, user: str, max_tokens: int = 512) -> Dict:
+    def _acquire(self, interactive: bool, budget: float) -> Optional[float]:
+        """The time spent waiting for the model, or None when it was not given."""
+        asked = time.monotonic()
+        if not interactive:
+            if self._interactive_waiting:
+                return None
+            got = self._gen_lock.acquire(timeout=LOCAL_LLM_QUEUE_TIMEOUT_S)
+            return time.monotonic() - asked if got else None
+        with self._waiting_lock:
+            self._interactive_waiting += 1
+        try:
+            # leave at least 10 s of the budget for the answer itself
+            wait = max(LOCAL_LLM_QUEUE_TIMEOUT_S, min(LOCAL_LLM_INTERACTIVE_WAIT_S, budget - 10))
+            got = self._gen_lock.acquire(timeout=wait)
+        finally:
+            with self._waiting_lock:
+                self._interactive_waiting -= 1
+        return time.monotonic() - asked if got else None
+
+    def chat(self, system: str, user: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False) -> Dict:
         base = {"model": "local-llm", "source": self.SOURCE, "model_id": LOCAL_LLM_REPO}
+        budget = LOCAL_LLM_TIME_BUDGET_S if time_budget_s is None else max(5.0, min(float(time_budget_s), LOCAL_LLM_MAX_TIME_BUDGET_S))
         if self.llm is None:
             if self._load_lock.locked():
                 return {**base, "response": None, "error": "local LLM is still loading"}
             self.load()
         if self.llm is None:
             return {**base, "response": None, "error": self.error or "local LLM not loaded"}
-        if not self._gen_lock.acquire(timeout=LOCAL_LLM_QUEUE_TIMEOUT_S):
+        waited = self._acquire(interactive, budget)
+        if waited is None:
             return {**base, "response": None, "error": "local LLM is busy with another request"}
+        # The time spent waiting comes out of the budget: the caller is waiting too.
+        budget = max(5.0, budget - waited)
         started = time.monotonic()
         stream = None
         try:
@@ -882,7 +912,11 @@ class LocalLLM:
                 pieces.append(read(chunk))
                 if chunk["choices"][0].get("finish_reason") == "length":
                     truncated = True
-                if time.monotonic() - started > LOCAL_LLM_TIME_BUDGET_S:
+                if time.monotonic() - started > budget:
+                    truncated = True
+                    break
+                if not interactive and self._interactive_waiting:
+                    # someone is waiting on the assistant: hand the model over
                     truncated = True
                     break
             text = re.sub(r"<think>.*?</think>", "", "".join(pieces), flags=re.S).strip()
@@ -1059,10 +1093,25 @@ class TransformerModelLoader:
         "such as reputation, hashes or CVEs, say it is unverified instead of guessing."
     )
 
-    def security_chat(self, query: str, max_tokens: int = 512) -> Dict:
+    # For a person talking to the assistant (interactive requests): a
+    # conversation first. The analyst prompt above stays for background
+    # explanations of scans, alerts and reports.
+    ASSISTANT_PROMPT = (
+        "You are the CyberForge assistant, a friendly, helpful chat assistant built into "
+        "the CyberForge security app. Talk naturally, like a normal chat assistant: reply "
+        "to greetings and small talk briefly and warmly, and offer to help. Answer security "
+        "questions clearly and concisely, in plain sentences, using a short list only for "
+        "steps. When the message includes the user's CyberForge memory, use it only if it "
+        "helps answer. Never claim to have scanned, detected or checked anything that is "
+        "not in the message; if something has not been checked, say so."
+    )
+
+    def security_chat(self, query: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False) -> Dict:
         """Cybersecurity Q&A, answered by the open-source model running inside
-        this Space (free, no API key)."""
-        return local_llm.chat(self.SYSTEM_PROMPT, query, max_tokens=max_tokens)
+        this Space (free, no API key). `interactive` when a person is waiting:
+        then it is a conversation (ASSISTANT_PROMPT), not an analyst's report."""
+        system = self.ASSISTANT_PROMPT if interactive else self.SYSTEM_PROMPT
+        return local_llm.chat(system, query, max_tokens=max_tokens, time_budget_s=time_budget_s, interactive=interactive)
 
     def status(self) -> Dict:
         return {
@@ -1108,235 +1157,6 @@ transformer_loader = TransformerModelLoader()
 
 
 # ============================================================================
-# NOTEBOOK EXECUTION  (existing Gradio functionality)
-# ============================================================================
-
-def get_available_notebooks() -> List[str]:
-    if not NOTEBOOKS_DIR.exists():
-        return []
-    return sorted([f.name for f in NOTEBOOKS_DIR.glob("*.ipynb")])
-
-
-def read_notebook_content(notebook_name: str) -> str:
-    """Read and display notebook content as markdown"""
-    notebook_path = NOTEBOOKS_DIR / notebook_name
-    if not notebook_path.exists():
-        return f"Notebook not found: {notebook_name}"
-    try:
-        with open(notebook_path, "r") as f:
-            nb = json.load(f)
-        output = f"# {notebook_name}\n\n"
-        for i, cell in enumerate(nb.get("cells", []), 1):
-            cell_type = cell.get("cell_type", "code")
-            source = "".join(cell.get("source", []))
-            if cell_type == "markdown":
-                output += f"{source}\n\n"
-            else:
-                output += f"### Cell {i} (Python)\n```python\n{source}\n```\n\n"
-        return output
-    except Exception as e:
-        return f"Error reading notebook: {str(e)}"
-
-
-def execute_notebook(notebook_name: str, progress=gr.Progress()) -> Tuple[str, str]:
-    """Execute a notebook and return output"""
-    notebook_path = NOTEBOOKS_DIR / notebook_name
-    output_path = NOTEBOOKS_DIR / f"output_{notebook_name}"
-    if not notebook_path.exists():
-        available = list(NOTEBOOKS_DIR.glob("*.ipynb")) if NOTEBOOKS_DIR.exists() else []
-        return f"Error: Notebook not found: {notebook_path}\nAvailable: {available}", ""
-    progress(0.1, desc="Starting notebook execution...")
-    try:
-        cmd = [
-            sys.executable, "-m", "nbconvert",
-            "--to", "notebook", "--execute",
-            "--output", str(output_path.absolute()),
-            "--ExecutePreprocessor.timeout=600",
-            "--ExecutePreprocessor.kernel_name=python3",
-            str(notebook_path.absolute()),
-        ]
-        progress(0.3, desc="Executing cells...")
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(NOTEBOOKS_DIR), timeout=900)
-        progress(0.8, desc="Processing output...")
-        if result.returncode == 0:
-            if output_path.exists():
-                with open(output_path, "r") as f:
-                    executed_nb = json.load(f)
-                outputs = []
-                for i, cell in enumerate(executed_nb.get("cells", []), 1):
-                    if cell.get("cell_type") == "code":
-                        for out in cell.get("outputs", []):
-                            if "text" in out:
-                                outputs.append(f"Cell {i}:\n{''.join(out['text'])}")
-                            elif "data" in out and "text/plain" in out["data"]:
-                                outputs.append(f"Cell {i}:\n{''.join(out['data']['text/plain'])}")
-                progress(1.0, desc="Complete!")
-                return "Notebook executed successfully!", "\n\n".join(outputs)
-            else:
-                return "Notebook executed but output file not found", result.stdout
-        else:
-            return f"Execution failed:\n{result.stderr}", result.stdout
-    except subprocess.TimeoutExpired:
-        return "Error: Notebook execution timed out (15 min limit)", ""
-    except Exception as e:
-        return f"Error executing notebook: {str(e)}", ""
-
-
-def run_notebook_cell(notebook_name: str, cell_number: int) -> str:
-    """Execute a single cell from a notebook"""
-    notebook_path = NOTEBOOKS_DIR / notebook_name
-    if not notebook_path.exists():
-        return f"Error: Notebook not found at {notebook_path}"
-    try:
-        original_cwd = os.getcwd()
-        os.chdir(NOTEBOOKS_DIR)
-        with open(notebook_path, "r") as f:
-            nb = json.load(f)
-        cells = [c for c in nb.get("cells", []) if c.get("cell_type") == "code"]
-        if cell_number < 1 or cell_number > len(cells):
-            os.chdir(original_cwd)
-            return f"Error: Cell {cell_number} not found. Available: 1-{len(cells)}"
-        cell = cells[int(cell_number) - 1]
-        source = "".join(cell.get("source", []))
-        import io
-        from contextlib import redirect_stdout, redirect_stderr
-
-        namespace = {"__name__": "__main__", "__file__": str(notebook_path)}
-        stdout_capture = io.StringIO()
-        stderr_capture = io.StringIO()
-        with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
-            try:
-                exec(source, namespace)
-            except Exception as e:
-                os.chdir(original_cwd)
-                return f"Error: {str(e)}"
-        os.chdir(original_cwd)
-        output = stdout_capture.getvalue()
-        errors = stderr_capture.getvalue()
-        result_text = f"### Cell {int(cell_number)} Output:\n"
-        if output:
-            result_text += f"```\n{output}\n```\n"
-        if errors:
-            result_text += f"\n**Warnings/Errors:**\n```\n{errors}\n```"
-        if not output and not errors:
-            result_text += "*(No output)*"
-        return result_text
-    except Exception as e:
-        try:
-            os.chdir(original_cwd)
-        except Exception:
-            pass
-        return f"Error: {str(e)}"
-
-
-# ============================================================================
-# MODEL TRAINING  (existing Gradio functionality)
-# ============================================================================
-
-class SecurityModelTrainer:
-    def __init__(self):
-        self.scaler = StandardScaler()
-        self.label_encoder = LabelEncoder()
-
-    def prepare_data(self, df: pd.DataFrame, target_col: str = "label") -> Tuple:
-        if target_col not in df.columns:
-            raise ValueError(f"Target column '{target_col}' not found")
-        X = df.drop(columns=[target_col])
-        y = df[target_col]
-        X = X.select_dtypes(include=[np.number]).fillna(0)
-        if y.dtype == "object":
-            y = self.label_encoder.fit_transform(y)
-        X_scaled = self.scaler.fit_transform(X)
-        return train_test_split(X_scaled, y, test_size=0.2, random_state=42)
-
-    def train_model(self, model_type: str, X_train, y_train):
-        if model_type not in MODEL_TYPES:
-            raise ValueError(f"Unknown model type: {model_type}")
-        model_class = MODEL_TYPES[model_type]
-        if model_type == "Isolation Forest (Anomaly)":
-            model = model_class(contamination=0.1, random_state=42)
-        else:
-            model = model_class(random_state=42)
-        model.fit(X_train, y_train)
-        return model
-
-    def evaluate_model(self, model, X_test, y_test) -> Dict:
-        y_pred = model.predict(X_test)
-        return {
-            "accuracy": accuracy_score(y_test, y_pred),
-            "f1_score": f1_score(y_test, y_pred, average="weighted", zero_division=0),
-        }
-
-
-trainer = SecurityModelTrainer()
-
-
-def train_model_from_data(data_file, model_type: str, task: str, progress=gr.Progress()):
-    """Train model from uploaded data"""
-    if data_file is None:
-        return "Please upload a CSV file", None, None
-    progress(0.1, desc="Loading data...")
-    try:
-        df = pd.read_csv(data_file.name)
-        progress(0.3, desc="Preparing data...")
-        X_train, X_test, y_train, y_test = trainer.prepare_data(df)
-        progress(0.5, desc=f"Training {model_type}...")
-        model = trainer.train_model(model_type, X_train, y_train)
-        progress(0.8, desc="Evaluating model...")
-        metrics = trainer.evaluate_model(model, X_test, y_test)
-        model_name = f"{task.lower().replace(' ', '_')}_{model_type.lower().replace(' ', '_')}"
-        model_path = MODELS_DIR / f"{model_name}.pkl"
-        joblib.dump(model, model_path)
-        progress(1.0, desc="Complete!")
-        result = f"""
-## Training Complete!
-
-**Task:** {task}
-**Model:** {model_type}
-**Samples:** {len(df)}
-
-### Metrics
-- Accuracy: {metrics['accuracy']:.4f}
-- F1 Score: {metrics['f1_score']:.4f}
-
-**Model saved to:** {model_path}
-"""
-        return result, str(model_path), json.dumps(metrics, indent=2)
-    except Exception as e:
-        return f"Error: {str(e)}", None, None
-
-
-def run_inference(model_file, features_text: str):
-    """Run inference with a trained model"""
-    if model_file is None:
-        return "Please upload a model file"
-    try:
-        model = joblib.load(model_file.name)
-        features = json.loads(features_text)
-        X = np.array([list(features.values())])
-        prediction = model.predict(X)[0]
-        result = {"prediction": int(prediction), "features_used": len(features)}
-        if hasattr(model, "predict_proba"):
-            proba = model.predict_proba(X)[0]
-            result["confidence"] = float(max(proba))
-            result["probabilities"] = {str(i): float(p) for i, p in enumerate(proba)}
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-
-def list_trained_models():
-    models = list(MODELS_DIR.glob("*.pkl"))
-    if not models:
-        return "No trained models found"
-    output = "## Trained Models\n\n"
-    for model_path in models:
-        size_kb = model_path.stat().st_size / 1024
-        output += f"- **{model_path.name}** ({size_kb:.1f} KB)\n"
-    return output
-
-
-# ============================================================================
 # FASTAPI APP  (REST endpoints for Heroku backend mlService.js)
 # ============================================================================
 
@@ -1349,6 +1169,121 @@ api.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Service-wide HTTP work measurements. No prompts, identities or addresses are retained.
+OPS_STARTED = time.monotonic()
+OPS = {"active_requests": 0, "completed_requests": 0, "failed_requests": 0, "total_duration_ms": 0.0}
+OPS_LOCK = threading.Lock()
+
+
+def operational_report():
+    with OPS_LOCK:
+        completed = OPS["completed_requests"]
+        return {"scope": "service process since startup", "active_requests": OPS["active_requests"],
+                "completed_requests": completed, "failed_requests": OPS["failed_requests"],
+                "mean_request_ms": round(OPS["total_duration_ms"] / completed, 1) if completed else None,
+                "uptime_seconds": round(time.monotonic() - OPS_STARTED, 1)}
+
+
+@api.middleware("http")
+async def measure_requests(request: Request, call_next):
+    # Measure inference HTTP operations, excluding health/capability polling and admin training.
+    measured = request.method == "POST" and not request.url.path.startswith("/api/admin/")
+    if not measured:
+        return await call_next(request)
+    started = time.monotonic()
+    with OPS_LOCK:
+        OPS["active_requests"] += 1
+    failed = True
+    try:
+        response = await call_next(request)
+        failed = response.status_code >= 400
+        return response
+    finally:
+        with OPS_LOCK:
+            OPS["active_requests"] -= 1
+            OPS["completed_requests"] += 1
+            OPS["failed_requests"] += int(failed)
+            OPS["total_duration_ms"] += (time.monotonic() - started) * 1000
+
+
+PUBLIC_PATHS = {"/", "/health"}
+# These check the owner's Hugging Face token themselves (owner_token below).
+OWNER_PATHS = {"/api/admin/train", "/api/admin/train/status"}
+
+
+class BodyTooLarge(Exception):
+    pass
+
+
+def service_key_valid(presented: Optional[bytes]) -> bool:
+    if not ML_SERVICE_KEY or not presented:
+        return False
+    return hmac.compare_digest(presented, ML_SERVICE_KEY.encode("utf-8"))
+
+
+async def _reply(send, status: int, detail: str, code: str):
+    body = json.dumps({"detail": detail, "code": code}).encode("utf-8")
+    await send({"type": "http.response.start", "status": status,
+                "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+    await send({"type": "http.response.body", "body": body})
+
+
+class ServiceGate:
+    """Outermost middleware. It refuses a call without the service key before
+    any route runs, and a body over ML_MAX_BODY_BYTES whether or not it states
+    its length."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        path = scope.get("path", "")
+        headers = dict(scope.get("headers") or [])
+        # A CORS preflight carries no credentials; the CORS middleware answers it.
+        if scope.get("method") != "OPTIONS" and path not in PUBLIC_PATHS and path not in OWNER_PATHS:
+            if not ML_SERVICE_KEY:
+                return await _reply(send, 503, "This service has no service key configured", "SERVICE_KEY_NOT_CONFIGURED")
+            if not service_key_valid(headers.get(SERVICE_KEY_HEADER.encode())):
+                return await _reply(send, 401, "A valid service key is required", "SERVICE_KEY_REQUIRED")
+        stated = headers.get(b"content-length")
+        if stated is not None:
+            try:
+                if int(stated) > ML_MAX_BODY_BYTES:
+                    return await _reply(send, 413, f"Request body is over {ML_MAX_BODY_BYTES} bytes", "BODY_TOO_LARGE")
+            except ValueError:
+                return await _reply(send, 400, "Content-Length must be a number", "BAD_CONTENT_LENGTH")
+        received = 0
+        started = False
+
+        async def bounded_receive():
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > ML_MAX_BODY_BYTES:
+                    raise BodyTooLarge()
+            return message
+
+        async def tracked_send(message):
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, bounded_receive, tracked_send)
+        except BodyTooLarge:
+            if started:
+                raise
+            await _reply(send, 413, f"Request body is over {ML_MAX_BODY_BYTES} bytes", "BODY_TOO_LARGE")
+
+
+# Added last, so it runs first: before CORS and every route.
+api.add_middleware(ServiceGate)
 
 
 @api.exception_handler(BadRequest)
@@ -1450,7 +1385,8 @@ async def api_health():
             "popular_domains_loaded": popular_domains_loaded(),
             "transformers": transformer_loader.transformers_available,
             "transformer_models_loaded": list(transformer_loader.pipelines.keys()),
-            "gradio_ui": True,
+            "service_key": "required" if ML_SERVICE_KEY else "not_configured",
+            "max_body_bytes": ML_MAX_BODY_BYTES,
         },
         "version": "2.0.0",
         "new_endpoints": [
@@ -1473,7 +1409,73 @@ async def api_analyze(request: Request):
     context = body.get("context")
     history = body.get("conversation_history")
     result = await run_in_threadpool(reasoning_service.analyze, query, context, history)
-    return result
+    return as_reasoning_text(result)
+
+
+ANALYSIS_SCHEMA = "cyberforge.ml.analysis.v1"
+VERDICT_POLICY = "trained_models_v1"
+
+
+def analysis_record(target: str, predictions: Dict, started: float) -> Dict:
+    """The versioned record of one analysis (V2-ML02), beside the older fields.
+
+    Verdict policy trained_models_v1: "threat" when any trained model answered
+    and flagged the target, "benign" when trained models answered and none
+    flagged it, "unknown" when no trained model answered (rule-based estimates
+    only). Scores are each model's output rescaled at its decision threshold:
+    raw scores, not calibrated probabilities, so no probability is given."""
+    detectors, warnings = [], []
+    for name, p in predictions.items():
+        trained = p.get("inference_source") == "ml_model"
+        meta = ml_loader.metadata.get(name, {}) if trained else {}
+        if "error" in p:
+            verdict = "unknown"
+        else:
+            verdict = "threat" if p.get("prediction") == 1 else "benign"
+        detectors.append({
+            "id": name,
+            "engine": "trained_model" if trained else "heuristic",
+            "verdict": verdict,
+            "raw_score": p.get("threat_score"),
+            "calibrated_probability": None,
+            "trained_at": meta.get("trained_at"),
+            "decision_threshold": meta.get("decision_threshold"),
+            "feature_set": meta.get("feature_set"),
+            "missing_features": p.get("missing_features"),
+        })
+        if not trained:
+            why = p.get("note") or ("features were missing" if p.get("missing_features") else "the model is not loaded")
+            warnings.append(f"{name}: rule-based estimate, not the trained model ({why})")
+    answered = [d for d in detectors if d["engine"] == "trained_model" and d["verdict"] != "unknown"]
+    if not answered:
+        verdict, reason = "unknown", "no trained model answered; only rule-based estimates are available"
+    elif any(d["verdict"] == "threat" for d in answered):
+        flagged = [d["id"] for d in answered if d["verdict"] == "threat"]
+        verdict, reason = "threat", f"flagged by {', '.join(flagged)}"
+    else:
+        verdict, reason = "benign", f"{len(answered)} trained model(s) answered and none flagged it"
+    warnings.append("scores are model outputs rescaled at each decision threshold, not calibrated probabilities")
+    return {
+        "schema": ANALYSIS_SCHEMA,
+        "analysis_id": uuid.uuid4().hex,
+        "task": "url",
+        "target": target,
+        "verdict": verdict,
+        "verdict_reason": reason,
+        "policy": VERDICT_POLICY,
+        "coverage": {
+            "detectors": len(detectors),
+            "trained_models_answered": len(answered),
+            "heuristic_estimates": sum(1 for d in detectors if d["engine"] == "heuristic"),
+            # popular_domains_loaded() is the number of domains in the list.
+            "reputation_list_loaded": popular_domains_loaded() > 0,
+            "reputation_list_size": popular_domains_loaded(),
+        },
+        "detectors": detectors,
+        "service_version": SERVICE_VERSION,
+        "duration_ms": round((time.perf_counter() - started) * 1000, 1),
+        "warnings": warnings,
+    }
 
 
 @api.post("/analyze-url")
@@ -1482,6 +1484,7 @@ async def api_analyze_url(request: Request):
     Returns per-model predictions + unified aggregate with risk_score (0-100).
     All models now consistently include threat_score (probability of class-1).
     """
+    started = time.perf_counter()
     body = await json_object(request)
     url = text_field(body, "url")
     if not url:
@@ -1542,6 +1545,7 @@ async def api_analyze_url(request: Request):
         "model_predictions": predictions,
         "features_analyzed": features,
         "timestamp": datetime.utcnow().isoformat(),
+        "analysis": analysis_record(url, predictions, started),
     }
 
 
@@ -1551,7 +1555,7 @@ async def api_scan_threats(request: Request):
     body = await json_object(request)
     query = json.dumps(body.get("data", body), indent=1)[:3000]
     result = await run_in_threadpool(reasoning_service.analyze, f"Scan these indicators for threats:\n{query}")
-    return result
+    return as_reasoning_text(result)
 
 
 @api.post("/api/insights/generate")
@@ -1561,10 +1565,13 @@ async def api_generate_insights(request: Request):
     query = text_field(body, "query")
     context = body.get("context")
     result = await run_in_threadpool(reasoning_service.analyze, query, context)
+    labelled = as_reasoning_text(result)
     return {
         "insights": result.get("response", ""),
         "confidence": result.get("confidence", 0),
         "timestamp": datetime.utcnow().isoformat(),
+        "result_kind": labelled["result_kind"],
+        "engine": labelled["engine"],
     }
 
 
@@ -1629,11 +1636,130 @@ async def api_v2_security_chat(request: Request):
     if not query:
         return JSONResponse(status_code=400, content={"detail": "query required"})
     max_tokens = int_field(body, "max_tokens", 512, 1, 2048)
-    result = await run_in_threadpool(transformer_loader.security_chat, query, max_tokens)
-    # Last resort: ML heuristic if no LLM answered
+    # A caller that waits longer may give the model more time (5-50 s).
+    budget = int_field(body, "time_budget_s", int(LOCAL_LLM_TIME_BUDGET_S), 5, int(LOCAL_LLM_MAX_TIME_BUDGET_S))
+    # "interactive" only when a person is waiting on the answer (the assistant);
+    # anything else is background work and gives way to it.
+    interactive = text_field(body, "priority") == "interactive"
+    result = await run_in_threadpool(transformer_loader.security_chat, query, max_tokens, budget, interactive)
     if result.get("error"):
-        return reasoning_service._fallback(query)
-    return result
+        # No made-up analysis in its place: the rule-based summary keyword-matches
+        # the whole prompt (context included) and is not an answer to a question.
+        return {**result, "response": None, "answered": False, "result_kind": "reasoning_text"}
+    return {**result, "answered": True, "result_kind": "reasoning_text"}
+
+
+CAPABILITIES_SCHEMA = "cyberforge.ml.capabilities.v1"
+SERVICE_VERSION = "2.0.0"
+BATCH_MAX_URLS = 20
+REASONING_ROUTES = ["/analyze", "/scan-threats", "/api/insights/generate", "/api/analysis/network",
+                    "/api/ai/execute-task", "/api/browser/analyze", "/api/threat-feeds/analyze"]
+
+
+def capability_report() -> Dict:
+    """What this service can do right now, each capability with its kind, its
+    readiness and its limits (V2-ML02). Nothing here is a promise: a
+    capability that is loading, failed or unavailable says so."""
+    models = []
+    for name in ml_loader.MODEL_NAMES:
+        meta = ml_loader.metadata.get(name, {})
+        loaded = name in ml_loader.models
+        models.append({
+            "id": name,
+            "kind": "trained_model",
+            "readiness": "ready" if loaded else "unavailable",
+            "reason": None if loaded else "the model file did not load; answers come from rule-based estimates",
+            "answers_without_model": "heuristic",
+            "trained_at": meta.get("trained_at"),
+            "feature_count": len(meta.get("feature_names") or []) or None,
+            "decision_threshold": meta.get("decision_threshold"),
+            "routes": ["/api/models/predict", "/analyze-url", "/api/v2/batch-analyze", "/api/v2/ioc-scan", "/api/v2/url-enrich"],
+        })
+    bert_error = transformer_loader.load_errors.get("url_phishing_bert")
+    if "url_phishing_bert" in transformer_loader.pipelines:
+        bert_state, bert_reason = "ready", None
+    elif bert_error:
+        bert_state, bert_reason = "failed", str(bert_error)[:300]
+    elif transformer_loader.transformers_available:
+        bert_state, bert_reason = "not_loaded", "loads on first use"
+    else:
+        bert_state, bert_reason = "unavailable", "transformers is not installed"
+    llm = local_llm.status()
+    if llm.get("loaded"):
+        llm_state, llm_reason = "ready", None
+    elif llm.get("error"):
+        llm_state, llm_reason = "failed", str(llm["error"])[:300]
+    elif llm.get("loading"):
+        llm_state, llm_reason = "loading", None
+    else:
+        llm_state, llm_reason = "not_loaded", "loads in the background after start"
+    return {
+        "schema": CAPABILITIES_SCHEMA,
+        "operational": operational_report(),
+        "service_version": SERVICE_VERSION,
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "capabilities": models + [
+            {
+                "id": "url_phishing_bert",
+                "kind": "transformer",
+                "readiness": bert_state,
+                "reason": bert_reason,
+                "model": transformer_loader.REGISTRY["url_phishing_bert"]["repo"],
+                "routes": ["/api/v2/url-classify", "/api/v2/ioc-scan", "/api/v2/url-enrich"],
+            },
+            {
+                "id": "dga_detector",
+                "kind": "heuristic",
+                "readiness": "ready",
+                "reason": "an entropy rule, not a trained model",
+                "routes": ["/api/v2/dga-detect", "/api/v2/ioc-scan"],
+            },
+            {
+                "id": "url_reputation",
+                "kind": "reference_list",
+                "readiness": "ready" if popular_domains_loaded() else "unavailable",
+                "reason": None if popular_domains_loaded() else "the popular-domain list did not load",
+                "routes": ["/analyze-url", "/api/models/predict"],
+            },
+            {
+                "id": "reasoning_llm",
+                "kind": "language_model",
+                "readiness": llm_state,
+                "reason": llm_reason,
+                "model": f"{llm.get('repo')}/{llm.get('file')}",
+                "answers_without_model": "rule_based_summary",
+                "result_kind": "reasoning_text",
+                "routes": ["/api/v2/security-chat", "/api/v2/chat"] + REASONING_ROUTES,
+                "limits": {
+                    "max_input_chars": LOCAL_LLM_MAX_INPUT_CHARS,
+                    "max_output_tokens": LOCAL_LLM_MAX_TOKENS,
+                    "queue_wait_seconds": LOCAL_LLM_QUEUE_TIMEOUT_S,
+                    "time_budget_seconds": LOCAL_LLM_TIME_BUDGET_S,
+                    "max_time_budget_seconds": LOCAL_LLM_MAX_TIME_BUDGET_S,
+                    "interactive_wait_seconds": LOCAL_LLM_INTERACTIVE_WAIT_S,
+                    "concurrent_generations": 1,
+                },
+            },
+        ],
+        "limits": {"max_body_bytes": ML_MAX_BODY_BYTES, "batch_max_urls": BATCH_MAX_URLS},
+        "not_offered": [
+            {"what": "network intrusion detection", "note": "/api/analysis/network returns reasoning text, not a trained detector's verdict"},
+            {"what": "task execution", "note": "/api/ai/execute-task returns reasoning text and carries nothing out (executed: false)"},
+            {"what": "dataset processing", "note": "no dataset pipeline is served; /api/datasets/process was removed"},
+        ],
+        "training": {
+            "who": "the Space owner only (Hugging Face token)",
+            "routes": ["/api/admin/train", "/api/admin/train/status"],
+            "separate_from_inference": False,
+            "note": "training runs in this process for now (V2-ML03)",
+        },
+    }
+
+
+@api.get("/api/v2/capabilities")
+async def api_v2_capabilities():
+    """The versioned capability and readiness report (cyberforge.ml.capabilities.v1)."""
+    return capability_report()
 
 
 @api.get("/api/v2/status")
@@ -2138,6 +2264,18 @@ async def api_v2_chat(request: Request):
     return fallback
 
 
+def as_reasoning_text(result: Dict, executed: Optional[bool] = None) -> Dict:
+    """Mark an answer as text from the language model, or from the rule-based
+    summary written when it does not answer: not a trained detector's verdict,
+    and not an action carried out (V2-ML02)."""
+    out = dict(result)
+    out["result_kind"] = "reasoning_text"
+    out["engine"] = "rule_based_summary" if result.get("model_used") == "cyberforge-ml-fallback" else "language_model"
+    if executed is not None:
+        out["executed"] = executed
+    return out
+
+
 @api.post("/api/analysis/network")
 async def api_analyze_network(request: Request):
     """Network traffic analysis – called by backend mlService.analyzeNetworkTraffic()"""
@@ -2147,7 +2285,8 @@ async def api_analyze_network(request: Request):
         reasoning_service.analyze,
         f"Analyze this network traffic for security threats:\n{json.dumps(traffic_data, indent=1)[:3000]}",
     )
-    return result
+    # Text about the traffic, not a trained network-intrusion detector.
+    return as_reasoning_text(result)
 
 
 @api.post("/api/ai/execute-task")
@@ -2160,7 +2299,8 @@ async def api_execute_task(request: Request):
         reasoning_service.analyze,
         f"Execute cybersecurity task '{task_type}':\n{json.dumps(task_data, indent=1)[:3000]}",
     )
-    return result
+    # Text about the task. Nothing is carried out here, so there is no receipt.
+    return as_reasoning_text(result, executed=False)
 
 
 @api.post("/api/browser/analyze")
@@ -2172,7 +2312,7 @@ async def api_analyze_browser(request: Request):
         reasoning_service.analyze,
         f"Analyze this browser session for security threats:\n{json.dumps(session, indent=1)[:3000]}",
     )
-    return result
+    return as_reasoning_text(result)
 
 
 @api.post("/api/threat-feeds/analyze")
@@ -2183,161 +2323,34 @@ async def api_analyze_threat_feed(request: Request):
         reasoning_service.analyze,
         f"Analyze this threat feed:\n{json.dumps(body, indent=1)[:3000]}",
     )
-    return result
-
-
-@api.post("/api/datasets/process")
-async def api_process_dataset(request: Request):
-    body = await json_object(request)
-    return {
-        "status": "processed",
-        "dataset_name": body.get("dataset_name", ""),
-        "timestamp": datetime.utcnow().isoformat(),
-    }
+    return as_reasoning_text(result)
 
 
 # ============================================================================
-# GRADIO INTERFACE  (UI tabs – notebooks, training, inference, models, API)
+# LANDING PAGE  (static; the service has no interactive UI)
 # ============================================================================
 
-def create_interface():
-    with gr.Blocks(title="CyberForge AI") as demo:
-        gr.Markdown("""
-        # 🔐 CyberForge AI - ML Training Platform
+LANDING_HTML = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberForge ML service</title>
+<style>body{font-family:system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;line-height:1.5;color:#1b1f24;background:#fff}
+code{background:#f1f3f5;padding:0 .25rem;border-radius:3px}</style></head>
+<body><h1>CyberForge ML service</h1>
+<p>This Space serves the detection models and the security chat model to the CyberForge backend.
+It has no interactive interface: it does not run notebooks, train on uploaded data, or load uploaded models.</p>
+<p><code>GET /health</code> is public. Every other route needs the service key held by the backend,
+and model training needs the Space owner's token.</p>
+<p>Source: <a href="https://github.com/Che237/cyberforge">github.com/Che237/cyberforge</a></p>
+</body></html>"""
 
-        Train cybersecurity ML models and run Jupyter notebooks on Hugging Face.
-        """)
 
-        with gr.Tabs():
-            # ============ NOTEBOOKS TAB ============
-            with gr.TabItem("📓 Notebooks"):
-                gr.Markdown("### Run ML Pipeline Notebooks\nExecute the CyberForge ML notebooks directly in the cloud.")
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        notebook_dropdown = gr.Dropdown(
-                            choices=get_available_notebooks(),
-                            label="Select Notebook",
-                            value=get_available_notebooks()[0] if get_available_notebooks() else None,
-                        )
-                        refresh_btn = gr.Button("🔄 Refresh List")
-                        view_btn = gr.Button("👁 View Content", variant="secondary")
-                        execute_btn = gr.Button("▶ Execute Notebook", variant="primary")
-                        gr.Markdown("### Run Single Cell")
-                        cell_number = gr.Number(label="Cell Number", value=1, minimum=1)
-                        run_cell_btn = gr.Button("Run Cell")
-                    with gr.Column(scale=2):
-                        notebook_status = gr.Markdown("Select a notebook to view or execute.")
-                        notebook_output = gr.Markdown("", label="Output")
-
-                def refresh_notebooks():
-                    notebooks = get_available_notebooks()
-                    return gr.update(choices=notebooks, value=notebooks[0] if notebooks else None)
-
-                refresh_btn.click(refresh_notebooks, outputs=notebook_dropdown)
-                view_btn.click(read_notebook_content, inputs=notebook_dropdown, outputs=notebook_output)
-                execute_btn.click(execute_notebook, inputs=notebook_dropdown, outputs=[notebook_status, notebook_output])
-                run_cell_btn.click(run_notebook_cell, inputs=[notebook_dropdown, cell_number], outputs=notebook_output)
-
-            # ============ TRAIN MODEL TAB ============
-            with gr.TabItem("🎯 Train Model"):
-                gr.Markdown("### Train a Security ML Model\nUpload your dataset and train a model for threat detection.")
-                with gr.Row():
-                    with gr.Column():
-                        task_dropdown = gr.Dropdown(choices=SECURITY_TASKS, label="Security Task", value="Phishing Detection")
-                        model_dropdown = gr.Dropdown(choices=list(MODEL_TYPES.keys()), label="Model Type", value="Random Forest")
-                        data_upload = gr.File(label="Upload Training Data (CSV)", file_types=[".csv"])
-                        train_btn = gr.Button("🚀 Train Model", variant="primary")
-                    with gr.Column():
-                        train_output = gr.Markdown("Upload data and click Train to begin.")
-                        model_path_output = gr.Textbox(label="Model Path", visible=False)
-                        metrics_output = gr.Textbox(label="Metrics JSON", visible=False)
-                train_btn.click(train_model_from_data, inputs=[data_upload, model_dropdown, task_dropdown], outputs=[train_output, model_path_output, metrics_output])
-
-            # ============ INFERENCE TAB ============
-            with gr.TabItem("🔍 Inference"):
-                gr.Markdown("### Run Model Inference\nLoad a trained model and make predictions.")
-                with gr.Row():
-                    with gr.Column():
-                        model_upload = gr.File(label="Upload Model (.pkl)")
-                        features_input = gr.Textbox(label="Features (JSON)", value='{"url_length": 50, "has_https": 1, "digit_count": 5}', lines=5)
-                        predict_btn = gr.Button("🎯 Predict", variant="primary")
-                    with gr.Column():
-                        prediction_output = gr.Textbox(label="Prediction Result", lines=10)
-                predict_btn.click(run_inference, inputs=[model_upload, features_input], outputs=prediction_output)
-
-            # ============ MODELS TAB ============
-            with gr.TabItem("📦 Models"):
-                gr.Markdown("### Trained Models")
-                models_list = gr.Markdown(list_trained_models())
-                refresh_models_btn = gr.Button("🔄 Refresh")
-                refresh_models_btn.click(list_trained_models, outputs=models_list)
-
-            # ============ API TAB ============
-            with gr.TabItem("🔌 API"):
-                gr.Markdown("""
-## API Integration — v2.0
-
-### Core Endpoints (stable, used by Heroku backend)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check — version, models, services |
-| POST | `/analyze` | AI chat / general analysis (LLM or ML fallback) |
-| POST | `/analyze-url` | URL threat analysis — 4 ML models + risk factors |
-| POST | `/scan-threats` | Deep threat scan (LLM or ML fallback) |
-| POST | `/api/insights/generate` | AI-generated security insights |
-| POST | `/api/models/predict` | Direct ML model prediction |
-| GET | `/models` | List loaded models with source info |
-
-### v2 Endpoints (new — for distributed agents + AI Deep Scan)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v2/batch-analyze` | Batch analyze up to 20 URLs (for multi-agent) |
-| GET | `/api/v2/explain/{model_name}` | Feature importances / explainability |
-| POST | `/api/v2/url-classify` | BERT-based URL phishing classifier |
-| POST | `/api/v2/dga-detect` | DGA domain detection (entropy heuristic) |
-| POST | `/api/v2/ioc-scan` | Multi-IOC scanner: URL + domain + DGA + BERT |
-| POST | `/api/v2/url-enrich` | Enriched analysis: ML + BERT + DGA + explainability |
-| POST | `/api/v2/chat` | Security chatbot — context-grounded, RAG-lite, machine→human translation |
-| POST | `/api/v2/security-chat` | Security LLM Q&A (open-source model running in this Space) |
-| GET | `/api/v2/status` | Transformer model load status |
-
-### Quick Examples
-
-```bash
-# Batch analyze URLs (for distributed agents)
-curl -X POST https://che237-cyberforge.hf.space/api/v2/batch-analyze \\
-  -H "Content-Type: application/json" \\
-  -d '{"urls": ["https://example.com", "http://evil.xyz/login?id=1"]}'
-
-# Enriched URL analysis (Deep Scan mode)
-curl -X POST https://che237-cyberforge.hf.space/api/v2/url-enrich \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com"}'
-
-# Feature explainability
-curl https://che237-cyberforge.hf.space/api/v2/explain/phishing_detection
-
-# IOC multi-field scan
-curl -X POST https://che237-cyberforge.hf.space/api/v2/ioc-scan \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "http://192.168.1.1/login", "domain": "192.168.1.1"}'
-
-# Chatbot (Wave 2 extension point)
-curl -X POST https://che237-cyberforge.hf.space/api/v2/chat \\
-  -H "Content-Type: application/json" \\
-  -d '{"message": "Is this URL suspicious: http://login.g00gle.com.xyz/verify"}'
-```
-                """)
-
-        gr.Markdown("---\n**CyberForge AI** | [GitHub](https://github.com/Che237/cyberforge) | [Datasets](https://huggingface.co/datasets/Che237/cyberforge-datasets)")
-
-    return demo
+@api.get("/", response_class=HTMLResponse)
+async def landing():
+    return LANDING_HTML
 
 
 # ============================================================================
-# MAIN – Mount Gradio on FastAPI
+# MAIN
 # ============================================================================
 
 # Initialize services at startup
@@ -2347,9 +2360,7 @@ ml_loader.initialize()
 threading.Thread(target=local_llm.load, name="local-llm-loader", daemon=True).start()
 logger.info("✅ Services initialized")
 
-# Create Gradio app and mount it on FastAPI
-demo = create_interface()
-app = gr.mount_gradio_app(api, demo, path="/")
+app = api
 
 if __name__ == "__main__":
     import uvicorn

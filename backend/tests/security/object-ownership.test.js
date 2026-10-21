@@ -2,6 +2,32 @@
 // reach. Two ordinary accounts, an analyst and an administrator use the real
 // routes, the real session check and the real in-memory stores (B03.2c).
 jest.mock('../../src/models/User', () => ({ findById: jest.fn() }));
+// Each account's workspace is "ws-<account id>"; the audit trail is kept in memory.
+jest.mock('../../src/services/workspaceService', () => ({
+  ensurePersonalWorkspace: jest.fn(async user => `ws-${user._id}`),
+  workspaceIdFor: jest.fn(async principal => (principal && principal.userId ? (principal.workspaceId || `ws-${principal.userId}`) : null)),
+  activeMembership: jest.fn(async (workspaceId, userId) => (workspaceId === `ws-${userId}` ? { role: 'owner' } : null))
+}));
+jest.mock('../../src/models/Policy', () => require('../helpers/fakeCollection').fakeCollection({
+  unique: [{ fields: ['policyId'] }, { fields: ['defaultKey'] }]
+}));
+jest.mock('../../src/models/ResponseAction', () => Object.assign(
+  require('../helpers/fakeCollection').fakeCollection({ unique: [{ fields: ['actionId'] }] }),
+  { STATUSES: ['proposed', 'applied', 'failed', 'unsupported'], RETENTION_DAYS: 90 }
+));
+jest.mock('../../src/models/SandboxScan', () => Object.assign(
+  require('../helpers/fakeCollection').fakeCollection({ unique: [{ fields: ['scanId'] }] }),
+  { VERDICTS: ['clean', 'suspicious', 'malicious', 'unknown'], RETENTION_DAYS: 90 }
+));
+jest.mock('../../src/models/AuditEvent', () => Object.assign(
+  require('../helpers/fakeCollection').fakeCollection(),
+  { OUTCOMES: ['success', 'failure', 'warning'], RETENTION_DAYS: 90 }
+));
+jest.mock('../../src/models/AlertDecision', () => require('../helpers/fakeCollection').fakeCollection());
+jest.mock('../../src/models/SyncedMemory', () => Object.assign(
+  require('../helpers/fakeCollection').fakeCollection({ unique: [{ fields: ['workspaceId', 'memoryId'] }] }),
+  { RETENTION_DAYS: 365, MAX_PER_WORKSPACE: 5000 }
+));
 jest.mock('../../src/utils/logger', () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }));
 jest.mock('../../src/services/redis', () => ({
   isReady: () => false, get: jest.fn(async () => null), set: jest.fn(async () => true), del: jest.fn(async () => true)
@@ -54,6 +80,8 @@ const { appwriteService } = require('../../src/services/appwriteService');
 const otxService = require('../../src/services/otx');
 const { agentManager } = require('../../src/agent/AgentManager');
 const { sandboxAnalysisService } = require('../../src/services/sandboxAnalysisService');
+const SandboxScan = require('../../src/models/SandboxScan');
+const AuditEvent = require('../../src/models/AuditEvent');
 const { memoryService } = require('../../src/services/memoryService');
 const { distributedIntelligenceService } = require('../../src/services/distributedIntelligenceService');
 const { policyEngineService } = require('../../src/services/policyEngineService');
@@ -116,7 +144,10 @@ describe('sandbox scans', () => {
     });
     expect(response.status).toBe(200);
     scanId = response.body.scan.id;
-    expect(sandboxAnalysisService.scans.get(scanId).ownerId).toBe(alice._id);
+    const stored = SandboxScan.docs.find(doc => doc.scanId === scanId);
+    expect(stored.ownerId).toBe(alice._id);
+    expect(stored.workspaceId).toBe(`ws-${alice._id}`);
+    expect(response.body.scan.integrity).toMatchObject({ algorithm: 'sha256', intact: true });
   });
 
   test('another account cannot read it, and is told only that it was not found', async () => {
@@ -129,7 +160,7 @@ describe('sandbox scans', () => {
 
   test('another account cannot delete it', async () => {
     expect((await as(bob, `/api/sandbox/scan/${scanId}`, { method: 'DELETE' })).status).toBe(404);
-    expect(sandboxAnalysisService.scans.has(scanId)).toBe(true);
+    expect(SandboxScan.docs.some(doc => doc.scanId === scanId)).toBe(true);
   });
 
   test('history, indicators and the technique heatmap cover only the caller\'s scans', async () => {
@@ -143,18 +174,34 @@ describe('sandbox scans', () => {
     expect((await as(bob, '/api/sandbox/mitre/heatmap')).body).toMatchObject({ count: 0, techniques: [] });
   });
 
-  test('a scan stored without an owner is visible to nobody', () => {
-    sandboxAnalysisService._store({ id: 'legacy', type: 'url', target: 'x', iocs: [], mitre: { techniques: [] } });
-    expect(sandboxAnalysisService.getScan('legacy', alice._id)).toBeNull();
-    expect(sandboxAnalysisService.getScan('legacy', undefined)).toBeNull();
-    expect(sandboxAnalysisService.listHistory({}).total).toBe(0);
-    sandboxAnalysisService.scans.delete('legacy');
-    sandboxAnalysisService.scanOrder.splice(sandboxAnalysisService.scanOrder.indexOf('legacy'), 1);
+  test('a scan with no account behind it is not kept, and a read with no workspace is refused', async () => {
+    const before = SandboxScan.docs.length;
+    await expect(sandboxAnalysisService.analyzeUrl('http://198.51.100.8/', {}, {}, null)).rejects.toThrow(/signed-in account/);
+    expect(SandboxScan.docs).toHaveLength(before);
+    for (const principal of [null, { userId: alice._id }]) {
+      await expect(sandboxAnalysisService.getScan(scanId, principal)).rejects.toMatchObject({ code: 'WORKSPACE_REQUIRED' });
+      await expect(sandboxAnalysisService.listHistory({}, principal)).rejects.toMatchObject({ code: 'WORKSPACE_REQUIRED' });
+    }
   });
 
-  test('the owner can delete it', async () => {
+  test('a changed record is reported as no longer intact', async () => {
+    const stored = SandboxScan.docs.find(doc => doc.scanId === scanId);
+    const verdict = stored.verdict;
+    stored.verdict = verdict === 'malicious' ? 'clean' : 'malicious';
+    expect((await as(alice, `/api/sandbox/scan/${scanId}`)).body.scan.integrity.intact).toBe(false);
+    stored.verdict = verdict;
+    expect((await as(alice, `/api/sandbox/scan/${scanId}`)).body.scan.integrity.intact).toBe(true);
+  });
+
+  test('the owner can delete it, and a minimal record of the deletion stays', async () => {
+    const stored = SandboxScan.docs.find(doc => doc.scanId === scanId);
     expect((await as(alice, `/api/sandbox/scan/${scanId}`, { method: 'DELETE' })).status).toBe(200);
-    expect(sandboxAnalysisService.scans.has(scanId)).toBe(false);
+    expect(SandboxScan.docs.some(doc => doc.scanId === scanId)).toBe(false);
+    const deletion = AuditEvent.docs.find(event => event.action === 'evidence.delete');
+    expect(deletion).toMatchObject({
+      workspaceId: `ws-${alice._id}`, actorUserId: alice._id, resource: `sandbox scan ${scanId}`,
+      details: { target: 'http://198.51.100.7/login', evidenceHash: stored.evidenceHash }
+    });
   });
 });
 
@@ -356,8 +403,8 @@ describe('policy responses and audit statistics', () => {
     expect((await as(alice, '/api/policy/evaluate', { method: 'POST', body: event })).body.data.triggered).toEqual([]);
   });
 
-  test('the response log shows a user their own responses, and analysts every response', async () => {
-    const everything = policyEngineService.getResponseLog({}).total;
+  test('the response log shows each account its own workspace\'s responses; every response is the administrators\' platform view', async () => {
+    const everything = (await policyEngineService.getPlatformResponseLog({})).total;
     const mine = await as(alice, '/api/policy/response-log');
     const theirs = await as(bob, '/api/policy/response-log');
     expect(mine.body.total).toBeGreaterThan(0);
@@ -365,13 +412,27 @@ describe('policy responses and audit statistics', () => {
     expect(theirs.body.log.every(entry => entry.userId === bob._id)).toBe(true);
     expect(mine.body.total + theirs.body.total).toBe(everything);
 
-    expect((await as(analyst, '/api/policy/response-log')).body.total).toBe(everything);
-    expect((await as(admin, '/api/policy/response-log')).body.total).toBe(everything);
+    // an analyst sees their own workspace, not everyone's
+    expect((await as(analyst, '/api/policy/response-log')).body.total).toBe(0);
+    expect((await as(analyst, '/api/policy/response-log?scope=platform')).status).toBe(403);
+    expect((await as(admin, '/api/policy/response-log?scope=platform')).body.total).toBe(everything);
   });
 
-  test('audit statistics, which name the most active users, need the analyst role', async () => {
-    expect((await as(alice, '/api/audit/stats')).status).toBe(403);
-    expect((await as(analyst, '/api/audit/stats')).status).toBe(200);
+  test('audit statistics cover the caller\'s own workspace; the platform view, which names accounts, is for administrators', async () => {
+    const own = await as(alice, '/api/audit/stats');
+    expect(own.status).toBe(200);
+    expect(own.body.scope).toBe('workspace');
+    expect(own.body.data.topUsers).toBeUndefined();
+    // the policy evaluations above were recorded, each in the evaluating account's workspace
+    const mine = await as(alice, '/api/audit/logs?action=policy.triggered');
+    expect(mine.body.total).toBeGreaterThan(0);
+    expect(mine.body.entries.every(entry => entry.actor.userId === alice._id)).toBe(true);
+
+    expect((await as(analyst, '/api/audit/stats?scope=platform')).status).toBe(403);
+    expect((await as(alice, '/api/audit/logs?scope=platform')).status).toBe(403);
+    const platform = await as(admin, '/api/audit/stats?scope=platform');
+    expect(platform.status).toBe(200);
+    expect(platform.body.data.topUsers.length).toBeGreaterThan(0);
   });
 });
 

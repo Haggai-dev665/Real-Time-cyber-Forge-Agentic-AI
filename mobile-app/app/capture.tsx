@@ -5,6 +5,10 @@
  * The capture engine is native + Android-only (see src/native/vpn.ts). When it
  * isn't in the build, this screen shows an honest "needs a dev build" state
  * rather than faking traffic.
+ *
+ * Capture starts only when "Capture network traffic" is on in Settings ›
+ * Privacy, and flows go to the account only while "Sync captures" is on
+ * (SEC-07; enforced in src/context/VpnContext.tsx).
  */
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
@@ -16,13 +20,17 @@ import { Card, SecLabel, Pill, StatTiles, EmptyState } from '../src/components/u
 import { Icon } from '../src/components/Icon';
 import { LiveDot } from '../src/components/LiveDot';
 import { useVpn } from '../src/context/VpnContext';
+import { usePrivacy } from '../src/context/PrivacyContext';
 import { useApi } from '../src/hooks/useApi';
 import { endpoints } from '../src/api/endpoints';
-import type { NetworkFlow } from '../src/native/vpn';
+import { unavailableReason, UNAVAILABLE_TEXT, type NetworkFlow } from '../src/native/vpn';
 
 export default function Capture() {
   const router = useRouter();
-  const { supported, state, flows, syncedCount, start, stop, installCa, refreshCa, clear } = useVpn();
+  const { supported, state, flows, syncedCount, syncing, start, stop, installCa, refreshCa, clear } = useVpn();
+  const privacy = usePrivacy();
+  const captureAllowed = privacy.allows('capture');
+  const openPrivacy = () => router.push({ pathname: '/screen/[key]', params: { key: 'settings' } });
 
   const running = state.status === 'running';
   const busy = state.status === 'preparing' || state.status === 'stopping';
@@ -47,7 +55,7 @@ export default function Capture() {
     <Screen refreshing={desktop.loading} onRefresh={() => { desktop.refresh(); void refreshCa(); }}>
       {/* header */}
       <View style={styles.head}>
-        <Pressable onPress={() => router.back()} style={styles.back} hitSlop={10}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back} hitSlop={10}>
           <Icon name="chevL" size={20} color={colors.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
@@ -63,10 +71,9 @@ export default function Capture() {
         <View style={{ paddingHorizontal: 18 }}>
           <Card style={styles.notice}>
             <Icon name="plug" size={22} color={colors.amber2} />
-            <Text style={styles.noticeTitle}>Capture engine not in this build</Text>
+            <Text style={styles.noticeTitle}>Capture is not available in this build</Text>
             <Text style={styles.noticeBody}>
-              The VPN capture engine is a native Android module. Run a dev or EAS build
-              (not Expo Go) on an Android device to enable device-wide capture.
+              {unavailableReason ? UNAVAILABLE_TEXT[unavailableReason] : 'Capture is not available.'}
             </Text>
           </Card>
         </View>
@@ -89,9 +96,25 @@ export default function Capture() {
                 </View>
               </View>
 
-              <Pressable
+              {!captureAllowed && !running ? (
+                <Pressable onPress={openPrivacy} accessibilityRole="button">
+                  <Text style={styles.privacyNote}>
+                    Capture is off in Settings › Privacy. Turn on "Capture network traffic" there to start. Tap to open Privacy.
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={openPrivacy} accessibilityRole="button">
+                  <Text style={styles.privacyNote}>
+                    {syncing
+                      ? 'Sync is on: captured requests go to your account, with sign-in codes and tokens removed from addresses.'
+                      : 'Sync is off: captures stay on this phone and are gone when the app closes.'}
+                  </Text>
+                </Pressable>
+              )}
+
+              <Pressable accessibilityRole="button"
                 onPress={onPrimary}
-                disabled={busy}
+                disabled={busy || (!captureAllowed && !running)}
                 style={[styles.btn, { backgroundColor: running ? tint(colors.red, 0.16) : tint(colors.green, 0.18), borderColor: tint(running ? colors.red : colors.green, 0.5) }]}
               >
                 {busy ? (
@@ -115,7 +138,7 @@ export default function Capture() {
             <StatTiles
               items={[
                 { value: String(flows.length), label: 'flows (live)', color: colors.cyan, icon: 'activity' },
-                { value: String(syncedCount), label: 'synced to DB', color: colors.green, icon: 'refresh' },
+                { value: syncing ? String(syncedCount) : 'off', label: 'synced to account', color: syncing ? colors.green : colors.faint, icon: 'refresh' },
                 { value: state.caInstalled ? 'trusted' : 'off', label: 'root CA', color: state.caInstalled ? colors.green : colors.amber2, icon: 'lock' },
               ]}
             />
@@ -133,7 +156,7 @@ export default function Capture() {
                   To read full request and response bodies over HTTPS, install and trust the
                   CyberForge root certificate. Without it, encrypted flows show host and IP only.
                 </Text>
-                <Pressable onPress={() => void installCa()} style={[styles.btn, styles.caBtn]}>
+                <Pressable accessibilityRole="button" onPress={() => void installCa()} style={[styles.btn, styles.caBtn]}>
                   <Icon name="shieldCheck" size={16} color={colors.amber2} />
                   <Text style={[styles.btnText, { color: colors.amber2 }]}>Install root CA</Text>
                 </Pressable>
@@ -145,7 +168,7 @@ export default function Capture() {
           <View style={styles.secHead}>
             <SecLabel style={{ marginTop: 0 }}>Live flows</SecLabel>
             {flows.length > 0 ? (
-              <Pressable onPress={clear} hitSlop={8}>
+              <Pressable accessibilityRole="button" onPress={clear} hitSlop={8}>
                 <Text style={styles.clear}>clear</Text>
               </Pressable>
             ) : null}
@@ -278,7 +301,7 @@ function statusLabel(s: string): string {
     case 'running': return 'capturing · device-wide';
     case 'preparing': return 'requesting permission…';
     case 'stopping': return 'stopping…';
-    case 'unsupported': return 'android dev build required';
+    case 'unsupported': return 'not available in this build';
     case 'error': return 'error';
     default: return 'idle';
   }
@@ -323,6 +346,7 @@ const styles = StyleSheet.create({
   controlSub: { fontFamily: fonts.sans, fontSize: 12, color: colors.dim, marginTop: 2, lineHeight: 17 },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: 12, borderWidth: 1 },
   btnText: { fontFamily: fonts.sansSemiBold, fontSize: 14 },
+  privacyNote: { fontFamily: fonts.sans, fontSize: 11.5, color: colors.dim, lineHeight: 16 },
   err: { fontFamily: fonts.mono, fontSize: 10.5, color: colors.red, textAlign: 'center' },
 
   caCard: { padding: 16, gap: 11, marginTop: 12 },

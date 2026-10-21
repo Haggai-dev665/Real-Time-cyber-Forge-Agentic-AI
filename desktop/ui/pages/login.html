@@ -20,12 +20,12 @@
         <div class="wordmark" id="word" style="margin-top:-6px"></div>
         <div class="tagline">
           <h2>Autonomous defense, <span class="fg">forged</span> in real time.</h2>
-          <p>AI agents that detect, detonate, and contain threats across your fleet — before they spread.</p>
+          <p>Scan links, watch your devices, and block threats you approve — with every step on the record.</p>
         </div>
         <div class="feat">
-          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>SOC-grade</div>
-          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 16h6"/></svg>8 AI agents</div>
-          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>Live telemetry</div>
+          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Audit trail</div>
+          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 16h6"/></svg>Approval first</div>
+          <div class="f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg>Signed devices</div>
         </div>
       </div>
 
@@ -36,7 +36,7 @@
           <h1>Sign in to CyberForge</h1>
           <p>Enter your credentials to access the security console.</p>
         </div>
-        <form id="form" onsubmit="return false">
+        <form id="form">
           <div class="field">
             <label>Work email</label>
             <div class="inp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="email" type="email" placeholder="you@company.com" autocomplete="username" /></div>
@@ -59,64 +59,15 @@
           <div class="s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Okta</div>
         </div>
         <div class="fp-foot">New to CyberForge? <a href="register.html">Create an account</a></div>
-        <div class="secure-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Protected by hardware-key MFA · SOC 2 Type II</div>
+        <div class="secure-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Your session is kept in this computer's credential store</div>
       </div>
     </div>
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cf-forge.js"></script>
 <script src="../scripts/cf-auth.js"></script>
-<script>
-fitWindow('win');
-forgeIllustration(document.getElementById('forge'),236);
-cfWordmark(document.getElementById('word'));
-
-/* Already signed in (valid keychain session)? Skip the form and enter the app.
-   Covers reaching this page straight from the installer or a direct link. */
-if(window.cfAuth && cfAuth.available()){
-  cfAuth.isAuthenticated().then(function(r){ if(r&&r.authenticated){ window.location.replace('threat-overview.html'); } }).catch(function(){});
-}
-
-document.getElementById('eye').addEventListener('click',function(){const pw=document.getElementById('pw');pw.type=pw.type==='password'?'text':'password';this.style.color=pw.type==='text'?'var(--amber-2)':'';});
-document.getElementById('remember').addEventListener('click',function(){this.querySelector('.cb').classList.toggle('on');});
-
-const btn=document.getElementById('signin');
-const errEl=document.getElementById('authErr');
-const original=btn.innerHTML;
-function showErr(m){errEl.textContent=m;errEl.classList.add('show');}
-function clearErr(){errEl.textContent='';errEl.classList.remove('show');}
-function setBusy(b){btn.disabled=b;btn.innerHTML=b?'<span class="spinner sm" style="border-top-color:#1a1206;border-color:rgba(26,18,6,.3)"></span>Authenticating…':original;}
-
-async function signIn(){
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('pw').value;
-  clearErr();
-  if(!email||!password){showErr('Enter your work email and password.');return;}
-  setBusy(true);
-  try{
-    const res=await cfAuth.login(email,password);
-    if(res&&res.success&&res.token){window.location.href='threat-overview.html';return;}
-    showErr((res&&(res.message||res.error))||'Invalid email or password.');
-    setBusy(false);
-  }catch(e){showErr((e&&e.message)?e.message:String(e));setBusy(false);}
-}
-btn.addEventListener('click',signIn);
-['email','pw'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();signIn();}}));
-
-/* Google sign-in — opens the consent flow in the system browser, captures the
-   code on a loopback port, exchanges it via the backend. Needs GOOGLE_CLIENT_ID
-   configured on the server. */
-const gbtn=document.getElementById('googleBtn');
-if(gbtn) gbtn.addEventListener('click',async()=>{
-  clearErr(); gbtn.style.opacity='.6'; gbtn.style.pointerEvents='none';
-  try{
-    const res=await cfAuth.google();
-    if(res&&res.success&&res.token){window.location.href='threat-overview.html';return;}
-    showErr((res&&(res.message||res.error))||'Google sign-in is not available. Configure GOOGLE_CLIENT_ID on the server.');
-  }catch(e){showErr((e&&e.message)?e.message:'Google sign-in failed.');}
-  gbtn.style.opacity=''; gbtn.style.pointerEvents='';
-});
-</script>
+<script src="../scripts/pages/login.js"></script>
 </body>
 </html>

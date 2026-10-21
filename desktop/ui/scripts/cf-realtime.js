@@ -1,9 +1,10 @@
 /**
- * CyberForge Realtime — one live SSE connection shared by every page.
+ * CyberForge Realtime — the live feed, for every page.
  *
- * Connects to the backend `/api/stream` (Server-Sent Events) and re-broadcasts
- * each event as a DOM CustomEvent on `window`, so any page can react live
- * instead of polling:
+ * The connection to the backend's `/api/stream` is held by the native layer
+ * (src-tauri/src/stream.rs), once for the whole app. This script only listens:
+ * it receives each event from the native layer and re-broadcasts it as a DOM
+ * CustomEvent on `window`, so any page can react live instead of polling:
  *
  *   window.addEventListener('cf:threat',  e => …)   // e.detail = threat
  *   window.addEventListener('cf:scan',    e => …)   // e.detail = scan result
@@ -12,16 +13,16 @@
  *   window.addEventListener('cf:agent',   e => …)   // e.detail = activity item
  *   window.addEventListener('cf:metrics', e => …)   // e.detail = metrics
  *   window.addEventListener('cf:event',   e => …)   // e.detail = {type,data,ts}
- *   window.addEventListener('cf:stream-status', e => …) // {connected:boolean}
+ *   window.addEventListener('cf:stream-status', e => …) // {connected:boolean, reason:string}
  *
- * Depends on `window.CF` (cyberforge-shared.js) for backendUrl() + getToken().
- * Auto-reconnects with capped exponential backoff; re-reads the auth token on
- * every (re)connect so a fresh login is picked up without a page reload. Each
- * connection uses a fresh one-time ticket, so the token is never in the URL.
+ * A page makes no network request and holds no session token. It used to open
+ * the stream itself, which the app's content security policy refuses in a
+ * built app, and which needed the token inside the page. Reconnection, the
+ * replay of missed events and sign-out are all handled natively.
+ *
+ * Outside the desktop app there is no feed, and the status says so.
  */
 (function () {
-  const CF = window.CF || {};
-
   // backend event type -> CustomEvent name
   const EVENT_MAP = {
     'threat:new': 'cf:threat',
@@ -31,18 +32,20 @@
     'alert:new': 'cf:alert',
     'agent:activity': 'cf:agent',
     'metrics:update': 'cf:metrics',
+    'console:changed': 'cf:console-changed',
   };
 
-  let es = null;
-  let stopped = false;
-  let retry = 0;
-  let reconnectTimer = null;
+  let started = false;
   let connected = false;
+  let reason = 'not started';
+  let unlisten = [];
 
-  function setStatus(isUp) {
-    if (connected === isUp) return;
+  function setStatus(isUp, why) {
+    const text = why || (isUp ? 'connected' : 'not connected');
+    if (connected === isUp && reason === text) return;
     connected = isUp;
-    window.dispatchEvent(new CustomEvent('cf:stream-status', { detail: { connected: isUp } }));
+    reason = text;
+    window.dispatchEvent(new CustomEvent('cf:stream-status', { detail: { connected: isUp, reason: text } }));
   }
 
   function dispatch(evt) {
@@ -54,108 +57,50 @@
     if (name) window.dispatchEvent(new CustomEvent(name, { detail: evt.data }));
   }
 
-  // The ID of the last event received. It is sent on reconnect so the server
-  // replays what was missed, once, instead of losing or repeating alerts.
-  let lastEventId = null;
-
-  function handleFrame(e) {
+  // Panels shown in a frame reach the desktop runtime through their parent.
+  function runtime() {
     try {
-      if (e.lastEventId) lastEventId = e.lastEventId;
-      dispatch(JSON.parse(e.data));
-    } catch (_) {
-      /* ignore malformed frame */
-    }
-  }
-
-  // A browser EventSource cannot send headers, and a session token must never
-  // go in a URL. The session is exchanged for a ticket that opens one stream
-  // and stops working within a minute.
-  async function requestTicket(base, token) {
-    try {
-      const response = await fetch(`${base}/api/stream/ticket`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return null;
-      const body = await response.json();
-      return body && body.ticket ? body.ticket : null;
+      return window.__TAURI__ || (window.parent && window.parent.__TAURI__) || null;
     } catch (_) {
       return null;
     }
   }
 
-  async function getToken() {
-    try {
-      if (typeof CF.getToken === 'function') return await CF.getToken();
-    } catch (_) {}
-    try {
-      return localStorage.getItem('cf_token') || null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  async function connect() {
-    if (stopped || typeof EventSource === 'undefined') return;
-    clearTimeout(reconnectTimer);
-
-    const base = CF.backendUrl ? await CF.backendUrl() : null;
-    if (!base) { scheduleReconnect(); return; }
-    const token = await getToken();
-    const query = [];
-    if (token) {
-      const ticket = await requestTicket(base, token);
-      if (!ticket) { scheduleReconnect(); return; }
-      query.push(`ticket=${encodeURIComponent(ticket)}`);
-    }
-    if (lastEventId) query.push(`lastEventId=${encodeURIComponent(lastEventId)}`);
-    const url = `${base}/api/stream` + (query.length ? `?${query.join('&')}` : '');
-
-    try {
-      es = new EventSource(url);
-    } catch (_) {
-      scheduleReconnect();
-      return;
-    }
-
-    es.onopen = () => {
-      retry = 0;
-      setStatus(true);
-    };
-
-    // The server tags each frame with `event: <type>`, so register named
-    // listeners; also keep onmessage for any untyped frames.
-    es.onmessage = handleFrame;
-    es.addEventListener('connected', () => setStatus(true));
-    Object.keys(EVENT_MAP).forEach((type) => es.addEventListener(type, handleFrame));
-
-    es.onerror = () => {
-      setStatus(false);
-      // Manage reconnection ourselves (so we re-read the token + use backoff)
-      // instead of EventSource's built-in retry with a stale URL.
-      try { es.close(); } catch (_) {}
-      es = null;
-      scheduleReconnect();
-    };
-  }
-
-  function scheduleReconnect() {
-    if (stopped) return;
-    retry = Math.min(retry + 1, 6);
-    const delay = Math.min(1000 * Math.pow(2, retry), 30000); // cap 30s
-    reconnectTimer = setTimeout(connect, delay);
+  function keep(promise) {
+    Promise.resolve(promise).then((off) => {
+      if (typeof off !== 'function') return;
+      if (started) unlisten.push(off);
+      else off(); // stopped before the listener was registered
+    }).catch(() => {});
   }
 
   const realtime = {
     start() {
-      stopped = false;
-      if (!es) connect();
+      if (started) return;
+      const T = runtime();
+      if (!T || !T.event || typeof T.event.listen !== 'function') {
+        setStatus(false, 'no live feed outside the desktop app');
+        return;
+      }
+      started = true;
+      keep(T.event.listen('cf-stream', (e) => dispatch(e && e.payload)));
+      keep(T.event.listen('cf-stream-status', (e) => {
+        const s = (e && e.payload) || {};
+        setStatus(!!s.connected, s.reason);
+      }));
+      // The feed may have connected before this page loaded.
+      if (T.core && typeof T.core.invoke === 'function') {
+        T.core.invoke('stream_status')
+          .then((s) => setStatus(!!(s && s.connected), s && s.reason))
+          .catch(() => setStatus(false, 'the live feed is not available in this build'));
+      }
     },
+    /** Stop listening on this page. The native connection stays open for the other pages. */
     stop() {
-      stopped = true;
-      clearTimeout(reconnectTimer);
-      if (es) { try { es.close(); } catch (_) {} es = null; }
-      setStatus(false);
+      started = false;
+      unlisten.forEach((off) => { try { off(); } catch (_) {} });
+      unlisten = [];
+      setStatus(false, 'stopped on this page');
     },
     /** convenience: realtime.on('cf:threat', handler) -> returns an unsubscribe */
     on(name, handler) {
@@ -163,6 +108,7 @@
       return () => window.removeEventListener(name, handler);
     },
     get connected() { return connected; },
+    get reason() { return reason; },
   };
 
   // expose

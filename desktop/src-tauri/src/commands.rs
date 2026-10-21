@@ -59,8 +59,29 @@ pub fn build_user_info(user_val: &Value) -> UserInfo {
     }
 }
 
-/// Restore an existing session from the in-memory state or the keychain by
-/// validating the token against `/api/auth/profile`.
+/// Add to a sign-in result whether the session was kept for the next launch.
+/// When it was not, the user is signed in until the app closes, and is told so.
+pub(crate) fn note_session_storage(result: &mut Value, kept: &Result<(), String>) {
+    result["sessionSaved"] = Value::Bool(kept.is_ok());
+    if let Err(reason) = kept {
+        result["sessionNote"] = Value::String(format!(
+            "You are signed in until you close the app. The session could not be saved for next time: {}.",
+            reason
+        ));
+    }
+}
+
+/// Whether the system credential store works on this machine, for Settings.
+#[tauri::command]
+pub async fn credential_storage_status() -> Result<Value, String> {
+    Ok(match crate::auth::check_secure_storage() {
+        Ok(()) => serde_json::json!({ "working": true }),
+        Err(reason) => serde_json::json!({ "working": false, "reason": reason }),
+    })
+}
+
+/// Restore an existing session from the in-memory state or the credential store
+/// by validating the token against `/api/auth/profile`.
 async fn restore_session_from_storage(shared: &SharedState) -> Result<Option<UserInfo>, String> {
     let (existing_auth, existing_user, backend_url, mem_token) = {
         let s = shared.lock().await;
@@ -131,6 +152,8 @@ async fn restore_session_from_storage(shared: &SharedState) -> Result<Option<Use
                         let mut s = shared.lock().await;
                         s.set_authenticated(user.clone(), tok.clone());
                     }
+                    // Already signed in from a stored token; a failure to store
+                    // it again changes nothing the user needs to be told.
                     let _ = crate::auth::store_token(&tok);
                     crate::auth::store_user(&user_json);
                     return Ok(Some(user));
@@ -235,26 +258,69 @@ pub async fn auth_login(
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
             drop(s);
-            let _ = crate::auth::store_token(token);
+            let kept = crate::auth::store_token(token);
             crate::auth::store_user(&user_json); // cache profile for offline restore
 
-            // Flatten so the frontend can read `result.token` / `result.user`.
-            return Ok(serde_json::json!({
+            // The page is told the sign-in worked and who signed in. It is not
+            // given the session token: every backend call is made from here.
+            let mut result = serde_json::json!({
                 "success": true,
-                "token": token,
                 "user": body.pointer("/data/user"),
                 "message": "Login successful"
-            }));
+            });
+            note_session_storage(&mut result, &kept);
+            return Ok(result);
         }
     }
 
-    // Pass the backend body through for error cases (carries success:false + message).
-    Ok(body)
+    // A refusal goes to the page with the backend's reasons (see explain_refusal).
+    Ok(explain_refusal(body))
 }
 
+/// A refused sign-in or registration, as the page shows it. The backend answers
+/// a rejected form with "Validation failed" and a list of field errors; the
+/// message becomes those reasons ("Last name is required …"), and each field
+/// error keeps only its field and reason: the backend's copy also echoes the
+/// submitted value, which for a password is the password.
+fn explain_refusal(mut body: Value) -> Value {
+    let errors: Vec<(String, String)> = body
+        .get("errors")
+        .and_then(|e| e.as_array())
+        .map(|list| {
+            list.iter()
+                .filter_map(|e| {
+                    let reason = e.get("msg").and_then(|m| m.as_str())?.trim().trim_end_matches('.').to_string();
+                    let field = e.get("path").and_then(|p| p.as_str()).unwrap_or("").to_string();
+                    (!reason.is_empty()).then_some((field, reason))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    if body.get("errors").is_some() {
+        body["errors"] = serde_json::json!(errors.iter().map(|(field, reason)| serde_json::json!({ "field": field, "message": reason })).collect::<Vec<_>>());
+    }
+    let mut reasons: Vec<&str> = Vec::new();
+    for (_, reason) in &errors {
+        if !reasons.contains(&reason.as_str()) {
+            reasons.push(reason);
+        }
+    }
+    if !reasons.is_empty() {
+        body["message"] = Value::String(format!("{}.", reasons.join(". ")));
+    }
+    body
+}
+
+/// What the register page sends. The backend requires the first and last
+/// names separately; an empty one is sent as empty so the backend's own
+/// reason comes back.
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegisterData {
-    pub name: String,
+    #[serde(default)]
+    pub first_name: String,
+    #[serde(default)]
+    pub last_name: String,
     pub email: String,
     pub password: String,
 }
@@ -273,8 +339,9 @@ pub async fn auth_register(
     let resp = client
         .post(&url)
         .json(&serde_json::json!({
-            "name": data.name,
-            "email": data.email,
+            "firstName": data.first_name.trim(),
+            "lastName": data.last_name.trim(),
+            "email": data.email.trim(),
             "password": data.password
         }))
         .send()
@@ -294,19 +361,20 @@ pub async fn auth_register(
             let mut s = state.lock().await;
             s.set_authenticated(user, token.to_string());
             drop(s);
-            let _ = crate::auth::store_token(token);
+            let kept = crate::auth::store_token(token);
             crate::auth::store_user(&user_json); // cache profile for offline restore
 
-            return Ok(serde_json::json!({
+            let mut result = serde_json::json!({
                 "success": true,
-                "token": token,
                 "user": body.pointer("/data/user"),
                 "message": "Registration successful"
-            }));
+            });
+            note_session_storage(&mut result, &kept);
+            return Ok(result);
         }
     }
 
-    Ok(body)
+    Ok(explain_refusal(body))
 }
 
 #[tauri::command]
@@ -355,18 +423,32 @@ pub async fn auth_is_authenticated(state: State<'_, SharedState>) -> Result<Valu
     }))
 }
 
-#[tauri::command]
-pub async fn auth_get_token(state: State<'_, SharedState>) -> Result<Value, String> {
-    let mem_token = {
-        let s = state.lock().await;
-        s.auth_token.clone()
-    };
 
-    if let Some(token) = mem_token.or_else(crate::auth::get_stored_token) {
-        let mut s = state.lock().await;
-        s.auth_token = Some(token.clone());
-        return Ok(serde_json::json!({ "token": token }));
+#[cfg(test)]
+mod refusal_tests {
+    use super::explain_refusal;
+    use serde_json::json;
+
+    #[test]
+    fn field_reasons_replace_validation_failed_and_submitted_values_are_dropped() {
+        let body = json!({
+            "success": false,
+            "message": "Validation failed",
+            "errors": [
+                { "type": "field", "value": "", "msg": "First name is required and must be less than 50 characters", "path": "firstName" },
+                { "type": "field", "value": "hunter2", "msg": "Password must be at least 8 characters long", "path": "password" },
+                { "type": "field", "value": "hunter2", "msg": "Password must be at least 8 characters long", "path": "password" }
+            ]
+        });
+        let out = explain_refusal(body);
+        assert_eq!(out["message"], "First name is required and must be less than 50 characters. Password must be at least 8 characters long.");
+        assert_eq!(out["errors"][1], json!({ "field": "password", "message": "Password must be at least 8 characters long" }));
+        assert!(!out.to_string().contains("hunter2"), "the submitted password is not passed to the page");
     }
 
-    Ok(serde_json::json!({ "token": Value::Null }))
+    #[test]
+    fn a_refusal_without_field_errors_keeps_its_message() {
+        let out = explain_refusal(json!({ "success": false, "message": "Invalid credentials" }));
+        assert_eq!(out["message"], "Invalid credentials");
+    }
 }

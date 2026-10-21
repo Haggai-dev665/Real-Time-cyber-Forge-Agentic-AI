@@ -13,6 +13,14 @@ const rateLimit = require('express-rate-limit');
 const { validationResult } = require('express-validator');
 
 const router = express.Router();
+const { notCarriedOut } = require('../middleware/notImplemented');
+
+// Every route in this file is built on ThreatHuntingService and IOCAnalysisService, which does no
+// work: scores, verdicts, progress and findings come from Math.random() and
+// fixed samples. Until there is a real implementation, each route answers 501
+// after the session check, so none of that can be mistaken for a result. The
+// handlers below are unreachable and are kept only as an outline of the API.
+router.use(auth, notCarriedOut('Threat hunting and indicator analysis are not implemented: the services behind these routes simulate progress, findings and verdicts.'));
 
 // Initialize services
 const threatHuntingService = new ThreatHuntingService();

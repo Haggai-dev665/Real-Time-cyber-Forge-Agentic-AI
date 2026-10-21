@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Security Functions</title>
+<title>CyberForge — Protection</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
@@ -98,40 +98,47 @@
 .sf-logrow .ldot{width:7px;height:7px;border-radius:50%;flex:none}
 .sf-logrow .ln{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sf-logrow .lt{font-family:var(--mono);font-size:9px;color:var(--faint);flex:none}
+.sf-grid{height:auto;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.sf-grid .sf-col{display:contents}.sf-grid[data-view="actions"]{grid-template-columns:1fr}.sf-grid .card{min-width:0}.sf-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Security Functions" id="win">
+  <div class="window" data-screen-label="Protection" id="win">
     <div class="topbar" id="topbar"></div>
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
-          <h1>Security Functions</h1>
+          <h1>Protection</h1>
           <div class="head-right">
-            <span class="live-ind"><span class="dot"></span>Armed</span>
+            <span class="live-ind"><span class="dot"></span>Policy controls</span>
             <span id="armedCount">0 active</span>
             <button class="btn-refresh" id="sfRefresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Refresh</button>
           </div>
         </div>
 
         <div class="sf-kpis">
-          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5Z"/></svg>Functions</div><div class="kv" id="kTotal">0</div><div class="kd">defined policies</div></div>
-          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Active</div><div class="kv" style="color:var(--green)" id="kActive">0</div><div class="kd">currently armed</div></div>
-          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7Z"/></svg>Responses</div><div class="kv" style="color:var(--amber-2)" id="kResp">0</div><div class="kd">actions taken</div></div>
-          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9z"/></svg>Detection ML</div><div class="kv" style="color:var(--cyan)" id="kModels">—</div><div class="kd">live engines</div></div>
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5Z"/></svg>Policies</div><div class="kv" id="kTotal">0</div><div class="kd">defined policies</div></div>
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Active</div><div class="kv" style="color:var(--green)" id="kActive">0</div><div class="kd">enabled policies</div></div>
+          <div class="card sf-kpi"><div class="kl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7Z"/></svg>Responses</div><div class="kv" style="color:var(--amber-2)" id="kResp">0</div><div class="kd">recorded outcomes</div></div>
         </div>
 
+        <p class="cf-context-note">Site lists apply to this computer. Saved sites apply no protection; allowed sites remain subject to scanning. Policy scope and edit permissions come from your signed-in account.</p><div id="outcomeCounts" class="cf-context-note">Loading policy outcomes?</div>
         <div class="sf-grid">
           <div class="sf-col">
             <!-- Security functions -->
             <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Security Functions<button class="sf-add" id="sfAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add Function</button></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Policies<button class="sf-add" id="sfAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Add Policy</button></div>
               <div class="sf-form" id="sfForm">
-                <div><span class="sf-lab">Function name</span><input class="sf-inp" id="fName" placeholder="e.g. Block on critical phishing score" /></div>
-                <div><span class="sf-lab">Description</span><input class="sf-inp" id="fDesc" placeholder="What this function does" /></div>
+                <div><span class="sf-lab">Policy name</span><input class="sf-inp" id="fName" placeholder="e.g. Block on critical phishing score" /></div>
+                <div><span class="sf-lab">Description</span><input class="sf-inp" id="fDesc" placeholder="What this policy does" /></div>
                 <div class="sf-row3">
                   <div><span class="sf-lab">When (metric)</span><select class="sf-sel" id="fMetric"></select></div>
                   <div><span class="sf-lab">Is</span><select class="sf-sel" id="fOp"></select></div>
@@ -139,11 +146,11 @@
                 </div>
                 <div><span class="sf-lab">Then (response action)</span><select class="sf-sel" id="fAction"></select></div>
                 <div class="sf-formbtns">
-                  <button class="sf-mkbtn" id="fCreate">Create Security Function</button>
+                  <button class="sf-mkbtn" id="fCreate">Create Policy</button>
                   <button class="sf-cancel" id="fCancel">Cancel</button>
                 </div>
               </div>
-              <div id="fnList"><div class="sf-empty"><div class="spinner" style="margin:0 auto 10px"></div>Loading security functions…</div></div>
+              <div id="fnList"><div class="sf-empty"><div class="spinner" style="margin:0 auto 10px"></div>Loading policies…</div></div>
             </div>
 
             <!-- Response log -->
@@ -161,10 +168,10 @@
           </div>
 
           <div class="sf-col">
-            <!-- Protected sites -->
+            <!-- Saved sites: a list only, nothing is enforced for them -->
             <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Protected Sites<span class="right" id="prCount">0</span></div>
-              <div class="blk-list" id="prList"><div class="sf-empty">No protected sites</div></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Saved Sites<span class="right" id="prCount">0</span></div>
+              <div class="blk-list" id="prList"><div class="sf-empty">No saved sites</div></div>
             </div>
             <!-- Allowed (trusted) sites -->
             <div class="card">
@@ -173,24 +180,20 @@
             </div>
 
             <!-- Threat simulator -->
-            <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 7v5l3 3"/></svg>Threat Simulator</div>
-              <div class="sf-sim">
+            <details class="card">
+              <summary class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 7v5l3 3"/></svg>Advanced: evaluate policies</summary>
+              <div class="sf-sim"><p class="cf-context-note">This calls the live policy agents and writes response records. Matching supported actions may run; it is not a preview. Server permissions apply.</p><label><input type="checkbox" id="simConsent"> I understand this creates real policy outcomes.</label>
                 <div class="sf-srow"><label>Risk score</label><input type="range" id="mRisk" min="0" max="100" value="80" /><span class="sv" id="mRiskV">80</span></div>
                 <div class="sf-srow"><label>Threat severity</label><input type="range" id="mSev" min="1" max="4" value="3" /><span class="sv" id="mSevV">3</span></div>
                 <div class="sf-srow"><label>Alerts / 24h</label><input type="number" id="mAlerts" value="5" min="0" /></div>
                 <div class="sf-srow"><label>Correlations</label><input type="number" id="mCorr" value="1" min="0" /></div>
                 <div class="sf-srow"><label>Malicious domains</label><input type="number" id="mDom" value="0" min="0" /></div>
-                <button class="sf-simbtn" id="simBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-3 7h6l-3 7"/><circle cx="12" cy="12" r="9"/></svg>EVALUATE RESPONSE</button>
+                <button class="sf-simbtn" id="simBtn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-3 7h6l-3 7"/><circle cx="12" cy="12" r="9"/></svg>RUN POLICY EVALUATION</button>
                 <div class="sf-simres" id="simRes"></div>
               </div>
-            </div>
+            </details>
 
-            <!-- ML detection engines -->
-            <div class="card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>ML Detection Engines<span class="right" id="mlStat">checking…</span></div>
-              <div id="mlList"><div class="sf-empty">Querying ML services…</div></div>
-            </div>
+            <div class="card cf-context-note">For model readiness and limitations, open <a href="model-inference.html">Model capabilities</a>.</div>
           </div>
         </div>
       </main>
@@ -199,297 +202,15 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-realtime.js"></script>
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
-<script>
-buildHeader({status:'ARMED'});
-buildSidebar('security');
-buildFooter({items:[{txt:'policy engine',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'ML sensors',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-/* ---- Blocked & Protected sites (real Rust hosts-file blocking) ---- */
-(function(){
-  function inv(c,a){ try{ if(window.CF&&CF.invoke) return CF.invoke(c,a||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
-  function e(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; }
-  var blkList=document.getElementById('blkList'), prList=document.getElementById('prList');
-  function loadBlocked(){
-    inv('list_blocked').then(function(r){
-      var arr=(r&&r.blocked)||[]; var c=document.getElementById('blkCount'); if(c)c.textContent=arr.length;
-      if(!arr.length){ blkList.innerHTML='<div class="sf-empty">No sites blocked</div>'; return; }
-      blkList.innerHTML=arr.map(function(b){ var on=b.enforced;
-        return '<div class="blk-row"><span class="bd" style="background:'+(on?'var(--red)':'var(--amber)')+'"></span>'+
-          '<div class="bi"><b>'+e(b.domain)+'</b><span>'+e(b.reason||'')+' · '+(on?'enforced':'listed · needs admin')+' · '+ago(b.ts)+' ago</span></div>'+
-          '<button class="bx" data-d="'+e(b.domain)+'">Unblock</button></div>'; }).join('');
-      blkList.querySelectorAll('.bx').forEach(function(btn){ btn.addEventListener('click',function(){ btn.textContent='…'; inv('unblock_site',{domain:btn.dataset.d}).then(loadBlocked).catch(function(){ btn.textContent='Unblock'; }); }); });
-    }).catch(function(){ blkList.innerHTML='<div class="sf-empty">Blocking needs a rebuilt desktop app.</div>'; });
-  }
-  function loadProtected(){
-    inv('list_protected').then(function(r){
-      var arr=(r&&r.protected)||[]; var c=document.getElementById('prCount'); if(c)c.textContent=arr.length;
-      if(!arr.length){ prList.innerHTML='<div class="sf-empty">No protected sites</div>'; return; }
-      prList.innerHTML=arr.map(function(p){ return '<div class="blk-row"><span class="bd" style="background:var(--cyan)"></span>'+
-        '<div class="bi"><b>'+e(p.domain)+'</b><span>protected access · '+ago(p.ts)+' ago</span></div>'+
-        '<button class="bx" data-d="'+e(p.domain)+'">Remove</button></div>'; }).join('');
-      prList.querySelectorAll('.bx').forEach(function(btn){ btn.addEventListener('click',function(){ btn.textContent='…'; inv('unprotect_site',{domain:btn.dataset.d}).then(loadProtected).catch(function(){ btn.textContent='Remove'; }); }); });
-    }).catch(function(){ prList.innerHTML='<div class="sf-empty">—</div>'; });
-  }
-  var ai=document.getElementById('blkInput'), ab=document.getElementById('blkAdd');
-  function addBlock(){ var v=(ai.value||'').trim(); if(!v) return; ab.textContent='…';
-    inv('block_site',{domain:v, reason:'Manually blocked'}).then(function(r){ ai.value=''; ab.textContent='Block';
-      if(window.CF&&CF.toast) CF.toast((r&&r.enforced)?('Blocked '+(r.domain||v)+' system-wide'):('Listed — '+((r&&r.message)||'needs admin')), (r&&r.enforced)?'ok':'warn'); loadBlocked();
-      try{ window.dispatchEvent(new Event('cf:secaction')); }catch(_){}
-    }).catch(function(){ ab.textContent='Block'; if(window.CF&&CF.toast) CF.toast('Block failed','error'); }); }
-  ab&&ab.addEventListener('click',addBlock);
-  ai&&ai.addEventListener('keydown',function(ev){ if(ev.key==='Enter') addBlock(); });
-  var alList=document.getElementById('alList');
-  function loadAllowed(){
-    inv('list_allowed').then(function(r){
-      var arr=(r&&r.allowed)||[]; var c=document.getElementById('alCount'); if(c)c.textContent=arr.length;
-      if(!arr.length){ alList.innerHTML='<div class="sf-empty">No allowed sites</div>'; return; }
-      alList.innerHTML=arr.map(function(p){ return '<div class="blk-row"><span class="bd" style="background:var(--green)"></span>'+
-        '<div class="bi"><b>'+e(p.domain)+'</b><span>trusted · '+ago(p.ts)+' ago</span></div>'+
-        '<button class="bx" data-d="'+e(p.domain)+'">Remove</button></div>'; }).join('');
-      alList.querySelectorAll('.bx').forEach(function(btn){ btn.addEventListener('click',function(){ btn.textContent='…'; inv('unallow_site',{domain:btn.dataset.d}).then(loadAllowed).catch(function(){ btn.textContent='Remove'; }); }); });
-    }).catch(function(){ alList.innerHTML='<div class="sf-empty">—</div>'; });
-  }
-  var rf=document.getElementById('sfRefresh'); rf&&rf.addEventListener('click',function(){ loadBlocked(); loadProtected(); loadAllowed(); });
-  loadBlocked(); loadProtected(); loadAllowed(); setInterval(function(){ loadBlocked(); loadProtected(); loadAllowed(); }, 20000);
-})();
-
-(function(){
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]; }); }
-  function set(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
-  function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
-  function timeAgo(iso){ try{ var s=Math.max(0,(Date.now()-new Date(iso).getTime())/1000);
-    if(s<60)return Math.round(s)+'s ago'; if(s<3600)return Math.round(s/60)+'m ago'; if(s<86400)return Math.round(s/3600)+'h ago'; return Math.round(s/86400)+'d ago'; }catch(e){ return ''; } }
-
-  // action type → response category (the three the operator cares about)
-  var CAT={ soft_block:'block', session_restrict:'block',
-            alert_escalate:'alert', notify_soc:'alert', log_response:'alert',
-            weight_boost:'secure', agent_task:'secure' };
-  function catOf(t){ return CAT[t]||'alert'; }
-  function catLabel(c){ return c==='block'?'BLOCK':c==='secure'?'SECURE':'ALERT'; }
-  function catColor(c){ return c==='block'?'#ff7185':c==='secure'?'var(--cyan)':'var(--amber-2)'; }
-  var METRIC_LABEL={ risk_score:'Risk Score', alert_count_24h:'Alerts / 24h', correlation_count:'Correlations', malicious_domains:'Malicious Domains', threat_severity:'Threat Severity' };
-
-  // Static policy schema — mirrors the backend Policy Engine (policyEngineService.js).
-  // Used as an immediate fallback so the Add-Function dropdowns are always populated,
-  // even when /api/policy/meta is unreachable (offline / backend cold start / rate-limited).
-  // loadMeta() refreshes this from the server whenever it responds.
-  var META={
-    triggerMetrics:['risk_score','alert_count_24h','correlation_count','malicious_domains','threat_severity'],
-    operators:['>','>=','<','<=','==','!='],
-    actionTypes:{
-      alert_escalate:{ label:'Escalate Alert' },
-      notify_soc:{ label:'Notify SOC' },
-      log_response:{ label:'Log Response' },
-      soft_block:{ label:'Soft Block' },
-      session_restrict:{ label:'Restrict Session' },
-      weight_boost:{ label:'Boost Risk Weights' },
-      agent_task:{ label:'Dispatch Agent Task' },
-    },
-  };
-  var POLICIES=[];
-
-  /* ---- loaders (all real, via Rust → backend Policy Engine) ---- */
-  async function loadMeta(){
-    buildForm(); // populate dropdowns immediately from the static fallback (don't wait on the network)
-    try{ var r=await CF.invoke('policy_meta');
-      if(r&&r.data&&Array.isArray(r.data.triggerMetrics)&&r.data.triggerMetrics.length){ META=r.data; buildForm(); }
-    }catch(e){}
-  }
-  async function loadPolicies(){
-    try{ var r=await CF.invoke('policy_list'); POLICIES=(r&&r.policies)||[]; renderPolicies(r&&r.offline);
-      set('armedCount', POLICIES.filter(function(p){return p.enabled;}).length+' active');
-    }catch(e){ POLICIES=[]; renderPolicies(false); }
-  }
-  async function loadStats(){
-    try{ var r=await CF.invoke('policy_stats'); var d=(r&&r.data)||{};
-      set('kTotal', d.totalPolicies!=null?d.totalPolicies:POLICIES.length);
-      set('kActive', d.enabledPolicies!=null?d.enabledPolicies:POLICIES.filter(function(p){return p.enabled;}).length);
-    }catch(e){ set('kTotal', POLICIES.length); set('kActive', POLICIES.filter(function(p){return p.enabled;}).length); }
-  }
-  /* Security activity comes primarily from the LOCAL memory store — every
-     block / protect / allow and every flagged scan is recorded there — merged
-     with any backend policy responses. This keeps the log full even offline. */
-  async function loadLog(){
-    var mem=[], plog=[];
-    try{ var r=await CF.invoke('memory_list',{limit:160}); mem=(r&&r.data&&r.data.memories)||[]; }catch(e){}
-    try{ var pr=await CF.invoke('policy_response_log',{limit:40}); plog=(pr&&pr.log)||[]; }catch(e){}
-    var items=[], actions=0;
-    mem.forEach(function(m){
-      var cat=String(m.category||''), kind=null, color=null;
-      if(/^action-block/.test(cat)){ kind='BLOCK'; color='#ff7185'; actions++; }
-      else if(/^action-protect/.test(cat)){ kind='PROTECT'; color='var(--cyan)'; actions++; }
-      else if(/^action-allow/.test(cat)){ kind='ALLOW'; color='var(--green)'; actions++; }
-      else if(cat==='report'){ kind='REPORT'; color='var(--amber-2)'; }
-      else if(m.kind==='episodic' && m.risk!=null && +m.risk>=50){ kind='THREAT'; color='#ff7185'; }
-      else if(/otx/.test(cat) && m.kind==='semantic'){ return; }
-      else return;
-      items.push({ kind:kind, text:m.text, ts:(m.ts?m.ts*1000:Date.now()), color:color });
-    });
-    plog.forEach(function(a){ items.push({ kind:'POLICY', text:(a.policyName||'policy')+' — '+(a.actionType||'action'), ts:(new Date(a.timestamp).getTime()||Date.now()), color:'var(--amber-2)' }); });
-    items.sort(function(a,b){ return b.ts-a.ts; });
-    renderActivity(items, actions + plog.length);
-  }
-  async function loadMl(){
-    try{ var r=await CF.invoke('ml_status'); renderMl(r); }
-    catch(e){ document.getElementById('mlList').innerHTML='<div class="sf-empty">ML services unreachable</div>'; set('mlStat','offline'); }
-  }
-
-  /* ---- render: functions list ---- */
-  function renderPolicies(offline){
-    var box=document.getElementById('fnList');
-    if(!POLICIES.length){
-      box.innerHTML='<div class="sf-empty">'+(offline?'Sign in to load and manage security functions.':'No security functions yet — click “Add Function”.')+'</div>';
-      return;
-    }
-    box.innerHTML=POLICIES.map(function(p){
-      var c=catOf(p.action&&p.action.type);
-      var act=((META.actionTypes[p.action.type]||{}).label)||(p.action&&p.action.type)||'action';
-      var rule=METRIC_LABEL[p.trigger.metric]||p.trigger.metric;
-      return '<div class="sf-fn'+(p.enabled?' on':'')+'" data-id="'+esc(p.id)+'">'+
-        '<button class="sf-tog'+(p.enabled?' on':'')+'" data-act="toggle" title="'+(p.enabled?'Disable':'Enable')+'"><span></span></button>'+
-        '<div class="sf-fnbody">'+
-          '<div class="sf-fnname">'+esc(p.name)+'<span class="sf-cat '+c+'">'+catLabel(c)+'</span>'+(p.isDefault?'<span class="sf-cat def">DEFAULT</span>':'')+'</div>'+
-          (p.description?'<div class="sf-fndesc">'+esc(p.description)+'</div>':'')+
-          '<div class="sf-fnrule"><b>IF</b> '+esc(rule)+' '+esc(p.trigger.operator)+' '+esc(p.trigger.threshold)+' &nbsp;<b>&rarr;</b>&nbsp; '+esc(act)+'</div>'+
-          '<div class="sf-fnstat">Triggered '+(p.triggerCount||0)+'×'+(p.lastTriggered?(' · last '+timeAgo(p.lastTriggered)):'')+'</div>'+
-        '</div>'+
-        (p.isDefault?'':'<button class="sf-del" data-act="del" title="Delete">×</button>')+
-      '</div>';
-    }).join('');
-    box.querySelectorAll('.sf-fn').forEach(function(el){
-      var id=el.dataset.id;
-      var tog=el.querySelector('[data-act=toggle]'); if(tog) tog.addEventListener('click',function(){ togglePolicy(id, el); });
-      var del=el.querySelector('[data-act=del]'); if(del) del.addEventListener('click',function(){ armDelete(id, del); });
-    });
-  }
-
-  async function togglePolicy(id, el){
-    var p=POLICIES.find(function(x){return x.id===id;}); if(!p) return;
-    var next=!p.enabled; var tog=el.querySelector('.sf-tog'); if(tog) tog.classList.add('busy');
-    try{
-      var r=await CF.invoke('policy_update',{ id:id, updates:{ enabled:next } });
-      if(r&&r.success){ p.enabled=next; if(CF.toast)CF.toast(p.name+' '+(next?'enabled':'disabled'), next?'ok':'warn'); renderPolicies(); loadStats();
-        set('armedCount', POLICIES.filter(function(x){return x.enabled;}).length+' active'); }
-      else { if(CF.toast)CF.toast((r&&r.error)||'Update failed','error'); if(tog) tog.classList.remove('busy'); }
-    }catch(e){ if(CF.toast)CF.toast('Update failed','error'); if(tog) tog.classList.remove('busy'); }
-  }
-
-  function armDelete(id, btn){
-    if(btn.dataset.armed){ doDelete(id); return; }
-    btn.dataset.armed='1'; btn.classList.add('arm'); btn.textContent='Delete?';
-    setTimeout(function(){ if(btn){ btn.removeAttribute('data-armed'); btn.classList.remove('arm'); btn.innerHTML='×'; } }, 3000);
-  }
-  async function doDelete(id){
-    try{
-      var r=await CF.invoke('policy_delete',{ id:id });
-      if(r&&r.success){ POLICIES=POLICIES.filter(function(x){return x.id!==id;}); if(CF.toast)CF.toast('Function deleted','ok'); renderPolicies(); loadStats(); }
-      else { if(CF.toast)CF.toast((r&&r.error)||'Delete failed','error'); }
-    }catch(e){ if(CF.toast)CF.toast('Delete failed','error'); }
-  }
-
-  /* ---- add form ---- */
-  function buildForm(){
-    var m=document.getElementById('fMetric'); if(m) m.innerHTML=(META.triggerMetrics||[]).map(function(x){return '<option value="'+x+'">'+(METRIC_LABEL[x]||x)+'</option>';}).join('');
-    var o=document.getElementById('fOp'); if(o) o.innerHTML=(META.operators||[]).map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join('');
-    var a=document.getElementById('fAction'); if(a) a.innerHTML=Object.keys(META.actionTypes||{}).map(function(k){return '<option value="'+k+'">'+catLabel(catOf(k))+' · '+META.actionTypes[k].label+'</option>';}).join('');
-  }
-  function openForm(){ document.getElementById('sfForm').classList.add('open'); }
-  function closeForm(){ document.getElementById('sfForm').classList.remove('open'); }
-  document.getElementById('sfAdd').addEventListener('click',function(){ var f=document.getElementById('sfForm'); f.classList.toggle('open'); });
-  document.getElementById('fCancel').addEventListener('click',closeForm);
-  document.getElementById('fCreate').addEventListener('click',async function(){
-    var name=val('fName'); if(!name){ if(CF.toast)CF.toast('Give the function a name','warn'); return; }
-    var policy={ name:name, description:val('fDesc'),
-      trigger:{ metric:val('fMetric'), operator:val('fOp'), threshold:Number(val('fThresh')||0) },
-      action:{ type:val('fAction') }, enabled:true, scope:'global' };
-    var btn=this; btn.disabled=true; btn.textContent='Creating…';
-    try{
-      var r=await CF.invoke('policy_create',{ policy:policy });
-      if(r&&r.success){ if(CF.toast)CF.toast('Security function created','ok'); document.getElementById('fName').value=''; document.getElementById('fDesc').value=''; closeForm(); await loadPolicies(); loadStats(); }
-      else { if(CF.toast)CF.toast((r&&r.error)||'Create failed','error'); }
-    }catch(e){ if(CF.toast)CF.toast('Create failed','error'); }
-    btn.disabled=false; btn.textContent='Create Security Function';
-  });
-
-  /* ---- threat simulator (real /api/policy/evaluate) ---- */
-  function bindRange(id,vid){ var r=document.getElementById(id),v=document.getElementById(vid); if(r&&v){ r.addEventListener('input',function(){ v.textContent=r.value; }); } }
-  bindRange('mRisk','mRiskV'); bindRange('mSev','mSevV');
-  document.getElementById('simBtn').addEventListener('click',async function(){
-    var metrics={ risk_score:Number(val('mRisk')), threat_severity:Number(val('mSev')),
-      alert_count_24h:Number(val('mAlerts')), correlation_count:Number(val('mCorr')), malicious_domains:Number(val('mDom')) };
-    var res=document.getElementById('simRes'); res.innerHTML='<div class="sf-empty" style="padding:10px"><div class="spinner sm" style="display:inline-block;vertical-align:middle"></div> Evaluating…</div>';
-    var btn=this; btn.disabled=true;
-    try{
-      // fresh node id per run so the engine isn't in its per-node cooldown window
-      var r=await CF.invoke('policy_evaluate',{ payload:{ nodeId:'sim-'+Date.now(), metrics:metrics } });
-      var d=(r&&r.data)||{}; var trig=d.triggered||[];
-      if(!trig.length){ res.innerHTML='<div class="sf-noresult">✓ No security function triggered at these levels' + (d.suppressed?(' ('+d.suppressed+' suppressed by cooldown)'):'') + '</div>'; }
-      else{
-        res.innerHTML=trig.map(function(a){
-          var c=catOf(a.actionType); var lbl=((META.actionTypes[a.actionType]||{}).label)||a.actionType;
-          return '<div class="sf-fire"><span class="fdot" style="background:'+catColor(c)+';box-shadow:0 0 6px '+catColor(c)+'"></span>'+
-            '<span class="fn">'+esc(a.policyName)+'</span>'+
-            '<span class="fa sf-cat '+c+'">'+catLabel(c)+' · '+esc(lbl)+'</span></div>';
-        }).join('');
-      }
-      loadStats(); loadLog(); // a real evaluation appends to the response log
-    }catch(e){ res.innerHTML='<div class="sf-empty" style="padding:10px;color:#ff7185">Evaluation failed</div>'; }
-    btn.disabled=false;
-  });
-
-  /* ---- response log / security activity (memory-backed) ---- */
-  function cleanTxt(t){ return String(t||'')
-      .replace(/^User\s+/,'')
-      .replace(/^enabled protected access for\s+/i,'protected ')
-      .replace(/\s*\(marked trusted\)/i,'')
-      .replace(/^Scanned\s+/i,'scanned ')
-      .replace(/^Security report\s+/i,'report ').trim(); }
-  function renderActivity(items, respCount){
-    set('logCount', items.length);
-    if(respCount!=null) set('kResp', respCount);
-    var box=document.getElementById('logList');
-    if(!items.length){ box.innerHTML='<div class="sf-empty">No security activity yet — block, protect or allow a site (or run a scan) and it appears here from memory.</div>'; return; }
-    box.innerHTML=items.slice(0,60).map(function(a){
-      return '<div class="sf-logrow"><span class="ldot" style="background:'+a.color+';box-shadow:0 0 6px '+a.color+'"></span>'+
-        '<span class="ln"><b style="color:'+a.color+';font-family:var(--mono);font-size:8.5px;letter-spacing:.5px;margin-right:6px">'+a.kind+'</b>'+esc(cleanTxt(a.text).slice(0,90))+'</span>'+
-        '<span class="lt">'+timeAgo(new Date(a.ts).toISOString())+'</span></div>';
-    }).join('');
-  }
-
-  /* ---- ML detection engines (real, via ml_status) ---- */
-  function prettyModel(n){ return String(n||'').replace(/_/g,' ').replace(/\b\w/g,function(m){return m.toUpperCase();}); }
-  function renderMl(r){
-    var health=(r&&r.health)||{}; var tf=(r&&r.transformers)||{};
-    var models = health.models_available || health.ml_models_loaded || tf.loaded || tf.available || [];
-    var ok = (health.status==='healthy') || (health.hf_space_status==='healthy') || (tf.transformers_available===true);
-    set('kModels', models.length||(ok?'live':'—'));
-    set('mlStat', ok?'healthy':'degraded');
-    var box=document.getElementById('mlList');
-    if(!models.length){ box.innerHTML='<div class="sf-empty">'+(ok?'ML service healthy':'No detection engines reported')+'</div>'; return; }
-    box.innerHTML=models.map(function(m){
-      return '<div class="sf-eng"><span class="ed '+(ok?'ok':'off')+'"></span><span class="en">'+esc(prettyModel(m))+'</span><span class="es">'+(ok?'READY':'—')+'</span></div>';
-    }).join('');
-  }
-
-  /* ---- refresh + real-time ---- */
-  function refreshAll(){ loadPolicies(); loadStats(); loadLog(); loadMl(); }
-  document.getElementById('sfRefresh').addEventListener('click',function(){ var b=this; b.classList.add('busy'); refreshAll(); setTimeout(function(){ b.classList.remove('busy'); },700); });
-
-  // initial load
-  loadMeta().then(function(){ refreshAll(); });
-  // a live threat/alert may trigger policies server-side → refresh the log + stats
-  var _lt; function bump(){ clearTimeout(_lt); _lt=setTimeout(function(){ loadLog(); loadStats(); },400); }
-  ['cf:threat','cf:alert','cf:scan','cf:secaction'].forEach(function(n){ window.addEventListener(n, bump); });
-  setInterval(function(){ loadStats(); loadLog(); }, 30000);
-})();
-</script>
+<script src="../scripts/pages/security-functions.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

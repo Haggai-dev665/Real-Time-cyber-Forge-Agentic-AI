@@ -13,6 +13,7 @@
 
 const axios = require('axios');
 const { getScraperConfig } = require('../config/scraper.config');
+const { checkDestination } = require('./destinationPolicy');
 
 // The backend answers through a router that closes requests at 30 seconds, and
 // the URL models and the explanation still have to run after the scan.
@@ -36,8 +37,13 @@ const EXPECTED_HEADERS = [
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 class WebScraperAPIService {
-    constructor(env = process.env) {
+    /**
+     * @param {object} [env]
+     * @param {{ lookup?: (hostname: string) => Promise<string[]> }} [options] - the resolver the destination check uses; tests pass their own
+     */
+    constructor(env = process.env, options = {}) {
         this.config = getScraperConfig(env);
+        this.destinationOptions = options.lookup ? { lookup: options.lookup } : {};
         if (!this.config.available) {
             // The reason names the setting, never its value.
             console.warn(`⚠️ Rendered-page scanner unavailable: ${this.config.reason}. URL scans will report partial coverage.`);
@@ -70,10 +76,17 @@ class WebScraperAPIService {
         const waitSeconds = Math.max(0, Math.min(options.waitSeconds === undefined ? DEFAULT_WAIT_SECONDS : options.waitSeconds, 25, Math.floor((budgetMs - 3000) / 1000)));
         const deadline = Date.now() + budgetMs;
 
+        // The backend's own destination check (SEC-04), before anything is sent:
+        // an internal or private target is refused here, and its name never leaves.
+        // It comes first, so such a target is reported as refused whatever the
+        // scanner's state, not as "scanner not configured".
+        const destination = await checkDestination(url, this.destinationOptions);
+        if (!destination.allowed) {
+            return this.unavailable(url, 'refused', destination.code, `not scanned: ${destination.reason}`);
+        }
         if (!this.config.available) {
             return this.unavailable(url, 'unavailable', 'SCRAPER_NOT_CONFIGURED', this.config.reason);
         }
-
         let scan;
         try {
             const created = await this.http.post(

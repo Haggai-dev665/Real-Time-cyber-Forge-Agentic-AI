@@ -44,9 +44,17 @@ const threatSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['detected', 'investigating', 'confirmed', 'mitigated', 'false_positive', 'dismissed', 'resolved'],
+    enum: ['detected', 'acknowledged', 'investigating', 'confirmed', 'mitigated', 'false_positive', 'dismissed', 'resolved', 'excepted'],
     default: 'detected'
   },
+  // DET-02 (services/findingService.js): one finding per account, category and
+  // normalised target; repeats within a day raise `occurrences`
+  fingerprint: { type: String, default: null },
+  occurrences: { type: Number, default: 1 },
+  firstSeenAt: { type: Date, default: null },
+  lastSeenAt: { type: Date, default: null },
+  recurrenceOf: { type: String, default: null },
+  exceptionId: { type: String, default: null },   // the exception that covered it (status 'excepted')
   source: {
     url: String,
     ip: String,
@@ -140,6 +148,7 @@ threatSchema.index({ type: 1, severity: 1 });
 threatSchema.index({ user: 1, 'detection.timestamp': -1 });
 threatSchema.index({ 'detection.timestamp': -1 });
 threatSchema.index({ status: 1 });
+threatSchema.index({ user: 1, fingerprint: 1, lastSeenAt: -1 });
 threatSchema.index({ 'source.domain': 1 });
 threatSchema.index({ 'source.ip': 1 });
 

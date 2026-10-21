@@ -23,6 +23,7 @@ const router  = express.Router();
 // belong to the account that produced them; a session ID names a session only
 // within that account.
 router.use(verifiedUser);
+const { analysisQuota } = require('../middleware/analysisQuota');
 const axios   = require('axios');
 const { getMLServiceUrl } = require('../config/ml.config');
 const { agentOrchestrator } = require('../services/agentOrchestrator');
@@ -34,7 +35,7 @@ const { webScraperAPIService } = require('../services/WebScraperAPIService');
  * Body: { url, sessionId?, userId? }
  * Returns full 8-agent report (verdict, score, IOCs, MITRE chain, LLM summary, agent statuses).
  */
-router.post('/analyze', async (req, res) => {
+router.post('/analyze', analysisQuota(), async (req, res) => {
     try {
         const { url, sessionId, userId } = req.body;
         if (!url) return res.status(400).json({ error: 'url required' });

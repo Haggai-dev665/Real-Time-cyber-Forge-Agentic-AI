@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" class="cf-desktop-shell">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Agents</title>
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.ag-grid{display:grid;grid-template-columns:330px 1fr;gap:12px;min-height:0;height:calc(100% - 64px)}
+.ag-col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto}
+.ag-card{padding:14px 16px}
+.ag-card h2{font-size:13px;font-weight:600;margin:0 0 10px}
+.ag-item{padding:10px 12px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;cursor:pointer}
+.ag-item.sel{border-color:var(--amber-2)}
+.ag-item b{display:block;font-size:12.5px}
+.ag-item span{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.ag-btn{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);font-family:var(--mono);font-size:10.5px;cursor:pointer;margin:0 6px 6px 0}
+.ag-btn:hover{color:var(--text);border-color:var(--border-3)}
+.ag-btn.go{border-color:rgba(67,224,138,.45);color:var(--green)}
+.ag-btn.warn{border-color:rgba(255,113,133,.45);color:#ff7185}
+.ag-btn[disabled]{opacity:.5;pointer-events:none}
+.ag-kv{display:grid;grid-template-columns:120px 1fr;gap:5px 12px;font-size:12px;margin-bottom:10px}
+.ag-kv .k{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;padding-top:2px}
+.ag-kv .v{font-family:var(--mono);font-size:11.5px;word-break:break-word}
+.ag-note{font-size:11.5px;color:var(--dim);line-height:1.6;margin:4px 0 8px}
+.ag-err{font-size:11.5px;color:#ff7185;margin:4px 0}
+.ag-pill{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;border:1px solid var(--border-2);display:inline-block}
+.ag-pill.active,.ag-pill.completed,.ag-pill.applied,.ag-pill.approved{color:var(--green);border-color:rgba(67,224,138,.4)}
+.ag-pill.ready,.ag-pill.paused,.ag-pill.partial,.ag-pill.queued,.ag-pill.leased,.ag-pill.running,.ag-pill.proposed,.ag-pill.delivered{color:var(--amber-2);border-color:rgba(245,166,35,.4)}
+.ag-pill.failed,.ag-pill.cancelled,.ag-pill.rejected,.ag-pill.expired,.ag-pill.archived{color:#ff7185;border-color:rgba(255,113,133,.4)}
+.ag-field{display:block;margin:0 0 8px}
+.ag-field span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.ag-input,.ag-field input,.ag-field select,.ag-field textarea{width:100%;box-sizing:border-box;padding:7px 9px;border-radius:7px;border:1px solid var(--border-2);background:rgba(8,12,20,.6);color:var(--text);font-family:var(--mono);font-size:11.5px}
+.ag-field textarea{min-height:64px;resize:vertical}
+.ag-step{display:grid;grid-template-columns:110px 1fr 90px;gap:8px;font-size:11.5px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ag-step .t{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.ag-empty{padding:20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11.5px}
+</style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Agents" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+          <h1>Agents</h1>
+          <div class="head-right"><button class="ag-btn warn" id="pauseAll">Pause all agents</button></div>
+        </div>
+        <div class="ag-grid">
+          <div class="ag-col">
+            <div class="card ag-card" id="proposals"><h2>Proposals to decide</h2><div class="ag-empty">Loading…</div></div>
+            <div class="card ag-card">
+              <h2>Your agents</h2>
+              <button class="ag-btn go" id="newAgent">New agent</button>
+              <div id="agentList"><div class="ag-empty">Loading…</div></div>
+            </div>
+            <div class="card ag-card" id="runSearch">
+              <h2>Find a run</h2>
+              <div class="ag-note">By run ID, device ID, address or any text in a run's steps and outcome. Covers the most recent 200 runs.</div>
+              <form id="runSearchForm" style="display:flex;gap:8px;margin-top:8px"><input id="runQ" class="ag-input" style="flex:1" maxlength="200" placeholder="run ID, device ID or text" aria-label="Search runs" /><button class="ag-btn" type="submit">Search</button></form>
+              <div id="runResults"></div>
+            </div>
+          </div>
+          <div class="ag-col" id="detail"><div class="card ag-card"><div class="ag-empty">Choose an agent, or create one.</div></div></div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cf-a11y.js"></script>
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script src="../scripts/pages/agents.js"></script>
+<span id="cf-ready" hidden></span>
+</body>
+</html>

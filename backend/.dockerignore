@@ -1,0 +1,10 @@
+# Keep secrets, local state and development files out of the image.
+.env
+.env.*
+!.env.example
+node_modules
+logs
+tests
+coverage
+*.log
+test-*.js

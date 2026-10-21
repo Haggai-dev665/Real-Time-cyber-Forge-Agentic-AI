@@ -4,6 +4,9 @@
            buildSidebar('overview')   // active key
    ============================================================ */
 (function(){
+  if(!document.getElementById('cfNavigationStyles')){
+    const css=document.createElement('link');css.id='cfNavigationStyles';css.rel='stylesheet';css.href='../styles/cf-navigation.css';document.head.appendChild(css);
+  }
   const I={
     shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>',
     chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>',
@@ -25,74 +28,78 @@
     doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
     spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg>'
   };
-  const ic={
-    ingest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
-    db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6"/></svg>'
+
+  const svg=body=>'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+body+'</svg>';
+  I.dashboard=svg('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>');
+  I.monitor=svg('<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M12 16v5M8 21h8"/>');
+  I.chat=svg('<path d="M21 15a3 3 0 0 1-3 3H8l-5 3V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3Z"/><path d="M7 8h10M7 12h7"/>');
+  I.browser=svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M7 5.5h.01M10 5.5h.01"/>');
+  I.memory=svg('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>');
+  I.gear=svg('<path d="m9 3-1 3-3 1v3l-2 2 2 2v3l3 1 1 3h6l1-3 3-1v-3l2-2-2-2V7l-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/>');
+  const groups=[
+    ['Workspace',[
+      ['overview','Overview','threat-overview.html',I.dashboard],
+      ['devices','Devices','devices.html',I.monitor],
+      ['agents','Agents','agents.html',I.nodes],
+      ['assistant','AI Assistant','ai-assistance.html',I.chat]
+    ]],
+    ['Security',[
+      ['analyzer','Analyze','analyzer.html',I.search],
+      ['alerts','Alerts & Incidents','alerts-evidence.html',I.bell],
+      ['security','Protection','security-functions.html',I.shield],
+      ['reports','Reports','reports.html',I.doc]
+    ]],
+    ['Explore',[
+      ['browser','Browser Activity','browser-intelligence.html',I.browser],
+      ['globe','Threat Intelligence','threat-globe.html',I.globe]
+    ]],
+    // The pages of Settings > Diagnostics, and the assistant's saved memory.
+    ['Diagnostics',[
+      ['agentcore','Local runtime','agent-core.html',I.cpu],
+      ['pipeline','Event stream','signal-pipeline.html',I.flow],
+      ['models','Model capabilities','model-inference.html',I.brain],
+      ['memory','Memory','memory.html',I.memory]
+    ]]
+  ];
+  // Old URLs remain valid; related workflows share a parent and local navigation.
+  const parents={sandbox:'analyzer',scheduled:'agents',history:'browser',invest:'alerts',incident:'alerts'};
+  const tabs={
+    agents:[['agents','Agents & runs','agents.html'],['scheduled','Schedules','scheduled.html']],
+    browser:[['browser','Observed pages','browser-intelligence.html'],['history','History & scans','web-history.html']],
+    alerts:[['alerts','Alerts','alerts-evidence.html'],['invest','Findings','investigations.html'],['incident','Incidents & timeline','incident-timeline.html']]
   };
-
-  function navItem(o,active){
-    const a=active===o.k?' active':'';
-    const tag=o.tag?'<span class="tag '+o.tag.c+'">'+o.tag.t+'</span>':'';
-    return '<a class="nav-item'+a+'" href="'+(o.href||'#')+'">'+o.icon+'<span class="lbl">'+o.label+'</span>'+tag+'</a>';
+  function link(item,active){
+    const [key,label,href,icon]=item;
+    return '<a class="nav-item'+(key===active?' active':'')+'" href="'+href+'" aria-label="'+label+'" title="'+label+'"'+(key===active?' aria-current="page"':'')+'>'+(icon||'')+'<span class="lbl">'+label+'</span></a>';
   }
-  function sub(label,href,opts){
-    opts=opts||{};
-    const on=opts.on?' on':'';
-    const badge=opts.badge!==undefined?'<span style="margin-left:auto;font-size:9px;color:var(--faint)">'+opts.badge+'</span>':'';
-    return '<a class="subitem'+on+'" href="'+(href||'#')+'"><span class="pip"></span>'+label+badge+'</a>';
-  }
-  function secHead(label,icon,chev){
-    return '<div class="nav-sec">'+(icon||'')+' '+label+(chev?' '+I.chev:'')+'</div>';
-  }
-
   window.buildSidebar=function(active){
-    let h='';
-    // Parent navigation only — child sub-items removed per design. Section
-    // headers carry no expand chevron because nothing nests under them now.
-
-    // INTELLIGENCE
-    h+=secHead('INTELLIGENCE',I.shield,false);
-    h+=navItem({k:'overview',label:'Threat Overview',href:'threat-overview.html',icon:I.clock},active);
-    h+=navItem({k:'globe',label:'Threat Globe',href:'threat-globe.html',icon:I.globe,tag:{t:'LIVE',c:'live'}},active);
-    h+=navItem({k:'sandbox',label:'Sandbox',href:'sandbox.html',icon:I.box,tag:{t:'NEW',c:'new'}},active);
-    h+=navItem({k:'browser',label:'Browser Intelligence',href:'browser-intelligence.html',icon:I.globe,tag:{t:'0',c:'zero'}},active);
-    h+=navItem({k:'assistant',label:'AI Assistance',href:'ai-assistance.html',icon:I.spark,tag:{t:'AI',c:'ai'}},active);
-    h+=navItem({k:'security',label:'Security Functions',href:'security-functions.html',icon:I.shield,tag:{t:'LIVE',c:'live'}},active);
-    h+=navItem({k:'pipeline',label:'Signal Pipeline',href:'signal-pipeline.html',icon:I.flow},active);
-
-    // MODEL INFERENCE
-    h+=secHead('MODEL INFERENCE',I.cpu,false);
-    h+=navItem({k:'models',label:'Model Inference',href:'model-inference.html',icon:I.cpu},active);
-
-    // AGENT SYSTEM
-    h+=secHead('AGENT SYSTEM',I.branch,false);
-    h+=navItem({k:'agentcore',label:'Agent Core',href:'agent-core.html',icon:I.branch,tag:{t:'ACTIVE',c:'act'}},active);
-    h+=navItem({k:'analyzer',label:'Threat Analyzer',href:'analyzer.html',icon:I.search,tag:{t:'ML',c:'ai'}},active);
-    h+=navItem({k:'scheduled',label:'Scheduled',href:'scheduled.html',icon:I.cal},active);
-    h+=navItem({k:'memory',label:'Memory',href:'memory.html',icon:I.brain},active);
-
-    // HTTP HISTORY
-    h+=secHead('HTTP HISTORY',I.history,false);
-    h+=navItem({k:'history',label:'Browser History',href:'web-history.html',icon:I.globe},active);
-
-    // SECURITY OPERATIONS
-    h+=secHead('SECURITY OPERATIONS',I.bell,false);
-    h+=navItem({k:'alerts',label:'Alerts & Evidence',href:'alerts-evidence.html',icon:I.bell,tag:{t:'0',c:'zero'}},active);
-    h+=navItem({k:'invest',label:'Investigations',href:'investigations.html',icon:I.search},active);
-    h+=navItem({k:'incident',label:'Incident Timeline',href:'incident-timeline.html',icon:I.timeline},active);
-
-    // REPORTS
-    h+=secHead('REPORTS',I.doc,false);
-    h+=navItem({k:'reports',label:'Reports',href:'reports.html',icon:I.doc,tag:{t:'12',c:'num'}},active);
-
-    const el=document.getElementById('sidebar');
-    if(el){
-      el.innerHTML=h;
-      // Always an icon rail: it expands while the mouse is over it (CSS :hover)
-      // and collapses back to icons as soon as the mouse leaves. No button.
-      el.classList.add('collapsed');
-      const body=el.closest('.body');
-      if(body) body.classList.add('sidebar-collapsed');
+    const el=document.getElementById('sidebar'); if(!el)return;
+    const parent=parents[active]||active;
+    el.setAttribute('aria-label','Main navigation');
+    el.innerHTML='<button type="button" class="nav-item nav-toggle" id="cfNavToggle" aria-controls="cfNavLinks">'+I.chev+'<span class="lbl">Collapse sidebar</span></button>'+
+      '<nav id="cfNavLinks" class="nav-links" aria-label="Workspace destinations">'+groups.map(([label,items])=>'<div class="nav-sec">'+label+'</div>'+items.map(item=>link(item,parent)).join('')).join('')+'</nav>'+
+      '<button type="button" id="cfNavSettings" class="nav-item nav-settings'+(parent==='settings'?' active':'')+'" aria-label="Settings" title="Settings" aria-haspopup="dialog">'+I.gear+'<span class="lbl">Settings</span></button>';
+    el.querySelectorAll('svg').forEach(icon=>icon.setAttribute('aria-hidden','true'));
+    const toggle=el.querySelector('#cfNavToggle');
+    function setCollapsed(collapsed){
+      el.classList.toggle('collapsed',collapsed);
+      const body=el.closest('.body'); if(body)body.classList.toggle('sidebar-collapsed',collapsed);
+      const label=collapsed?'Expand sidebar':'Collapse sidebar';
+      toggle.setAttribute('aria-expanded',String(!collapsed)); toggle.setAttribute('aria-label',label); toggle.title=label;
+      toggle.querySelector('.lbl').textContent=label;
+    }
+    let preference=null;try{preference=localStorage.getItem('cf_sidebar_collapsed');}catch(e){}
+    let collapsed=preference===null?window.innerWidth<1100:preference==='true';
+    window.addEventListener('resize',function(){if(preference===null)setCollapsed(window.innerWidth<1100);});
+    setCollapsed(collapsed);
+    toggle.addEventListener('click',function(){ collapsed=!el.classList.contains('collapsed');setCollapsed(collapsed);preference=String(collapsed);try{localStorage.setItem('cf_sidebar_collapsed',String(collapsed));}catch(e){}window.dispatchEvent(new Event('resize')); });
+    el.querySelector('#cfNavSettings').addEventListener('click',()=>window.openCfSettings&&window.openCfSettings(['agentcore','pipeline','models'].includes(parent)?'diagnostics':'account'));
+    const main=document.querySelector('main.main'), head=main&&main.querySelector('.main-head');
+    if(main&&tabs[parent]){
+      const previous=document.getElementById('cfWorkspaceTabs'); if(previous)previous.remove();
+      const nav=document.createElement('nav');nav.id='cfWorkspaceTabs';nav.className='workspace-tabs';nav.setAttribute('aria-label','Related views');
+      nav.innerHTML=tabs[parent].map(item=>link(item,active)).join('');
+      if(head)head.after(nav);else main.prepend(nav);
     }
   };
 })();

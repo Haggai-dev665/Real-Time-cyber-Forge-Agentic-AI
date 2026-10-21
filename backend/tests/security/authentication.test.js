@@ -8,6 +8,20 @@ jest.mock('../../src/services/appwriteService', () => ({
   appwriteService: { isInitialized: true, registerAppwriteUser: jest.fn() }
 }));
 jest.mock('bcryptjs', () => ({ hash: jest.fn(), compare: jest.fn() }));
+// The audit trail has its own suite (audit-events.test.js); here it records nothing.
+jest.mock('../../src/services/auditLogService', () => ({
+  record: jest.fn(async () => ({})), getActionCatalog: () => ({}), AUDIT_ACTIONS: {}
+}));
+// Workspaces and identity links have their own suites (workspaces.test.js,
+// account-linking.test.js). Here they are stand-ins that record their calls.
+jest.mock('../../src/services/workspaceService', () => ({
+  IdentityConflictError: class IdentityConflictError extends Error {},
+  ensurePersonalWorkspace: jest.fn(async () => 'workspace-1'),
+  linkIdentity: jest.fn(async () => ({})),
+  userIdForIdentity: jest.fn(async () => null),
+  hasIdentity: jest.fn(async () => false),
+  activeMembership: jest.fn(async () => ({ role: 'owner' }))
+}));
 jest.mock('firebase-admin', () => ({ apps: [{}], auth: jest.fn() }));
 jest.mock('axios', () => ({ post: jest.fn(), get: jest.fn() }));
 // These tests target authentication; rate-limit counters are outside this suite.
@@ -266,16 +280,42 @@ describe('provider identity cannot come from the request body', () => {
     expect(user.save).not.toHaveBeenCalled();
   });
 
+  test('Google code exchange needs the PKCE verifier and a loopback redirect, and asks Google nothing without them', async () => {
+    axios.post.mockClear();
+    const send = body => client.request('/api/auth/google/token', { method: 'POST', body: { code: 'one-time-code', ...body } });
+    const noVerifier = await send({ redirect_uri: 'http://127.0.0.1:12345' });
+    expect(noVerifier.status).toBe(400);
+    expect((await send({ redirect_uri: 'http://127.0.0.1:12345', code_verifier: 'short' })).status).toBe(400);
+    expect((await send({ redirect_uri: 'https://attacker.example/cb', code_verifier: 'v'.repeat(43) })).status).toBe(400);
+    expect((await send({ redirect_uri: 'http://127.0.0.1.attacker.example:80', code_verifier: 'v'.repeat(43) })).status).toBe(400);
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
   test('Google code exchange requires verified email and preserves member sessions', async () => {
     axios.post.mockResolvedValue({ data: { access_token: 'provider-access-token' } });
     axios.get.mockResolvedValue({ data: { id: 'google-member', email: user.email, verified_email: false } });
-    const options = { method: 'POST', body: { code: 'one-time-code', redirect_uri: 'http://127.0.0.1:12345' } };
+    const verifier = 'v'.repeat(43);
+    const options = { method: 'POST', body: { code: 'one-time-code', redirect_uri: 'http://127.0.0.1:12345', code_verifier: verifier } };
     expect((await client.request('/api/auth/google/token', options)).status).toBe(401);
+    // the PKCE verifier goes to Google with the code
+    expect(axios.post).toHaveBeenCalledWith('https://oauth2.googleapis.com/token', expect.objectContaining({ code_verifier: verifier }));
     expect(User.findOne).not.toHaveBeenCalled();
     axios.get.mockResolvedValue({ data: { id: 'google-member', email: user.email, verified_email: true } });
-    User.findOne.mockResolvedValue(user);
+    const { linkIdentity } = require('../../src/services/workspaceService');
+    // The member account has a password. A Google sign-in with the same address
+    // does not enter it: that address match is not proof of who set the password.
+    User.findOne.mockReturnValue({ select: async () => user });
+    const refused = await client.request('/api/auth/google/token', options);
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe('ACCOUNT_EXISTS');
+    expect(refused.body.data).toBeUndefined();
+    expect(linkIdentity).not.toHaveBeenCalled();
+    // An account with no password was made by an earlier verified provider
+    // sign-in; it is linked by Google's ID for the caller and signed in.
+    delete user.passwordHash;
     const response = await client.request('/api/auth/google/token', options);
     expect(response.status).toBe(200);
     expect(jwt.verify(response.body.data.token, process.env.JWT_SECRET).userId).toBe(USER_ID);
+    expect(linkIdentity).toHaveBeenCalledWith(user._id, 'google', 'google-member', 'sign-in');
   });
 });

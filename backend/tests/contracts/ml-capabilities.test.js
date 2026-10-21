@@ -191,7 +191,6 @@ test('routes built on retired ML endpoints report the gap instead of placeholder
     expect((await server.request('/api/ai/models')).status).toBe(401);
 
     for (const [route, method, body] of [
-      ['/api/threats/map', 'GET'],
       ['/api/ai/agent/threats', 'GET'],
       ['/api/ai/agent/learning', 'GET'],
       ['/api/ai/models', 'GET'],

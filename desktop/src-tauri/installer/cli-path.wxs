@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The cyberforge CLI on PATH, for the MSI (per-machine) installer (V2-01).
+  cyberforge.exe is installed beside CyberForge.exe; this adds the install
+  folder to the system PATH. Windows Installer removes the entry again when
+  the product is uninstalled (Permanent="no").
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="CyberForgeCliPath" Guid="{5F3C6B1E-8E2A-4C7D-9B41-2E6A7C0D3F19}">
+        <Environment Id="CyberForgeCliPathEntry" Name="PATH" Value="[INSTALLDIR]" Part="last" Action="set" System="yes" Permanent="no" />
+        <RegistryValue Root="HKLM" Key="Software\CyberForge\CLI" Name="OnPath" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

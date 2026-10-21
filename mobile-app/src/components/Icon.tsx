@@ -41,6 +41,8 @@ export const ICON_PATHS = {
   flask: ['M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3'],
   eyeoff: ['M2 12s4-7 10-7c2 0 3.7.6 5.2 1.5M22 12s-4 7-10 7c-2 0-3.7-.6-5.2-1.5', 'M3 3l18 18'],
   list: ['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'],
+  download: ['M12 3v12', 'm7 10 5 5 5-5', 'M4 20h16'],
+  trash: ['M4 7h16', 'M10 11v6M14 11v6', 'M6 7l1 13h10l1-13', 'M9 7V4h6v3'],
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

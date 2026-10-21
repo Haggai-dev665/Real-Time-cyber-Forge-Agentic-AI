@@ -27,7 +27,8 @@ beforeAll(async () => {
 afterAll(() => client.close());
 beforeEach(() => {
   User.findById.mockResolvedValue(user);
-  Analysis.find.mockReturnValue({ sort: () => ({ skip: () => ({ limit: () => ({ populate: async () => [] }) }) }) });
+  // no populate: the model has no `threats` path, and Mongoose 8 refuses to populate one (16.67)
+  Analysis.find.mockReturnValue({ sort: () => ({ skip: () => ({ limit: async () => [] }) }) });
   Analysis.countDocuments.mockResolvedValue(0);
   Threat.find.mockReturnValue({ sort: () => ({ skip: () => ({ limit: async () => [] }) }) });
   Threat.countDocuments.mockResolvedValue(0);
@@ -79,4 +80,19 @@ test('threat stats receive the verified owner', async () => {
     headers: { Authorization: `Bearer ${signSessionToken(user)}` }
   });
   expect(getThreatStats).toHaveBeenCalledWith(user._id);
+});
+
+test('analysis statistics are counted from the signed-in account\'s own records', async () => {
+  Analysis.countDocuments.mockReset();
+  Analysis.countDocuments
+    .mockResolvedValueOnce(12).mockResolvedValueOnce(9).mockResolvedValueOnce(2).mockResolvedValueOnce(3);
+  const response = await client.request('/api/analysis/stats', { headers: { Authorization: `Bearer ${signSessionToken(user)}` } });
+  expect(response.body).toEqual({
+    success: true,
+    data: { total_analyses: 12, completed_analyses: 9, pending_analyses: 2, high_risk_found: 3 }
+  });
+  expect(Analysis.countDocuments).toHaveBeenCalledTimes(4);
+  for (const [filter] of Analysis.countDocuments.mock.calls) {
+    expect(String(filter.user)).toBe(String(user._id));
+  }
 });

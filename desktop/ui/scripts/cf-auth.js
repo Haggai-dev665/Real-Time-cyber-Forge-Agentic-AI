@@ -1,8 +1,9 @@
 /* ============================================================
    CyberForge — backend auth client
    Thin wrapper around the Rust Tauri commands (auth_login / auth_register …)
-   which call the backend at /api/auth/* and store the token in the OS keychain.
-   Usage:  cfAuth.login(email, password)  ->  { success, token, user, message }
+   which call the backend at /api/auth/* and keep the session token in the
+   system credential store. The token is never returned to the page.
+   Usage:  cfAuth.login(email, password)  ->  { success, user, message, sessionSaved }
    ============================================================ */
 (function () {
   function invoke(cmd, args) {
@@ -19,8 +20,8 @@
     login: function (email, password) {
       return invoke('auth_login', { credentials: { email: email, password: password } });
     },
-    register: function (name, email, password) {
-      return invoke('auth_register', { data: { name: name, email: email, password: password } });
+    register: function (firstName, lastName, email, password) {
+      return invoke('auth_register', { data: { firstName: firstName, lastName: lastName, email: email, password: password } });
     },
     logout: function () {
       return invoke('auth_logout');

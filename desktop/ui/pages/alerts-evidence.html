@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Alerts & Evidence</title>
+<title>CyberForge — Alerts & Incidents</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
@@ -68,29 +68,35 @@
 .ev .dl{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;cursor:pointer;color:var(--faint);border:1px solid var(--border-2)}
 .ev .dl:hover{color:var(--cyan);border-color:rgba(43,212,238,.3)} .ev .dl svg{width:13px;height:13px}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Alerts & Evidence" id="win">
+  <div class="window" data-screen-label="Alerts & Incidents" id="win">
     <div class="topbar" id="topbar"></div>
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></div>
-          <h1>Alerts &amp; Evidence</h1>
+          <h1>Alerts & Incidents</h1>
           <div class="head-right">
             <span class="live-ind"><span class="dot"></span>Triage</span>
-            <span id="openc">11 open</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Ack All</button>
+            <span id="openc">—</span>
+            <button class="btn-refresh" title="Marks every alert as seen on this screen only; Acknowledge on an alert saves it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Mark all seen</button>
           </div>
         </div>
 
         <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Open Alerts</div><div class="kv" style="color:var(--amber-2)" id="kOpen">11</div><div class="kd">last 24h</div></div>
-          <div class="card kpi"><div class="kl">Critical</div><div class="kv" style="color:#ff7185" id="kCrit">2</div><div class="kd">P0 · needs action</div></div>
-          <div class="card kpi"><div class="kl">Mean Triage</div><div class="kv" style="color:var(--cyan)">38<span style="font-size:13px;color:var(--faint)">s</span></div><div class="kd">AI-assisted</div></div>
-          <div class="card kpi"><div class="kl">Evidence Items</div><div class="kv" style="color:var(--green)">48</div><div class="kd">chain-of-custody</div></div>
+          <div class="card kpi"><div class="kl">Open Alerts</div><div class="kv" style="color:var(--amber-2)" id="kOpen">—</div><div class="kd">not yet acknowledged</div></div>
+          <div class="card kpi"><div class="kl">Critical</div><div class="kv" style="color:#ff7185" id="kCrit">—</div><div class="kd">critical, not yet acknowledged</div></div>
+          <div class="card kpi"><div class="kl">Mean Triage</div><div class="kv" style="color:var(--faint)">—</div><div class="kd">not measured: acknowledgements carry no time</div></div>
+          <div class="card kpi"><div class="kl">Evidence Items</div><div class="kv" style="color:var(--green)" id="kEv">—</div><div class="kd">stored for the selected alert</div></div>
         </div>
 
         <div class="ae-grid">
@@ -105,7 +111,7 @@
               <div class="adet" id="adet"></div>
             </div>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14l-1 14H6Z"/><path d="M9 7V4h6v3"/></svg>Evidence Locker<span class="right" id="evCount">5 items</span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14l-1 14H6Z"/><path d="M9 7V4h6v3"/></svg>Linked evidence<span class="right" id="evCount">—</span></div>
               <div class="evid" id="evid"></div>
             </div>
           </div>
@@ -117,122 +123,15 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-realtime.js"></script>
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
-<script>
-buildHeader({status:'TRIAGE'});
-buildSidebar('alerts');
-buildFooter({items:[{txt:'alert queue',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-const sevIco={crit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>',
-  high:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
-  med:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
-  low:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>'};
-let alerts=[];          // populated from REAL backend alerts (agent_alerts) + live ML scans
-const evidence={};      // real evidence bundles keyed by alert id (none synthetic)
-const evIco={mem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6V3M16 6V3M9 18v3M15 18v3"/></svg>',
-  db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.6 3.6 3 8 3s8-1.4 8-3V6"/></svg>',
-  json:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H6a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h2M16 3h2a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-2"/></svg>',
-  img:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5L5 20"/></svg>',
-  pcap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18"/></svg>'};
-
-let filter='all', selected=0;
-const alertsEl=document.getElementById('alerts');
-function visible(){return filter==='all'?alerts:alerts.filter(a=>filter==='new'?a.st==='new':a.sev===filter);}
-function renderAlerts(){
-  const list=visible();
-  alertsEl.innerHTML=list.map((a)=>{
-    const gi=alerts.indexOf(a);
-    return '<div class="al '+a.sev+(gi===selected?' sel':'')+'" data-i="'+gi+'"><span class="edge"></span>'+
-    '<span class="sev">'+sevIco[a.sev]+'</span><div class="ainfo"><div class="at">'+a.t+'</div>'+
-    '<div class="am"><span>'+a.id+'</span><span>'+a.host+'</span><span>'+a.rule+'</span></div></div>'+
-    '<span class="astat '+a.st+'">'+a.st.toUpperCase()+'</span></div>';
-  }).join('') || ('<div style="padding:30px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">'+(alerts.length?'No alerts match this filter':'No active alerts — queue is clear')+'</div>');
-  alertsEl.querySelectorAll('.al').forEach(el=>el.addEventListener('click',()=>{selected=+el.dataset.i;renderAlerts();renderDetail();}));
-}
-function renderDetail(){
-  const a=alerts[selected]; if(!a){document.getElementById('adet').innerHTML='';return;}
-  document.getElementById('adet').innerHTML=
-    '<div class="dh"><span class="di">'+sevIco[a.sev]+'</span><div><div class="dt">'+a.t+'</div><div class="dm">'+a.id+' · '+a.rule+'</div></div></div>'+
-    '<div><div class="drow"><span class="k">Severity</span><span class="v pill '+(a.sev==='crit'?'crit':a.sev==='low'?'low':'med')+'">'+a.sev.toUpperCase()+'</span></div>'+
-    '<div class="drow"><span class="k">Host</span><span class="v">'+a.host+'</span></div>'+
-    '<div class="drow"><span class="k">Source</span><span class="v">'+a.src+'</span></div>'+
-    '<div class="drow"><span class="k">MITRE</span><span class="v" style="color:var(--amber-2)">'+a.mitre+'</span></div>'+
-    '<div class="drow"><span class="k">Confidence</span><span class="v" style="color:var(--cyan)">'+a.conf+'</span></div>'+
-    '<div class="drow"><span class="k">Status</span><span class="v"><span class="astat '+a.st+'">'+a.st.toUpperCase()+'</span></span></div></div>'+
-    '<div class="dactions"><div class="abtn ack" data-act="ack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Acknowledge</div>'+
-    '<div class="abtn esc" data-act="esc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Escalate</div></div>';
-  document.querySelectorAll('#adet .abtn').forEach(b=>b.addEventListener('click',()=>{
-    alerts[selected].st=b.dataset.act==='ack'?'ack':'esc'; renderAlerts(); renderDetail();
-  }));
-  renderEvidence(a.id);
-}
-function renderEvidence(id){
-  const items=evidence[id]||[['triage_summary.md','auto-generated by Agent','—','json'],['alert_context.json','enrichment bundle','—','json']];
-  document.getElementById('evCount').textContent=items.length+' items';
-  document.getElementById('evid').innerHTML=items.map(e=>
-    '<div class="ev"><span class="ei">'+evIco[e[3]]+'</span><div class="einfo"><div class="en">'+e[0]+'</div><div class="em">'+e[1]+' · sha '+e[2]+'</div></div>'+
-    '<span class="dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span></div>').join('');
-}
-renderAlerts(); renderDetail();
-['kOpen','kCrit'].forEach(function(id){var e=document.getElementById(id); if(e)e.textContent='0';});
-(function(){var oc=document.getElementById('openc'); if(oc)oc.textContent='0 open'; var ec=document.getElementById('evCount'); if(ec)ec.textContent='0 items';})();
-document.querySelectorAll('#qfilters .qf').forEach(q=>q.addEventListener('click',()=>{
-  document.querySelectorAll('#qfilters .qf').forEach(x=>x.classList.remove('on'));q.classList.add('on');filter=q.dataset.f;renderAlerts();
-}));
-
-// (no synthetic alert stream — alerts arrive from agent_alerts + live ML scans below)
-
-// Ack All
-document.querySelector('.btn-refresh').addEventListener('click',()=>{alerts.forEach(a=>{if(a.st==='new')a.st='ack';});renderAlerts();renderDetail();document.getElementById('kCrit').textContent='0';});
-
-// ===== REAL alert queue — agent_alerts (backend, when signed in) =====
-function sevToCls(s){ s=String(s||'').toLowerCase();
-  return s==='critical'?'crit':(s==='high'?'high':(s==='low'?'low':'med')); }
-async function loadRealAlerts(){
-  try{
-    const r=await CF.invoke('agent_alerts'); const d=(r&&r.data)||{}; const list=d.alerts||[];
-    if(list.length){
-      const mapped=list.map((a,i)=>({
-        id:'ALT-'+String(a.id||a.$id||(9000+i)).slice(-4),
-        sev:sevToCls(a.severity),
-        t:a.description||a.source||'Alert',
-        host:a.deviceId||'desktop', rule:a.source||'agent',
-        st:['resolved','dismissed'].includes(String(a.status||'').toLowerCase())?'ack':'new',
-        mitre:'—', src:a.source||'agent',
-        conf:(a.confidence!=null?Math.round(a.confidence*100)+'%':(a.riskScore!=null?a.riskScore+'%':''))
-      }));
-      alerts.length=0; mapped.forEach(m=>alerts.push(m)); selected=0;
-      renderAlerts(); renderDetail();
-      const ko=document.getElementById('kOpen'); if(ko) ko.textContent=alerts.filter(a=>a.st==='new').length;
-      const oc=document.getElementById('openc'); if(oc) oc.textContent=alerts.length+' open';
-      const kc=document.getElementById('kCrit'); if(kc) kc.textContent=alerts.filter(a=>a.sev==='crit'&&a.st==='new').length;
-    }
-  }catch(e){ /* not signed in / preview → keep seed */ }
-}
-loadRealAlerts(); setInterval(loadRealAlerts,30000);
-
-// Real-time: prepend live ML alerts/threats straight from the SSE feed.
-function cfLiveAlert(d){
-  if(!d) return;
-  const sev=(d.severity==='high'||d.severity==='critical')?'crit':(d.severity==='low'?'low':'med');
-  alerts.unshift({ id:'ALT-'+String(Date.now()).slice(-5), st:'new', sev,
-    t:d.message||((d.verdict||'Threat')+' — '+(d.url||d.indicator||'')),
-    host:'desktop', rule:d.category||'ML.Scan', mitre:'—',
-    src:d.url||d.indicator||'agent', conf:(d.riskScore!=null?d.riskScore+'%':'') });
-  if(selected>=0) selected++;
-  renderAlerts();
-  const ko=document.getElementById('kOpen'); if(ko) ko.textContent=alerts.filter(a=>a.st==='new').length;
-  const oc=document.getElementById('openc'); if(oc) oc.textContent=alerts.length+' open';
-  const kc=document.getElementById('kCrit'); if(kc) kc.textContent=alerts.filter(a=>a.sev==='crit'&&a.st==='new').length;
-}
-window.addEventListener('cf:alert', e=>cfLiveAlert(e.detail));
-window.addEventListener('cf:threat', e=>cfLiveAlert(e.detail));
-</script>
+<script src="../scripts/pages/alerts-evidence.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

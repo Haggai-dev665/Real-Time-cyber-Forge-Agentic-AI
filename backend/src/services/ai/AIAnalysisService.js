@@ -235,7 +235,9 @@ class AIAnalysisService {
    */
   async createThreatFromAnalysis(analysis, results) {
     try {
-      const threat = new Threat({
+      // one finding per account, category and target; a repeat raises its count (DET-02)
+      const { recordFinding } = require('../findingService');
+      const fields = {
         user: ownedThreatFilter(analysis.user).user,
         type: this.mapAnalysisToThreatType(analysis.type, results.threat_types),
         severity: this.mapRiskScoreToSeverity(results.risk_score),
@@ -254,17 +256,9 @@ class AIAnalysisService {
           indicators: results.threat_types,
           ml_results: results.details
         }
-      });
-
-      await threat.save();
-      
-      // Add timeline event
-      await threat.addTimelineEvent(
-        'Threat detected by AI analysis',
-        `Analysis ID: ${analysis._id}, Risk Score: ${results.risk_score}`,
-        analysis.user
-      );
-
+      };
+      const target = analysis.target && analysis.target.value;
+      const { threat } = await recordFinding(analysis.user, fields, target);
       return threat;
 
     } catch (error) {

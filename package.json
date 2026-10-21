@@ -52,10 +52,6 @@
   ],
   "author": "Haggai-dev665",
   "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.0",
-    "lerna": "^7.1.4"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI.git"
@@ -68,7 +64,6 @@
     "url": "https://github.com/Haggai-dev665/Real-Time-cyber-Forge-Agentic-AI/issues"
   },
   "dependencies": {
-    "axios": "^1.11.0",
     "heroku": "^8.7.1"
   }
 }

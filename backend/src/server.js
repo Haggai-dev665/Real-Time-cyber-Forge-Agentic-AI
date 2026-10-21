@@ -3,8 +3,9 @@ require('dotenv').config();
 // Fail before importing services, opening connections, or starting timers.
 const { getJwtSecret } = require('./config/auth.config');
 getJwtSecret();
-const { getMLServiceUrl } = require('./config/ml.config');
+const { getMLServiceUrl, getMLServiceKey } = require('./config/ml.config');
 getMLServiceUrl();
+getMLServiceKey();
 
 // Initialize Datadog tracer FIRST (before any other imports)
 const { initializeDatadog } = require('./config/datadog.config');
@@ -29,6 +30,12 @@ const { datadogMetrics } = require('./services/datadogMetrics');
 const authRoutes = require('./routes/auth');
 const analysisRoutes = require('./routes/analysis');
 const threatRoutes = require('./routes/threats');
+const deviceRoutes = require('./routes/devices');
+const agentDefinitionRoutes = require('./routes/agentsV1');
+const accountDataRoutes = require('./routes/accountData');
+const findingExceptionRoutes = require('./routes/findingExceptions');
+const reportRoutes = require('./routes/reports');
+const mlCapabilityRoutes = require('./routes/mlCapabilitiesV1');
 const aiRoutes = require('./routes/ai');
 const webScrapingRoutes = require('./routes/web-scraping');
 const domainIntelligenceRoutes = require('./routes/domain-intelligence');
@@ -130,7 +137,11 @@ class CyberForgeServer {
     this.app.use(morgan('combined'));
 
     // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    this.app.use(express.json({
+      limit: '10mb',
+      // device requests are signed over their exact body bytes (deviceService.js)
+      verify: (req, res, buf) => { if (req.originalUrl.startsWith('/api/v1/devices')) req.rawBody = buf; }
+    }));
     this.app.use(express.urlencoded({ extended: true }));
 
     // Note: Static file serving is configured in setupRoutes() for production
@@ -167,6 +178,13 @@ class CyberForgeServer {
     this.app.use('/api/distributed', distributedRoutes); // TODO 4: Distributed Intelligence
     this.app.use('/api/policy', policyRoutes);           // TODO 5: Policy Engine
     this.app.use('/api/audit', auditRoutes);             // TODO 6: Audit Trail
+    this.app.use('/api/v1', deviceRoutes);               // Devices: enrollment, approval, heartbeats (DEV-01/02)
+    this.app.use('/api/v1', agentDefinitionRoutes);      // Agent definitions (AGT-01/02/03)
+    this.app.use('/api/v1', accountDataRoutes);          // Export, data deletion, account deletion (SEC-07)
+    this.app.use('/api/v1', findingExceptionRoutes);     // Exceptions to findings (DET-02)
+    this.app.use('/api/v1', reportRoutes);               // Evidence reports (DET-04)
+    this.app.use('/api/v1', require('./routes/consoleV1'));
+    this.app.use('/api/v1', mlCapabilityRoutes);         // ML capabilities and readiness (V2-ML02)
     this.app.use('/api/sandbox', sandboxRoutes);         // Sandbox: IOC + MITRE + evidence locker
     this.app.use('/api/orchestrator', orchestratorRoutes); // 8-agent orchestrator
     this.app.use('/api/memory', memoryRoutes);           // Vector memory (local-first RAG sync)
@@ -294,6 +312,10 @@ class CyberForgeServer {
       // Connect to external services
       await connectDatabase();
       await connectRedis();
+      require('./services/auditLogService').record({
+        platform: true, action: 'system.startup', resource: 'server',
+        details: { release: process.env.HEROKU_RELEASE_VERSION || null, node: process.version }
+      });
 
       // Start HTTP/WebSocket server
       this.server.listen(this.port, () => {
@@ -307,6 +329,11 @@ class CyberForgeServer {
 
       // Begin emitting the live metrics heartbeat to all realtime subscribers.
       realtimeMetrics.start();
+
+      // The agent worker: the one place agent runs are claimed and carried out (AGT-04).
+      if (process.env.NODE_ENV !== 'test') require('./services/agentRunService').start();
+      // signed audit checkpoints, hourly (SEC-08)
+      if (process.env.NODE_ENV !== 'test') require('./services/auditIntegrityService').start();
 
       // Graceful shutdown
       process.on('SIGTERM', () => this.shutdown());

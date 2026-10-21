@@ -1,0 +1,7 @@
+.vendor/
+__pycache__/
+_defence-static.pptx
+template/
+_template-static.pptx
+photos/*
+!photos/credits.json

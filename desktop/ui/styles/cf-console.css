@@ -1,0 +1,51 @@
+/* Live workspace chrome: shared typography, icons and restrained state motion. */
+:root{--cc-control:36px;--cc-radius:8px;--cc-gap:8px}
+.cc-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--cc-control);padding:7px 11px;border:1px solid var(--border-2);border-radius:var(--cc-radius);background:var(--surface-solid);color:var(--dim);font:500 13px/1.4 var(--sans);text-decoration:none;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.cc-button:hover{color:var(--text);border-color:var(--cyan);background:var(--surface-2)}
+.cc-button:disabled{opacity:.55;cursor:wait}.cc-button svg,.cc-filter svg{width:18px;height:18px;flex:none}
+.cc-button[data-state=warn]{color:var(--amber-2)}.cc-button[data-state=error]{color:#ff7185}.cc-button[data-state=ok]{color:var(--green)}
+.cc-scope{max-width:170px}.cc-scope span{overflow:hidden;text-overflow:ellipsis}
+.cf-desktop-shell #topbar.topbar{height:64px;min-height:64px;gap:8px;background:linear-gradient(180deg,var(--surface-solid),var(--bg));padding:0 16px}
+.cf-desktop-shell .topbar .icon-btn,.cf-desktop-shell .topbar .avatar{width:36px;height:36px;flex:none}
+.cf-desktop-shell .topbar .search{height:36px}.cf-desktop-shell .topbar .search input{font-family:var(--sans);font-size:13px}
+.cf-desktop-shell .topbar .btn-scan{height:36px;font-size:13px;border-radius:8px}
+.cf-desktop-shell .topbar #cf-live-pill{display:none}
+.cf-desktop-shell .main-head h1{font-size:23px;line-height:1.3;letter-spacing:-.3px}
+.cf-desktop-shell .main-head .head-right{font-family:var(--sans);font-size:13px}
+.cf-desktop-shell .main-head :is(button,.btn-refresh){min-height:36px;font-family:var(--sans);font-size:13px}
+.cf-desktop-shell .main-head .live-ind .dot{animation:none;box-shadow:none}
+.cc-page-tools{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 18px;padding:12px 0;border-bottom:1px solid var(--border)}
+.cc-page-metrics{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.cc-metric{font:500 12px/1.5 var(--sans);font-variant-numeric:tabular-nums;color:var(--dim);padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+.cc-page-actions{display:flex;gap:8px;margin-left:auto;flex-shrink:0}
+.cc-filter{display:flex;align-items:center;gap:8px;min-width:160px;max-width:300px;flex:1;border:1px solid var(--border-2);border-radius:8px;padding:7px 10px;color:var(--faint);background:var(--surface-solid)}
+.cc-filter input{width:100%;min-width:0;background:none;border:0;color:var(--text);font:13px var(--sans);outline:none}.cc-filter:focus-within{outline:2px solid var(--cyan)}.cc-filter-count{font-size:11px;white-space:nowrap}
+.cc-filtered{display:none!important}
+.cc-more{position:relative}.cc-more summary{list-style:none}.cc-more summary::-webkit-details-marker{display:none}
+.cc-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:240px;display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--surface-solid);border:1px solid var(--border-2);border-radius:10px;box-shadow:0 16px 40px #0008;animation:cc-enter .18s ease-out}
+.cc-menu .cc-button{justify-content:flex-start;white-space:normal}
+.cf-desktop-shell .statusbar.cc-footer{height:36px;min-height:36px;gap:4px;padding:0 10px;font:12px/1.4 var(--sans);overflow:hidden}
+.cc-footer .cc-button{min-height:28px;border:0;background:transparent;padding:4px 7px;font-size:12px;font-weight:400;font-variant-numeric:tabular-nums;gap:6px}
+.cc-footer svg{width:15px;height:15px}.cc-footer #ccOperation{min-width:0;flex:1;justify-content:flex-start;color:var(--dim)}
+.cc-footer #ccOperation span{overflow:hidden;text-overflow:ellipsis}.cc-version{font:11px var(--mono);color:var(--faint);margin-left:auto;white-space:nowrap}
+.cc-dialog{position:fixed;inset:0 0 0 auto;margin:0;width:min(530px,100vw);max-width:100vw;height:100dvh;max-height:100dvh;border:0;border-left:1px solid var(--border-2);padding:0;background:var(--surface-solid);color:var(--text);font-family:var(--sans);box-shadow:-20px 0 70px #0007;animation:cc-enter .18s ease-out}
+.cc-dialog[open]{display:flex;flex-direction:column}.cc-dialog::backdrop{background:#0007;backdrop-filter:blur(2px)}
+.cc-dialog-head{display:flex;align-items:center;gap:12px;padding:18px;border-bottom:1px solid var(--border)}.cc-dialog-head h2{font-size:19px;flex:1}
+.cc-details{overflow:auto;flex:1;min-height:0;padding:8px 18px}.cc-detail{padding:12px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:145px minmax(0,1fr);gap:12px}
+.cc-detail dt{font-size:13px;color:var(--dim)}.cc-detail dd{font-size:13px;line-height:1.6;overflow-wrap:anywhere;margin:0}
+.cc-dialog-actions{display:flex;flex-wrap:wrap;gap:8px;padding:16px;border-top:1px solid var(--border)}
+.cc-running>svg{animation:cc-spin .9s linear infinite}.cc-changed{animation:cc-update .4s ease-out}
+@keyframes cc-enter{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@keyframes cc-spin{to{transform:rotate(360deg)}}
+@keyframes cc-update{from{background:var(--cyan-dim)}to{background:transparent}}
+/* Chrome never animates an idle decoration or counters continuously. */
+.cf-desktop-shell :is(.topbar,.statusbar) :is(.dot,.cf-mark .sage){animation:none!important}
+@media(max-width:1150px){.cc-scope{max-width:40px;padding:8px}.cc-scope span{display:none}.cc-version{display:none}.cc-footer #ccUpdated{display:none}}
+@media(max-width:760px){
+ .cf-desktop-shell #topbar.topbar{height:auto;min-height:64px;flex-wrap:wrap;padding:10px 12px}.cc-services span{display:none}.cc-services{padding:8px}
+ .cf-desktop-shell .topbar .search{flex-basis:100%;order:10}.cf-desktop-shell .topbar .brand{margin-right:auto}
+ .cf-desktop-shell .statusbar.cc-footer{height:40px;min-height:40px}.cc-footer #ccMl,.cc-footer #ccEvents{display:none}.cc-footer #ccUpdated{display:inline-flex}
+ .cc-footer .cc-button{min-height:34px}.cc-footer #ccOperation{max-width:110px}.cc-page-actions{margin-left:0}.cc-detail{grid-template-columns:1fr;gap:4px}
+}
+@container(max-width:550px){.cc-page-tools{align-items:stretch}.cc-page-metrics{width:100%}.cc-filter{max-width:none}.cc-page-actions{width:100%}.cc-page-actions>.cc-button{flex:1}}
+@media(prefers-reduced-motion:reduce){.cc-running>svg,.cc-changed,.cc-dialog,.cc-menu{animation:none!important}.cc-button{transition:none}}

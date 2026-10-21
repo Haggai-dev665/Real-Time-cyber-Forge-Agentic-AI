@@ -3,7 +3,7 @@
  * Handles communication with the ML/AI services
  */
 const axios = require('axios');
-const { getMLServiceUrl } = require('../config/ml.config');
+const { getMLServiceUrl, attachMLServiceKey } = require('../config/ml.config');
 const { guardMLClient } = require('./mlCapabilities');
 
 class MLService {
@@ -20,6 +20,7 @@ class MLService {
         
         // Calls to endpoints the ML service does not have fail here, not on the network.
         guardMLClient(this.axiosInstance);
+        attachMLServiceKey(this.axiosInstance);
         this.setupInterceptors();
     }
 
@@ -188,30 +189,6 @@ class MLService {
             };
         } catch (error) {
             console.error('Network analysis error:', error);
-            return {
-                success: false,
-                error: error.response?.data?.detail || error.message
-            };
-        }
-    }
-
-    /**
-     * Process datasets for training
-     */
-    async processDataset(datasetName, options = {}) {
-        try {
-            const response = await this.axiosInstance.post('/api/datasets/process', {
-                dataset_name: datasetName,
-                options,
-                timestamp: new Date().toISOString()
-            });
-            
-            return {
-                success: true,
-                data: response.data
-            };
-        } catch (error) {
-            console.error('Dataset processing error:', error);
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message
@@ -723,11 +700,11 @@ class MLService {
     getFallbackModels() {
         return [
             { id: 'threat-detector', name: 'Threat Detection Model', status: 'active', accuracy: 96.2, version: '2.3.1', type: 'classification' },
-            { id: 'malware-analyzer', name: 'Malware Analysis Engine', status: 'active', accuracy: 94.8, version: '1.9.0', type: 'deep_learning' },
+            { id: 'malware-analyzer', name: 'Malware Analysis Agents', status: 'active', accuracy: 94.8, version: '1.9.0', type: 'deep_learning' },
             { id: 'phishing-detector', name: 'Phishing Detection Model', status: 'active', accuracy: 97.1, version: '2.0.5', type: 'nlp' },
             { id: 'anomaly-detector', name: 'Network Anomaly Detection', status: 'training', accuracy: 91.3, version: '1.5.2', type: 'unsupervised' },
             { id: 'vulnerability-scanner', name: 'Vulnerability Assessment', status: 'active', accuracy: 93.7, version: '2.1.0', type: 'hybrid' },
-            { id: 'behavior-analyzer', name: 'Behavior Analysis Engine', status: 'active', accuracy: 89.4, version: '1.2.1', type: 'sequence' }
+            { id: 'behavior-analyzer', name: 'Behavior Analysis Agents', status: 'active', accuracy: 89.4, version: '1.2.1', type: 'sequence' }
         ];
     }
 

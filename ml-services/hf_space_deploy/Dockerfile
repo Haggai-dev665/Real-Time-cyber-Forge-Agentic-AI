@@ -1,4 +1,4 @@
-# Use Python 3.11 to avoid the gradio_client Python 3.13 bug
+# Python 3.11: the version this image has been built and run with
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -25,9 +25,7 @@ WORKDIR $HOME/app
 # Copy requirements and install dependencies
 COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir ipykernel && \
-    python -m ipykernel install --user --name python3 --display-name "Python 3"
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY --chown=user . .
@@ -35,5 +33,5 @@ COPY --chown=user . .
 # Expose port
 EXPOSE 7860
 
-# Run the application via uvicorn (FastAPI + Gradio mounted)
+# Run the API via uvicorn (FastAPI only, no web interface)
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]

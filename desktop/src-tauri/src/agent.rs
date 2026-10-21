@@ -54,6 +54,7 @@ fn run_osascript(_script: &str) -> Option<String> {
 /// scanner never has to guess between many history entries.
 #[tauri::command]
 pub async fn get_active_urls(state: State<'_, SharedState>) -> Result<Value, String> {
+    crate::privacy::require(crate::privacy::Feature::ActiveTab)?;
     #[cfg(target_os = "macos")]
     {
         let _ = &state;
@@ -223,7 +224,8 @@ pub async fn browser_intel(state: State<'_, SharedState>) -> Result<Value, Strin
         .pointer("/data/browsers")
         .cloned()
         .unwrap_or(json!([]));
-    let sessions = collect_active_urls();
+    // the active tabs are read only if the user allowed it (SEC-07)
+    let sessions = if crate::privacy::allowed(crate::privacy::Feature::ActiveTab) { collect_active_urls() } else { Vec::new() };
 
     // domains = unique active-tab hosts + external domains from the last scan
     let mut domains: Vec<String> = Vec::new();
@@ -259,6 +261,7 @@ pub async fn browser_intel(state: State<'_, SharedState>) -> Result<Value, Strin
 /// Report the detected browsers to the backend (best-effort, runs occasionally).
 #[tauri::command]
 pub async fn browser_intel_report(state: State<'_, SharedState>) -> Result<Value, String> {
+    crate::privacy::require(crate::privacy::Feature::Sync)?;
     let browsers = crate::system::browsers_data(state.inner())
         .await
         .pointer("/data/browsers")
@@ -289,69 +292,59 @@ pub async fn browser_intel_report(state: State<'_, SharedState>) -> Result<Value
     }
 }
 
-/// Fetch threat-intelligence pulses from AlienVault OTX. The API key is supplied
-/// by the caller (the Threat Globe holds it in the frontend). The request runs
-/// from Rust via reqwest so it bypasses the webview's CSP/CORS (`connect-src`
-/// blocks otx.alienvault.com from JS). Tries the richest source first and falls
-/// back, so a fresh key still returns data.
+/// Fetch threat-intelligence pulses for the Threat Globe.
+///
+/// The pulses come from the backend (`/api/otx/pulses`), which holds the OTX
+/// key and requires a session. The desktop app holds no OTX key: one used to be
+/// written into two pages and passed to this command, where anyone with a copy
+/// of the app could read it.
 #[tauri::command]
-pub async fn otx_fetch(api_key: String, limit: Option<u32>) -> Result<Value, String> {
-    let key = api_key.trim().to_string();
-    if key.is_empty() {
-        return Err("OTX API key is required".into());
-    }
+pub async fn otx_fetch(state: State<'_, SharedState>, limit: Option<u32>) -> Result<Value, String> {
     let limit = limit.unwrap_or(40).clamp(1, 100);
-    let base = "https://otx.alienvault.com/api/v1";
-    let endpoints = [
-        format!("{}/pulses/subscribed?limit={}&page=1", base, limit),
-        format!("{}/pulses/activity?limit={}&page=1", base, limit),
-        format!("{}/search/pulses?q=malware&limit={}&sort=-modified", base, limit),
-    ];
-    let client = reqwest::Client::new();
-    let mut last_err = String::new();
-    for url in endpoints.iter() {
-        let res = client
-            .get(url)
-            .header("X-OTX-API-KEY", &key)
-            .header("User-Agent", "cyberforge-desktop/1.0")
-            .timeout(Duration::from_secs(20))
-            .send()
-            .await;
-        match res {
-            Ok(r) => {
-                let status = r.status();
-                let body: Value = match r.json().await {
-                    Ok(v) => v,
-                    Err(e) => {
-                        last_err = format!("decode error: {}", e);
-                        continue;
-                    }
-                };
-                let results = body.get("results").cloned().unwrap_or(Value::Null);
-                let count = results.as_array().map(|a| a.len()).unwrap_or(0);
-                if status.is_success() && count > 0 {
-                    // Geolocate the malicious IP indicators so the globe can draw
-                    // real origin → destination movement (OTX has no source geo).
-                    let ips = extract_indicator_ips(&results);
-                    let ip_geo = geolocate_ips(&client, &ips).await;
-                    return Ok(json!({
-                        "success": true, "source": url, "count": count,
-                        "results": results, "ip_geo": ip_geo
-                    }));
-                }
-                if !status.is_success() {
-                    last_err = format!("HTTP {} from OTX", status.as_u16());
-                }
-            }
-            Err(e) => {
-                last_err = crate::http::error_chain(e);
-            }
-        }
+    let (base, headers, signed_in) = {
+        let s = state.lock().await;
+        (s.backend_url.clone(), s.auth_headers(), s.is_authenticated)
+    };
+    let failed = |error: String| json!({ "success": false, "error": error, "results": [], "ip_geo": {} });
+    if !signed_in {
+        return Ok(failed("sign in to load threat intelligence".into()));
     }
+
+    let client = reqwest::Client::new();
+    let req = client
+        .get(format!("{}/api/otx/pulses?limit={}&page=1", base, limit))
+        .timeout(Duration::from_secs(25));
+    let res = match authed(req, &headers).send().await {
+        Ok(r) => r,
+        Err(e) => return Ok(failed(crate::http::error_chain(e))),
+    };
+    let status = res.status();
+    let body: Value = match res.json().await {
+        Ok(v) => v,
+        Err(e) => return Ok(failed(format!("decode error: {}", e))),
+    };
+    if !status.is_success() {
+        // The backend says why: no key configured (503) or OTX itself failed (502).
+        let reason = body.get("message").and_then(|v| v.as_str()).unwrap_or("");
+        return Ok(failed(if reason.is_empty() {
+            format!("HTTP {} from the server", status.as_u16())
+        } else {
+            reason.to_string()
+        }));
+    }
+
+    let results = body.get("data").cloned().unwrap_or(Value::Null);
+    let count = results.as_array().map(|a| a.len()).unwrap_or(0);
+    if count == 0 {
+        return Ok(failed("OTX returned no pulses".into()));
+    }
+    // Geolocate the malicious IP indicators so the globe can draw real
+    // origin → destination movement (OTX has no source geography).
+    let ips = extract_indicator_ips(&results);
+    let ip_geo = geolocate_ips(&client, &ips).await;
     Ok(json!({
-        "success": false,
-        "error": if last_err.is_empty() { "OTX returned no pulses".into() } else { last_err },
-        "results": [], "ip_geo": {}
+        "success": true, "source": "backend", "count": count,
+        "results": results, "ip_geo": ip_geo
     }))
 }
 
@@ -760,6 +753,73 @@ mod scan_tests {
         assert_eq!(cookie, "3624db7ef7f551a04f7321d4c8cf05c7");
         assert_eq!(target, "https://x/?i=1");
     }
+
+    // Reputation is one signal and never a verdict (plan-update.md, F10 / B07).
+
+    #[test]
+    fn well_known_sites_and_their_subdomains_are_recognised() {
+        for host in ["google.com", "www.google.com", "accounts.google.com", "login.microsoftonline.com", "github.com", "GitHub.com", "paypal.com:443"] {
+            assert_eq!(host_reputation(host), HostReputation::WellKnown, "{host}");
+        }
+    }
+
+    #[test]
+    fn hosts_where_anyone_can_publish_are_never_well_known() {
+        // Each of these was forced to risk 0 by the old allowlist.
+        for host in [
+            "storage.googleapis.com", "firebasestorage.googleapis.com", "sites.google.com", "docs.google.com",
+            "drive.google.com", "raw.githubusercontent.com", "gist.github.com", "evil.s3.amazonaws.com",
+            "phish.blob.core.windows.net", "someone.medium.com", "victim.wordpress.com", "dl.dropbox.com",
+            "onedrive.live.com", "page.notion.so",
+        ] {
+            assert_eq!(host_reputation(host), HostReputation::UserContent, "{host}");
+        }
+    }
+
+    #[test]
+    fn a_look_alike_host_is_not_well_known() {
+        for host in ["google.com.evil.example", "paypal.com-secure.example", "notgoogle.com", "evil.example", "", "google.com@evil.example"] {
+            assert_eq!(host_reputation(host), HostReputation::Unknown, "{host}");
+        }
+        // credentials in front of a real host do not change whose host it is
+        assert_eq!(host_reputation("evil.example@google.com"), HostReputation::WellKnown);
+    }
+
+    #[test]
+    fn a_well_known_host_never_erases_what_the_backend_found() {
+        let (risk, category, signals) = well_known_result(true, 92, "phishing");
+        assert_eq!((risk, category.as_str()), (92, "phishing"));
+        assert!(signals.iter().any(|s| s.contains("conflicting evidence")));
+
+        // a generic backend label is still reported as what the score says
+        assert_eq!(well_known_result(true, 75, "benign").1, "malicious");
+        assert_eq!(well_known_result(true, 45, "").1, "suspicious");
+    }
+
+    #[test]
+    fn a_well_known_host_is_clean_only_when_the_backend_answered() {
+        assert_eq!(well_known_result(true, 5, "benign"), (5, "clean".to_string(), vec!["well-known site: the local page heuristics were not applied".to_string()]));
+        assert_eq!(well_known_result(false, 0, "").1, "unknown");
+    }
+
+    #[test]
+    fn nothing_checked_is_unknown_not_benign() {
+        assert_eq!(scan_verdict(0, false), "unknown");
+        assert_eq!(scan_verdict(20, false), "unknown");
+        assert_eq!(scan_verdict(0, true), "benign");
+        assert_eq!(scan_verdict(39, true), "benign");
+        assert_eq!(scan_verdict(40, true), "suspicious");
+        assert_eq!(scan_verdict(69, false), "suspicious");
+        assert_eq!(scan_verdict(70, false), "malicious");
+        assert_eq!(scan_verdict(100, true), "malicious");
+    }
+
+    #[test]
+    fn no_site_is_exempt_from_the_alert_but_a_well_known_one_needs_more() {
+        assert_eq!(alert_floor(HostReputation::Unknown), 50);
+        assert_eq!(alert_floor(HostReputation::UserContent), 50);
+        assert_eq!(alert_floor(HostReputation::WellKnown), 70);
+    }
 }
 
 /// Ask DeepSeek (via the HF token) to confirm a phishing verdict. Returns
@@ -806,7 +866,7 @@ async fn deepseek_phish(url: &str, page_text: &str) -> Option<(i64, String, Stri
 
 /// Run the local reinforcement and return the blended `(risk, category, signals)`
 /// given the backend's own verdict. `backend_risk`/`backend_cat` may be benign.
-async fn reinforce_scan(url: &str, backend_risk: i64, backend_cat: &str) -> (i64, String, Vec<String>) {
+async fn reinforce_scan(url: &str, backend_risk: i64, backend_cat: &str) -> (i64, String, Vec<String>, bool) {
     let (u_risk, mut signals) = url_phish_signals(url);
 
     let page = scan_fetch_page(url).await;
@@ -862,7 +922,7 @@ async fn reinforce_scan(url: &str, backend_risk: i64, backend_cat: &str) -> (i64
     } else {
         "clean".into()
     };
-    (final_risk.min(100), final_cat, signals)
+    (final_risk.min(100), final_cat, signals, page.is_some())
 }
 
 /// Build (or replace) the always-on-top threat-alert popup so the user sees it
@@ -904,28 +964,124 @@ pub async fn get_pending_threat(state: State<'_, SharedState>) -> Result<Value, 
     Ok(s.pending_threat.clone().unwrap_or(Value::Null))
 }
 
-/// Allowlist of popular, known-good domains. Matches the domain or any subdomain
-/// (e.g. `mail.google.com`, `gist.github.com`). These are forced clean so the
-/// scanner never false-positives on the sites people use every day.
-fn is_trusted_domain(host: &str) -> bool {
-    const TRUSTED: &[&str] = &[
-        "google.com", "gmail.com", "youtube.com", "googleapis.com", "gstatic.com",
-        "github.com", "githubusercontent.com", "githubassets.com", "gitlab.com", "bitbucket.org",
-        "dev.to", "stackoverflow.com", "stackexchange.com", "medium.com",
-        "microsoft.com", "office.com", "office365.com", "live.com", "outlook.com", "bing.com", "windows.net", "msn.com",
-        "apple.com", "icloud.com", "amazon.com", "amazonaws.com", "aws.amazon.com",
-        "cloudflare.com", "cloudflare.net", "akamai.com", "fastly.net",
+/// What is known about a host before the page is looked at.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum HostReputation {
+    /// A widely used first-party site.
+    WellKnown,
+    /// A host where anyone can publish: file sharing, free hosting, storage.
+    UserContent,
+    Unknown,
+}
+
+impl HostReputation {
+    fn label(self) -> &'static str {
+        match self {
+            HostReputation::WellKnown => "well_known",
+            HostReputation::UserContent => "user_content",
+            HostReputation::Unknown => "unknown",
+        }
+    }
+}
+
+fn host_matches(host: &str, list: &[&str]) -> bool {
+    list.iter().any(|d| host == *d || host.ends_with(&format!(".{}", d)))
+}
+
+/// Reputation is one signal among several, never a verdict.
+///
+/// A well-known host changes two things: the page heuristics that look for a
+/// brand name beside a password field are not applied (on the brand's own site
+/// they always match), and it takes stronger evidence to interrupt the user
+/// with an alert. It never lowers a score. Whatever the backend found is kept
+/// and shown, and a scan that found nothing because nothing was checked is
+/// reported as unknown, not as clean.
+///
+/// Hosts where anyone can publish are not well known, whichever company runs
+/// them: a page on storage.googleapis.com or a file on drive.google.com is its
+/// author's, not Google's. They are listed first so they win over the parent
+/// domain.
+fn host_reputation(host: &str) -> HostReputation {
+    const USER_CONTENT: &[&str] = &[
+        "sites.google.com", "docs.google.com", "drive.google.com", "script.google.com", "forms.gle",
+        "googleapis.com", "appspot.com", "web.app", "firebaseapp.com",
+        "githubusercontent.com", "github.io", "gist.github.com", "gitlab.io",
+        "amazonaws.com", "cloudfront.net", "windows.net", "azurewebsites.net", "sharepoint.com",
+        "onedrive.live.com", "1drv.ms", "dropbox.com", "dropboxusercontent.com",
+        "medium.com", "wordpress.com", "blogspot.com", "weebly.com", "wixsite.com",
+        "notion.so", "notion.site", "netlify.app", "vercel.app", "pages.dev", "workers.dev",
+        "herokuapp.com", "glitch.me", "repl.co", "hf.space", "discordapp.com", "discordapp.net",
+        "telegra.ph", "linktr.ee", "bit.ly", "tinyurl.com", "t.co",
+    ];
+    const WELL_KNOWN: &[&str] = &[
+        "google.com", "gmail.com", "youtube.com", "gstatic.com",
+        "github.com", "githubassets.com", "gitlab.com", "bitbucket.org",
+        "dev.to", "stackoverflow.com", "stackexchange.com",
+        "microsoft.com", "microsoftonline.com", "office.com", "office365.com", "live.com", "outlook.com", "bing.com", "msn.com",
+        "apple.com", "icloud.com", "amazon.com", "cloudflare.com",
         "wikipedia.org", "wikimedia.org", "mozilla.org", "duckduckgo.com", "yahoo.com",
         "npmjs.com", "python.org", "pypi.org", "rust-lang.org", "crates.io", "nodejs.org", "docker.com",
         "linkedin.com", "x.com", "twitter.com", "facebook.com", "instagram.com", "whatsapp.com",
         "reddit.com", "netflix.com", "spotify.com", "twitch.tv", "discord.com",
-        "paypal.com", "stripe.com", "dropbox.com", "slack.com", "zoom.us", "notion.so",
+        "paypal.com", "stripe.com", "slack.com", "zoom.us",
         "atlassian.com", "jetbrains.com", "vercel.com", "netlify.com", "heroku.com", "digitalocean.com",
-        "wordpress.com", "adobe.com", "salesforce.com", "openai.com", "anthropic.com",
-        "huggingface.co", "kaggle.com", "cloudflarestream.com",
+        "adobe.com", "salesforce.com", "openai.com", "anthropic.com",
+        "huggingface.co", "kaggle.com",
     ];
-    let h = host.trim().trim_start_matches("www.").to_lowercase();
-    TRUSTED.iter().any(|d| h == *d || h.ends_with(&format!(".{}", d)))
+    let lowered = host.trim().to_lowercase();
+    // "user@host" and "host:port" are read as the host alone
+    let without_user = lowered.rsplit('@').next().unwrap_or("");
+    let h = without_user.split(':').next().unwrap_or("").trim_start_matches("www.");
+    if h.is_empty() {
+        HostReputation::Unknown
+    } else if host_matches(h, USER_CONTENT) {
+        HostReputation::UserContent
+    } else if host_matches(h, WELL_KNOWN) {
+        HostReputation::WellKnown
+    } else {
+        HostReputation::Unknown
+    }
+}
+
+/// The verdict shown for a scan. "benign" is only said when something was
+/// actually checked and found nothing; with no evidence the answer is "unknown".
+fn scan_verdict(risk: i64, checked: bool) -> &'static str {
+    if risk >= 70 {
+        "malicious"
+    } else if risk >= 40 {
+        "suspicious"
+    } else if checked {
+        "benign"
+    } else {
+        "unknown"
+    }
+}
+
+/// What a scan of a well-known host reports: the backend's own result, as it
+/// is. The local page heuristics are not applied, and nothing is lowered.
+fn well_known_result(backend_available: bool, backend_risk: i64, backend_cat: &str) -> (i64, String, Vec<String>) {
+    let mut signals = vec!["well-known site: the local page heuristics were not applied".to_string()];
+    let category = if backend_risk >= 40 {
+        signals.push(format!(
+            "conflicting evidence: the site is well known, but the analysis rated this address {} / 100",
+            backend_risk
+        ));
+        if backend_cat.is_empty() || backend_cat == "benign" || backend_cat == "unknown" {
+            if backend_risk >= 70 { "malicious".to_string() } else { "suspicious".to_string() }
+        } else {
+            backend_cat.to_string()
+        }
+    } else if backend_available {
+        "clean".to_string()
+    } else {
+        "unknown".to_string()
+    };
+    (backend_risk, category, signals)
+}
+
+/// How much risk it takes to interrupt the user with the alert window.
+fn alert_floor(reputation: HostReputation) -> i64 {
+    if reputation == HostReputation::WellKnown { 70 } else { 50 }
 }
 
 /// Scan a URL through the backend agent pipeline and cache the result in state.
@@ -936,9 +1092,11 @@ pub async fn scan_url(
     url: String,
     browser: Option<String>,
 ) -> Result<Value, String> {
-    if url.trim().is_empty() {
-        return Err("url is required".into());
-    }
+    let url = crate::input::text(&url, "url", 2048)?;
+    let browser = crate::input::optional_text(browser.as_deref(), "browser", 64)?;
+    crate::privacy::require(crate::privacy::Feature::CloudScanning)?;
+    // sign-in codes, tokens and credentials are removed before the address leaves this computer
+    let url = crate::system::redact_url(&url);
 
     let (base, headers, user_id) = {
         let s = state.lock().await;
@@ -960,11 +1118,18 @@ pub async fn scan_url(
         }));
 
     // Backend scan (best-effort). If it fails we still run local reinforcement,
-    // so scanning never hard-fails and phishing is still caught offline-ish.
+    // so scanning never hard-fails and phishing is still caught offline-ish. A
+    // backend that did not answer is remembered as that: its absence is not
+    // evidence that the address is clean.
     let mut body: Value = match authed(req, &headers).send().await {
         Ok(resp) => resp.json().await.unwrap_or_else(|_| json!({ "success": true, "data": {} })),
         Err(_) => json!({ "success": true, "data": { "scraperSuccess": false } }),
     };
+    if !body.is_object() {
+        body = json!({ "success": true, "data": {} });
+    }
+    let backend_available = body.pointer("/data/riskScore").map(|v| v.is_number()).unwrap_or(false);
+    let backend_saw_page = body.pointer("/data/evidenceStatus").and_then(|v| v.as_str()) == Some("complete");
     if !body.get("data").map(|d| d.is_object()).unwrap_or(false) {
         body["data"] = json!({});
     }
@@ -983,22 +1148,40 @@ pub async fn scan_url(
         .unwrap_or("")
         .to_string();
 
-    // Allowlist: popular/known-good domains (github.com, google.com, dev.to, …)
-    // are forced clean so they never false-positive. The reinforcement (fetch +
-    // heuristics + DeepSeek) is skipped for them entirely.
+    // Reputation is one signal (see host_reputation). On a well-known site the
+    // local page heuristics are not applied and the backend's result stands as
+    // it is; nothing is forced to zero. Everywhere else, including hosts where
+    // anyone can publish, the page is fetched and checked locally as well.
     let scan_host_l = scan_host(&url);
-    let trusted = is_trusted_domain(&scan_host_l);
-    let (final_risk, final_cat, signals) = if trusted {
-        (0_i64, "trusted".to_string(), vec!["allowlisted known-good domain".to_string()])
+    let reputation = host_reputation(&scan_host_l);
+    let (final_risk, mut final_cat, signals, page_fetched) = if reputation == HostReputation::WellKnown {
+        let (risk, cat, sig) = well_known_result(backend_available, backend_risk, &backend_cat);
+        (risk, cat, sig, false)
     } else {
         reinforce_scan(&url, backend_risk, &backend_cat).await
     };
+    // Something was checked if the backend's models answered or the page was
+    // fetched here. With neither, a low score means "not looked at".
+    let checked = backend_available || page_fetched;
+    let verdict = scan_verdict(final_risk, checked);
+    if verdict == "unknown" {
+        final_cat = "unknown".to_string();
+    }
     let reinforced = final_risk > backend_risk || (final_cat != backend_cat && final_risk >= 50);
     if let Some(obj) = body.get_mut("data").and_then(|d| d.as_object_mut()) {
         obj.insert("riskScore".to_string(), json!(final_risk));
         obj.insert("category".to_string(), json!(final_cat));
+        obj.insert("verdict".to_string(), json!(verdict));
+        obj.insert("reputation".to_string(), json!(reputation.label()));
+        obj.insert("backendAvailable".to_string(), json!(backend_available));
+        obj.insert("conflictingEvidence".to_string(), json!(reputation == HostReputation::WellKnown && final_risk >= 40));
+        obj.insert("coverage".to_string(), json!({
+            "backendModels": backend_available,
+            "page": if backend_saw_page { "observed by the backend scanner" } else if page_fetched { "fetched and checked locally" } else { "not observed" },
+            "localHeuristics": if reputation == HostReputation::WellKnown { "not applied: well-known site" } else { "applied" },
+        }));
         obj.insert("signals".to_string(), json!(signals));
-        obj.insert("backendRiskScore".to_string(), json!(backend_risk));
+        obj.insert("backendRiskScore".to_string(), json!(if backend_available { json!(backend_risk) } else { Value::Null }));
         obj.insert("reinforced".to_string(), json!(reinforced));
         if reinforced && !signals.is_empty() {
             let extra = format!(
@@ -1026,11 +1209,11 @@ pub async fn scan_url(
         obj.insert("related".to_string(), json!(related));
     }
 
-    // Pop an always-on-top alert ONLY for a CONFIRMED phishing/malware verdict on
-    // a non-allowlisted domain — popular/trusted sites and generic "suspicious"
-    // scores never trigger the popup (keeps it from false-alerting). Deduped per
-    // host (10-minute window) so it never spams.
-    if !trusted && final_risk >= 50 && (final_cat.contains("phish") || final_cat.contains("mal")) {
+    // Pop an always-on-top alert ONLY for a CONFIRMED phishing/malware verdict.
+    // A generic "suspicious" score never triggers it, and on a well-known site
+    // it takes stronger evidence (see alert_floor), but no site is exempt.
+    // Deduped per host (10-minute window) so it never spams.
+    if final_risk >= alert_floor(reputation) && (final_cat.contains("phish") || final_cat.contains("mal")) {
         let host = scan_host(&url);
         let fire = {
             let mut s = state.lock().await;
@@ -1315,6 +1498,10 @@ fn open_url(_url: &str) {}
 /// captures the OAuth `code` on a loopback port, and exchanges it via the
 /// backend (`/api/auth/google/token`). Requires `GOOGLE_CLIENT_ID`/`SECRET` on
 /// the server (and the loopback redirect registered in the Google console).
+///
+/// The flow is protected by a random `state`, checked on the callback, and by
+/// PKCE: the backend can redeem the code only with this app's verifier
+/// (oauth.rs). Requests to the port that are not the callback are ignored.
 #[tauri::command]
 pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String> {
     let base = {
@@ -1351,12 +1538,16 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     let redirect_uri = format!("http://127.0.0.1:{}", port);
 
-    // 3) build the consent URL + open the system browser
+    // 3) state + PKCE, then the consent URL in the system browser
+    let state_value = crate::oauth::random_token(32)?;
+    let verifier = crate::oauth::random_token(32)?;
     let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&access_type=offline&prompt=select_account",
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&access_type=offline&prompt=select_account&state={}&code_challenge={}&code_challenge_method=S256",
         urlencode(&client_id),
         urlencode(&redirect_uri),
         urlencode("openid email profile"),
+        urlencode(&state_value),
+        urlencode(&crate::oauth::pkce_challenge(&verifier)),
     );
     open_url(&auth_url);
 
@@ -1374,22 +1565,24 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
                 let req = String::from_utf8_lossy(&buf[..n]);
                 let first = req.lines().next().unwrap_or("");
                 let path = first.split_whitespace().nth(1).unwrap_or("");
-                let found = path.split('?').nth(1).and_then(|qs| {
-                    qs.split('&').find_map(|kv| {
-                        let mut it = kv.splitn(2, '=');
-                        if it.next() == Some("code") {
-                            it.next().map(urldecode)
-                        } else {
-                            None
+                let page = |text: &str| format!("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!doctype html><meta charset=utf-8><body style=\"font-family:system-ui,sans-serif;background:#0b1220;color:#efe9dd;text-align:center;padding-top:90px\"><h2>CyberForge</h2><p>{text}</p></body>");
+                match crate::oauth::parse_callback(path, urldecode) {
+                    crate::oauth::Callback::Code { code, state: returned } => {
+                        if !crate::oauth::same_secret(&returned, &state_value) {
+                            let _ = stream.write_all(page("This sign-in did not start in CyberForge, so it was refused.").as_bytes());
+                            return Ok(json!({ "success": false, "message": "Google sign-in was refused: the answer did not match the request this app made." }));
                         }
-                    })
-                });
-                let html = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!doctype html><meta charset=utf-8><body style=\"font-family:system-ui,sans-serif;background:#0b1220;color:#efe9dd;text-align:center;padding-top:90px\"><h2>CyberForge</h2><p>Signed in &mdash; close this tab and return to the app.</p></body>";
-                let _ = stream.write_all(html.as_bytes());
-                match found {
-                    Some(c) if !c.is_empty() => break c,
-                    _ => {
-                        return Ok(json!({ "success": false, "message": "Google sign-in was cancelled." }))
+                        let _ = stream.write_all(page("Signed in &mdash; close this tab and return to the app.").as_bytes());
+                        break code;
+                    }
+                    crate::oauth::Callback::Refused(_) => {
+                        let _ = stream.write_all(page("Sign-in cancelled &mdash; you can close this tab.").as_bytes());
+                        return Ok(json!({ "success": false, "message": "Google sign-in was cancelled." }));
+                    }
+                    crate::oauth::Callback::Other => {
+                        // not the callback (a favicon request, a stray page): keep waiting
+                        let _ = stream.write_all(b"HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
+                        continue;
                     }
                 }
             }
@@ -1408,7 +1601,7 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
         .post(format!("{}/api/auth/google/token", base))
         .header("User-Agent", "cyber-forge-desktop/1.0")
         .timeout(Duration::from_secs(30))
-        .json(&json!({ "code": code, "redirect_uri": redirect_uri }))
+        .json(&json!({ "code": code, "redirect_uri": redirect_uri, "code_verifier": verifier }))
         .send()
         .await
         .map_err(crate::http::error_chain)?;
@@ -1428,9 +1621,11 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
             let mut s = state.lock().await;
             s.set_authenticated(user, tok.to_string());
         }
-        let _ = crate::auth::store_token(tok);
+        let kept = crate::auth::store_token(tok);
         crate::auth::store_user(&user_json); // cache profile for offline restore
-        return Ok(json!({ "success": true, "token": tok, "user": user_clone, "message": "Signed in with Google" }));
+        let mut result = json!({ "success": true, "user": user_clone, "message": "Signed in with Google" });
+        crate::commands::note_session_storage(&mut result, &kept);
+        return Ok(result);
     }
 
     Ok(body)

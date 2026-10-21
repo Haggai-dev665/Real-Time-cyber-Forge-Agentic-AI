@@ -127,7 +127,7 @@ export default function Home() {
           )}
         </Card>
 
-        <Pressable style={styles.cta} onPress={() => router.push('/(tabs)/alerts')}>
+        <Pressable accessibilityRole="button" style={styles.cta} onPress={() => router.push('/(tabs)/alerts')}>
           <Icon name="alert" size={15} color={colors.red} />
           <Text style={styles.ctaText}>View all alerts</Text>
         </Pressable>

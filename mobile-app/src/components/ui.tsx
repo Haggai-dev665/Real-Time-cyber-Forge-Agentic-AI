@@ -103,6 +103,8 @@ export function FeedRow({
 export function Toggle({ on, onToggle }: { on: boolean; onToggle?: () => void }) {
   return (
     <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: on }}
       onPress={onToggle}
       style={{
         width: 42,
@@ -126,10 +128,16 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle?: () => void })
 }
 
 /* ---------- Sparkline ---------- */
-export function Sparkline({ color, points = 18 }: { color: string; points?: number }) {
-  const pts = Array.from({ length: points }, (_, i) => {
-    const x = (i * (100 / (points - 1))).toFixed(1);
-    const y = (36 - Math.random() * 30).toFixed(1);
+// Draws the values it is given, oldest first; with fewer than two there is
+// nothing to draw. (It used to draw random points, whatever it was meant to show.)
+export function Sparkline({ color, values }: { color: string; values: number[] }) {
+  if (!values || values.length < 2) return null;
+  const top = Math.max(...values);
+  const bottom = Math.min(...values);
+  const range = top - bottom || 1;
+  const pts = values.map((v, i) => {
+    const x = (i * (100 / (values.length - 1))).toFixed(1);
+    const y = (36 - ((v - bottom) / range) * 30).toFixed(1);
     return `${x},${y}`;
   }).join(' ');
   return (

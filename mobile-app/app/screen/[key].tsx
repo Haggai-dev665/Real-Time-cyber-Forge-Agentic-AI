@@ -23,6 +23,7 @@ import {
 } from '../../src/sections/DataSections';
 import { AssistantSection } from '../../src/sections/AssistantSection';
 import { DevicesSection } from '../../src/sections/DevicesSection';
+import { AgentsSection } from '../../src/sections/AgentsSection';
 import { SettingsSection } from '../../src/sections/SettingsSection';
 
 const BODIES: Record<string, React.ComponentType> = {
@@ -36,6 +37,7 @@ const BODIES: Record<string, React.ComponentType> = {
   memory: MemorySection,
   assistant: AssistantSection,
   devices: DevicesSection,
+  agents: AgentsSection,
   settings: SettingsSection,
 };
 

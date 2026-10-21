@@ -12,6 +12,14 @@ const rateLimit = require('express-rate-limit');
 const { validationResult } = require('express-validator');
 
 const router = express.Router();
+const { notCarriedOut } = require('../middleware/notImplemented');
+
+// Every route in this file is built on DomainIntelligenceService, which does no
+// work: scores, verdicts, progress and findings come from Math.random() and
+// fixed samples. Until there is a real implementation, each route answers 501
+// after the session check, so none of that can be mistaken for a result. The
+// handlers below are unreachable and are kept only as an outline of the API.
+router.use(auth, notCarriedOut('Domain intelligence is not implemented: the service behind these routes generates its scores, records and verdicts at random.'));
 
 // Initialize services
 const domainIntelService = new DomainIntelligenceService();

@@ -13,6 +13,12 @@ rust-version = "1.77.2"
 name = "cyberforge_console_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+# One workspace for the desktop app and the shared crates (V2-01), rooted here
+# so Tauri keeps its layout, lockfile and target directory.
+[workspace]
+members = [".", "../../crates/cyberforge-core", "../../crates/cyberforge-cli", "../../crates/cyberforge-mcp"]
+resolver = "2"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -20,6 +26,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Shared native services, also used by the cyberforge CLI (crates/cyberforge-core).
+cyberforge-core = { path = "../../crates/cyberforge-core" }
 # Backend authentication (login/register) — calls run from Rust to avoid browser
 # CORS, exactly like the existing desktop-app. Tokens are kept in the OS keychain.
 # `tokio` must expose the IO/net + multi-thread reactor that `reqwest` polls on;
@@ -28,7 +36,11 @@ serde_json = "1"
 # "error sending request for url (...)" even though the server is healthy.
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
-keyring = "3"
+# The platform features are what make this the real credential store. Without
+# one, the crate silently uses an in-memory stand-in that keeps nothing after
+# exit, which is how tokens came to live only in plaintext files (finding F09).
+# Linux builds need the D-Bus development package for the Secret Service client.
+keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service", "crypto-rust"] }
 # Real local telemetry for the floating agent panel (CPU / memory / uptime,
 # running-browser detection) — same crate the desktop-app uses.
 sysinfo = "0.32"
@@ -36,6 +48,15 @@ sysinfo = "0.32"
 # `moz_places`) so the agent can scan actually-visited URLs in real time — no
 # browser extension required. `bundled` compiles SQLite in (no system dep).
 rusqlite = { version = "0.32", features = ["bundled"] }
+# Hosts-file changes (blocking.rs): the elevated step's PowerShell command is
+# base64 (-EncodedCommand), its prepared content is checked by SHA-256, and it
+# is staged in a randomly named folder. All three were already in the build.
+base64 = "0.22"
+sha2 = "0.10"
+getrandom = "0.3"
+# Device identity (device.rs): this installation's Ed25519 key. Already in the
+# build through rustls, so nothing new is downloaded.
+ring = "0.17"
 
 # Windows-only: read the foreground window title so we can identify the active
 # browser tab the user is actually looking at (priority target for real-time
@@ -45,6 +66,10 @@ windows = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
 ] }
+
+[dev-dependencies]
+# Tauri's mock runtime, for the per-window command permission test (src/acl_tests.rs)
+tauri = { version = "2", features = ["test"] }
 
 [features]
 # This feature is used for production builds where `devtools` is disabled.

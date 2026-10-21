@@ -1,0 +1,135 @@
+CYBERFORGE — THESIS DEFENCE, VERSION 3 (21 October 2026)
+
+OPEN FIRST
+CyberForge - Thesis Defence v3.pptx
+20 slides on the SlidesCarnival template "Dark Modern Tech Startup Brand"
+(slidescarnival.com/template/tech-startup-brand/154090, CC BY 4.0, credited on slide 20):
+charcoal raised panels, lime accent, Oswald headings and Titillium Web text.
+Content follows the presentation guide and the root thesis, with speaker notes on every slide.
+Photos: free Pexels photos (pexels.com/license), shown in monochrome like the template's own,
+credited by photographer on slide 20. Interface illustration on slide 17 is from the thesis.
+Animations (added by PowerPoint itself): Morph on every slide (the section bar at the top
+slides along, photo frames glide between slides), letter-by-letter titles, word-by-word
+statements, a sideways-scrolling literature timeline, a credits-roll reference list,
+growing bars, zooming numbers and pulsing headline results.
+
+FONTS
+Oswald and Titillium Web (SIL Open Font License) were installed for this Windows user and
+are embedded in the deck, so it displays correctly on another PC. To edit text on another PC,
+install both fonts from fonts.google.com first.
+
+REBUILD
+  python presentationsuild_template_deck.py
+  powershell -ExecutionPolicy Bypass -File presentationspply_animations.ps1 -In _template-static.pptx -Out "CyberForge - Thesis Defence v3.pptx" -Previews previews-v3 -EmbedFonts
+The template (template/) and photos (photos/) are local only, not in git: the template's
+licence forbids redistributing it unmodified. They are downloaded from the links above.
+
+======================================================================================
+
+CYBERFORGE — THESIS DEFENCE, VERSION 2 (18 October 2026)
+
+OPEN FIRST
+CyberForge - Thesis Defence v2.pptx
+20 slides in the order of the presentation guide, with content from the root thesis
+(Che Haggai Ngha Kang.docx, Chapters 1-5 and Appendix C) and speaker notes on every slide.
+Animations were added by PowerPoint itself (apply_animations.ps1), so they play as built:
+  - Morph on every slide: the section rail scrolls to the current section, and the
+    background rings drift from slide to slide.
+  - Text: letter-by-letter titles, word-by-word statements, paragraph rises.
+  - Scroll: the literature timeline scrolls sideways; the references roll like credits.
+  - Charts: bars grow, key numbers zoom in, headline results pulse.
+Builds start on their own after each slide appears; advance slides with a click.
+previews-v2/ holds PNGs rendered by PowerPoint (static, without animation).
+
+REBUILD
+  python build_defence.py
+  powershell -File apply_animations.ps1 -In _defence-static.pptx -Out "CyberForge - Thesis Defence v2.pptx" -Previews previews-v2
+
+The earlier deck (CyberForge - Thesis Defence.pptx) is unchanged; it was open in PowerPoint.
+
+======================================================================================
+
+CYBERFORGE — THESIS DEFENCE AND THESIS REVISION
+18 October 2026
+
+OPEN FIRST
+CyberForge - Thesis Defence.pptx
+15 editable 16:9 slides with speaker notes, source references, native staggered
+entrances, fade transitions, and embedded looping orbit/signal GIF animations.
+Use Slide Show mode in desktop PowerPoint to see the animations. Slide builds
+start automatically; advance slides manually so the defence stays presenter-led.
+There is no audio, macro, external asset dependency or automatic slide advance.
+
+REQUIRED PRESENTATION GUIDE — CORRECTED STRUCTURE
+Slide 1: Thesis title and candidate
+Slide 2: Brief introduction
+Slide 3: Problem statement
+Slide 4: Research questions
+Slide 5: Research objectives
+Slide 6: Brief literature review
+Slides 7–10: Methods and materials used
+  7: Software materials and architecture
+  8: Eight-agent analysis pipeline
+  9: Learning techniques and training phases
+  10: Evaluation data and procedure
+Slides 11–14: Results
+  11: Detection performance
+  12: Processing speed
+  13: Explanation quality
+  14: Findings against research objectives
+Slide 15: Conclusion
+These exact section headings appear as the prominent titles on the slides.
+The previous separate Current System section has been removed; relevant system
+specifications remain within Methods and materials used.
+CyberForge - Previous layout.pptx preserves the earlier presentation.
+
+PREVIEWS
+CyberForge - Slide Preview.pdf: static companion, without animation.
+Slide overview.png: contact sheet of all 15 slides.
+previews/: individual PNG slides. These are generator-rendered review previews,
+not screenshots of Microsoft PowerPoint. Native Office is unavailable here,
+so final playback and font substitution should be checked in PowerPoint.
+Fonts: Bahnschrift (headings), Calibri (body), Consolas (technical labels).
+All colors come from cyberforge-landing/cyberforge.css: raisin #1F1A1B,
+panel #2A2425, ivory #EFE9DD, orange #F69D39, sage #869B7E, ink #0B0908.
+
+THESIS
+The original root file, Che Haggai Ngha Kang.docx, is now revised.
+Che Haggai Ngha Kang - Original backup.docx in this folder is the untouched source.
+The original title, authorship and academic date were preserved.
+117 original paragraphs were revised; Appendix C was added; architecture and
+decision-flow figures were redrawn. Historical results tables were preserved,
+except the summary table's latency target was corrected to the stricter target
+in the original methods chapter. The 4.05-second mean is 0.05 seconds above it.
+Word is instructed to update fields when opening. If the contents/page numbers
+are not refreshed automatically, update the table of contents using Update
+entire table. The final pagination must be checked in Word before submission.
+
+SUBSTANTIVE UPDATES
+- Tauri 2/Rust replaces the obsolete Electron desktop description.
+- Node.js 24/Express, Python 3.11/FastAPI REST, Expo/React Native and shared Rust
+  CLI/MCP source are described, with their actual scope and release limitations.
+- Three supervised gradient-boosted URL classifiers, benign-only IsolationForest,
+  pretrained BERT/Qwen inference, DGA/IOC rules and memory retrieval are separated.
+- Training phases, domain-grouped partitions, threshold selection, acceptance
+  gates and publishing are documented. Training currently shares inference.
+- Consent, workspace ownership, service authentication, signed commands, explicit
+  action receipts and capability-aware console states are documented.
+- The original Gemini/Mistral experiment is distinguished from current Qwen.
+- The current Reporter weighted sum is distinguished from the historical 60/40
+  equation and from the newer versioned detector decision policy.
+- MCP stdio exists in source but the desktop Integrations UI still says it is
+  not built; that mismatch and packaged end-to-end acceptance remain outstanding.
+
+EVIDENCE BOUNDARY
+The original 300-URL results were not rerun. They are historical findings, not
+fresh performance claims about the revised source. No new training, production
+deployment, cloud availability measurement or hardware benchmark was performed.
+The original screenshots are labelled historical illustrations; their visible
+counters are not additional experimental data. Memory does not retrain weights.
+
+REPRODUCTION / AUDIT
+build_presentation.py, revise_thesis.py, validate_deliverables.py
+speaker-notes.json, thesis-revision-log.json, validation-report.json
+Python dependencies are local to .vendor/ (python-pptx, lxml, Pillow).
+The revision script always starts from the original backup, making it repeatable.

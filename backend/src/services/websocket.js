@@ -1,6 +1,16 @@
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 const { analyzePageData } = require('./analysisService');
+
+// Requests this service accepts but has nothing behind. Each used to be
+// answered with random totals, a made-up threat, or a confirmation that a
+// setting had been saved. Each is now answered as unsupported, with the reason.
+const UNSUPPORTED_REQUESTS = {
+  analysis_request: 'this service keeps no browsing totals to report',
+  threat_scan: 'no scan is run over this socket',
+  request_data: 'dashboard and threat figures are not served over this socket',
+  setting_update: 'settings sent over this socket are not stored'
+};
 const { detectThreats } = require('./threatService');
 const { logActivity } = require('../utils/logger');
 const otxService = require('./otx');
@@ -258,19 +268,10 @@ class WebSocketManager {
         break;
       
       case 'analysis_request':
-        await this.handleAnalysisRequest(clientId, message);
-        break;
-      
       case 'threat_scan':
-        await this.handleThreatScan(clientId, message);
-        break;
-      
       case 'request_data':
-        await this.handleDataRequest(clientId, message);
-        break;
-      
       case 'setting_update':
-        await this.handleSettingUpdate(clientId, message);
+        this.answerUnsupported(clientId, message.type);
         break;
       
       case 'heartbeat':
@@ -425,116 +426,14 @@ class WebSocketManager {
     }
   }
 
-  async handleAnalysisRequest(clientId, message) {
+  /** Say that a request was understood and that nothing carries it out. */
+  answerUnsupported(clientId, request) {
     const client = this.clients.get(clientId);
-    
-    // Simulate analysis data
-    const analysisData = {
-      totalPages: Math.floor(Math.random() * 1000) + 100,
-      securePages: Math.floor(Math.random() * 800) + 50,
-      riskyPages: Math.floor(Math.random() * 50) + 5,
-      blockedPages: Math.floor(Math.random() * 10) + 1,
-      recentPages: [
-        {
-          url: 'https://example.com',
-          riskLevel: 'low',
-          isSecure: true,
-          timestamp: new Date().toISOString()
-        },
-        {
-          url: 'https://suspicious-site.com',
-          riskLevel: 'medium',
-          isSecure: false,
-          timestamp: new Date().toISOString()
-        }
-      ],
-      patterns: [
-        {
-          name: 'Suspicious Domain Pattern',
-          description: 'Detected patterns in domain names that may indicate phishing',
-          severity: 'medium'
-        }
-      ]
-    };
-
+    if (!client) return;
     client.socket.send(JSON.stringify({
-      type: 'analysis_data',
-      data: analysisData
-    }));
-  }
-
-  async handleThreatScan(clientId, message) {
-    const client = this.clients.get(clientId);
-    
-    // Simulate threat detection
-    setTimeout(() => {
-      const threats = [
-        {
-          id: uuidv4(),
-          type: 'Malicious URL',
-          description: 'Detected access to known malicious domain',
-          severity: 'high',
-          url: 'malicious-example.com',
-          timestamp: new Date().toISOString()
-        }
-      ];
-
-      client.socket.send(JSON.stringify({
-        type: 'threats_detected',
-        data: threats
-      }));
-    }, 2000);
-  }
-
-  async handleDataRequest(clientId, message) {
-    const client = this.clients.get(clientId);
-    const dataType = message.data_type;
-
-    let responseData = {};
-
-    switch (dataType) {
-      case 'dashboard':
-        responseData = {
-          pagesMonitored: Math.floor(Math.random() * 500) + 100,
-          threatsDetected: Math.floor(Math.random() * 20) + 5,
-          riskScore: Math.floor(Math.random() * 100),
-          aiInsights: Math.floor(Math.random() * 50) + 10
-        };
-        break;
-      
-      case 'threats':
-        responseData = [
-          {
-            id: uuidv4(),
-            type: 'Phishing Attempt',
-            description: 'Suspicious login page detected',
-            severity: 'medium',
-            timestamp: new Date().toISOString()
-          }
-        ];
-        break;
-      
-      default:
-        responseData = { message: 'Unknown data type requested' };
-    }
-
-    client.socket.send(JSON.stringify({
-      type: `${dataType}_data`,
-      data: responseData
-    }));
-  }
-
-  async handleSettingUpdate(clientId, message) {
-    const { setting, value } = message;
-    
-    // Store setting update (would typically go to database)
-    logActivity('info', `Setting updated for client ${clientId}: ${setting} = ${value}`);
-    
-    const client = this.clients.get(clientId);
-    client.socket.send(JSON.stringify({
-      type: 'setting_updated',
-      setting: setting,
-      value: value,
+      type: 'unsupported',
+      request,
+      reason: UNSUPPORTED_REQUESTS[request],
       timestamp: new Date().toISOString()
     }));
   }

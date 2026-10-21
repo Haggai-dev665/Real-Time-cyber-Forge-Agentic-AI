@@ -109,8 +109,12 @@ class CyberForgeMLService {
         return this._callTransformerEndpoint('/api/v2/dga-detect', { domain });
     }
 
-    async securityChat(query, maxTokens = 512) {
-        return this._callTransformerEndpoint('/api/v2/security-chat', { query, max_tokens: maxTokens });
+    async securityChat(query, maxTokens = 512, timeBudgetS = 40) {
+        // The request waits up to 60 s (_callTransformerEndpoint), so the model may
+        // take 40 s: on the ML service's CPU, reading a long prompt alone takes ~15 s.
+        // A person is waiting on this answer (the assistant): it goes before the
+        // background explanations of scans, which give way to it on the ML service.
+        return this._callTransformerEndpoint('/api/v2/security-chat', { query, max_tokens: maxTokens, time_budget_s: timeBudgetS, priority: 'interactive' });
     }
 
     async iocScan(indicators = {}) {
@@ -198,39 +202,63 @@ class CyberForgeMLService {
     }
 
     /**
-     * Predict using HuggingFace Space API (if available)
+     * Ask the ML service's model. Given the URL, the service computes the
+     * model's features itself, which is what the retrained models need;
+     * otherwise the features are sent by name.
+     *
+     * This used to post to `/predict`, a route the service does not have, so
+     * every call failed and a local rule of thumb answered in its place, under
+     * the model's name. Now a model that does not answer is reported as
+     * unavailable: no score, and nothing for a verdict to be built on.
      */
-    async predictRemote(modelName, features) {
+    async predictRemote(modelName, features, url = null) {
         try {
-            const response = await axios.post(`${this.hfSpaceUrl}/predict`, {
-                model: modelName,
-                features: features
-            }, {
+            const body = url ? { model_type: modelName, url } : { model_type: modelName, input_data: features };
+            const response = await axios.post(`${this.hfSpaceUrl}/api/models/predict`, body, {
                 timeout: 10000,
                 headers: { 'Content-Type': 'application/json' }
             });
-
+            const result = response.data || {};
+            const score = Number(result.threat_score);
+            if (!Number.isFinite(score)) throw new Error('the service returned no threat score');
+            const isThreat = result.prediction === 1 || result.prediction_label === 'threat' || result.is_anomaly === true;
             return {
-                ...response.data,
-                inference_source: 'huggingface_space'
+                model: modelName,
+                available: true,
+                prediction: result.prediction_label || (isThreat ? 'threat' : 'benign'),
+                is_threat: isThreat,
+                confidence: result.confidence,
+                threat_score: Math.max(0, Math.min(1, score)),
+                risk_level: this.getRiskLevel(score),
+                // 'ml_model' when a trained model answered; the service's own rule-based estimate says so
+                inference_source: result.inference_source || 'huggingface_space',
+                ...(result.missing_features ? { missing_features: result.missing_features } : {}),
+                ...(result.note ? { note: result.note } : {})
             };
         } catch (error) {
-            // Fall back to local prediction
-            console.log(`⚠️ Remote prediction failed, using local: ${error.message}`);
-            return this.predictLocal(modelName, features);
+            console.log(`⚠️ Model ${modelName} did not answer: ${error.message}`);
+            return {
+                model: modelName,
+                available: false,
+                is_threat: false,
+                threat_score: null,
+                risk_level: 'unknown',
+                inference_source: 'unavailable',
+                error: String(error.message || error).slice(0, 200)
+            };
         }
     }
 
     /**
-     * Main prediction method — uses real ML on HF Space by default,
-     * falls back to local heuristic only if remote fails.
-     * Pass `preferLocal=true` for offline/fast paths (e.g. bulk scans).
+     * Main prediction method — the ML service's model. `preferLocal=true`
+     * asks for the local rule of thumb instead, labelled as such; nothing
+     * falls back to it silently.
      */
-    async predict(modelName, features, preferLocal = false) {
+    async predict(modelName, features, preferLocal = false, url = null) {
         if (preferLocal) {
             return this.predictLocal(modelName, features);
         }
-        return this.predictRemote(modelName, features);
+        return this.predictRemote(modelName, features, url);
     }
 
     /**
@@ -254,17 +282,38 @@ class CyberForgeMLService {
 
         const results = {};
         for (const modelName of Object.keys(this.models)) {
-            results[modelName] = await this.predict(modelName, features);
+            // the URL goes with the request, so the service computes each model's own features
+            results[modelName] = await this.predict(modelName, features, false, url);
         }
 
-        const scores = Object.values(results).map(r => r.threat_score || 0);
+        // Only models that answered count. With none, there is no verdict:
+        // the result says unknown instead of scoring the silence as clean.
+        const answered = Object.values(results).filter(r => r.available !== false && Number.isFinite(r.threat_score));
+        if (answered.length === 0) {
+            return {
+                url,
+                timestamp: new Date().toISOString(),
+                aggregate: {
+                    average_threat_score: null,
+                    max_threat_score: null,
+                    blended_threat_score: null,
+                    overall_risk_level: 'unknown',
+                    model_consensus: `0/0 (none of ${Object.keys(results).length} models answered)`,
+                    recommended_action: 'unknown',
+                    models_answered: 0
+                },
+                model_predictions: results,
+                features_analyzed: features
+            };
+        }
+        const scores = answered.map(r => r.threat_score);
         const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
         const maxScore = Math.max(...scores);
         // 60% average + 40% max — average grounds the verdict, max gives weight to outliers
         const blendedScore = 0.6 * avgScore + 0.4 * maxScore;
-        // How many models flagged this as a threat?
-        const agreeingModels = Object.values(results).filter(r => r.is_threat).length;
-        const totalModels = Object.keys(results).length;
+        // How many of the models that answered flagged this as a threat?
+        const agreeingModels = answered.filter(r => r.is_threat).length;
+        const totalModels = answered.length;
         const consensus = agreeingModels / totalModels;
 
         // Block: 2+ models agree AND blended ≥ high, OR any single model very confident
@@ -286,7 +335,8 @@ class CyberForgeMLService {
                 blended_threat_score: Math.round(blendedScore * 10000) / 10000,
                 overall_risk_level: this.getRiskLevel(blendedScore),
                 model_consensus: `${agreeingModels}/${totalModels}`,
-                recommended_action: recommendedAction
+                recommended_action: recommendedAction,
+                models_answered: totalModels
             },
             model_predictions: results,
             features_analyzed: features

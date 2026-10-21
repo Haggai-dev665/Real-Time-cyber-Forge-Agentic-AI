@@ -12,8 +12,12 @@ const ThreatMonitoringService = require('../services/ai/ThreatMonitoringService'
 const { mlService } = require('../services/mlService');
 const { webScraperAPIService } = require('../services/WebScraperAPIService');
 const rateLimit = require('express-rate-limit');
+const { analysisQuota } = require('../middleware/analysisQuota');
+const { reportUnavailableMLCapability } = require('../services/mlCapabilities');
 
 const router = express.Router();
+// A handler whose ML endpoint is retired answers 501 with the reason, not a generic 500 (16.68).
+router.use(reportUnavailableMLCapability);
 
 // Initialize services
 const aiAnalysisService = new AIAnalysisService();
@@ -197,6 +201,7 @@ const fileAnalysisValidation = [
 router.post('/analyze/url', 
   auth, 
   aiAnalysisLimiter, 
+  analysisQuota(),
   urlAnalysisValidation,
   async (req, res) => {
     try {
@@ -247,6 +252,7 @@ router.post('/analyze/url',
 router.post('/analyze/file',
   auth,
   aiAnalysisLimiter,
+  analysisQuota(),
   fileAnalysisValidation,
   async (req, res) => {
     try {
@@ -305,6 +311,7 @@ router.post('/analyze/network',
   auth,
   authorize('analyst', 'admin'),
   aiAnalysisLimiter,
+  analysisQuota(),
   async (req, res) => {
     try {
       const { networkData } = req.body;
@@ -659,6 +666,7 @@ router.post('/chat-ml',
 router.post('/analyze-website-ml',
   auth,
   aiAnalysisLimiter,
+  analysisQuota(),
   [
     body('url').isURL().withMessage('Valid URL is required'),
     body('content').optional().isString()
@@ -698,6 +706,7 @@ router.post('/analyze-website-ml',
 router.post('/scan-threats-ml',
   auth,
   aiAnalysisLimiter,
+  analysisQuota(),
   [
     body('data').isObject().withMessage('Scan data is required')
   ],
@@ -1087,6 +1096,7 @@ router.post('/chat',
 router.post('/analyze-website',
   auth,
   aiAnalysisLimiter,
+  analysisQuota(),
   [
     body('url').isURL().withMessage('Valid URL is required'),
     body('content').optional().isString()
@@ -1132,6 +1142,7 @@ router.post('/analyze-website',
 router.post('/scan-threats',
   auth,
   aiAnalysisLimiter,
+  analysisQuota(),
   [
     body('data').isObject().withMessage('Analysis data is required')
   ],
@@ -1294,6 +1305,7 @@ router.post('/execute-task',
 router.post('/scrape-website',
   auth,
   aiAnalysisLimiter,
+  analysisQuota(),
   [
     body('url').isURL().withMessage('Valid URL is required')
   ],

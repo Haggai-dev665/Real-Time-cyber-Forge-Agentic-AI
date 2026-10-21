@@ -1,5 +1,5 @@
 # CyberForge AI - HuggingFace Space
-# Combined Gradio UI + FastAPI REST API
+# FastAPI REST API only. There is no Gradio UI and no notebook runner (V2-ML01).
 
 # Core ML
 # Pinned: the .pkl files in Che237/cyberforge-models were saved with 1.8.0 and the
@@ -13,9 +13,6 @@ joblib>=1.4.0
 torch>=2.2.0
 transformers>=4.40.0
 tokenizers>=0.19.0
-
-# Gradio UI
-gradio>=5.20.0
 
 # FastAPI REST endpoints (for Heroku backend)
 fastapi>=0.100.0
@@ -34,14 +31,6 @@ tldextract>=5.1.0
 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 --only-binary llama-cpp-python
 llama-cpp-python==0.3.36
-
-# Notebook execution
-nbformat>=5.10.0
-nbconvert>=7.16.0
-nest_asyncio>=1.6.0
-
-# HTTP client for notebooks
-httpx>=0.27.0
 
 # Data handling
 datasets>=2.20.0

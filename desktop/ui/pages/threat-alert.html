@@ -66,48 +66,12 @@
     </div>
     <div class="btns">
       <button class="btn blk" id="btnBlock">Block<small>stop this site</small></button>
-      <button class="btn prt" id="btnProtect">Protect<small>open safely</small></button>
-      <button class="btn alw" id="btnAllow">Allow<small>trust it</small></button>
+      <button class="btn prt" id="btnProtect" title="Keeps this site on your saved list. It does not change how the site is reached.">Save<small>keep on a list</small></button>
+      <button class="btn alw" id="btnAllow">Allow<small>unblock it</small></button>
     </div>
   </div>
 
-  <script>
-    var T = window.__TAURI__;
-    function inv(cmd, args){ try{ return T.core.invoke(cmd, args||{}); }catch(e){ return Promise.reject(e); } }
-    function closeWin(){ try{ T.window.getCurrentWindow().close(); }catch(e){ try{ window.close(); }catch(_){} } }
-    var host = '';
-    var note = document.getElementById('note');
-
-    function esc(s){ return String(s==null?'':s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
-
-    inv('get_pending_threat').then(function(t){
-      if(!t || !t.host){ return; }
-      host = t.host;
-      document.getElementById('host').textContent = t.host;
-      document.getElementById('host').title = t.url || t.host;
-      document.getElementById('risk').textContent = 'RISK ' + (t.risk!=null?t.risk:'—');
-      if(t.message) document.getElementById('msg').innerHTML =
-        esc(t.message).replace(esc(t.host), '<b>'+esc(t.host)+'</b>');
-    }).catch(function(){});
-
-    function done(txt){ note.textContent = txt; ['btnBlock','btnProtect','btnAllow'].forEach(function(id){ document.getElementById(id).disabled=true; }); setTimeout(closeWin, 1600); }
-    function act(btn, cmd, ok){
-      if(!host){ closeWin(); return; }
-      btn.disabled = true; var orig = btn.firstChild.textContent; btn.firstChild.textContent = '…';
-      inv(cmd, {domain: host}).then(function(r){ done(ok(r)); })
-        .catch(function(){ btn.disabled=false; btn.firstChild.textContent=orig; note.textContent='Action unavailable — open CyberForge to retry.'; });
-    }
-    document.getElementById('btnBlock').addEventListener('click', function(){
-      act(this, 'block_site', function(r){ return (r&&r.enforced) ? (host+' is now blocked system-wide.') : (host+' added to the blocklist (needs admin to enforce).'); });
-    });
-    document.getElementById('btnProtect').addEventListener('click', function(){
-      act(this, 'protect_site', function(r){ return (r&&r.note) ? r.note : (host+' marked for protected access.'); });
-    });
-    document.getElementById('btnAllow').addEventListener('click', function(){
-      act(this, 'allow_site', function(r){ return host+' marked trusted'+((r&&r.wasUnblocked)?' and unblocked':'')+'.'; });
-    });
-    document.getElementById('closeBtn').addEventListener('click', closeWin);
-    document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeWin(); });
-  </script>
+  <script src="../scripts/cf-a11y.js"></script>
+<script src="../scripts/pages/threat-alert.js"></script>
 </body>
 </html>

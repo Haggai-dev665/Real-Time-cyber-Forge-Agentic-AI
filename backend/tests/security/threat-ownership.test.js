@@ -8,6 +8,15 @@ jest.mock('../../src/models/Threat', () => {
   return Threat;
 });
 jest.mock('../../src/services/cyberforgeMLService', () => ({ cyberforgeML: {} }));
+// a finding looks for an exception in the account's workspace (DET-02); none here
+jest.mock('../../src/services/workspaceService', () => ({
+  ensurePersonalWorkspace: jest.fn(async user => `ws-${user._id}`),
+  workspaceIdFor: jest.fn(async principal => (principal && principal.userId ? `ws-${principal.userId}` : null)),
+  activeMembership: jest.fn(async () => ({ role: 'owner' }))
+}));
+jest.mock('../../src/models/FindingException', () => Object.assign(
+  require('../helpers/fakeCollection').fakeCollection(), { MAX_DAYS: 90, SEVERITIES: ['low', 'medium', 'high', 'critical'] }
+));
 
 const express = require('express');
 const User = require('../../src/models/User');
@@ -156,6 +165,9 @@ test('new analysis-derived threats inherit the persisted analysis owner', async 
   const AIAnalysisService = require('../../src/services/ai/AIAnalysisService');
   const saved = { save: jest.fn(), addTimelineEvent: jest.fn() };
   Threat.mockImplementation(() => saved);
+  // no open or earlier finding for this target (findingService, DET-02)
+  Threat.findOneAndUpdate.mockResolvedValue(null);
+  Threat.find.mockReturnValue({ lean: async () => [] });
   const analysis = { _id: 'analysis', user: userA._id, type: 'url', target: { value: 'https://example.com' } };
   const results = { risk_score: 8, threat_types: ['phishing'], confidence: 0.9 };
   const service = new AIAnalysisService();

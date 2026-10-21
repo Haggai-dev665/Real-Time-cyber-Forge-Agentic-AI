@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Incident Timeline</title>
+<title>CyberForge — Incidents & timeline</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
@@ -57,48 +57,54 @@
 .clock-card .ck{font-family:var(--mono);font-size:34px;font-weight:600;color:var(--amber-2);letter-spacing:1px}
 .clock-card .ckl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase;margin-top:4px}
 .clock-card .ckm{font-size:11px;color:var(--dim);margin-top:8px}
+.tev .ttime{width:135px;flex-shrink:0;white-space:normal}.kpi-row{grid-template-columns:repeat(3,minmax(0,1fr))}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Incident Timeline" id="win">
+  <div class="window" data-screen-label="Incidents & timeline" id="win">
     <div class="topbar" id="topbar"></div>
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8M9 6h11M9 18h7M9 12h9"/></svg></div>
-          <h1>Incident Timeline</h1>
+          <h1>Incidents & timeline</h1>
           <div class="head-right">
-            <span class="live-ind"><span class="dot"></span>1 active</span>
-            <span id="mttr">MTTR 1h 48m</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>Export</button>
+            <span class="live-ind" id="openCount">—</span>
+
+            <button class="btn-refresh" id="toReports" title="Reports export your threats, scans and actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>Export</button>
           </div>
         </div>
 
         <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Active Incidents</div><div class="kv" style="color:#ff7185">1</div><div class="kd">INC-2207 critical</div></div>
-          <div class="card kpi"><div class="kl">Contained Today</div><div class="kv" style="color:var(--green)">4</div><div class="kd">0 escalated</div></div>
-          <div class="card kpi"><div class="kl">MTTR</div><div class="kv" style="color:var(--cyan)">1.8<span style="font-size:13px;color:var(--faint)">h</span></div><div class="kd">rolling 30d</div></div>
-          <div class="card kpi"><div class="kl">This Week</div><div class="kv">23</div><div class="kd">incidents logged</div></div>
+          <div class="card kpi"><div class="kl">Open incidents</div><div class="kv">—</div><div class="kd">returned for your account</div></div>
+          <div class="card kpi"><div class="kl">Closed incidents</div><div class="kv">—</div><div class="kd">returned for your account</div></div>
+          <div class="card kpi"><div class="kl">Incidents</div><div class="kv">—</div><div class="kd">current result set</div></div>
         </div>
-
+        <p class="cf-context-note">Response time is not measured: no resolution times recorded. Select an incident to view its stored timeline and evidence.</p>
         <!-- PHASE SWIMLANE -->
         <div class="card phase-card">
-          <div class="phase-head"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--amber-2)" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg><b>INC-2207 — RedLine Stealer Containment</b><span class="pid" style="margin-left:auto">WS-4471 · started 09:41</span></div>
-          <div class="phase-row" id="phaseRow"></div>
+          <div class="phase-head"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--amber-2)" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg><b>Select an incident</b><span class="pid" style="margin-left:auto">stored events for the selected incident</span></div>
+
         </div>
 
         <div class="tl-grid">
           <div class="card" style="display:flex;flex-direction:column;min-height:0">
-            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Event Timeline<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Event Timeline<span class="right"><span class="badge-live"><span class="dot"></span>STORED EVENTS</span></span></div>
             <div class="feed" id="feed"></div>
           </div>
           <div class="col">
             <div class="card clock-card">
-              <div class="ck" id="ck">00:24:18</div>
+              <div class="ck" id="ck">—</div>
               <div class="ckl">Time Since Detection</div>
-              <div class="ckm">INC-2207 · <span style="color:var(--amber-2)">Containment phase</span></div>
+              <div class="ckm">Select an incident</div>
             </div>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
               <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>Recent Incidents</div>
@@ -113,105 +119,15 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-realtime.js"></script>
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
-<script>
-buildHeader({status:'INCIDENT'});
-buildSidebar('incident');
-buildFooter({items:[{txt:'incident tracking',cls:'sb-amber'},{txt:'backend-linked',cls:'sb-cyan'},{txt:'Live',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-/* phase swimlane — standard IR phases (a template; times fill from real incident data) */
-const phases=[
-  ['todo','Detection','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'],
-  ['todo','Triage','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>'],
-  ['todo','Containment','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>'],
-  ['todo','Eradication','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>'],
-  ['todo','Recovery','—','<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>']
-];
-const stepIco={done:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>'};
-const row=document.getElementById('phaseRow');
-row.innerHTML=phases.map((p,i)=>'<div class="ph '+p[0]+'" data-i="'+i+'"><div class="pn">'+(p[0]==='done'?stepIco.done:p[3])+'</div><div class="pl">'+p[1]+'</div><div class="pt">'+p[2]+'</div></div>').join('');
-// connectors
-function layoutConn(){
-  row.querySelectorAll('.pconn').forEach(c=>c.remove());
-  const phs=[...row.querySelectorAll('.ph')], rr=row.getBoundingClientRect();
-  for(let i=0;i<phs.length-1;i++){
-    const a=phs[i].querySelector('.pn').getBoundingClientRect(), b=phs[i+1].querySelector('.pn').getBoundingClientRect();
-    const c=document.createElement('div'); c.className='pconn';
-    c.style.left=(a.right-rr.left)+'px'; c.style.width=(b.left-a.right)+'px';
-    const fill=phases[i][0]==='done'?1:(phases[i][0]==='active'?0.5:0);
-    c.innerHTML='<i style="transform:scaleX('+fill+')"></i>';
-    row.appendChild(c);
-  }
-}
-layoutConn(); window.addEventListener('resize',layoutConn);
-// particle on active connector
-setInterval(()=>{
-  const conns=[...row.querySelectorAll('.pconn')];
-  const ac=conns[1]; if(!ac)return; // containment connector index
-  const p=document.createElement('span'); p.className='pp'; ac.appendChild(p);
-  let t0=performance.now();(function s(now){const t=(now-t0)/700;if(t>=0.5){p.remove();return;}p.style.left=(t*100)+'%';requestAnimationFrame(s);})(t0);
-},500);
-
-/* time since detection — shown only when a real incident is active */
-(function(){ var ck=document.getElementById('ck'); if(ck) ck.textContent='—'; })();
-
-/* event feed */
-const evIco={crit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>',
-  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
-  ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>',
-  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'};
-const seed=[];   // populated from REAL backend threats/alerts (loadIncidents)
-const feed=document.getElementById('feed');
-function evRow(e){
-  const c=e[2]||e[1];
-  return '<div class="tev '+c+'"><span class="ttime">'+e[0]+'</span><span class="tnode">'+evIco[c]+'</span>'+
-    '<div class="ttx"><b>'+(e[3]||e[2])+'</b><div class="td">'+(e[4]||e[3])+'</div><div class="tm">phase: '+(e[5]||e[4])+'</div></div></div>';
-}
-function render(){
-  if(!seed.length){ feed.innerHTML='<div style="padding:34px 20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No incidents recorded<br><span style="font-size:9px">events appear here as the agent confirms threats &amp; alerts</span></div>'; return; }
-  feed.innerHTML='<div class="daygroup">Today</div>'+seed.map(evRow).join('');
-}
-render();
-
-// ===== REAL incident events — live threats/alerts from the backend =====
-function sevToClass(s){ s=String(s||'').toLowerCase();
-  return s==='critical'?'crit':(s==='high'?'warn':(s==='low'?'info':(s==='medium'?'warn':'info'))); }
-function pushEvent(ts,sev,title,desc,phase){
-  const c=sevToClass(sev);
-  seed.unshift([ts,c,c,String(title||'').slice(0,80),String(desc||'').slice(0,140),phase||'Detection']);
-  if(seed.length>14) seed.pop(); render();
-}
-async function loadIncidents(){
-  try{
-    const r=await CF.invoke('get_threats'); const d=(r&&r.data)||{}; const arr=d.threats||[];
-    if(arr.length){
-      seed.length=0;
-      arr.slice(0,14).forEach(x=>{
-        const det=x.detection||{}; const t=new Date(det.timestamp||x.createdAt||x.ts||Date.now());
-        const ts=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-        const c=sevToClass(x.severity);
-        seed.push([ts,c,c,(x.title||x.type||x.indicator||'Threat detected'),
-          (x.description||x.summary||('risk '+(x.riskScore!=null?x.riskScore:'—'))),(x.category||x.source||(det.source)||'Detection')]);
-      });
-      render();
-    }
-    // real KPI counts
-    const kv=document.querySelectorAll('.kpi .kv');
-    if(kv[0]) kv[0].textContent=(d.critical||0)+(d.high||0);
-    if(kv[3]) kv[3].textContent=(d.total||arr.length||0);
-  }catch(e){ /* keep seed */ }
-}
-loadIncidents(); setInterval(loadIncidents,30000);
-window.addEventListener('cf:threat', e=>{ const x=e.detail||{}; const ts=new Date().toTimeString().slice(0,5);
-  pushEvent(ts, x.severity, (x.indicator||x.url||'Threat detected'), (x.category||'')+' · risk '+(x.riskScore!=null?x.riskScore:'—'), x.source||'Detection'); });
-window.addEventListener('cf:alert', e=>{ const x=e.detail||{}; const ts=new Date().toTimeString().slice(0,5);
-  pushEvent(ts, x.severity, (x.message||x.url||'Alert raised'), x.url||'', 'Triage'); });
-</script>
+<script src="../scripts/pages/incident-timeline.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

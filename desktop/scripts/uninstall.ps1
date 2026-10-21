@@ -63,9 +63,23 @@ if ($uninst) {
 if ($KeepData) {
   Write-Host "Keeping data directory: $DataDir" -ForegroundColor Yellow
 } elseif (Test-Path $DataDir) {
-  if (Confirm "Delete all CyberForge data (scans, memory, blocklists, token) in $DataDir?") {
+  if (Confirm "Delete all CyberForge data (scans, memory, site lists, cached profile) in $DataDir?") {
     Remove-Item -Path $DataDir -Recurse -Force
     Write-Host "Removed data directory." -ForegroundColor Green
+  }
+}
+
+# 5) Remove the sign-in session and the AI token from Windows Credential Manager.
+#    They are kept there, not in the data directory, so deleting the directory
+#    does not remove them.
+if (-not $KeepData) {
+  foreach ($entry in 'auth_token', 'hf_token') {
+    $target = "$entry.com.cyberforge.console"
+    $found = (cmdkey /list:$target 2>$null | Select-String -SimpleMatch $target)
+    if ($found) {
+      cmdkey /delete:$target | Out-Null
+      Write-Host "Removed credential: $target" -ForegroundColor Green
+    }
   }
 }
 

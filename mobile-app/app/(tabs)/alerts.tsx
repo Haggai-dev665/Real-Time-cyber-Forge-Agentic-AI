@@ -48,7 +48,7 @@ export default function Alerts() {
         contentContainerStyle={styles.chips}
       >
         {FILTERS.map(([key, label]) => (
-          <Pressable
+          <Pressable accessibilityRole="button"
             key={key}
             style={[styles.chip, filter === key && styles.chipOn]}
             onPress={() => setFilter(key)}
@@ -75,7 +75,7 @@ export default function Alerts() {
           />
         ) : (
           list.map((a) => (
-            <Pressable
+            <Pressable accessibilityRole="button"
               key={a.id}
               style={[styles.alert, { borderLeftColor: severityColor[a.severity] }]}
               onPress={() => router.push({ pathname: '/alert/[id]', params: { id: a.id } })}

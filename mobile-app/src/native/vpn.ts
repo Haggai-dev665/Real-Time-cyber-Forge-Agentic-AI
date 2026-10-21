@@ -73,6 +73,8 @@ type StateListener = (state: VpnState) => void;
 
 /** Shape of the native module (Expo Modules API). */
 interface NativeVpn {
+  /** Whether the packet engine (libtun2socks.so) loaded; absent in older native builds. */
+  engineAvailable?: () => boolean;
   isCaInstalled(): Promise<boolean>;
   getCaPem(): Promise<string>;
   /** Opens the system dialog to install/trust the root CA. */
@@ -108,16 +110,39 @@ function loadNative(): NativeVpn | null {
 
 const native = loadNative();
 
-export const isSupported = native !== null;
+/**
+ * Why capture is not available in this build, or null when it is. Capture is
+ * offered only when the native module is linked AND its packet engine
+ * (libtun2socks.so) loaded: a module without the engine cannot carry traffic
+ * (finding F16), so it is not advertised.
+ */
+export type CaptureUnavailable = 'not_android' | 'module_missing' | 'engine_missing';
+
+function engineLoaded(module: NativeVpn): boolean {
+  try {
+    return typeof module.engineAvailable === 'function' && module.engineAvailable() === true;
+  } catch {
+    return false;
+  }
+}
+
+export const unavailableReason: CaptureUnavailable | null =
+  Platform.OS !== 'android' ? 'not_android' : native === null ? 'module_missing' : !engineLoaded(native) ? 'engine_missing' : null;
+
+export const UNAVAILABLE_TEXT: Record<CaptureUnavailable, string> = {
+  not_android: 'Network capture is Android-only.',
+  module_missing: 'The capture module is not in this build. It needs an Android dev or EAS build, not Expo Go.',
+  engine_missing:
+    'This build has the capture module but not its packet engine (libtun2socks.so), so it cannot carry traffic. Capture is off in this build.',
+};
+
+export const isSupported = unavailableReason === null;
 
 const UNSUPPORTED: VpnState = {
   status: 'unsupported',
   flowCount: 0,
   caInstalled: false,
-  error:
-    Platform.OS === 'android'
-      ? 'Native capture engine not in this build — run a dev/EAS build.'
-      : 'Network capture is Android-only.',
+  error: unavailableReason ? UNAVAILABLE_TEXT[unavailableReason] : undefined,
 };
 
 export const vpn = {

@@ -30,11 +30,11 @@ export function SandboxSection() {
   if (history.loading) return <Loading label="Loading sandbox history…" />;
   if (history.error) return <EmptyState icon="flask" title="Sandbox unavailable" hint={history.error} />;
   if (scans.length === 0)
-    return <EmptyState icon="flask" title="No detonations yet" hint="Analyzed samples will appear here." />;
+    return <EmptyState icon="flask" title="No analyses yet" hint="Static URL and file analyses appear here. Nothing is run or opened." />;
 
   return (
     <>
-      <SecLabel>Recent detonations</SecLabel>
+      <SecLabel>Recent static analyses</SecLabel>
       <Card style={{ overflow: 'hidden' }}>
         {scans.slice(0, 12).map((s, i) => {
           const verdict = String(s.verdict ?? 'unknown');
@@ -68,7 +68,7 @@ export function IntelSection() {
 
   return (
     <>
-      <SecLabel>Live threat pulses</SecLabel>
+      <SecLabel>Public threat intelligence · AlienVault OTX</SecLabel>
       <Card style={{ overflow: 'hidden' }}>
         {list.slice(0, 14).map((p, i) => (
           <View key={i} style={[styles.row, i > 0 && styles.rowBorder]}>
@@ -83,6 +83,7 @@ export function IntelSection() {
           </View>
         ))}
       </Card>
+      <Text style={styles.note}>Published by the OTX community; not activity seen on your devices. Times are when each pulse was last updated.</Text>
     </>
   );
 }
@@ -95,7 +96,7 @@ export function BrowserSection() {
   if (snap.loading) return <Loading label="Loading browser snapshot…" />;
   if (snap.error) return <EmptyState icon="globe" title="No active browser session" hint={snap.error} />;
   if (!data || Object.keys(data).length === 0)
-    return <EmptyState icon="globe" title="No browser activity" hint="Pair the CyberForge extension to stream sessions." />;
+    return <EmptyState icon="globe" title="No browser activity" hint="Browser activity appears here when the desktop app sends its browser report (desktop Settings › Privacy › Sync)." />;
 
   const sessions = num(data.sessions ?? data.activeSessions, 0);
   const trackers = num(data.trackers ?? data.blockedTrackers, 0);

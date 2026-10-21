@@ -3,6 +3,7 @@
  * REST endpoints for ML model predictions
  */
 
+const { ENGINES, engineOfSpaceAnswer } = require('../services/answerEngine');
 const express = require('express');
 const { verifiedUser } = require('../middleware/verifiedUser');
 const router = express.Router();
@@ -289,8 +290,9 @@ router.post('/v2/dga-detect', async (req, res) => {
 
 /**
  * @route   POST /api/cyberforge-ml/v2/security-chat
- * @desc    Cybersecurity Q&A LLM — DeepSeek via HF Inference Providers, Mistral-7B
- *          fallback, ML heuristic as last resort.
+ * @desc    Cybersecurity Q&A, answered by the open-source model in the ML
+ *          service, or by its rule-based summary, or by the backend's
+ *          reference text. Every answer carries `engine`: which of these it was.
  * @body    { query: string, max_tokens?: number }
  */
 router.post('/v2/security-chat', async (req, res) => {
@@ -305,13 +307,26 @@ router.post('/v2/security-chat', async (req, res) => {
         }
         // If the HF Space errored or returned an empty body (models loading),
         // serve grounded knowledge so the assistant is never blank.
-        if (chatNeedsFallback(result)) {
-            return res.json({ success: true, response: securityChatFallback(query), model: 'cyberforge-kb', fallback: true });
+        // The model was asked and did not finish: say so, with the reason,
+        // rather than offering stock text as if it answered the question.
+        if (result && result.answered === false) {
+            const reason = typeof result.error === 'string' && result.error ? result.error.slice(0, 200) : 'no reason given';
+            return res.json({
+                success: true,
+                answered: false,
+                reason,
+                model: 'none',
+                response: `The Analysis Agents' language model did not answer this time (${reason}). It runs on a small shared CPU, so a long question can run out of time. Try again in a moment, or ask something shorter.`,
+                engine: ENGINES.noAnswer()
+            });
         }
-        res.json(result);
+        if (chatNeedsFallback(result)) {
+            return res.json({ success: true, response: securityChatFallback(query), model: 'cyberforge-kb', fallback: true, engine: ENGINES.knowledgeBase() });
+        }
+        res.json({ ...result, engine: engineOfSpaceAnswer(result) });
     } catch (error) {
         // Even on unexpected errors, keep the assistant useful.
-        res.json({ success: true, response: securityChatFallback(req.body && req.body.query), model: 'cyberforge-kb', fallback: true });
+        res.json({ success: true, response: securityChatFallback(req.body && req.body.query), model: 'cyberforge-kb', fallback: true, engine: ENGINES.knowledgeBase() });
     }
 });
 

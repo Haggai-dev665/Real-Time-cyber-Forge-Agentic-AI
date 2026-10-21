@@ -1,0 +1,44 @@
+[package]
+name = "cyberforge-core"
+version = "1.0.0"
+description = "CyberForge shared native services: backend origins, profiles, credential storage, HTTP and status checks"
+authors = ["CyberForge"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77.2"
+# The workspace is rooted at the desktop crate, which keeps its own layout for Tauri.
+workspace = "../../desktop/src-tauri"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+# The platform features make this the real credential store. Without one the
+# crate silently uses an in-memory stand-in that keeps nothing (finding F09).
+keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service", "crypto-rust"] }
+# Device identity and the messages the backend checks (device.rs): the same
+# versions the desktop already builds with.
+base64 = "0.22"
+sha2 = "0.10"
+getrandom = "0.3"
+ring = "0.17"
+# The broker's pipe and its I/O (broker.rs).
+tokio = { version = "1", features = ["net", "io-util", "time", "rt"] }
+
+# The broker's Windows pieces: the pipe's access list, and the user SID of the
+# process at the other end of it.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_System_Pipes",
+    "Win32_System_Threading",
+] }
+
+# The broker's macOS and Linux pieces: the lock (flock) and the user ID.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "net", "time"] }

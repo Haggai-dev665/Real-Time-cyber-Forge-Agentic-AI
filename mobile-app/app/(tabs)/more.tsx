@@ -26,7 +26,7 @@ export default function More() {
         {FEATURED.map((k) => {
           const m = SECTIONS[k];
           return (
-            <Pressable key={k} style={styles.tile} onPress={() => go(k)}>
+            <Pressable accessibilityRole="button" key={k} style={styles.tile} onPress={() => go(k)}>
               <View style={[styles.tileIcon, { backgroundColor: tint(m.color, 0.13) }]}>
                 <Icon name={m.icon} size={19} color={m.color} />
               </View>
@@ -44,7 +44,7 @@ export default function More() {
         {REST.map((k, i) => {
           const m = SECTIONS[k];
           return (
-            <Pressable key={k} style={[styles.row, i > 0 && styles.rowBorder]} onPress={() => go(k)}>
+            <Pressable accessibilityRole="button" key={k} style={[styles.row, i > 0 && styles.rowBorder]} onPress={() => go(k)}>
               <View style={[styles.rowIcon, { borderColor: colors.line2 }]}>
                 <Icon name={m.icon} size={16} color={m.color} />
               </View>

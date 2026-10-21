@@ -5,26 +5,45 @@
 function fitWindow(id){
   const w=document.getElementById(id);
   if(!w) return;
+  // Workspace pages use a responsive shell, not a scaled design canvas.
+  // Keep the separate welcome/sign-in layouts on their existing fitting path.
+  if(w.querySelector('#sidebar')){
+    document.documentElement.classList.add('cf-desktop-shell');
+    document.documentElement.classList.remove('cf-scrolled-layout');
+    return;
+  }
+
+  // The design is 1440 x 824. It is scaled to the window, but never so far that
+  // it undoes the system's text scaling: with the display or text scaled to
+  // 175% or more, or when fitting would go below 75%, the page keeps at least
+  // full size and scrolls instead of shrinking the whole interface (UX-02:
+  // 200% text scaling must not shrink everything back).
+  const DW=1440, DH=824, MIN_FIT=0.75;
   function fit(){
-    const vw=window.innerWidth, vh=window.innerHeight, DW=1440, DH=824;
-    // Scale so the design HEIGHT exactly fills the viewport (footer always
-    // visible, no vertical scroll). Then WIDEN the design to fill the viewport
-    // width too, so there are no dark side bands. On unusually narrow windows we
-    // fall back to a width-fit and centre vertically (still no side bands).
+    const vw=window.innerWidth, vh=window.innerHeight;
+    const scaled=(window.devicePixelRatio||1)>=1.75;
     const sH=vh/DH;
+    let s, width;
+    if(vw/sH>=DW){ s=sH; width=vw/sH; }            // wide enough: fill the width
+    else { s=vw/DW; width=DW; }                    // narrow: fit the width
+    const floor=scaled?1:MIN_FIT;
+    const scroll=s<floor;
+    if(scroll){ s=Math.max(1,floor); width=Math.max(DW,vw/s); }
     w.style.transformOrigin='top left';
-    if(vw/sH>=DW){                                  // wide enough → fluid full-width
-      w.style.width=(vw/sH)+'px';
-      w.style.transform='scale('+sH+')';
-      w.style.left='0px'; w.style.top='0px';
-    }else{                                          // narrow → fit width, centre vertically
-      const s=vw/DW;
-      w.style.width=DW+'px';
-      w.style.transform='scale('+s+')';
-      w.style.left='0px'; w.style.top=Math.max(0,(vh-DH*s)/2)+'px';
+    w.style.width=width+'px';
+    w.style.transform='scale('+s+')';
+    w.style.left='0px';
+    w.style.top=(!scroll&&s*DH<vh)?Math.max(0,(vh-DH*s)/2)+'px':'0px';
+    const stage=w.parentElement;
+    if(stage){
+      // fitted: exactly the viewport, no page scroll; otherwise as large as the
+      // scaled design, and the page scrolls both ways
+      stage.style.height=(scroll?DH*s:vh)+'px';
+      stage.style.width=scroll?(width*s)+'px':'';
+      stage.style.overflowX=scroll?'visible':'';
     }
-    const stage=w.parentElement;                    // exact viewport height → no page scroll
-    if(stage) stage.style.height=vh+'px';
+    document.body.style.overflowX=scroll?'auto':'';
+    document.documentElement.classList.toggle('cf-scrolled-layout',scroll);
   }
   window.addEventListener('resize',fit); fit();
 }
@@ -54,6 +73,15 @@ function attachRipple(el){
    ============================================================ */
 window.CF = window.CF || {};
 
+/* Text for HTML. Anything that came from outside this page (a URL, a page
+   title, a backend record, model text, a file name) goes through this before it
+   is put into innerHTML, in text or in a quoted attribute (SEC-05). */
+CF.esc = function(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+};
+
 /* locate the Tauri bridge from this window or a parent frame */
 CF._tauri = function(){
   try { if (window.__TAURI__ && window.__TAURI__.core) return window.__TAURI__; } catch(e){}
@@ -82,10 +110,8 @@ CF.backendUrl = function(){
   return CF._backendUrl;
 };
 
-/* current auth token (keychain-backed, via Rust) — used by cf-realtime SSE */
-CF.getToken = async function(){
-  try { var r = await CF.invoke('auth_get_token'); return (r && r.token) || null; } catch(e){ return null; }
-};
+/* There is no CF.getToken: a page is never given the session token. Backend
+   calls and the live feed are made from the native layer. */
 
 /* Prewarm cache (localStorage). The loading screen fetches each page's data and
    stashes it here so a page can paint instantly on navigate, then refresh live.
@@ -97,6 +123,18 @@ CF.preGet = function(key, maxAgeMs){
 };
 
 /* ML convenience wrappers over the ml_* Rust commands */
+/* Which engine produced an assistant answer, as the answering side reported it
+   (F28). Every chat answer carries `engine`; this is how it is shown. */
+CF.engineOf = function(body){ var d=(body&&body.data)||body||{}; return d.engine||(body&&body.engine)||null; };
+CF.engineLabel = function(body){ var e=CF.engineOf(body); return (e&&e.label)||'Agent not reported'; };
+CF.engineShort = function(body){ var e=CF.engineOf(body); if(!e) return 'unknown';
+  if(e.kind==='fixed-text') return 'no model (fixed text)';
+  return String(e.model||e.id||'model').split('/').pop().replace(/-GGUF$/i,''); };
+CF.engineNoteHTML = function(body){ var e=CF.engineOf(body);
+  var text=(e&&e.label)||'Agent not reported';
+  var warn=!e||e.kind!=='language-model';
+  return '<div class="kb-note" style="margin-top:9px">'+(warn?'⚠ ':'')+'Answered by: '+String(text).replace(/[<>&]/g,'')+'</div>'; };
+
 CF.ml = {
   chat:       function(query, maxTokens){ return CF.invoke('ml_security_chat', { query: query, maxTokens: maxTokens||512 }); },
   classifyUrl:function(url){ return CF.invoke('ml_classify_url', { url: url }); },
@@ -113,7 +151,7 @@ CF.ml = {
 CF._memSeen = CF._memSeen || {};
 CF.remember = function(text, opts){
   try{
-    text = String(text||'').trim(); if(!text) return Promise.resolve();
+    text = String(text||'').trim().slice(0,4000); if(!text) return Promise.resolve(); // memory_save takes up to 4000 characters
     var key = text.slice(0,160);
     if(CF._memSeen[key]) return Promise.resolve(); CF._memSeen[key]=1;
     opts = opts||{};
@@ -159,7 +197,9 @@ CF.threatFromMemory = function(mems){
   return best;
 };
 
-/* ---- shared Block / Protect / Allow action buttons for a flagged host ---- */
+/* ---- shared Block / Save / Allow action buttons for a flagged host ----
+   "Save" (the protect_site command) only keeps the host on a list. It was
+   named for protection, which promised a tunnel that does not exist. */
 CF._taCss=function(){ if(document.getElementById('cf-ta-css'))return; var st=document.createElement('style'); st.id='cf-ta-css';
   st.textContent='.cf-ta{margin-top:10px;padding:11px;border-radius:10px;border:1px solid rgba(244,73,94,.3);background:rgba(244,73,94,.07)}'+
   '.cf-ta .h{font-size:12px;color:#ff9aa6;display:flex;align-items:center;gap:7px;margin-bottom:9px}.cf-ta .h b{color:#ff7185}'+
@@ -175,15 +215,15 @@ CF.threatActions=function(opts){
   opts=opts||{}; var host=String(opts.host||'').replace(/[<>]/g,''); var risk=(opts.risk!=null)?opts.risk:'';
   CF._taCss();
   var w=document.createElement('div'); w.className='cf-ta';
-  w.innerHTML='<div class="h"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>Threat - <b>'+host+'</b>'+(risk!==''?(' (risk '+risk+')'):'')+' · choose an action:</div>'+
-    '<div class="b"><button class="blk">Block</button><button class="prt">Protect</button><button class="alw">Allow</button></div><div class="n"></div>';
+  w.innerHTML='<div class="h"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></svg>Threat - <b>'+CF.esc(host)+'</b>'+(risk!==''?(' (risk '+CF.esc(risk)+')'):'')+' · choose an action:</div>'+
+    '<div class="b"><button class="blk">Block</button><button class="prt" title="Keeps this site on your saved list. It does not change how the site is reached.">Save</button><button class="alw">Allow</button></div><div class="n"></div>';
   var note=w.querySelector('.n');
   function act(btn, cmd, args, ok){ btn.classList.add('done'); var orig=btn.textContent; btn.textContent='…';
     CF.invoke(cmd,args).then(function(r){ ok(r,btn); if(opts.onAction)opts.onAction(cmd,host,r); })
       .catch(function(e){ btn.classList.remove('done'); btn.textContent=orig; note.textContent=cmd+' unavailable: '+((e&&e.message)||e)+' (rebuild the desktop app)'; }); }
-  w.querySelector('.blk').addEventListener('click',function(){ act(this,'block_site',{domain:host,reason:'CyberForge action'},function(r,b){ b.textContent=r&&r.enforced?'✓ Blocked':'✓ Listed'; note.textContent=r&&r.enforced?(host+' blocked system-wide via the hosts file.'):('Listed - needs admin to enforce. '+((r&&r.message)||'')); }); });
-  w.querySelector('.prt').addEventListener('click',function(){ act(this,'protect_site',{domain:host},function(r,b){ b.textContent='✓ Protected'; var ip=r&&r.publicIp?(' Public IP: '+r.publicIp+'.'):''; note.textContent=((r&&r.note)||'Protected access recorded.')+ip; }); });
-  w.querySelector('.alw').addEventListener('click',function(){ act(this,'allow_site',{domain:host},function(r,b){ b.textContent='✓ Allowed'; note.textContent=host+' marked trusted (allow-list)'+(r&&r.wasUnblocked?' and unblocked':'')+'.'; }); });
+  w.querySelector('.blk').addEventListener('click',function(){ act(this,'block_site',{domain:host,reason:'CyberForge action'},function(r,b){ b.textContent=r&&r.enforced?'✓ Blocked':'✓ Listed'; note.textContent=r&&r.enforced?(host+' blocked on this computer through the hosts file (name lookup only).'):('Listed - needs admin to enforce. '+((r&&r.message)||'')); }); });
+  w.querySelector('.prt').addEventListener('click',function(){ act(this,'protect_site',{domain:host},function(r,b){ b.textContent='✓ Saved'; note.textContent=(r&&r.note)||(host+' saved to your list. Nothing else changes.'); }); });
+  w.querySelector('.alw').addEventListener('click',function(){ act(this,'allow_site',{domain:host},function(r,b){ if(r&&r.stillBlocked){ b.textContent='Still blocked'; note.textContent=host+' is still blocked: '+(r.message||'the hosts file could not be changed')+'.'; return; } b.textContent='✓ Allowed'; note.textContent=host+' added to your allowed list'+(r&&r.wasUnblocked?' and unblocked':'')+'. It is still scanned.'; }); });
   return w;
 };
 
@@ -208,10 +248,14 @@ CF._gatherReportData=function(rangeSec){
     var mems=a[0]||[], hist=a[1]||[], threats=a[2]||{};
     var isMal=function(t){ return /phishing|malware|malicious|ransomware|botnet|trojan|c2|spyware|dga|exploit|suspicious/i.test(t||''); };
     var inWin=mems.filter(function(m){ return m.ts!=null && +m.ts>=cutoff; });
-    var scans=inWin.filter(function(m){ return /^scanned/i.test(m.text||'') || (m.category||'')==='scan' || /verdict|risk score|classif/i.test(m.text||''); });
-    var intel=inWin.filter(function(m){ return m.kind==='semantic' || /otx|pulse|threat intel|indicator|alienvault/i.test((m.category||'')+' '+(m.text||'')); });
-    var actions=inWin.filter(function(m){ return /^action-/.test(m.category||'') || /\b(blocked|protected|allowed|marked trusted|enabled protected)\b/i.test(m.text||''); });
-    var risks=inWin.filter(function(m){ return (m.risk!=null && +m.risk>=50) || isMal(m.text); });
+    // Public threat intelligence (OTX pulses the globe saved) is kept apart from what
+    // happened on this computer: it is never counted as a scan, a risk or an action (DET-04).
+    var isIntel=function(m){ return m.kind==='semantic' || /otx|pulse|threat intel|indicator|alienvault/i.test((m.category||'')+' '+(m.text||'')); };
+    var intel=inWin.filter(isIntel);
+    var own=inWin.filter(function(m){ return !isIntel(m); });
+    var scans=own.filter(function(m){ return /^scanned/i.test(m.text||'') || (m.category||'')==='scan' || /verdict|risk score|classif/i.test(m.text||''); });
+    var actions=own.filter(function(m){ return /^action-/.test(m.category||'') || /\b(blocked|protected|allowed|marked trusted|enabled protected)\b/i.test(m.text||''); });
+    var risks=own.filter(function(m){ return (m.risk!=null && +m.risk>=50) || isMal(m.text); });
     var histWin=hist.filter(function(h){ return h.lastVisit!=null && +h.lastVisit>=cutoff; });
     var hostCount={}; histWin.forEach(function(h){ var host=CF._rpHost(h.url); if(host) hostCount[host]=(hostCount[host]||0)+1; });
     var topHosts=Object.keys(hostCount).sort(function(a,b){ return hostCount[b]-hostCount[a]; }).slice(0,18);
@@ -231,7 +275,7 @@ CF._reportPrompt=function(d,label){
   L.push('FLAGGED RISKS ('+d.risks.length+'):');
   L.push.apply(L, d.risks.length ? d.risks.slice(0,30).map(function(m){ return ' - '+one(m.text)+(m.risk!=null?(' [risk '+m.risk+']'):'')+(m.url?(' <'+m.url+'>'):''); }) : [' (no high-risk items recorded)']);
   L.push('');
-  L.push('THREAT-INTELLIGENCE ('+d.intel.length+'):');
+  L.push('PUBLIC THREAT INTELLIGENCE ('+d.intel.length+') — AlienVault OTX pulses and other published intelligence. Context only: not activity seen on this computer, and not to be reported as an incident:');
   L.push.apply(L, d.intel.length ? d.intel.slice(0,25).map(function(m){ return ' - '+one(m.text); }) : [' (none recorded)']);
   L.push('');
   L.push('ACTIONS TAKEN ('+d.actions.length+'):');
@@ -297,7 +341,7 @@ CF.findingsReport=function(opts){
       var ok=!!(aiText&&String(aiText).trim())&&(body&&body.success!==false);
       var sections=ok?CF._rpParse(aiText):CF._rpDeterministic(data,label);
       sections.unshift(CF._rpMetrics(data));
-      return {ok:ok,sections:sections,data:data,label:label,risk:CF._rpRisk(data)};
+      return {ok:ok,sections:sections,data:data,label:label,risk:CF._rpRisk(data),engine:CF.engineLabel?CF.engineLabel(body):'Agent not reported'};
     }).catch(function(){
       var sections=CF._rpDeterministic(data,label); sections.unshift(CF._rpMetrics(data));
       return {ok:false,sections:sections,data:data,label:label,risk:CF._rpRisk(data)};
@@ -319,9 +363,14 @@ CF.toast = function(text, kind){
       document.head.appendChild(st);
     }
     var box=document.getElementById('cf-toasts');
-    if(!box){ box=document.createElement('div'); box.id='cf-toasts'; document.body.appendChild(box); }
-    var t=document.createElement('div'); t.className='cf-toast '+(kind||''); t.textContent=text;
-    box.appendChild(t); setTimeout(function(){ t.style.opacity='0'; setTimeout(function(){ t.remove(); },300); }, 5000);
+    if(!box){ box=document.createElement('div'); box.id='cf-toasts'; box.setAttribute('role','status'); box.setAttribute('aria-live','polite'); document.body.appendChild(box); }
+    var t=document.createElement('div'); t.className='cf-toast '+(kind||''); t.textContent=text; t.title='Click to dismiss'; t.style.cursor='pointer';
+    t.addEventListener('click',function(){ t.remove(); });
+    box.appendChild(t);
+    // At most three at once, so a burst of events cannot cover the page; the
+    // Live Activity list keeps every event.
+    while(box.children.length>3) box.firstChild.remove();
+    setTimeout(function(){ t.style.opacity='0'; setTimeout(function(){ t.remove(); },300); }, 5000);
   }catch(e){}
 };
 

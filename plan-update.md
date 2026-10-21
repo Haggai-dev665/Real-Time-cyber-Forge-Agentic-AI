@@ -1,5 +1,7 @@
 # CyberForge: Detailed Product and Engineering Update Plan
 
+**V2 handoff (October 16, 2026):** [Update Plan V2](plan-update-v2.md) covers the desktop MCP server, AI-enabled CyberForge CLI, and ML service changes. [ML services and training](docs/ML-SERVICES.md) explains the active pipeline and its limits. This document remains the V1 implementation record; its opening status predates the later Section 16 entries. V2 does not mark the remaining V1 release checks complete.
+
 **Review date:** October 2, 2026  
 **Code baseline:** local working tree based on commit `6e6704b`  
 **Status:** Stage 1 is implemented locally; Stage 2 is in progress. Each completed subtask and its validation are recorded immediately in Section 16. Remaining work is tracked in Section 12.  
@@ -80,7 +82,7 @@ These are source-level observations from the reviewed baseline, with implication
 | F06 | P0 | Distributed registration reads signature/timestamp headers without checking them. Telemetry destructures `signature` without verifying it; its replay set is process-local | Bind devices to enrolled keys; verify message integrity and freshness; persist deduplication and reject impersonation |
 | F07 | P0 | JWT signing/verification falls back to a fixed source-code secret | Require configured signing material outside explicitly isolated tests; fail startup when production auth is misconfigured |
 | F08 | P1 | Distributed listing reads `req.user.id`/`_id`, while middleware supplies `req.user.userId`. “Admin” routes such as `/nodes/all` and weight changes lack role checks | Use one verified principal shape and enforce both role and workspace membership |
-| F09 | P0 | Desktop `store_token()` always also writes `session.json`; HF tokens are saved in JSON and recent-token history as well as keyring | Keyring success does not prevent plaintext copies. Migrate credentials, remove copies safely, and return storage failures honestly |
+| F09 | P0 | Desktop `store_token()` always also writes `session.json`; HF tokens are saved in JSON and recent-token history as well as keyring. **Amended October 13:** it was worse than “as well as”. The `keyring` crate was built with no platform feature, which makes it an in-memory stand-in that keeps nothing after exit, so nothing was ever written to the operating system's credential store and the plaintext files were the only copy of every token. The Settings screen was also sent the full Hugging Face token | Keyring success does not prevent plaintext copies. Migrate credentials, remove copies safely, and return storage failures honestly. **Fixed locally, Section 16.43** |
 | F10 | P0 | `is_trusted_domain()` and `scan_url()` force a broad domain/subdomain list to risk zero, including user-content hosting domains | Reputation must be one signal. Never override contrary evidence solely because of a hosting domain |
 | F11 | P1 | `AgentManager` keys instances by global display name. `CyberforgeAgent` obtains hostname/platform from the backend process and creates device records on registration | Different users can collide on names; backend workers can be mistaken for endpoints. Separate identities and make enrollment idempotent |
 | F12 | P1 | Distributed nodes, policy state, audit entries, sandbox evidence, and backend memory include in-memory stores. So do the two largest route files: `routes/features.js` (58 routes) and `routes/child-pages.js` (66 routes) keep requests, workflows, findings, scans, and browser sessions in process-local `Map`s | Restart and multi-instance behavior can lose or disagree on security state. Add explicit durability contracts. On a platform that restarts processes daily, such as Heroku, this data does not survive a day |
@@ -97,11 +99,13 @@ These are source-level observations from the reviewed baseline, with implication
 | F23 | P1 | Backend ML clients disagree about where the ML service is. Six default to `http://localhost:8001` (`mlService.js`, `cyberforgeMLService.js` `localAPIUrl`, `ai/AIAnalysisService.js`, `analysisService.js`, `threatService.js`, `analysisController.js`); four default to the Hugging Face Space (`mlServiceClient.js`, `llmFallbackChain.js`, `routes/ai.js`, `routes/orchestrator.js`). They read three different variables: `AI_SERVICE_URL`, `ML_SERVICE_URL`, and `HF_SPACE_URL`. The first two are set to localhost in the local `.env` | In production more than half the ML clients would target the backend's own host. Use one setting, default it to the deployed service, and fail visibly when it is unreachable |
 | F24 | P1 | 29 of the 44 ML paths the backend references do not exist on the deployed Space: the training, dataset, agent, batch, recommendation, and threat-map calls in `mlService.js` (used by `routes/ml-training.js`, `routes/ai.js`, `routes/child-pages.js`) and `/analyze/url`, `/analyze/file`, `/analyze/network` in `ai/AIAnalysisService.js`. They belong to the FastAPI service under `ml-services/app/`, which is not deployed | The 16 `ml-training` routes and the AI routes built on these calls cannot work against the Space. Decide per feature: retire the backend route, port the endpoint to the Space, or deploy the second service. Do not present these features as available until one is chosen |
 | F25 | P0 | `routes/analysis.js` and `routes/threats.js` treat any request whose `User-Agent` contains `cyber-forge-desktop` or `Electron` as the desktop app and serve `GET /api/threats`, `/api/threats/stats`, `/api/analysis/stats`, and `/api/analysis/history` without a token. The desktop sends that header from `state.rs` | A request header is not a credential; anyone can send it. Require the same authentication as every other client and scope the results to the caller |
-| F26 | P1 | The desktop live feed (`ui/scripts/cf-realtime.js`, loaded by 14 pages and `cf-live.js`) opens an `EventSource` from the WebView straight to the backend with the JWT in the query string. The app's CSP in `tauri.conf.json` sets `connect-src 'self' ipc: http://ipc.localhost`, which does not include the backend origin | The live feed is expected to be blocked in a packaged build, independently of F21, and the token would appear in server logs if it were not. Consume the stream in Rust and forward events over Tauri events, as SEC-02 already recommends; verify in a packaged build |
+| F26 | P1 | The desktop live feed (`ui/scripts/cf-realtime.js`, loaded by 14 pages and `cf-live.js`) opens an `EventSource` from the WebView straight to the backend with the JWT in the query string. The app's CSP in `tauri.conf.json` sets `connect-src 'self' ipc: http://ipc.localhost`, which does not include the backend origin | The live feed is expected to be blocked in a packaged build, independently of F21, and the token would appear in server logs if it were not. Consume the stream in Rust and forward events over Tauri events, as SEC-02 already recommends; verify in a packaged build. **Done except the packaged-build check, Section 16.44** |
 | F27 | P1 | Live tests of the deployed models (Section 16.1) show the anomaly model's output is read backwards, so clean URLs score 50, “medium”; the phishing, malware, and web-attack models have identical feature importances and use two features; the DGA check scores only the first DNS label; `ioc-scan` ignores `ip` and `hash`; malformed input returns HTTP 500 | Every URL verdict the desktop shows is built on these scores. Fix the inversion and input handling, then retrain or replace the three duplicate models before DET-01 evaluation; do not tune thresholds on the current outputs |
 | F28 | P1 | Three clients choose the language model independently. The backend's `llmFallbackChain.js` calls Gemini directly when `GEMINI_API_KEY` is set, then the Space. The desktop's `ml.rs` calls DeepSeek directly with a user-supplied Hugging Face token, then the backend. The Space answers with its own small in-Space model. UI text and `ml-services/eval/eval_harness.py` still name DeepSeek as the engine | The same question can be answered by three different models with different quality and data-sharing implications, and the engine label shown to the user can be wrong. Choose one policy (Section 15), report the engine that actually answered, and keep the small model's output advisory (Section 16.1 limitations) |
-| F29 | P2 | `protect_site`, `allow_site`, and `mark_installed` are registered native commands that no UI code invokes; the UI can list and remove protected and allowed sites but cannot add them | Either wire the add actions into the UI or remove the commands. Related to the “Protect” wording in SEC-06 |
+| F29 | P2 | **Withdrawn as stated, October 13.** It said three native commands were never invoked. All three are: `mark_installed` from the setup wizard (`installer.js`), and `protect_site` and `allow_site` from the shared threat-action buttons, the floating agent panel and the alert window; the earlier statement that they were not was wrong. What was wrong with them is the wording: “Protect” promised a secure tunnel that does not exist, and “Allow” said the site was trusted when the scanner never reads the allowed list | The wording is corrected in Section 16.37; nothing else to do |
 | F30 | P1 | The ML Space is public and unauthenticated, and its chat model handles one request at a time on two CPU cores | Anyone who finds the URL can occupy the model and push real users onto the template fallback. Put the Space behind the backend with a shared secret or make it private, and rate-limit the chat routes |
+| F31 | P0 | Two working AlienVault OTX API keys were written into tracked files of this public repository: one as the fallback in `backend/src/services/otx.js` (it is the key the deployed backend was using, because the app had no `OTX_API_KEY` set), and a different one in `desktop/ui/pages/loading.html` and `threat-globe.html`, passed to the native `otx_fetch` command | Both keys are disclosed and stay in the git history whatever is changed now. Removed from the source and guarded by a test (Section 16.39). **The owner must replace both keys in the OTX account**; removing them from the files does not undo the disclosure |
+| F32 | P1 | The desktop app copies browser history into its own file (`history_collection.json`), lists it, and sends addresses from it to the backend to be scanned, with whatever was in the address bar: sign-in codes, session tokens, auto-login and reset links. On the development machine the file held 6,570 addresses, 29 of them with a session-token-shaped value | A second plaintext store of credentials, and a scanner that fetches such an address is using the person's credential. Credentials are now removed from every address when history is collected (Section 16.43). The wider SEC-07 controls (consent, retention, clearing history) remain |
 
 Additional verification targets: the desktop OAuth request shown in `auth_google()` does not include state or PKCE parameters; Android CA storage uses a fixed-password PKCS#12 file; the upstream TLS socket sets SNI without explicit endpoint-identification configuration. Review these end to end and add negative tests before declaring them secure. Do not treat this static review as a demonstrated exploit against a running installation.
 
@@ -699,8 +703,8 @@ The execution pipeline below uses the existing task IDs. A passing local gate do
 | --- | --- | --- | --- |
 | 1. Authentication prerequisites | B01; signing configuration from B05; immediately related provider-identity and SSE fixes | Credential-independent HTTP/token/stream regression suite and backend syntax check | Implemented locally; see Section 16.3 |
 | 2. Connectivity and access boundaries | B00a–B00c, B09; B02, B03 and remaining B05 identity mapping | Configurable client/service endpoints, reproducible startup, ML contract inventory, route/permission matrix and cross-user REST tests | In progress; individual completed subtasks and checks are recorded in Section 16.4 onward. B00a–B00c and B03 are complete as of October 13. B02 is complete as well (Section 16.27). Remaining: B09.2 and B05 identity mapping |
-| 3. Complete the secure baseline | B00d, B00e, remaining B04, B06–B08 | Verified realtime routing, credential migration, truthful detection/actions and packaged desktop checks | In progress. B00e and B04 complete and live (Sections 16.23–16.25). Remaining: B00d, B06–B08 |
-| 4. Durable foundation | B10 and remaining M1 work | Workspace repositories, schema migrations and restart/recovery tests | Pending; requires M0 security gate |
+| 3. Complete the secure baseline | B00d, B00e, remaining B04, B06–B08 | Verified realtime routing, credential migration, truthful detection/actions and packaged desktop checks | In progress. B00e and B04 complete and live (Sections 16.23–16.25). B07 complete locally (16.35). B08 complete: backend part live as release v15 (16.41), desktop part local (16.37, 16.40, 16.42). B06 complete locally (16.43). B00d implemented and checked against the live backend at the native layer (16.44). B05 complete locally (16.46). Remaining: the packaged-build check, B00d.2 |
+| 4. Durable foundation | B10 and remaining M1 work | Workspace repositories, schema migrations and restart/recovery tests | B10 done (16.46 to 16.52): workspaces, migrations and scoped repositories are live, and the audit trail, policies with their responses, and sandbox evidence are kept in the database by workspace. Other in-memory stores remain (F12) |
 | 5. Product slices | M2 device lifecycle → M3 agent builder → M4 verified response | Enrollment, durable runs, approval and enforcement receipts pass end to end | Pending; requires Stage 4 |
 | 6. Release gates | M5; M6 as a separate Android capture release | Supported-platform, packaging, privacy, accessibility and recovery acceptance | Pending |
 
@@ -719,6 +723,8 @@ npm run validate:updates
   - [x] **B00c.1 / F23:** centralize every backend ML destination on validated `ML_SERVICE_URL`; 12 offline contract tests pass. Completed locally October 12; Section 16.4.
   - [x] **B00c.2 / F24:** retire or port unsupported ML calls and add endpoint-contract coverage; URL consolidation alone does not make these endpoints available. All 29 calls retired behind a tested capability guard; 8 contract tests pass. Completed locally October 12; Section 16.8. Live backend-to-ML acceptance still needs the deployment in B00a.
 - [ ] **B00d / F26:** move the desktop live feed into the native layer and confirm it connects in a packaged build.
+  - [x] **B00d.1:** the feed is read by the native layer and forwarded to every window; pages listen, open no connection and hold no session token. 10 Rust tests pass, and the reader received a real alert from the live backend. Done locally October 13; Section 16.44.
+  - [ ] **B00d.2:** confirm in a packaged build that the “live” indicator connects after sign-in and that a scan appears on the feed. This needs the app built and looked at; steps are in Section 16.44.
 - [x] **B00e / F27:** fix the anomaly-score inversion and the unguarded input handling in the ML service; record before-and-after results with the `.rest` suite. **Done October 13:** live as Space commit `555859a`; also covers the DGA first-label blind spot and the ignored `ip` and `hash` fields. Before and after recorded, and the updated suite passes 85 requests against the live Space; Section 16.23. The three duplicate models still need retraining (F27).
 - [x] **B01 / SEC-01:** prevent public role elevation and add regression coverage. Remove the `User-Agent` access path (F25) in the same change. Implemented and locally tested October 12; Section 16.3.
 - [x] **B02 / SEC-01:** remove Appwrite public permission fallback; inventory/migrate affected permissions in a controlled environment. **Done October 13:** all three subtasks complete; Section 16.27.
@@ -731,14 +737,23 @@ npm run validate:updates
   - [x] **B03.2b:** require a session on the nine routes the inventory listed as open (`/api/ai/chat`, `/api/ai/chat-context`, `/api/ai/scrape-website`, `/api/policy/evaluate`, and five `/api/distributed` routes) and record distributed nodes under the verified account (F08); 9 further tests pass and the inventory's open list is empty. Completed locally October 12; Section 16.19.
   - [x] **B03.2c:** add per-object ownership checks (agent tasks and agents by name, sandbox scans, orchestrator sessions, policy and audit records), restrict OTX polling control and distributed weights to administrators, and confirm the mobile client against the guarded routes. Also closed: memory overwrite by ID, and browser-intelligence writes and reads that named their own owner; 35 further tests pass and the mobile app's two tokenless ML calls are fixed. Completed October 13 and live in release v9; Section 16.22.
 - [x] **B04 / SEC-02:** fix SSE private-event filtering, verify WebSocket credentials, and replace unscoped capture broadcasts. **Done locally October 13:** explicit event visibility, header or one-time-ticket stream authentication, expiry and revocation, replay on reconnect, verified and account-scoped WebSockets; 32 tests pass. Device-scoped visibility waits for M2. Live in release v9; Sections 16.24 and 16.25.
-- [ ] **B05 / SEC-01:** require production signing configuration and validate identity mappings. **Partial:** shared signing configuration and token validation implemented; Google/Firebase body-identity bypasses removed. Full provider/account linking and workspace mapping remain.
-- [ ] **B06 / SEC-03:** stop plaintext credential copies and provide a tested migration.
-- [ ] **B07 / SEC-06:** remove forced-clean trusted-domain overrides; add unknown/partial verdicts.
-- [ ] **B08 / SEC-06 + UX-03:** stop reporting no-op responses as executed; fix misleading protection/agent states.
-- [ ] **B09 / ENG-01:** repair the supported clean-checkout setup and document current platform limits.
+- [x] **B05 / SEC-01:** require production signing configuration and validate identity mappings. Signing configuration and token validation were done earlier (Section 16.3). **Completed locally October 13:** outside identities are mapped to accounts in one place, by the provider's own ID; a Google sign-in no longer enters an account because the email address matches; every account has a workspace on its principal. Section 16.46. Live as release v16 (16.47).
+- [x] **B06 / SEC-03:** stop plaintext credential copies and provide a tested migration. **Done locally October 13:** tokens are kept in the operating system's credential store and in no file; plaintext copies from older builds are moved on first read and removed; a store that does not work is reported, with nothing written in its place; 14 Rust tests, a round trip through the real Windows store, and 6 source checks pass. Not yet run in a built app. Section 16.43. The rest of SEC-03 (encrypting local stores, the capture CA key, the mobile web client) is not part of this item.
+- [x] **B07 / SEC-06:** remove forced-clean trusted-domain overrides; add unknown/partial verdicts. **Done locally October 13:** the desktop scanner has no list that forces a result to clean, reputation is one signal that never lowers a score, and a scan in which nothing could be checked is “unknown” and is shown as not checked; 8 Rust tests and 4 source checks pass. Not yet run in a built app. Section 16.35.
+- [x] **B08 / SEC-06 + UX-03:** stop reporting no-op responses as executed; fix misleading protection/agent states. **Done October 13:** backend part live as release v15 and checked there (16.41); desktop and mobile parts local and not yet seen in a built app.
+  - [x] **B08.1 / F13:** a policy response records what happened to it: `applied` with an executor, target, time and verification, `failed` with the reason, or `unsupported`. Nothing is `executed`. 15 tests pass. Done locally October 13; Section 16.36.
+  - [x] **B08.2 / F14:** the Agent Core page shows measured readings or says there are none; no random charts, no timer-driven steps, no sample tasks, no switch that only changes colour; “Pause” is “Pause display”. Done locally October 13; Section 16.37.
+  - [x] **B08.3 / SEC-06:** “Protect” is “Save”, and says nothing is enforced; “Allow” no longer says the site is trusted. Done locally October 13; Section 16.37.
+  - [x] **B08.4 / UX-03:** backend routes and socket requests that reported work nobody did, or figures nobody measured, answer 501 with the reason or return what is stored: 4 socket requests, 16 routes in `child-pages.js`, 5 in `features.js`, and three whole route groups (37 routes) built on simulating services. Done locally October 13; Section 16.38.
+  - [x] **B08.5 / UX-03:** the remaining screens that drew from random numbers or fixed samples: Model Inference (16.40); Sandbox, Memory, Threat Globe arcs, the setup wizard and the mobile sparkline (16.42). Done locally October 13. The lifecycle states SEC-06 names beyond `applied`, `failed` and `unsupported` need the approval flow and are M4 work, not part of this item.
+- [x] **B09 / ENG-01:** repair the supported clean-checkout setup and document current platform limits. Both parts done; B09.2 on October 13, with the container setup written and not yet run.
   - [x] **B09.1 / F20:** root scripts reference only existing targets, the deploy hook installs the backend alone, the Node version matches the tested one, and the gate fails on a broken script reference; 4 tests pass. Completed locally October 12; Section 16.9.
-  - [ ] **B09.2 / F20:** repair or replace Compose (it expects PostgreSQL and a `backend/Dockerfile` that does not exist), restore or stop referencing `desktop/BUILD.md`, document platform prerequisites, and remove unused root dependencies.
-- [ ] **B10 / M1:** introduce workspace-scoped repositories and schema migrations before new device/agent endpoints.
+  - [x] **B09.2 / F20:** repair or replace Compose, restore or stop referencing `desktop/BUILD.md`, document platform prerequisites, and remove unused root dependencies. **Done locally October 13:** Compose replaced with the backend, MongoDB and Redis, with a backend Dockerfile; `desktop/BUILD.md` written; three unused root dependencies removed; 8 tests keep the named paths, links and dependencies real. **Docker is not installed on the development machine, so no container has been built or started.** Section 16.45.
+- [x] **B10 / M1:** introduce workspace-scoped repositories and schema migrations before new device/agent endpoints. **Done October 14**, all of it live as of release v19 (16.53). Other in-memory stores remain (F12: distributed nodes, backend memory, the two large route files); they move as their features are worked on.
+  - [x] **B10.1:** workspaces, memberships, identity links, a migration runner with a ledger, and the first migration (a personal workspace for every account). The verified principal carries the account's workspace. 19 tests pass, and a dry run against the real database reads cleanly. Done locally October 13; Section 16.46.
+  - [x] **B10.2:** a repository base that scopes every read and write to the caller's workspace, for new stores to be built on. 6 tests pass. Done locally October 13; Section 16.46.
+  - [x] **B10.3:** apply the migration to the deployed database. Applied October 14 on release v16 and checked; Section 16.47.
+  - [x] **B10.4:** move the first existing stores onto the repository base. All three named stores are done: the audit trail (live in v17; 16.48, 16.49), policies with their response log (live in v18; 16.50, 16.51), and sandbox evidence (live in v19; 16.52, 16.53).
 
 Do not enable distributed-node registration or telemetry as a trusted device channel until DEV-02/04 verification is complete. Until then, secure or restrict the legacy endpoints as part of B03.
 
@@ -777,43 +792,43 @@ Use these as change locations, not instructions to create parallel duplicate sub
 
 ### Reachable system
 
-- [ ] The backend is deployed, starts with validated configuration, and reports healthy.
-- [ ] Desktop and mobile reach it through a configurable address; no client contains a hard-coded host.
-- [ ] The desktop can register, sign in, scan a URL, and receive live events in a packaged build.
-- [ ] Every ML path the backend calls exists on the configured ML service, or the feature is removed from the product.
-- [ ] URL verdicts no longer rate ordinary sites as medium risk because of the anomaly-score inversion.
-- [ ] The engine that produced an AI answer is reported accurately to the user.
+- [x] The backend is deployed, starts with validated configuration, and reports healthy. Release v19, `/health` 200; the signing secret and the ML address are validated at startup (16.3, 16.4); checked live after each release (16.25 to 16.53).
+- [x] Desktop and mobile reach it through a configurable address; no client contains a hard-coded host. One overridable default per client and none in any page or screen, enforced by a contract test (16.10). Strictly, that default is still a host written in each client.
+- [ ] The desktop can register, sign in, scan a URL, and receive live events in a packaged build. **Open:** the live feed is native and was checked against the live backend at the native layer (16.44); the packaged build itself has not been run (B00d.2).
+- [x] Every ML path the backend calls exists on the configured ML service, or the feature is removed from the product. Unsupported calls retired (16.8); the last client fixed and covered by the contract test (16.55); live, the trained models answer the backend (16.56).
+- [x] URL verdicts no longer rate ordinary sites as medium risk because of the anomaly-score inversion. Fixed and checked live (16.23), and the anomaly model retrained (16.33). Other false positives remain under F27.
+- [ ] The engine that produced an AI answer is reported accurately to the user. **Live on the backend (16.58); the screens wait for a built desktop app:** every answer carries the engine as the answering side reported it, and the screens show it (16.57).
 
 ### Connected security baseline
 
 - [x] Registration cannot select a privileged role. Local HTTP/controller regression coverage passes; Section 16.3.
-- [ ] No request header other than a verified credential grants access.
-- [ ] Every private API and stream derives ownership from verified credentials.
-- [ ] Cross-user REST, SSE, WebSocket, memory, evidence, and capture tests pass.
-- [ ] Appwrite permissions are intentional and never broaden automatically on errors.
-- [ ] No production fallback signing secret or plaintext desktop credential mirror remains.
-- [ ] Scanning/fetching and rendering respect their trust boundaries.
-- [ ] Model/provider failure cannot produce a false clean/protected state.
+- [x] No request header other than a verified credential grants access. The `User-Agent` path is removed (16.3), and tests show `User-Agent`, `x-node-id`, `X-Workspace-Id` and identity fields in the query or body grant nothing (16.3, 16.15, 16.46).
+- [x] Every private API and stream derives ownership from verified credentials. Route inventory test (no unauthenticated route outside the reviewed list), object ownership (16.22), streams (16.24), and workspace scope from the account record (16.46).
+- [x] Cross-user REST, SSE, WebSocket, memory, evidence, and capture tests pass. REST, SSE, WebSocket, memory and evidence (16.22, 16.24, 16.52), checked live with two accounts (16.28, 16.51, 16.53); capture added in 16.55.
+- [x] Appwrite permissions are intentional and never broaden automatically on errors. Fail-closed writes (16.5), the permissive helper removed and guarded by a test, the inventory run against the real project (16.27).
+- [x] No production fallback signing secret or plaintext desktop credential mirror remains. Signing secret required and checked at startup (16.3); desktop tokens only in the credential store, with migration and a round trip through the real Windows store (16.43). Not yet seen in a built app.
+- [ ] Scanning/fetching and rendering respect their trust boundaries. **Fetching live (16.65):** every backend scan passes a destination policy first, the scanner is HTTPS-only (F19), and credentials are removed from history addresses (16.43). **Uploads and quotas live (16.63):** one bounded file per upload, names and metadata cleaned, type read from content, and analyses limited per workspace. **Rendering done locally (16.61):** the desktop's content policy runs only the app's own script files, and outside text reaches the pages as text, with a regression test over every HTML write. **Open:** the policy and pages have not been run in a packaged build (B00d.2).
+- [x] Model/provider failure cannot produce a false clean/protected state. **Live (16.56):** the desktop scanner reports "unknown" when nothing was checked (16.35), explanations report "unavailable" (16.28), "Protect" no longer claims protection (16.37), and the backend no longer replaces a model that did not answer with its own score: with no model answering a URL has no verdict (16.55).
 
 ### Devices and agents
 
-- [ ] One-time enrollment produces a stable, owned device identity with key proof.
-- [ ] Online, stale, offline, revoked, and degraded states are distinguishable.
-- [ ] Device/agent state survives restart and supports documented recovery.
-- [ ] Agent creation validates actual capabilities, permissions, scope, and budgets.
-- [ ] Pause/cancel affects the runtime; repeated work cannot duplicate enforcement.
-- [ ] Approvals bind exact actions; executor receipts determine success.
-- [ ] Revocation and expiry prevent stale remote work from starting.
+- [x] One-time enrollment produces a stable, owned device identity with key proof. **Backend live (16.71):** one-time codes stored as hashes, an atomic claim with an Ed25519 key proof, approval against the key fingerprint, one record per installation. **Desktop side done locally (16.70):** the app's own key in the credential store, enrollment, approval, heartbeats and a Devices page. **Mobile approves devices locally (16.72).** **Open:** the phone enrolling itself, and the packaged-build check.
+- [x] Online, stale, offline, revoked, and degraded states are distinguishable. **Done locally (16.73):** connection (online, stale, offline, never connected, awaiting approval, revoked) and coverage (full, degraded with the capabilities named, unknown) are separate fields, shown on the desktop and phone. **Live (16.77).**
+- [x] Device/agent state survives restart and supports documented recovery. **Done locally (16.70, 16.73, 16.76):** device identity, sequence and outbox are on disk; agent runs are in the database with leases, and an abandoned run is retried once, then failed with the reason. **Live (16.77).** **Recovery documented (16.82):** `docs/RECOVERY.md`. **Verified across a production restart (16.82, release v31).**
+- [x] Agent creation validates actual capabilities, permissions, scope, and budgets. **Definitions done locally (16.75):** tools, modes and proposals are bounded by the template on every save; validation checks devices, capabilities, targets and budgets for the current version. **Open:** runs (A2), screens (A3).
+- [x] Pause/cancel affects the runtime; repeated work cannot duplicate enforcement. **Done locally (16.76):** the worker checks pause and cancel before every step; runs, schedule slots, approvals and device commands are idempotent. **Live (16.77).**
+- [x] Approvals bind exact actions; executor receipts determine success. **Device commands done locally (16.74):** a command is one exact action on one device, signed by the server, and shows applied or failed only on that device's signed receipt. **Agent proposals done locally (16.76):** approval rechecks the agent version, expiry and device, then becomes a signed device command whose receipt is the outcome. **Live (16.77).**
+- [x] Revocation and expiry prevent stale remote work from starting. **Device commands done locally (16.74):** a revoked device cannot fetch work, an expired command is never delivered and the device checks expiry again, a delivered command cannot be cancelled as if it had not run. **Agent runs done locally (16.76):** paused agents' queued runs do not start, and a proposal for a revoked device cannot be approved. **Live (16.77).**
 
 ### Product experience
 
-- [ ] Core flows work at supported window sizes and with keyboard navigation/text scaling.
-- [ ] The assistant and live-activity surfaces do not obscure primary tasks.
-- [ ] All metrics and badges have an actual source or an explicit unavailable state.
-- [ ] Privacy choices accurately control collection, provider processing, and sync.
-- [ ] Android capture is advertised only in builds that pass the native gate.
-- [ ] Static analysis, public threat intelligence, and actual device incidents are labeled distinctly.
-- [ ] Build instructions, test evidence, known limitations, and rollback guidance match the released code.
+- [ ] Core flows work at supported window sizes and with keyboard navigation/text scaling. **Done locally (16.87):** on the desktop, every clickable element is reachable and usable from the keyboard, focus is always visible, reduced motion is honoured, Settings keeps and returns focus, and the layout no longer shrinks the interface to undo 175%+ or 200% scaling (it scrolls instead); on the phone, every control is announced with its role, icon-only controls have names, and text follows the system font size. **Open:** walked through in the built apps at the supported sizes, with a screen reader, and contrast checked (UX-04's WCAG 2.2 AA scope).
+- [ ] The assistant and live-activity surfaces do not obscure primary tasks. **Done locally (16.86):** the connection indicator sits in the top bar; the Live Activity list is hidden until opened, opens above the agent button and closes with Escape; at most three toasts show at once and each can be dismissed; Escape puts the agent panel away. **Open:** seen in a built app at the supported window sizes (with the window-size item).
+- [ ] All metrics and badges have an actual source or an explicit unavailable state. **Done locally (16.85):** every desktop page was audited for numbers written into the page that no data replaces. The six pages still showing invented figures were corrected (16.37, 16.40, 16.42 corrected the earlier ones), and the phone app was swept too. Source checks fail if the figures return. **Open:** seen in a built app.
+- [ ] Privacy choices accurately control collection, provider processing, and sync. **Desktop done locally (16.79):** five separate controls, off until chosen, checked by the Rust commands that collect or send; withdrawing sync holds back the upload queue; an account switch cannot upload the previous account's memories. **Backend done locally (16.80):** synced memory kept in the database per workspace; export, deletion of synced data by kind, and account deletion with a receipt. Verified live. **Phone and app buttons done locally (16.81):** three separate phone controls, off until chosen, checked where capture starts, where captures are sent and where the assistant sends; export, deletion and account deletion in Settings on the desktop and the phone; captured addresses redacted on the phone and again on the backend. **Open:** deploy and live check of 16.81's backend part, built apps (desktop build, Expo build).
+- [ ] Android capture is advertised only in builds that pass the native gate. **Done locally (16.83):** capture is offered only when the native module is linked and its packet engine (`libtun2socks.so`) loaded; otherwise the screen gives the exact reason and capture is not featured. **Open:** confirm in an Expo build (the engine library itself is M6).
+- [ ] Static analysis, public threat intelligence, and actual device incidents are labeled distinctly. **Done locally (16.84):** the globes on both apps label OTX as public intelligence with each pulse's own age and keep the account's own events in a separate panel; the Sandbox is static analysis and its MITRE tiles are hints with the signal that suggested them; reports no longer count OTX pulses as the user's risks; claims the product cannot back (SOC 2, hardware-key MFA, detonation, eight agents) are gone. Checked by `source-labels.test.js`. **Open:** seen in the built apps.
+- [ ] Build instructions, test evidence, known limitations, and rollback guidance match the released code. **Partly:** `desktop/BUILD.md` and the README match the code and say what was not run (16.45, brought up to date in 16.88); test evidence is in section 16; the README has a known-limitations section (16.88); the rollback guide is `docs/RECOVERY.md` (16.82). **Open:** the container setup (`docker compose up`) has not been run (no Docker on the development machine), and the packaged builds.
 
 ## 15. Decisions to resolve during implementation
 
@@ -1619,3 +1634,2380 @@ The models now answer as four detectors instead of three copies: the web-attack 
 - The backend's `cyberforgeMLService.js` still posts to a route the Space does not have and falls back to its own rule-based score (16.23).
 
 **Not affected:** the backend. `npm run validate:updates` passes **385 tests across nineteen suites**.
+
+### 16.35 October 13, 2026 — B07 complete: no result is forced to clean, and “nothing checked” is not “clean”
+
+**What was wrong.** The desktop scanner (`desktop/src-tauri/src/agent.rs`) had a function, `is_trusted_domain`, holding a list of well-known sites. A scan of any address on one of them was given risk 0 and the category “clean” whatever the backend had found, and the list matched by suffix, so `storage.googleapis.com` or a page on `sites.google.com` counted as Google. Separately, a scan in which the backend did not answer and the page could not be fetched ended with risk 0, which every page drew as a green CLEAN.
+
+**What changed.**
+
+- **The shortcut is gone.** `is_trusted_domain` is removed. In its place `host_reputation` returns one of three values: well known, user content, or unknown. Hosts where anyone can publish (Google Sites, Drive and Docs, `googleapis.com`, `github.io`, `amazonaws.com`, `sharepoint.com`, link shorteners and about forty more) are checked first, so they never inherit their owner's standing.
+- **Reputation is a signal, not a verdict.** On a well-known host two things change: the page heuristics that look for a brand name beside a password field are not applied (on the brand's own site they always match), and the alert window needs a risk of 70 instead of 50. It never lowers a score. If the backend rates an address on a well-known site at 40 or more, that score is kept and the result carries `conflictingEvidence` and a line saying so.
+- **“Unknown” exists.** `scan_verdict` says `benign` only when something was checked and found nothing. With no backend answer and no page, the verdict is `unknown`.
+- **The scan result says what was checked.** It now carries `verdict`, `reputation`, `backendAvailable`, `conflictingEvidence` and `coverage` (whether the page was fetched), and `backendRiskScore` is null, not 0, when the backend did not answer.
+- **The pages show it.** `analyzer.html`, `web-history.html` and `sandbox.html` show an unknown verdict as NOT VERIFIED or NOT CHECKED in grey, with the reason. The analyzer adds Page and Reputation rows.
+
+**Checked.** `cargo test --lib scan_tests`: 8 pass, 7 of them new (user-content hosts are not well known; a flagged address on a well-known site keeps its score; nothing checked is unknown; the alert thresholds). `cargo check` passes. The inline scripts of the three pages parse. A contract test (`backend/tests/contracts/desktop-truthfulness.test.js`) fails if `is_trusted_domain` or any function with “trusted” in its name returns to the scanner.
+
+**Not done, not checked.**
+
+- The app was not built or run; the pages were checked by parsing their scripts, not by looking at them.
+- SEC-06 also asks for user exceptions that are scoped, expire and carry a reason. There are none: the “allowed” list is permanent, and the scanner does not read it (see 16.37).
+- Coverage is two facts (backend answered, page fetched). Engine versions, evidence age and duration are not reported.
+- The backend's own verdict words are not standardised; this entry is the desktop scanner only.
+
+### 16.36 October 13, 2026 — B08.1 complete: a policy response says what happened to it
+
+**What was wrong (F13).** When a policy fired, `policyEngineService.js` built a response record and set its status to `executed`. Nothing was done for six of the seven action types: no block, no session limit, no task, no notification. The record, the statistics and the desktop page all said otherwise.
+
+**What changed.**
+
+- **Executors.** The engine keeps a table of executors, one per action type. A fired policy starts as `proposed` and is handed to its executor. The outcome is one of three:
+  - `applied`, with a receipt: the executor's name, the target, the time, and how it was verified. An executor that returns no target or no verification has not applied anything, and the action is recorded as failed.
+  - `failed`, with the reason and the executor's name.
+  - `unsupported`, with the reason, when no executor is registered for the type.
+- **Two action types are real.** `log_response` is applied by the engine itself; the check is that the entry is in the response log. `notify_soc` is applied by publishing an alert to the live feed of the account whose evaluation triggered the policy (registered in `routes/policy.js`); the receipt is the published event's ID, and if nothing is published the action is `failed`.
+- **Five are unsupported and say so:** `soft_block`, `session_restrict`, `weight_boost`, `agent_task`, `alert_escalate`. Each needs an executor that acts on a device or on another service; none exists yet.
+- **Clients can tell.** `GET /api/policy/meta` marks each action type `supported: true` or `false`, and the statistics count responses by status.
+- **The desktop page shows it** (`security-functions.html`): each fired policy and each response-log line carries its outcome (“applied by live-feed”, “failed: …”, “not carried out (no executor)”), and an unsupported action type is disabled in the policy form with the reason.
+
+**Checked.** `tests/security/policy-actions.test.js`, 15 tests: the five unsupported types are never applied; the log entry has a full receipt; an executor that throws leaves `failed` with its reason; an executor that returns nothing, no target, no verification or a bare `true` has not applied anything; `notify_soc` through the API is applied when published and failed when not; no response has the status `executed` and the word is gone from the source.
+
+**Not done.** SEC-06 lists more states (`awaiting_approval`, `queued`, `executing`, `expired`, `rolled_back`). They need an approval step and a device to act on, which is M4. The response log is still in memory (F12). The backend change is not deployed.
+
+### 16.37 October 13, 2026 — B08.2 and B08.3 complete: the Agent Core page, and what “Protect” and “Allow” do
+
+**Agent Core (`desktop/ui/pages/agent-core.html`, F14).** Before, the page opened showing CPU 82%, memory 57%, “context 68k / 200k tokens”, a model called “claude-sentinel”, “ONLINE · 1h 12m”, 142 actions and 9 tools, none of it read from anywhere. Two charts were drawn from random numbers. The six-step “reasoning chain” advanced on a timer. The task queue listed five invented tasks whose progress bars climbed at random. Four capability switches changed colour and nothing else. Three of four quick actions printed a line saying something had been done. “Pause” stopped the console printing and left the agent running.
+
+Now:
+
+| Part | What it shows |
+| --- | --- |
+| CPU, memory | The readings the app takes from this computer; “—” and “no samples yet” until the first one arrives |
+| Third gauge | “Backend link”: reachable or not, with the measured round-trip time. The “context” gauge is gone; its figure was computed from the threat count |
+| Charts | The last 16 readings actually taken; a dashed line labelled “No samples yet” with fewer than two |
+| Header | Whether the ML service answers; “Idle” or “Scanning” |
+| Reasoning chain | No step is lit, because the agent reports no steps. The label says idle, scan in progress, or when the last scan finished |
+| Task queue | Scans started from this page, while they run and once they finish. No percentage: a scan reports none. Empty otherwise, and says the agent publishes no queue |
+| Capabilities | “not configurable”, with the reason: no setting for them is stored or applied |
+| Quick actions | Run Sweep works. Isolate, Report and Snapshot are disabled, each with its reason |
+| Session | Alerts, resolved alerts and agents, from the backend; a failed read leaves the last figures in place instead of showing zero |
+| Pause | “Pause display”. On resume it says how many lines were held back and that the agent kept running |
+| Scan lines | One line per finished scan, as a result. A scan with nothing checked reads “not verified”, not “Clean” |
+
+**“Protect” (SEC-06).** The button saved the site to a list and then showed “✓ Protected” with a note about traffic encryption and a rotated address “when the CyberForge secure tunnel is active”. There is no tunnel anywhere in the application. The button is now **Save**, the result is “✓ Saved”, and the note says the site is reached exactly as before. The native command keeps its name (`protect_site`) so existing lists still load, returns `enforced: false`, and no longer looks up the public IP address. The list is headed “Saved Sites” on the Security Functions page and in the header panel.
+
+**“Allow”.** It unblocks a site and records it; that part is real. It also said “marked trusted”, and the alert window said “trust it”. Nothing reads the allowed list: the scanner scans an allowed site like any other. The wording now says “allowed … It is still scanned.”
+
+**“Blocked system-wide”.** Now “blocked on this computer through the hosts file (name lookup only)”, which is what a hosts entry is.
+
+**F29 corrected.** It said `protect_site` and `allow_site` were never called. They are, from three places. The finding is amended.
+
+**Checked.** The page's script was run against a stand-in for the browser's document: before any reading it shows no figure; after readings it shows them; a pushed update that reports the backend down changes the gauge to OFF and the agent count to “—”; a sweep appears in the queue as running and then done; the three unavailable actions print “not available” with a reason; the three kinds of scan result print the three kinds of line. All edited pages parse. `cargo check` passes. Six source checks in `desktop-truthfulness.test.js` fail if a random number, a colour-only switch, a timer-driven step display, a sample figure or the word “Protect” on a button returns.
+
+**Not checked.** The desktop app was not built or run, so none of this has been seen on screen. Spacing and wrapping of the new labels are unverified.
+
+### 16.38 October 13, 2026 — B08.4 complete: backend routes and socket requests that reported work nobody did
+
+Each of these answered “success” for something that had not happened. No desktop or mobile screen calls any of them, which is why they had not been noticed; anything that did call them would have been told something untrue.
+
+**WebSocket (`services/websocket.js`).** Four requests are now answered `{ type: "unsupported", request, reason }`:
+
+| Request | It used to answer with |
+| --- | --- |
+| `analysis_request` | random page totals and two sample pages |
+| `threat_scan` | after two seconds, a made-up “Malicious URL” threat |
+| `request_data` | a random dashboard, or a sample phishing threat |
+| `setting_update` | “setting updated”, with nothing stored |
+
+**`routes/child-pages.js`.** Sixteen routes answer 501 with the reason, after the session check: the ten scan-mode routes (passive, active, stealth, aggressive), the threat action route, agent settings (read and write), model switch, model configuration, and team invitation. The worst was `POST /scan/active`, which started nothing and then raised a progress figure, a request count and a findings count from random numbers every two seconds until it reported “completed”. Also in this file:
+
+- `GET /alerts` returned two sample attacks (“SQL Injection Detected”, “Brute Force Attack”) to any account with no alerts. It returns an empty list.
+- `GET /threats/feeds` returned three well-known feeds as active with invented indicator counts. It returns the feeds the account added.
+- `GET /ai/agent/status` reported “4 active models”, an uptime of “4h 23m” and an activity log, and said the agent was running whenever the ML service was up. It reports whether this account's agent exists and is running, whether the ML service answers, and the account's task counts.
+- Acknowledging or dismissing an alert did not check whose alert it was. Both now answer 404 unless it is the caller's. Nothing writes to that store today, so no data was exposed.
+
+**Three route groups, 37 routes.** `/api/domain-intel`, `/api/threat-hunting` and `/api/scraping` are built on three services that do no work: `DomainIntelligenceService` decides `isPhishing` and `isMalware` with `Math.random()`, `IOCAnalysisService` marks each source malicious at random, `ThreatHuntingService` and `WebScrapingService` advance a progress figure and add findings at random. Every route in the three files now answers 501 after the session check, through one line at the top of each file. **The simulating code is still in the repository**, unreachable, as an outline of the API. Deleting the three services and their handlers is the cleaner end state and is the owner's call.
+
+**`routes/features.js`.** Five routes answer 501: request replay (it stored a copy marked as answered with status 200 without sending anything), automation run and logs (“completed” after two seconds, with three stock log lines), and export (“completed” with a random file size and a download link to nothing).
+
+**`routes/analysis.js`.** `GET /api/analysis/stats` returned five fixed zeros. It now counts the signed-in account's stored analyses.
+
+**`services/otx.js`.** Each threat event had a random latitude and longitude as its origin and San Francisco as its destination, labelled “your network”. Coordinates are now null and there is no destination: no location is looked up. A failed read from OTX was returned as an empty list, which reads as “no threats”; it is now an error (502, or 503 when no key is configured).
+
+**Checked.** `tests/contracts/no-invented-data.test.js` (24 tests): each retired route answers 401 without a session and 501 with one, with a reason and no data; the gate line comes before the first route in each of the three files; alerts and feeds are empty for a new account; agent status has none of the invented fields, and the ML service being up does not make the agent “running”. One test in `websocket.test.js` for the four requests, one in `private-routes.test.js` for the counted statistics.
+
+**Gate.** `npm run validate:updates` passes: 109 files, **447 tests across twenty-three suites** (304 security, 143 contract).
+
+**Not done.**
+
+- Not deployed. The backend needs `npm --prefix backend run heroku:deploy`.
+- B08.5: several screens still draw from random numbers or samples (listed in the checklist). They were found while closing this entry and have not been changed.
+- `getAnalysisStats` in `analysisController.js` is imported by the route file and unused; it filters on a field the model does not have and would throw on this version of Mongoose. Other methods in that controller filter on the same wrong field and therefore find nothing. That is a correctness defect in a feature no client uses, recorded here and not fixed.
+
+### 16.39 October 13, 2026 — F31: two OTX keys were in the public repository
+
+**Found** while removing the random coordinates from `services/otx.js` (16.38).
+
+- `backend/src/services/otx.js` read `process.env.OTX_API_KEY` and fell back to a key written on the same line. The Heroku app had no `OTX_API_KEY`, so that written key is the one production has been using.
+- `desktop/ui/pages/loading.html` and `threat-globe.html` each held a different key in a constant and passed it to the native `otx_fetch` command, which called OTX directly.
+
+Both are in the history of a public repository. **They are disclosed, and changing the files does not change that.** Neither value is repeated in this document.
+
+**What changed.**
+
+- **Backend.** The key comes from the environment and nowhere else. Without one the service makes no call to OTX: its methods fail with `OTX_NOT_CONFIGURED`, the routes answer 503, and polling does not start.
+- **Desktop.** The app holds no OTX key. `otx_fetch` asks the backend (`GET /api/otx/pulses`, with the session) and then geolocates the indicators as before. Before sign-in it returns “sign in to load threat intelligence”.
+- **Heroku.** `OTX_API_KEY` is now set on the app, to the key the deployed code was already falling back to (release v14, configuration only; `/health` answered 200 afterwards). This changes nothing about what the app sends; it moves the key out of the source so that the next deploy, which has no key in it, keeps the intelligence feed working. It is a bridge until the key is replaced, not a fix.
+- **Guard.** `tests/security/no-embedded-credentials.test.js` (9 tests) reads every source file of the backend, the desktop app and the mobile app and fails if a long literal is assigned to anything named like a key, secret, token or password, including the `process.env.X || '…'` form this one was written in. It also checks that the backend without a key calls nothing, and that the desktop command names no key and no OTX address.
+
+**The owner has to do the rest:**
+
+1. In the OTX account (otx.alienvault.com → Settings), generate a new API key. This invalidates the old one. If the two disclosed keys belong to two accounts, do it in both.
+2. Set the new key on the app: `heroku config:set OTX_API_KEY=<new key> -a cyberforge`, and in `backend/.env` for local runs.
+3. Deploy the backend so the fallback line is no longer in the running code.
+
+**Consequences to know about.**
+
+- Until the backend is deployed and the desktop app rebuilt, nothing changes for users.
+- After both, the Threat Globe needs a signed-in session and a backend with a valid key. It no longer falls back to OTX's “activity” and “search” listings, which the old command tried when the subscribed list was empty.
+- The loading screen warms the globe's data before sign-in. That request now returns “sign in”, and the globe loads its data when it opens instead.
+- The mobile app already went through the backend and is unaffected.
+
+**Not checked.** The new `otx_fetch` compiles and is covered by a source check; it has not been run against the backend, because the app was not built. The rest of the git history was not searched for other keys; the guard covers the current files only.
+
+### 16.40 October 13, 2026 — B08.5, first part: the Model Inference page
+
+**What was wrong** (`desktop/ui/pages/model-inference.html`). The page opened showing “4.8k inferences/s across 4 served models”, “36 ms p95 · GPU batch=32” and “98.6% mean accuracy, rolling 24h”. None of the three is measured anywhere; the latency figure was never replaced, and the other two were overwritten after the first status check with “LIVE” and, when the service gave no count, “5 served”. Each of five model rows had a chart drawn from random numbers and its own latency (“~40ms”). The “Inference Throughput” chart was a line of random numbers updated every 0.7 seconds under a LIVE badge. A status call that got no answer left the page saying “Serving”.
+
+**Now.**
+
+| Part | What it shows |
+| --- | --- |
+| First figure | Scans seen on the live feed since the page opened: a count of events |
+| Second figure | ML service: healthy, degraded or unavailable, with the time it was checked |
+| Third figure | Models loaded, only when the service states a number; otherwise “—” |
+| Rows | The five endpoints the service offers, as a list. Each badge follows the health of the service as a whole (“service up”, “degraded”, “no answer”), because that is all that is known. No per-row chart, rate, accuracy or latency |
+| Chart | Scans seen in the last 60 seconds, in 5-second columns; with none, “No scans seen in the last 60 seconds” |
+| No answer | Shown as “unavailable”, apart from “degraded” (the service answered and did not report healthy) |
+
+**Checked.** The page's script was run against a stand-in for the browser's document in four states: no answer, healthy with four models reported, answered but not healthy with no count, and three scans arriving. Each showed the figures in the table and nothing else. Two source checks were added to `desktop-truthfulness.test.js`. The gate passes: 109 files, **449 tests across twenty-three suites** (304 security, 145 contract).
+
+**Not checked.** Not seen in a built app. The shape of the status answer was read from the code that produces it, not from a live call.
+
+**Still open in B08.5:** `sandbox.html` invents a process number and animates activity bars at random while a scan runs; `threat-globe.html` draws an arc between an unrelated origin and destination when a pulse names only one of them; `installer.js` advances its progress bar by random steps; `memory.html` and `browser-intelligence.html` use random numbers in what may be decoration only; the mobile app has an unused `Sparkline` component drawn from random numbers.
+
+### 16.41 October 13, 2026 — Release v15 checked live; the OTX keys are not yet replaced
+
+**Deployed by the owner:** backend release v15 (the changes of 16.36, 16.38 and 16.39).
+
+**Checked on the live backend** with one throwaway account, removed afterwards by its exact IDs (8 real users remain; the Appwrite database is empty again). 20 of 21 checks pass:
+
+- **Policy actions.** `/api/policy/meta` marks two action types supported, `log_response` and `notify_soc`. An evaluation that fired two policies returned one `applied` (`notify_soc`, by `live-feed`, with a full receipt) and one `unsupported` with its reason. Nothing is `executed`.
+- **Retired routes.** Nine sampled across `child-pages.js`, the three simulated groups and `features.js` answer 401 without a session and 501 with one, with no data.
+- **A new account** has no alerts. Agent status returns five fields that can be read back and none of the invented ones. Analysis statistics are counted.
+- **OTX.** Pulses arrive through the backend. Threat events carry null coordinates and no destination.
+
+**The one failure was the check, not the release, and it found something.** `GET /api/threats/feeds` does not reach the handler in `child-pages.js`: `routes/threats.js` is mounted first at `/api/threats` and its `GET /:threatId` takes the request, reading “feeds” as a threat ID. The same is true of `GET /api/threats/map`. Both handlers in `child-pages.js` are therefore unreachable in production, and always were. The tests did not show it because they mount each route file alone. No client calls either address. Not fixed: the right fix is to decide which file owns `/api/threats/*`, not to reorder the mounts.
+
+**OTX keys (F31): not done.** The app's `OTX_API_KEY` is still one of the two disclosed keys, and `backend/.env` now holds the same value. Release v15 no longer has a key in its code, which is the part a deploy can fix. The disclosure is only undone by generating a new key in the OTX account and setting it on the app and in `backend/.env`. Until then, anyone who read the repository's history can use the account's key.
+
+**Environment note.** On this machine Node could not resolve the database's SRV record (`EBADRESP`) while the system resolver could; public resolvers failed the same way from Node. The cleanup was run with the non-SRV form of the address built from the system resolver's answer. This does not affect the deployed backend.
+
+### 16.42 October 13, 2026 — B08.5 complete: the Sandbox, Memory, Threat Globe and setup pages
+
+**Sandbox (`desktop/ui/pages/sandbox.html`).** The page said “ISOLATED VM”, “Win11 x64 · 4 vCPU · 8 GB”, “SNAPSHOT v04”, and while a scan ran it printed eleven lines on a timer (“restoring clean Win11 x64 memory snapshot”, “attaching syscall + API hooks”, “injecting behavioural monitor”), showed a random process number, moved four bars labelled CPU, MEM, NET and DSK at random, and stepped through “Detonating in isolated VM…”. What it does is ask the backend to scan a URL. Nothing is opened in a virtual machine.
+
+- The claims are gone: the badge reads “URL SCAN”, the panel “URL Scan · NO VM”, the button “Scan”, and the machine line “remote fetch · no virtual machine”.
+- While a scan runs the console says it was requested and that no step is reported until it finishes. When it finishes it adds whether the backend models answered and whether the page was fetched, then the verdict.
+- The four bars stay at rest, with the reason in their tooltip.
+- **Left as it is:** the page and its sidebar entry are still called “Sandbox”, and the Agent Core page still lists “Sandbox Detonation” as a capability (marked not configurable). Renaming the feature is the owner's decision. The animated ring and the moving dots on the wire are decoration and remain.
+
+**Memory (`memory.html`).** It opened with “48,210 memories, +312 today”, “1,536 d”, “8 ms avg kNN lookup” and “128k associations”. After the first read it replaced two of them with “55 recalls/min” and “1 ms”, also fixed. The graph was 46 random dots with random links. A “recall” line naming a memory picked at random was added every 1.4 seconds.
+
+| Part | Now |
+| --- | --- |
+| Total, dimensions | Read from the local store (the dimension is 128) |
+| Third figure | “Last Search”: how long the last search on this page took and how many it found |
+| Fourth figure | “Last Sync”: the result of the last sync with the backend, with the reason when it was not done. The footer no longer says “synced” unconditionally |
+| Map | One dot per stored memory (newest 160), coloured by kind, larger for higher recorded risk; a line joins memories in the same category. Position is layout only. A dot lights when a search returns it |
+| List | The searches made on this page. The agent's own recalls are not reported to the page, and it says so |
+| Bar | The split of the store by kind |
+
+**Threat Globe (`threat-globe.html`).** A pulse that named origins but no targets was joined to a target picked at random from another pulse; one with targets only was joined to a random origin, or its target countries were joined to each other. An arc is now drawn only when the same pulse names both ends.
+
+**Setup wizard (`scripts/installer.js`).** The install step played nine phases on a timer with a random increment: “Extracting program files — 1,842 files”, “Registering CyberForge Sentinel service — service ok”, “Provisioning local threat database — 48k IOCs”, “Verifying installation integrity — SHA-256 ok”. Setup does two things: it adds the program to the PATH if asked, and it records that setup is complete. The step now lists those two with what each returned, and says so when one fails. The “Security baseline: calibrated” row is removed from the system scan. The summary no longer says the PATH was registered when there is no result.
+
+**Mobile (`components/ui.tsx`).** The `Sparkline` component drew random points. Nothing uses it. It now draws the values it is given and nothing with fewer than two.
+
+**Left as decoration:** the dots that travel between the centre and the real domain names on `browser-intelligence.html`, and animation timing on several pages.
+
+**Checked.** Each page's script was run against a stand-in for the browser's document. Memory: three stored memories give a total of 3, dimension 128, three dots; a search shows its count and time; a refused sync shows “Not done · not signed in”. Sandbox: a scan in which nothing could be checked ends “not verified”. Setup: both steps succeeding, the PATH update failing, and the completion marker failing each show the true result. Eight source checks were added to `desktop-truthfulness.test.js`. `cargo check` passes. Gate: 109 files, **455 tests across twenty-three suites** (304 security, 151 contract).
+
+**Not checked.** None of these pages has been seen in a built app. The mobile change was not type-checked (the mobile app has no installed packages on this machine).
+
+### 16.43 October 13, 2026 — B06 complete: desktop tokens are in the credential store and nowhere else
+
+**What was wrong (F09), and it was worse than recorded.** The desktop app was written to save its tokens in the operating system's credential store and, “as a fallback”, in files. The credential store was never used. `Cargo.toml` asked for `keyring = "3"` with no features, and that crate, built without a platform feature, substitutes an in-memory stand-in that accepts a value and forgets it when the program exits. `Cargo.lock` confirms it: the crate was built with no Windows, macOS or Linux dependency. So for every user, on every platform:
+
+- the backend session token was in `session.json`, in plaintext, and nowhere else;
+- the Hugging Face token was in `hf_config.json` (with the previous four tokens beside it as “history”) and again in `session.json`;
+- a comment in the code blamed “a real failure mode we hit on Windows” on the keychain. It was this.
+
+Separately, the Settings screen asked for the saved Hugging Face token and was sent all of it, to pre-fill an input box.
+
+**What changed** (`desktop/src-tauri/src/auth.rs`, rewritten).
+
+- **The real store.** The crate is now built with the Windows, macOS and Secret Service features. A source check fails if any is removed, or if `Cargo.lock` shows the crate built without them.
+- **Every write is read back.** A value is saved only if a second, independent read returns it. The stand-in store fails exactly that check, so the old defect cannot recur silently.
+- **Session token:** credential store only. The cached profile, which is not a secret, stays in `session.json` so the app can still open offline.
+- **Hugging Face token:** credential store only. `hf_config.json` in the app's folder remains as an import slot: a token pasted there is moved to the credential store at the next start and removed from the file, so the old way of changing the token still works without leaving it on disk. A file a developer places beside the app, or names in `HF_CONFIG`, is read and left alone, like the `HF_TOKEN` variable.
+- **When the store does not work:**
+  - *Signing in:* the session lasts until the app closes. The sign-in result carries `sessionSaved: false` and the reason, and the sign-in and registration pages show it before opening the app. Nothing is written to a file instead.
+  - *Saving a Hugging Face token:* it fails with the reason, says nothing was written, and names the environment variable as the alternative.
+  - *Settings → Security* shows whether the credential store works, tested with a throwaway entry, and why not when it does not.
+- **Settings is sent a masked preview and the source,** never the token. The input box is empty, with “saved — paste a new token to replace it”.
+
+**Migration.** It happens when a token is first read, with no step for the user:
+
+| Found on disk | Credential store works | Credential store does not work |
+| --- | --- | --- |
+| Session token in `session.json` | Moved, read back, then removed from the file; the profile beside it is kept | Used for this launch, then removed from the file anyway: a session token can be had again by signing in |
+| Hugging Face token in `hf_config.json` or `session.json` | Moved, read back, then removed from both, with every older token in the history list | Used, and **left in the file**, because it is the only copy of a secret the user supplied. Settings says it is in plaintext and why |
+
+**Also found and fixed: F32.** The app copies browser history into `history_collection.json`, lists it, and sends addresses from it to be scanned, with whatever was in the address bar. Credentials are now removed from every address when history is collected, before it is kept, listed, scanned or written: parameters named like a credential or a one-time code, values shaped like a token whatever they are called, tokens used as path segments or returned in the fragment, and `user:password@` in the address. The host, path and ordinary parameters are kept. Run over the file on the development machine, printing counts only: 6,570 addresses, 1,845 changed, 29 holding a session-token-shaped value before and none after. The existing file is replaced the next time the app collects history.
+
+**Checked.**
+
+- `cargo test --lib`: 29 pass. Fourteen are the credential rules, run against a store that works, one that refuses and one that forgets: nothing is on disk after a save; a refusal is an error and nothing is written instead; the forgetting store is caught; both migrations in both columns of the table; sign-out removes the token and the profile; the order of sources for the Hugging Face token; an override file is never rewritten. Five are the address redaction, including that ordinary addresses and search queries are unchanged.
+- **The real Windows credential store**, on this machine: one throwaway entry written, read through a second handle, deleted, and confirmed gone. Nothing of the app's is left in Credential Manager.
+- Source checks (`backend/tests/contracts/desktop-credentials.test.js`, 6 tests): the build features, no token written to a file by the storage module, every sign-in path reports whether the session was saved, the token is not sent to a page, Settings shows the store's state, and history addresses are cleaned before anything else uses them.
+- Gate: 110 files, **461 tests across twenty-four suites** (304 security, 157 contract).
+
+**Not done, not checked.**
+
+- The app was not built or run. The migration has been exercised on test directories, not on a real profile. This machine has no token in either file to migrate.
+- macOS and Linux are untested. Linux builds now need the D-Bus development package, and a desktop session with a Secret Service running.
+- Windows Credential Manager holds at most 2,560 bytes per entry. A session token is a few hundred. One that did not fit would be reported as not saved.
+- The sign-in commands still return the session token to the page, which the live feed needs until B00d moves it into the native layer.
+- The mobile app uses the platform's secure storage on a phone and browser storage when run as a web page; the web case is not addressed.
+- Other local stores (`memories.json`, the history file itself) are not encrypted, and the capture certificate's key still has a fixed password. Those are the rest of SEC-03.
+
+### 16.44 October 13, 2026 — B00d.1 complete: the live feed is read natively, and no page holds the session token
+
+**What was wrong (F26).** Every page loaded `cf-realtime.js`, which opened the backend's event stream from inside the page. The app's content security policy lets a page talk only to the app itself (`connect-src 'self' ipc: http://ipc.localhost`), so in a built app that connection is refused and the live feed never arrives. To make the attempt at all, the page asked the native layer for the session token.
+
+**What changed.**
+
+- **One native connection** (`desktop/src-tauri/src/stream.rs`, new). A task started with the app waits for a signed-in session, opens `/api/stream` with the session in the `Authorization` header, and forwards each event to every window as the Tauri event `cf-stream`. It reports its state as `cf-stream-status`, with the reason when it is not connected, and answers a `stream_status` command for a page that loads after it connected.
+- **Reconnection** with a wait that grows from 1 to 30 seconds. The ID of the last event received is sent in `Last-Event-ID`, so the server replays what was missed, once. A position in one account's feed is discarded when another account signs in.
+- **Sign-out and silence.** A quiet connection checks every 5 seconds that the session it belongs to is still the one signed in, and closes if not. The server sends a keep-alive every 25 seconds; 70 seconds with nothing at all is treated as a dead connection.
+- **A refused session** (401 or 403) is reported as refused and retried slowly. The existing session check decides whether to sign the user out.
+- **Pages only listen** (`ui/scripts/cf-realtime.js`, rewritten). The same DOM events are dispatched as before (`cf:scan`, `cf:alert`, `cf:threat`, `cf:event`, `cf:stream-status`), so the 14 pages that use them are unchanged. A page makes no network request. Opened outside the app, the status reads “no live feed outside the desktop app”.
+- **No page is given the session token.** With the feed native, nothing in a page needs it. The `auth_get_token` command and `CF.getToken` are removed, and the sign-in, registration and Google sign-in results no longer carry the token. This closes the item left open in 16.43.
+- The backend's one-time stream ticket (16.24) is now used by no client. It stays, for a client that can only use an address.
+
+**Checked.**
+
+- `cargo test --lib`: 39 pass. Ten are the feed: frames read as the server writes them; keep-alives are not events; bytes split at every possible position, including inside a character, give the same frames; the session goes in a header and nothing about it is in the address; the last position is sent on reconnect and moves forward; a refused session forwards nothing; the server's reason for closing is kept; an open connection ends within one check of the account signing out; an unreachable server is retried.
+- **Against the live backend.** One throwaway account was registered, its session handed to the Rust reader, and one policy evaluation made for it. The reader reported: connected, `metrics:update`, `alert:new` (the notification published by the policy executor of 16.36), then ended when the session was signed out, with its position kept. The account was removed afterwards (8 real users remain; Appwrite is empty).
+- The page script was run with a stand-in for the desktop runtime and without one: events are re-dispatched under the same names, the status follows the native layer, and the page made no network request in either case.
+- Contract tests rewritten for the new arrangement, and one added: no script or page under `desktop/ui` calls `fetch`, `EventSource`, `WebSocket` or `XMLHttpRequest`; nothing hands the token to a page. Gate: 110 files, **462 tests across twenty-four suites** (304 security, 158 contract).
+
+**Not done: B00d.2, the packaged-build check.** Nothing here has run inside a built app. To confirm:
+
+1. In `desktop`, run `npm run build:debug` (or `npm run build`) and start the built app, not `tauri dev`.
+2. Sign in. The “live” indicator in the header should turn on within a few seconds. If it does not, its tooltip or the `cf:stream-status` reason says why.
+3. Run a scan from the Analyzer. It should appear in the live activity list without a refresh.
+4. Sign out. The indicator should turn off within about 5 seconds.
+
+**Known limits.**
+
+- A page that is open when an event arrives receives it; a page opened later does not see earlier events, as before.
+- The floating panel and any other window receive the same events. Nothing is filtered per window.
+- On a network that drops long-lived connections, the feed reconnects and replays; events older than the server's replay window are not recovered.
+
+### 16.45 October 13, 2026 — B09.2 complete: Compose, the desktop build document, root dependencies
+
+**Compose (`docker-compose.yml`).** The file described a system that is not in this repository: PostgreSQL (the backend uses MongoDB), `backend/Dockerfile` (absent), a `landing-page` folder (it is `cyberforge-landing`, and is not a service), `nginx.conf` and an `ssl` folder (absent), an ML container (ML code is not run locally), `AI_SERVICE_URL` (the backend reads `ML_SERVICE_URL`), and the signing secret `your-production-jwt-secret`, which the backend refuses to start with. No line of it could have worked.
+
+It is replaced with what local development needs: the backend, MongoDB 7 and Redis 7. The backend reads `backend/.env` and is given the two container addresses in place of whatever the file says. The database and cache are not published to the host. `backend/Dockerfile` (Node 24, production dependencies, runs as the `node` user) and `backend/.dockerignore` (keeps `.env` and `node_modules` out of the image) are new.
+
+**Not run.** Docker is not installed on the development machine. Neither file has been used to build or start anything, and both say so at the top. What is checked is the class of defect the old file had: `tests/contracts/compose.test.js` (6 tests) fails if a build context lacks its Dockerfile, a mounted path or copied file does not exist, an `.env` file has no committed example, the database is not the one the backend uses, the port differs from the server's, a secret appears in the file, or the image's Node version differs from the backend's. The first `docker compose up --build` is the real test.
+
+**`desktop/BUILD.md`.** The README pointed to it for build, signing, first-run and uninstall details. It did not exist. It is written from what the repository contains and from what was run: prerequisites for the three systems, running and testing, what `npm run build` produces on each, that nothing is signed as configured, the variables read at start, where credentials are kept and under what names, the data folder, first run, and uninstall. It states at the top which steps were run (Windows: compile, tests, development run) and which were not (an installer build; anything on macOS or Linux).
+
+**Uninstall scripts.** Since 16.43 the tokens are in the credential store, which deleting the data folder does not touch. `uninstall.ps1` and `uninstall.sh` now remove the two entries (Credential Manager, the Keychain, or the Secret Service through `secret-tool`). Both scripts parse; neither was run, because running them removes the app's data.
+
+**Root package.** `axios`, `concurrently` and `lerna` were declared and used by nothing; they are removed, and the lock file is about 7,000 lines shorter. `heroku` stays: `backend/scripts/push-heroku-config.js` falls back to it when no Heroku command is installed.
+
+**README.** The backend section told the reader to start the ML service locally with `python main.py`. It now gives the backend steps, points to Compose with its caveat, and says the ML service is hosted. “Block / Protect / Allow” is “Block / Save / Allow”, and the note on the assistant's token says where it is kept.
+
+**Checked.** `tests/contracts/workspace-scripts.test.js` gains two tests: the root package declares only `heroku`, and every file the README links to or names exists. Gate: 111 files, **470 tests across twenty-five suites** (304 security, 166 contract).
+
+**Seen and left alone** (tracked files at the repository root that nothing uses; removing them is the owner's decision):
+
+- `patch_bind.js` edits `desktop-app/src/renderer/cyberforge-app.js`, a path that no longer exists.
+- `_otx50.json` and `_otx_sub.json` are saved responses from OTX (public threat data, no keys).
+- `desktop/package.json` lists `heroku` as a dependency of the desktop app, which does not use it.
+- The root package's description and keywords still describe an Electron, React and TensorFlow application.
+- `ml-services/Dockerfile` and the root scripts `dev:ml`, `start:ml` and `test:ml` start the ML service locally, which this project does not do.
+
+### 16.46 October 13, 2026 — B05 complete and B10 started: identities, workspaces, migrations, scoped repositories
+
+**F31 follow-up: the OTX keys are still live.** The owner reported the key rotated. Checked by asking OTX itself, printing statuses only: the key that was in `services/otx.js`, the key that was in the two desktop pages, and the key the deployed app is using are all still accepted (HTTP 200), and the app's key is still one of the two disclosed ones. Whatever was changed did not replace these two keys. F31 stays open.
+
+#### B05: an email address does not select an account
+
+**What was wrong.** `POST /api/auth/google/token` exchanged a Google authorization code, read the Google account's address, and signed the caller in to whatever account had that address: `User.findOne({ email })`. It also wrote Google's ID for the caller to a `googleId` field that the account schema does not have, so the ID was discarded and the next sign-in matched by address again.
+
+The consequence: anyone can register an account with a password for an address they do not own (registration does not verify the address). When the address's real owner later signs in with Google, they are placed in that account, which the first person can still open with the password. The owner's scans, memory and alerts from then on are shared with them.
+
+**What changed.**
+
+- **One place for identities** (`models/IdentityLink.js`, `services/workspaceService.js`). An outside identity (the Appwrite user made at registration, a Firebase user, a Google account) is recorded against the internal account ID by the provider's own stable ID for it. The database enforces that one such ID maps to one account. It is never moved to another.
+- **Google sign-in** looks the caller up by Google's ID. Found: that account, even if its address has since changed. Not found, and an account with the same address exists:
+  - with a password: refused (409, `ACCOUNT_EXISTS`). Who set the password cannot be known from here. Nothing is linked or changed.
+  - already linked to a different Google account: refused. An address can pass from one person to another; the account does not.
+  - with no password and no Google link: this is an account made by an earlier verified provider sign-in, from before links were recorded. It is linked now, once.
+- **Registration** records the Appwrite identity it creates.
+
+**Not done.** There is no way yet for a signed-in user to connect Google to an account that has a password; the refusal says so. The desktop's Google flow still has no `state` or PKCE (noted in the plan's verification targets). Registration still does not verify the address.
+
+#### B10.1: workspaces and migrations
+
+- **Models.** `Workspace` (one personal workspace per account, enforced by a unique index), `Membership` (which account may act in which workspace, and as what; the authority for access), `IdentityLink`, and `MigrationRecord` (the ledger). The account gains `defaultWorkspaceId`, a pointer that saves a query and grants nothing.
+- **The principal.** `req.user.workspaceId` is the signed-in account's own workspace, taken from the account record. `requireWorkspace` (new middleware) is for routes whose records belong to a workspace: it creates the workspace for an account that predates them, checks for an active membership, and overwrites any `workspaceId` in the query or body, as `bindVerifiedUser` does for `userId`. Registration and password sign-in create the workspace too; a failure there is logged and does not undo the sign-in.
+- **Migrations** (`src/migrations/`, `scripts/migrate.js`). Numbered files run in order. The default is a dry run that reads and reports; `--apply` changes data and records the migration in the ledger; `--status` lists them. A migration that throws is not recorded and runs again.
+- **Migration 001** gives every account its workspace and owner membership and records the Appwrite and Firebase identities already stored on accounts. It adds two collections and one field and changes nothing that exists. An identity held by two accounts is given to neither and both are listed; an identity already linked elsewhere is not taken. After applying, it checks that accounts, personal workspaces and owner memberships are equal in number and fails if not.
+
+**Dry run against the real database** (reads only): 8 accounts, 8 workspaces to create, 1 identity link to create, none set aside. Only one account has a stored Appwrite identity; the other seven predate it. The database's name is `test`, the driver's default, because `DATABASE_URL` names none; worth setting before more collections are added.
+
+#### B10.2: the repository base
+
+`repositories/workspaceRepository.js` wraps a model whose records belong to a workspace. Every method takes the principal and adds its workspace to the query. Another workspace's record is not found, not changed and not deleted. The workspace, the ID and the creator cannot be set from the fields a handler passes; a filter cannot name a workspace or use a top-level operator such as `$or`; a listing is a page of at most 200. With no workspace on the principal, every method throws. **Nothing is built on it yet.** It exists so that the next stores are, instead of on a process-wide `Map`.
+
+**Checked.**
+
+- `tests/security/workspaces.test.js`, 19 tests: one workspace per account under repeated and concurrent creation; a missing membership or pointer is repaired; a suspended membership is not access; identities cannot be moved or shared; the request's workspace is the caller's whatever the query, body or a header names; the migration's dry run changes nothing, its applied run is recorded and not repeated, and the two set-aside cases.
+- `tests/security/account-linking.test.js`, 9 tests: the Google rules above, including that a refusal carries no token and changes nothing.
+- `tests/security/workspace-repository.test.js`, 6 tests.
+- One existing test asserted the old behaviour (a Google sign-in entering a password account by address) and now asserts the refusal.
+- These run against an in-memory stand-in for the collections that enforces unique indexes the way the database does. The service and the migration were also run, read-only, against the real database through the real driver.
+- Gate: 125 files, **504 tests across twenty-eight suites** (338 security, 166 contract).
+
+**Also fixed here.** `desktop/BUILD.md` (16.45) was being ignored by git: the repository ignores every Markdown file except four named ones. That is the likely reason the README pointed at a file that was never there. The build guide is now an exception, and the README-links test fails for a linked file that git would ignore.
+
+**To do after the next backend deploy (B10.3).** The new code does not need the migration first: an account without a workspace gets one at its next sign-in or first use. The migration brings the rest into line and records the identities.
+
+```bash
+heroku run -a cyberforge "node scripts/migrate.js"            # dry run: what it would do
+heroku run -a cyberforge "node scripts/migrate.js --apply"    # do it and record it
+heroku run -a cyberforge "node scripts/migrate.js --status"
+```
+
+From a development machine it is `npm --prefix backend run migrate` (add `-- --apply`), which uses the database in `backend/.env`.
+
+**Not done.**
+
+- Not deployed, and the migration is not applied.
+- No route uses `requireWorkspace` yet and no store is workspace-scoped: records are still keyed by account. For a personal workspace the two are the same set of records, which is why this can be introduced without changing behaviour.
+- The Appwrite collections still key documents by account ID. Whether they gain a workspace field is part of B10.4.
+- Team workspaces, invitations and roles inside a workspace are not offered.
+
+### 16.47 October 14, 2026 — Release v16 live; migration 001 applied
+
+**Deployed by the owner:** backend release v16, with everything since v15 (16.43 to 16.46 on the backend side: the workspace model, identity links, the Google sign-in rule, the migration runner, the repository base).
+
+**Migration 001 applied** on the deployed app (`heroku run -a cyberforge "node scripts/migrate.js --apply"`), after a dry run on the same app gave the result expected from 16.46. Its own check passed: 8 accounts, 8 personal workspaces, 8 active owner memberships. One identity link was recorded; nothing was set aside. `--status` shows it applied at 13:16 UTC, and a second run reports nothing waiting.
+
+How it went, for next time: the first attempt failed because the release that contained the script had not been deployed. In the second, the `--apply` command was typed while the dry run's session was still attached, so it became that session's input and never ran. Each `heroku run` should be started after the previous one has returned.
+
+**Checked live** with one throwaway account, removed afterwards by its exact IDs, including its workspace, membership and identity link:
+
+- Registration returns the new account's workspace, and signing in returns the same one.
+- Policy responses still report `applied` and `unsupported`; a retired route still answers 501; OTX answers through the backend; `/health` is 200.
+- The database built every index the new collections declare: one personal workspace per account (a partial unique index), one membership per account and workspace, one account per provider identity, one ledger entry per migration.
+
+**State after cleanup:** 8 accounts, each with a workspace pointer; 8 workspaces; 8 memberships; 1 identity link; 1 ledger entry. The Appwrite database and its users are empty, as before.
+
+**Not checked live:** the Google sign-in rules (no Google client is configured for a test), and a team workspace (none exist).
+
+### 16.48 October 14, 2026 — B10.4, first store: the audit trail is durable, scoped and written by the server
+
+**What was wrong.**
+
+- The audit log (`services/auditLogService.js`) was an array in process memory, capped at 10,000 entries and emptied by every restart; on Heroku, at least daily. Its own comment said “in production, back with Appwrite collection for persistence”.
+- No server code wrote to it. A helper meant for other routes (`req.auditLog`) was attached only to requests already inside `/api/audit`, so nothing used it. The only entries were a “system started” line and whatever a client posted.
+- Any analyst could read every account's entries, and the statistics named the most active accounts.
+
+**What changed.**
+
+- **Stored in the database** (`models/AuditEvent.js`, collection `audit_events`). Each event records its scope (a workspace, or the platform), actor (an account, or the system), action, resource, outcome, origin (`server` or `client`), bounded details, a correlation ID (Heroku's request ID when it has one) and the client address. Events expire after 90 days through a database index.
+- **Append-only, as far as the application goes.** Every update and delete operation on the model is refused before it reaches the database, and so is saving a changed event. There is no route that changes or deletes one. This is not tamper-proof storage: anyone with write access to the database itself can alter it, as SEC-08 notes.
+- **Written by the server where things change:**
+  - registration;
+  - sign-in by password or Google, including a wrong password for an existing account;
+  - sign-out;
+  - policy created, updated or deleted (platform events, because policies apply to everyone);
+  - each policy response, with its outcome (applied, failed, unsupported);
+  - the server starting.
+
+  Workspace events go to the workspace of the account concerned. A refused Google sign-in records nothing in the existing account's workspace.
+- **Read by scope.** A member reads their own workspace's events and statistics (`GET /api/audit/logs`, `/stats`), built on the workspace repository of 16.46, so naming another workspace in the request changes nothing. The platform view (`?scope=platform`), which includes every workspace and the most active accounts, is for administrators. An analyst asking for it is refused, not quietly narrowed.
+- **Client reports** (`POST /api/audit/log`) are kept in the caller's workspace with `origin: 'client'` and the session as the actor. A client cannot report an action the server records itself (`auth.*`, `policy.*`, `system.*`).
+- **No credentials in details.** Keys named like a secret (password, token, key, code, authorization, cookie and similar) are replaced; long strings are cut; anything over 4 KB keeps only its keys.
+- **Recording never fails the operation** it records. A failure is logged.
+
+**Checked.**
+
+- `tests/security/audit-events.test.js`, 16 tests: recording in each scope; resolving an account's workspace when the request has none; never throwing; details cleaned and bounded; correlation IDs validated; a member sees only their workspace whatever the query names; filters narrow and cannot widen; the platform view and its statistics for administrators only; client reports marked and restricted; no route changes or deletes an event; the model refuses all seven update and delete operations and a changed save, checked with no database connected so the refusal cannot be the database's; the expiry index.
+- The ownership suite's audit test now asserts the new rule: an account's own statistics, its own policy responses in its trail, and the platform view refused to an analyst and given to an administrator.
+- A Google sign-in is recorded in the account's workspace, and a refused one records nothing.
+- Gate: 127 files, **521 tests across twenty-nine suites** (355 security, 166 contract).
+
+**Not done.**
+
+- Not deployed. After the next deploy the collection and its indexes are created on first use; there is no data to migrate, because the old log never survived a restart.
+- Only the actions listed above are recorded. Changes to devices, agents, approvals and enforcement will be added as those features are built; role changes have no route yet.
+- No integrity checkpoints or export. Retention is a fixed 90 days.
+- No client reads the trail yet.
+
+### 16.49 October 14, 2026 — Release v17: the audit trail checked live
+
+**Deployed by the owner:** release v17 (16.48).
+
+**Checked live** with one throwaway account, removed afterwards with its workspace records and its seven audit events. 15 of 15 checks pass:
+
+- The trail, read back by the account, held what the server saw: registration; a failed sign-in for a wrong password; the sign-in; two policy responses, one applied and one unsupported, recorded as success and warning; and one client report.
+- The client report was marked `client`, and its `token` detail was stored as `[redacted]`.
+- Every event had a correlation ID.
+- A client could not report a sign-in (400).
+- The statistics matched the trail: 6 in total, 4 successes, 1 failure, 1 warning.
+- The platform view was refused to a member (403), and deleting an event through the API found no route (404).
+- Signing out was recorded.
+
+**In the database:** `audit_events` has its three indexes, including the one that expires events after 90 days. The only event left after cleanup is v17's own "server started" record, which is a platform event.
+
+### 16.50 October 14, 2026 — B10.4, second store: policies and their responses are kept in the database
+
+**What was wrong (F12).** The policy engine kept its policies, the log of responses and the cooldowns in process memory. Every restart dropped the responses and any policy an analyst had created or changed, and created the five built-in policies again under new IDs. Analysts could read every account's responses.
+
+**What changed.**
+
+- **Policies** are records in `policies`. They are platform-wide, as before, so they have no workspace. The five built-in policies are created once, keyed by a stable name. An administrator's change to one, such as disabling it, survives restarts. They still cannot be deleted. The engine reads the policies at most every 30 seconds and at once after a change it made.
+- **Each response** is a record in `response_actions`, in the workspace of the account whose risk event fired the policy. It is read through the workspace repository of 16.46, and expires after 90 days.
+- **A response is recorded before it is carried out.** The executor's outcome (applied with its receipt, failed with its reason, or unsupported) is written to the same record. If the response cannot be recorded, it is not carried out, and it is reported as failed with that reason. The "log response" executor now verifies by reading its record back from the database.
+- **A policy update is validated as strictly as a new policy.** Before, `PUT` accepted any trigger or action, including one the engine could not evaluate.
+- **Who reads what**, the same rule as the audit trail:
+  - a member reads their own workspace's responses and response counts;
+  - every workspace's responses (`?scope=platform`) are for administrators only, and an analyst is refused;
+  - the policies themselves stay readable by every signed-in account, and manageable by analysts and administrators.
+- **Cooldowns stay in memory.** Losing them on a restart only lets one response through a few minutes early.
+- The engine and its routes are now asynchronous. The responses keep their shape (`policies`, `log`, `total`, `data`, `timestamp`), which the desktop's `policy.rs` and the Security Functions page read.
+
+**Checked.**
+
+- `tests/security/policy-actions.test.js`, rewritten, 23 tests. They run the real storage code against the in-memory stand-in for the database. Covered:
+  - the eight outcome rules from 16.36, plus an executor that returns a promise of nothing;
+  - policies and responses outlive the engine that made them, as they will a restart, with trigger counts kept;
+  - each workspace sees only its own responses, and the platform view and statistics see all;
+  - a response that cannot be recorded is not carried out;
+  - the built-in policies are not duplicated, and an administrator's change to one survives;
+  - invalid updates are refused;
+  - cooldowns still apply per account;
+  - through the API: "Notify SOC" applied and failed, the response log by workspace, and the platform view for administrators only.
+- The ownership suite's response-log test now asserts the new rule: an analyst sees their own workspace (empty), is refused the platform view, and an administrator's platform view holds every response.
+- Gate: 129 files, **529 tests across twenty-nine suites** (363 security, 166 contract).
+
+**Not done.**
+
+- Not deployed. On the first start after deploying, the engine creates the five built-in policies in the database. No data is migrated: the old responses never survived a restart.
+- Policies are still platform-wide; per-workspace policies would need a workspace on the policy and a rule for which ones apply.
+- Sandbox evidence is the last in-memory store named in B10.4.
+
+### 16.51 October 14, 2026 — Release v18: policies and responses checked live
+
+**Deployed by the owner:** release v18 (16.50).
+
+**Checked live** with two throwaway accounts, removed afterwards with everything they made. 12 of 12 checks pass:
+
+- **Policies.** The five built-in policies exist once each, with stable IDs, created by the engine on its first start against the database.
+- **Evaluation.** An evaluation fired two policies: "Escalate Alert" was unsupported and "Notify SOC" was applied by `live-feed`. Each response carried its workspace.
+- **Responses read back from the database.** Each account saw only its own workspace's responses, and the stored "Notify SOC" response kept its status and receipt.
+- **Platform view.** It was refused to a member.
+- **Statistics.** They counted this workspace's responses, one applied and one unsupported. The trigger counts were stored on the policies.
+- **Cooldown and roles.** The cooldown held on a second evaluation, and a member could not create a policy.
+
+**Cleanup.** The two accounts, their workspaces, memberships, identity links, six audit events and four responses were removed by exact ID. The two built-in policies' trigger counts were set back to zero, from the test's own responses counted per policy. Their "last triggered" time cannot be restored and shows the test's time. 8 accounts remain.
+
+### 16.52 October 14, 2026 — B10.4, third store: sandbox evidence kept in the database, with a fingerprint
+
+**What was wrong (F12, SEC-08).** Sandbox scans (the evidence from each URL or file analysis: the verdict, the indicators, the attack-technique mapping, the findings) were kept in a ring of 200 in process memory. The oldest were dropped silently, all were lost on restart, and a deleted scan left no trace.
+
+**What changed.**
+
+- **Stored in the database** (`models/SandboxScan.js`, collection `sandbox_scans`), in the workspace of the account that ran the scan, read through the workspace repository. Records expire after 90 days, by a database index.
+- **A fingerprint of the evidence.** When a scan is stored, a SHA-256 of its evidence (every field, in a canonical form) is stored with it. Every read recomputes it and reports `integrity: { algorithm, evidenceHash, intact }`. A record changed after collection reads as not intact. This detects a change; it does not prevent one, and anyone able to rewrite the record could rewrite the hash too.
+- **Deleting a scan leaves a minimal audit event** (`evidence.delete`, server-recorded): what was deleted, by whom, its verdict, when it was collected, and its fingerprint. Clients cannot report `evidence.*` events.
+- **A scan that cannot be stored is an error**, not a result: evidence that was not kept is not reported as kept. A scan needs a signed-in account with a workspace.
+- **History, indicators and the technique heatmap** cover the workspace's scans. The two summaries are counted over the latest 200 scans and say so in the code.
+- **`/api/sandbox/health`** reports the workspace's stored count and the retention period, instead of a ring capacity.
+- **Response shapes are unchanged**, so the mobile app's calls to `/api/sandbox/history` and `/api/sandbox/iocs` keep working.
+- **The repository base** gains `findOne` and `deleteOne` by a plain filter, for records with their own public ID; both are scoped like the rest.
+
+**Checked.**
+
+- The ownership suite's sandbox tests now read the stored records. They cover:
+  - a scan is stored for the account that ran it, in its workspace, and reads as intact;
+  - another account gets "not found" for reading or deleting it;
+  - history, indicators and heatmap are per workspace;
+  - a scan with no account is not kept, and a read with no workspace is refused;
+  - a record changed after collection reads as not intact, and as intact again once restored;
+  - the owner's deletion leaves an `evidence.delete` event with the target and fingerprint.
+- One repository test for the new methods.
+- The route-inventory check now accepts a router-wide guard followed by further checks, such as `requireWorkspace`.
+- Gate: 130 files, **531 tests across twenty-nine suites** (365 security, 166 contract).
+
+**Not done.**
+
+- Not deployed. Whether a real database round trip keeps the fingerprint intact is checked live after the deploy. Mongo might, for example, store a value in `mlReport` differently from how it was sent.
+- No export with a verifiable manifest yet (SEC-08's acceptance), and no link from reports to evidence IDs.
+
+### 16.53 October 14, 2026 — Release v19: sandbox evidence checked live
+
+**Deployed by the owner:** release v19 (16.52).
+
+**Checked live** with two throwaway accounts, removed afterwards. 13 of 13 checks pass:
+
+- **Stored and fingerprinted.** A URL scan was stored with its verdict (malicious), four indicators and two techniques, and returned with a SHA-256 fingerprint marked intact.
+- **The fingerprint survives the database.** The scan read back with the same fingerprint, still intact, and with the same verdict, indicators and target. This was the open question in 16.52: the canonical form holds across a real database round trip.
+- **Isolation.** The other account was told the scan did not exist, could not delete it, and had an empty history.
+- **Summaries.** The workspace's history listed the scan. Its indicator summary and technique heatmap were built from the stored scan. `/health` reported one stored scan and 90 days' retention.
+- **Deletion.** The owner deleted it, after which it was not found. The audit trail held a server-recorded `evidence.delete` with the same target and fingerprint.
+
+**Cleanup:** the accounts, their workspaces, memberships, identity links and three audit events were removed by exact ID. The scan had already been deleted by the test. 8 accounts remain.
+
+**State of the batch items:** B00 to B10 are all complete except B00d.2, the look at the live feed in a packaged desktop build, which needs the app built.
+
+### 16.54 October 14, 2026 — Release acceptance checklist marked against the evidence
+
+With the batch items done, section 14's checklist was gone through item by item. An item is ticked only where this section records a test or a live check that shows it; the others say what is missing.
+
+| Group | Ticked | Open |
+| --- | --- | --- |
+| Reachable system | 3 of 6 (4 after 16.56) | the packaged desktop build (B00d.2), the backend's call to an ML route that does not exist, which engine answered (F28) |
+| Connected security baseline | 5 of 8 (7 after 16.55 and 16.56) | a cross-account test for capture data; a review of fetch and render trust boundaries (SEC-04); the backend's rule-based score when ML fails |
+| Devices and agents | 0 of 7 | not started: this is M2 and M3 |
+| Product experience | 0 of 7 | partial work on metrics and documentation noted on the items; the rest not started |
+
+**What this says about where the work is.** The batch was the M0/M1 baseline, and that is what is now mostly ticked. The open items in the first two groups are small and specific. The last two groups are the product milestones (M2 devices, M3 agents, M5 experience) and need design decisions before code.
+
+### 16.55 October 14, 2026 — F27: the backend's model client calls the route that exists; capture ownership tested
+
+**What was wrong.** `services/cyberforgeMLService.js` is the client behind the sandbox, the threat service and the `/api/cyberforge-ml` routes. It asked each model for a score by posting to `/predict`, a route the ML service has never had. Every call failed, and the client answered for the model with a local rule of thumb (`predictLocal`). The result carried the model's name, so the four "model" scores in every URL report came from the same few lines of arithmetic. When nothing answered, those scores were low, and the URL was reported as "allow" and "clean". The ML contract test checked two other clients and not this one, which is how it was not caught. This was recorded as open in 16.23 and 16.34.
+
+**What changed.**
+
+- **The model's own route.** Predictions go to `POST /api/models/predict` with the model's name. A URL is sent as-is, so the service computes the features each retrained model was trained on; otherwise the features are sent by name. What the service says about its answer is kept: `ml_model` when a trained model answered, the service's own rule-based estimate labelled as that, and any missing features.
+- **A model that does not answer is unavailable.** It has no score and an `unknown` risk level, and it is not a finding. The local rule of thumb is used only when a caller asks for it explicitly, and is then labelled `local-heuristic`.
+- **Verdicts come from the models that answered.** The URL verdict is built from those alone, with the number stated (`models_answered`). With none, the result is `unknown`: no score, and no "allow". The sandbox turns an unknown result into an `unknown` verdict instead of `clean`, and the threat service ignores a model that did not answer.
+- **The contract test now covers this client.** Every route it calls must be one the ML service defines.
+
+**Capture ownership (checklist item).** `tests/security/capture-ownership.test.js`, 3 tests:
+- flows are stored for the account that sent them, whatever account the body or the flows name, with no permission granted to any client;
+- the live copy goes only to the sender's own devices;
+- another account reads none of them, whatever it asks for;
+- nothing is stored or read without a session.
+
+**Checked.**
+
+- `tests/contracts/ml-client-routes.test.js`, 7 tests: the client calls only routes the service has, and `/predict` is gone; the request carries the model and the URL; without a URL the features go by name, and the service's labels are kept; a failed request or an answer without a score makes the model unavailable, not guessed; with no model answering the verdict is `unknown`, and so is the sandbox's; with some models answering, only those count.
+- Gate: 132 files, **541 tests across thirty-one suites** (368 security, 173 contract).
+
+**Not done.** Not deployed. The live check after deploying is a URL scan through the sandbox, whose report should show `inference_source: "ml_model"` for the retrained models instead of `local-heuristic`.
+
+### 16.56 October 14, 2026 — Release v20: the trained models answer the backend
+
+**Deployed by the owner:** release v20 (16.55).
+
+**Checked live** with one throwaway account, removed afterwards. Two URL scans went through the sandbox, which uses the backend's model client. 6 of 6 checks pass:
+
+| Address | Phishing | Malware | Anomaly | Web attack | Verdict |
+| --- | --- | --- | --- | --- | --- |
+| `http://198.51.100.7/secure-login/paypal.com/verify.php?account=1` | 0.995 | 1.000 | 0.557 | 0.000 | malicious |
+| `https://www.wikipedia.org/` | 0.001 | 0.001 | 0.327 | 0.000 | clean |
+
+- **Every score came from the ML service's trained models** (`inference_source: "ml_model"`), and all four answered (`models_answered: 4`). None came from the backend's local rule of thumb. Before v20 all four came from it, under the models' names.
+- **The verdicts are the expected way round.**
+- The web-attack model gives both addresses almost nothing. That is right: neither contains an injection or script payload.
+
+**Checklist:** "every ML path exists" and "model failure cannot produce a false clean state" are now ticked.
+
+**What remains open in the first two groups of the checklist:**
+- the packaged desktop build (B00d.2);
+- which engine produced an AI answer (F28);
+- a review of the trust boundaries for fetching and rendering (SEC-04).
+
+### 16.57 October 14, 2026 — F28 (labels): every assistant answer says which engine produced it
+
+The decision in section 15 asks for two things at M0a: report the engine that actually answered, and label the desktop's direct calls as a separate, user-supplied feature. Both are done here. Choosing one engine order for agents is M3.
+
+**What was wrong.**
+
+- **The backend mislabelled its main path.** Its chain for scan summaries called the ML service's chat route and labelled every answer `ZySec-AI/SecurityLLM`, a model nothing in this project runs. The service answers with its open-source model (`unsloth/Qwen3.5-2B-GGUF`, run in the Space) or, when that does not answer, with a rule-based summary. Both were labelled ZySec.
+- **The desktop named DeepSeek wherever it could.** Its assistant page showed "DeepSeek" as the model before any answer, in the footer and in Settings ("DeepSeek-V3"), whoever answered. Without the user's own Hugging Face token, every answer came from the ML service.
+- **The floating panel guessed the engine from substrings of the model name.**
+
+**What changed.**
+
+- **One description of the engine** (`backend/src/services/answerEngine.js`). Each answer carries `engine: { id, kind, where, model, label }`. It is worked out from what the answering side said about itself, never from what the product would like:
+
+  | Engine | Kind | Label shown |
+  | --- | --- | --- |
+  | The ML service's model | language model | "Qwen3.5-2B (open-source, in the CyberForge ML service)" |
+  | The ML service's rule-based summary | fixed text | "Rule-based summary from the ML service: no language model answered" |
+  | The backend's reference text | fixed text | "Built-in reference text: no language model answered" |
+  | The backend's template text | fixed text | "Template text: no language model answered" |
+  | A hosted model configured on the server | language model | e.g. "gemini-2.5-flash (hosted by Google, configured on the server)"; not configured in the deployed app |
+  | DeepSeek with the user's own token (desktop only) | language model | "DeepSeek-V3-0324 (sent from this app to Hugging Face with your own token)" |
+
+- **Where the description goes:**
+  - the chat route (`/api/cyberforge-ml/v2/security-chat`) and the backend chain both attach it;
+  - orchestrator reports carry it as `summaryEngine`;
+  - the desktop's direct DeepSeek path attaches its own description, including when it fails.
+- **The screens show it.**
+  - The assistant page writes "Answered by: …" under every answer, with a warning mark when no language model answered.
+  - Its badges show the last answer's engine; they show "—" before any answer.
+  - Agent Core writes the engine under each answer, and the floating panel shows what was reported.
+  - Settings says "Answers come from: the ML service's open-source model, or DeepSeek directly if you save your own token".
+  - The token panel says what the token changes: with it, questions go from the app straight to Hugging Face instead of to the ML service.
+
+**Checked.**
+
+- `tests/contracts/answer-engine.test.js`, 8 tests:
+  - the ML service's answers are named from their own fields;
+  - the backend chain labels the model, the rule-based summary and the template correctly, and nothing as ZySec;
+  - the chat route names the engine in all three cases;
+  - the desktop's direct path names itself on success and on failure;
+  - the pages no longer carry a fixed "DeepSeek".
+- `cargo test --lib`: 39 pass. Gate: 134 files, **549 tests across thirty-two suites** (368 security, 181 contract).
+
+**Not done.**
+
+- Not deployed, and the desktop app has not been built.
+- The engine order itself is unchanged: a configured hosted model first, then the ML service, then template text, as section 15 describes.
+- `ml-services/eval/eval_harness.py` still names DeepSeek; it is a test harness, not something a user sees.
+- Keeping the small model's answers advisory in agent use is M3.
+
+### 16.58 October 14, 2026 — Release v21: answers name their engine, checked live
+
+**Deployed by the owner:** release v21 (16.57).
+
+**Checked live** with one throwaway account, removed afterwards. 5 of 5 checks pass:
+
+- **A chat question** ("what is a DGA domain?") was answered through `/api/cyberforge-ml/v2/security-chat`. The answer carried `engine: ml-service-model`, a language model, `unsloth/Qwen3.5-2B-GGUF`, labelled "Qwen3.5-2B (open-source, in the CyberForge ML service)". That is the model the ML service runs. Nothing in the response mentions ZySec.
+- **An orchestrator analysis** carried `summaryEngine` with the same engine for its written summary.
+
+**Still unchecked:** what the desktop screens show, which needs a built app.
+
+### 16.59 October 14, 2026 — SEC-04, fetching: a scan cannot be aimed at an internal or private destination
+
+**Where fetching happens.**
+
+- **The backend fetches no user-supplied address itself.** Every page scan goes to the rendered-page scanner through one function, `WebScraperAPIService.scrapeWebsite`, called from six places: the agent scan routes (two), the agent, the orchestrator and the AI routes (two).
+- **The ML service does not fetch pages.** It computes features from the text of the address.
+- **The desktop fetches pages from the user's own machine** when it scans a visited address. That is the "explicitly scoped local capability" SEC-04 allows for private networks, so it is not restricted here.
+- **The scanner's transport was already HTTPS-only** (F19): a plain-HTTP scanner address makes the scanner unavailable instead of being used.
+
+**What was missing.** The backend sent whatever address it was given to the scanner. The scanner refuses internal destinations on its side, but the backend did not check, and an internal host name was handed to an outside service.
+
+**What changed** (`backend/src/services/destinationPolicy.js`, applied at the top of `scrapeWebsite`). Before anything is sent, the address is checked. Refused:
+
+- schemes other than `http` and `https` (`file:`, `ftp:`, `gopher:`, `javascript:`, `data:`), and any user name or password in the address;
+- internal names: `localhost` and `*.localhost`, `*.local`, `*.internal` (including `metadata.google.internal`), `*.home.arpa`, `*.lan`, `*.intranet`, `*.corp`, and any name without a dot;
+- addresses that are not public, in every form the URL parser accepts. `2130706433`, `0x7f000001`, `0177.0.0.1` and `127.1` all become `127.0.0.1` and are refused. Covered:
+  - IPv4: loopback, private, carrier-grade NAT, link-local (including the cloud metadata address `169.254.169.254`), benchmarking, multicast and reserved;
+  - IPv6: loopback, unspecified, link-local, unique-local and multicast, plus IPv4 written as IPv6 (`::ffff:…`, `::a.b.c.d`, `64:ff9b::…`);
+- names that resolve to any such address, including a name with one public and one private address.
+
+A refused scan reports `status: "refused"` with the reason ("not scanned: …"), and the page evidence is marked skipped. Nothing is sent to the scanner. A name that does not resolve is passed on: the scanner fails to load it and says so.
+
+**Limits stated in the code.** The check is made when the request is sent. The scanner resolves the name again when it connects, so DNS rebinding between the two is the scanner's own check to stop. Documentation ranges such as `198.51.100.0/24` are not refused: they are not internal, and the live tests use one.
+
+**Checked.** `tests/security/destination-policy.test.js`, 60 tests, with a stubbed resolver (no test touches DNS):
+- 24 private and internal addresses in their different forms, and 5 public ones;
+- 9 internal names, and 5 public-looking names that resolve to private addresses;
+- 9 refused schemes, credentials and malformed addresses;
+- the scanner client refuses four kinds of target without sending anything, and sends a public one on.
+
+The existing scanner contract suite passes unchanged. Gate: 136 files, **609 tests across thirty-three suites** (428 security, 181 contract).
+
+**Still open in SEC-04 and SEC-05:**
+- upload validation beyond the existing 50 MB limit;
+- treating file names and report cells as untrusted output;
+- per-workspace quotas on scans;
+- the desktop's content policy, which allows inline and evaluated scripts, and its `innerHTML` rendering paths (F18).
+
+Not deployed.
+
+### 16.60 October 14, 2026 — SEC-04, uploads and quotas: bounded uploads, untrusted names, per-workspace limits
+
+**What was there.** The sandbox upload took a file of up to 50 MB with no other limit on the form. The file's name was stored and shown exactly as sent, including path parts and control characters. Metadata was any JSON at all, silently ignored if it did not parse. The type came from the name and the client's claimed type. Analyses were limited only per IP address (100 requests per 15 minutes server-wide, 50 on the AI routes), which does not bound one account and lets one account use up everyone else's allowance behind a shared address.
+
+**Uploads** (`backend/src/routes/sandbox.js`, `backend/src/services/uploadPolicy.js`):
+
+- **The form:** one file of at most 25 MB, plus at most one small field (16 KB). Anything more is refused before analysis starts, as JSON: `413 LIMIT_FILE_SIZE`, or `400` with multer's code (`LIMIT_FILE_COUNT`, `LIMIT_PART_COUNT`, …). An empty file is refused.
+- **The file name is untrusted text.** It keeps its last path part only, loses control characters and the Unicode characters that reorder or hide text (the right-to-left override U+202E makes `invoice` + U+202E + `fdp.exe` display as `invoiceexe.pdf`), and is cut to 200 characters with its extension kept. An empty result becomes `unnamed`. Names are now read as UTF-8; multer's default read them as Latin-1, which garbled every non-ASCII name (found by the new test).
+- **The claimed type** is cut to 100 characters of type-name characters.
+- **Metadata** must be a JSON object. It keeps at most 20 keys of at most 64 characters, with string (at most 500 characters), number or boolean values. Keys starting with `$`, keys with dots, and nested values are dropped. Anything that is not an object is refused with 400.
+- **The type is read from the content.** The first bytes are matched against 13 signatures (Windows, Linux and macOS executables, PDF, ZIP, OLE, RAR, 7z, gzip, PNG, JPEG, GIF, scripts), else text or binary. The result is stored as `mlReport.detectedType`. New findings:
+  - a name that disagrees with the content ("named .pdf but its content is a Windows executable: a disguised executable");
+  - an executable with no extension, or sent with an image, text, audio or video type;
+  - an archive, which is stated as not unpacked: what is inside a ZIP, RAR, 7z or gzip file is not analysed.
+
+  These go into the scan's findings, which already feed the verdict, so no evidence field was added and existing scans' fingerprints stay valid.
+- URL scans in the sandbox take an address of at most 2048 characters and the same bounded metadata.
+
+**Quotas** (`backend/src/middleware/analysisQuota.js`). Per workspace, counting analyses rather than requests:
+
+- **at most 60 analyses in any 10 minutes** (`ANALYSIS_QUOTA`, `ANALYSIS_WINDOW_MS`); a batch counts once per URL, and a batch that would go over is refused whole;
+- **at most 3 running at once** (`ANALYSIS_CONCURRENCY`); a slot frees when the response finishes or the client disconnects.
+
+Over either limit: `429`, code `QUOTA_EXCEEDED`, a `Retry-After` header and the limits in the body. Nothing is started. Applied to:
+- `/api/agent/scan-url` and `/scan-url/batch`;
+- `/api/orchestrator/analyze`;
+- `/api/sandbox/analyze/url` and `/analyze/file` (before the upload is read);
+- the eight AI analysis routes: `/api/ai/analyze/url`, `/analyze/file`, `/analyze/network`, `/analyze-website`, `/analyze-website-ml`, `/scan-threats`, `/scan-threats-ml` and `/scrape-website`.
+
+The per-IP limits stay. Chat is not counted. The counts are kept in the web process's memory: the deployment runs one web process, and with more they would move to Redis.
+
+**Checked.** `tests/security/upload-and-quota.test.js`, 35 tests:
+- 9 file names (path traversal, Windows paths, right-to-left override, NUL and line breaks, leading dots, empty, zero-width only) and the 200-character cut;
+- metadata bounds and 4 refused shapes;
+- 9 content types;
+- the disguised-executable, wrong-claimed-type and archive findings;
+- the quota: the sixth analysis refused with `Retry-After` while another workspace is unaffected, batch weighting, the concurrency limit and its release, and no counting without a signed-in user;
+- the real sandbox route, through a real multipart upload: a disguised executable named `..\..\invoice` + U+202E + `fdp.pdf` is stored as `invoicefdp.pdf` with `detectedType: "pe"`, the disguised-executable finding, cleaned metadata and an intact fingerprint; a second file, non-object metadata, an empty file and a file over 25 MB are refused before the model is called.
+
+The ownership suite, which runs real scans through these routes, passes unchanged. Gate: **644 tests across thirty-four suites** (463 security, 181 contract).
+
+**Still open in SEC-05:** the desktop's content policy, which allows inline and evaluated scripts, and its `innerHTML` rendering paths (F18). File names and report cells are now cleaned when stored; how the pages render them is that review.
+
+Not deployed (with 16.59).
+
+### 16.61 October 15, 2026 — SEC-05, rendering: outside text is shown as text, and the content policy runs only the app's own scripts
+
+**What was there.** The desktop's content policy allowed inline and evaluated scripts (`script-src 'self' 'unsafe-inline' 'unsafe-eval'`, F18). Every page carried its code in an inline `<script>` block. The pages write HTML through `innerHTML` in 189 places, and four escape helpers differed: some escaped `"`, some did not, and some only removed `<` and `>`.
+
+**Content policy** (`desktop/src-tauri/tauri.conf.json`):
+
+- **Scripts:** `script-src 'self'` only: no inline and no evaluated code.
+- **Added:** `object-src 'none'`, `base-uri 'self'`, `form-action 'none'` and `frame-src 'self'` (the agent panel is a same-origin frame).
+- **Styles still allow inline** (`style-src 'unsafe-inline'`). The pages use style attributes throughout. Styles cannot run code, so this stays and is stated here.
+
+What that needed:
+
+- **The 23 inline script blocks moved into files**, with their code unchanged: `ui/scripts/pages/<page>.js` and `ui/scripts/components/agent-panel.js`. Each page loads its file at the same position, so the code runs at the same moment as before.
+- **The only two inline handlers** (`onsubmit="return false"` on the sign-in and registration forms) became listeners.
+- **Nothing in the app evaluates code.** The one `new Function` in the bundled d3 is its CSV parser, which no page calls.
+- **The agent panel asked Google Fonts for its fonts.** The policy already blocked that, so the panel fell back to system fonts. It now uses the bundled fonts like every other page.
+
+**Rendering.** The 189 HTML writes were listed with a parser (Babel) and every value that is not escaped was traced to its source. Four places put outside text into the page as markup. Each was confirmed by loading the page before the fix with hostile records (an `<img onerror>` in each field) and seeing the markup rendered, then again after the fix:
+
+1. **Alerts and evidence** rendered alert descriptions, sources, device IDs and confidence from the backend and the live feed as raw HTML (list and detail).
+2. **Investigations** rendered backend threat titles, IDs, steps, entities and IOCs as raw HTML.
+3. **Incident timeline** rendered threat titles, descriptions and categories as raw HTML.
+4. **Memory** rendered each memory's text, category, kind and risk as raw HTML. Memories are written from scans, so a hostile page title or URL reached this page.
+
+Two more were weaknesses rather than open holes:
+
+- **The assistant's markdown** escaped text before formatting but not `"`, and links from model text go into `href="…"`. An answer containing `[x](https://a.example/"onmouseover="…)` gained an event-handler attribute. The policy now blocks such handlers too, but the escaping is fixed regardless.
+- **The agent panel's activity log** wrote the scanned address (from the active browser tab) and its category as HTML. It now adds the line as a text node. The panel's verdict, actions bar and browser list are escaped too.
+
+Smaller fixes:
+
+- The shared Block/Save/Allow bar (`CF.threatActions`) only removed `<` and `>` from the host, and put the risk in raw. Both are now escaped.
+- The policy form's options from the backend's metadata are escaped.
+- The signal pipeline and scheduled pages now escape rather than strip.
+- Backend counts written into HTML (agent count, cooldown count, trigger count, latency) are made numbers first.
+- The alert popup highlights the host through a function, so `$` in a host name is not read as a replacement pattern.
+
+**One escaper.** `CF.esc` in `cyberforge-shared.js` escapes `& < > " '`. It is safe in text and in quoted attributes, and the fixed pages use it. The assistant's `escHtml` is now `CF.esc`. The agent panel is a separate frame without the shared script, so it has its own copy of the same function.
+
+**What remains unescaped**, 230 values in 29 files, was reviewed. They are the pages' own icons and SVG geometry, labels the pages define, local counts and times, and HTML assembled from escaped parts. They are listed in `backend/tests/security/fixtures/desktop-html-reviewed.json`.
+
+**Checked.**
+- **`tests/security/desktop-rendering.test.js`, 14 tests:**
+  - the policy's script, object, base and form directives;
+  - no page or script needs what the policy refuses: no inline script, no inline or string-built event handler, no `javascript:` address, no stylesheet from another origin, no evaluated code;
+  - `CF.esc` itself;
+  - the memory and incident renderers, taken from the page scripts and given four hostile values, produce no tag or handler outside a quoted value;
+  - an assistant answer cannot add attributes through a link address;
+  - **every value written into HTML without an escaper must be on the reviewed list.** A new one fails the gate, and so does a list entry the code no longer has.
+- **The page source checks** (truthfulness, credentials, answer engine) now read each page together with its moved script (`tests/helpers/desktopPage.js`). A check that something is absent therefore cannot pass on the HTML alone.
+- **The changed pages, run with hostile backend records** in a stand-in DOM: memory, alerts, investigations, incident timeline and scheduled render no markup and throw nothing.
+- **Every moved script passes a syntax check.**
+
+Gate: **658 tests across thirty-five suites** (477 security, 181 contract).
+
+**Not checked:** the policy in a packaged build. Tauri adds its own hashes to the policy at build time, and how the pages load under it has to be seen in the built app (B00d.2). Also not checked: model links inside the assistant, which open with `target="_blank"`. Where the webview sends them is part of that same check.
+
+**Still open in SEC-05:**
+- ~~The alert popup's commands~~: done in 16.62.
+- **Input validation inside each Tauri command.**
+- ~~Hosts-file update hardening~~: done in 16.64.
+
+Desktop only: no backend deploy needed for this entry.
+
+### 16.62 October 15, 2026 — SEC-05: the alert popup can call only its own four commands
+
+**What was there.** One capability file (`capabilities/default.json`) gave both windows, the main window and the threat-alert popup (`cf-threat-alert`), Tauri's defaults. Tauri checks the app's own commands per window only when the app lists them in `build.rs`, and this app did not. So any page in either window could call any of the 60 commands. That includes reading the AI token, signing out, editing the hosts file, adding the app to the PATH, reading browser history and changing policies.
+
+**What changed:**
+
+- **`build.rs` lists the 60 commands** registered in `lib.rs` (Tauri's app manifest). Tauri then refuses any call that the calling window's capability does not grant, before the command runs.
+- **Two capability files replace the one:**
+  - `capabilities/main.json`: the main window, which includes the agent panel frame inside it. It keeps Tauri's defaults and is granted every command, so nothing the app does today is lost.
+  - `capabilities/threat-alert.json`: the popup gets `get_pending_threat`, `block_site`, `protect_site` and `allow_site` (what its page calls), plus closing its own window.
+- **The popup no longer has Tauri's defaults.** They include sending events, and the main window listens for `cf-stream` and `cf-telemetry`. A popup that could send those could feed the main window invented threats and telemetry.
+- **Windows manifest.** On Windows (MSVC) the application manifest (Common Controls v6, the same content as tauri-build's default) is now embedded by the linker into every target instead of by tauri-build into the app executable only. Without it the test binary cannot start (`STATUS_ENTRYPOINT_NOT_FOUND`). The built executable was checked to carry the manifest once.
+- **`desktop/BUILD.md`** says how to add a command: lib.rs, build.rs, then the capability.
+
+**Checked:**
+
+- **`cargo check`:** tauri-build accepted both capability files. It refuses a capability that names a permission that does not exist.
+- **`src/acl_tests.rs`, on Tauri's mock runtime with the app's real permission set:**
+  - the popup's own command works;
+  - the main window can call that command and the others;
+  - 18 other commands are refused for the popup with "not allowed", including the AI token, sign-out, unblock, PATH, history, memory, policy, scan and chat.
+
+  The sensitive commands are not registered in the test, so nothing sensitive can run even if the check failed. **The test was shown to catch a mistake:** granting the popup `hf_token_get` made it fail, with the call getting past the permission check.
+- **All 40 desktop Rust tests pass** (3 ignored, as before).
+- **`tests/contracts/desktop-capabilities.test.js`, 6 tests:**
+  - build.rs lists exactly the commands lib.rs registers;
+  - two capability files, one per window;
+  - the main window is granted every command;
+  - the popup is granted exactly its four commands and close;
+  - the popup page calls only those and loads only its own script;
+  - every command any page calls is registered, since an unlisted one would now be refused.
+- **Gate:** 664 tests across thirty-six suites (477 security, 187 contract).
+
+**Not checked:** a packaged build (B00d.2). The mock runtime uses the same permission resolution as the real one, but the popup has not been opened in the built app.
+
+**Still open in SEC-05:**
+- input validation inside each Tauri command;
+- hosts-file update hardening.
+
+Desktop only: no backend deploy needed for this entry.
+
+### 16.63 October 15, 2026 — Release v22: uploads and quotas checked live; the destination refusal was hidden by the scanner's state
+
+**Deployed by the user as v22** (16.59 and 16.60). Checked with one throwaway account against the live backend, then removed by exact ID. Removed: the account, its workspace, membership and identity link, 6 sandbox scans, 1 audit event and 1 Appwrite alert. The 8 real accounts remain.
+
+**Passed live (10 of 12):**
+
+- **A disguised executable upload** (an MZ file named `..\..\invoice` + U+202E + `fdp.pdf`):
+  - stored as `invoicefdp.pdf`;
+  - `detectedType: "pe"`, with the disguised-executable finding;
+  - metadata cleaned to `{"source":"live-check"}` (the `$gt` key dropped);
+  - evidence fingerprint intact.
+- **Refused shapes:** two files in one form get `400 LIMIT_FILE_COUNT`; metadata that is not an object gets 400.
+- **Six analyses at once:** the burst came back `200 429 200 200 429 200`. The refusals carry `QUOTA_EXCEEDED` and `Retry-After`, and a later analysis runs once the burst finishes.
+- **A public address** is not refused by the destination policy.
+
+**Not seen live (2 of 12): the destination refusal.** Scans of `169.254.169.254` and `localhost` returned 200 with no refusal. The cause:
+
+- The scanner client checked its own configuration before the destination.
+- On Heroku `WEBSCRAPER_API_KEY` is not set. The scanner address was fixed in v11, but no key was ever added. The scanner is therefore "not configured" in production, and every live scan reports its page evidence as unavailable.
+- So nothing was sent anywhere and nothing leaked. But an internal target was reported as "scanner not configured" rather than refused, and the live check could not see the policy.
+
+**Fixed locally:** the destination check now comes first, so an internal or private target is reported as refused whatever the scanner's state. A test covers that case (refused with no scanner configured, while a public address still reports the scanner unavailable). Gate: 665 tests (478 security, 187 contract).
+
+**Open:**
+- **Deploy and re-check** the two destination cases.
+- **Whether production should have page scanning at all.** The key exists locally (`backend/.env`) but not on Heroku. Setting it would switch on rendered-page scanning for every live scan, using the scanner service. That is the user's decision.
+
+### 16.64 October 15, 2026 — SEC-05: hosts-file changes are staged, checked, backed up and reversible
+
+**What was there** (`desktop/src-tauri/src/blocking.rs`):
+
+1. **The elevated path was a privilege-escalation route.** Without administrator rights, the app wrote its PowerShell script and the new content to fixed names in the user's temp folder (`cf_apply_hosts.ps1`, `cf_hosts_pending.txt`), then ran the script elevated. Any program running as the same user could replace the script between the write and the UAC prompt. The user would then approve the program's code as administrator, believing it was CyberForge.
+2. **Verification was wrong.** A change counted as applied if the file contained CyberForge's start marker. After the first block the marker is always there, so a write that failed was reported as enforced.
+3. **The direct write truncated and rewrote the file in place.** A failure part-way left a broken hosts file. A hosts file that could not be read was treated as empty and overwritten.
+4. **Unrelated entries could be lost.** A start marker without an end marker made it drop every following line. Windows line endings were rewritten as bare LF.
+5. **Saved-list entries went into the hosts file unchecked.** An edited `blocklist.json` could add any line, such as a redirect for a bank's domain, with the user's administrator approval.
+6. **The lists could disagree with the hosts file.** Unblock and allow removed a domain from the list even when the hosts file could not be changed (for example, elevation cancelled), so the list said "unblocked" while the site stayed blocked.
+7. **Two changes could interleave** their read-modify-write of the lists and the hosts file.
+
+**What changed:**
+
+- **Only CyberForge's section is rewritten.** Every other line is kept exactly, with the file's own line endings. A file with an incomplete section is not changed, and the user is told which marker line to remove. A file that cannot be read is not written.
+- **Only valid domain names are written**, re-checked from the saved list on every change; anything else in the list is ignored.
+- **Direct write:** the content goes to a file beside the hosts file and is renamed over it. Then:
+  - the previous content is kept in the app's data folder: `hosts.previous`, and `hosts.original` from the first change;
+  - the file is read back, and the previous content is put back if it does not match.
+- **Elevated write (Windows):**
+  - the content is prepared in a new folder with a random 128-bit name, which cannot already exist;
+  - the elevated step is passed as an encoded command, and no script file is written;
+  - the step copies the content into the hosts folder, where an unprivileged program cannot change it, and refuses it unless its SHA-256 matches the one the app computed;
+  - it keeps `hosts.cyberforge-backup`, moves the new file into place and checks its hash, putting the backup back if it does not match;
+  - a cancelled UAC prompt is reported as such (the earlier code could not tell);
+  - paths are quoted for PowerShell, including typographic quotes;
+  - the temporary folder is removed afterwards.
+- **"Enforced" is read from the hosts file after every change, never assumed.** This applies to `block_site`, `unblock_site`, `allow_site` and `list_blocked`:
+  - a cancelled elevation leaves the domain listed as not enforced;
+  - an unblock that could not change the file keeps the domain listed as blocked and fails with the reason, which the Security Functions page now shows;
+  - an allow that could not unblock says `stillBlocked`, and the popup, the shared action bar and the agent panel say so.
+- **One change at a time:** all list and hosts changes run under one lock.
+- **The saved lists are written beside themselves and renamed into place.**
+- **The block reason is cut to 200 characters.**
+- **New direct dependencies:** `base64`, `sha2` and `getrandom`, all already in the build.
+- **Documentation:** `desktop/BUILD.md` and the data folder's `README.txt` say where the backups are and how to undo every block.
+
+**Checked.** `blocking::hosts_tests`, 7 tests:
+- a CRLF hosts file with a comment, localhost and a LAN entry survives a block and an unblock byte for byte, and gets no bare LF;
+- three kinds of incomplete section are refused, and the file is left unchanged;
+- list entries with a newline-injected redirect, a space-separated IP line, a duplicate, upper case and a non-string are kept out of the file;
+- a block and then an unblock against a scratch file: both read back correctly, `hosts.original` keeps the first content, `hosts.previous` the latest, and no staged file is left behind;
+- a hosts path that cannot be read is not written;
+- PowerShell quoting;
+- **the elevated step itself, run through real PowerShell (without elevation) on scratch files, with a `'` in the path:** it replaces the file and keeps a backup, and it refuses content swapped after preparation (exit 3), leaving the file unchanged.
+
+All 47 desktop Rust tests pass (3 ignored, as before). Gate: 665 tests (478 security, 187 contract).
+
+**Not checked:** the real UAC prompt and the real hosts file. Both need the packaged build on a test machine (B00d.2): block, cancel the prompt, approve it, unblock, and confirm the file's other lines.
+
+**Still open in SEC-05:** ~~input validation inside each Tauri command~~: done in 16.66.
+
+Desktop only: no backend deploy needed for this entry.
+
+### 16.65 October 15, 2026 — Release v25: internal destinations are refused live; the scanner key was set under a misspelled name
+
+**Deployed by the user as v25** (the destination check moved ahead of the scanner's configuration check, 16.63). Checked with two throwaway accounts, both removed by exact ID afterwards: the accounts, their workspaces, memberships and identity links, 14 sandbox scans, 2 audit events and the Appwrite records. The 8 real accounts remain.
+
+**Passed live (11 of 12):**
+
+- **Internal destinations are refused.** A scan of `169.254.169.254` comes back "not scanned: the address is internal, private or reserved", and `localhost` is refused as an internal name. A public address is not refused.
+- **Uploads behave as in v22:** a disguised executable is stored under its cleaned name, flagged as an executable, with metadata cleaned and its fingerprint intact. Two files in one upload, and non-object metadata, are refused.
+
+**The concurrency limit depends on timing when checked live.**
+- The six-request burst was not refused this time (it was in v22, 2 of 6).
+- Timed, each analysis takes about half a second on the server, while the requests reach it spread over a second or more of connection setup, so six did not overlap.
+- A burst of eight, timed, had 2 refused with `QUOTA_EXCEEDED` and `Retry-After: 5`. The app runs one web dyno, so the counts are not split between processes.
+- The limit is checked deterministically by the unit tests (16.60). The live check now reports it rather than relying on it.
+
+**The scanner key is set under the wrong name.**
+- Release v23 set `WEBSCRAPPER_API_KEY` (double P). The backend reads `WEBSCRAPER_API_KEY`, so the scanner is still "not configured" and live scans still do not load pages.
+- The value is present (51 characters, not shown). The variable needs to be renamed, and that is left to the user.
+
+### 16.66 October 15, 2026 — SEC-05: every desktop command checks what a page passes it
+
+All 60 commands were reviewed for what they take from the page and what they do with it. Most pass a page's value into a JSON request body, which the backend validates, or take nothing at all. Three did something unsafe with the value:
+
+1. **`add_to_path` let a page choose what to add to the user's PATH.**
+   - **macOS/Linux:** the folder went into a line appended to `~/.zprofile` or `~/.profile` (`export PATH="$PATH:<folder>"`). A folder name containing `"` or `$(…)` would run commands at every login.
+   - **Windows:** a `;` in the name added extra PATH entries, and relative or network (UNC) folders were accepted.
+   - **Fix:** one check (`checked_bin`) for `get_path_status`, `add_to_path` and `mark_installed`. The folder must be a full local path, with no `..`, no control characters and no PATH separator. Windows refuses network paths. macOS/Linux refuse `" $ \` and backquote, the characters the shell would read inside that line. The limit is 400 characters.
+2. **`policy_update` and `policy_delete` put the page's ID into the request path.** An ID like `../auth/logout` or `x?y` sent the request, with the user's session, to a different backend endpoint. Policy IDs are UUIDs, so an ID must now be 1–64 letters, digits, `-` or `_`.
+3. **`memory_save` stored whatever a page sent.** Text, URL and category were unbounded, and any kind was accepted. These are kept on disk and shown on several pages.
+   - **Now:** text up to 4,000 characters, URL up to 2,048, category up to 64; kind must be episodic, semantic or procedural; risk is kept within 0–100.
+   - The pages' own saves (`CF.remember`, the globe's OTX intel) trim to that limit first, so nothing they save is refused.
+
+**Smaller bounds:**
+
+| Command | Now |
+| --- | --- |
+| `ml_security_chat` | query up to 32,000 characters; `max_tokens` 1–4,096 (it is paid for on the user's own token) |
+| `ml_classify_url`, `ml_url_enrich`, `scan_url` | URL up to 2,048 characters; `scan_url`'s browser name up to 64 |
+| `ml_detect_dga` | domain up to 253 characters |
+| `ml_ioc_scan` | each of URL, domain, IP and hash bounded |
+| `set_hf_token` | 8–512 printable characters, no spaces (it becomes an Authorization header) |
+| `resolve_ip` | host up to 253 characters, no spaces |
+| `memory_search` | query cut to 1,000 characters; 1–100 results |
+| `memory_list` | 1–500 results |
+| `policy_response_log` | 1–200 entries |
+
+Control characters other than line breaks and tabs are refused in text inputs. The checks live in one module, `src/input.rs`.
+
+**Already safe, and left as they were:**
+- `otx_fetch` and `get_browser_history` already clamped their counts.
+- The block, save and allow commands check domains (16.64).
+- The commands that take nothing from the page.
+
+**Checked.** 8 new Rust tests:
+- **`input::tests`:**
+  - IDs such as `../auth/logout`, `x?y=1`, `%2e%2e` and `#x` are refused;
+  - text limits and control characters (NUL, terminal escape) are enforced;
+  - counts are clamped.
+- **`system::install_dir_tests`:**
+  - **Windows:** a relative folder, a second PATH entry after `;`, network paths written with backslashes and with forward slashes, `..`, a newline and `"` are refused, as is an over-long path; a normal folder becomes `…\bin`.
+  - **macOS/Linux** (compiled only there, so not run on this machine): the `"; curl … | sh; echo "`, `$(id)`, backquote, `:` and `..` cases are refused.
+- All 52 desktop Rust tests pass (3 ignored, as before). Gate: 665 tests.
+
+**SEC-05 now:** the content policy (16.61), safe rendering (16.61), the popup's command boundary (16.62), hosts-file changes (16.64) and command inputs (16.66) are all done in code. What remains is the packaged-build check (B00d.2): the policy, the popup, a real UAC prompt on the hosts file, and the installer's PATH step.
+
+Desktop only: no backend deploy needed for this entry.
+
+### 16.67 October 15, 2026 — Two recorded defects closed: the threat feed routes, and the analysis routes
+
+Both were recorded earlier and left open (16.41, 16.38). Checked live on v25 before the change, with a throwaway account that was then removed.
+
+**Threat feeds and the threat map.** 16.41 recorded that `GET /api/threats/feeds` and `GET /api/threats/map` never reached their handlers in `child-pages.js`: `routes/threats.js` is mounted first and read "feeds" and "map" as threat IDs. Looking again showed something worse. `POST`, `PUT` and `DELETE` on `/api/threats/feeds…` did fall through to `child-pages.js`, and there:
+
+- **`PUT` and `DELETE` checked no owner.** Any account could change or delete any other account's feed, and `PUT` merged the request body into the feed, owner field included. Live: `DELETE /api/threats/feeds/<any id>` answered 200 "Feed deleted".
+- **`POST` created a feed shown as `status: "active"`** (live: 201), although nothing ever fetches a feed. The feeds lived in the web process's memory.
+- **No client calls either route.**
+
+Now:
+- Both are retired where callers actually reach them: in `routes/threats.js`, before `/:threatId`. `GET`, `POST`, `PUT` and `DELETE` on `/api/threats/feeds` and `/feeds/:id`, and `GET /api/threats/map`, answer 401 without a session and 501 with the reason.
+- The handlers and their in-memory store are removed from `child-pages.js`.
+
+**Analysis routes** (`controllers/analysisController.js`, `routes/analysis.js`). The controller used field names the model does not have (`userId`, `url`, `analysisType`, `priority`), where the model has `user`, `type` and `target.value`. As a result:
+
+- **Creating an analysis always failed** (live: 500 for `/url` and `/bulk`). The required fields were missing. It would then have called an ML endpoint, `/analyze-url`, that does not exist, invented a 0.5 confidence, and left the record "processing" for ever. `/bulk` also answered the same request once per URL.
+- **Reading or deleting one analysis never worked.** It filtered on `userId`, which no record has. An ID that is not a database ID made it fail with 500 (live).
+- **The history populated `threats`, a path the model does not have.** Mongoose 8 refuses that, so the list could not be read once an account had analyses. (A new account gets 200 because there is nothing to populate.) It also filtered on fields that do not exist and sorted by any field the caller named.
+- `getAnalysisStats`, `updateAnalysisStatus` and `triggerBatchAnalysis` were unused. The stats one would have thrown on this Mongoose version.
+
+Now:
+- **List, read and delete** work on the account's own analyses (`user`), by analysis ID or database ID. Only status and type filters are accepted, and only four fields can be sorted on. Nothing is populated.
+- **Creating** (`/url`, `/bulk`) answers 501 and names the routes that do scan: `/api/sandbox/analyze/url` and `/api/agent/scan-url`. The records come from the AI analysis service, which already writes the right fields.
+- **The unused methods are removed.**
+
+**Checked:**
+- `tests/security/analysis-routes.test.js`, 4 tests: history scoping, filters and sort; read and delete scoped to the owner by either ID; creation retired.
+- `no-invented-data.test.js` now mounts the threats router ahead of `child-pages.js`, as `server.js` does, and checks all five feed and map requests (401 without a session, 501 with one).
+- The private-routes test's stand-in query no longer expects the `populate` call.
+- Gate: **670 tests** (482 security, 188 contract).
+
+**Needs:** `npm --prefix backend run heroku:deploy`, then the same live script again.
+
+### 16.68 October 15, 2026 — Release v26 checked live; retired AI analysis routes answer 501
+
+**Deployed by the user as v26** (16.67). Checked with five throwaway accounts over three runs; all were removed by exact ID afterwards, with their workspace records, audit events and the one seeded analysis. The 8 real accounts remain, and no analyses are stored.
+
+**The ten requests from 16.67, before and after:**
+
+| Request | v25 | v26 |
+| --- | --- | --- |
+| `GET /api/analysis/history` | 200 | 200 |
+| `GET /api/analysis/stats` | 200 | 200 |
+| `GET /api/analysis/<id that is not a database ID>` | 500 | 404 |
+| `POST /api/analysis/url` | 500 | 501 |
+| `POST /api/analysis/bulk` | 500 | 501 |
+| `GET /api/threats/feeds` | 404 "Threat not found" | 501 |
+| `POST /api/threats/feeds` | 201, a feed shown as active | 501 |
+| `PUT /api/threats/feeds/<id>` | reached the unowned handler | 501 |
+| `DELETE /api/threats/feeds/<id>` | 200 "Feed deleted", for any ID | 501 |
+| `GET /api/threats/map` | 404 "Threat not found" | 501 |
+
+**History with a stored record, 8 of 8.**
+- The production database holds **no analyses at all**, so the `populate` failure had not happened yet. It would have on the first stored record.
+- Nothing writes new analyses: the AI analysis route's ML endpoint is retired. So one record was placed in the database for a throwaway account, and the checks ran through the API:
+  - the history lists it;
+  - it can be read by its analysis ID and by its database ID;
+  - a second account can neither read it, delete it, nor see it in its history;
+  - the owner deletes it, and it is then gone.
+
+**Found during the check, fixed locally:**
+- `POST /api/ai/analyze/url` answered **500** with "ML capability unavailable: …", because its ML endpoint is retired. Other retired capabilities answer 501 with the shared code. The middleware that converts such failures to 501 existed, but only `ml-training.js` used it.
+- It is now applied to the whole AI router: `/analyze/url`, `/analyze/file` and `/analyze/network` answer 501 with `CAPABILITY_UNAVAILABLE`.
+- **Test:** `tests/contracts/ai-unavailable.test.js`, 2 tests. It was shown to catch a mistake: without the middleware it fails on 500.
+- **Gate:** 672 tests (482 security, 190 contract).
+
+**Not changed:** the scanner key is still set as `WEBSCRAPPER_API_KEY`, so live scans still do not load pages (16.65).
+
+**Needs:** `npm --prefix backend run heroku:deploy` for the AI router change.
+
+### 16.69 October 15, 2026 — Device slice, increment 1: enrollment, key proof, approval and signed heartbeats (backend)
+
+The first step of the device vertical slice (section 12): the backend parts of DEV-01 and DEV-02, and the first parts of DEV-04 (signed heartbeats) and DEV-05 (revocation). Clients come next. There was no device record before this: device IDs were free strings in a few routes, and the distributed node map is left as it is for now.
+
+**New** (`models/Device.js`, `models/DeviceEnrollment.js`, `services/deviceService.js`, `routes/devices.js`, mounted at `/api/v1`):
+
+| Endpoint | Who | What |
+| --- | --- | --- |
+| `POST /device-enrollments` | signed-in member | a one-time code: 12 characters of Crockford base32 (60 random bits), shown as `XXXX-XXXX-XXXX`, with a `cyberforge://enroll?code=…` link for a QR code; expires in 10 minutes |
+| `DELETE /device-enrollments/:id` | member | cancel a pending code |
+| `POST /device-enrollments/claim` | the installation: code plus key proof, no user session | claim the code; the device waits for approval |
+| `GET /devices`, `GET /devices/:id` | member | inventory and detail, with connection state |
+| `POST /devices` | member | an inventory-only record (no key, no telemetry) |
+| `PATCH /devices/:id` | member | rename (the ID stays) |
+| `POST /devices/:id/approve` | member | activate, naming the key fingerprint shown on both screens |
+| `POST /devices/:id/revoke` | member | refuse the device's key from now on |
+| `POST /devices/:id/heartbeat` | the device, by signature | presence and what its own checks confirmed |
+
+**How it holds:**
+
+- **The code.** Only its SHA-256 is stored, bound to the workspace and the member who made it. It carries no user credential. It is typed forgivingly: any case, with or without dashes, O read as 0, I and L as 1.
+- **The claim.** The installation makes its own Ed25519 key and signs `cyberforge-device-claim-v1`, the code, its installation ID and its public key. The signature is checked before the code is touched, so a bad claim does not use it up.
+  - The code then changes from pending to claimed in **one atomic update**, so of concurrent claims exactly one wins.
+  - Expired, cancelled, used and unknown codes are each refused with their own reason.
+  - Claims are limited to 20 per 15 minutes per address.
+- **Approval.** A claimed device cannot sign in until a member approves it. The approval must name the key fingerprint (32 hex characters, the SHA-256 of the key), and it is applied only if the fingerprint still matches, so a key swapped in between is not approved.
+- **Stable identity.** One record per installation per workspace (a unique index). Enrolling the same installation again, after a reinstall that kept its ID or after a revoke, updates that record: same device ID, key version up by one, sequence reset, approval needed again. The old key stops working. Two devices with the same name remain two devices.
+- **Kinds.** `endpoint`, `backend_worker` and `inventory_only` are separate, so a server process is never shown as the user's laptop. Advertised capabilities, policy-enabled capabilities and runtime-confirmed capabilities are kept apart.
+- **Signed requests.** The device signs `cyberforge-device-request-v1`: method, path, device ID, a millisecond timestamp, a sequence number and the SHA-256 of the exact body bytes. The server captures the raw body for `/api/v1/devices` to check this.
+  - The timestamp must be within 5 minutes of server time.
+  - The sequence must be higher than the last accepted one. It is advanced in one atomic update that also requires the device to be active and the signing key to be the current version.
+  - So replayed, reordered, forged, altered, late and borrowed requests are refused, and so is a revoked device or an old key.
+- **Connection** comes from server time: online within 3 minutes of the last accepted heartbeat, stale within 24 hours, offline after that. Inventory records have no connection state, revoked devices show "revoked", and claimed devices show "awaiting approval".
+- **Audit.** Code created or cancelled, claim, approval, rename, revoke and inventory record are recorded as `device.*` events. Clients cannot post `device.*` events themselves.
+
+**Checked.** `tests/security/devices.test.js`, 14 tests, through the real routes and session check:
+- **codes:** stored only as a hash, with no JWT anywhere; three concurrent claims of one code give one 201 and two 409, with one device; a bad signature does not use the code; expired, cancelled and unknown codes are refused, and a cancel by another account is 404; the forgiving code format.
+- **approval:** a pending device cannot report; a wrong fingerprint and another account are refused; the owner approves.
+- **heartbeats:** what the device's checks confirmed is recorded; replay, lower sequence, another key, altered body, clock skew and a header naming another device are each refused.
+- **revocation:** a revoked device cannot report.
+- **identity:** re-enrollment keeps the ID and invalidates the old key; same names stay separate; rename keeps the ID; another workspace sees nothing; inventory records have no credential; connection comes from server time.
+
+The test stand-in gained `$gt`, `$lt`, `$ne` and an atomic `findOneAndUpdate`. The route inventory lists the claim and heartbeat routes as public by design, with their reasons. Gate: **686 tests** (496 security, 190 contract).
+
+**Not done in this increment:**
+- the desktop and mobile sides: generating and keeping the key in the OS credential store, the add-device screens and the approval screen;
+- key rotation, telemetry batches and outbox (the rest of DEV-04);
+- command delivery (DEV-05);
+- moving the distributed node map onto device records.
+
+**Needs:** `npm --prefix backend run heroku:deploy`. Then a live check (`live_devices.js`, prepared): code, concurrent claim, approval, signed heartbeat, replay, foreign key, listing, code reuse and revoke, against the real database and its indexes.
+
+### 16.70 October 15, 2026 — Device slice, increment 2: the desktop enrolls itself and sends signed heartbeats
+
+The desktop side of 16.69 (`desktop/src-tauri/src/device.rs`, `ui/pages/devices.html`, `ui/scripts/pages/devices.js`).
+
+**Identity:**
+
+- **The installation ID** is made once from 128 random bits. It is kept in `device.json` in the app's data folder, with the device ID once enrolled and the last sequence number; none of it is secret.
+- **The Ed25519 key** is made by this installation (with `ring`, already in the build) and kept only in the system credential store, as entry `device_key`.
+  - The write is read back before the key is used. If the store cannot keep the key, enrollment stops and says so (the "unavailable secure storage" case in DEV-02).
+  - The key is kept when the user signs out: the computer stays enrolled until it is revoked.
+- **The messages and the code format are the backend's.** Five Rust tests check them against vectors produced by `deviceService.js` with Node's crypto, for one fixed key: the public key, its fingerprint, the claim signature, the body digest and the heartbeat signature are identical byte for byte.
+
+**Commands** (registered in `lib.rs`, `build.rs` and the main window's capability only; the alert popup gets none of them):
+- `device_status`: installation ID, device ID, state, key fingerprint, and whether key storage works.
+- `device_enroll_this`: with the user's session, ask for a code and claim it at once with this installation's key. Returns the fingerprint computed here and the one the backend received.
+- `device_approve`: approve a device naming its fingerprint.
+- `device_enrollment_create`: show a code for another device.
+- `device_claim_code`: claim a code shown elsewhere.
+- `devices_list`, `device_rename`, `device_revoke`.
+- `device_heartbeat`: check in now.
+
+**Heartbeats:**
+- **Schedule:** every 60 seconds while enrolled and not revoked.
+- **What they report:** what this computer's own checks confirm right now:
+  - `secure_storage`: the credential store keeps a value;
+  - `browser_history`: a supported browser's history file is found;
+  - `hosts_blocking`: the hosts file is readable and has no incomplete CyberForge section.
+- **Sequence numbers:** the clock in milliseconds, or one more than the last one sent if the clock went back, saved before sending. So they keep increasing across restarts, and even if `device.json` is lost, without getting stuck behind the server's last value.
+- **State:** a "revoked" or "awaiting approval" answer is recorded locally and shown on the page.
+
+**The Devices page** (in the sidebar):
+- **This computer:** status, fingerprint, device ID and key storage. "Enroll this computer" puts the fingerprint made here next to the one the backend received; "Approve" is offered only when they match.
+- **Add another device:** show a one-time code, or enter one.
+- **The workspace's devices:** name, kind, platform, state, connection, last seen and fingerprint, with "Fingerprint matches — approve", inline rename, and a two-step revoke.
+- Everything shown is escaped with `CF.esc`. The rendering audit (16.61) passed without additions. The page uses no inline script and no browser dialogs.
+
+**Checked:**
+- Six new Rust tests: the five vectors and installation-ID persistence. All 58 desktop Rust tests pass, with 4 ignored.
+- A live Rust test is ready for after the deploy: `device_tests::the_live_backend…`, run with `CF_LIVE_BASE` and `CF_LIVE_TOKEN`. It enrolls a throwaway in-memory key, not this machine's credential store, through the real backend, then approves, sends a heartbeat signed by this code, replays it and revokes.
+- The permission contract confirms every command the page calls is granted to the main window.
+- Gate: 686 tests.
+- The page has not been seen in a built app (B00d.2).
+
+**Needs:** the backend deploy from 16.68 and 16.69 (`npm --prefix backend run heroku:deploy`). Then the live checks: `live_devices.js` and the Rust live test.
+
+### 16.71 October 16, 2026 — Release v27: device enrollment works live, from both a script and the desktop's own code
+
+**Deployed by the user as v27** (16.68, 16.69). Checked with four throwaway accounts, all removed by exact ID afterwards with their devices, enrollment codes, workspaces and audit events. The database again holds 8 accounts, 0 devices and 0 enrollment codes.
+
+**The device flow, live, 15 of 15** (`live_devices.js`, Node's crypto, against the real database):
+- **Codes:** a member gets a code in `XXXX-XXXX-XXXX` form. Two concurrent claims of it give `201` and `409`, and a used code is refused as already claimed.
+- **Approval:** the claimed device waits for approval and cannot report meanwhile. Another account cannot approve it, and a wrong fingerprint is refused. The owner approves it.
+- **Heartbeats:** a signed heartbeat is accepted and shows the device online. The same sequence again is refused as a replay, and another key cannot sign for it.
+- **Listing:** the owner lists it with what its checks confirmed; another account lists nothing.
+- **Revocation:** after the owner revokes it, it cannot report.
+
+**The desktop's own code, live, 1 of 1** (`device_tests::the_live_backend…`). The Rust client claimed a code with a throwaway in-memory key, and the backend reported the same fingerprint (`9a80 7e51 …`). It was approved, and a heartbeat signed by `device.rs` was accepted (online). The replay and the heartbeat after revocation were refused. The session came from a throwaway account and was passed to `cargo test` in the environment, never printed.
+
+**Production indexes:** `devices` has `deviceId` unique and `workspaceId+installationId` unique (one record per installation per workspace), as declared.
+
+**AI routes (16.68), live:** `POST /api/ai/analyze/url` answers `501 CAPABILITY_UNAVAILABLE` with the reason, where it answered 500. `/analyze/network` answers 403 for an ordinary account, since it is limited to analysts and administrators, which is as intended.
+
+**Next in the device slice:** the mobile app's side of enrollment (claiming a code from the phone, and approving devices from it), then key rotation and telemetry batches (DEV-04).
+
+### 16.72 October 16, 2026 — Device slice, increment 3: the phone approves devices; a mobile source file that was never committed
+
+**The phone as the approving companion** (`mobile-app/src/sections/DevicesSection.tsx`, `src/api/endpoints.ts`, `src/api/types.ts`). The Devices screen keeps its connection view and adds the workspace's devices, as `/api/v1/devices` returns them:
+- name, platform, kind, last seen, and connection state with its colour;
+- the key fingerprint.
+
+From the phone a member can:
+- **show a one-time code** for adding a computer;
+- **approve a device that claimed a code.** "Approve…" first asks the user to check that the computer shows exactly the same fingerprint, and only then sends the approval, naming that fingerprint;
+- **revoke a device,** in two steps.
+
+The section is not shown to guests. The phone does not enroll itself yet: that needs an Ed25519 key in the phone's secure store and a native build to check it in, so it is the next mobile step (with DEV-04's "replace mobile's constant device identifier").
+
+**Found while typechecking: the mobile app did not build from a clean checkout.**
+- `app/(tabs)/more.tsx` and `app/screen/[key].tsx` import `src/data/sections`.
+- That file was not in the repository, and not on this machine either: the root `.gitignore`'s `data/` rule (meant for ML data) also matched `mobile-app/src/data/`, so it was never committed.
+- `src/data/sections.ts` is recreated from what the two screens use: a title, a line of description, an icon and a colour for each of the 12 screens, plus which four are featured. It holds labels only, and no screen claims to be live.
+- `.gitignore` now re-includes `mobile-app/src/data/`.
+- `npx tsc --noEmit` on the mobile app now reports **no errors**. Before the fix it reported 5, all from the missing file.
+
+**Checked:**
+- **`tests/contracts/source-files-tracked.test.js`, 2 tests:**
+  - every file the mobile app imports, and every script and stylesheet a desktop page loads, exists;
+  - and `git check-ignore` reports none of them as ignored.
+  - It was shown to catch the mistake: without the `.gitignore` exception it names `mobile-app/src/data/sections.ts`.
+- **The endpoint contract** (`client-endpoints.test.js`) now reads `${…}` path parameters as `:param` and matches them against the backend's routes. Before, it read a route only up to the first `${`. So the new `/api/v1/devices/:id/approve` and `/revoke` calls are checked against the backend. It was shown to catch a misspelled route.
+- **The mobile dependencies** were installed locally to typecheck, from the lockfile with `npm ci --legacy-peer-deps --ignore-scripts`; `node_modules` is ignored by git.
+- **Gate:** 688 tests (496 security, 192 contract).
+- **The screen has not been run on a phone.** It needs an Expo build (`eas build` or `expo start`), which is the user's to run.
+
+Mobile only: no backend deploy needed.
+
+### 16.73 October 16, 2026 — Device slice, increment 4: signed telemetry with an outbox, key rotation, and coverage apart from connection
+
+The rest of DEV-04's first scope, and the "degraded" state from DEV-03.
+
+**Backend** (`models/DeviceEvent.js`, `services/deviceService.js`, `routes/devices.js`):
+
+- **`POST /api/v1/devices/:id/telemetry`**, signed by the device like a heartbeat.
+  - **Limits:** a batch has an ID and 1 to 100 events, and at most 256 KB.
+  - **Event types:** `enforcement`, `capability_change` or `app_event`. Each event's time must be within the last 7 days, and its data must be an object of at most 2 KB. One bad event refuses the whole batch, and nothing is stored.
+  - **Idempotent:** (device, batch, position) is unique, so a batch sent again after a lost acknowledgement, with a new sequence number, stores nothing twice. The answer acknowledges the batch ID and gives the counts stored and already stored.
+  - **Retention:** events are kept 30 days, by an index.
+- **`GET /api/v1/devices/:id/events`:** a member reads a device's recent events. Another workspace gets 404.
+- **`POST /api/v1/devices/:id/rotate-key`:** signed with the current key, with `proof`, the new key's signature over `cyberforge-device-rotate-v1`, the device ID, the next key version and the new key. So the device holds both keys.
+  - The switch is one atomic update on the key version, so of two rotations racing, one applies.
+  - The old key stops working at once. The rotation is audited as `device.key_rotate`.
+- **Coverage, apart from connection:** `full` when every advertised capability is confirmed `ok` by the device's own checks; `degraded`, naming the capabilities, when any is not; `unknown` before the device has reported; `not_applicable` when it is not active. So an online device with a denied permission shows as online and degraded.
+
+**Desktop** (`src/outbox.rs`, `src/device.rs`, `src/blocking.rs`, the Devices page):
+
+- **The outbox** is a file in the app's data folder, `device_outbox.json`.
+  - **Bounded:** it holds at most 500 events. Past that, the oldest are dropped and counted.
+  - **Resending:** a batch keeps its ID until acknowledged, and is sent again with the same ID after a failure. So a crash or a lost answer loses nothing that was queued and duplicates nothing that was stored.
+  - **When:** batches go out after each accepted heartbeat (every 60 seconds), and with "Check in now".
+- **What is recorded:**
+  - **enforcement receipts:** each block, unblock and allow, and whether the hosts file enforces it afterwards (including an unblock that could not be applied);
+  - **capability changes:** what this computer's checks confirm, compared with the previous heartbeat.
+  - Nothing else: no history, page content or scan results.
+- **Key rotation** ("Rotate key"). The next key is made and kept in the credential store (`device_key_next`) before anything is sent. Every device request goes through one function: if the current key is refused and a next key exists, it tries the next key once, and makes it the current key when the backend accepts it. So a rotation whose answer was lost is finished at the next request rather than leaving the computer locked out.
+- **The page** shows the key version and the outbox (queued, awaiting acknowledgement, sent, dropped of the limit), plus a "degraded: …" mark in the device list. The phone shows the same mark.
+
+**Checked:**
+- **Backend:** `tests/security/devices.test.js` now has 22 tests, 8 new:
+  - **batches:** one stored once despite a resend, with the replay of the same request refused; batches with a bad type, an old time, oversized data, non-object data, a short ID, or 101 events are refused and store nothing; a device cannot send as another, and a revoked one cannot send;
+  - **rotation:** it works with the proof, after which the old key fails and the new one works; three bad proofs change nothing; two racing rotations, one applies;
+  - **coverage:** unknown, then degraded naming `hosts_blocking`, then full;
+  - **claim limit:** the 21st claim in 15 minutes from one address is refused. The suite now resets the limiter between tests.
+- **Desktop Rust:** 63 tests pass, 4 ignored.
+  - Outbox: dropping when full, resending with the same ID, persistence, and the wire shape.
+  - A new vector: the rotation proof signed in Rust matches the backend's signature.
+- **The live Rust test now also covers** a telemetry batch sent twice (stored 1, then 0 with 1 duplicate) and a rotation (old key refused, new key accepted). It runs after the deploy.
+- **Mobile:** typechecks with no errors.
+- **Gate:** 696 tests (504 security, 192 contract).
+
+**Needs:** `npm --prefix backend run heroku:deploy`, then the live Rust test.
+
+### 16.74 October 16, 2026 — Device slice, increment 5: commands to devices, signed, expiring, and done only on the device's receipt (DEV-05)
+
+**Backend** (`models/DeviceCommand.js`, `services/deviceCommandService.js`, `services/deviceCommandKey.js`, `routes/devices.js`):
+
+| Endpoint | Who | What |
+| --- | --- | --- |
+| `POST /api/v1/devices/:id/commands` | member | one exact action: `block_domain` or `unblock_domain`, one domain, with an idempotency key; expires after 1 hour by default (1 minute to 24 hours) |
+| `GET /api/v1/devices/:id/commands` | member | the device's commands with state and receipt |
+| `DELETE /api/v1/devices/:id/commands/:commandId` | member | cancel while still queued |
+| `POST /api/v1/devices/:id/commands/pull` | the device, signed | its queued, unexpired commands, each signed by the server |
+| `POST /api/v1/devices/:id/commands/:commandId/receipt` | the device, signed | `applied` or `failed`, the executor and what happened |
+
+- **Approval binds the action.** The member's request is the approval for that exact action: type, domain, device and expiry are fixed when the command is created, and the server signs exactly those when it delivers it (`cyberforge-device-command-v1`). A command is accepted only for an active device that advertises the capability it needs (`hosts_blocking`). The same idempotency key gives the same command, and reusing it for a different command is refused.
+- **The device knows the server's key.** The server's command key is an Ed25519 key in `DEVICE_COMMAND_KEY`, now set on Heroku (generated here, never printed). Its public half is returned to a device when it claims an enrollment code, and every command is checked against it. Without the setting, the command routes answer 501.
+- **Receipts decide.** A command moves queued → delivered (once, atomically) → applied or failed, and only on the device's signed receipt. Sending the same receipt again is accepted, and a contradicting one is refused.
+- **Stale work never starts:**
+  - a revoked device's pull is refused, so its queued work stays queued and never runs;
+  - a command not delivered before its expiry is marked expired and never delivered;
+  - a cancelled command is not delivered;
+  - a delivered command cannot be cancelled, since it may already be running.
+- **Audit:** create, cancel and receipt are recorded (`device.command_*`). Records are kept 90 days.
+
+**Desktop** (`src/device.rs`, the Devices page):
+
+- **After each heartbeat** the app pulls its commands. A command is carried out only if:
+  - the key the server presents is the one kept from enrollment;
+  - the signature matches that key for this device, this domain and this expiry;
+  - it has not expired;
+  - it is not among the last 200 already carried out.
+- **Running it:** the block or unblock goes through the hosts-file code of 16.64, so the user's own administrator approval still applies to the change.
+- **The receipt** says `applied` only if the hosts file enforces the result. Otherwise it says why: approval not given, signature or key mismatch, or expired.
+- **Older enrollments:** a device enrolled before commands existed keeps the first server key it sees.
+- **Sending commands:** "Block or unblock a domain…" and "Commands" on each approved device that offers hosts blocking, with each command's state and receipt.
+
+**Phone:** the same "Block or unblock a domain…" on each device, with the recent commands and what their receipts said. It typechecks with no errors.
+
+**Checked:**
+- **`tests/security/device-commands.test.js`, 7 tests:**
+  - no key gives 501;
+  - commands go only to active devices with the capability: refused for pending, inventory and no-capability devices, bad domains and types, and another account;
+  - idempotency: one command per key, and a reuse is refused;
+  - delivery: once, signed by the claim's key, with the signature failing for another device; "applied" only after the receipt; same receipt accepted, contradicting one refused;
+  - receipts are refused before delivery and from another device;
+  - expired, cancelled and revoked-device work never starts;
+  - a delivered command cannot be cancelled.
+- **Desktop Rust:** 64 tests pass. A new vector checks a command signed by the backend's code: it verifies in Rust, and does not verify for another device, domain, expiry or key.
+- **The live Rust test now includes** the command round trip (send, pull, verify, receipt, applied).
+- **Gate:** 703 tests (511 security, 192 contract).
+
+**Needs:** `npm --prefix backend run heroku:deploy`, then the live Rust test (16.73 and 16.74 together).
+
+### 16.75 October 16, 2026 — Agents, increment A1: definitions, a template catalogue, versions and lifecycle (AGT-01, AGT-02 backend, AGT-03)
+
+The first part of the agent workstream. "Agent" now has a defined meaning for new work: a **definition** is a member's saved configuration (this entry); runs, steps and approvals come in A2. The older uses of the word (the desktop assistant, `AgentManager`'s Node agents, the orchestrator's specialists) are left as they are, and are not counted as agents here.
+
+**New** (`services/agentCatalog.js`, `models/Agent.js`, `services/agentDefinitionService.js`, `routes/agentsV1.js`, mounted at `/api/v1`):
+
+- **`GET /agent-templates`: the catalogue.** Two templates are available, because their tools exist:
+  - **URL and Phishing Analyst:** URL classification and indicator extraction; observe or assist mode; may propose `block_domain` in assist mode.
+  - **Device Health Monitor:** device status; observe only.
+
+  The other five templates from AGT-03 are listed as unavailable, each with its reason. For example, Browser Guardian needs visited addresses, which devices do not send; the Policy Response Agent's guarded mode needs rollback, which no executor supports. Guarded automatic mode is not offered at all.
+- **`POST /agents`:** creates a draft. The ID is made by the server and the name is only a label. An idempotency key means a duplicate submission makes one definition.
+- **`GET /agents`, `GET /agents/:id`:** the workspace's agents, excluding archived ones. One agent includes its last 20 versions with their permission diffs.
+- **`PATCH /agents/:id`:** must name `expectedVersion`; a stale version gets 409. Every change is a new version in the history with a permission diff of tools, proposals, devices, targets and mode.
+- **`POST /agents/:id/validate | activate | pause | resume | archive | clone`.**
+
+**How it holds:**
+
+- **The template is a ceiling on every save.** A tool, mode or proposal outside the template is refused with 400, so a modified request cannot enable it. The same goes for proposals in observe mode, targets that are not http(s) addresses or domains, and budgets or schedules outside their limits: 1–200 steps, 10–600 seconds, every 15 minutes to 7 days.
+- **Validation is against the workspace as it is now, and for one version.** It checks that:
+  - assigned devices are this workspace's and approved;
+  - devices a proposal could target offer `hosts_blocking`;
+  - proposals have at least one device;
+  - the URL analyst has at least one target.
+
+  The result is stored with the version it was for.
+- **Lifecycle:** draft → ready (validated) → active ⇄ paused → archived.
+  - Activation and resume validate again first, so a device revoked meanwhile stops a resume.
+  - A change that **widens** what a running agent may do (a new tool, proposal, device or target, or observe → assist) takes it back to ready, to be activated again. A change that does not widen keeps it running if it still validates.
+  - An archived agent cannot be changed, but can be cloned into a new draft.
+- **Audit:** `agent.create`, `update` (with the diff), `activate`, `pause`, `resume`, `archive`. Clients cannot post `agent.*` events.
+
+**Checked.** `tests/security/agent-definitions.test.js`, 8 tests:
+- the catalogue lists what can run and why the rest cannot; an unavailable template is refused;
+- two accounts each have an agent called "Default" and see only their own, and the other account gets 404 on read, edit and archive;
+- a duplicate create makes one definition;
+- six modified requests are refused: an unknown tool, assist for the health monitor, proposals in observe mode, an unknown proposal, a `file:` target, `guarded` mode; and a PATCH adding a foreign tool;
+- the full lifecycle, including clone and archive;
+- a stale version is refused;
+- widening an active agent sends it to ready with the exact diff recorded, while non-widening and narrowing edits keep it active;
+- validation refuses another workspace's device, a device without the capability, and proposals without a device; a revoked device stops a resume and the agent stays paused.
+
+The endpoint contract now checks every router mounted at a shared prefix (`/api/v1` has devices and agents). Gate: **711 tests** (519 security, 192 contract).
+
+One full-gate run had a single failure in `stream.test.js` that did not repeat in four separate runs or in the next full run. It looks like timing under load, and is recorded here to keep an eye on.
+
+**Needs:** `npm --prefix backend run heroku:deploy`, together with 16.73 and 16.74.
+
+### 16.76 October 16, 2026 — Agents, increment A2: runs with leases, budgets, pause and cancel, schedules, and approvals (AGT-04, AGT-05)
+
+**Runs** (`models/AgentRun.js`, `services/agentRunService.js`):
+
+- **Endpoints:**
+  - `POST /api/v1/agents/:id/runs` (idempotent; the agent must be active);
+  - `GET /api/v1/agents/:id/runs`, `GET /api/v1/runs/:id`;
+  - `POST /api/v1/runs/:id/cancel`;
+  - `POST /api/v1/agents/pause-all`, the workspace's emergency stop.
+- **One scheduling authority.** The worker runs in the web process every 5 seconds; it does not run under tests.
+  - It claims a queued run in one atomic update that gives it a lease with a random token.
+  - Every later write to the run names that token, so a worker whose lease expired cannot write to a run another worker has taken over.
+  - A run whose lease expired (the process stopped) is queued again once, then failed with "the worker running it stopped; tried N times".
+- **What a run does comes from its definition version only.** The tools, targets and devices are read from the stored configuration, never from a tool's output. No model takes part in deciding steps, so no retrieved content can add a step or a tool (AGT-06). A run for a version the agent no longer has is cancelled with that reason.
+- **Each step** records its tool, its input, its status (completed, failed or skipped), a one-line summary and its timing. Findings are kept with the run.
+- **Tools:**
+  - `url_classify`: the ML service's URL models. No model answering is a **failed step**, never a clean verdict.
+  - `ioc_extract`: indicators in the address; no page is fetched.
+  - `device_status`: devices that are not online with full coverage.
+- **Pause and cancel stop the work.** Before every step the worker checks that the run was not cancelled and that the agent is still active at the run's version. A paused agent's queued runs are cancelled without running, and a running one stops at its next step. Cancelling a queued run is immediate; a running one stops at its next step, and the answer says which.
+- **Budgets.** Going over the step or time budget ends the run as `partial`, with the skipped steps and the reason.
+- **Interval schedules** make one run per time slot (`schedule:<agent>:<version>:<slot>` is unique), however many times the worker checks.
+
+**Proposals and approval** (`models/AgentAction.js`, `services/agentActionService.js`):
+
+- **Endpoints:** `GET /api/v1/actions`, `POST /api/v1/actions/:id/approve`, `POST /api/v1/actions/:id/reject`.
+- **Making proposals.** In assist mode, a URL rated malicious becomes a proposal to block its domain on each assigned device. A proposal is fixed when made (type, device, domain, agent version, evidence) and expires after 24 hours.
+- **Approving.** Only a signed-in member can approve; an agent has no session, so it cannot approve its own proposal. Approval rechecks the present:
+  - not expired and not already decided;
+  - the agent still active at the version that proposed it (an edit since makes the proposal stale);
+  - the device still approved and able.
+
+  It then becomes a signed device command (16.74), keyed by the proposal so a double approval makes one command. The proposal's outcome is that command's state and the device's receipt: it shows applied only when the device says so.
+- **Audit:** run requested, run cancelled, proposal approved, proposal rejected.
+
+**Checked.** `tests/security/agent-runs.test.js`, 12 tests:
+- a run records its four steps and findings, and the same request twice is one run;
+- no model answering gives a failed step and no verdict;
+- the step budget gives `partial`, with the skipped steps' reason;
+- pausing cancels a queued run without calling the model, and pausing mid-run stops at the next step;
+- cancel works on queued and on running runs, and another account gets 404;
+- **fencing:** a worker whose lease expired gets nothing written, the run is retried and completes, and a run out of attempts fails with the reason;
+- a schedule makes one run per slot;
+- the health monitor reports a degraded device and an offline one, and not another workspace's;
+- assist mode: one proposal, nothing until approved, another account cannot see or approve it, approval creates one command and a second approval is refused, and the outcome follows the device's receipt;
+- stale proposals are refused: agent edited, expired, device revoked (and no command is made);
+- reject;
+- pause-all stops only this workspace's agents.
+
+Gate: **723 tests** (531 security, 192 contract).
+
+**Not done:** agent screens (A3, next), and the run history and debugging views (AGT-07).
+
+**Needs:** `npm --prefix backend run heroku:deploy`, together with 16.73 to 16.75.
+
+### 16.77 October 16, 2026 — Release v29: telemetry, rotation, commands, agents and approvals checked live
+
+**Deployed by the user as v29** (16.73 to 16.76). `DEVICE_COMMAND_KEY` had been set as v28. Checked with three throwaway accounts, all removed by exact ID afterwards, along with their 2 devices, 2 codes, 1 device event, 2 device commands, 3 agents, 2 runs, 1 proposal and their audit and workspace records. The database again holds 8 accounts and nothing in the device or agent collections.
+
+**The desktop's own code, live** (`device_tests::the_live_backend…`):
+- it claimed a code with a throwaway key, was approved, and its heartbeat showed the device online;
+- **telemetry:** a batch from the Rust outbox was stored once (`stored 1`); sent again, it was `stored 0, duplicates 1`;
+- **rotation:** rotated to key version 2, after which the old key was refused and the new one accepted;
+- **command:** a member's command was pulled by the device, its server signature verified in Rust against the key given at enrollment, and its receipt sent; the member then saw it as **applied**;
+- the replay and the heartbeat after revocation were refused.
+
+**Agents on the production worker, 15 of 15** (`live_agents.js`):
+- the catalogue offers the two runnable templates;
+- two accounts each have a "Default" agent, and they are different agents;
+- a PATCH adding an unknown tool is refused;
+- the URL analyst (assist mode, one enrolled device) validated, activated and ran on the production worker in a few seconds. 4 of 4 steps completed:
+  - the phishing-style test address was rated **malicious (score 0.7786, 4 models answered)**;
+  - wikipedia.org was rated **clean (0.1815)**;
+  - indicators were found in both;
+- that verdict became **one proposal**. Another account could neither read the run nor approve the proposal. The owner's approval turned it into a device command, shown as **queued, not applied**: the device had not reported;
+- the device health agent reported the enrolled device as never connected;
+- pause-all paused both of this workspace's agents, a paused agent refused a run, and the other account's agent was untouched.
+
+**What remains in the agent workstream:** the screens (A3: agent list, detail, runs with their steps, proposals to approve; on the desktop and the phone), and the run history and debugging views of AGT-07.
+
+### 16.78 October 16, 2026 — Agents, increment A3: the Agents screens on the desktop and the phone (AGT-02, AGT-05, AGT-07)
+
+The backend these use is live (16.77), so this entry needs no deploy; it needs a built desktop app and an Expo build to be seen.
+
+**Desktop** (`ui/pages/agents.html`, `ui/scripts/pages/agents.js`, `src-tauri/src/agents_api.rs`, a new Agents entry in the sidebar):
+
+- **One command, `agents_call`.** It has a fixed table of 19 operations, each exactly one method and path under `/api/v1`. IDs are checked as record IDs before they go into a path, and nothing outside the table can be called through it. It is granted to the main window only.
+- **Proposals to decide:** each proposal with its reason, device and expiry, with Approve and Reject. Decided ones show their state and the device's actual outcome (queued, delivered, applied or failed, with the receipt's words).
+- **Your agents:** name, template, version, mode and state.
+  - **New agent:** pick a template; unavailable templates are shown disabled with their reason. Then set the name, targets (for the URL analyst), objective, mode, the proposal (assist only), devices (approved ones only) and schedule.
+  - **Saving** is a draft with one idempotency key per form, so a double click creates one agent. A validation error keeps what was typed.
+- **One agent:**
+  - **What it may do:** template, version, mode, tools, proposals, devices, targets, schedule, budget, and whether validation passes for this version (or its errors).
+  - **Buttons** follow the state: validate, activate, run now, pause, resume, edit, clone as draft, archive.
+  - **Edit** names the version it changes. A save that widens the agent says so, and that it must be activated again.
+- **Runs** are listed with their state, trigger, version and outcome. Choosing one shows its real step timeline: each tool, its target, its summary and its status. Then its findings:
+  - URL verdicts with score, model count and engine;
+  - indicators;
+  - device health.
+
+  A running run can be cancelled from there.
+- **Configuration history:** each version with its permission diff.
+- **Pause all agents:** two-step, then reports how many were paused and whether runs already going stop at their next step.
+- All rendering goes through `e()`. The rendering audit's reviewed list gained two HTML builders (`formHtml`, the template `<option>` list), both built only from `e()` values and literals.
+
+**Phone** (`src/sections/AgentsSection.tsx`, now featured on Explore):
+- proposals with Approve and Reject, and the outcome of decided ones;
+- each agent's state, template, version and mode, with Pause or Resume;
+- a two-step "Pause all agents".
+
+Creating and editing agents stays on the desktop. The endpoint contract checks the seven new calls against the backend.
+
+**Checked:**
+- 2 new Rust tests for `agents_call`: each operation maps to one method and path, and an unknown operation, a missing ID, and IDs like `../auth/logout`, `x?y=1` or `a/b` are refused.
+- Desktop Rust: 66 tests pass, 4 ignored.
+- Mobile typechecks with no errors.
+- Gate: 723 tests.
+- Neither screen has been seen running; that needs the packaged desktop build (B00d.2) and an Expo build.
+
+**Agent workstream, what remains:**
+- **AGT-06** (untrusted content and models): no model takes part in a run yet, so retrieved content cannot choose a step or a tool. When a model is added to runs, the hostile-content tests in AGT-06 come with it.
+- **AGT-07:** searchable logs by run or device ID, and "Retry failed checks". **Done locally in 16.89.**
+- The other five templates, as their inputs come to exist.
+
+### 16.79 October 16, 2026 — SEC-07, desktop: separate privacy controls, enforced where the data is collected and sent
+
+**What was there:**
+- the history collector read every browser's full history at startup and every five minutes, without asking;
+- every scan sent its address to the backend as given (only history addresses had credentials removed);
+- memory sync uploaded every unsynced memory with whoever was signed in, so after an account switch one person's history went to the other's account, and after any upload succeeded it marked **all** memories synced, including the ones that had failed;
+- the About section said "Data residency: On this device" and "nothing is uploaded unless you explicitly sync", which was not true of scans or the assistant.
+
+**What changed** (`desktop/src-tauri/src/privacy.rs`, `memory.rs`, `system.rs`, `agent.rs`, `ml.rs`, `ui/scripts/cf-header.js`):
+
+- **Five separate controls,** each saying what it sends and where:
+
+| Control | What it allows | What leaves the computer |
+| --- | --- | --- |
+| Read browser history | reading the browsers' history files | nothing on its own |
+| Watch the active tab | reading the address in the active tab | nothing on its own |
+| Cloud scanning | scans and URL, DGA and IOC checks | the address, with sign-in codes and tokens removed, to the backend, which uses the ML service on Hugging Face and may load the page |
+| Assistant (language model) | the assistant | questions and the findings they mention, to the ML service's model or to DeepSeek with the user's token |
+| Sync to your account | memory sync and the browser report | memory entries and the browser list, to the account |
+
+- **Off until the user decides.** The choices are kept in `privacy.json` with the consent version and the time, plus a log of the last 50 changes. A later consent version counts as undecided, and an earlier "on" does not carry over to it.
+- **Enforced in Rust, where the data flows.** The commands that collect or send check the control first and answer with the reason if it is off. The gated commands are `scan_url`, `ml_classify_url`, `ml_detect_dga`, `ml_ioc_scan`, `ml_url_enrich`, `ml_security_chat`, `memory_sync`, `browser_intel_report`, `get_browser_history`, `get_collected_history` and `get_active_urls`. The background history collector reads and saves nothing without consent, and the browser-intelligence view leaves out the active tabs unless allowed.
+- **Minimising:** `scan_url` now redacts the address (`redact_url`, 16.43) before it leaves the computer.
+- **Withdrawing sync** takes everything waiting to upload out of the queue: those memories are kept on this computer only and are not uploaded if sync is turned on again later.
+- **Account switching:** each memory records the account signed in when it was made. Sync uploads only the signed-in account's own memories, so another account's backlog is never sent. Memories from before this change have no owner and stay local. Only the memories that actually uploaded are marked synced.
+- **On this computer:** "Clear browser history copy" deletes the saved history snapshot and the cache. "Clear local memory" deletes the local memory; synced copies are not affected. Both are two-step.
+- **The screens:**
+  - a **Privacy** section in Settings, with a switch for each control and its description, the clear buttons, the recent changes and the consent version;
+  - until the user decides, every page shows "Choose what CyberForge may collect and send", linking to it;
+  - **About** now shows where data actually goes, worked out from the choices ("This computer only", or "This computer, plus: Cloud scanning, …").
+
+**Checked:**
+- **Rust:** 72 tests pass (4 ignored), including:
+  - `privacy_tests`, 5 tests: everything off until decided; separate controls with a change log; a new consent version asks again; unknown controls and non-boolean values refused; choices kept across a restart;
+  - `memory::sync_tests`: only the signed-in account's own unsynced, not-held-back memories are uploaded; after switching accounts, the previous account's are not.
+- **`tests/contracts/desktop-privacy.test.js`, 4 tests:**
+  - every desktop command that sends to the network either checks its named control or is on a reviewed list with its reason. Sign-in, device and policy management, agents, and public threat intelligence need no separate consent. A new sending command fails the gate;
+  - the history and active-tab readers and the background collector check their control;
+  - a scanned address is redacted before sending;
+  - sync filters by owner and marks only what went up.
+- The rendering audit's reviewed list was updated for the Privacy section's escaped rows.
+- **Gate:** 727 tests (531 security, 196 contract).
+
+**Behaviour change to expect:** after this update, scanning, history, the assistant and sync stay off on the desktop until the user opens Privacy and chooses. That is what SEC-07 asks for. The banner on every page says so.
+
+**Still open in SEC-07:**
+- on the backend: export, deletion of synced data, and account deletion with an auditable completion state;
+- on the phone: capture and sync controls.
+
+### 16.80 October 16, 2026 — SEC-07, backend: synced memory in the database, export, data deletion, account deletion with a receipt
+
+**What was there:**
+- synced memory (`routes/memory.js`) was an array in the web process: lost at every restart and deploy (part of F12). An entry saved without an account was included in every account's list and search;
+- there was no way to export an account's data, to delete what the account had synced, or to delete the account.
+
+**What changed:**
+
+- **Synced memory is kept in the database** (`models/SyncedMemory.js`, collection `synced_memories`), in the account's workspace, read and written through the workspace repository. The routes and the response shapes are unchanged, so the desktop needs no change.
+  - An entry's ID is unique only within its workspace. Saving an ID again replaces that entry; another account using the same ID gets its own.
+  - Entries expire 365 days after they were last saved. At most 5,000 are kept per workspace, the oldest going first.
+  - The list says how long entries are kept (`retentionDays`).
+- **One list of the stores that hold an account's records** (`services/accountDataService.js`, `STORES`). Export, data deletion and account deletion all work from it, so a store cannot be exported but left behind at deletion. A test fails when a model is added without being placed in the list or in `NOT_PERSONAL` with the reason.
+
+| Store | Keyed by | Deleted with scope |
+| --- | --- | --- |
+| synced memory | workspace | `memory` |
+| threats, analyses | account | `scans` |
+| sandbox scans, response actions | workspace | `scans` |
+| agents, agent runs, agent proposals | workspace | `agents` |
+| devices, enrollment codes, device events, device commands | workspace | `devices` |
+| Appwrite documents (devices, alerts, agents, agent tasks, browser intelligence, evidence, network captures) | account | `all` |
+
+- **`GET /api/v1/me/export`:** everything kept about the account as one JSON file (`cyberforge-account-export-v1`): the account, its workspace and memberships, its sign-in identities, every store above, the workspace's audit events, and its Appwrite documents.
+  - Never included: password hash, two-factor secret, recovery codes, device public keys and sequence counters, enrollment code hashes, command signatures, memory embeddings.
+  - At most 5,000 records per store, marked `truncated` beyond that.
+  - If Appwrite cannot be reached, the export still comes back and says that part is missing.
+  - Limited to 5 an hour per account; sent as a download with `Cache-Control: no-store`.
+- **`DELETE /api/v1/me/data?scope=memory|scans|agents|devices|all`:** deletes that kind of data and keeps the account. `all` also deletes the Appwrite documents, but not the Appwrite sign-in record. The answer lists how many records went from each store, and which failed. Only the workspace owner can do this.
+- **`POST /api/v1/me/delete-account`** with `{ "confirm": "<the account's email>" }`:
+  1. deletes every store above;
+  2. deletes the Appwrite documents, then the Appwrite sign-in user;
+  3. replaces the account's ID with `deleted-account` on platform policies it created or changed;
+  4. deletes the account itself: memberships, sign-in identity links, the personal workspace, the user record. This happens **only when every earlier step succeeded.** Otherwise the account stays and still works, the receipt is `partial` (HTTP 207) with what failed, and asking again finishes the job.
+  - The old session stops working once the user record is gone.
+- **The receipt** (`models/AccountDeletion.js`, collection `account_deletions`) outlives the account. It holds the account ID, a SHA-256 of the email address (never the address), the times, every store's result, and what is kept and why:
+  - audit events, until their 90-day retention ends (they are the security record, including of this deletion);
+  - the receipt itself;
+  - platform policies, without the account's name;
+  - copies a device keeps on its own disk (uninstalling or "Clear local memory" removes them).
+- **`GET /api/v1/account-deletions/:id`** reads a receipt without a session, since the account is gone by then. The ID is 144 random bits, the receipt holds no personal data, and the route is limited to 60 per 15 minutes per address. It is on the route inventory's reviewed public list with that reason.
+- **Audit:** `account.export`, `account.data_delete` (with each store's result) and `account.delete`. The last is recorded at platform level, because the workspace it would belong to is deleted.
+- Also: `workspaceRepository` gained `deleteMany` (scoped to the workspace like every other method), and `appwriteService` gained `listAccountDocuments`, `deleteAccountDocuments` and `deleteAuthUser`.
+
+**Checked:**
+- **`tests/security/account-data.test.js`, 12 tests:**
+  - every model is either an account store or listed as not personal, with a reason;
+  - the export holds the account's own record from every store and nothing of another account's, and no secrets; it still answers when Appwrite is down; it needs a session and is limited to five an hour per account;
+  - each deletion scope removes only its own stores and only this account's records; `all` also removes the Appwrite documents but not the sign-in record; an unknown scope is refused and nothing is removed;
+  - without the email typed as confirmation, nothing is deleted;
+  - account deletion removes every store, Appwrite and the account, leaves the other account untouched, keeps the audit events, records a platform event, ends the session, and gives a receipt readable without a session that holds no email address;
+  - when a store fails, the receipt is `partial`, the account is kept, and asking again completes it;
+  - a malformed or unknown receipt ID answers 404;
+  - synced memory is kept in the workspace store, and saving an ID again replaces that entry.
+- `object-ownership` and `route-guards` now run the memory routes against the workspace store.
+- **Gate:** 739 tests (543 security, 196 contract).
+
+**Verified live (deployed by the user, October 16, 2026), 26 of 26 checks, with two throwaway accounts:**
+- saving a memory ID again replaced that entry; the other account's entry under the same ID stayed its own; search found only the account's own entry; the list states 365 days;
+- the export came back as a `no-store` download holding the account, its workspace, the synced memory (without the embedding), the enrollment code (without its hash), the agent, the audit events and its Appwrite documents, with nothing of the other account and no secrets;
+- `scope=memory` removed the one memory and left the other account's; an unknown scope was refused;
+- deletion with the other account's email was refused; with the account's own (in capitals) it completed, with a result for each of the 26 stores and steps; the old session then answered 401 and signing in failed;
+- the receipt was readable without a session, held no email address, and said audit events are kept until their 90-day retention; an unknown receipt answered 404; the other account still worked;
+- a database count afterwards found nothing of the deleted account but its audit events and the receipt, and its Appwrite sign-in user was already gone. Both test accounts and those records were then removed by exact ID; the database holds the 8 real accounts again.
+
+Synced memory saved before this deploy was in the web process's memory and is not carried over (the last restart had already emptied it). Entries a desktop marked as synced earlier stay on that desktop and are not uploaded again; new entries are.
+
+**Still open in SEC-07:**
+- on the phone: capture and sync controls;
+- export and deletion buttons in the desktop and phone apps (the backend routes are ready).
+
+### 16.81 October 16, 2026 — SEC-07, phone and apps: separate phone controls, export and deletion in Settings, captured addresses redacted
+
+**What was there:**
+- **On the phone:** once someone was signed in, every captured request went to the backend, with its full address (sign-in codes and tokens included). The assistant sent every question. There was no choice to make: the VPN permission was the only question asked.
+- The phone handed the session token to the native capture engine, which never used it.
+- A comment said the native engine "also persists locally, so nothing is truly lost". It keeps nothing.
+- The Notifications note said the preferences "are stored on this device". They were never saved.
+- **On the backend:** the capture route stored and forwarded addresses exactly as they arrived. Its buffer of recent captures was kept per account in the route file, so deleting an account did not clear it. The redaction used for request logs knew only nine parameter names.
+- 16.80's export and deletion routes had no buttons in either app.
+
+**What changed:**
+
+- **Phone controls** (`mobile-app/src/context/PrivacyContext.tsx`), each separate and saying what it sends:
+
+| Control | What it allows | What leaves the phone |
+| --- | --- | --- |
+| Capture network traffic | starting the on-device VPN capture | nothing on its own |
+| Sync captures to your account | sending captured requests | host, address (sign-in codes and tokens removed), method, status, sizes, app, to the backend |
+| Assistant (language model) | asking the assistant | the question, to the backend and its model |
+
+  - **Off until the user decides.** The choices are kept on the phone with the consent version, the time and the last 50 changes. A later consent version counts as undecided.
+  - **Checked where the data flows:**
+    - `VpnContext` will not start capture without the first control, and stops a running capture when it is turned off;
+    - captures are sent only while sync is on, and turning sync off drops everything waiting to be sent;
+    - the assistant sends nothing while its control is off.
+  - The Capture screen and the assistant say when their control is off and link to Privacy. The Capture screen also says whether sync is on.
+  - The native engine is no longer given the session token.
+- **Addresses redacted with one set of rules everywhere.** The backend's `redactUrl` now uses the desktop's rules: credential and one-time-code parameters, token-shaped values whatever they are called, tokens used as path segments, and `user:password@`. The phone has a copy (`mobile-app/src/utils/redact.ts`).
+  - The phone redacts captured addresses before sending them. The backend redacts them again before storing, listing or forwarding them, so an older phone build is covered too.
+  - The same redaction now applies to request logs.
+- **Captures buffer:** the recent-captures buffer moved to `services/networkCaptureBuffer.js`. The export includes it, and deleting all synced data or the account empties it.
+- **Export and deletion in Settings:**
+  - **phone** (Settings → Your data, Delete account):
+    - export, shared through the share sheet when under 400 KB, otherwise a pointer to the desktop's export;
+    - deletion of each kind of data, after a confirmation;
+    - account deletion once the account's email address is typed exactly. It shows the receipt and what is kept; a `partial` result says what failed and that the account is kept;
+  - **desktop** (Settings → Privacy, below the controls):
+    - export saved as `cyberforge-export-<UTC time>.json` in Downloads, with a count per store;
+    - deletion by kind, two-step;
+    - account deletion with the email typed out. After a completed deletion the computer's session is cleared;
+    - the desktop calls these through a new `account_call` command with a fixed table: four operations, scopes from a fixed list, and the receipt ID checked by shape before it goes into a path. It is on the privacy contract's reviewed list ("the user's own export and deletion, each an explicit act") and in the window's capability list.
+- The Notifications note now says the preferences are not saved yet.
+
+**Checked:**
+- **`tests/security/redact-url.test.js`, 25 tests:** the backend's and the phone's redaction give the desktop's answers for the same examples. The phone's TypeScript is compiled with the phone's own compiler for this. The examples are the ones in the desktop's Rust tests.
+- **`capture-ownership`, 1 new test:** credentials in a captured address are removed before it is stored, listed or sent to the account's other devices.
+- **`account-data`:** the export includes the capture buffer, and account deletion empties the account's buffer but not another account's.
+- **`tests/contracts/mobile-privacy.test.js`, 7 tests:**
+  - each sending endpoint is called from one file only;
+  - sync drops the queue when off; capture starts only when allowed and stops when turned off;
+  - addresses are redacted before sending, and the native engine gets no token;
+  - the assistant checks its control;
+  - every control is off until decided, and a new consent version asks again;
+  - Settings uses the export, deletion and account-deletion routes, and the account is deleted only once the typed address matches.
+- **Rust:** 76 tests pass (4 ignored), including `account_api_tests`: one method and path per operation, no path tricks through the scope or the receipt ID, the file name's UTC time, the per-store summary.
+- The desktop rendering audit's reviewed list gained the two new fixed rows. The phone type-checks (`tsc --noEmit`).
+- **Gate:** 772 tests (569 security, 203 contract).
+
+**Behaviour change to expect:** after the phone is rebuilt, capture, sync and the assistant are off until the user turns them on in Settings › Privacy.
+
+**Verified live (release v31, deployed by the user, October 16, 2026), 9 of 9 checks.** A capture whose address carried a sign-in code, a state value and an access token in the fragment:
+- was listed with all three redacted, and no part of the secret appeared;
+- was redacted in the export's capture buffer and in the durable Appwrite copy;
+- was not visible to another account.
+
+Account deletion then completed: it emptied the capture buffer and removed the stored capture. The other account kept working. Before the deploy, the same check against v30 failed exactly on the redaction and buffer checks, as expected. The test accounts were removed by exact ID.
+
+The phone and desktop parts are checked in the built apps (Expo build, packaged desktop build).
+
+### 16.82 October 16, 2026 — Recovery guide; a refused telemetry batch can no longer block a device's outbox
+
+**What was there:**
+- Nothing described what survives a restart, how devices and agents recover, or how to roll a release back. The checklist item "supports documented recovery" had no document.
+- **A bug found while writing it:** when the backend refused a telemetry batch for its content, the desktop kept that batch "in flight" and sent it again every time, forever. Nothing queued behind it was ever sent. One way to trigger it: the computer is offline for more than 7 days, and an event becomes older than the backend accepts. The queue then filled up, and its oldest events were dropped without ever being sent.
+
+**What changed:**
+- **`docs/RECOVERY.md`**, linked from the README, written from the code:
+  - what is kept in the database, what is lost at every restart (the F12 caches), and what each app keeps on the computer or the phone;
+  - for devices: clock skew, replays, lost acknowledgements, long offline periods, a refused batch, lost keys, reinstalling, revocation, a degraded device;
+  - for device commands: time to live, a delivered command with no receipt, and why changing `DEVICE_COMMAND_KEY` means enrolling every device again;
+  - for agents: leases and the single retry, fencing, missed schedule slots, pause-all, proposal expiry;
+  - for accounts: a `partial` deletion;
+  - releases: the checks before a deploy, `heroku rollback` and what it does not undo (the database, one-way migrations), the configuration it does undo, the ML Space, and installing an older app build;
+  - undoing blocking with the hosts-file backups.
+- The repository ignores Markdown by default; `docs/RECOVERY.md` is added to the exceptions. The README link check (`workspace-scripts.test.js`) caught this: the guide would otherwise never reach a clone.
+- **The outbox** (`desktop/src-tauri/src/outbox.rs`, `device.rs`):
+  - events older than the backend accepts are dropped before a batch is made (with an hour's margin for clock differences);
+  - a batch refused for its content (`TELEMETRY_EVENT_INVALID`, `TELEMETRY_BATCH_INVALID`) is dropped and counted, and the reason is kept;
+  - a batch that got no answer, a clock-skew refusal or a revocation still keeps the batch;
+  - the Devices page now says why events were dropped ("queue full, older than 7 days, or refused") and shows the last refusal.
+
+**Checked:**
+- **Rust:** 79 tests pass (4 ignored). New:
+  - `events_too_old_for_the_backend_are_dropped_before_a_batch_is_made`;
+  - `a_refused_batch_is_dropped_with_the_reason_and_the_queue_moves_on`;
+  - `only_a_refusal_of_the_batch_itself_drops_it` (a network failure, clock skew, a server error or a revocation do not).
+- **Gate:** 772 tests (569 security, 203 contract).
+- **Restart check, set up on production before the 16.81 deploy**, with a throwaway account: an approved device that has reported once (sequence 1), a queued block command valid for a day, an active `device_health` agent on a 15-minute schedule, and a synced memory. After the deploy restarts the web processes, the check confirms:
+  - the account signs in;
+  - the device is still approved with its key; sequence 1 is refused as a replay and sequence 2 is accepted;
+  - the queued command is delivered, signed by the key given at enrollment, and its receipt is taken;
+  - the agent is still active at the same version, its scheduled runs were made, and none is stuck;
+  - the memory and the setup's audit events are still there.
+  Then the account is removed by exact ID.
+
+**Verified live across the v31 deploy's restart, 11 of 11 checks, plus the schedule:**
+- the account signed in;
+- the device was still approved at key version 1; sequence 1 was refused as `DEVICE_REPLAY` and sequence 2 accepted;
+- the command queued before the restart was delivered, signed by the key given at enrollment, and its `applied` receipt was taken;
+- the agent was still active at version 1;
+- the memory and the setup's audit events were still there;
+- the schedule went on after the restart: the run for the 14:00 slot was made at 14:03 UTC, before the restart at 14:06; the next slot's run was made at 14:15:02 UTC on the new process and completed.
+
+The test accounts and their records were then removed by exact ID.
+
+### 16.83 October 16, 2026 — Android capture is offered only in a build whose packet engine loaded
+
+**What was there:**
+- The phone counted capture as available whenever the native module was linked.
+- The module's packet engine, `libtun2socks.so`, is not in the repository (finding F16). So every build with the module offered capture, featured it on the More tab as "on-device capture (Android builds)", and showed a Start button. Pressing Start could only fail, with the service's error about the missing library.
+
+**What changed** (`mobile-app/src/native/vpn.ts`, `CyberForgeVpnModule.kt`, `src/data/sections.ts`, `app/capture.tsx`):
+- The native module reports whether the engine loaded (`engineAvailable`, from `Tun2Socks.isAvailable()`, which is set by `System.loadLibrary("tun2socks")`).
+- The app counts capture as available only when it is on Android, the module is linked, and the engine loaded. An older native build without `engineAvailable` counts as having no engine.
+- When capture is not available, the reason is given exactly: not Android; the module is not in this build (Expo Go); or the module is there but its packet engine is not, so it cannot carry traffic.
+- Capture is featured on the More tab only when it is available. Its list entry otherwise reads "not available in this build", and so does the screen's status.
+
+**Checked:**
+- **`tests/contracts/mobile-capture-gate.test.js`, 4 tests:**
+  - the module reports the engine from the library load;
+  - availability needs both the module and the engine;
+  - capture is featured and described as available only when it is, and the screen shows the reason;
+  - the engine library is not in the repository yet, so no build from it offers capture. That test is to be replaced by the capture release gate when the library is added (M6).
+- The phone type-checks (`tsc --noEmit`).
+- `stream.test.js` "the stream is closed at the moment the session expires" sometimes failed under load. Its token was signed with `expiresIn: 1`, and since `exp` is in whole seconds, that can leave almost no time to connect. It now uses 2 seconds.
+- **Gate:** 776 tests (569 security, 207 contract).
+
+**Behaviour change to expect:** in a build without `libtun2socks.so` (every build from this repository today), capture is no longer offered. The Network Capture screen still opens from the list and explains why.
+
+### 16.84 October 16, 2026 — Public intelligence, static analysis and the user's own incidents, each labelled as what it is
+
+**What was there:**
+- **Desktop Threat Globe:**
+  - the header said "Live", "42 attacks/min" (a fixed placeholder), then "N live attacks", which was the number of arcs between countries named in OTX pulses;
+  - the page header showed "318 threats", a number written into the page;
+  - the "Live Attack Stream" went round the same pulses every 1.7 seconds, labelled "live", "1s", "2s" and so on, so pulses of any age looked like events happening now;
+  - the account's own scans, threats and alerts were added to that same stream, in the same style;
+  - the legend had a "Low / probe" level the page never assigns, and did not say severity comes from keywords in the pulse.
+- **Phone globe:** "live attack map" and "Live attack stream". It merged the account's own threat events with OTX items in one list, gave every OTX item a "high" severity it did not have, and gave an item without a date the time "now minus i minutes".
+- **Desktop Sandbox:** the MITRE ATT&CK panel lit techniques without evidence:
+  - a risk score of 50 or more lit "T1059 Execution";
+  - missing security headers lit "T1046 Discovery";
+  - loading any other domain lit "T1071 Command and Control";
+  - credential words lit "T1555 Credentials from Password Stores", and cloaking lit "T1055 Process Injection": the wrong techniques.
+- **Phone Sandbox:** "Recent detonations".
+- **Reports:** "Flagged risks" counted every memory with risk 50 or above, or with words such as "malware". The globe saves each OTX pulse into memory with risk 55 or 80, so public intelligence was reported among the user's own risks.
+- **Claims the product cannot back:**
+  - login: "Protected by hardware-key MFA · SOC 2 Type II", "SOC-grade", "8 AI agents", and agents that "detect, detonate, and contain";
+  - register: "SOC 2", "8 autonomous agents", "Detect, detonate, contain";
+  - the setup wizard: "detecting, detonating, and containing threats in real time";
+  - Agent Core: "Sandbox Detonation";
+  - README: "a globe of worldwide attacks".
+  The agent catalogue offers two runnable templates, nothing is executed, and there is no certification or hardware-key sign-in.
+
+**What changed:**
+- **Desktop globe** (`threat-globe.html`, `threat-globe.js`):
+  - the header reads "Public intelligence · AlienVault OTX" (with a tooltip saying these are not activity on your devices) and "N pulses · fetched HH:MM". There is no threat count;
+  - a note on the map says positions are approximate: an origin is where an IP a pulse lists is geolocated, a target is a country's centre, and an arc is drawn only when one pulse names both;
+  - "Recent pulses" lists the pulses newest first, each with its own age from OTX's `modified` or `created` time ("date unknown" when neither is given), and does not cycle;
+  - a separate **"On your devices"** panel takes the account's scans, threats and alerts as they happen;
+  - the legend reads "Severe keywords" and "Other pulses", with the keyword list;
+  - the panels are "Top indicator origins" and "Malware and techniques named";
+  - the memory digest says it is public intelligence, not activity on this computer.
+- **Phone globe:** two sections, "On your account · live" and "Public intelligence · AlienVault OTX". A severity or time is shown only when the source gives one. A note says the globe drawing is an illustration and does not plot the items. The Threat Intel list is headed "Public threat intelligence · AlienVault OTX", with the same note.
+- **Sandbox:**
+  - the MITRE panel is "MITRE ATT&CK · possible". It says the tiles are hints from words in the scan's findings, not confirmed techniques;
+  - two tiles are left, each lit only by a matching word, and the tooltip says which word: **T1566 Phishing** (phishing, credential, login, password, steal, sign-in) and **T1497 Sandbox Evasion** (cloaking, evasion, anti-bot);
+  - the phone's list is "Recent static analyses": "Nothing is run or opened".
+- **Reports** (`cyberforge-shared.js`): memories that are public intelligence are set apart first. Scans, risks and actions are counted only from the rest. The report's intelligence section is headed "public threat intelligence … context only: not activity seen on this computer, and not to be reported as an incident".
+- **Copy:**
+  - login, register and the setup wizard now describe what the product does: scanning links, analysing pages without opening them on the computer, signed device enrollment, blocks only after approval, the audit trail, and export and deletion;
+  - the login note says the session is kept in the computer's credential store;
+  - the phone's empty browser view points to the desktop's browser report instead of a browser extension that does not exist;
+  - the README describes the globe as public threat intelligence.
+
+**Checked:**
+- **`tests/contracts/source-labels.test.js`, 7 tests:**
+  - no client file or the README calls public intelligence a live attack, attacks per minute, an attack map or worldwide attacks;
+  - the desktop globe names its source, shows each pulse's age, does not cycle, and sends the account's own events to their own panel;
+  - no page header carries a fixed threat count;
+  - the phone globe keeps the two apart and fills in no severity or time;
+  - no visible text promises detonation;
+  - the Sandbox lights only the two evidence-backed tiles, each with its reason;
+  - no client claims SOC 2 or hardware-key MFA;
+  - reports count scans, risks and actions only from what is not intelligence.
+- The rendering audit's reviewed list lost two entries the globe no longer has: its rows now set text with `textContent`.
+- The phone type-checks.
+- **Gate:** 783 tests (569 security, 214 contract).
+
+### 16.85 October 16, 2026 — Every desktop page audited for invented figures; six corrected, Scheduled rebuilt on real agents
+
+**How the audit was done:** every number in every desktop page's markup was listed. For each, the check was whether the page's script ever writes the element that holds it. A number nothing replaces is either a label ("last 24h", "/ 100 risk") or an invented figure. The checks before only covered pages already known to be wrong; this one covered all of them. The phone app was searched the same way and holds none: its only random values are the decorative globe's dots and ID generation.
+
+**What was there, and what changed:**
+
+| Page | Invented before | Now |
+| --- | --- | --- |
+| Incident Timeline | "1 active", "MTTR 1h 48m", "INC-2207 critical", "Contained Today 4 · 0 escalated", "MTTR 1.8h rolling 30d", "23 this week", a "RedLine Stealer Containment" incident on "WS-4471 started 09:41", a 24-minute detection clock, and a particle running along the "containment" step. "Recent Incidents" was never filled; Export did nothing | counts by severity from the account's threats; time to respond "not measured: no resolution times recorded"; "No incident in progress", with the phases marked as a template; Recent Incidents lists the account's threats; Export opens Reports |
+| Investigations | "3 active", "avg resolve 2.4h", "Closed (7d) 28 · 26 resolved", "Mean Resolve 2.4h AI-accelerated", "Linked Alerts 41". Every case "assigned" to "CyberForge Agent", with a progress bar computed from the risk score and "Mitigation in progress" | open, closed and total counts from the threats; mean resolve "not measured"; a case shows what its threat records: detection, the risk score or "not scored", and "no response recorded yet" or how it was closed; no assignee; progress counts recorded steps |
+| Scheduled | nine invented jobs (Fleet Threat Sweep, Model Retrain, Compliance Report, …) with countdowns that "ran" at zero and wrote fake runs to the log; "Run now" and the switches did nothing; "214 runs today", "99.7% success", "3.4 s" | rebuilt on the account's agents with an interval schedule (AGT-04): each one's next slot from its interval, its real runs, runs today, failures, the share completed and the mean duration from those runs. "Run now", pause and resume call the backend. With none scheduled, it says how to schedule one in Agents |
+| Signal Pipeline | "12,480 events/s", "12.4k / 12.3k / 11.9k / 318 per s", "142 rules", "7 collectors", "ECS schema", "99.1% parsed", "+18% vs avg", "3.2M enriched", fixed utilisation bars, stage latencies. Running totals were shown as "/s". "Backlog 0" meant "backend reachable"; a round trip was labelled "end-to-end p95". Particles flowed with no events; Pause did nothing | each stage counts the events it receives (agent activity, scan results, threats and alerts) this session, in the last minute, with the last event's time. Normalize, which has no source, says "not measured". The rate is the last 10 seconds. The backend cards say "Backend round trip", "reachable" and "threats on your account". Particles move only while events arrive, and the list can be paused |
+| Browser Intelligence | "1,240 req/min", "3 active sessions · 1 browser", "1.2k requests/min", "5 held", "Intercept Queue 5" until data arrived (or for good, with collection off). The domain count was labelled "Requests / min", the account's threat total "Behavioral Alerts · last 24h", and every HTTPS tab got the status "200" | "—" until data arrives; "Domains seen", "Threats on your account", "Insecure tabs"; the scheme (https or http) instead of a status code nothing saw |
+| Alerts & Evidence | "11 open", "Mean Triage 38 s AI-assisted", "Evidence Items 48 chain-of-custody", "5 items". Every alert without stored evidence listed "triage_summary.md" and "alert_context.json", with download icons. A risk score was shown as "Confidence" | counts from the alerts; mean triage "not measured"; evidence only as stored, otherwise "No evidence stored for this alert"; the score says whether it is a confidence or a risk score |
+| Model Inference | a Datasets panel of six invented collections ("Network Flows", "Auth Events", …, "6 · 4.2 TB") | "Training data · per model": each model's training report, published with it in `Che237/cyberforge-models`, gives its collections, sizes, licences, held-out results and limits |
+
+- Page headers and footers on these pages say what refreshes and from where, instead of "Live" and spinning "Streaming…".
+
+**Checked:**
+- **`tests/contracts/desktop-truthfulness.test.js`, 9 new tests:**
+  - the invented figures above, by value, are gone from each page;
+  - time to respond and resolve are marked as not measured;
+  - a case invents no assignee, progress or mitigation, and no phase is animated as under way;
+  - Scheduled lists agents and their runs through `agents_call`, and its controls call the backend;
+  - Signal Pipeline ships no preset rate, latency, rule count or trend, and labels the backend check correctly;
+  - Browser Intelligence, Alerts and Model Inference ship no preset traffic, queue, triage time, evidence or dataset.
+- The rendering audit's reviewed list lost the entries of the code that was removed; the new rows set their text with `textContent`.
+- **Gate:** 792 tests (569 security, 223 contract).
+
+**Behaviour change to expect:** these pages now show "—", zero or "not measured" where they used to show figures. That is the actual state: those figures had no source.
+
+### 16.86 October 16, 2026 — The live surfaces shared by every page no longer cover it
+
+**What was there** (on every desktop page, from `cf-live.js`, `cyberforge-shared.js` and `cf-agent.js`):
+- The live-feed indicator was fixed at the top right, above everything (`z-index: 10000`), over whatever the page header had in that corner.
+- The "Live Activity" list, when collapsed, still showed a 300 × 40 bar at the bottom right, over the status bar and next to the agent button.
+- Toasts stacked without limit: a burst of alerts made a column down the right side of the page, each staying five seconds. They could not be dismissed.
+- The agent panel could be put away only with its own button.
+- The page header showed a "● REC" and a green "● ON" chip on every page that did not pass its own, with nothing recording.
+
+**What changed:**
+- The indicator is placed in the page's top bar when there is one, so it takes its place in the header instead of covering it. It is a button (Enter or Space) and says whether the list is open.
+- The Live Activity list is hidden until the indicator opens it. It opens above the agent button rather than over it, and closes from its header or with Escape. It is a labelled region.
+- At most three toasts show at once (the oldest goes first; the Live Activity list keeps every event). A click dismisses one. Toasts are announced politely to screen readers.
+- Escape puts the agent panel away, back to its icon.
+- The header shows no status chip unless the page passes a real one. Sandbox's own "URL scan" chip stays.
+
+**Checked:**
+- **`tests/contracts/desktop-truthfulness.test.js`, 5 new tests:**
+  - the indicator goes into the top bar;
+  - the list is hidden until opened, opens above the agent button, and closes on Escape;
+  - toasts are capped at three and can be dismissed;
+  - Escape puts the agent panel away;
+  - the header has no default recording chip.
+- **Gate:** 797 tests (569 security, 228 contract).
+
+**Not checked here:** how these look at each supported window size, which needs the built app (the window-size and keyboard item).
+
+### 16.87 October 16, 2026 — Keyboard, focus, motion and text scaling on the desktop and the phone (UX-02, UX-04)
+
+**What was there:**
+- **Desktop:**
+  - about thirty kinds of control, across the pages, were `<div>`s or `<span>`s with a click handler. Examples: tabs, chips, filter buttons, the job and case rows, Settings' section list, the globe's view switch. None could be reached with Tab or used with Enter, and none was announced as a button;
+  - no page showed where keyboard focus was;
+  - animations ran whatever the system's reduced-motion setting;
+  - Settings did not move focus into itself, let Tab wander behind it, and dropped focus on close;
+  - **text scaling was undone.** `fitWindow` scaled the 1440 × 824 design to the window's height. At 200% system scaling a 1080p screen is 960 × 540 CSS pixels, so the whole interface was shrunk to 65%, back to about its unscaled size, which is exactly what UX-02 rules out.
+- **Phone:** 27 of the 33 pressable controls were not announced as buttons. The back buttons, the send button and the password eye had no name. The switch had no role or state.
+
+**What changed:**
+- **`desktop/ui/scripts/cf-a11y.js`, loaded first on every page** (25 pages and the agent panel):
+  - any element that is not a native control and gets a click handler becomes focusable (`tabindex="0"`), is announced as a button (unless it has its own role), and answers Enter and Space;
+  - overlays, backdrops and large containers are left alone, since a click handler there is a backdrop or event delegation, not a control;
+  - keyboard focus always shows a ring (`:focus-visible`);
+  - with "reduce motion" set in the system, animations and transitions stop;
+  - it calls no native command (checked), so the alert popup's capability is unchanged.
+- **The layout keeps the system's scaling** (`fitWindow`):
+  - it still fits the design to the window, but never so far that it undoes scaling. With the display or text scaled to 175% or more, or when fitting would go below 75%, the page keeps at least full size and scrolls both ways instead;
+  - at normal scaling a small window still fits, down to 75%;
+  - the common 150% laptop setting still fits, as before.
+- **Settings is a dialog** (`role="dialog"`, `aria-modal`, labelled by its title):
+  - focus moves to its close button when it opens;
+  - Tab and Shift+Tab stay inside it;
+  - Escape or Close returns focus to where it was.
+- **Phone:**
+  - every pressable control has a role: button, or a switch with its on or off state;
+  - the icon-only controls are named: "Back" (twice), "Send", "Show password" or "Hide password", and "Close" for the alert sheet's backdrop;
+  - nothing turns off the system font size.
+
+**Checked:**
+- **`tests/contracts/accessibility.test.js`, 8 tests:**
+  - every desktop page loads the keyboard layer first;
+  - the layer turns clickable non-controls into focusable buttons that answer Enter and Space;
+  - focus is visible and reduced motion is honoured;
+  - the layout does not undo scaling;
+  - Settings takes, keeps and returns focus;
+  - every phone control has a role;
+  - the icon-only controls have names, and the switch has its state;
+  - no phone text opts out of the system font size.
+- `desktop-capabilities.test.js` now allows the keyboard layer on the alert popup, and checks that it calls no command.
+- Rust: 79 tests pass. The phone type-checks.
+- **Gate:** 805 tests (569 security, 236 contract).
+
+**Not checked here, and needed for the item:** going through the core flows in the built apps at the supported window sizes and at 200% scaling; using them with a screen reader (Narrator or NVDA on Windows, TalkBack on Android); and checking contrast against UX-04's WCAG 2.2 AA scope.
+
+### 16.88 October 16, 2026 — README and BUILD.md brought up to date: privacy defaults, known limitations, recovery
+
+**What was there:**
+- The README did not say that collection and sending start off, or where to export or delete data.
+- It had no list of limitations: those were only in this plan.
+- The plan's checklist still said there was no rollback guide. There has been one since 16.82.
+- `desktop/BUILD.md` described neither `privacy.json` nor `device_outbox.json`, and did not say that every page asks for the privacy choice on first run. Its known limits said nothing about window size or scaling.
+
+**What changed:**
+- **README, Getting started:** each collection or sending control is off until chosen in Settings → Privacy (the phone's three as well), each says what it sends, and the same screen exports or deletes the data.
+- **README, Known limitations**, each as the code stands:
+  - Android capture is not available (no packet engine in the repository);
+  - the sandbox is static analysis, and its MITRE tiles are hints;
+  - incidents are threats, with no phases, assignees or resolution times;
+  - some backend data lives only in the web process (the F12 list);
+  - the models' measured limits are in their training reports;
+  - what has not been run: the packaged builds, an Expo build, `docker compose up`, a screen-reader walkthrough and a contrast check.
+  It links `docs/RECOVERY.md` for recovery and rollback.
+- **`desktop/BUILD.md`:**
+  - the data folder's `device_outbox.json` (its limit, and what is dropped and counted) and `privacy.json`;
+  - first run: the Privacy prompt on every page, and everything off until chosen;
+  - known limits: the interface keeps full size and scrolls at 175%+ scaling or in a small window; keyboard, focus and reduced motion are in place, the screen-reader walkthrough and contrast check are not; a link to the recovery guide.
+
+**Checked:**
+- The README's links are checked by `workspace-scripts.test.js`, including that none points to an ignored file.
+- **Gate:** 805 tests (569 security, 236 contract).
+
+**Still open in this item:** `docker compose up` has not been run (Docker is not installed on the development machine), and the packaged desktop builds and the Expo build are the user's to run.
+
+### 16.89 October 16, 2026 — AGT-07: "Retry failed checks" and run search; addresses redacted in run records and before analysis
+
+**What was there:** a run's steps and findings could be read one run at a time, from its agent. There was no way to:
+- find a run by its ID, by a device it checked, or by an address;
+- repeat only what failed.
+
+Run records showed addresses exactly as given, sign-in codes included, and the URL tools sent them to the ML service that way too.
+
+**What changed** (`services/agentRunService.js`, `models/AgentRun.js`, `routes/agentsV1.js`):
+- **`POST /api/v1/runs/:id/retry`**, "Retry failed checks": a new run (`trigger: 'retry'`, `retryOf` the original) that repeats only the original's failed or skipped steps.
+  - It is valid only for a partial or failed run whose agent is still active at the same version. After a change it answers `AGENT_CHANGED`: run the agent again instead, because what a run does comes from its definition version.
+  - The steps to repeat must be in that version's plan. The worker checks this again when it runs them, so a changed record cannot add a step.
+  - Idempotent by key; budgets and pause apply as to any run; audited as `agent.run_retry`.
+  - Each run now says how many of its steps can be retried (`retryableSteps`).
+- **`GET /api/v1/runs?q=&deviceId=&state=&agentId=`**: search the workspace's runs by:
+  - run ID (also finds that run's retries);
+  - device ID (a device a step checked, or one a finding names);
+  - text in the outcome, a step's summary or tool, a target, a finding, or the agent's name.
+  It covers the most recent 200 runs matching the state and agent filters, says so, and gives each result its agent's name. Another workspace's runs are never searched.
+- **Redaction:**
+  - every address in a run's record (targets, summaries, outcomes, findings) is shown with sign-in codes and tokens removed, through the same `redactUrl` as everywhere else;
+  - the URL tools now remove them before the address is sent for analysis.
+- **Desktop Agents page:**
+  - a "Find a run" card (run ID, device ID or text) whose results open the run;
+  - a "Retry failed checks (N)" button on a partial or failed run that has any;
+  - a retry run says which run it repeats.
+  The desktop reaches these through two new entries in the fixed `agents_call` table: `run_retry`, and `run_search`, which passes only its four terms, as text of at most 200 characters each.
+- The phone's Agents screen handles proposals and the emergency pause, not runs, so it is unchanged.
+
+**Checked:**
+- **`agent-runs.test.js`, 5 new tests:**
+  - a retry repeats only the failed step, once per request, says which run it repeats, and is audited;
+  - it is refused for a run with nothing to retry, for another account's run, and after the agent changed;
+  - a tampered retry record cannot add a step;
+  - search by run ID, by device ID and by text, within the workspace only;
+  - addresses are shown redacted, and never left for analysis with the code in them.
+- **Rust:** 80 tests pass, including `run_search_passes_only_its_own_terms`.
+- **Gate:** 810 tests (574 security, 236 contract).
+
+**Verified live (release v32, deployed by the user, October 16, 2026), 10 of 10 checks.** A one-step-budget agent over two targets, one carrying a sign-in code:
+- its run ended partial: "1 of 4 steps completed; stopped: the step budget (1) was reached", with 3 steps retryable;
+- the retry was queued (201) naming that run; the same request again returned the same retry;
+- the retry covered exactly the three skipped checks;
+- another account could not retry it (404) and its search found nothing;
+- search by run ID found the run and its retry, and search by text found both;
+- the sign-in code appeared nowhere: the targets read `code=[redacted]`.
+
+The test accounts and their records were then removed by exact ID; the database holds the 8 real accounts again.
+
+### 16.90 October 16, 2026 — SEC-08: signed audit checkpoints, an integrity check, and evidence exported with a signed manifest
+
+**What was there:** audit events were durable, written by the server and append-only through the application (16.48), and sandbox evidence carried a fingerprint (16.52). Nothing could show that an event had been changed or removed directly in the database. Evidence could not be exported with a manifest anyone could verify. Both were in SEC-08's acceptance.
+
+**What changed:**
+- **Content hashes.** Each audit event is recorded with a SHA-256 of its fields: scope, workspace, actor, action, resource, outcome, origin, details, correlation ID, address and time (`contentHash`).
+- **Signed checkpoints** (`models/AuditCheckpoint.js`, `services/auditIntegrityService.js`):
+  - for each workspace and for the platform, a checkpoint covers the events recorded since the previous one: their count, their first and last times, and a root hash over each event's ID and content hash, in order;
+  - it names the previous checkpoint and its root hash, so checkpoints form a chain;
+  - it is signed with **`AUDIT_SIGNING_KEY`**, an Ed25519 key that is a server setting, never in the database. Someone who can write to the database but cannot read the server's settings cannot make a valid one;
+  - events from the last minute wait for the next checkpoint, so one still being written elsewhere is not left out;
+  - the web process writes checkpoints hourly, and before every check;
+  - checkpoints are append-only through the application, and expire a day after the events they cover.
+- **`GET /api/audit/integrity`** checks the workspace's trail; `?scope=platform` checks the platform's, for administrators only. For every checkpoint it:
+  - recomputes each event's content hash;
+  - recomputes the checkpoint's root hash and event count;
+  - checks its signature and its link to the previous checkpoint.
+
+  The answer is `intact`, `altered` (with the IDs of changed events, and the counts when events were removed or added), `signature_invalid`, `chain_broken`, `other_key`, or `expired` / `partly_expired` (past the 90-day retention, as intended). It also gives:
+  - how many events are covered and how many are not yet;
+  - how many were recorded before content hashes existed (checked by ID only);
+  - the public key.
+
+  Its note says what the check does: it detects changes made after a checkpoint, without naming what a removal took, and it does not prevent them. Without the key it answers 501 and says so.
+- **Evidence export** (`GET /api/sandbox/export?ids=…`; the latest 200 without ids): the scans as stored, with a manifest.
+  - Each manifest item gives the scan's ID, kind, source ("sandbox url analysis"), collection time, fingerprint, and whether it read intact at export.
+  - The manifest also lists the fields the fingerprint covers, and its transformations (none: items are exported as stored).
+  - It is signed with the same key; the signature, key ID and public key come with it. Anyone can verify it offline: Ed25519 over `cyberforge-evidence-manifest-v1`, a newline, and the manifest's canonical SHA-256.
+  - Exports are audited as `evidence.export`.
+- **`POST /api/sandbox/export/verify`** checks a manifest's signature (`valid`, `invalid`, `other_key`, `unsigned`), then each item against what is stored now:
+  - `intact`;
+  - `changed`;
+  - `deleted`, with the time of its deletion record and whether that record's fingerprint matches;
+  - `missing`, gone with no deletion record.
+
+  A manifest for another workspace is refused without looking anything up. This is "derived reports show missing or deleted evidence honestly" for exports.
+- Clients can no longer report `account.*` events, alongside `evidence.*` and the others the server records itself.
+- `utils/canonical.js` is the one canonical form for fingerprints, content hashes and manifests (the sandbox's copy moved there unchanged).
+- **Configuration:** `AUDIT_SIGNING_KEY` was generated and set on Heroku (release v33), never printed. `backend/.env.example` documents it and `DEVICE_COMMAND_KEY`. `docs/RECOVERY.md` says what removing or changing the key does, and what to do about a failed check.
+
+**Checked:**
+- **`tests/security/audit-integrity.test.js`, 14 tests:**
+  - every event carries its content hash;
+  - a checkpoint covers what is new, chains to the previous one, and is signed;
+  - recent events wait;
+  - an untouched trail is intact, and another workspace's events are not counted;
+  - a changed event is named, a restored one is intact again, and a removed one is counted;
+  - an event slipped into a covered range, even with a correct content hash, is found;
+  - a changed checkpoint fails its signature, and a removed one breaks the chain;
+  - older events are checked by ID only;
+  - without a key the route says so (501);
+  - the route checks the caller's workspace, and the platform is for administrators;
+  - a client cannot report `account.*` or `evidence.*`;
+  - the evidence manifest names source, time and fingerprint, and verifies;
+  - a changed item, a deleted item (with its deletion record) and an edited manifest are each reported;
+  - another workspace's manifest is not looked up.
+- `route-guards.test.js` counts the two new sandbox routes behind the session check (61). The account-data store list places `AuditCheckpoint` as not personal, with the reason.
+- **Gate:** 827 tests (591 security, 236 contract).
+
+**Verified live (release v34, deployed by the user, October 16, 2026), 13 of 13 checks:**
+- two scans were stored as evidence;
+- the integrity check answered; events from the last minute were reported as not yet covered;
+- 70 seconds later a signed checkpoint covered them, the trail was intact, and every content hash matched after the real database's round trip;
+- the platform view was refused to a non-administrator;
+- the export held both scans with a signed manifest, which verified offline with the published key and through the route (both intact);
+- after one scan was deleted, it read as deleted, with its deletion record and a matching fingerprint;
+- an edited manifest failed its signature, and another account's lookup was refused without naming items.
+
+**Still open in SEC-08:**
+- desktop reports linking each finding to an evidence ID (the desktop builds its reports from local memory);
+- database backups and their retention, which belong to the database host (MongoDB Atlas) and are not set up from here.
+
+### 16.91 October 16, 2026 — DET-02, first part: one finding per thing found, and a workflow that is saved
+
+**What was there:**
+- Every analysis with a high enough risk score added a new threat record. A page scanned ten times was ten threats.
+- The threat had statuses and a timeline, but only "dismiss" and "resolve" could change them, from any state.
+- The desktop's Acknowledge, Escalate and "Ack All" buttons on Alerts & Evidence changed only what that screen showed.
+
+**What changed:**
+- **One finding per account, category and target** (`services/findingService.js`). Each finding has a stable fingerprint: the account, the category, and the normalised target (host without "www.", path, lower case, no query string or fragment).
+  - A detection matching an open finding with the same fingerprint seen in the last 24 hours raises its count (`occurrences`) and last-seen time. It keeps the worst severity seen, and adds "Seen again" to the timeline (the last 100 entries are kept). No new record is made.
+  - A detection matching only a closed finding (resolved, false positive, dismissed, mitigated), or an open one last seen more than a day ago, is a new finding naming the earlier one (`recurrenceOf`, "Found again after it was resolved"). The closed one's history stays as it was.
+  - Analyses now create findings through this one path (`AIAnalysisService.createThreatFromAnalysis`).
+- **The workflow**, `PUT /api/threats/:threatId/state { action, note }`:
+
+| Action | Moves to | Allowed from |
+| --- | --- | --- |
+| acknowledge | acknowledged | detected |
+| investigate (assigns it to the caller) | investigating | detected, acknowledged, confirmed |
+| resolve | resolved | any open state |
+| false_positive | false_positive | any open state |
+| reopen | acknowledged | any closed state |
+
+  - The state is checked and changed in one database step, so two people cannot both move it from the same state. A step that is not allowed answers 409 and changes nothing.
+  - Each step goes into the finding's timeline ("acknowledged → investigating", with the note) and is audited as `finding.state_change`. Clients cannot report that action.
+  - Severity is the detection's and does not change with the workflow.
+  - **A false positive changes that one finding only:** no model, threshold or other account's detection. Another account's detection of the same target is its own new finding.
+  - "Active" counts and lists include `acknowledged`.
+- **Desktop:**
+  - each finding in Investigations shows its state, how many times it was seen, and that severity stays as detected. It offers only the steps that state allows, through a new `finding_state` command with a fixed list of actions, and the list reloads after each step;
+  - findings that come from the agent alerts (a separate store) say they have no workflow yet;
+  - on Alerts & Evidence, Acknowledge and Escalate now say they mark the alert on that screen only and are not saved, and "Ack All" is "Mark all seen".
+- The test stand-in gained `$push` (with `$each` and `$slice`) and dotted paths in `$set`.
+
+**Checked:**
+- **`tests/security/findings.test.js`, 8 tests:**
+  - the same target seen again raises the count and keeps the worst severity;
+  - a different category, target or account is a different finding;
+  - after a day, or once closed, the target is a new finding that names the earlier one, and the closed one is unchanged;
+  - targets are compared without "www.", the query string or letter case;
+  - the workflow steps are checked, kept in the timeline and audited, and severity does not change;
+  - another account's finding is not found, and an unknown action is refused;
+  - a false positive does not affect another account's detection;
+  - a client cannot report `finding.*`.
+- `threat-ownership.test.js` still shows a new finding takes its owner from the stored analysis.
+- `desktop-truthfulness.test.js`, 2 new tests: Investigations uses the backend workflow and offers only the allowed steps, and Alerts says its acknowledgements are not saved.
+- **Rust:** 81 tests pass, including `finding_api_tests` (only the listed actions; the finding ID checked before it goes into the path).
+- **Gate:** 835 tests (599 security, 236 contract).
+
+**Verified live (release v34), 7 of 7 checks.** Findings were created for a throwaway account in the production database through `recordFinding`, since a finding from the API needs the ML service to rate a page 7 or more:
+- a repeat of the same target, written with "www." and another query string, was counted on the same finding (2 occurrences, severity raised to high);
+- through the deployed route: acknowledge worked; acknowledging again answered 409 `TRANSITION_NOT_ALLOWED`; another account got 404; resolve kept the whole timeline ("Found | Seen again | detected → acknowledged | acknowledged → resolved");
+- the target found again after it was resolved was a new finding naming the earlier one;
+- both steps were in the audit trail.
+
+Both test accounts, with their findings, scans, audit events and checkpoint, were removed by exact ID; the database holds the 8 real accounts again. Platform-level audit events are no longer removed by the cleanup, since a signed checkpoint may cover them.
+
+**Still open in DET-02:**
+- ~~grouping related findings into incidents with a shared timeline and evidence~~ (16.93);
+- ~~"why this matters" and the recommended next step on each finding~~ (16.92);
+- ~~scoped exceptions with an owner, reason, expiry and audit trail~~ (16.92);
+- a saved workflow for the agent alerts.
+
+### 16.92 October 16, 2026 — DET-02, second part: scoped exceptions, and what each finding means
+
+**What was there:** no way to say "this target is expected for us" except dismissing the finding, which a new detection then raised again. A finding said what was found, but not why it mattered or what to do.
+
+**What changed:**
+- **Exceptions** (`models/FindingException.js`; `GET`, `POST` and `DELETE /api/v1/finding-exceptions`; and `POST /api/threats/:threatId/exception` to make one from a finding):
+  - an exception names a category and a target (normalised as findings are), a **reason** (required), an **expiry** of 1 to 90 days, its **owner**, and the **highest severity** it covers (medium by default; from the finding's own severity when made from one);
+  - it belongs to the workspace and applies to that account's findings only. Another account's detection of the same target is never covered;
+  - a detection it covers is **still recorded**, as `excepted`, with its count, the exception's ID and reason in the timeline. It is not in the open list. The exception counts its matches and keeps the last one's time;
+  - **new contradictory evidence is not covered:** a detection more severe than the exception covers opens as a normal finding, whose timeline says "exception … did not apply: severity critical is above the medium it covers";
+  - an expired or revoked exception covers nothing. Revoked and expired ones stay listed with their state, as the record of what was excepted;
+  - making and revoking are audited (`finding.exception_create`, `finding.exception_revoke`). Clients cannot report `finding.*` events;
+  - an excepted finding can be reopened like any closed one;
+  - exceptions are part of the account's data: they are exported, and deleted with the `scans` scope or the account.
+- **Guidance on each finding:** `GET /api/threats` gives each finding `guidance`:
+  - `whyItMatters`, by category (phishing, malware, suspicious URL, network intrusion, and a general one);
+  - `nextStep`, which depends on the state: what to do while open, "Reopen it if…" when closed, "Revoke the exception to raise it again" when excepted;
+  - `occurrences`.
+- **Desktop Investigations:** shows "Why this matters" and "Next step" for each finding, and an "Except this target" form (reason; 7, 30 or 90 days) through a new `finding_exception` command. The command checks the reason and the length before sending.
+- `GET /api/threats?status=` also takes `acknowledged`, `excepted` and `all`.
+
+**Checked:**
+- **`tests/security/findings.test.js`, 6 new tests (14 in all):**
+  - a covered detection is recorded as excepted, counted, and kept out of the open list;
+  - a more severe one is not covered, and says why;
+  - an expired or revoked exception covers nothing, another account is never covered, and the list shows the revoked one;
+  - an exception needs a reason and an expiry of at most 90 days;
+  - made from a finding, it takes that finding's category, target and severity, and another account cannot make one from it;
+  - each listed finding says why it matters and what to do next.
+- `account-data.test.js` covers the new store (the `scans` scope removes exceptions too). `threat-ownership.test.js` gives the workspace lookup a stand-in.
+- **Rust:** 82 tests pass, including `an_exception_needs_a_reason_and_1_to_90_days`.
+- **Gate:** 843 tests (605 security, 238 contract).
+
+**Verified live (release v35, deployed by the user, October 16, 2026), 11 of 11 checks**, over the API and the production database:
+- an exception was made and normalised (`selftest-staging.example/login`, medium and below), and one without a reason was refused;
+- a covered detection was recorded as excepted;
+- a critical one was not covered, and its timeline said why;
+- another account's detection was not covered;
+- the open list held only the uncovered finding, with its guidance;
+- the exception counted its match, and was invisible to another account;
+- revoked, it stayed listed as revoked and covered nothing;
+- making and revoking were in the audit trail.
+
+The test accounts, their findings and the exception were removed by exact ID. The incidents route (16.93) was not yet in v35.
+
+### 16.93 October 16, 2026 — DET-02, third part: incidents, with one timeline, resolved through the findings
+
+**What was there:** findings could only be read one at a time. Several findings about the same host (a sign-in page, then a file from it) had nothing tying them together. The desktop's Incident Timeline showed threat counts with no incident.
+
+**What changed** (`services/incidentService.js`; `GET /api/v1/incidents`, `POST /api/v1/incidents/:id/resolve`):
+- **An incident is computed from the account's findings each time it is read**, not stored, so it cannot drift from them:
+  - findings about the same host (the normalised target up to the first "/") belong together;
+  - a gap of more than 72 hours between one finding and the next starts a new incident;
+  - it covers the last 30 days, at most 500 findings.
+- Each incident gives:
+  - its findings (category, state, severity, count, last seen) and the highest severity among them;
+  - open or closed, and how many findings are open;
+  - first and last seen;
+  - **one timeline** merged from its findings' timelines (each entry names its finding, last 100 kept);
+  - the **last-known connection and coverage of the workspace's devices**, as context for what could have seen it.
+- **Resolving an incident resolves each of its open findings** through the same audited workflow (`finding.state_change`, note "resolved with incident …"). Their history is kept, and the incident then reads as closed. A finding changed meanwhile is left as it is and counted.
+- **Desktop Incident Timeline:**
+  - Recent Incidents lists the incidents (host, finding count, severity, state, occurrences, last seen), through two new commands, `incidents_list` and `incident_resolve`;
+  - choosing one shows its merged timeline in the event feed, its host and state in the heading, and the time since it was first seen while open;
+  - "Resolve incident (N open)" resolves it.
+
+**Checked:**
+- **`tests/security/findings.test.js`, 2 new tests (16 in all):**
+  - findings on one host form one incident with one timeline, while another host or a 10-day gap is another incident; the incident carries the device context, and another account sees none;
+  - resolving an incident resolves each open finding through the audited workflow and keeps their history, another account gets 404, and the incident then reads as closed.
+- `desktop-truthfulness.test.js`: Incident Timeline lists the incidents and resolves through the backend.
+- **Rust:** 82 tests pass.
+- **Gate:** 846 tests (607 security, 239 contract).
+
+**Verified live (release v36, deployed by the user, October 16, 2026), 8 of 8 checks**, with findings created in the production database for a throwaway account:
+- two findings on one host formed one incident and a third host another;
+- the incident had the highest severity and one timeline merged from both findings;
+- another account saw no incident and could not resolve it (404);
+- resolving it resolved both findings, the incident then read as closed, and both resolutions were in the audit trail.
+
+The test accounts and their findings were removed by exact ID; the database holds the 8 real accounts again.
+
+**Still open in DET-02:** a saved workflow for the agent alerts (a separate Appwrite store), and linking incidents to stored evidence.
+
+### 16.94 October 16, 2026 — Desktop Google sign-in: `state` and PKCE, and only the real callback is taken
+
+**What was there** (one of the plan's verification targets, and noted as not done in 16.47):
+- The desktop's Google sign-in (`auth_google`) opened the consent screen with no `state` and no PKCE.
+- It took the first request to its loopback port that had a `code`, whoever sent it. A page the user visited during the sign-in could send the browser to that port with its own code and sign the app in to an account of its choosing.
+- A code intercepted on its way could be redeemed through the backend, which needed only the code and a redirect address.
+- Any other request to the port (a browser asking for `/favicon.ico`, for example) ended the sign-in as "cancelled".
+
+**What changed:**
+- **Desktop** (`desktop/src-tauri/src/oauth.rs`, `agent.rs`):
+  - each sign-in makes a random `state` (32 bytes) and a PKCE verifier (32 bytes), and sends the state and the S256 challenge with the consent request;
+  - the callback is accepted only when it brings back the same state, compared in constant time. Otherwise the browser tab says the sign-in did not start in CyberForge and the app refuses it;
+  - Google's `error` answer ends the sign-in as cancelled. Any other request to the port gets a 404 and the app keeps waiting;
+  - the verifier goes to the backend with the code.
+- **Backend** (`authController.exchangeGoogleToken`, `routes/auth.js`):
+  - the code exchange requires a well-formed PKCE verifier (43 to 128 characters of the RFC 7636 alphabet) and passes it to Google, which redeems the code only with the verifier that matches its challenge;
+  - the redirect address must be the app's loopback address (`http://127.0.0.1:<port>`, optionally with a simple path);
+  - without them, Google is never asked.
+
+**Behaviour change to expect:** after this deploy, Google sign-in from a desktop build older than this change fails with "A PKCE code_verifier is required. Update the desktop app." Password sign-in is unaffected. The new desktop build signs in with Google as before.
+
+**Checked:**
+- **Rust:** 85 tests pass. New in `oauth_tests`:
+  - the S256 challenge matches RFC 7636's own example (appendix B), and the random values are 43 base64url characters and differ each time;
+  - only a callback with both code and state is taken; an error is a refusal; a favicon request or a code without a state is not the callback;
+  - secrets are compared whole.
+- **`authentication.test.js`, 1 new test and 1 changed:**
+  - without a verifier, with a short one, with a non-loopback redirect, or with `127.0.0.1.attacker.example`, the exchange answers 400 and Google is never asked;
+  - the verifier is passed to Google with the code.
+- **`tests/contracts/desktop-oauth.test.js`, 3 tests:**
+  - the consent request carries a random state and an S256 challenge;
+  - the callback is taken only with the same state;
+  - the verifier is sent with the code.
+- `account-linking.test.js` now sends a verifier.
+- **Gate:** 850 tests (608 security, 242 contract).
+
+**Verified live (release v37, deployed by the user):** the exchange answered a request without a verifier with 400 `PKCE_REQUIRED` ("A PKCE code_verifier is required. Update the desktop app."), and one with a non-loopback redirect with 400, both before asking Google. **Not checked live:** a real Google sign-in, which needs the packaged desktop app and a Google client configured on the server (16.47 also could not test this).
+
+### 16.95 October 16, 2026 — DET-02, fourth part: a saved workflow for the agent alerts
+
+**What was there:** agent alerts (from the browser, the scraper and the models) are kept in Appwrite, whose `alerts` collection has no status field. The desktop's Acknowledge and Escalate changed only what its screen showed (16.91 said so on the screen).
+
+**What changed:**
+- **Decisions are kept in the backend database** (`models/AlertDecision.js`, `services/alertDecisionService.js`): one per workspace and alert, with the current state and its history (who, when, from, to, note; the last 50 entries kept). The alert itself stays in Appwrite as it was recorded, so the Appwrite schema is unchanged.
+- **`PUT /api/agent/alerts/:alertId/state { action, note }`**:
+  - acknowledge (from new), escalate (from new or acknowledged), resolve and false_positive (from any open state), and reopen (from resolved or false positive);
+  - only an alert of the signed-in account can be decided on: it is looked up in Appwrite by its alert ID (or document ID) together with the account's user ID (`appwriteService.getAlertForUser`), so another account's alert answers 404;
+  - the state is checked and changed in one step, and a step the state does not allow answers 409;
+  - each step is audited as `alert.state_change` (with the alert's severity and the note). Clients cannot report `alert.*` events.
+- **`GET /api/agent/alerts`** gives each alert its `workflowState` (`new` when nobody has decided) and its last decision.
+- Decisions are part of the account's data: exported, and deleted with the `scans` scope or the account.
+- **Desktop Alerts & Evidence:**
+  - for a stored alert, Acknowledge and Escalate now save through a new `alert_state` command (fixed list of actions; the alert ID checked by shape), and the detail says the state is saved for the account and audited;
+  - a live alert that arrived on the event stream and is not stored yet still says its buttons mark it on that screen only;
+  - each alert's state is read from the backend when the list loads.
+
+**Checked:**
+- **`tests/security/alert-decisions.test.js`, 4 tests:**
+  - acknowledge, escalate, resolve and reopen are saved, checked against the state, kept in the history and audited;
+  - the listed alerts carry their decided state and last decision;
+  - another account's alert cannot be decided on, and an unknown action or a malformed ID is refused, with nothing stored;
+  - a client cannot report `alert.*`.
+- `route-guards.test.js` counts the new route (62), and the account-data list covers the new store.
+- `desktop-truthfulness.test.js`: Alerts saves through the backend for stored alerts and says when an alert stays on the screen. `desktop-privacy.test.js` reviews `alert_state`.
+- **Rust:** 85 tests pass.
+- **Gate:** 855 tests (613 security, 242 contract).
+
+**Verified live (release v38, deployed by the user, October 16, 2026), 8 of 8 checks:**
+- an alert stored through the browser-intelligence route was listed as `new`;
+- acknowledging it was saved, acknowledging again answered 409, and another account got 404;
+- escalating it was saved, and the list then showed `escalated` with the last decision;
+- both steps were in the audit trail.
+
+The test accounts, the decision and the Appwrite alert were removed by exact ID; the database holds the 8 real accounts again and Appwrite no test documents.
+
+**Still open in DET-02:** ~~linking incidents to stored evidence~~ (16.96).
+
+### 16.96 October 16, 2026 — DET-02 complete: each incident lists its stored evidence and exports it with a signed manifest
+
+**What was there:** an incident (16.93) showed its findings and timeline, but not the evidence stored about the same host: the sandbox scans, with their fingerprints. Nothing tied a finding to the evidence behind it, and an incident's evidence could only be exported with all the workspace's scans.
+
+**What changed:**
+- **Each incident lists the stored evidence about its host** (`incidentService`): every sandbox scan of the workspace (the latest 200) whose target has the same host, with its ID, verdict, collection time, fingerprint, and whether it still reads as intact (at most 20 shown).
+- **`GET /api/v1/incidents/:id/evidence`** exports exactly that evidence with the signed manifest of 16.90, through the same `exportEvidence`. The manifest is checked with `POST /api/sandbox/export/verify`, which reports changed or deleted items. An incident with no stored evidence says so. Another account's incident answers 404.
+- **Desktop Incident Timeline:**
+  - each incident shows how many evidence items it has;
+  - "Export evidence" saves the incident's evidence and signed manifest as `cyberforge-<incident>-evidence-<UTC time>.json` in Downloads, through a new `incident_evidence` command.
+
+**Verified live (release v39, deployed by the user, October 16, 2026), 5 of 5 checks:**
+- a sandbox scan of example.com was stored through the API, and a finding on the same host was created in the production database;
+- the incident listed the scan as intact;
+- its evidence exported with a signed manifest of exactly that scan, which verified;
+- another account got 404.
+
+The test accounts, the scan and the finding were removed by exact ID.
+
+**DET-02 is now done in code and live:**
+- findings deduplicated with a recurrence count (16.91);
+- a workflow kept in the timeline and audited, with severity independent of it (16.91);
+- false-positive feedback that changes one finding only (16.91);
+- scoped exceptions with an owner, reason, expiry and audit, which a more severe detection overrides (16.92);
+- "why this matters" and the next step (16.92);
+- incidents with one timeline and device coverage (16.93);
+- a workflow for the agent alerts (16.95);
+- incident evidence (16.96).
+
+**Checked:**
+- **`tests/security/findings.test.js`, 1 new test (17 in all):** an incident lists the scans of its host, a scan of another host and another account's scan of the same host are left out, the export carries a signed manifest of exactly that evidence, and another account gets 404.
+- **Rust:** 85 tests pass.
+- **Gate:** 856 tests (614 security, 242 contract).
+
+### 16.97 October 16, 2026 — DET-04 and SEC-08: evidence reports from a fixed, signed snapshot, linked to evidence IDs
+
+**What was there:** the desktop's reports were written by a language model from the computer's local memory and browsing history. They named no evidence IDs, said nothing about what was missing, and could not be checked later. SEC-08 and DET-04 both ask for reports linked to evidence, built from a fixed snapshot, that show missing or deleted evidence honestly.
+
+**What changed:**
+- **`GET /api/v1/reports/evidence?from=&to=&tz=&deviceIds=`** (`services/evidenceReportService.js`) builds a report of the account's records in the window: at most 90 days, the past week by default, with an IANA timezone (UTC by default). It holds:
+  - the **window**, in UTC and in the chosen timezone;
+  - the **findings** seen in it, each with its state, count, last-seen time in the timezone, and the **IDs of the stored evidence** about its host;
+  - the **incidents** overlapping it, with their evidence IDs;
+  - an **evidence appendix**: each stored scan in the window or behind one of its incidents, with target, verdict, collection time, fingerprint, and whether it still reads as intact;
+  - **its limits**:
+    - evidence deleted in the window (from the deletion records, with their fingerprints);
+    - scans that produced no verdict;
+    - agent checks that did not run because a model or service did not answer;
+    - devices not online with full coverage (filtered by `deviceIds` when given);
+  - the **data sources** (findings by detection method, scans, agent runs) and the **model versions and engines** involved;
+  - a **summary** computed from these counts. No language model writes any of it.
+- **The snapshot is hashed and signed:** a SHA-256 of the canonical report, signed with `AUDIT_SIGNING_KEY` (Ed25519 over `cyberforge-evidence-report-v1`, a newline, the hash), with the key ID and public key, so a copy can be checked offline. Each report is audited as `report.generate` with its hash. Clients cannot report `report.*`.
+- **Desktop Reports:**
+  - the period picker now offers "AI-written report (from this computer's memory)", which is the existing one, or "Evidence report (your account's records, signed, no AI)";
+  - the evidence report renders as Summary, Period, Findings, Incidents, Evidence appendix, Limits of this report, Sources and versions, and Snapshot (hash and signing key), through a new `evidence_report` command;
+  - the existing PDF export and copy work on it.
+
+**Checked:**
+- **`tests/security/evidence-report.test.js`, 3 tests:**
+  - a report holds the window's findings (an older one left out), linked to their evidence by ID, and the incident with its evidence;
+  - it lists deleted evidence, a scan without a verdict, an agent check that failed because no model answered, and a device not fully covered;
+  - it lists model versions and engines, and its summary says the counts;
+  - its hash is the canonical hash of the report, the signature verifies, another account's records are absent, and the generation is audited;
+  - an unknown timezone, a window over 90 days or a reversed window are refused;
+  - with no device and nothing found, the report says so.
+- `desktop-truthfulness.test.js`: Reports offers the signed evidence report from the backend.
+- **Rust:** 86 tests pass, including `query_values_are_encoded`.
+- **Gate:** 860 tests (617 security, 243 contract).
+
+**Live (Heroku release v40, October 16, 2026): 8 of 8 passed.** Two throwaway accounts: a scan stored through the API and a finding on the same host. The report for the window in Europe/London:
+- holds the finding, linked to the scan by ID;
+- has the scan in the appendix with its fingerprint, intact;
+- states the "no enrolled device" limit;
+- lists the finding's model version.
+
+The snapshot signature verifies offline. The other account's report holds none of it, and an unknown timezone is refused (`TIMEZONE_INVALID`). The accounts and their records were removed by exact ID, leaving the 8 real accounts.
+
+**Still open in DET-04:** redacted export previews, and report distribution (manual for now, as DET-04 says).

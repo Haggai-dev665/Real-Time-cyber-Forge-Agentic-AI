@@ -674,6 +674,24 @@ class AppwriteService {
     }
   }
 
+  /** One alert of this account, by its alert ID (or document ID), or null. */
+  async getAlertForUser(userId, alertId) {
+    this.ensureInitialized();
+    const db = APPWRITE_CONFIG.databaseId;
+    const collection = APPWRITE_CONFIG.collections.alerts;
+    const byAlertId = await this.services.databases.listDocuments(db, collection, [
+      Query.equal('alert_id', [String(alertId)]), Query.equal('user_id', [String(userId)]), Query.limit(1)
+    ]);
+    if (byAlertId.documents.length) return byAlertId.documents[0];
+    try {
+      const doc = await this.services.databases.getDocument(db, collection, String(alertId));
+      return doc && String(doc.user_id) === String(userId) ? doc : null;
+    } catch (error) {
+      if (error && error.code === 404) return null;
+      throw error;
+    }
+  }
+
   // ==================== EVIDENCE METADATA ====================
 
   // ==================== BROWSER INTELLIGENCE ====================
@@ -897,6 +915,88 @@ class AppwriteService {
     } catch (error) {
       logger.error('❌ Failed to get latest browser intelligence:', error.message);
       throw error;
+    }
+  }
+
+  // ==================== ACCOUNT DATA (SEC-07) ====================
+
+  /**
+   * The collections holding an account's documents, with the field that names
+   * the account. `users` is keyed by the Appwrite sign-in ID, the others by the
+   * backend account ID. `browsers` and `browser_events` have no account field
+   * (they are keyed by device) and nothing in the backend writes to them.
+   */
+  accountCollections(accountId, appwriteUserId) {
+    const c = APPWRITE_CONFIG.collections;
+    return [
+      ['users', c.users, 'user_id', appwriteUserId],
+      ['devices', c.devices, 'user_id', accountId],
+      ['alerts', c.alerts, 'user_id', accountId],
+      ['agents', c.agents, 'user_id', accountId],
+      ['agent_tasks', c.agentTasks, 'user_id', accountId],
+      ['browser_intelligence', c.browserIntelligence, 'user_id', accountId],
+      ['evidence_metadata', c.evidenceMetadata, 'userId', accountId],
+      ['network_captures', c.networkCaptures, 'user_id', accountId]
+    ].filter(([, collection, , id]) => collection && id).map(([name, collection, field, id]) => ({ name, collection, field, id: String(id) }));
+  }
+
+  /** An account's documents, per collection, at most `max` from each. */
+  async listAccountDocuments(accountId, appwriteUserId, { max = 5000 } = {}) {
+    this.ensureInitialized();
+    const out = {};
+    for (const { name, collection, field, id } of this.accountCollections(accountId, appwriteUserId)) {
+      const documents = [];
+      let cursor = null;
+      try {
+        while (documents.length < max) {
+          const queries = [Query.equal(field, [id]), Query.limit(100)];
+          if (cursor) queries.push(Query.cursorAfter(cursor));
+          const page = await this.services.databases.listDocuments(APPWRITE_CONFIG.databaseId, collection, queries);
+          documents.push(...page.documents);
+          if (page.documents.length < 100) break;
+          cursor = page.documents[page.documents.length - 1].$id;
+        }
+        out[name] = { documents: documents.slice(0, max), truncated: documents.length >= max };
+      } catch (error) {
+        out[name] = { error: String(error.message || error).slice(0, 200) };
+      }
+    }
+    return out;
+  }
+
+  /** Deletes an account's documents in every collection; per collection, how many went or what failed. */
+  async deleteAccountDocuments(accountId, appwriteUserId) {
+    this.ensureInitialized();
+    const out = {};
+    for (const { name, collection, field, id } of this.accountCollections(accountId, appwriteUserId)) {
+      let removed = 0;
+      try {
+        // the first page again each time, until it is empty (at most 100 pages)
+        for (let round = 0; round < 100; round++) {
+          const page = await this.services.databases.listDocuments(APPWRITE_CONFIG.databaseId, collection, [Query.equal(field, [id]), Query.limit(100)]);
+          if (!page.documents.length) break;
+          for (const doc of page.documents) {
+            await this.services.databases.deleteDocument(APPWRITE_CONFIG.databaseId, collection, doc.$id);
+            removed += 1;
+          }
+        }
+        out[name] = { removed };
+      } catch (error) {
+        out[name] = { removed, error: String(error.message || error).slice(0, 200) };
+      }
+    }
+    return out;
+  }
+
+  /** Deletes the Appwrite sign-in user; one that no longer exists counts as done. */
+  async deleteAuthUser(appwriteUserId) {
+    this.ensureInitialized();
+    try {
+      await this.services.users.delete(String(appwriteUserId));
+      return { removed: 1 };
+    } catch (error) {
+      if (error && error.code === 404) return { removed: 0 };
+      return { removed: 0, error: String(error.message || error).slice(0, 200) };
     }
   }
 }

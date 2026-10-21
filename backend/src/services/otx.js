@@ -4,16 +4,28 @@ const EventEmitter = require('events');
 class OTXService extends EventEmitter {
     constructor() {
         super();
-        this.apiKey = process.env.OTX_API_KEY || 'e80a674c5bab3cd2f9acaebf9eedabe7c82735443b6c986a2b9e3791488c928d';
+        // The key comes from the environment and from nowhere else. A working key
+        // used to be written on this line as a fallback, in a public repository:
+        // that key is disclosed and has to be replaced in the OTX account.
+        this.apiKey = (process.env.OTX_API_KEY || '').trim();
         this.baseURL = 'https://otx.alienvault.com/api/v1';
         this.pollingInterval = null;
         this.lastPulseTimestamp = null;
+    }
+
+    /** Refuse to call OTX without a key, with an error callers can recognise. */
+    requireKey() {
+        if (this.apiKey) return;
+        const error = new Error('OTX is not configured: OTX_API_KEY is not set');
+        error.code = 'OTX_NOT_CONFIGURED';
+        throw error;
     }
 
     /**
      * Fetch subscribed threat pulses
      */
     async getSubscribedPulses(page = 1, limit = 10) {
+        this.requireKey();
         try {
             const response = await axios.get(`${this.baseURL}/pulses/subscribed`, {
                 params: { page, limit },
@@ -33,6 +45,7 @@ class OTXService extends EventEmitter {
      * Search for specific threats
      */
     async searchPulses(query, limit = 20) {
+        this.requireKey();
         try {
             const response = await axios.get(`${this.baseURL}/search/pulses`, {
                 params: { q: query, limit },
@@ -52,6 +65,7 @@ class OTXService extends EventEmitter {
      * Get indicator details (IP, domain, hash)
      */
     async getIndicatorDetails(type, indicator) {
+        this.requireKey();
         try {
             const response = await axios.get(`${this.baseURL}/indicators/${type}/${indicator}/general`, {
                 headers: {
@@ -136,23 +150,20 @@ class OTXService extends EventEmitter {
         const locations = this.extractThreatLocations(pulse);
         
         locations.forEach((location, index) => {
-            // Simulate origin/destination pairs
-            // In real scenario, you'd parse actual network flow data
+            // An indicator says where a threat was seen from, not where it went.
+            // No location lookup is done, so the coordinates are null, and no
+            // destination is given: there is no flow data to take one from.
+            // (Random coordinates and a fixed "your network" used to stand here.)
             const event = {
                 id: `${pulse.id}_${index}`,
                 timestamp: new Date(location.created).getTime(),
                 origin: {
                     ip: location.ip,
-                    country: 'Unknown', // Would need geo lookup
-                    lat: Math.random() * 180 - 90, // Placeholder
-                    lon: Math.random() * 360 - 180  // Placeholder
+                    country: null,
+                    lat: null,
+                    lon: null
                 },
-                destination: {
-                    ip: 'Target Network',
-                    country: 'US', // Your network
-                    lat: 37.7749,
-                    lon: -122.4194
-                },
+                destination: null,
                 threat: location.threat,
                 adversary: location.adversary,
                 malware: location.malware,
@@ -172,6 +183,11 @@ class OTXService extends EventEmitter {
     startPolling(intervalMs = 30000) {
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
+        }
+
+        if (!this.apiKey) {
+            console.warn('OTX polling not started: OTX_API_KEY is not set');
+            return false;
         }
 
         console.log(`Starting OTX threat polling every ${intervalMs / 1000} seconds`);
@@ -238,8 +254,10 @@ class OTXService extends EventEmitter {
             
             return allEvents;
         } catch (error) {
+            // A failed read is reported as a failure. It used to be returned as an
+            // empty list, which reads as "no threats".
             console.error('Error fetching recent threats:', error.message);
-            return [];
+            throw error;
         }
     }
 }

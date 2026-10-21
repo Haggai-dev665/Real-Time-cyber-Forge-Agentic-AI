@@ -109,7 +109,7 @@
       '<div class="pr-letterhead">' +
         '<img class="pr-logo" src="' + LOGO + '" alt="CyberForge" />' +
         '<div class="pr-lh-meta">' +
-          '<div class="pr-class">' + esc(opts.classification || 'CONFIDENTIAL · TLP:AMBER') + '</div>' +
+          '<div class="pr-class">' + esc(opts.classification || 'No classification selected') + '</div>' +
           '<div class="pr-lh-id">' + esc(opts.id || ('RPT-' + String(Date.now()).slice(-6))) + ' &middot; ' + esc(now.toISOString().slice(0, 10)) + '</div>' +
         '</div>' +
       '</div>' +
@@ -131,7 +131,7 @@
       headerHtml(opts, user) +
       secs +
       '<div class="pr-foot">' +
-        'CyberForge &mdash; AI Security Console &middot; ' + esc(opts.classification || 'CONFIDENTIAL · TLP:AMBER') +
+        'CyberForge &mdash; AI Security Console &middot; ' + esc(opts.classification || 'No classification selected') +
         ' &middot; Generated from live on-device data; intended for the named recipient only.' +
       '</div>';
   }

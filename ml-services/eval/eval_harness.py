@@ -15,6 +15,8 @@ Design notes
 * The Space calls DeepSeek server-side using its *own* HF_TOKEN secret, so this
   client normally needs NO token. HF_TOKEN is read from the env only if you point
   it at a *private* Space (sent as a Bearer header). It is never hardcoded.
+* The Space needs its service key (ML_SERVICE_KEY in the environment), sent as
+  X-CyberForge-Service-Key; without it every case fails with HTTP 401.
 * Exits non-zero with the failure count, so it can gate CI.
 * Stdlib + `requests` only.
 
@@ -82,6 +84,10 @@ class SpaceClient:
         token = os.environ.get("HF_TOKEN", "")
         if token:  # only for private Spaces; harmless for public ones
             self.session.headers["Authorization"] = f"Bearer {token}"
+        # Since V2-ML01 the Space answers only callers with its service key.
+        service_key = os.environ.get("ML_SERVICE_KEY", "")
+        if service_key:
+            self.session.headers["X-CyberForge-Service-Key"] = service_key
 
     def post(self, path: str, payload: Dict[str, Any]) -> tuple[Optional[Dict], float, Optional[str]]:
         t0 = time.perf_counter()

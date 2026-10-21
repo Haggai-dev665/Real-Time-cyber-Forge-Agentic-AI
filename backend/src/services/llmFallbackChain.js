@@ -1,12 +1,17 @@
 /**
- * LLM Fallback Chain — Gemini → ZySec/HF → heuristic
+ * The backend's language-model order (F28, plan section 15):
  *
- * Single entry point for any LLM call in the orchestrator. Tries Gemini first
- * (best quality), falls back to ZySec-AI/SecurityLLM via HF Inference API
- * (cyber-tuned but rate-limited), then drops to a heuristic synthesis.
+ *   1. A hosted model, only when the server is configured for one
+ *      (GEMINI_API_KEY). Not set in the deployed app.
+ *   2. The ML service's chat route: its open-source model (Qwen3.5-2B, run in
+ *      the Space), or the service's rule-based summary when that model does
+ *      not answer.
+ *   3. Template text from the backend.
  *
- * Each provider is wrapped in a try-catch with a per-call timeout. Returns:
- *   { text, source, latencyMs, error? }
+ * Each step has a timeout. Returns { text, source, model, engine, latencyMs,
+ * error? }, where `engine` says which of these produced the text
+ * (services/answerEngine.js). Step 2 used to be labelled "ZySec-AI/SecurityLLM",
+ * a model nothing here runs.
  */
 
 const axios = require('axios');
@@ -16,6 +21,7 @@ const { memoryService } = require('./memoryService');
 const HF_SPACE_URL = getMLServiceUrl();
 const GEMINI_KEY   = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const { ENGINES, engineOfSpaceAnswer } = require('./answerEngine');
 
 class LLMFallbackChain {
     /**
@@ -39,32 +45,36 @@ class LLMFallbackChain {
                     memoryService.pushLlmTurn(contextKey, 'user', prompt);
                     memoryService.pushLlmTurn(contextKey, 'assistant', geminiText);
                 }
-                return { text: geminiText, source: 'gemini', model: GEMINI_MODEL, latencyMs: Date.now() - t0 };
+                return { text: geminiText, source: 'gemini', model: GEMINI_MODEL, engine: ENGINES.hosted('gemini', GEMINI_MODEL), latencyMs: Date.now() - t0 };
             }
         } catch (e) {
-            console.warn(`[LLMChain] Gemini failed (${e.message?.slice(0, 80)}), falling to ZySec...`);
+            console.warn(`[LLMChain] Gemini failed (${e.message?.slice(0, 80)}), falling to the ML service...`);
         }
 
-        // ── 2. ZySec-AI/SecurityLLM via HF Space's /api/v2/security-chat ──
+        // ── 2. The ML service's /api/v2/security-chat: its open-source model, or
+        //       its rule-based summary when the model does not answer. The answer
+        //       says which; it used to be labelled "ZySec SecurityLLM" either way.
         try {
-            const zysecText = await this._callZySec(prompt, maxTokens, timeoutMs);
-            if (zysecText) {
+            const spaceAnswer = await this._callSpace(prompt, maxTokens, timeoutMs);
+            if (spaceAnswer) {
                 if (contextKey) {
                     memoryService.pushLlmTurn(contextKey, 'user', prompt);
-                    memoryService.pushLlmTurn(contextKey, 'assistant', zysecText);
+                    memoryService.pushLlmTurn(contextKey, 'assistant', spaceAnswer.text);
                 }
-                return { text: zysecText, source: 'zysec-securityllm', model: 'ZySec-AI/SecurityLLM', latencyMs: Date.now() - t0 };
+                const engine = engineOfSpaceAnswer(spaceAnswer.raw);
+                return { text: spaceAnswer.text, source: engine.id, model: engine.model, engine, latencyMs: Date.now() - t0 };
             }
         } catch (e) {
-            console.warn(`[LLMChain] ZySec failed (${e.message?.slice(0, 80)}), falling to heuristic...`);
+            console.warn(`[LLMChain] ML service failed (${e.message?.slice(0, 80)}), falling to template text...`);
         }
 
         // ── 3. Heuristic — last-resort canned synthesis ───────────
         return {
             text:      this._heuristicSynthesis(prompt),
             source:    'heuristic-fallback',
+            engine:    ENGINES.template(),
             latencyMs: Date.now() - t0,
-            error:     'Both Gemini and ZySec unavailable — using rule-based response',
+            error:     'No language model answered: template text',
         };
     }
 
@@ -105,15 +115,15 @@ Be concise. Lead with the verdict.`;
         return text.trim();
     }
 
-    async _callZySec(prompt, maxTokens, timeoutMs) {
+    async _callSpace(prompt, maxTokens, timeoutMs) {
         const r = await axios.post(`${HF_SPACE_URL}/api/v2/security-chat`,
-            { query: prompt, max_tokens: maxTokens },
+            // the model's time inside this request's own timeout, with a margin
+            { query: prompt, max_tokens: maxTokens, time_budget_s: Math.max(5, Math.floor(timeoutMs / 1000) - 8) },
             { timeout: timeoutMs }
         );
-        // The HF Space auto-falls back to Gemini internally too, so any usable text wins.
         const text = r.data?.response || r.data?.text || r.data?.generated_text;
-        if (!text) throw new Error(r.data?.error || 'ZySec returned no text');
-        return String(text).trim();
+        if (!text) throw new Error(r.data?.error || 'the ML service returned no text');
+        return { text: String(text).trim(), raw: r.data };
     }
 
     _heuristicSynthesis(prompt) {

@@ -9,10 +9,15 @@ const { auth } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { mlService } = require('../services/mlService');
 const { requireMLCapability } = require('../services/mlCapabilities');
+const { notCarriedOut } = require('../middleware/notImplemented');
 const { agentManager } = require('../agent/AgentManager');
 const logger = require('../utils/logger');
 
 const router = express.Router();
+
+// Routes below that answer with notCarriedOut used to report a scan as running,
+// a setting as saved or an action as taken when nothing had happened, some of
+// them with random progress and findings.
 
 // In-memory stores for child page features
 const childStores = {
@@ -24,7 +29,6 @@ const childStores = {
   scans: new Map(),
   scanConfigs: new Map(),
   alerts: new Map(),
-  threatFeeds: new Map(),
   aiTasks: new Map(),
   aiModels: new Map(),
   aiTraining: new Map(),
@@ -220,287 +224,27 @@ router.post('/browser/console', auth, asyncHandler(async (req, res) => {
 // SCAN MODES
 // =========================================
 
-router.get('/scan/passive', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const config = childStores.scanConfigs.get(`${userId}:passive`) || {
-    enabled: true,
-    requestsAnalyzed: 0,
-    issuesFound: 0,
-    infoDisclosures: 0,
-    cookieIssues: 0
-  };
-  
-  // Get passive scan rules
-  const rules = [
-    { name: 'Missing Security Headers', enabled: true, findings: 0 },
-    { name: 'Information Disclosure', enabled: true, findings: 0 },
-    { name: 'Insecure Cookies', enabled: true, findings: 0 },
-    { name: 'Mixed Content', enabled: true, findings: 0 },
-    { name: 'Sensitive Data Exposure', enabled: true, findings: 0 }
-  ];
-  
-  res.json({ 
-    success: true, 
-    data: { 
-      ...config, 
-      rules,
-      recentFindings: []
-    } 
-  });
-}));
+router.get('/scan/passive', auth, notCarriedOut('Passive scanning is not implemented: no requests are analysed and no rules run.'));
 
-router.put('/scan/passive', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const config = { ...req.body, userId, updatedAt: new Date().toISOString() };
-  childStores.scanConfigs.set(`${userId}:passive`, config);
-  res.json({ success: true, data: config });
-}));
+router.put('/scan/passive', auth, notCarriedOut('Passive scanning is not implemented: no requests are analysed and no rules run.'));
 
-router.get('/scan/active', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  
-  const active = Array.from(childStores.scans.values())
-    .filter(s => s.userId === userId && s.type === 'active' && s.status === 'running');
-  
-  const history = Array.from(childStores.scans.values())
-    .filter(s => s.userId === userId && s.type === 'active' && s.status !== 'running')
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 20);
-  
-  res.json({ success: true, data: { active, history } });
-}));
+router.get('/scan/active', auth, notCarriedOut('Active scanning is not implemented: no scan is started, so there is no progress or finding to report.'));
 
-router.post('/scan/active', auth, asyncHandler(async (req, res) => {
-  const { target, scanType, depth, concurrent } = req.body;
-  
-  const scan = {
-    id: generateId(),
-    userId: req.user.userId,
-    type: 'active',
-    target,
-    scanType: scanType || 'full',
-    depth: depth || 3,
-    concurrent: concurrent || 10,
-    status: 'running',
-    progress: 0,
-    requests: 0,
-    findings: 0,
-    createdAt: new Date().toISOString()
-  };
-  
-  childStores.scans.set(scan.id, scan);
-  
-  // Simulate scan progress
-  simulateScanProgress(scan.id);
-  
-  res.status(201).json({ success: true, data: scan });
-}));
+router.post('/scan/active', auth, notCarriedOut('Active scanning is not implemented: no scan is started, so there is no progress or finding to report.'));
 
-router.post('/scan/active/:id/stop', auth, asyncHandler(async (req, res) => {
-  const scan = childStores.scans.get(req.params.id);
-  if (scan) {
-    scan.status = 'stopped';
-    scan.stoppedAt = new Date().toISOString();
-  }
-  res.json({ success: true, data: scan });
-}));
+router.post('/scan/active/:id/stop', auth, notCarriedOut('Active scanning is not implemented: no scan is started, so there is no progress or finding to report.'));
 
-router.get('/scan/stealth/config', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const config = childStores.scanConfigs.get(`${userId}:stealth`) || {
-    delay: 1000,
-    jitter: 500,
-    maxRequestsPerHour: 100,
-    evasionTechniques: {
-      userAgentRotation: true,
-      ipRotation: false,
-      requestRandomization: true,
-      payloadEncoding: false
-    },
-    proxyChain: ['direct', 'tor', 'target']
-  };
-  res.json({ success: true, data: config });
-}));
+router.get('/scan/stealth/config', auth, notCarriedOut('Stealth scanning is not implemented.'));
 
-router.put('/scan/stealth/config', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const config = { ...req.body, userId, updatedAt: new Date().toISOString() };
-  childStores.scanConfigs.set(`${userId}:stealth`, config);
-  res.json({ success: true, data: config });
-}));
+router.put('/scan/stealth/config', auth, notCarriedOut('Stealth scanning is not implemented.'));
 
-router.post('/scan/stealth', auth, asyncHandler(async (req, res) => {
-  const { target, duration } = req.body;
-  const scan = {
-    id: generateId(),
-    userId: req.user.userId,
-    type: 'stealth',
-    target,
-    duration: duration || '1h',
-    status: 'running',
-    progress: 0,
-    createdAt: new Date().toISOString()
-  };
-  childStores.scans.set(scan.id, scan);
-  res.status(201).json({ success: true, data: scan });
-}));
+router.post('/scan/stealth', auth, notCarriedOut('Stealth scanning is not implemented.'));
 
-router.get('/scan/aggressive/config', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const config = childStores.scanConfigs.get(`${userId}:aggressive`) || {
-    threads: 50,
-    requestRate: 'aggressive',
-    timeout: 30,
-    attackVectors: ['sqli', 'xss', 'cmdi', 'path-traversal', 'xxe', 'ssrf'],
-    payloads: {
-      sqli: 2847,
-      xss: 1523,
-      cmdi: 456,
-      pathTraversal: 234
-    }
-  };
-  res.json({ success: true, data: config });
-}));
+router.get('/scan/aggressive/config', auth, notCarriedOut('Aggressive scanning is not implemented.'));
 
-router.post('/scan/aggressive', auth, asyncHandler(async (req, res) => {
-  const { target, confirm } = req.body;
-  
-  if (!confirm) {
-    return res.status(400).json({ 
-      success: false, 
-      message: 'Must confirm authorization for aggressive scan' 
-    });
-  }
-  
-  const scan = {
-    id: generateId(),
-    userId: req.user.userId,
-    type: 'aggressive',
-    target,
-    status: 'running',
-    progress: 0,
-    requests: 0,
-    findings: 0,
-    createdAt: new Date().toISOString()
-  };
-  childStores.scans.set(scan.id, scan);
-  res.status(201).json({ success: true, data: scan });
-}));
+router.post('/scan/aggressive', auth, notCarriedOut('Aggressive scanning is not implemented.'));
 
-// Helper to simulate scan progress
-function simulateScanProgress(scanId) {
-  const interval = setInterval(() => {
-    const scan = childStores.scans.get(scanId);
-    if (!scan || scan.status !== 'running') {
-      clearInterval(interval);
-      return;
-    }
-    
-    scan.progress = Math.min(100, scan.progress + Math.random() * 5);
-    scan.requests += Math.floor(Math.random() * 20);
-    
-    if (Math.random() > 0.8) {
-      scan.findings += 1;
-    }
-    
-    if (scan.progress >= 100) {
-      scan.status = 'completed';
-      scan.completedAt = new Date().toISOString();
-      clearInterval(interval);
-    }
-  }, 2000);
-}
-
-// =========================================
-// REAL-TIME INTEL - THREAT MAP
-// =========================================
-
-router.get('/threats/map', auth, asyncHandler(async (req, res) => {
-  // This handler is built on an ML endpoint. Without it the handler used to
-  // answer with placeholder data, so it now reports the capability as unavailable.
-  if (!requireMLCapability(res, 'GET', '/api/threat-map')) return;
-
-  const { range = '24h' } = req.query;
-  
-  // Call ML service for threat data
-  let mlData = null;
-  try {
-    const mlHealth = await mlService.checkHealth();
-    if (mlHealth.available) {
-      mlData = await mlService.getThreatMap({ range });
-    }
-  } catch (e) {
-    console.log('ML service not available for threat map');
-  }
-  
-  const threats = mlData?.data?.threats || [
-    { id: 1, type: 'DDoS', source: 'Russia', target: 'US', severity: 'critical', timestamp: new Date() },
-    { id: 2, type: 'Brute Force', source: 'China', target: 'Germany', severity: 'high', timestamp: new Date() },
-    { id: 3, type: 'Malware', source: 'Brazil', target: 'UK', severity: 'medium', timestamp: new Date() }
-  ];
-  
-  const stats = mlData?.data?.stats || {
-    activeAttacks: 127,
-    highRisk: 45,
-    blocked: 892
-  };
-  
-  res.json({ success: true, data: { threats, stats } });
-}));
-
-// =========================================
-// REAL-TIME INTEL - LIVE FEEDS
-// =========================================
-
-router.get('/threats/feeds', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  let feeds = Array.from(childStores.threatFeeds.values())
-    .filter(f => f.userId === userId);
-  
-  if (feeds.length === 0) {
-    // Default feeds
-    feeds = [
-      { id: '1', name: 'AlienVault OTX', url: 'https://otx.alienvault.com', type: 'IOC', status: 'active', indicators: 15234, enabled: true, lastUpdate: new Date() },
-      { id: '2', name: 'URLhaus', url: 'https://urlhaus.abuse.ch', type: 'Malware URLs', status: 'active', indicators: 8721, enabled: true, lastUpdate: new Date() },
-      { id: '3', name: 'Feodo Tracker', url: 'https://feodotracker.abuse.ch', type: 'Botnet C2', status: 'active', indicators: 2345, enabled: true, lastUpdate: new Date() }
-    ];
-  }
-  
-  res.json({ success: true, data: { feeds } });
-}));
-
-router.post('/threats/feeds', auth, asyncHandler(async (req, res) => {
-  const { name, url, type, interval } = req.body;
-  const feed = {
-    id: generateId(),
-    userId: req.user.userId,
-    name,
-    url,
-    type,
-    interval: interval || '1h',
-    status: 'active',
-    indicators: 0,
-    enabled: true,
-    createdAt: new Date().toISOString(),
-    lastUpdate: new Date().toISOString()
-  };
-  childStores.threatFeeds.set(feed.id, feed);
-  res.status(201).json({ success: true, data: feed });
-}));
-
-router.put('/threats/feeds/:id', auth, asyncHandler(async (req, res) => {
-  const feed = childStores.threatFeeds.get(req.params.id);
-  if (!feed) {
-    return res.status(404).json({ success: false, message: 'Feed not found' });
-  }
-  Object.assign(feed, req.body, { updatedAt: new Date().toISOString() });
-  res.json({ success: true, data: feed });
-}));
-
-router.delete('/threats/feeds/:id', auth, asyncHandler(async (req, res) => {
-  childStores.threatFeeds.delete(req.params.id);
-  res.json({ success: true, message: 'Feed deleted' });
-}));
+// The threat map and threat feeds are retired in routes/threats.js (16.67).
 
 // =========================================
 // REAL-TIME INTEL - ALERTS
@@ -508,37 +252,35 @@ router.delete('/threats/feeds/:id', auth, asyncHandler(async (req, res) => {
 
 router.get('/alerts', auth, asyncHandler(async (req, res) => {
   const userId = req.user.userId;
-  const { severity, status } = req.query;
-  
+  const { severity } = req.query;
+
   let alerts = Array.from(childStores.alerts.values())
     .filter(a => a.userId === userId)
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  
+
   if (severity && severity !== 'all') {
     alerts = alerts.filter(a => a.severity === severity);
   }
-  
-  // Add default alerts if none exist
-  if (alerts.length === 0) {
-    alerts = [
-      { id: '1', title: 'SQL Injection Detected', description: 'Multiple SQL injection attempts detected', severity: 'critical', category: 'Attack', read: false, source: 'WAF', timestamp: new Date() },
-      { id: '2', title: 'Brute Force Attack', description: 'Over 100 failed login attempts', severity: 'high', category: 'Authentication', read: false, source: 'IDS', timestamp: new Date() }
-    ];
-  }
-  
+
+  // No alerts means an empty list. Two sample attacks used to be returned here.
   res.json({ success: true, data: { alerts } });
 }));
 
 router.post('/alerts/:id/acknowledge', auth, asyncHandler(async (req, res) => {
   const alert = childStores.alerts.get(req.params.id);
-  if (alert) {
-    alert.read = true;
-    alert.acknowledgedAt = new Date().toISOString();
+  if (!alert || alert.userId !== req.user.userId) {
+    return res.status(404).json({ success: false, message: 'Alert not found' });
   }
+  alert.read = true;
+  alert.acknowledgedAt = new Date().toISOString();
   res.json({ success: true, data: alert });
 }));
 
 router.post('/alerts/:id/dismiss', auth, asyncHandler(async (req, res) => {
+  const alert = childStores.alerts.get(req.params.id);
+  if (!alert || alert.userId !== req.user.userId) {
+    return res.status(404).json({ success: false, message: 'Alert not found' });
+  }
   childStores.alerts.delete(req.params.id);
   res.json({ success: true, message: 'Alert dismissed' });
 }));
@@ -556,32 +298,31 @@ router.post('/alerts/mark-all-read', auth, asyncHandler(async (req, res) => {
 // =========================================
 
 router.get('/ai/agent/status', auth, asyncHandler(async (req, res) => {
-  // Check ML service health
+  // Only what can be read back is reported: whether the ML service answers,
+  // whether this account's agent exists and is running, and this account's
+  // tasks. A model count, an uptime and an activity log used to be made up here.
   let mlStatus = { available: false };
   try {
     mlStatus = await mlService.checkHealth();
   } catch (e) {
-    console.log('ML service not available');
+    logger.warn(`ML health check failed: ${e.message}`);
   }
-  
+
   const userId = req.user.userId;
   const tasks = Array.from(childStores.aiTasks.values())
     .filter(t => t.userId === userId);
-  
-  const status = {
-    running: mlStatus.available,
-    activeModels: mlStatus.available ? 4 : 0,
-    pendingTasks: tasks.filter(t => t.status === 'pending').length,
-    threatsDetected: tasks.filter(t => t.type === 'threat').length,
-    uptime: mlStatus.available ? '4h 23m' : '0m',
-    lastActivity: new Date().toISOString(),
-    activityLog: [
-      { time: new Date(), action: 'System check completed', type: 'info' },
-      { time: new Date(Date.now() - 60000), action: 'Analyzed 5 requests', type: 'analysis' }
-    ]
-  };
-  
-  res.json({ success: true, data: status });
+  const agent = agentManager.getAgentStatus('default', userId);
+
+  res.json({
+    success: true,
+    data: {
+      running: Boolean(agent.exists && agent.isRunning),
+      agentState: agent.exists ? agent.state : 'not_started',
+      mlAvailable: Boolean(mlStatus && mlStatus.available),
+      pendingTasks: tasks.filter(t => t.status === 'pending').length,
+      threatsDetected: tasks.filter(t => t.type === 'threat').length
+    }
+  });
 }));
 
 // POST /ai/agent/status — toggle agent on/off (called by toggleAIAgent in frontend)
@@ -706,10 +447,7 @@ router.get('/ai/agent/threats', auth, asyncHandler(async (req, res) => {
   res.json({ success: true, data: { threats } });
 }));
 
-router.post('/ai/agent/threats/:id/action', auth, asyncHandler(async (req, res) => {
-  const { action } = req.body; // investigate, confirm, dismiss
-  res.json({ success: true, message: `Threat ${action}ed` });
-}));
+router.post('/ai/agent/threats/:id/action', auth, notCarriedOut('No action is taken on a threat from this route.'));
 
 router.get('/ai/agent/learning', auth, asyncHandler(async (req, res) => {
   if (!requireMLCapability(res, 'GET', '/api/agent/learning')) return;
@@ -741,24 +479,9 @@ router.get('/ai/agent/learning', auth, asyncHandler(async (req, res) => {
   res.json({ success: true, data });
 }));
 
-router.get('/ai/agent/settings', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const settings = childStores.aiModels.get(`${userId}:settings`) || {
-    autoAnalysis: true,
-    analysisThreshold: 0.75,
-    aiProvider: 'gemini',
-    enableNotifications: true,
-    realtimeMonitoring: true
-  };
-  res.json({ success: true, data: settings });
-}));
+router.get('/ai/agent/settings', auth, notCarriedOut('Agent settings are not stored or applied.'));
 
-router.put('/ai/agent/settings', auth, asyncHandler(async (req, res) => {
-  const userId = req.user.userId;
-  const settings = { ...req.body, userId, updatedAt: new Date().toISOString() };
-  childStores.aiModels.set(`${userId}:settings`, settings);
-  res.json({ success: true, data: settings });
-}));
+router.put('/ai/agent/settings', auth, notCarriedOut('Agent settings are not stored or applied.'));
 
 // =========================================
 // AI MODELS
@@ -791,21 +514,9 @@ router.get('/ai/models', auth, asyncHandler(async (req, res) => {
   res.json({ success: true, data: { models } });
 }));
 
-router.put('/ai/models/:id', auth, asyncHandler(async (req, res) => {
-  const { enabled, threshold } = req.body;
-  res.json({ success: true, data: { id: req.params.id, enabled, threshold } });
-}));
+router.put('/ai/models/:id', auth, notCarriedOut('Models cannot be enabled, disabled or tuned from this route.'));
 
-router.get('/ai/models/config', auth, asyncHandler(async (req, res) => {
-  const config = {
-    defaultThreshold: 0.75,
-    maxConcurrentModels: 4,
-    gpuEnabled: false,
-    autoRetrain: true,
-    retrainInterval: '7d'
-  };
-  res.json({ success: true, data: config });
-}));
+router.get('/ai/models/config', auth, notCarriedOut('There is no model configuration to report.'));
 
 router.get('/ai/models/training', auth, asyncHandler(async (req, res) => {
   const userId = req.user.userId;
@@ -971,29 +682,18 @@ router.get('/team/members', auth, asyncHandler(async (req, res) => {
   const userId = req.user.userId;
   let members = Array.from(childStores.teamMembers.values())
     .filter(m => m.ownerId === userId || m.userId === userId);
-  
-  if (members.length === 0) {
+
+  // With no team, the only member is the signed-in account itself.
+  if (members.length === 0 && req.user.email) {
     members = [
-      { id: '1', name: 'You', email: req.user.email || 'user@example.com', role: 'Owner', status: 'active' }
+      { id: String(userId), name: 'You', email: req.user.email, role: 'Owner', status: 'active' }
     ];
   }
-  
+
   res.json({ success: true, data: { members } });
 }));
 
-router.post('/team/members/invite', auth, asyncHandler(async (req, res) => {
-  const { email, role } = req.body;
-  const member = {
-    id: generateId(),
-    ownerId: req.user.userId,
-    email,
-    role: role || 'viewer',
-    status: 'pending',
-    invitedAt: new Date().toISOString()
-  };
-  childStores.teamMembers.set(member.id, member);
-  res.status(201).json({ success: true, data: member });
-}));
+router.post('/team/members/invite', auth, notCarriedOut('Invitations are not sent: team membership is not implemented.'));
 
 router.get('/team/activity', auth, asyncHandler(async (req, res) => {
   const userId = req.user.userId;

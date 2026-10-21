@@ -5,6 +5,30 @@
 
 const bcrypt = require('bcryptjs');
 const { signSessionToken, verifySessionToken } = require('../services/sessionTokens');
+const { ensurePersonalWorkspace, linkIdentity, userIdForIdentity, hasIdentity, IdentityConflictError } = require('../services/workspaceService');
+const audit = require('../services/auditLogService');
+
+/** The principal an audit event is recorded for, from an account record. */
+const principalOf = (user, workspaceId) => ({
+  userId: user._id,
+  workspaceId: workspaceId || (user.defaultWorkspaceId ? String(user.defaultWorkspaceId) : null)
+});
+
+/**
+ * Give the account its workspace and record an outside identity. A failure
+ * here does not undo a sign-in that has already succeeded: the workspace is
+ * created on first use (middleware/workspace.js) and the migration repairs
+ * links. It is logged so it is not silent.
+ */
+async function prepareAccount(user, identity) {
+  try {
+    if (identity) await linkIdentity(user._id, identity.provider, identity.subject, identity.source);
+    return String(await ensurePersonalWorkspace(user));
+  } catch (error) {
+    console.error('Account preparation failed:', error.message);
+    return user.defaultWorkspaceId ? String(user.defaultWorkspaceId) : null;
+  }
+}
 const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const { appwriteService } = require('../services/appwriteService');
@@ -81,6 +105,8 @@ class AuthController {
       });
 
       await user.save();
+      const workspaceId = await prepareAccount(user, { provider: 'appwrite', subject: appwriteAuthUser.$id, source: 'registration' });
+      await audit.record({ principal: principalOf(user, workspaceId), action: 'auth.register', resource: 'account', details: { method: 'password' }, req });
 
       // Generate JWT token
       const token = signSessionToken(user);
@@ -95,7 +121,8 @@ class AuthController {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: user.role
+            role: user.role,
+            workspaceId
           },
           token
         }
@@ -142,6 +169,7 @@ class AuthController {
       // Verify password
       const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
       if (!isPasswordValid) {
+        await audit.record({ principal: principalOf(user), action: 'auth.login', resource: 'account', outcome: 'failure', details: { method: 'password', reason: 'wrong password' }, req });
         return res.status(401).json({
           success: false,
           message: 'Invalid credentials'
@@ -151,6 +179,9 @@ class AuthController {
       // Update last login
       user.lastLoginAt = new Date();
       await user.save();
+      // an account from before workspaces existed gets its own at its next sign-in
+      const workspaceId = await prepareAccount(user);
+      await audit.record({ principal: principalOf(user, workspaceId), action: 'auth.login', resource: 'account', details: { method: 'password' }, req });
 
       // Generate JWT token
       const token = signSessionToken(user);
@@ -165,7 +196,8 @@ class AuthController {
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
-            lastLoginAt: user.lastLoginAt
+            lastLoginAt: user.lastLoginAt,
+            workspaceId
           },
           token
         }
@@ -343,6 +375,7 @@ class AuthController {
       // Session tokens are not revocable yet, but the account's open live
       // streams end here rather than running on until the token expires.
       require('../routes/stream').closeStreamsFor(req.user.userId, 'signed_out');
+      await audit.record({ principal: req.user, action: 'auth.logout', resource: 'account', req });
       res.json({
         success: true,
         message: 'Logout successful'
@@ -476,13 +509,22 @@ class AuthController {
    */
   async exchangeGoogleToken(req, res) {
     try {
-      const { code, redirect_uri } = req.body;
+      const { code, redirect_uri, code_verifier } = req.body;
 
       if (!code) {
         return res.status(400).json({
           success: false,
           message: 'Authorization code is required'
         });
+      }
+      // The desktop's loopback flow: the code is good only with the PKCE
+      // verifier the app made for it (RFC 7636), and only for a loopback
+      // redirect. A code intercepted on its way to the app is useless without it.
+      if (typeof redirect_uri !== 'string' || !/^http:\/\/127\.0\.0\.1:\d{2,5}(\/[A-Za-z0-9_\/-]*)?$/.test(redirect_uri)) {
+        return res.status(400).json({ success: false, message: 'redirect_uri must be the app\'s loopback address' });
+      }
+      if (typeof code_verifier !== 'string' || !/^[A-Za-z0-9._~-]{43,128}$/.test(code_verifier)) {
+        return res.status(400).json({ success: false, code: 'PKCE_REQUIRED', message: 'A PKCE code_verifier is required. Update the desktop app.' });
       }
 
       // Exchange code for tokens using Google OAuth API
@@ -492,6 +534,7 @@ class AuthController {
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri,
+        code_verifier,
         grant_type: 'authorization_code'
       });
 
@@ -510,15 +553,46 @@ class AuthController {
         return res.status(401).json({ success: false, message: 'Verified Google email required' });
       }
 
-      // Find or create user
-      let user = await User.findOne({ email: googleUser.email });
+      // The account is the one this Google account is linked to, by Google's
+      // own ID for it. An email address does not select an account: until
+      // now this signed the caller in to whatever account had the same
+      // address, including one created with a password by somebody else.
+      const linkedUserId = await userIdForIdentity('google', googleUser.id);
+      let user = linkedUserId ? await User.findById(linkedUserId) : null;
+      if (linkedUserId && !user) {
+        return res.status(401).json({ success: false, message: 'Account unavailable' });
+      }
+
+      if (!user) {
+        const sameAddress = await User.findOne({ email: googleUser.email }).select('+passwordHash');
+        if (sameAddress && sameAddress.passwordHash) {
+          // Somebody chose a password for an account with this address. Whether
+          // that was this person cannot be known from here, so nothing is linked.
+          return res.status(409).json({
+            success: false,
+            code: 'ACCOUNT_EXISTS',
+            message: 'An account with this email address already exists. Sign in with its password. Connecting Google to an existing account is not available yet.'
+          });
+        }
+        if (sameAddress && await hasIdentity(sameAddress._id, 'google')) {
+          // The account already belongs to a different Google account. An
+          // address can pass from one person to another; the account does not.
+          return res.status(409).json({
+            success: false,
+            code: 'ACCOUNT_EXISTS',
+            message: 'An account with this email address already exists and belongs to a different Google account.'
+          });
+        }
+        // What is left is an account with no password and no Google link: one
+        // made by an earlier provider sign-in for this verified address, before
+        // links were recorded. It is linked now, once.
+        user = sameAddress;
+      }
 
       if (user) {
         if (!user.isActive || user.isLocked()) {
           return res.status(401).json({ success: false, message: 'Account unavailable' });
         }
-        // Update existing user
-        user.googleId = googleUser.id;
         user.photoURL = googleUser.picture;
         user.lastLoginAt = new Date();
         user.provider = 'google.com';
@@ -527,7 +601,6 @@ class AuthController {
         // Create new user
         user = new User({
           email: googleUser.email,
-          googleId: googleUser.id,
           firstName: googleUser.given_name || googleUser.name?.split(' ')[0] || 'User',
           lastName: googleUser.family_name || googleUser.name?.split(' ').slice(1).join(' ') || '',
           role: 'user',
@@ -545,6 +618,15 @@ class AuthController {
         });
         await user.save();
       }
+
+      try {
+        await linkIdentity(user._id, 'google', googleUser.id, 'sign-in');
+      } catch (error) {
+        if (!(error instanceof IdentityConflictError)) throw error;
+        return res.status(409).json({ success: false, code: error.code, message: error.message });
+      }
+      const googleWorkspaceId = await prepareAccount(user);
+      await audit.record({ principal: principalOf(user, googleWorkspaceId), action: 'auth.login', resource: 'account', details: { method: 'google' }, req });
 
       // Generate JWT token
       const token = signSessionToken(user);

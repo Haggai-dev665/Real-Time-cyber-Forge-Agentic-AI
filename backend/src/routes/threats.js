@@ -9,6 +9,9 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { detectThreats, getThreatStats } = require('../services/threatService');
 const Threat = require('../models/Threat');
 const { ownedThreatFilter } = require('../services/threatOwnership');
+const { notCarriedOut } = require('../middleware/notImplemented');
+const findings = require('../services/findingService');
+const { requireWorkspace } = require('../middleware/workspace');
 
 const router = express.Router();
 
@@ -19,8 +22,9 @@ const validate = (req, res, next) => {
 };
 const threatIdValidation = param('threatId').isString().isLength({ min: 1, max: 128 });
 const statusFilter = status => {
-  if (status === 'active') return { $in: ['detected', 'investigating', 'confirmed'] };
+  if (status === 'active') return { $in: findings.OPEN };
   if (status === 'resolved') return { $in: ['resolved', 'mitigated', 'false_positive'] };
+  if (status === 'all') return undefined;
   return status;
 };
 
@@ -31,7 +35,7 @@ router.get('/',
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('severity').optional().isIn(['low', 'medium', 'high', 'critical']),
-    query('status').optional().isIn(['active', 'resolved', 'dismissed', 'detected', 'investigating', 'confirmed', 'mitigated', 'false_positive']),
+    query('status').optional().isIn(['active', 'resolved', 'dismissed', 'detected', 'acknowledged', 'investigating', 'confirmed', 'mitigated', 'false_positive', 'excepted', 'all']),
     query('type').optional().isString().isLength({ max: 100 })
   ],
   validate,
@@ -48,7 +52,7 @@ router.get('/',
       // Get real threat data from DB
       const query = ownedThreatFilter(req.user.userId);
       if (severity) query.severity = severity;
-      if (status) query.status = statusFilter(status);
+      if (status && statusFilter(status) !== undefined) query.status = statusFilter(status);
       if (type) query.type = type;
 
       const totalCount = await Threat.countDocuments(query);
@@ -62,7 +66,8 @@ router.get('/',
       res.json({
         success: true,
         data: {
-          threats,
+          // each with what it means and what to do next (DET-02)
+          threats: threats.map(t => ({ ...(t.toObject ? t.toObject() : t), guidance: findings.guidanceOf(t) })),
           pagination: {
             currentPage: parseInt(page),
             totalPages,
@@ -165,6 +170,18 @@ router.post('/scan',
   })
 );
 
+// Retired paths (16.67). They are declared here, before `/:threatId`, because
+// this router is mounted at /api/threats ahead of child-pages.js: GET /feeds and
+// GET /map were read as threat IDs, and POST, PUT and DELETE fell through to
+// handlers in child-pages.js that let any account change or delete another
+// account's feed. The feeds were kept in memory and shown as "active" although
+// nothing ever fetched them; the map was built on an ML endpoint that does not
+// exist. No client calls either.
+router.all(['/feeds', '/feeds/:id'], auth,
+  notCarriedOut('Threat feeds are not implemented: nothing is fetched from a feed, so none can be listed, added or changed.'));
+router.get('/map', auth,
+  notCarriedOut('The threat map is not available: the ML endpoint it was built on does not exist.'));
+
 // Get specific threat details
 router.get('/:threatId',
   auth,
@@ -187,6 +204,47 @@ router.get('/:threatId',
         success: false,
         message: 'Failed to get threat details'
       });
+    }
+  })
+);
+
+/**
+ * PUT /api/threats/:threatId/state { action, note } — the finding workflow (DET-02):
+ * acknowledge, investigate (assigns it to the caller), resolve, false_positive, reopen.
+ * Each step is checked against the current state, kept in the timeline and
+ * audited; severity does not change.
+ */
+router.put('/:threatId/state',
+  auth,
+  threatIdValidation,
+  [body('action').isString().isLength({ min: 1, max: 32 }), body('note').optional().isString().isLength({ max: 1000 })],
+  validate,
+  asyncHandler(async (req, res) => {
+    try {
+      const updated = await findings.transition(req.user, req.params.threatId, req.body.action, req.body.note, req);
+      res.json({ success: true, data: { threatId: updated.threatId, status: updated.status, severity: updated.severity, occurrences: updated.occurrences, timeline: updated.timeline } });
+    } catch (error) {
+      if (error instanceof findings.FindingError) return res.status(error.status).json({ success: false, code: error.code, message: error.message });
+      res.status(500).json({ success: false, message: 'Failed to change the finding' });
+    }
+  })
+);
+
+/**
+ * POST /api/threats/:threatId/exception { reason, expiresInDays, maxSeverity? } —
+ * except this finding's category and target for this account (DET-02).
+ */
+router.post('/:threatId/exception',
+  auth,
+  requireWorkspace,
+  threatIdValidation,
+  validate,
+  asyncHandler(async (req, res) => {
+    try {
+      res.status(201).json({ success: true, data: await findings.exceptionFromFinding(req.user, req.params.threatId, req.body || {}, req) });
+    } catch (error) {
+      if (error instanceof findings.FindingError) return res.status(error.status).json({ success: false, code: error.code, message: error.message });
+      res.status(500).json({ success: false, message: 'Failed to make the exception' });
     }
   })
 );

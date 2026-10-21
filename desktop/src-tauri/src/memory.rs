@@ -36,6 +36,57 @@ struct Memory {
     emb: Vec<f32>,
     #[serde(default)]
     synced: bool,
+    /// The account signed in when it was recorded. Only memories of the account
+    /// that is signed in are ever uploaded, so a switch of account does not send
+    /// one person's history to another's account (SEC-07). None: recorded by an
+    /// older version, kept on this computer.
+    #[serde(default)]
+    owner: Option<String>,
+    /// Kept on this computer: sync was withdrawn while it waited to upload.
+    #[serde(default)]
+    local_only: bool,
+}
+
+/// The account signed in now, from the cached profile.
+fn signed_in_user() -> Option<String> {
+    crate::auth::get_stored_user()
+        .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+        .and_then(|user| user.get("id").and_then(|v| v.as_str()).map(String::from))
+}
+
+/// What may be uploaded for `uid`: not yet synced, not held back, and recorded
+/// while that account was signed in.
+fn upload_candidates(store: &[Memory], uid: &str) -> Vec<Memory> {
+    store.iter().filter(|m| !m.synced && !m.local_only && m.owner.as_deref() == Some(uid)).cloned().collect()
+}
+
+/// Sync was withdrawn: everything waiting to upload stays on this computer. Returns how many.
+pub fn hold_back_unsynced() -> usize {
+    ensure_loaded();
+    let (count, snapshot) = {
+        let mut store = lock();
+        let mut count = 0;
+        for m in store.iter_mut().filter(|m| !m.synced && !m.local_only) {
+            m.local_only = true;
+            count += 1;
+        }
+        (count, store.clone())
+    };
+    persist(&snapshot);
+    count
+}
+
+/// Delete every local memory. Returns how many were removed.
+pub fn clear_all() -> usize {
+    ensure_loaded();
+    let removed = {
+        let mut store = lock();
+        let n = store.len();
+        store.clear();
+        n
+    };
+    persist(&[]);
+    removed
 }
 
 static STORE: StdMutex<Vec<Memory>> = StdMutex::new(Vec::new());
@@ -85,6 +136,15 @@ fn read_memories(p: &PathBuf) -> Option<Vec<Memory>> {
         .and_then(|s| serde_json::from_str::<Vec<Memory>>(&s).ok())
 }
 
+/// Forget what is held in this process and read the file again: for a copy
+/// that has just become the owner, so it does not write back an old copy over
+/// what the previous owner saved.
+pub fn reload_from_disk() {
+    lock().clear();
+    LOADED.store(false, Ordering::SeqCst);
+    ensure_loaded();
+}
+
 fn ensure_loaded() {
     if LOADED.swap(true, Ordering::SeqCst) {
         return;
@@ -109,6 +169,11 @@ fn ensure_loaded() {
 }
 
 fn persist(mems: &[Memory]) {
+    // Only the owner of this computer's state writes the file (ownership.rs);
+    // another copy keeps what it records for this session only.
+    if !crate::ownership::is_owner_or_unenforced() {
+        return;
+    }
     let p = memory_path();
     if let Some(parent) = p.parent() {
         let _ = std::fs::create_dir_all(parent);
@@ -184,6 +249,8 @@ pub fn remember(
         ts: now_secs(),
         emb: embed(text),
         synced: false,
+        owner: signed_in_user(),
+        local_only: false,
     };
     let snapshot = {
         let mut store = lock();
@@ -227,16 +294,26 @@ pub async fn memory_save(
     category: Option<String>,
     risk: Option<i64>,
 ) -> Result<Value, String> {
-    if text.trim().is_empty() {
-        return Err("text is required".into());
-    }
-    let id = remember(&text, kind.as_deref().unwrap_or("episodic"), url, category, risk);
+    crate::ownership::ensure_owner()?;
+    // what a page saves is kept and shown again: bounded, and one of the three kinds
+    let text = crate::input::text(&text, "text", 4000)?;
+    let kind = match kind.as_deref().map(str::trim) {
+        None | Some("") => "episodic",
+        Some(k @ ("episodic" | "semantic" | "procedural")) => k,
+        Some(_) => return Err("kind must be episodic, semantic or procedural".into()),
+    };
+    let url = crate::input::optional_text(url.as_deref(), "url", 2048)?;
+    let category = crate::input::optional_text(category.as_deref(), "category", 64)?;
+    let risk = risk.map(|r| r.clamp(0, 100));
+    let id = remember(&text, kind, url, category, risk);
     Ok(json!({ "success": true, "id": id }))
 }
 
 #[tauri::command]
 pub async fn memory_search(query: String, top_k: Option<usize>) -> Result<Value, String> {
-    Ok(json!({ "success": true, "data": { "results": recall(&query, top_k.unwrap_or(5)) } }))
+    let query: String = query.chars().take(1000).collect();
+    let k = crate::input::count(top_k, 5, 1, 100);
+    Ok(json!({ "success": true, "data": { "results": recall(&query, k) } }))
 }
 
 #[tauri::command]
@@ -252,7 +329,7 @@ pub async fn memory_list(limit: Option<usize>) -> Result<Value, String> {
             _ => ep += 1,
         }
     }
-    let lim = limit.unwrap_or(40);
+    let lim = crate::input::count(limit, 40, 1, 500);
     let memories: Vec<Value> = store
         .iter()
         .rev()
@@ -271,6 +348,8 @@ pub async fn memory_list(limit: Option<usize>) -> Result<Value, String> {
 /// Push unsynced local memories to the backend vector store (best-effort).
 #[tauri::command]
 pub async fn memory_sync(state: State<'_, SharedState>) -> Result<Value, String> {
+    crate::ownership::ensure_owner()?;
+    crate::privacy::require(crate::privacy::Feature::Sync)?;
     ensure_loaded();
     let (base, headers, uid) = {
         let s = state.lock().await;
@@ -285,13 +364,14 @@ pub async fn memory_sync(state: State<'_, SharedState>) -> Result<Value, String>
     };
     let unsynced: Vec<Memory> = {
         let store = lock();
-        store.iter().filter(|m| !m.synced).cloned().collect()
+        upload_candidates(&store, &uid)
     };
     if unsynced.is_empty() {
         return Ok(json!({ "success": true, "pushed": 0 }));
     }
     let client = reqwest::Client::new();
     let mut pushed = 0;
+    let mut pushed_ids: Vec<String> = Vec::new();
     for m in &unsynced {
         let mut req = client
             .post(format!("{}/api/memory/save", base))
@@ -305,12 +385,14 @@ pub async fn memory_sync(state: State<'_, SharedState>) -> Result<Value, String>
         }
         if req.send().await.map(|r| r.status().is_success()).unwrap_or(false) {
             pushed += 1;
+            pushed_ids.push(m.id.clone());
         }
     }
     if pushed > 0 {
         let snapshot = {
             let mut store = lock();
-            for m in store.iter_mut() {
+            // only the ones that went up: a failed upload is tried again next time
+            for m in store.iter_mut().filter(|m| pushed_ids.contains(&m.id)) {
                 m.synced = true;
             }
             store.clone()
@@ -318,4 +400,32 @@ pub async fn memory_sync(state: State<'_, SharedState>) -> Result<Value, String>
         persist(&snapshot);
     }
     Ok(json!({ "success": true, "pushed": pushed }))
+}
+
+#[cfg(test)]
+mod sync_tests {
+    use super::*;
+
+    fn memory(id: &str, owner: Option<&str>, synced: bool, local_only: bool) -> Memory {
+        Memory {
+            id: id.into(), text: "t".into(), kind: "episodic".into(), url: None, category: None, risk: None, ts: 0,
+            emb: vec![], synced, owner: owner.map(String::from), local_only,
+        }
+    }
+
+    #[test]
+    fn only_the_signed_in_accounts_own_unsynced_memories_are_uploaded() {
+        let store = vec![
+            memory("alice-new", Some("alice"), false, false),
+            memory("alice-done", Some("alice"), true, false),
+            memory("alice-held", Some("alice"), false, true),
+            memory("bob-new", Some("bob"), false, false),
+            memory("older-version", None, false, false),
+        ];
+        let ids = |uid: &str| upload_candidates(&store, uid).into_iter().map(|m| m.id).collect::<Vec<_>>();
+        assert_eq!(ids("alice"), vec!["alice-new"]);
+        // after switching to bob, alice's backlog is not sent to bob's account
+        assert_eq!(ids("bob"), vec!["bob-new"]);
+        assert!(ids("carol").is_empty());
+    }
 }

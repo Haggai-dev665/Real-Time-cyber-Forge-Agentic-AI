@@ -27,7 +27,7 @@
   const icInfo='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>';
   const icClose='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
   const icOut='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>';
-  const CF_VERSION='1.0.0';
+  function appVersion(){return window.CFConsole&&CFConsole.state.version?CF.esc(CFConsole.state.version):'unavailable';}
   const MARK='<svg class="cf-mark" viewBox="0 0 60 60" fill="none"><rect x="1" y="1" width="58" height="58" fill="none" stroke="var(--cream)" stroke-width="2"></rect><path d="M15 45 L30 13 L45 45 Z" fill="var(--brand-orange)"></path><path d="M23 45 L30 29 L37 45 Z" fill="#0e1420"></path><circle class="sage" cx="30" cy="45" r="3.2" fill="var(--sage)"></circle></svg>';
   const searchI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
   const threatI='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V5l-8-3Z"/></svg>';
@@ -93,14 +93,14 @@
     }catch(e){}
   }
 
-  function applyTheme(t){
+  function applyTheme(t,silent){
     t=(t==='light')?'light':'dark';
     try{ localStorage.setItem('cf-theme',t); }catch(e){}
     if(t==='light') document.documentElement.setAttribute('data-theme','light');
     else document.documentElement.removeAttribute('data-theme');
     var tb=document.getElementById('cfTheme'); if(tb) tb.innerHTML=(t==='light')?sun:moon;
     propagateTheme(t);
-    if(window.CF&&CF.toast) CF.toast((t==='light'?'Light':'Dark')+' theme','ok');
+    if(!silent&&window.CF&&CF.toast) CF.toast((t==='light'?'Light':'Dark')+' theme','ok');
   }
 
   /* ---- inject component styles + light theme once ---- */
@@ -283,10 +283,13 @@
   var SECTIONS=[
     { k:'account',    ic:icProfile, label:'Account',      sub:'Your CyberForge identity' },
     { k:'appearance', ic:icPaint,   label:'Appearance',   sub:'Theme & motion' },
-    { k:'ai',         ic:icChip,    label:'AI & Models',  sub:'DeepSeek inference token' },
-    { k:'connection', ic:icPlug,    label:'Connection',   sub:'Backend & ML service' },
+    { k:'ai',         ic:icChip,    label:'AI & Models',  sub:'Assistant agents and your optional token' },
+    { k:'connection', ic:icPlug,    label:'Connection',   sub:'Server & Analysis Agents' },
     { k:'system',     ic:icCpu,     label:'System',       sub:'Device profile & PATH' },
-    { k:'security',   ic:icShield,  label:'Security',      sub:'Blocking & public IP' },
+    { k:'security',   ic:icShield,  label:'Security',      sub:'Credentials & network' },
+    { k:'privacy',    ic:icShield,  label:'Privacy',       sub:'What is collected and sent' },
+    { k:'diagnostics', ic:icCpu, label:'Diagnostics', sub:'Runtime, events & model readiness' },
+    { k:'integrations', ic:icPlug, label:'Integrations', sub:'CLI setup & supported commands' },
     { k:'about',      ic:icInfo,    label:'About',         sub:'Version & privacy' }
   ];
 
@@ -325,26 +328,30 @@
     var eyeOn='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
     var eyeOff='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.2 3.9M6.3 6.3A16 16 0 0 0 2 12s3.5 7 10 7a9.5 9.5 0 0 0 3-.5"/></svg>';
     b.innerHTML=
-      '<div class="cf-sectn">DEEPSEEK INFERENCE</div><div class="cf-card">'+
-        srow('Connection','Hugging Face inference token','<span class="cf-badge d" id="cfAiStat">checking…</span>')+
-        srow('Model','Powers the AI Assistant & Agent Core','<span class="rv">DeepSeek-V3</span>')+
-        '<div class="cf-srow col"><div class="l"><div class="lt">Access token</div><div class="ls">Paste a Hugging Face token (hf_…). Saved locally — never sent anywhere but HF.</div></div>'+
+      '<div class="cf-sectn">ASSISTANT</div><div class="cf-card">'+
+        srow('Your token (optional)','Sends questions straight to DeepSeek on Hugging Face','<span class="cf-badge d" id="cfAiStat">checking…</span>')+
+        srow('Answers come from','The Analysis Agents\' open-source model, or DeepSeek directly if you save your own token below. Each answer names its agent.','<span class="rv">Analysis Agents by default</span>')+
+        '<div class="cf-srow col"><div class="l"><div class="lt">Access token</div><div class="ls">Paste a Hugging Face token (hf_…). Kept in your system credential store — sent only to Hugging Face.</div></div>'+
           '<div class="cf-inrow"><input class="cf-input" id="cfHfTok" type="password" placeholder="hf_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false"/>'+
             '<button class="cf-eye" id="cfHfEye" title="Show / hide token" type="button">'+eyeOn+'</button>'+
             '<button class="cf-btn pri" id="cfHfSave">Save</button></div>'+
           '<div class="cf-hint" id="cfHfHint" style="display:none"><span class="k">Saved token</span><b id="cfHfMask">—</b><span class="src" id="cfHfSrc"></span></div>'+
         '</div>'+
       '</div>'+
-      '<div class="cf-note-info">The token is stored in your OS keychain and a local config file (<code>hf_config.json</code>) — it never appears in source or syncs to the cloud. Saving here updates the config file so the token takes effect immediately.</div>';
+      '<div class="cf-note-info" id="cfHfNote">The token is kept in your system credential store (Windows Credential Manager, macOS Keychain or the Secret Service). It is not written to a file and is not shown again after saving: only a masked preview is.</div>';
+    b.insertAdjacentHTML('beforeend','<a class="cf-btn" href="model-inference.html">Model capabilities and limitations</a>');
     var inp=b.querySelector('#cfHfTok'), shown=false;
     function loadHf(){
       inv('hf_token_get').then(function(r){
         var ok=r&&r.configured; var s=b.querySelector('#cfAiStat');
         if(s){ s.className='cf-badge '+(ok?'g':'r'); s.textContent=ok?'Connected':'Not connected'; }
         var hint=b.querySelector('#cfHfHint');
-        if(ok && r.token){
-          if(inp){ inp.value=r.token; inp.type=shown?'text':'password'; }
-          if(hint){ hint.style.display='flex'; set('cfHfMask', r.masked||r.token); set('cfHfSrc', r.source?('from '+r.source):''); }
+        // The saved token is never sent to this page: only its masked form and source.
+        if(inp){ inp.value=''; inp.placeholder=ok?'saved — paste a new token to replace it':'hf_xxxxxxxxxxxxxxxxxxxx'; }
+        if(ok){
+          if(hint){ hint.style.display='flex'; set('cfHfMask', r.masked||'saved'); set('cfHfSrc', r.source?('from the '+r.source):''); }
+          var note=b.querySelector('#cfHfNote');
+          if(note && r.plaintext){ note.style.color='#ff9aa6'; note.textContent='This token is still in a plaintext file because the system credential store is not working on this machine. See Settings > Security for the reason.'; }
         }else if(hint){ hint.style.display='none'; }
       }).catch(function(){
         // older build without hf_token_get → fall back to the boolean status
@@ -353,13 +360,13 @@
     }
     loadHf();
     var eye=b.querySelector('#cfHfEye'); if(eye) eye.addEventListener('click',function(){ shown=!shown; if(inp) inp.type=shown?'text':'password'; eye.innerHTML=shown?eyeOff:eyeOn; });
-    var sv=b.querySelector('#cfHfSave'); if(sv) sv.addEventListener('click',function(){ var v=(inp&&inp.value||'').trim(); if(!v){ if(window.CF&&CF.toast)CF.toast('Paste a token first','warn'); return; } sv.disabled=true; sv.textContent='Saving…'; inv('set_hf_token',{token:v}).then(function(){ if(window.CF&&CF.toast)CF.toast('Token saved','ok'); loadHf(); }).catch(function(){ if(window.CF&&CF.toast)CF.toast('Could not save token','error'); }).then(function(){ sv.disabled=false; sv.textContent='Save'; }); });
+    var sv=b.querySelector('#cfHfSave'); if(sv) sv.addEventListener('click',function(){ var v=(inp&&inp.value||'').trim(); if(!v){ if(window.CF&&CF.toast)CF.toast('Paste a token first','warn'); return; } sv.disabled=true; sv.textContent='Saving…'; inv('set_hf_token',{token:v}).then(function(){ if(window.CF&&CF.toast)CF.toast('Token saved to the credential store','ok'); loadHf(); }).catch(function(e){ var why=String((e&&e.message)||e||'Could not save the token'); if(window.CF&&CF.toast)CF.toast(why,'error'); var note=b.querySelector('#cfHfNote'); if(note){ note.style.color='#ff9aa6'; note.textContent=why; } }).then(function(){ sv.disabled=false; sv.textContent='Save'; }); });
   }
   function secConnection(b){
     b.innerHTML=
       '<div class="cf-sectn">SERVICES</div><div class="cf-card">'+
-        srow('Backend API','Cloud sync & threat intelligence','<span class="cf-badge d" id="cfCBe">checking…</span>')+
-        srow('ML service','Phishing & IOC detection models','<span class="cf-badge d" id="cfCMl">checking…</span>')+
+        srow('Server API','Cloud sync & threat intelligence','<span class="cf-badge d" id="cfCBe">checking…</span>')+
+        srow('Analysis Agents','Phishing & IOC detection models','<span class="cf-badge d" id="cfCMl">checking…</span>')+
         srow('Active agents','Registered agents + this device','<span class="rv" id="cfCAg">—</span>')+
         srow('Open threats','Across your workspace','<span class="rv" id="cfCTh">—</span>')+
       '</div>'+
@@ -399,29 +406,264 @@
     b.innerHTML=
       '<div class="cf-sectn">PROTECTION LISTS</div><div class="cf-card">'+
         srow('Blocked sites','Resolved to localhost via the hosts file','<span class="rv" id="cfSecB">—</span>')+
-        srow('Protected sites','Recorded for the secure tunnel','<span class="rv" id="cfSecP">—</span>')+
-        srow('Allowed sites','Marked trusted','<span class="rv" id="cfSecA">—</span>')+
+        srow('Saved sites','A list only: nothing is enforced for them','<span class="rv" id="cfSecP">—</span>')+
+        srow('Allowed sites','Unblocked by you; still scanned','<span class="rv" id="cfSecA">—</span>')+
       '</div>'+
+      '<div class="cf-sectn">CREDENTIALS</div><div class="cf-card">'+
+        srow('Credential storage','Where the sign-in session and the AI token are kept','<span class="rv" id="cfSecStore">checking…</span>')+
+      '</div>'+
+      '<div class="cf-note-info" id="cfSecStoreNote" style="display:none"></div>'+
       '<div class="cf-sectn">NETWORK</div><div class="cf-card">'+
         srow('Public IP','Your current outbound address','<span class="rv" id="cfSecIp">checking…</span>')+
       '</div>'+
-      '<div class="cf-srow" style="border:none;padding-left:0"><button class="cf-btn" id="cfSecManage">'+icShield+'Manage in Security Functions</button></div>';
+      '<div class="cf-srow" style="border:none;padding-left:0"><button class="cf-btn" id="cfSecManage">'+icShield+'Manage in Protection</button></div>';
     function cnt(cmd,id){ inv(cmd).then(function(r){ set(id, String((r&&r.count)!=null?r.count:0)); }).catch(function(){ set(id,'—'); }); }
     cnt('list_blocked','cfSecB'); cnt('list_protected','cfSecP'); cnt('list_allowed','cfSecA');
     inv('public_ip').then(function(r){ set('cfSecIp',(r&&r.ip)||'Unavailable'); }).catch(function(){ set('cfSecIp','Unavailable'); });
+    // Whether the system credential store keeps a value on this machine. When it
+    // does not, sign-in lasts until the app closes and the reason is shown here.
+    inv('credential_storage_status').then(function(r){
+      var note=b.querySelector('#cfSecStoreNote');
+      if(r&&r.working){ set('cfSecStore','System credential store · working'); return; }
+      set('cfSecStore','Not working');
+      if(note){ note.style.display='block'; note.style.color='#ff9aa6';
+        note.textContent='The system credential store did not keep a test value'+((r&&r.reason)?(': '+r.reason):'')+'. Sign-in lasts until the app closes, and an AI token cannot be saved. Nothing is written to a file instead.'; }
+    }).catch(function(){ set('cfSecStore','Unknown (older build)'); });
     var mg=b.querySelector('#cfSecManage'); if(mg) mg.addEventListener('click',function(){ closeSettingsModal(); location.href='security-functions.html'; });
+  }
+  /* What the app may collect and send (SEC-07). Each control is separate and
+     says what it sends; the Rust commands check the same choices. */
+  function secPrivacy(b){
+    b.innerHTML='<div class="cf-msg">Loading…</div>';
+    function draw(p, effects){
+      var rows=(p.features||[]).map(function(f){
+        return srow(esc(f.label), esc(f.sends), '<div class="cf-sw'+(f.enabled?' on':'')+'" data-priv="'+esc(f.id)+'" role="switch" tabindex="0" aria-checked="'+(f.enabled?'true':'false')+'"></div>');
+      }).join('');
+      var log=(p.log||[]).slice(0,8).map(function(c){ return '<div class="ls">'+esc(new Date(c.at).toLocaleString())+' · '+esc(c.feature)+' '+esc(c.enabled?'on':'off')+'</div>'; }).join('');
+      b.innerHTML=
+        (p.decided?'':'<div class="cf-note-info" style="color:var(--amber-2)">Nothing below is on yet. Turn on only what you want; each one says what it sends and where.</div>')+
+        '<div class="cf-sectn">COLLECTION AND SHARING</div><div class="cf-card">'+rows+'</div>'+
+        ((effects&&effects.length)?'<div class="cf-note-info">'+esc(effects.join('. '))+'.</div>':'')+
+        '<div class="cf-sectn">ON THIS COMPUTER</div><div class="cf-card">'+
+          srow('Clear browser history copy','The history this app read from your browsers','<button class="cf-btn dng" id="cfPrivHist">Clear</button>')+
+          srow('Clear local memory','What the assistant recalls on this computer; copies already synced to your account are not affected','<button class="cf-btn dng" id="cfPrivMem">Clear</button>')+
+        '</div>'+
+        (log?'<div class="cf-sectn">CHANGES</div><div class="cf-card" style="padding:8px 12px">'+log+'</div>':'')+
+        '<div class="cf-note-info">Consent version '+esc(p.consentVersion)+(p.decidedAt?(' · last saved '+esc(new Date(p.decidedAt).toLocaleString())):'')+'</div>'+
+        '<div id="cfPrivAcct"></div>';
+      accountData(b.querySelector('#cfPrivAcct'));
+      b.querySelectorAll('[data-priv]').forEach(function(sw){
+        function flip(){ var choice={}; choice[sw.dataset.priv]=!sw.classList.contains('on');
+          inv('privacy_set',{choices:choice}).then(function(r){ draw(r, r.effects); try{ CF._privacyDecided=r.decided; var bn=document.getElementById('cfPrivBanner'); if(bn&&r.decided) bn.remove(); }catch(e){} })
+            .catch(function(e){ if(window.CF&&CF.toast) CF.toast(String((e&&e.message)||e),'error'); }); }
+        sw.addEventListener('click',flip); sw.addEventListener('keydown',function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); flip(); } });
+      });
+      function twoStep(id, cmd, done){ var btn=b.querySelector('#'+id); if(!btn) return; var armed=false;
+        btn.addEventListener('click',function(){ if(!armed){ armed=true; btn.textContent='Confirm'; return; }
+          inv(cmd).then(function(r){ if(window.CF&&CF.toast) CF.toast(done(r),'ok'); btn.textContent='Cleared'; btn.disabled=true; })
+            .catch(function(e){ if(window.CF&&CF.toast) CF.toast(String((e&&e.message)||e),'error'); }); }); }
+      twoStep('cfPrivHist','privacy_clear_history',function(r){ return 'Browser history copy cleared ('+(r.filesRemoved||0)+' file).'; });
+      twoStep('cfPrivMem','privacy_clear_memory',function(r){ return (r.memoriesRemoved||0)+' local memories cleared.'; });
+    }
+    inv('privacy_get').then(function(p){ draw(p); }).catch(function(){ b.innerHTML='<div class="cf-msg">This section needs the latest app build.</div>'; });
+  }
+  /* The account's own data on the backend (SEC-07): export it as a file, delete
+     one kind of it, or delete the account (the email typed out to confirm).
+     Every value shown is set as text. */
+  var DATA_SCOPES=[['memory','Synced memory'],['scans','Scans and threats'],['agents','Agents'],['devices','Devices'],['all','All synced data']];
+  function accountData(box){
+    if(!box) return;
+    box.innerHTML=
+      '<div class="cf-sectn">YOUR ACCOUNT\'S DATA</div><div class="cf-card">'+
+        srow('Export your data','Everything kept about your account, saved as a JSON file in Downloads','<button class="cf-btn" id="cfAcExp">Export</button>')+
+        srow('Delete synced data','Removes that kind of data from your account; the account stays','<div class="cf-inrow"><select class="cf-input" id="cfAcScope" style="width:auto"></select><button class="cf-btn dng" id="cfAcDel">Delete</button></div>')+
+      '</div>'+
+      '<div class="cf-note-info" id="cfAcMsg" style="display:none;white-space:pre-line"></div>'+
+      '<div class="cf-sectn">DELETE ACCOUNT</div><div class="cf-card" style="padding:12px">'+
+        '<div class="ls" id="cfAcWhat">Deletes your account and everything it holds on the server: synced memory, scans, agents, devices, captures and the sign-in. Audit events stay until their 90-day retention ends. Type your account\'s email address to confirm.</div>'+
+        '<div class="cf-inrow" style="margin-top:10px"><input class="cf-input" id="cfAcEmail" type="email" autocomplete="off" spellcheck="false"/><button class="cf-btn dng" id="cfAcGo" disabled>Delete account</button></div>'+
+      '</div>'+
+      '<div class="cf-note-info" id="cfAcReceipt" style="display:none;white-space:pre-line"></div>';
+    var sel=box.querySelector('#cfAcScope');
+    DATA_SCOPES.forEach(function(s){ var o=document.createElement('option'); o.value=s[0]; o.textContent=s[1]; sel.appendChild(o); });
+    function say(text, bad){ var m=box.querySelector('#cfAcMsg'); m.style.display='block'; m.style.color=bad?'#ff9aa6':''; m.textContent=text; }
+    function failure(e){ return String((e&&e.message)||e); }
+    var email='';
+    inv('auth_get_user').then(function(u){
+      var user=(u&&(u.user||(u.data&&u.data.user)||u.data))||{};
+      email=String(user.email||'');
+      var input=box.querySelector('#cfAcEmail'); input.placeholder=email||'Sign in first';
+      if(!email){ box.querySelectorAll('button').forEach(function(x){ x.disabled=true; }); }
+    }).catch(function(){});
+
+    var exp=box.querySelector('#cfAcExp');
+    exp.addEventListener('click',function(){ exp.disabled=true; exp.textContent='Exporting…';
+      inv('account_call',{op:'export'}).then(function(r){
+        var counts=Object.keys(r.counts||{}).map(function(k){ return k.replace(/_/g,' ')+': '+r.counts[k]; }).join('\n');
+        say('Saved to '+r.path+'\n\n'+counts);
+      }).catch(function(e){ say('Export failed: '+failure(e), true); }).then(function(){ exp.disabled=false; exp.textContent='Export'; });
+    });
+
+    var del=box.querySelector('#cfAcDel'); var armed=false;
+    sel.addEventListener('change',function(){ armed=false; del.textContent='Delete'; });
+    del.addEventListener('click',function(){
+      if(!armed){ armed=true; del.textContent='Confirm'; return; }
+      armed=false; del.disabled=true; del.textContent='Deleting…';
+      var label=sel.options[sel.selectedIndex].textContent;
+      inv('account_call',{op:'data_delete',arg:sel.value}).then(function(r){
+        var removed=0; Object.keys(r.results||{}).forEach(function(k){ removed+=(r.results[k].removed||0); });
+        say(r.complete ? label+': '+removed+' record'+(removed===1?'':'s')+' deleted.' : label+': '+removed+' deleted, but these could not be: '+(r.failed||[]).join(', ')+'. Try again later.', !r.complete);
+      }).catch(function(e){ say('Delete failed: '+failure(e), true); }).then(function(){ del.disabled=false; del.textContent='Delete'; });
+    });
+
+    var input=box.querySelector('#cfAcEmail'); var go=box.querySelector('#cfAcGo');
+    input.addEventListener('input',function(){ go.disabled=!email || input.value.trim().toLowerCase()!==email.toLowerCase(); });
+    go.addEventListener('click',function(){
+      if(go.disabled) return;
+      go.disabled=true; go.textContent='Deleting…';
+      inv('account_call',{op:'delete_account',body:{confirm:input.value.trim()}}).then(function(r){
+        var out=box.querySelector('#cfAcReceipt'); out.style.display='block';
+        if(r.state==='completed'){
+          out.style.color='';
+          out.textContent='Your account was deleted. Receipt '+r.deletionId+' (keep it to check the deletion later).\n\nKept:\n'+(r.kept||[]).map(function(k){ return '• '+k; }).join('\n');
+          go.textContent='Deleted'; input.disabled=true;
+          var done=document.createElement('button'); done.className='cf-btn'; done.textContent='Go to sign-in'; done.style.marginTop='10px';
+          done.addEventListener('click',function(){ location.href='login.html'; }); out.appendChild(document.createElement('br')); out.appendChild(done);
+        } else {
+          out.style.color='#ff9aa6';
+          out.textContent='Deletion is not finished: '+(r.failed||[]).join(', ')+' could not be deleted. Your account is kept; try again to finish.';
+          go.disabled=false; go.textContent='Delete account';
+        }
+      }).catch(function(e){ say('Account deletion failed: '+failure(e), true); go.disabled=false; go.textContent='Delete account'; });
+    });
   }
   function secAbout(b){
     b.innerHTML=
-      '<div class="cf-prof" style="padding-bottom:12px"><div class="av" style="background:linear-gradient(135deg,#143042,#0c1a26);border-color:var(--border-2)">'+MARK+'</div><div><div class="pn">CyberForge Console</div><div class="pe">Version '+CF_VERSION+' · Desktop</div></div></div>'+
+      '<div class="cf-prof" style="padding-bottom:12px"><div class="av" style="background:linear-gradient(135deg,#143042,#0c1a26);border-color:var(--border-2)">'+MARK+'</div><div><div class="pn">CyberForge Console</div><div class="pe">Version '+appVersion()+' · Desktop</div></div></div>'+
       '<div class="cf-card">'+
         srow('Edition','Local-first AI security workspace','<span class="rv">Desktop</span>')+
-        srow('Engine','Agentic AI with DeepSeek reasoning','<span class="rv">Tauri + Rust</span>')+
-        srow('Data residency','Where your data lives','<span class="rv">On this device</span>')+
+        srow('Runtime','Desktop application','<span class="rv">Tauri + Rust</span>')+
+        srow('Data residency','Where your data goes, from your Privacy choices','<span class="rv" id="cfAbRes">checking…</span>')+
       '</div>'+
-      '<div class="cf-note-info">CyberForge runs locally on your machine. Scans, browser intelligence, memory and reports are stored on-device — nothing is uploaded unless you explicitly sync. © 2026 CyberForge.</div>';
+      '<div class="cf-note-info" id="cfAbNote">Memory, reports and the history copy are kept on this computer. What leaves it depends on your Privacy choices. © 2026 CyberForge.</div>';
+    inv('privacy_get').then(function(p){
+      var on=(p.features||[]).filter(function(f){ return f.enabled && ['cloud_scanning','llm_processing','sync'].indexOf(f.id)>=0; }).map(function(f){ return f.label; });
+      set('cfAbRes', on.length ? 'This computer, plus: '+on.join(', ') : 'This computer only');
+    }).catch(function(){ set('cfAbRes','Unknown (older build)'); });
   }
-  var RENDER={ account:secAccount, appearance:secAppearance, ai:secAi, connection:secConnection, system:secSystem, security:secSecurity, about:secAbout };
+  function secDiagnostics(b){
+    b.innerHTML='<div class="cf-note-info">Troubleshoot this computer and its services. Each page reports its own source and availability. The same pages are in the sidebar under Diagnostics.</div><div class="cf-card">'+
+      srow('Local runtime','Monitoring, resource use and console','<a class="cf-btn" href="agent-core.html">Open runtime</a>')+
+      srow('Floating monitor','Inspect the existing background monitor','<button class="cf-btn" id="cfOpenRuntime">Open monitor</button>')+
+      srow('Event stream','Events received by this window and server round trip','<a class="cf-btn" href="signal-pipeline.html">Open events</a>')+
+      srow('Model capabilities','Reported model and heuristic readiness, sources and limitations','<a class="cf-btn" href="model-inference.html">Open models</a>')+
+      srow('Device coverage','Enrollment, connection and verified action outcomes','<a class="cf-btn" href="devices.html">Open Devices</a>')+'</div>';
+    b.querySelector('#cfOpenRuntime').addEventListener('click',function(){closeSettingsModal();window.dispatchEvent(new Event('cf:open-runtime-monitor'));});
+  }
+  function secIntegrations(b){
+    function code(lines){ return '<code>'+lines.map(esc).join('<br>')+'</code>'; }
+    b.innerHTML='<div class="cf-sectn">CYBERFORGE CLI</div><div class="cf-card">'+
+      srow('Installed','The cyberforge command, installed beside this app','<span class="cf-badge d" id="cfCliInstalled">checking…</span>')+
+      srow('Version','As the installed command reports it','<span class="rv" id="cfCliVersion">—</span>')+
+      srow('On PATH','Whether a new terminal finds it as cyberforge','<span class="rv" id="cfCliOnPath">—</span>')+
+      srow('Location','Where it is installed','<span class="rv" id="cfCliPath">—</span>')+'</div>'+
+      '<div class="cf-sectn">COMMANDS</div><div class="cf-card">'+
+      srow('Check the setup','Server, credential store, sign-in and which program owns this computer\'s state',code(['cyberforge status']))+
+      srow('Sign in','Its own session, separate from this app\'s; the password is never an argument',code(['cyberforge auth login','cyberforge auth status','cyberforge auth logout']))+
+      srow('Analysis Agents','What the agents can do now, and a versioned check of one address',code(['cyberforge models status','cyberforge scan url https://example.com']))+
+      srow('Profiles','Named servers, each with its own sign-in',code(['cyberforge profile list','cyberforge config set origin https://…']))+
+      srow('This computer\'s state','Which CyberForge program owns it',code(['cyberforge broker status']))+
+      srow('Scripts and CI','One JSON answer and a fixed exit code; a verdict exits 0 unless asked',code(['cyberforge --json scan url https://example.com --fail-on threat']))+
+      srow('AI clients','Approve, list and revoke clients of the MCP server',code(['cyberforge mcp grant create --name "Claude Desktop"','cyberforge mcp grant list','cyberforge mcp config --grant <id>']))+'</div>'+
+      '<div class="cf-sectn">MCP SERVER</div><div class="cf-card">'+
+      srow('For AI clients','An approved client starts it as cyberforge mcp serve and gets only the tools you grant it','<span class="cf-badge d" id="cfMcpState">checking…</span>')+
+      srow('Acts as','The CLI\'s current profile and its sign-in, separate from this app\'s','<span class="rv" id="cfMcpProfile">—</span>')+'</div>'+
+      '<div class="cf-sectn">APPROVE A CLIENT</div><div class="cf-card">'+
+      srow('Client name','How you will recognise it here later','<input class="cf-input" id="cfMcpName" maxlength="60" placeholder="Claude Desktop" autocomplete="off" spellcheck="false" style="width:220px"/>')+
+      srow('Read-only tools','Server status and what the Analysis Agents can do now. Always included','<span class="rv">cyberforge_status, cyberforge_model_status</span>')+
+      srow('Address analysis','Also let it send web addresses to your server for analysis (credentials are removed first)','<input type="checkbox" id="cfMcpScan"/>')+
+      srow('Expires after','It must be approved again then','<select class="cf-input" id="cfMcpDays" style="width:auto"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="365">365 days</option></select>')+
+      '<div class="cf-srow" style="border:none"><div class="l"><div class="ls" id="cfMcpMsg"></div></div><div class="r"><button class="cf-btn pri" id="cfMcpApprove" disabled>Approve</button></div></div>'+
+      '<div id="cfMcpCfgBox" style="display:none;padding:0 16px 14px"><div class="ls" style="margin-bottom:6px">Add this to the client\'s MCP configuration. It holds no password or token.</div><pre id="cfMcpCfg" style="white-space:pre-wrap;word-break:break-all;font-family:var(--mono);font-size:11px;margin:0;padding:10px;border-radius:9px;border:1px solid var(--border-2);background:rgba(8,12,20,.6)"></pre><button class="cf-btn" id="cfMcpCopy" style="margin-top:8px">Copy</button></div>'+
+      '</div>'+
+      '<div class="cf-sectn">APPROVED CLIENTS</div><div class="cf-card" id="cfMcpList"><div class="cf-srow"><div class="l"><div class="ls">Checking…</div></div></div></div>'+
+      '<div class="cf-sectn">RECENT CALLS</div><div class="cf-card" id="cfMcpCalls"><div class="cf-srow"><div class="l"><div class="ls">—</div></div></div></div>'+
+      '<div class="cf-note-info" id="cfIntNote">Approving a client lets it act as the CLI profile shown above: sign that profile in with cyberforge auth login first. Revoking, expiry, signing the profile in to another account, or pointing it at another server stops the client\'s next call. Calls are logged without what was sent.</div>';
+    var mcpCfgText='';
+    function showCfg(cfg){
+      mcpCfgText=JSON.stringify(cfg,null,2);
+      var box=document.getElementById('cfMcpCfgBox'); if(box) box.style.display='';
+      set('cfMcpCfg',mcpCfgText);
+    }
+    function when(sec){ if(!sec) return '—'; try{ return new Date(sec*1000).toLocaleString(); }catch(e){ return String(sec); } }
+    function loadMcp(){
+      inv('mcp_grants').then(function(r){
+        var badge=document.getElementById('cfMcpState');
+        var grants=(r&&r.grants)||[];
+        var active=grants.filter(function(g){ return g.state==='active'; });
+        if(badge){ badge.className='cf-badge '+(active.length?'g':'d'); badge.textContent=active.length?(active.length+' approved'):'No client approved'; }
+        var prof=null; ((r&&r.profiles&&r.profiles.profiles)||[]).forEach(function(p){ if(p.current) prof=p; });
+        set('cfMcpProfile',prof?(prof.name+' · '+prof.origin+' · '+(prof.session==='kept'?'signed in':'not signed in')):'No CLI profile yet; run cyberforge config set origin …');
+        var approve=document.getElementById('cfMcpApprove'); if(approve) approve.disabled=false;
+        var names={}; grants.forEach(function(g){ names[g.id]=g.clientName; });
+        var list=document.getElementById('cfMcpList');
+        if(list){
+          list.innerHTML=grants.length?grants.slice().reverse().map(function(g){
+            var cls=g.state==='active'?'g':(g.state==='revoked'?'r':'d');
+            var btns=g.state==='active'?('<button class="cf-btn" data-cfg="'+esc(g.id)+'">Configuration</button> <button class="cf-btn dng" data-revoke="'+esc(g.id)+'">Revoke</button>'):'';
+            return '<div class="cf-srow"><div class="l"><div class="lt">'+esc(g.clientName)+' <span class="cf-badge '+cls+'">'+esc(g.state)+'</span></div>'+
+              '<div class="ls">'+esc((g.operations||[]).join(', '))+' · profile '+esc(g.profile)+' · expires '+esc(when(g.expiresAt))+' · '+esc(g.id)+'</div></div><div class="r">'+btns+'</div></div>';
+          }).join(''):'<div class="cf-srow"><div class="l"><div class="ls">No AI client is approved.</div></div></div>';
+          list.querySelectorAll('[data-cfg]').forEach(function(btn){ btn.addEventListener('click',function(){
+            grants.forEach(function(g){ if(g.id===btn.getAttribute('data-cfg')&&g.clientConfig) showCfg(g.clientConfig); });
+          }); });
+          list.querySelectorAll('[data-revoke]').forEach(function(btn){ btn.addEventListener('click',function(){
+            btn.disabled=true;
+            inv('mcp_grant_revoke',{id:btn.getAttribute('data-revoke')}).then(function(){
+              if(window.CF&&CF.toast) CF.toast('Approval revoked','ok'); loadMcp();
+            }).catch(function(e){ btn.disabled=false; if(window.CF&&CF.toast) CF.toast(String((e&&e.message)||e),'err'); });
+          }); });
+        }
+        var calls=document.getElementById('cfMcpCalls');
+        if(calls){
+          var rows=(r&&r.recentCalls)||[];
+          calls.innerHTML=rows.length?rows.map(function(c){
+            return '<div class="cf-srow"><div class="l"><div class="lt">'+esc(c.tool)+'</div><div class="ls">'+esc(names[c.grant]||c.grant)+' · '+esc(when(c.at))+'</div></div><div class="r"><span class="cf-badge '+(c.outcome==='ok'?'g':'r')+'">'+esc(c.outcome)+'</span></div></div>';
+          }).join(''):'<div class="cf-srow"><div class="l"><div class="ls">No calls yet.</div></div></div>';
+        }
+      }).catch(function(e){
+        var badge=document.getElementById('cfMcpState'); if(badge){ badge.className='cf-badge r'; badge.textContent='Unavailable'; }
+        var list=document.getElementById('cfMcpList'); if(list) list.innerHTML='<div class="cf-srow"><div class="l"><div class="ls">'+esc(String((e&&e.message)||e||'This section needs the latest app build.'))+'</div></div></div>';
+      });
+    }
+    var approveBtn=document.getElementById('cfMcpApprove');
+    if(approveBtn) approveBtn.addEventListener('click',function(){
+      var name=(document.getElementById('cfMcpName')||{}).value||'';
+      var scan=!!(document.getElementById('cfMcpScan')||{}).checked;
+      var days=parseInt((document.getElementById('cfMcpDays')||{}).value,10)||90;
+      if(!name.trim()){ set('cfMcpMsg','Give the client a name.'); return; }
+      approveBtn.disabled=true; set('cfMcpMsg','Checking the CLI profile\'s sign-in with the server…');
+      inv('mcp_grant_create',{name:name.trim(),allowScan:scan,days:days}).then(function(d){
+        set('cfMcpMsg','Approved '+((d&&d.grant&&d.grant.clientName)||name.trim())+'.');
+        if(d&&d.clientConfig) showCfg(d.clientConfig);
+        approveBtn.disabled=false; loadMcp();
+      }).catch(function(e){ approveBtn.disabled=false; set('cfMcpMsg',String((e&&e.message)||e)); });
+    });
+    var copyBtn=document.getElementById('cfMcpCopy');
+    if(copyBtn) copyBtn.addEventListener('click',function(){
+      try{ navigator.clipboard.writeText(mcpCfgText); if(window.CF&&CF.toast) CF.toast('Configuration copied','ok'); }catch(e){}
+    });
+    loadMcp();
+    inv('cli_status').then(function(r){
+      var badge=document.getElementById('cfCliInstalled');
+      if(badge){ badge.className='cf-badge '+(r&&r.installed?'g':'r'); badge.textContent=r&&r.installed?'Installed':'Not installed'; }
+      if(!r||!r.installed){ set('cfCliVersion','—'); set('cfCliOnPath','—'); set('cfCliPath',(r&&r.reason)||'Not found'); return; }
+      set('cfCliVersion',r.version?('v'+r.version+(r.schema?' · '+r.schema:'')):(r.versionError||'Unknown'));
+      set('cfCliOnPath',r.onPath?'Yes':'Not in this app\'s PATH; open a new terminal after installing, or add '+r.folder);
+      set('cfCliPath',r.path);
+    }).catch(function(){ set('cfCliInstalled','Unavailable'); set('cfCliPath','This section needs the latest app build.'); });
+  }
+  var RENDER={ diagnostics:secDiagnostics, integrations:secIntegrations, account:secAccount, appearance:secAppearance, ai:secAi, connection:secConnection, system:secSystem, security:secSecurity, privacy:secPrivacy, about:secAbout };
 
   function showSection(k){
     var ov=document.getElementById('cfSetModal'); if(!ov) return;
@@ -432,15 +674,21 @@
     var body=ov.querySelector('#cfSetBody'); if(!body) return; body.scrollTop=0;
     try{ RENDER[sec.k](body); }catch(e){ body.innerHTML='<div class="cf-msg">This section needs the latest app build.</div>'; }
   }
-  function closeSettingsModal(){ var ov=document.getElementById('cfSetModal'); if(ov) ov.remove(); }
+  var cfSetReturn=null;   // the element focused before Settings opened; focus goes back to it
+  function closeSettingsModal(){ var ov=document.getElementById('cfSetModal'); if(!ov) return; ov.remove();
+    if(cfSetReturn&&document.contains(cfSetReturn)) try{ cfSetReturn.focus(); }catch(e){}
+    cfSetReturn=null; }
   function openSettingsModal(section){
+    var from=document.activeElement;
     closeDD(); closeSettingsModal();
+    cfSetReturn=(from&&from!==document.body)?from:null;
     var ov=document.createElement('div'); ov.className='cf-mov'; ov.id='cfSetModal';
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','cfSetTitle');
     ov.innerHTML='<div class="cf-mw">'+
         '<div class="cf-mside">'+
           '<div class="cf-mside-h">'+MARK+'<div><b>Cyber<span class="fg">Forge</span></b><small>SETTINGS</small></div></div>'+
           '<div class="cf-mnav">'+SECTIONS.map(function(s){ return '<div class="cf-mni" data-sec="'+s.k+'">'+s.ic+'<span>'+s.label+'</span></div>'; }).join('')+'</div>'+
-          '<div class="cf-mside-f">CyberForge Console · v'+CF_VERSION+'</div>'+
+          '<div class="cf-mside-f">CyberForge Console · v'+appVersion()+'</div>'+
         '</div>'+
         '<div class="cf-mmain">'+
           '<div class="cf-mtop"><h3 id="cfSetTitle">Account</h3><button class="cf-mclose" id="cfSetClose" title="Close">'+icClose+'</button></div>'+
@@ -452,7 +700,17 @@
     ov.querySelector('#cfSetClose').addEventListener('click',closeSettingsModal);
     ov.querySelectorAll('.cf-mni').forEach(function(n){ n.addEventListener('click',function(){ showSection(n.dataset.sec); }); });
     if(!window.__cfSetEsc){ window.__cfSetEsc=true; document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeSettingsModal(); } }); }
+    // Tab and Shift+Tab stay inside the dialog while it is open.
+    ov.addEventListener('keydown',function(e){
+      if(e.key!=='Tab') return;
+      var f=[].slice.call(ov.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(function(x){ return !x.disabled && x.offsetParent!==null; });
+      if(!f.length) return;
+      var first=f[0], last=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+    });
     showSection(section||'account');
+    try{ ov.querySelector('#cfSetClose').focus(); }catch(e){}
   }
   try{ window.openCfSettings=openSettingsModal; }catch(e){}
 
@@ -498,15 +756,14 @@
     o=o||{};
     const search=o.search||'Search a website for its IP — e.g. github.com';
     const status=o.status||'MONITORING';
-    const chips=(o.chips!==undefined)?o.chips:
-      '<div class="tb-chip"><span class="dot rec"></span>REC</div>'+
-      '<div class="tb-chip"><span class="dot" style="background:var(--green)"></span>ON</div>';
-    const cta=o.cta||'Quick Scan';
+    // No status chips unless the page passes real ones (a default "REC" and "ON" stood here, with nothing recording).
+    const chips=(o.chips!==undefined)?o.chips:'';
+    const cta='Analyze';
     const threats=o.threats?('<div class="pill-threats" id="tbThreats">'+threatI+' '+o.threats+' threats</div>'):'';
     const html=
       '<div class="brand"><a class="logo-mark" href="threat-overview.html">'+MARK+'</a><div class="name"><b>Cyber<span class="fg">Forge</span></b><span>AI SECURITY</span></div></div>'+
       '<div class="tb-group">'+chips+'</div>'+
-      '<div class="search" id="cfSearchBox">'+searchI+'<input id="cfSearch" class="cf-sinput" placeholder="'+esc(search)+'" autocomplete="off" spellcheck="false" /><span class="kbd">↵</span><div class="cf-sres" id="cfSres"></div></div>'+
+      '<div class="search" id="cfSearchBox">'+searchI+'<input id="cfSearch" class="cf-sinput" placeholder="Look up a domain" aria-label="Look up a domain" autocomplete="off" spellcheck="false" /><span class="kbd">↵</span><div class="cf-sres" id="cfSres"></div></div>'+
       '<div class="tb-status"><div class="spinner sm"></div>'+status+'</div>'+
       threats+
       '<button class="btn-scan">'+bolt+cta+'</button>'+
@@ -522,8 +779,19 @@
     var notesDD=document.createElement('div'); notesDD.className='cf-dd'; notesDD.id='cfNotesDD'; el.appendChild(notesDD);
 
     if(window.attachRipple){ var bs=el.querySelector('.btn-scan'); if(bs) attachRipple(bs); }
-    applyTheme(curTheme()); // sets the toggle icon to match
+    applyTheme(curTheme(),true); // Restore the saved theme without covering the header with a toast.
     wireDoc();
+
+    // Until the user has chosen what may be collected and sent, nothing is, and every page says so (SEC-07).
+    inv('privacy_get').then(function(p){
+      if(!p || p.decided || document.getElementById('cfPrivBanner')) return;
+      var bn=document.createElement('div'); bn.id='cfPrivBanner'; bn.className='cf-note-info';
+      bn.style.cssText='margin:6px 14px;border:1px solid rgba(245,166,35,.4);color:var(--amber-2);display:flex;align-items:center;gap:10px';
+      bn.textContent='Choose what CyberForge may collect and send. Until you do, history reading, scanning, the assistant and sync stay off. ';
+      var go=document.createElement('button'); go.className='cf-btn'; go.textContent='Choose';
+      go.addEventListener('click',function(){ openSettingsModal('privacy'); });
+      bn.appendChild(go); el.after(bn);
+    }).catch(function(){});
 
     // Notifications
     var bellBtn=document.getElementById('cfBell');
@@ -555,7 +823,7 @@
 
     // Quick Scan → scan the typed site, else open the Sandbox
     var scanBtn=el.querySelector('.btn-scan');
-    if(scanBtn) scanBtn.addEventListener('click',function(){ var q=inp&&inp.value.trim(); if(q){ doIpSearch(); } else { location.href='sandbox.html'; } });
+    if(scanBtn) scanBtn.addEventListener('click',function(){ location.href='analyzer.html'; });
 
     // initial + live notifications
     loadNotes();

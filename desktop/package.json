@@ -1,13 +1,15 @@
 {
   "name": "cyberforge-console",
   "version": "1.0.0",
-  "description": "CyberForge — AI Security Console (standalone Tauri desktop app)",
+  "description": "CyberForge \u2014 AI Security Console (standalone Tauri desktop app)",
   "private": true,
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",
-    "build": "tauri build",
-    "build:debug": "tauri build --debug"
+    "build": "node scripts/build-cli.mjs && tauri build --config src-tauri/tauri.cli.conf.json",
+    "build:debug": "node scripts/build-cli.mjs && tauri build --debug --config src-tauri/tauri.cli.conf.json",
+    "build:cli": "node scripts/build-cli.mjs",
+    "test:navigation": "node scripts/check-navigation.cjs"
   },
   "keywords": [
     "cyberforge",

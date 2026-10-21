@@ -10,10 +10,25 @@ jest.mock('../../src/services/sandboxAnalysisService', () => require('../helpers
 jest.mock('../../src/services/cyberforgeMLService', () => require('../helpers/stub').anything());
 jest.mock('../../src/services/otx', () => require('../helpers/stub').anything());
 jest.mock('../../src/services/websocket', () => require('../helpers/stub').anything());
-jest.mock('../../src/services/policyEngineService', () => ({ policyEngineService: { evaluate: jest.fn(() => ({ triggered: [] })) } }));
+// The audit trail has its own suite (audit-events.test.js); here it records nothing.
+jest.mock('../../src/services/auditLogService', () => ({
+  record: jest.fn(async () => ({})), getActionCatalog: () => ({}), AUDIT_ACTIONS: {}
+}));
+jest.mock('../../src/services/policyEngineService', () => ({ policyEngineService: { evaluate: jest.fn(async () => ({ triggered: [] })), registerExecutor: jest.fn() } }));
+// Each account's workspace is "ws-<account id>" (the workspace suites test the real thing).
+jest.mock('../../src/services/workspaceService', () => ({
+  ensurePersonalWorkspace: jest.fn(async user => `ws-${user._id}`),
+  workspaceIdFor: jest.fn(async principal => (principal && principal.userId ? `ws-${principal.userId}` : null)),
+  activeMembership: jest.fn(async (workspaceId, userId) => (workspaceId === `ws-${userId}` ? { role: 'owner' } : null))
+}));
 jest.mock('../../src/services/distributedIntelligenceService', () => ({
   distributedIntelligenceService: { registerNode: jest.fn(() => ({ success: true, nodeId: 'node-1' })) }
 }));
+jest.mock('../../src/models/AlertDecision', () => require('../helpers/fakeCollection').fakeCollection());
+jest.mock('../../src/models/SyncedMemory', () => Object.assign(
+  require('../helpers/fakeCollection').fakeCollection({ unique: [{ fields: ['workspaceId', 'memoryId'] }] }),
+  { RETENTION_DAYS: 365, MAX_PER_WORKSPACE: 5000 }
+));
 jest.mock('../../src/utils/logger', () => ({ info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }));
 
 const fs = require('fs');
@@ -76,8 +91,8 @@ afterAll(async () => {
 });
 beforeEach(() => User.findById.mockResolvedValue(member));
 
-test('the seven formerly open route groups define the 59 routes this suite covers', () => {
-  expect(guardedRoutes).toHaveLength(59);
+test('the seven formerly open route groups define the 62 routes this suite covers', () => {
+  expect(guardedRoutes).toHaveLength(62);
 });
 
 test.each(guardedRoutes)('$method $url rejects a request with no session', async ({ method, url }) => {
@@ -188,10 +203,17 @@ test('bindVerifiedUser replaces identity in the query and JSON body and leaves r
 
 const PUBLIC_BY_DESIGN = [
   'GET /api/ai/ml-health',
+  'GET /api/v1/account-deletions/:deletionId', // the receipt outlives the account; 144-bit ID, no personal data, rate limited (account-data.test.js)
   'GET /api/audit/catalog',
   'GET /api/distributed/health',
   'GET /api/policy/meta',
-  'GET /api/stream' // authenticates per event; see stream.test.js
+  'GET /api/stream', // authenticates per event; see stream.test.js
+  'POST /api/v1/device-enrollments/claim', // a one-time code plus proof of the device key, no user session; rate limited (devices.test.js)
+  'POST /api/v1/devices/:id/heartbeat', // signed with the approved device key; replay and revocation checked (devices.test.js)
+  'POST /api/v1/devices/:id/rotate-key', // signed with the current key, plus the new key's proof (devices.test.js)
+  'POST /api/v1/devices/:id/commands/pull', // signed by the device; only its own unexpired commands (device-commands.test.js)
+  'POST /api/v1/devices/:id/commands/:commandId/receipt', // signed by the device; only its own delivered commands (device-commands.test.js)
+  'POST /api/v1/devices/:id/telemetry' // signed with the device key; idempotent by batch (devices.test.js)
 ];
 
 // Every gap the first inventory found has been closed. Keep this empty: a route
@@ -208,7 +230,8 @@ test('route inventory: no unauthenticated route exists outside the reviewed list
   for (const [, prefix, variable] of server.matchAll(/this\.app\.use\('([^']+)',\s*(\w+)\)/g)) {
     if (!files[variable] || prefix === '/api/auth') continue;
     const source = fs.readFileSync(path.join(routesDirectory, `${files[variable]}.js`), 'utf8');
-    const routerGuard = source.search(/^router\.use\((?:verifiedUser|auth)\)/m);
+    // a router-wide guard: the session check first, optionally followed by more checks (such as requireWorkspace)
+    const routerGuard = source.search(/^router\.use\((?:verifiedUser|auth)(?:\s*,\s*\w+)*\)/m);
     for (const match of source.matchAll(ROUTE)) {
       total += 1;
       const rest = source.slice(match.index + match[0].length - 1, match.index + 1500);

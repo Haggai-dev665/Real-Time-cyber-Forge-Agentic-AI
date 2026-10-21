@@ -52,6 +52,12 @@ class CyberForgeVpnModule : Module() {
         OnCreate { CaptureBus.addListener(busListener) }
         OnDestroy { CaptureBus.removeListener(busListener) }
 
+        // Whether the packet engine (libtun2socks.so) loaded. Without it capture
+        // cannot run, and the app does not offer it (finding F16).
+        Function("engineAvailable") {
+            Tun2Socks.isAvailable()
+        }
+
         AsyncFunction("getCaPem") {
             CertificateAuthority(context).rootCertPem()
         }

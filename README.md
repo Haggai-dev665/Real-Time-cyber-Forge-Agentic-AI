@@ -22,9 +22,9 @@ protect or investigate them in one click — all while your data stays on your m
 |---|---|
 | 🔎 **Real‑time scanning** | Continuously scans the page you're actually viewing (active‑tab aware), even across multiple browsers, reading history straight from the on‑disk databases — no extension required. |
 | 🧠 **Agentic AI** | An autonomous Agent Core reasons through each threat step‑by‑step and streams its thinking live; a DeepSeek‑powered assistant answers questions grounded in your local security memory. |
-| 🎯 **Deep phishing detection** | Blends backend ML, URL + page‑content heuristics, an allow‑list of trusted domains, and a DeepSeek confirmation pass — and even **solves free‑host anti‑bot (`aes.js`) challenges** to see the page a normal scanner can't. |
+| 🎯 **Deep phishing detection** | Blends backend ML, URL + page‑content heuristics, host reputation, and a DeepSeek confirmation pass — and even **solves free‑host anti‑bot (`aes.js`) challenges** to see the page a normal scanner can't. |
 | 🚨 **Always‑on alerts** | When a credential‑harvesting site is confirmed, an always‑on‑top popup appears **over your browser even when CyberForge is minimized**, with one‑click Block / Protect / Allow. |
-| 🌍 **Live threat globe** | A real, interactive 3‑D globe of worldwide attacks streamed from AlienVault OTX — and the agent learns from it into memory. |
+| 🌍 **Threat globe** | An interactive 3‑D globe of public threat‑intelligence pulses from AlienVault OTX, with each pulse's age and approximate geography, kept apart from what happens on your own devices. The agent learns the pulses into memory as context. |
 | 📊 **AI reports** | Generate a detailed, LaTeX‑styled PDF security report for the last 8h / 24h / 7d / 30d, written by DeepSeek from your real scans, history, intel and actions. |
 | 🔒 **Real enforcement** | Block, protect or allow sites for real via the OS hosts file; manage your blocked / protected / allowed lists from Security Functions. |
 | 🗃️ **Local‑first memory** | A local vector memory stores every scan, intel pulse, report and action so the assistant and reports recall your whole history — nothing is uploaded unless you choose to sync. |
@@ -36,7 +36,7 @@ protect or investigate them in one click — all while your data stays on your m
 
 ## 🖼️ Screenshots
 
-### Threat Globe — live worldwide attacks (OTX)
+### Threat Globe — public threat intelligence (OTX)
 ![Threat Globe](images/after/threatglobe_after.png)
 
 ### Agent Core — autonomous reasoning + terminal
@@ -85,8 +85,10 @@ protect or investigate them in one click — all while your data stays on your m
 
 1. **Active‑tab awareness** — the scanner reads the OS foreground window to know the page you're
    actually looking at, then scans it (priority queue, never interrupts a running scan).
-2. **Allow‑list** — popular, known‑good domains (Google, GitHub, Microsoft, dev.to, …) are forced
-   clean so trusted sites never false‑positive.
+2. **Host reputation** — a well‑known domain (Google, GitHub, Microsoft, …) needs stronger evidence
+   before it raises an alert, but its reputation never erases what a check found. Hosts where anyone
+   can publish (Google Docs and Drive, GitHub gists, cloud storage buckets, blogs) never count as
+   well‑known.
 3. **Backend + ML** — the orchestrator runs URL classification, IOC extraction and threat‑intel
    enrichment.
 4. **Local reinforcement** — URL heuristics (free/abused hosting, risky TLDs, brand tokens) +
@@ -94,7 +96,7 @@ protect or investigate them in one click — all while your data stays on your m
    confirmation pass. Free‑host **anti‑bot interstitials are solved** (a from‑scratch AES‑128) so
    the scanner sees the real page.
 5. **Verdict + action** — scores are blended; a confirmed phishing/malware verdict raises an
-   always‑on‑top alert and offers Block / Protect / Allow, and the result is written to memory.
+   always‑on‑top alert and offers Block / Save / Allow, and the result is written to memory.
 
 ---
 
@@ -107,21 +109,78 @@ cd desktop
 npm install
 npm run dev      # live dev build
 # or
-npm run build    # production installers — see desktop/BUILD.md
+npm run build    # installers — see desktop/BUILD.md
 ```
 
-Full per‑OS build, signing, first‑run and uninstall details are in **`desktop/BUILD.md`**.
+Prerequisites for each system, what the build produces, signing, where credentials are kept, first run and uninstall are in **[`desktop/BUILD.md`](desktop/BUILD.md)**. It also says which of those steps have been run and which have not.
 
 ### Backend + ML (optional, for cloud features)
 
 ```bash
-cd backend && npm install && npm run dev
-cd ml-services && pip install -r requirements.txt && python main.py
+cd backend
+cp .env.example .env     # then set JWT_SECRET and the keys you use
+npm install
+npm run dev              # http://localhost:8000/health
 ```
+
+The backend needs a MongoDB database (`DATABASE_URL`) and works with or without Redis.
+To get both in containers, with the backend, run `docker compose up --build` from the
+repository root; see the notes at the top of [`docker-compose.yml`](docker-compose.yml),
+including that it has not yet been run.
+
+The ML service is not run locally. The backend calls the hosted one (a Hugging Face
+Space); its code is in `ml-services/` and is deployed with `python deploy_space.py`. The Space
+answers only callers holding its service key (`ML_SERVICE_KEY`, set on both the backend and the
+Space), except for `/health`.
 
 The desktop app works on its own (local detection, memory, hosts‑file enforcement); the backend
 adds cloud threat‑intel and cross‑device sync. Connect the AI assistant by pasting a Hugging Face
-token in **Settings → AI & Models** (stored locally, never committed).
+token in **Settings → AI & Models** (kept in the system credential store, not in a file).
+
+Reading browser history, watching the active tab, cloud scanning, the assistant and sync are each
+**off until you choose** in **Settings → Privacy** (on the phone: capture, capture sync and the
+assistant). Each control says what it sends and where. Export your data, delete it by kind, or
+delete the account from the same screen.
+
+### Known limitations
+
+- **Android capture is not available.** Its packet engine (`libtun2socks.so`) is not in this
+  repository, so no build from it offers capture; the screen says why.
+- **The sandbox is static analysis.** Links and files are analysed without being opened or run;
+  its MITRE ATT&CK tiles are hints from words in the findings, not confirmed techniques.
+- **Incidents are grouped findings, not managed cases.** Findings on the same host are grouped
+  into incidents that can be resolved and whose evidence can be exported with a signed manifest,
+  but there are no response phases or assignees, and time to respond is not measured.
+- **Some backend data is kept only in the web process** and is lost at each restart (recent network
+  captures, orchestrator session memory, distributed-node registrations, and the records of
+  `routes/features.js` and `routes/child-pages.js`). Everything else is in the database; see
+  [`docs/RECOVERY.md`](docs/RECOVERY.md).
+- **The detection models have measured limits**, stated in each model's training report in the
+  `Che237/cyberforge-models` repository (for example, the web-attack model was not trained on path
+  traversal).
+- **Not yet run:** packaged desktop builds on each system, an Expo (phone) build,
+  `docker compose up`, a screen-reader walkthrough, and a contrast check.
+
+What survives a restart, how devices and agents recover, and how to roll a release back:
+[`docs/RECOVERY.md`](docs/RECOVERY.md).
+
+The next release is planned in [Update Plan V2](plan-update-v2.md): a desktop MCP server,
+an AI-enabled CyberForge CLI, and the ML changes they require. These are planned features.
+
+The first part is in place. The installers include a `cyberforge` terminal command, and on
+Windows they put it on PATH. It can:
+
+- **Check the setup:** `status` reports the backend, the stored credentials and the session.
+- **Sign in and out:** `auth login | status | logout`, keeping the session in the system credential store.
+- **Manage profiles:** `profile` and `config`.
+- **Show or hold the owner of this computer's state:** `broker status | hold`.
+- **Ask the Analysis Agents:** `models status`, and `scan url` for one address.
+- **Serve AI clients over MCP:** `mcp serve` for clients you approve in Settings > Integrations or with `mcp grant create`. Each client gets read-only tools; sending addresses for analysis must be allowed separately. Revoking an approval stops the client's next call.
+
+Only one CyberForge program at a time changes this computer's device state, hosts file,
+local memory and privacy settings. See [`desktop/BUILD.md`](desktop/BUILD.md).
+Read [How ML services work](docs/ML-SERVICES.md) for the active models, training phases,
+learning methods, evaluation limits, and proposed improvements.
 
 Backend startup requires a generated `JWT_SECRET`; see `backend/.env.example`. The staged
 implementation and current limitations are tracked in [plan-update.md](plan-update.md#12-milestones-dependencies-and-implementation-order).

@@ -30,14 +30,15 @@
       box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:pointer;user-select:none;transition:.2s}
     #cf-live-pill .dot{width:8px;height:8px;border-radius:50%;background:#5b6b78;
       box-shadow:0 0 0 0 rgba(45,212,191,.6);transition:.2s}
+    #cf-live-pill.inbar{position:static;box-shadow:none;margin-left:6px;flex:none}
     #cf-live-pill.on{color:#bdeee4;border-color:#1c5c52}
     #cf-live-pill.on .dot{background:#2dd4bf;animation:cfpulse 1.8s infinite}
     @keyframes cfpulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.5)}70%{box-shadow:0 0 0 7px rgba(45,212,191,0)}100%{box-shadow:0 0 0 0 rgba(45,212,191,0)}}
-    #cf-live-rail{position:fixed;right:16px;bottom:16px;z-index:9998;width:300px;max-height:46vh;
+    #cf-live-rail{position:fixed;right:16px;bottom:110px;z-index:9998;width:300px;max-height:46vh;
       display:flex;flex-direction:column;background:rgba(8,17,26,.96);border:1px solid #1f3a4d;
       border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);overflow:hidden;font:13px/1.4 system-ui,sans-serif;
       backdrop-filter:blur(8px);transform:translateY(0);transition:transform .25s}
-    #cf-live-rail.collapsed{transform:translateY(calc(100% - 40px))}
+    #cf-live-rail.collapsed{display:none}
     #cf-live-rail .hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
       cursor:pointer;border-bottom:1px solid #162c3a;color:#cfe3ec;font-weight:600;font-size:12px;
       letter-spacing:.03em;text-transform:uppercase}
@@ -62,6 +63,7 @@
 
   // ── DOM scaffold ──────────────────────────────────────────────────────────
   let railBody, pill, cntEl;
+  let toggleRail = () => {};
   function mount() {
     if (document.getElementById('cf-live-pill')) return;
     injectStyles();
@@ -69,26 +71,50 @@
     pill = document.createElement('div');
     pill.id = 'cf-live-pill';
     pill.innerHTML = '<span class="dot"></span><span class="lbl">connecting</span>';
-    pill.title = 'Real-time feed — click to toggle the activity rail';
-    pill.onclick = () => rail.classList.toggle('collapsed');
-    document.body.appendChild(pill);
+    pill.title = 'Real-time feed — click to show or hide recent activity';
+    pill.setAttribute('role', 'button');
+    pill.tabIndex = 0;
+    pill.onclick = () => toggleRail();
+    pill.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleRail(); } };
+    // In the page's top bar when it has one, so it never covers the header;
+    // otherwise in the corner.
+    const bar = document.querySelector('.topbar');
+    if (bar) { pill.classList.add('inbar'); bar.appendChild(pill); } else document.body.appendChild(pill);
 
     const rail = document.createElement('div');
     rail.id = 'cf-live-rail';
     rail.className = 'collapsed';
+    // Hidden until the pill opens it: nothing stays over the page.
     rail.innerHTML =
-      '<div class="hd"><span>Live Activity</span><span class="cnt">0</span></div><div class="body"></div>';
-    rail.querySelector('.hd').onclick = () => rail.classList.toggle('collapsed');
+      '<div class="hd" title="Close"><span>Live Activity</span><span class="cnt">0</span></div><div class="body"></div>';
+    rail.setAttribute('role', 'region');
+    rail.setAttribute('aria-label', 'Live activity');
+    rail.querySelector('.hd').onclick = () => toggleRail(false);
     document.body.appendChild(rail);
+    toggleRail = (open) => {
+      const show = open === undefined ? rail.classList.contains('collapsed') : open;
+      rail.classList.toggle('collapsed', !show);
+      pill.setAttribute('aria-expanded', show ? 'true' : 'false');
+    };
+    pill.setAttribute('aria-expanded', 'false');
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !rail.classList.contains('collapsed')) toggleRail(false); });
     railBody = rail.querySelector('.body');
     cntEl = rail.querySelector('.cnt');
     renderRail();
   }
 
-  function setPill(on) {
+  // The indicator says what the native live feed reports, and why when it is
+  // not connected. (It used to say "reconnecting" for every other state,
+  // including signed out.)
+  function setPill(on, reason) {
     if (!pill) return;
+    const why = String(reason || '');
     pill.classList.toggle('on', on);
-    pill.querySelector('.lbl').textContent = on ? 'live' : 'reconnecting';
+    pill.querySelector('.lbl').textContent = on ? 'live'
+      : /signed out/.test(why) ? 'signed out'
+      : /outside the desktop app|not available/.test(why) ? 'no live feed'
+      : 'reconnecting';
+    pill.title = on ? 'Live feed connected' : ('Live feed not connected' + (why ? ': ' + why : ''));
   }
 
   // ── event → human row ─────────────────────────────────────────────────────
@@ -163,10 +189,10 @@
     window.addEventListener('cf:event', (e) => record(e.detail));
     window.addEventListener('cf:stream-status', (e) => {
       state.connected = !!(e.detail && e.detail.connected);
-      setPill(state.connected);
+      setPill(state.connected, e.detail && e.detail.reason);
     });
     // reflect current status if the stream connected before we mounted
-    if (CF.realtime && CF.realtime.connected) setPill(true);
+    if (CF.realtime) setPill(!!CF.realtime.connected, CF.realtime.reason);
   }
 
   if (document.readyState !== 'loading') init();

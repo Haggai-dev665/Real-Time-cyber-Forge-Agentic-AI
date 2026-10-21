@@ -88,7 +88,7 @@ pub async fn policy_response_log(
     if !is_auth {
         return Ok(json!({ "success": true, "log": [], "total": 0 }));
     }
-    let l = limit.unwrap_or(50);
+    let l = crate::input::count(limit, 50, 1, 200);
     let client = reqwest::Client::new();
     finish(authed(
         client
@@ -130,6 +130,8 @@ pub async fn policy_update(
     id: String,
     updates: Value,
 ) -> Result<Value, String> {
+    // the ID goes into the request path: it must not be able to change the endpoint
+    let id = crate::input::record_id(&id, "policy id")?;
     let (base, headers, is_auth) = ctx(state.inner()).await;
     if !is_auth {
         return Ok(json!({ "success": false, "error": "Sign in to manage security functions" }));
@@ -151,6 +153,7 @@ pub async fn policy_delete(
     state: State<'_, SharedState>,
     id: String,
 ) -> Result<Value, String> {
+    let id = crate::input::record_id(&id, "policy id")?;
     let (base, headers, is_auth) = ctx(state.inner()).await;
     if !is_auth {
         return Ok(json!({ "success": false, "error": "Sign in to manage security functions" }));

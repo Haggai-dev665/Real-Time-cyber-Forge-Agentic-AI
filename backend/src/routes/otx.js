@@ -8,6 +8,9 @@ const router = express.Router();
 router.use(verifiedUser);
 const otxService = require('../services/otx');
 
+// 503 when the service has no key to call OTX with; 502 when OTX itself failed.
+const failureStatus = error => (error && error.code === 'OTX_NOT_CONFIGURED' ? 503 : 502);
+
 /**
  * GET /api/otx/pulses
  * Get subscribed threat pulses from OTX
@@ -26,7 +29,7 @@ router.get('/pulses', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching OTX pulses:', error);
-    res.status(500).json({
+    res.status(failureStatus(error)).json({
       success: false,
       error: 'Failed to fetch threat pulses',
       message: error.message
@@ -58,7 +61,7 @@ router.get('/search', async (req, res) => {
     });
   } catch (error) {
     console.error('Error searching OTX:', error);
-    res.status(500).json({
+    res.status(failureStatus(error)).json({
       success: false,
       error: 'Failed to search threats',
       message: error.message
@@ -91,7 +94,7 @@ router.get('/indicator/:type/:indicator', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching indicator:', error);
-    res.status(500).json({
+    res.status(failureStatus(error)).json({
       success: false,
       error: 'Failed to fetch indicator details',
       message: error.message
@@ -115,7 +118,7 @@ router.get('/threats/recent', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching recent threats:', error);
-    res.status(500).json({
+    res.status(failureStatus(error)).json({
       success: false,
       error: 'Failed to fetch recent threats',
       message: error.message

@@ -10,8 +10,11 @@ const router = express.Router();
 // Every route below requires a signed-in user, and takes the user's identity
 // from the session rather than from the request.
 router.use(verifiedUser);
+const { analysisQuota } = require('../middleware/analysisQuota');
 const { agentManager } = require('../agent/AgentManager');
 const { appwriteService } = require('../services/appwriteService');
+const { requireWorkspace } = require('../middleware/workspace');
+const alertDecisions = require('../services/alertDecisionService');
 const { webScraperAPIService } = require('../services/WebScraperAPIService');
 const { mlServiceClient } = require('../services/mlServiceClient');
 const realtimeBus = require('../services/realtimeBus');
@@ -257,7 +260,23 @@ router.get('/task/:taskId', async (req, res) => {
  * List alerts for a user
  * GET /api/agent/alerts
  */
-router.get('/alerts', async (req, res) => {
+/**
+ * PUT /api/agent/alerts/:alertId/state { action, note } — the alert workflow
+ * (DET-02): acknowledge, escalate, resolve, false_positive, reopen. Checked
+ * against the current state, kept with its history, audited.
+ */
+router.put('/alerts/:alertId/state', requireWorkspace, async (req, res) => {
+  try {
+    const { action, note } = req.body || {};
+    res.json({ success: true, data: await alertDecisions.transition(req.user, req.params.alertId, action, note, req) });
+  } catch (error) {
+    if (error instanceof alertDecisions.AlertDecisionError) return res.status(error.status).json({ success: false, code: error.code, message: error.message });
+    logger.error('alert state change failed:', error);
+    res.status(500).json({ success: false, message: 'Failed to change the alert' });
+  }
+});
+
+router.get('/alerts', requireWorkspace, async (req, res) => {
   try {
     const { userId, severity, status, limit } = req.query;
 
@@ -273,7 +292,8 @@ router.get('/alerts', async (req, res) => {
     if (status) filters.status = status;
     if (limit) filters.limit = parseInt(limit, 10);
 
-    const alerts = await appwriteService.listAlerts(userId, filters);
+    // each with the state people decided for it (DET-02)
+    const alerts = await alertDecisions.applyDecisions(req.user, await appwriteService.listAlerts(userId, filters));
 
     res.json({
       success: true,
@@ -460,7 +480,7 @@ router.get('/browser-intelligence', async (req, res) => {
  * This is the endpoint the desktop app's URL monitor calls for every new URL
  * the user visits. It requires a signed-in user, like every route in this file.
  */
-router.post('/scan-url', async (req, res) => {
+router.post('/scan-url', analysisQuota(), async (req, res) => {
   try {
     const { url, browser, pageTitle, userId, agentId, sessionId } = req.body;
 
@@ -649,7 +669,7 @@ router.post('/scan-url', async (req, res) => {
  *
  * Concurrency is capped at 5 to avoid flooding the HF Space.
  */
-router.post('/scan-url/batch', async (req, res) => {
+router.post('/scan-url/batch', analysisQuota(req => (Array.isArray(req.body && req.body.urls) ? Math.min(req.body.urls.length, 20) : 1)), async (req, res) => {
   try {
     const { urls, browser, userId, sessionId, concurrency = 3 } = req.body;
 

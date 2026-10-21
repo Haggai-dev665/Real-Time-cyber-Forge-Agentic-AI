@@ -191,7 +191,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 function BigButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   const scale = useRef(new Animated.Value(1)).current;
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       onPressIn={() => Animated.timing(scale, { toValue: 0.96, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }).start()}
       onPressOut={() => Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true }).start()}
       onPress={onPress}

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Memory</title>
+<title>CyberForge — Saved context</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <link rel="stylesheet" href="../styles/cf-agent.css" />
@@ -61,61 +61,67 @@
 .rc .rcn{flex:1;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rc .rct{color:var(--faint);font-size:9px}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Memory" id="win">
+  <div class="window" data-screen-label="Saved context" id="win">
     <div class="topbar" id="topbar"></div>
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></div>
-          <h1>Memory</h1>
+          <h1>Saved context</h1>
           <div class="head-right">
             <span class="live-ind"><span class="dot"></span>Recalling</span>
-            <span id="recps">142 recalls/min</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6M12 19h8"/></svg>Consolidate</button>
+            <span id="recps">no searches yet</span>
+            <button class="btn-refresh" id="contextPrivacy">Storage &amp; deletion controls</button>
           </div>
         </div>
 
-        <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Total Memories</div><div class="kv" style="color:var(--amber-2)" id="kMem">48,210</div><div class="kd">+312 today</div></div>
-          <div class="card kpi"><div class="kl">Embeddings</div><div class="kv" style="color:var(--cyan)">1,536<span style="font-size:13px;color:var(--faint)">d</span></div><div class="kd">vector dim</div></div>
-          <div class="card kpi"><div class="kl">Recall Latency</div><div class="kv" style="color:var(--green)" id="kRec">8<span style="font-size:13px;color:var(--faint)">ms</span></div><div class="kd">avg kNN lookup</div></div>
-          <div class="card kpi"><div class="kl">Graph Edges</div><div class="kv" id="kEdge">128k</div><div class="kd">associations</div></div>
+        <p class="cf-context-note">Saved context is stored on this computer’s installation and can be recalled by the assistant. It is not a trained model. Category links show grouping, not causal relationships. Clear local context or manage synced account data in Privacy.</p><div class="kpi-row">
+          <div class="card kpi"><div class="kl">Saved records</div><div class="kv" style="color:var(--amber-2)" id="kMem">—</div><div class="kd">in the local store</div></div>
+          <details class="card kpi"><summary class="kl">Advanced: embeddings</summary><div class="kv" style="color:var(--cyan)" id="kDim">—</div><div class="kd">vector dimensions</div></details>
+          <details class="card kpi"><summary class="kl">Advanced: last search</summary><div class="kv" style="color:var(--green)" id="kRec">—</div><div class="kd" id="kRecNote">no search made yet</div></details>
+          <div class="card kpi"><div class="kl">Last Sync</div><div class="kv" id="kSync">—</div><div class="kd" id="kSyncNote">not attempted yet</div></div>
         </div>
 
         <div class="mem-grid">
           <div class="col">
             <div class="card graph-card">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5 11 16M16.5 7.5 13 16M8 6h8"/></svg>Associative Memory Graph<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 7.5 11 16M16.5 7.5 13 16M8 6h8"/></svg>Context by category<span class="right" id="gNote">no memories yet</span></div>
               <div class="graph-stage">
                 <canvas id="graph"></canvas>
-                <div class="gmeta"><b id="gNodes">240</b><span>active nodes</span></div>
+                <div class="gmeta"><b id="gNodes">0</b><span>memories shown</span></div>
                 <div class="glegend">
-                  <div class="row"><span class="sw" style="background:var(--amber)"></span>Episodic</div>
-                  <div class="row"><span class="sw" style="background:var(--cyan)"></span>Semantic</div>
-                  <div class="row"><span class="sw" style="background:var(--green)"></span>Procedural</div>
+                  <div class="row"><span class="sw" style="background:var(--amber)"></span>Activity records</div>
+                  <div class="row"><span class="sw" style="background:var(--cyan)"></span>Reference information</div>
+                  <div class="row"><span class="sw" style="background:var(--green)"></span>Saved guidance</div>
                 </div>
               </div>
             </div>
             <div class="card usage">
               <div class="ul"><span>Memory Store</span><span id="memTotal">—</span></div>
               <div class="ubar"><i id="uEp" style="background:var(--amber);width:0"></i><i id="uSe" style="background:var(--cyan);width:0"></i><i id="uPr" style="background:var(--green);width:0"></i></div>
-              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Episodic <b id="legEp">0</b></span><span><span class="d" style="background:var(--cyan)"></span>Semantic <b id="legSe">0</b></span><span><span class="d" style="background:var(--green)"></span>Procedural <b id="legPr">0</b></span></div>
+              <div class="leg"><span><span class="d" style="background:var(--amber)"></span>Activity records <b id="legEp">0</b></span><span><span class="d" style="background:var(--cyan)"></span>Reference information <b id="legSe">0</b></span><span><span class="d" style="background:var(--green)"></span>Saved guidance <b id="legPr">0</b></span></div>
             </div>
           </div>
 
           <div class="col">
             <div class="card" style="flex:1.5;display:flex;flex-direction:column;min-height:0">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Recent Memories<span class="right mfilters" id="mfilters"><span class="mchip on" data-f="all">All</span><span class="mchip" data-f="episodic">Episodic</span><span class="mchip" data-f="semantic">Semantic</span><span class="mchip" data-f="procedural">Proc</span></span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Recent context<span class="right mfilters" id="mfilters"><span class="mchip on" data-f="all">All</span><span class="mchip" data-f="episodic">Activity records</span><span class="mchip" data-f="semantic">Reference information</span><span class="mchip" data-f="procedural">Guidance</span></span></div>
               <div class="ai-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg>Your AI Assistant reads this memory to ground every answer — scans, threat-intel, reports &amp; analysis from every page.</div>
               <div class="msearch"><input id="memSearch" placeholder="Search all memory — scans, intel, reports, analysis…" autocomplete="off" /></div>
               <div class="mems" id="mems"></div>
             </div>
             <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
-              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Recall Activity<span class="right"><span class="badge-cyan"><span class="dot"></span>LIVE</span></span></div>
+              <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Searches on This Page</div>
               <div class="recall" id="recall"></div>
             </div>
           </div>
@@ -127,162 +133,13 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
-<script>
-buildHeader({status:'MEMORY'});
-buildSidebar('memory');
-buildFooter({items:[{txt:'local vector store',cls:'sb-amber'},{txt:'synced',cls:'sb-cyan'},{txt:'recall <1ms',cls:'sb-green'},{txt:'Live',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-setTimeout(()=>{document.getElementById('uEp').style.width='24%';document.getElementById('uSe').style.width='13%';document.getElementById('uPr').style.width='5%';},150);
-
-/* ===== animated memory graph ===== */
-(function(){
-  const cvs=document.getElementById('graph'),ctx=cvs.getContext('2d');
-  let W=0,H=0,dpr=Math.min(window.devicePixelRatio||1,2);
-  function resize(){const r=cvs.parentElement.getBoundingClientRect();W=r.width;H=r.height;
-    cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
-  resize();window.addEventListener('resize',resize);
-  const COL={ep:'#f5a623',se:'#2bd4ee',pr:'#43e08a'};
-  const types=['ep','se','pr'];
-  let filter=null; window.__memFilter=function(t){filter=t;};
-  const MAP={episodic:'ep',semantic:'se',procedural:'pr'};
-  const N=46, nodes=[], edges=[];
-  for(let i=0;i<N;i++){const t=types[Math.random()<0.5?0:(Math.random()<0.6?1:2)];
-    nodes.push({x:Math.random(),y:Math.random(),vx:(Math.random()-.5)*0.0006,vy:(Math.random()-.5)*0.0006,
-      r:2.5+Math.random()*3.5,t:t,pulse:0});}
-  // connect nearby
-  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){if(Math.random()<0.06)edges.push([i,j,0]);}
-  let pulses=[]; // traveling recall pulses along edges
-  function recall(){
-    const e=edges[Math.floor(Math.random()*edges.length)];
-    pulses.push({e,t:0}); nodes[e[0]].pulse=1; 
-  }
-  window.__memRecall=recall;
-  function frame(){
-    if(W<2){requestAnimationFrame(frame);return;}
-    ctx.clearRect(0,0,W,H);
-    nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;if(n.x<0.05||n.x>0.95)n.vx*=-1;if(n.y<0.05||n.y>0.95)n.vy*=-1;n.pulse*=0.94;});
-    // edges
-    edges.forEach(e=>{const a=nodes[e[0]],b=nodes[e[1]];
-      ctx.strokeStyle='rgba(126,148,184,'+(0.06+Math.max(a.pulse,b.pulse)*0.4).toFixed(2)+')';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(a.x*W,a.y*H);ctx.lineTo(b.x*W,b.y*H);ctx.stroke();});
-    // traveling pulses
-    pulses=pulses.filter(p=>{p.t+=0.03;if(p.t>=1){nodes[p.e[1]].pulse=1;return false;}
-      const a=nodes[p.e[0]],b=nodes[p.e[1]];const x=(a.x+(b.x-a.x)*p.t)*W,y=(a.y+(b.y-a.y)*p.t)*H;
-      ctx.fillStyle='#ffd27a';ctx.shadowColor='#f5a623';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();ctx.shadowBlur=0;return true;});
-    // nodes
-    nodes.forEach(n=>{const c=COL[n.t];const x=n.x*W,y=n.y*H,rr=n.r+n.pulse*3;
-      const dim=filter&&MAP[filter]!==n.t;
-      ctx.globalAlpha=dim?0.16:1;
-      if(n.pulse>0.1&&!dim){ctx.fillStyle=c;ctx.globalAlpha=n.pulse*0.3;ctx.beginPath();ctx.arc(x,y,rr+6,0,7);ctx.fill();ctx.globalAlpha=1;}
-      ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,rr,0,7);ctx.fill();ctx.globalAlpha=1;});
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-  setInterval(recall,650);
-})();
-
-/* recent memories */
-const memTypes={episodic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-  semantic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
-  procedural:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7l5 5-5 5M13 17h6"/></svg>'};
-let memData=[];  // populated from the real local vector memory (memory_list)
-const memsEl=document.getElementById('mems');
-function memRow(m){return '<div class="mrow '+m[0]+'"><span class="mi">'+memTypes[m[0]]+'</span>'+
-  '<div class="mc"><div class="mt">'+m[1]+'</div><div class="mm"><span>'+m[2]+'</span></div></div><span class="conf">'+m[3]+'</span></div>';}
-let memFilter='all';
-function renderMems(){
-  const list=memFilter==='all'?memData:memData.filter(m=>m[0]===memFilter);
-  memsEl.innerHTML=list.map(memRow).join('');
-}
-renderMems();
-document.querySelectorAll('#mfilters .mchip').forEach(c=>c.addEventListener('click',()=>{
-  document.querySelectorAll('#mfilters .mchip').forEach(x=>x.classList.remove('on'));
-  c.classList.add('on'); memFilter=c.dataset.f; renderMems();
-  if(window.__memFilter) window.__memFilter(memFilter==='all'?null:memFilter);
-}));
-
-/* recall activity */
-const recallEl=document.getElementById('recall');
-function addRecall(){
-  // Only surface recalls of REAL stored memories — no synthetic queries.
-  if(!memData.length){ if(!recallEl.querySelector('.rc')) recallEl.innerHTML='<div style="padding:18px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11px">No recall activity yet<br><span style="font-size:9px">memories are written as the agent scans URLs</span></div>'; return; }
-  var ph=recallEl.firstElementChild; if(ph && !ph.classList.contains('rc')) recallEl.innerHTML='';
-  if(window.__memRecall)window.__memRecall();
-  const el=document.createElement('div');el.className='rc';
-  const now=new Date();const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-  var pick=memData[Math.floor(Math.random()*memData.length)];
-  el.innerHTML='<svg class="rci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'+
-    '<span class="rcn">recall "'+String(pick[1]).slice(0,38).replace(/[<>]/g,'')+'"</span><span class="rct">'+ts+'</span>';
-  recallEl.prepend(el);while(recallEl.children.length>30)recallEl.lastChild.remove();
-}
-addRecall();
-setInterval(addRecall,1400);
-
-/* ===========================================================
-   REAL vector memory — local Rust store (memory_list), synced to
-   the backend /api/memory. Scans auto-write episodic memories.
-   =========================================================== */
-(function(){
-  function cfInvoke(cmd,args){ try{ var T=window.__TAURI__||(window.parent&&window.parent.__TAURI__); if(T&&T.core&&T.core.invoke) return T.core.invoke(cmd,args||{}); }catch(e){} return Promise.reject(new Error('no tauri')); }
-  function ago(ts){ var s=Math.max(0,Math.floor(Date.now()/1000)-(ts||0)); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
-  var searching=false, searchT=null;
-  function toRows(arr){ return (arr||[]).map(function(m){
-    var meta=(m.category||'scan')+' · '+ago(m.ts);
-    var conf=(m.risk!=null)?('risk '+m.risk):'';
-    return [(m.kind||'episodic'), m.text, meta, conf];
-  }); }
-  function pollMemory(){
-    cfInvoke('memory_list',{limit:200}).then(function(r){
-      var d=(r&&r.data)||{};
-      // While the user is searching, keep their results on screen but still
-      // refresh the counters below.
-      if(!searching){ memData=toRows(d.memories); renderMems(); }
-      var total=d.total||0;
-      var mt=document.getElementById('memTotal'); if(mt) mt.textContent=total+(total===1?' mem':' mems');
-      var le=document.getElementById('legEp'); if(le) le.textContent=(d.episodic||0);
-      var ls=document.getElementById('legSe'); if(ls) ls.textContent=(d.semantic||0);
-      var lp=document.getElementById('legPr'); if(lp) lp.textContent=(d.procedural||0);
-      var kMem=document.getElementById('kMem'); if(kMem) kMem.textContent=total.toLocaleString();
-      var kEdge=document.getElementById('kEdge'); if(kEdge) kEdge.textContent=((d.episodic||0)+(d.semantic||0)+(d.procedural||0));
-      var gNodes=document.getElementById('gNodes'); if(gNodes) gNodes.textContent=Math.min(total,240);
-      var recps=document.getElementById('recps'); if(recps) recps.textContent=total?'55 recalls/min':'idle';
-      var kRec=document.getElementById('kRec'); if(kRec) kRec.innerHTML='1<span style="font-size:13px;color:var(--faint)">ms</span>';
-      var tot=(d.episodic||0)+(d.semantic||0)+(d.procedural||0)||1;
-      var uEp=document.getElementById('uEp'),uSe=document.getElementById('uSe'),uPr=document.getElementById('uPr');
-      if(uEp) uEp.style.width=Math.round((d.episodic||0)/tot*42)+'%';
-      if(uSe) uSe.style.width=Math.round((d.semantic||0)/tot*42)+'%';
-      if(uPr) uPr.style.width=Math.round((d.procedural||0)/tot*42)+'%';
-    }).catch(function(){});
-  }
-  pollMemory(); setInterval(pollMemory,5000);
-
-  // Search the FULL memory store (semantic recall via memory_search) so the user
-  // can find any scan / intel / report / analysis the AI can also see.
-  var searchEl=document.getElementById('memSearch');
-  if(searchEl){
-    searchEl.addEventListener('input',function(){
-      var q=searchEl.value.trim(); clearTimeout(searchT);
-      if(!q){ searching=false; pollMemory(); return; }
-      searching=true;
-      searchT=setTimeout(function(){
-        cfInvoke('memory_search',{query:q, topK:60}).then(function(r){
-          var res=(r&&r.data&&r.data.results)||[];
-          memData=toRows(res);
-          if(!memData.length) memData=[['episodic','No matching memory for “'+q.replace(/[<>]/g,'')+'”','try another term','']];
-          renderMems();
-        }).catch(function(){});
-      },220);
-    });
-  }
-
-  cfInvoke('memory_sync').catch(function(){});
-  setInterval(function(){ cfInvoke('memory_sync').catch(function(){}); },30000);
-})();
-</script>
+<script src="../scripts/pages/memory.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

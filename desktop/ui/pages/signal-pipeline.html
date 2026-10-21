@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="cf-desktop-shell">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CyberForge — Signal Pipeline</title>
+<title>CyberForge — Event stream</title>
 <link rel="stylesheet" href="../styles/fonts.css" />
 <link rel="stylesheet" href="../styles/cyberforge.css" />
 <style>
@@ -61,52 +61,57 @@
 .kpi .kl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
 .kpi .kv{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:6px}
 .kpi .kd{font-size:10.5px;color:var(--faint);margin-top:2px}
+.pipe-note{font-family:var(--mono);font-size:10px;color:var(--faint);margin:-4px 2px 10px;line-height:1.5}
+.smeta2{font-family:var(--mono);font-size:9.5px;color:var(--faint);padding:0 14px 12px}
 </style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
 </head>
 <body>
 <div class="stage">
-  <div class="window" data-screen-label="Signal Pipeline" id="win">
+  <div class="window" data-screen-label="Event stream" id="win">
     <div class="topbar" id="topbar"></div>
     <div class="body">
       <aside class="sidebar" id="sidebar"></aside>
       <main class="main">
         <div class="main-head">
           <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-12 2 6h6"/></svg></div>
-          <h1>Signal Pipeline</h1>
+          <h1>Event stream</h1>
           <div class="head-right">
-            <span class="live-ind"><span class="dot"></span>Streaming</span>
-            <span id="thru">12,480 events/s</span>
-            <button class="btn-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause</button>
+            <span class="live-ind" id="flowState">waiting for events</span>
+            <span id="thru">—</span>
+            <button class="btn-refresh" id="pauseBtn" title="Stop adding events to the list below"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>Pause list</button>
           </div>
         </div>
 
         <!-- KPIs -->
         <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Ingest Rate</div><div class="kv accent-amber" id="kIngest" style="color:var(--amber-2)">12.4k<span style="font-size:13px;color:var(--faint)">/s</span></div><div class="kd">across 7 sources</div></div>
-          <div class="card kpi"><div class="kl">Pipeline Latency</div><div class="kv" style="color:var(--cyan)" id="kLat">142<span style="font-size:13px;color:var(--faint)">ms</span></div><div class="kd">end-to-end p95</div></div>
-          <div class="card kpi"><div class="kl">Backlog</div><div class="kv" style="color:var(--green)" id="kBack">0</div><div class="kd">queue depth</div></div>
-          <div class="card kpi"><div class="kl">Enriched Today</div><div class="kv" id="kEnrich">3.2M</div><div class="kd">+18% vs avg</div></div>
+          <div class="card kpi"><div class="kl">Event Rate</div><div class="kv accent-amber" id="kAgent events" style="color:var(--amber-2)">—</div><div class="kd">events per second, last 10 s</div></div>
+          <div class="card kpi"><div class="kl">Server round trip</div><div class="kv" style="color:var(--cyan)" id="kLat">—</div><div class="kd">latest status check</div></div>
+          <div class="card kpi"><div class="kl">Server</div><div class="kv" style="color:var(--green)" id="kBack">—</div><div class="kd">reachable from this computer</div></div>
+          <div class="card kpi"><div class="kl">Threats</div><div class="kv" id="kEnrich">—</div><div class="kd">on your account</div></div>
         </div>
+        <div class="pipe-note">Each event below is one the server sent to this app (agent activity, a scan result, a threat or an alert). Counts start when this page opens.</div>
 
         <!-- HERO PIPELINE -->
         <div class="card pipe-hero">
           <div class="hero-bg"></div>
-          <div class="pipe-row" id="pipeRow">
+          <p class="cf-context-note">These counters are independent event types received in this window. They do not prove processing stages or end-to-end coverage.</p><div class="pipe-row" id="pipeRow">
             <div class="stage on" data-stage="ingest">
               <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
-              <div class="sname">Ingest</div><div class="scount" data-c="12480">12.4k/s</div><div class="smeta">7 collectors</div>
-            </div>
-            <div class="stage on" data-stage="normalize">
-              <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/><path d="m17 14 3 3-3 3"/></svg></div>
-              <div class="sname">Normalize</div><div class="scount" data-c="12350">12.3k/s</div><div class="smeta">ECS schema</div>
+              <div class="sname">Agent events</div><div class="scount">0</div><div class="smeta">agent activity</div>
             </div>
             <div class="stage on" data-stage="analyze">
               <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
-              <div class="sname">Analyze</div><div class="scount" data-c="11920">11.9k/s</div><div class="smeta">142 rules</div>
+              <div class="sname">Scan results</div><div class="scount">0</div><div class="smeta">scan results</div>
             </div>
-            <div class="stage queued" data-stage="reason">
+            <div class="stage on" data-stage="reason">
               <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></div>
-              <div class="sname">Reason</div><div class="scount" data-c="318">318/s</div><div class="smeta">LLM agents</div>
+              <div class="sname">Findings &amp; alerts</div><div class="scount">0</div><div class="smeta">threats and alerts</div>
             </div>
           </div>
         </div>
@@ -114,13 +119,12 @@
         <!-- DETAIL + LOG -->
         <div class="cols3">
           <div class="stage-cards">
-            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/></svg></span><b>Ingest</b><span class="st active">ACTIVE</span></div><div class="metrics"><div class="met"><b style="color:var(--cyan)">12.4k</b><span>events/s</span></div><div class="met"><b>7</b><span>sources</span></div><div class="met"><b>4ms</b><span>latency</span></div></div><div class="util"><i data-u="74" style="background:var(--cyan)"></i></div></div>
-            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--blue)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h7"/></svg></span><b>Normalize</b><span class="st active">ACTIVE</span></div><div class="metrics"><div class="met"><b style="color:var(--blue)">12.3k</b><span>events/s</span></div><div class="met"><b>99.1%</b><span>parsed</span></div><div class="met"><b>11ms</b><span>latency</span></div></div><div class="util"><i data-u="68" style="background:var(--blue)"></i></div></div>
-            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--amber-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><b>Analyze</b><span class="st active">ACTIVE</span></div><div class="metrics"><div class="met"><b style="color:var(--amber-2)">11.9k</b><span>events/s</span></div><div class="met"><b>142</b><span>rules</span></div><div class="met"><b>38ms</b><span>latency</span></div></div><div class="util"><i data-u="88"></i></div></div>
-            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></span><b>Reason</b><span class="st idle">LLM</span></div><div class="metrics"><div class="met"><b style="color:var(--green)">318</b><span>infer/s</span></div><div class="met"><b>8</b><span>agents</span></div><div class="met"><b>89ms</b><span>latency</span></div></div><div class="util"><i data-u="42" style="background:var(--green)"></i></div></div>
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/></svg></span><b>Agent events</b><span class="st idle" id="st-ingest">IDLE</span></div><div class="metrics"><div class="met"><b style="color:var(--cyan)" id="n-ingest">0</b><span>this session</span></div><div class="met"><b id="m-ingest">0</b><span>last minute</span></div><div class="met"><b id="t-ingest">—</b><span>last event</span></div></div><div class="smeta2">agent activity</div></div>
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--amber-2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><b>Scan results</b><span class="st idle" id="st-analyze">IDLE</span></div><div class="metrics"><div class="met"><b style="color:var(--amber-2)" id="n-analyze">0</b><span>this session</span></div><div class="met"><b id="m-analyze">0</b><span>last minute</span></div><div class="met"><b id="t-analyze">—</b><span>last event</span></div></div><div class="smeta2">scan results</div></div>
+            <div class="card sc"><div class="sch"><span class="ci" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4 4 4 0 0 0-1 7 4 4 0 0 0 5 4 4 4 0 0 0 5-4 4 4 0 0 0-1-7 4 4 0 0 0-4-4Z"/></svg></span><b>Findings &amp; alerts</b><span class="st idle" id="st-reason">IDLE</span></div><div class="metrics"><div class="met"><b style="color:var(--green)" id="n-reason">0</b><span>this session</span></div><div class="met"><b id="m-reason">0</b><span>last minute</span></div><div class="met"><b id="t-reason">—</b><span>last event</span></div></div><div class="smeta2">threats and alerts</div></div>
           </div>
           <div class="card evlog">
-            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Live Event Flow<span class="right"><span class="badge-live"><span class="dot"></span>LIVE</span></span></div>
+            <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Live Event Flow<span class="right" id="flowCount">0 events</span></div>
             <div class="evstream" id="evstream"></div>
           </div>
         </div>
@@ -131,90 +135,15 @@
   </div>
 </div>
 
+<script src="../scripts/cf-a11y.js"></script>
 <script src="../scripts/cyberforge-shared.js"></script>
 <script src="../scripts/cf-realtime.js"></script>
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
-<script>
-buildHeader({status:'STREAMING'});
-buildSidebar('pipeline');
-buildFooter({items:[{txt:'signal pipeline',cls:'sb-cyan'},{txt:'local + backend',cls:'sb-amber'},{txt:'Streaming…',cls:'sb-green',spin:true}]});
-fitWindow('win');
-
-// stage utilization bars
-setTimeout(()=>document.querySelectorAll('.util i').forEach(i=>i.style.width=i.dataset.u+'%'),150);
-
-// connectors + particles between stages
-(function(){
-  const row=document.getElementById('pipeRow');
-  const stages=[...row.querySelectorAll('.stage')];
-  const colors=['#2bd4ee','#5aa9e6','#f5a623','#43e08a'];
-  function layout(){
-    row.querySelectorAll('.conn').forEach(c=>c.remove());
-    for(let i=0;i<stages.length-1;i++){
-      const a=stages[i].querySelector('.node').getBoundingClientRect();
-      const b=stages[i+1].querySelector('.node').getBoundingClientRect();
-      const rr=row.getBoundingClientRect();
-      const c=document.createElement('div'); c.className='conn';
-      c.style.left=(a.right-rr.left)+'px'; c.style.width=(b.left-a.right)+'px';
-      c.dataset.i=i; row.appendChild(c);
-    }
-  }
-  layout(); window.addEventListener('resize',layout);
-  setInterval(()=>{
-    row.querySelectorAll('.conn').forEach(c=>{
-      const i=+c.dataset.i, p=document.createElement('span'); p.className='pp';
-      p.style.color=colors[i]; p.style.background=colors[i]; c.appendChild(p);
-      let t0=performance.now(); const dur=520+Math.random()*200;
-      (function step(now){const t=(now-t0)/dur; if(t>=1){p.remove();return;}
-        p.style.left=(t*100)+'%'; p.style.opacity=(1-Math.abs(t-0.5)*0.8).toFixed(2); requestAnimationFrame(step);})(t0);
-    });
-  },130);
-})();
-
-// REAL live event flow — every frame is a real SSE event (scan/threat/alert/
-// agent) re-broadcast by cf-realtime.js. Starts empty and fills as the agent works.
-(function(){
-  const stream=document.getElementById('evstream');
-  let id=900000; const counts={ingest:0,analyze:0,reason:0};
-  const stamps=[];
-  function row(stageK,label){
-    if(!stream) return;
-    counts[stageK]=(counts[stageK]||0)+1; stamps.push(Date.now());
-    const el=document.createElement('div'); el.className='evr';
-    const now=new Date(); const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-    el.innerHTML='<span class="et">'+ts+'</span><span class="eid">#'+(id++)+'</span>'+
-      '<span class="es">'+String(label).replace(/[<>]/g,'')+'</span>'+
-      '<span class="estage '+stageK+'">'+stageK.toUpperCase()+'</span>';
-    stream.prepend(el); while(stream.children.length>40) stream.lastChild.remove();
-  }
-  window.addEventListener('cf:agent', e=>{ const d=e.detail||{}; row('ingest','agent · '+(d.type||'activity')+(d.url?' '+d.url:'')); });
-  window.addEventListener('cf:scan',  e=>{ const d=e.detail||{}; row('analyze','scored '+((d.verdict||'').toUpperCase())+' · '+(d.url||'')); });
-  window.addEventListener('cf:threat',e=>{ const d=e.detail||{}; row('reason','threat.match · '+(d.indicator||d.url||'')); });
-  window.addEventListener('cf:alert', e=>{ const d=e.detail||{}; row('reason','alert · '+(d.message||d.url||'')); });
-
-  // REAL pipeline KPIs from backend telemetry (agent_status) + live event rate.
-  const thru=document.getElementById('thru'),kIngest=document.getElementById('kIngest'),
-        kLat=document.getElementById('kLat'),kBack=document.getElementById('kBack'),kEnrich=document.getElementById('kEnrich');
-  function rate(){ const now=Date.now(); while(stamps.length && now-stamps[0]>10000) stamps.shift(); return (stamps.length/10); }
-  async function tele(){
-    try{ const s=await CF.invoke('agent_status'); const d=(s&&s.data)||{};
-      const r=rate();
-      if(thru) thru.textContent=r.toFixed(1)+' events/s';
-      if(kIngest) kIngest.innerHTML=r.toFixed(1)+'<span style="font-size:13px;color:var(--faint)">/s</span>';
-      if(kLat&&d.latencyMs!=null) kLat.innerHTML=d.latencyMs+'<span style="font-size:13px;color:var(--faint)">ms</span>';
-      if(kBack) kBack.textContent=d.backendOk?'0':'—';
-      if(kEnrich) kEnrich.textContent=(d.threatCount!=null?d.threatCount:counts.analyze);
-      // reflect live throughput on the hero stage counters
-      const sc=document.querySelectorAll('.scount');
-      if(sc[0]) sc[0].textContent=counts.ingest+'/s'; if(sc[2]) sc[2].textContent=counts.analyze+'/s'; if(sc[3]) sc[3].textContent=counts.reason+'/s';
-    }catch(e){}
-  }
-  tele(); setInterval(tele,5000);
-  window.addEventListener('cf:metrics', tele);
-})();
-</script>
+<script src="../scripts/pages/signal-pipeline.js"></script>
+<span id="cf-ready" hidden></span>
 </body>
 </html>

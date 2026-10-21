@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="cf-desktop-shell">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberForge — Devices</title>
+<link rel="stylesheet" href="../styles/fonts.css" />
+<link rel="stylesheet" href="../styles/cyberforge.css" />
+<style>
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.dv-card{padding:16px 18px}
+.dv-card h2{font-size:13px;font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.dv-kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:12px;margin-bottom:12px}
+.dv-kv .k{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;padding-top:2px}
+.dv-kv .v{font-family:var(--mono);font-size:11.5px;word-break:break-all}
+.dv-btn{height:32px;padding:0 13px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--dim);font-family:var(--mono);font-size:10.5px;cursor:pointer;margin:0 6px 6px 0}
+.dv-btn:hover{color:var(--text);border-color:var(--border-3)}
+.dv-btn.go{border-color:rgba(67,224,138,.45);color:var(--green)}
+.dv-btn.warn{border-color:rgba(255,113,133,.45);color:#ff7185}
+.dv-btn[disabled]{opacity:.5;pointer-events:none}
+.dv-note{font-size:11.5px;color:var(--dim);line-height:1.6;margin:6px 0 10px}
+.dv-err{font-size:11.5px;color:#ff7185;margin:6px 0}
+.dv-code{font-family:var(--mono);font-size:26px;letter-spacing:3px;color:var(--amber-2);margin:6px 0}
+.dv-fp{font-family:var(--mono);font-size:13px;color:var(--cyan);letter-spacing:1px}
+.dv-input{height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--border-2);background:rgba(8,12,20,.6);color:var(--text);font-family:var(--mono);font-size:12px;width:220px;margin:0 6px 6px 0}
+.dv-list{overflow:auto}
+.dv-row{display:grid;grid-template-columns:1.6fr .9fr 1fr 1fr 1.5fr auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.dv-row.head{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.dv-name b{display:block;font-weight:600} .dv-name span{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.dv-pill{font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;border:1px solid var(--border-2);display:inline-block}
+.dv-pill.online,.dv-pill.active{color:var(--green);border-color:rgba(67,224,138,.4)}
+.dv-pill.stale,.dv-pill.awaiting_approval,.dv-pill.pending_approval,.dv-pill.never_connected{color:var(--amber-2);border-color:rgba(245,166,35,.4)}
+.dv-pill.applied{color:var(--green);border-color:rgba(67,224,138,.4)}
+.dv-pill.queued,.dv-pill.delivered{color:var(--amber-2);border-color:rgba(245,166,35,.4)}
+.dv-pill.failed,.dv-pill.expired,.dv-pill.cancelled,.dv-pill.offline,.dv-pill.revoked{color:#ff7185;border-color:rgba(255,113,133,.4)}
+.dv-empty{padding:30px 20px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:11.5px}
+</style>
+<link rel="stylesheet" href="../styles/cf-console.css" />
+<!-- The shell layout is known before the first paint, and that paint waits for the
+     header, sidebar and footer (built by the scripts above #cf-ready), so navigating
+     between pages never shows a half-built screen. -->
+<link rel="stylesheet" id="cfNavigationStyles" href="../styles/cf-navigation.css" />
+<link rel="expect" href="#cf-ready" blocking="render" />
+</head>
+<body>
+<div class="stage">
+  <div class="window" data-screen-label="Devices" id="win">
+    <div class="topbar" id="topbar"></div>
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main">
+        <div class="main-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+          <h1>Devices</h1>
+          <div class="head-right"><span id="dvCount">—</span></div>
+        </div>
+
+        <div class="dv-grid">
+          <div class="card dv-card">
+            <h2>This computer</h2>
+            <div class="dv-kv" id="thisKv"><span class="k">Status</span><span class="v">reading…</span></div>
+            <div id="thisActions"></div>
+            <div id="thisNote"></div>
+          </div>
+          <div class="card dv-card">
+            <h2>Add another device</h2>
+            <div class="dv-note">Show a one-time code here and enter it in CyberForge on the other device. The code expires after 10 minutes and works once. That device then waits until you approve it below.</div>
+            <button class="dv-btn" id="makeCode">Show a code</button>
+            <div id="codeOut"></div>
+            <div class="dv-note">Or enter a code shown by CyberForge elsewhere, to add this computer to that account:</div>
+            <input class="dv-input" id="claimCode" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
+            <button class="dv-btn" id="claimBtn">Use code</button>
+            <div id="claimOut"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="dv-row head"><span>Device</span><span>Platform</span><span>State</span><span>Connection</span><span>Key fingerprint</span><span></span></div>
+          <div class="dv-list" id="dvList"><div class="dv-empty">Loading devices…</div></div>
+        </div>
+      </main>
+      <div class="agent-fab" title="CyberForge Agent"><span class="fab-ping"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/></svg></div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+</div>
+
+<script src="../scripts/cf-a11y.js"></script>
+<script src="../scripts/cyberforge-shared.js"></script>
+<script src="../scripts/cf-realtime.js"></script>
+<script src="../scripts/cf-live.js"></script>
+<script src="../scripts/cf-header.js"></script>
+<script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-console.js"></script>
+<script src="../scripts/cf-footer.js"></script>
+<script src="../scripts/pages/devices.js"></script>
+<span id="cf-ready" hidden></span>
+</body>
+</html>

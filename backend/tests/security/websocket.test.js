@@ -201,6 +201,24 @@ describe('a signed-in socket', () => {
     }
   });
 
+  test('requests that nothing carries out are answered as unsupported, never with invented data', async () => {
+    const socket = await signedIn(userA, 'desktop');
+    for (const message of [
+      { type: 'analysis_request' },
+      { type: 'threat_scan' },
+      { type: 'request_data', data_type: 'dashboard' },
+      { type: 'request_data', data_type: 'threats' },
+      { type: 'setting_update', setting: 'autoBlock', value: true }
+    ]) {
+      socket.send(message);
+      expect(await socket.next('unsupported')).toMatchObject({ request: message.type, reason: expect.stringMatching(/\S/) });
+    }
+    await socket.settled();
+    expect(types(socket).filter(type => /_data$|^threats_detected$|^setting_updated$/.test(type))).toEqual([]);
+    const source = require('fs').readFileSync(require.resolve('../../src/services/websocket'), 'utf8');
+    expect(source).not.toMatch(/Math\.random/);
+  });
+
   test('cannot register as anything but a desktop or mobile client', async () => {
     const socket = await signedIn(userA);
     socket.send({ type: 'identify', client_type: 'admin-console' });

@@ -48,40 +48,20 @@ function pathDoneText(){
   return 'PATH registration: no result';
 }
 
-/* Detailed, plain-language license & privacy terms — local-first, no cloud. */
+/* Local-first setup; remote features remain separate privacy choices. */
 const TERMS_HTML=`
   <h4>CyberForge License &amp; Privacy Terms</h4>
-  <p class="td-meta">Version 2.0 · Effective May 2026 · Local-First Edition</p>
-  <p><b>Plain-language summary.</b> CyberForge is an on-device security agent. Everything it reads about your computer — your operating system, hardware, installed browsers, browser history and network activity — is collected and analysed <b>locally, on this machine</b>. CyberForge does <b>not</b> upload, sell or store your system or browsing data in the cloud. The network is used only for your account sign-in and for downloading threat-intelligence updates.</p>
-
-  <h5>1. What CyberForge reads on this device</h5>
-  <p>To calibrate detection and protect you in real time, the agent reads — locally:</p>
-  <ul>
-    <li><b>System profile</b> — operating system and version, CPU, memory, storage capacity and active network interfaces.</li>
-    <li><b>Installed &amp; running browsers</b> — which browsers exist on this machine and whether they are currently open.</li>
-    <li><b>Browser history</b> — visited-site records are read from your browser's local history database to flag malicious or compromised domains. History is analysed in place and is <b>never copied off this device</b>.</li>
-    <li><b>System &amp; network signals</b> — process, file and connection events used for behavioural threat detection.</li>
-  </ul>
-
-  <h5>2. Local-only processing — no cloud storage of your data</h5>
-  <p>All analysis runs inside the CyberForge agent on this computer. Your system inventory, browser history and network logs are kept in a local, on-device store. They are <b>not</b> transmitted to CyberForge servers or any third party, and they are <b>not</b> retained in any cloud database. If a future feature would ever send any of this data off the device, CyberForge will ask for your explicit, separate approval first.</p>
-
-  <h5>3. What does leave this device</h5>
-  <p>Only two things use the network: (a) your account credentials when you sign in, sent securely to the CyberForge authentication service; and (b) anonymous threat-intelligence indicators (such as a suspicious-domain hash) that you may <i>optionally</i> share to improve detection. Your raw history and system data are never part of this.</p>
-
-  <h5>4. Adding CyberForge to your system PATH</h5>
-  <p>If you keep the &ldquo;Add CyberForge to system PATH&rdquo; option enabled, the installer adds CyberForge's <code>bin</code> folder to your <b>user</b> PATH so you can run the <code>cyberforge</code> command from any terminal. This change applies to your user account only, requires no administrator rights, and can be reversed at any time by removing the entry from your environment variables.</p>
-
-  <h5>5. Your controls</h5>
-  <p>You choose which local sources are monitored, how you are alerted and how often reports are generated. You can pause monitoring, disable any source, export your local data, or uninstall CyberForge — which removes the on-device store — at any time from Settings.</p>
-
-  <h5>6. Data retention</h5>
-  <p>Local telemetry is retained only on this device, under your control, and is overwritten on a rolling basis. Uninstalling CyberForge deletes the on-device store.</p>
-
-  <h5>7. License &amp; warranty</h5>
-  <p>CyberForge grants you a personal, non-transferable license to run this software on devices you own or control. The software is provided &ldquo;as is&rdquo;, without warranty of any kind. CyberForge is a defensive security tool; you are responsible for using it only on systems you are authorised to monitor.</p>
-
-  <p class="td-foot">By enabling the toggles below you confirm that you have read and accept these terms, and that you consent to on-device analysis of the signals described above — processed locally and never stored in the cloud.</p>
+  <p class="td-meta">Local-first setup ? October 2026</p>
+  <p><b>On-device checks.</b> Four trained URL detectors run in the native desktop runtime. Setup downloads a small, pinned model pack from Hugging Face and verifies its SHA-256. A verified copy is included for offline use. Routine local URL checks do not send an address to the backend, fetch the page or invoke a language model.</p>
+  <h5>What you control</h5>
+  <p>Settings has separate choices for browser-history access, active-tab observation, cloud scanning, language-model processing and account sync. Installing models does not enable these choices.</p>
+  <p>With cloud scanning enabled, an explicit deep scan or a fallback when local models are unavailable can send a redacted URL to the CyberForge backend and Hugging Face ML service and may fetch the page. The assistant sends questions and relevant context to its configured model when language-model processing is enabled. Sync can copy selected local records to your account.</p>
+  <h5>Local data and activity</h5>
+  <p>Browser history is read only with its separate permission. Local model files remain cached on this computer. Event Stream keeps up to 500 redacted activity entries for one hour in memory, isolated by account; it does not store a permanent activity log. Memory and browser-history copies have separate clearing controls in Settings. Uninstalling the application may leave per-user data; clear it explicitly when required.</p>
+  <h5>Command line</h5>
+  <p>The packaged installer places the scoped CLI beside the app and registers the installation folder on your user PATH. The setup wizard reports whether an additional PATH operation succeeded.</p>
+  <h5>Limitations and license</h5>
+  <p>URL features and anomaly scores are signals, not proof that a page is safe or malicious. Page content, live intelligence and BERT require deeper checks. Use CyberForge only on devices you own or are authorised to monitor. The software is provided as is under the project license.</p>
 `;
 
 /* ============ ILLUSTRATIONS ============ */
@@ -173,7 +153,7 @@ const steps=[
    p:'Select where CyberForge will be installed on this device. We can also register the cyberforge command on your system PATH so you can run scans from any terminal.',
    body:`<div class="fade-seq">
      <div class="pathbox" style="animation-delay:0s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h6l2 2h8v9H4z"/></svg><input id="instPath" value="" placeholder="Install directory" spellcheck="false"/><span class="browse">Browse…</span></div>
-     <div class="hint" style="animation-delay:.05s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>Requires ~1.4 GB · <span id="diskHint">checking disk…</span></div>
+     <div class="hint" style="animation-delay:.05s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>Includes a small native ML pack; download size shown during preparation · <span id="diskHint">checking disk…</span></div>
      <div class="toggle-row" style="animation-delay:.1s"><span class="tr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 17 6-6-6-6M12 19h8"/></svg></span><div style="flex:1"><div class="tr-t">Add CyberForge to system PATH</div><div class="tr-d">Adds <span id="binPath" style="font-family:var(--mono);color:var(--amber-2)">…\\bin</span> to your <span id="pathLabelTxt">user PATH</span></div></div><span class="tgl" data-tgl="path"></span></div>
      <div class="toggle-row" style="animation-delay:.15s"><span class="tr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg></span><div style="flex:1"><div class="tr-t">Launch agent service at startup</div><div class="tr-d">Run CyberForge Sentinel as a background service</div></div><span class="tgl" data-tgl="startup"></span></div>
    </div>`},
@@ -385,6 +365,11 @@ function runInstall(){
         return pathResult.alreadyPresent?'already present':pathBin;
       },e=>{ pathResult={success:false,error:String((e&&e.message)||e)}; throw e; })});
   }
+  jobs.push({label:'Preparing on-device ML detectors from Hugging Face',
+    run:()=>INV('prepare_local_models').then(r=>{
+      if(!r||!r.ready)throw new Error((r&&r.error)||'Local detectors could not be loaded');
+      return r.success?'4 detectors ready · pinned download verified':'4 verified bundled detectors ready · download deferred: '+(r.error||'offline');
+    })});
   jobs.push({label:'Recording that setup is complete',   // one-time gate: the wizard does not run again
     run:()=>INV('mark_installed',{installDir:state.installDir||''}).then(()=>'saved')});
   let done=0;

@@ -32,6 +32,10 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 test('the ML service\'s answers are named for what produced them', () => {
+  expect(engineOfSpaceAnswer({ ...SPACE_MODEL, grounding: { generation_constraint: 'reviewed_passages' } }))
+    .toMatchObject({ kind: 'language-model', label: 'Qwen3.5-2B selects reviewed security passages' });
+  expect(engineOfSpaceAnswer({ ...SPACE_MODEL, model_generated: false, grounding: { mode: 'verified_reference' } }))
+    .toMatchObject({ id: 'ml-service-reference', kind: 'fixed-text' });
   expect(engineOfSpaceAnswer(SPACE_MODEL)).toEqual({
     id: 'ml-service-model', kind: 'language-model', where: 'CyberForge Analysis Agents', model: 'unsloth/Qwen3.5-2B-GGUF',
     label: 'Qwen3.5-2B (open-source, in the CyberForge Analysis Agents)'
@@ -80,6 +84,10 @@ describe('the chat route the desktop falls back to', () => {
   });
 
   test.each([
+    ['its factual check uses a reviewed reference', () => axios.post.mockResolvedValue({ data: {
+      ...SPACE_MODEL, model_generated: false, grounding: { mode: 'verified_reference' },
+      references: [{ title: 'OWASP', url: 'https://cheatsheetseries.owasp.org/' }]
+    } }), 'ml-service-reference'],
     ['the ML service\'s model answers', () => axios.post.mockResolvedValue({ data: SPACE_MODEL }), 'ml-service-model'],
     ['only its rule-based summary answers', () => axios.post.mockResolvedValue({ data: SPACE_RULES }), 'ml-service-rules'],
     ['its model is asked and does not finish', () => axios.post.mockResolvedValue({ data: SPACE_NO_ANSWER }), 'ml-service-no-answer'],
@@ -91,6 +99,7 @@ describe('the chat route the desktop falls back to', () => {
     expect(response.status).toBe(200);
     expect(response.body.engine.id).toBe(id);
     expect(typeof response.body.engine.label).toBe('string');
+    if (id === 'ml-service-reference') expect(response.body.references[0].title).toBe('OWASP');
   });
 });
 

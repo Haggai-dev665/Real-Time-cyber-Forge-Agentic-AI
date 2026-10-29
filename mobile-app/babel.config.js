@@ -1,10 +1,7 @@
 module.exports = function (api) {
   api.cache(true);
   return {
+    // SDK 54 configures the Worklets/Reanimated plugin through this preset.
     presets: ['babel-preset-expo'],
-    plugins: [
-      // expo-router requires this; react-native-reanimated plugin must be last.
-      'react-native-reanimated/plugin',
-    ],
   };
 };

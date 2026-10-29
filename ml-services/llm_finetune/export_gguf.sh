@@ -17,9 +17,15 @@ NAME=${GGUF_NAME:-cyberforge-qwen3.5-2b}
 mkdir -p "$OUT"
 
 if [ ! -x "$LLAMA/build/bin/llama-quantize" ]; then
-  [ -d "$LLAMA" ] || git clone --depth 1 https://github.com/ggml-org/llama.cpp "$LLAMA"
-  cmake -S "$LLAMA" -B "$LLAMA/build" -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF
-  cmake --build "$LLAMA/build" -j "$(nproc)" --target llama-quantize llama-imatrix
+  if [ ! -d "$LLAMA" ]; then
+    git init "$LLAMA"
+    git -C "$LLAMA" remote add origin https://github.com/ggml-org/llama.cpp
+    # Exact submodule revision used by the Space's llama-cpp-python 0.3.36.
+    git -C "$LLAMA" fetch --depth 1 origin 0c1e57098bba43ac29e6e3b677cdceebdd22334f
+    git -C "$LLAMA" checkout FETCH_HEAD
+  fi
+  cmake -S "$LLAMA" -B "$LLAMA/build" -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=89
+  cmake --build "$LLAMA/build" -j 2 --target llama-quantize llama-imatrix
 fi
 pip install -q "$LLAMA/gguf-py" sentencepiece protobuf
 
@@ -32,16 +38,16 @@ echo "== 2. importance matrix"
 # 400 training examples in the served chat format (prompt + answer)
 python - "$CALIB_JSONL" "$OUT/calibration.txt" <<'EOF'
 import json, random, sys
+from serving import prompt_text
 rows = [json.loads(l) for l in open(sys.argv[1], encoding="utf-8")]
 random.Random(1).shuffle(rows)
 with open(sys.argv[2], "w", encoding="utf-8") as f:
     for r in rows[:400]:
         s, u, a = (m["content"] for m in r["messages"])
-        f.write(f"<|im_start|>system\n{s}<|im_end|>\n<|im_start|>user\n{u}<|im_end|>\n"
-                f"<|im_start|>assistant\n<think>\n\n</think>\n\n{a}<|im_end|>\n")
+        f.write(prompt_text(s, u) + a + "<|im_end|>\n")
 EOF
 "$LLAMA/build/bin/llama-imatrix" -m "$OUT/$NAME-BF16.gguf" -f "$OUT/calibration.txt" \
-  -o "$OUT/imatrix.gguf" -c 512 --chunks "${IMATRIX_CHUNKS:-200}" -t "$(nproc)"
+  -o "$OUT/imatrix.gguf" -c 512 --chunks "${IMATRIX_CHUNKS:-200}" -t "$(nproc)" -ngl 99
 
 echo "== 3. quantize"
 "$LLAMA/build/bin/llama-quantize" --imatrix "$OUT/imatrix.gguf" "$OUT/$NAME-BF16.gguf" "$OUT/$NAME-Q4_K_M.gguf" Q4_K_M "$(nproc)"

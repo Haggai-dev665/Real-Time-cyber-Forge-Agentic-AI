@@ -1,0 +1,120 @@
+{
+  "source": "CyberForge - Thesis Defence v3.pptx",
+  "source_sha256": "ae73fafed57bab303def807267185a71d9d29523326d0da22cf1bd70c015a6b8",
+  "output": "CyberForge - Thesis Defence v5.pptx",
+  "output_sha256": "b75471b586a966991148ea4e038730eebdd867604966352a32267a8e99e72115",
+  "slides": 15,
+  "fonts": [
+    "Oswald",
+    "Titillium Web"
+  ],
+  "embedded_fonts_unchanged": true,
+  "native_effects_unchanged": true,
+  "details": [
+    {
+      "slide": 1,
+      "v3_source_slide": 1,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 10
+    },
+    {
+      "slide": 2,
+      "v3_source_slide": 2,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 16
+    },
+    {
+      "slide": 3,
+      "v3_source_slide": 3,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 7
+    },
+    {
+      "slide": 4,
+      "v3_source_slide": 4,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 18
+    },
+    {
+      "slide": 5,
+      "v3_source_slide": 5,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 7
+    },
+    {
+      "slide": 6,
+      "v3_source_slide": 6,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 9
+    },
+    {
+      "slide": 7,
+      "v3_source_slide": 8,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 14
+    },
+    {
+      "slide": 8,
+      "v3_source_slide": 9,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 20
+    },
+    {
+      "slide": 9,
+      "v3_source_slide": 10,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 8
+    },
+    {
+      "slide": 10,
+      "v3_source_slide": 12,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 12
+    },
+    {
+      "slide": 11,
+      "v3_source_slide": 13,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 21
+    },
+    {
+      "slide": 12,
+      "v3_source_slide": 14,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 30
+    },
+    {
+      "slide": 13,
+      "v3_source_slide": 15,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 26
+    },
+    {
+      "slide": 14,
+      "v3_source_slide": 18,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 10
+    },
+    {
+      "slide": 15,
+      "v3_source_slide": 20,
+      "exact_animation_tree": true,
+      "exact_run_styles": true,
+      "native_effects": 6
+    }
+  ]
+}

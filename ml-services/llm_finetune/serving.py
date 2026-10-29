@@ -7,7 +7,12 @@ learned. tests in this folder check that the two copies agree.
 """
 
 import re
+import sys
+from pathlib import Path
 from typing import Dict, List, Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hf_space_deploy"))
+from security_knowledge import ground_prompt
 
 # TransformerModelLoader.SYSTEM_PROMPT: background analysis (scans, alerts, reports)
 SYSTEM_PROMPT = (
@@ -63,6 +68,7 @@ def clean_user_text(system: str, user: str) -> (str, str):
 def prompt_text(system: str, user: str) -> str:
     """The exact text LocalLLM.chat feeds llama.cpp, up to where the answer starts."""
     system, user = clean_user_text(system, user)
+    system, _ = ground_prompt(system, user)
     return (
         f"<|im_start|>system\n{system}<|im_end|>\n"
         f"<|im_start|>user\n{user}<|im_end|>\n"

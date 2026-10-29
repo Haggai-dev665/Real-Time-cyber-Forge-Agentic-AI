@@ -11,7 +11,7 @@ workspace = "../../desktop/src-tauri"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 # The platform features make this the real credential store. Without one the
 # crate silently uses an in-memory stand-in that keeps nothing (finding F09).
@@ -21,6 +21,8 @@ keyring = { version = "3", features = ["windows-native", "apple-native", "sync-s
 base64 = "0.22"
 sha2 = "0.10"
 getrandom = "0.3"
+regex = "1"
+flate2 = "1"
 ring = "0.17"
 # The broker's pipe and its I/O (broker.rs).
 tokio = { version = "1", features = ["net", "io-util", "time", "rt"] }

@@ -188,8 +188,8 @@ def url_answer(url: str, a: Dict, rng: random.Random, evidence: str, prescan=Non
             line = f"The {name} scores it {a['top']:.2f}, above the 0.50 threat line"
             line += f"; the {' and '.join(others)} also flag{'s' if len(others) == 1 else ''} it." if others else "."
         else:
-            line = rng.choice([f"No detector flags it; the highest score is {a['top']:.2f} ({name}).",
-                               f"All detectors stay below the 0.50 threat line (highest {a['top']:.2f})."])
+            line = rng.choice([f"No supervised detector flags it; their highest score is {a['top']:.2f} ({name}).",
+                               f"The supervised detectors stay below the 0.50 threat line (their highest {a['top']:.2f})."])
         lines.append(line)
     for f in (a["strong"] or a["flags"])[: 2 if a["level"] != "Low" else 1]:
         lines.append(f[0].upper() + f[1:] + ".")

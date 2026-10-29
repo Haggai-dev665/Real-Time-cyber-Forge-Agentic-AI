@@ -1,6 +1,6 @@
 //! Direct ML capabilities, surfaced from the HF Space through the backend proxy
 //! (`/api/cyberforge-ml/v2/*`):
-//!   • `ml_security_chat` — DeepSeek cybersecurity Q&A (DeepSeek → Mistral → ML heuristic)
+//!   • `ml_security_chat` — grounded Qwen Q&A through the backend by default
 //!   • `ml_classify_url`  — BERT URL phishing/malware classifier
 //!   • `ml_detect_dga`    — DGA-generated domain detector
 //!   • `ml_ioc_scan`      — multi-IOC scan (url/domain/ip/hash) across all models
@@ -9,8 +9,8 @@
 //!
 //! These call the BACKEND (not the HF Space directly) so the desktop reuses the
 //! same auth + `cyber-forge-desktop` User-Agent path as the rest of the app and
-//! has no CORS/CSP concerns. DeepSeek vs. Mistral is decided server-side on the
-//! Space, so the desktop transparently benefits once the Space has `HF_TOKEN`.
+//! has no CORS/CSP concerns. Direct DeepSeek is a separately selected optional
+//! provider; storing a token alone does not select it.
 
 use crate::state::AppState;
 use serde_json::{json, Value};
@@ -121,10 +121,9 @@ fn your_token_engine(model: &str) -> Value {
     })
 }
 
-/// DeepSeek cybersecurity Q&A. Calls DeepSeek DIRECTLY via HF Inference Providers
-/// when a token is configured (reliable, real model). If a token IS set but the
-/// call fails, the real reason is surfaced (not silently swallowed). Only with
-/// NO token does it proxy to the backend (HF Space → grounded heuristic).
+/// Security Q&A uses the backend's fine-tuned Qwen service by default. Direct
+/// DeepSeek is an explicit opt-in via CYBERFORGE_CHAT_PROVIDER=deepseek; merely
+/// saving an HF token must not bypass the deployed grounding/reference service.
 #[tauri::command]
 pub async fn ml_security_chat(
     state: State<'_, SharedState>,
@@ -136,11 +135,14 @@ pub async fn ml_security_chat(
     crate::privacy::require(crate::privacy::Feature::LlmProcessing)?;
     let query = crate::input::text(&query, "query", 32_000)?;
     let mt = crate::input::count(max_tokens, 512, 1, 4096);
-    let token = crate::auth::get_hf_token();
+    let direct_provider = std::env::var("CYBERFORGE_CHAT_PROVIDER")
+        .map(|value| value.eq_ignore_ascii_case("deepseek"))
+        .unwrap_or(false);
+    let token = if direct_provider { crate::auth::get_hf_token() } else { None };
     #[cfg(debug_assertions)]
     eprintln!(
         "[cyberforge] ml_security_chat: hf_token={}",
-        if token.is_some() { "present" } else { "absent (will use server KB)" }
+        if token.is_some() { "direct provider selected" } else { "using server Qwen" }
     );
     if let Some(token) = token {
         match deepseek_chat(query.trim(), mt, &token).await {
@@ -354,6 +356,7 @@ pub async fn ml_status(state: State<'_, SharedState>, include_capabilities: Opti
     let (base, headers) = ctx(state.inner()).await;
     let client = reqwest::Client::new();
     let mut out = json!({});
+    out["local"] = crate::local_ml::status();
     if let Ok(r) = authed(
         client
             .get(format!("{}/api/cyberforge-ml/v2/status", base))

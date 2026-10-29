@@ -188,6 +188,7 @@ pub async fn read_stream(
             Ok(Err(e)) => return Ended::Dropped(crate::http::error_chain(e)),
             Ok(Ok(None)) => return Ended::Dropped("the server closed the stream".into()),
             Ok(Ok(Some(bytes))) => {
+                if !session_is_still(state, token).await { return Ended::SessionChanged; }
                 last_heard = Instant::now();
                 for frame in parser.push(&bytes) {
                     match frame.event.as_deref() {
@@ -234,6 +235,7 @@ fn set_status(app: &tauri::AppHandle, connected: bool, reason: &str) {
     };
     if changed {
         let _ = app.emit("cf-stream-status", json!({ "connected": connected, "reason": reason }));
+        crate::event_journal::device(app, "stream:status", json!({"status":if connected {"connected"} else {"disconnected"},"reason":reason}));
     }
 }
 
@@ -275,6 +277,10 @@ pub fn start(app: tauri::AppHandle, state: SharedState) {
             }
 
             let mut was_connected = false;
+            let journal_scope = {
+                let s = state.lock().await;
+                crate::event_journal::scope(&s)
+            };
             let ended = {
                 let handle = app.clone();
                 let mut forward = |signal: Signal| match signal {
@@ -283,6 +289,7 @@ pub fn start(app: tauri::AppHandle, state: SharedState) {
                         set_status(&handle, true, "connected");
                     }
                     Signal::Event(event) => {
+                        crate::event_journal::record(&journal_scope, &event, "backend");
                         let _ = handle.emit("cf-stream", event);
                     }
                 };

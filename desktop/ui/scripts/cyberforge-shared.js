@@ -128,12 +128,23 @@ CF.preGet = function(key, maxAgeMs){
 CF.engineOf = function(body){ var d=(body&&body.data)||body||{}; return d.engine||(body&&body.engine)||null; };
 CF.engineLabel = function(body){ var e=CF.engineOf(body); return (e&&e.label)||'Agent not reported'; };
 CF.engineShort = function(body){ var e=CF.engineOf(body); if(!e) return 'unknown';
+  if(e.id==='ml-service-reference') return 'reviewed reference';
   if(e.kind==='fixed-text') return 'no model (fixed text)';
   return String(e.model||e.id||'model').split('/').pop().replace(/-GGUF$/i,''); };
+CF.referenceNoteHTML = function(body){
+  var d=(body&&body.data)||body||{}, refs=d.references||[], allowed=['cheatsheetseries.owasp.org','attack.mitre.org','www.openssl-library.org','csrc.nist.gov','pages.nist.gov','www.uspis.gov'];
+  if(!Array.isArray(refs)) return '';
+  var links=refs.slice(0,3).map(function(ref){
+    try{ var u=new URL(ref.url); if(u.protocol!=='https:'||u.username||u.password||allowed.indexOf(u.hostname)===-1) return '';
+      return '<a href="'+CF.esc(u.href)+'" target="_blank" rel="noopener noreferrer">'+CF.esc(ref.title||u.hostname)+'</a>';
+    }catch(e){return '';}
+  }).filter(Boolean);
+  return links.length?'<div class="kb-note" style="margin-top:6px">References: '+links.join(' · ')+'</div>':'';
+};
 CF.engineNoteHTML = function(body){ var e=CF.engineOf(body);
   var text=(e&&e.label)||'Agent not reported';
-  var warn=!e||e.kind!=='language-model';
-  return '<div class="kb-note" style="margin-top:9px">'+(warn?'⚠ ':'')+'Answered by: '+String(text).replace(/[<>&]/g,'')+'</div>'; };
+  var warn=!e||(e.kind!=='language-model'&&e.id!=='ml-service-reference');
+  return '<div class="kb-note" style="margin-top:9px">'+(warn?'⚠ ':'')+'Answered by: '+String(text).replace(/[<>&]/g,'')+'</div>'+CF.referenceNoteHTML(body); };
 
 CF.ml = {
   chat:       function(query, maxTokens){ return CF.invoke('ml_security_chat', { query: query, maxTokens: maxTokens||512 }); },

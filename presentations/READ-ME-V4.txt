@@ -1,0 +1,88 @@
+CYBERFORGE — THESIS AND DEFENCE V4
+23 October 2026
+
+OPEN
+The root document: Che Haggai Ngha Kang.docx
+Presentation: CyberForge - Thesis Defence v4.pptx
+Overview: Slide overview v4.png
+
+V4 has 12 slides, reduced from V3's 20. It follows the required guide:
+title; brief introduction; problem statement; research questions; research
+objectives; brief literature review; methods/materials (three slides);
+results (two slides); conclusion. Every slide has source-aware speaker notes.
+Native staggered entrances, fade transitions and embedded looping accents play
+in Slide Show. Advance slides manually. No macros or external media are needed.
+
+ACCURATE RESULTS
+The new results come from saved Qwen training/evaluation/deployment artefacts.
+V2 training: 2,462 train / 273 validation; 100 steps on NVIDIA L4; validation
+loss 0.136654 to 0.066537. This is target fit, not factual accuracy.
+Final serving pipeline: 130/130 covered factual/support cases and zero reference
+replacements. Both previous and V2 models passed with the same constraint.
+This is reviewed-passage selection, not unaided recall or URL-detection accuracy.
+Regression: 240 items; 84 of 87 applicable risk labels match authored targets
+(96.55%). Three disagreements remain. Independent evaluation remains needed.
+The 52 additional scenario-mode cases are INCLUDED in 130, not added to 130.
+
+Actual backend/service calls and the loaded pinned revision are documented.
+The Windows desktop was built and its citation UI tested in a browser fixture;
+the installed app was not replaced and a signed-in native acceptance session
+was not driven. Historical 300-URL results and older screenshots are explicitly
+historical. No new detector accuracy, uptime or cross-platform benchmark is invented.
+
+THESIS CHANGES
+Chapters 3 and 4 now include the separate Jobs workflow, LoRA supervision,
+partitions, masking, quantisation, rejected candidates, unchanged gates,
+constrained inference, measured results and current desktop scope. Abstract,
+French resume, related discussion, conclusion and Appendix C are aligned.
+Section geometry, Times New Roman body styles, heading/caption styles, original
+front matter, mathematical formula and historical confusion-count tables are
+preserved. Seven historical result tables retain their data. Table 4.8 qualifies
+unsupported historical objective claims. Tables and figures use ordered labels.
+The caption lists retain their two-column table layout with refreshed entries;
+the main TOC and page references are refreshed in Word during native validation.
+
+BACKUPS
+Che Haggai Ngha Kang - Before V4 update.docx preserves the immediately prior
+document. The earlier Original backup.docx is unchanged. Older presentations
+are unchanged. thesis-v4-revision-log.json records the source and output hashes.
+
+DIAGRAMS AND DESIGN
+diagrams-v4/ contains eight self-contained HTML sources, vector SVG exports and
+3x PNGs (2880 pixels wide), plus skill and text-bound checks. Four old diagrams
+are replaced; four new figures cover training, grounding, quality and a recorded
+live service response. The response panel is not a simulated desktop screenshot.
+Architecture, principal interactions, decision flow and current class relations
+are redrawn from current source, with explicit training/inference separation.
+
+The requested cathrynlavery/diagram-design skill is installed for Claude Code
+at .claude/skills/diagram-design. It will be available in the next Claude Code
+session for this project. The public source revision is recorded in
+diagram-skill-source.json. The requested npx command was used with Claude Code
+and project-local copy flags; a pinned source download provided a verified
+fallback while its initial Windows Git TLS request was failing.
+
+Colours come from Cyberforge-landing/cyberforge.css: raisin #1F1A1B, cream
+#EFE9DD, orange #F69D39 and sage #869B7E. The printed figures use white paper
+and dark readable labels; a darker orange is used where contrast requires it.
+The thesis retains its fonts. V4 uses Calibri Light, Calibri and Consolas for
+portable Office editing; it does not depend on V3's template or photo downloads.
+
+REBUILD (from the repository root)
+  python presentations/build_diagrams_v4.py
+  node presentations/render_diagrams_v4.cjs
+  python presentations/revise_thesis_v4.py
+  python presentations/build_defence_v4.py
+  powershell -NoProfile -ExecutionPolicy Bypass -File presentations/refresh_office_v4.ps1 -SkipThesisPdf
+  python presentations/validate_v4.py
+
+The thesis builder always starts from the preserved pre-V4 backup, so it is
+repeatable. Do not rerun it after making new manual edits without making a new
+source backup. Native Word refresh is the final document step; it creates
+correct main TOC page references. The local
+PNG/PDF deck previews from the Python builder are layout proxies; native
+PowerPoint renders, when present, are in previews-v4-native/ and the Native PDF.
+validation-v4.json and office-validation-v4.json distinguish those checks.
+The optional full-thesis PDF renderer stalled in this environment; it was
+cancelled after the DOCX had been saved. Word opening, pagination, field refresh
+and structural layout checks succeeded. The slide PDF has its own native export.

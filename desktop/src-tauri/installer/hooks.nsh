@@ -9,6 +9,14 @@
   nsExec::Exec 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$INSTDIR\installer\path-add.ps1"'
   Pop $0
   DetailPrint "cyberforge CLI on PATH: exit $0"
+  DetailPrint "Preparing the pinned ML pack from Hugging Face..."
+  nsExec::ExecToLog '"$INSTDIR\${MAINBINARYNAME}.exe" --prepare-local-ml'
+  Pop $0
+  ${If} $0 == 0
+    DetailPrint "Local ML pack downloaded and SHA-256 verified."
+  ${Else}
+    DetailPrint "Download deferred; verified bundled detectors work offline. Retry in Model capabilities."
+  ${EndIf}
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL

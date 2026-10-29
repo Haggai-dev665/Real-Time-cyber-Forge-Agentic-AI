@@ -1,0 +1,35 @@
+# EAS archives from the Git repository root even when invoked in mobile-app.
+# This standalone app has no dependencies on the desktop/backend/ML projects.
+# An explicit root .easignore also prevents EAS from discovering .gitignore
+# files inside protected desktop test caches before applying ignore rules.
+/*
+!/.easignore
+!/mobile-app
+
+# .easignore replaces nested .gitignore files; retain the mobile exclusions.
+node_modules
+.gradle
+.cxx
+build
+local.properties
+.expo
+dist
+web-build
+expo-env.d.ts
+*.orig.*
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+credentials.json
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+.env
+.env.*
+!.env.example

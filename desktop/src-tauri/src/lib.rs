@@ -1,10 +1,9 @@
 //! CyberForge — AI Security Console
 //!
 //! Tauri desktop shell that serves the static CyberForge UI (HTML/CSS/JS in `../ui`).
-//! The only piece wired to the backend is authentication: `auth_login` /
-//! `auth_register` (and friends) call `https://…herokuapp.com/api/auth/*` from
-//! Rust and persist the session token in the OS keychain. The frontend invokes
-//! them via `window.__TAURI__.core.invoke(...)`.
+//! Rust owns authentication, local URL inference, the account-isolated activity
+//! journal, backend requests and device services. The frontend invokes commands
+//! through Tauri; credentials remain in the OS keychain.
 
 mod agent;
 mod account_api;
@@ -24,11 +23,13 @@ mod ownership;
 mod session_renewal;
 mod metrics;
 mod ml;
+mod local_ml;
 mod console;
 mod policy;
 mod privacy;
 mod state;
 mod stream;
+mod event_journal;
 mod system;
 #[cfg(test)]
 mod acl_tests;
@@ -52,6 +53,7 @@ pub fn run() {
             commands::auth_is_authenticated,
             commands::credential_storage_status,
             stream::stream_status,
+            event_journal::stream_history,
             commands::get_backend_url,
             integrations::cli_status,
             integrations::mcp_grants,
@@ -98,6 +100,8 @@ pub fn run() {
             ml::ml_ioc_scan,
             ml::ml_url_enrich,
             ml::ml_status,
+            local_ml::local_model_status,
+            local_ml::prepare_local_models,
             console::console_snapshot,
             ml::set_hf_token,
             ml::hf_token_status,
@@ -165,6 +169,9 @@ pub fn run() {
             // everything the app needs exists right after installation
             // (app-config dir, hf_config.json template, README). Idempotent.
             crate::system::prepare_filesystem(&app.handle());
+            // Load verified native detectors, then cache the pinned HF artifact.
+            // This runs off the UI thread and does not wait for backend sign-in.
+            crate::local_ml::start(app.handle().clone());
 
             // One owner per user of this computer's state (ownership.rs). Only the
             // owner runs the device loop: two would reuse device sequence numbers.
@@ -267,3 +274,6 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running the CyberForge desktop application");
 }
+
+/// NSIS post-install entry point; downloads model data without opening a window.
+pub fn prepare_local_models_headless() -> bool { local_ml::bootstrap() }

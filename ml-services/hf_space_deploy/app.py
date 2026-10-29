@@ -66,7 +66,10 @@ HF_MODEL_REPO = os.environ.get("HF_MODEL_REPO", "Che237/cyberforge-models")
 # It replaces Gemini and needs no API key or credit. Any GGUF chat model can be
 # set here; on the free cpu-basic tier (2 vCPU) stay around 2B parameters or the
 # answers will not fit inside the callers' timeouts.
+from security_knowledge import ground_prompt, finish_grounded_answer, reference_grammar
+
 LOCAL_LLM_REPO = os.environ.get("LOCAL_LLM_REPO", "unsloth/Qwen3.5-2B-GGUF")
+LOCAL_LLM_REVISION = os.environ.get("LOCAL_LLM_REVISION") or None
 LOCAL_LLM_FILE = os.environ.get("LOCAL_LLM_FILE", "Qwen3.5-2B-Q4_K_M.gguf")
 LOCAL_LLM_CTX = int(os.environ.get("LOCAL_LLM_CTX", "4096"))
 LOCAL_LLM_THREADS = int(os.environ.get("LOCAL_LLM_THREADS", "2"))
@@ -796,6 +799,7 @@ class LocalLLM:
         return {
             "repo": LOCAL_LLM_REPO,
             "file": LOCAL_LLM_FILE,
+            "revision": LOCAL_LLM_REVISION,
             "loaded": self.ready,
             "loading": self._load_lock.locked(),
             "error": self.error,
@@ -809,10 +813,10 @@ class LocalLLM:
             try:
                 from llama_cpp import Llama
                 try:
-                    path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, token=HF_TOKEN or None)
+                    path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, revision=LOCAL_LLM_REVISION, token=HF_TOKEN or None)
                 except Exception:
                     # A stale HF_TOKEN must not block the download of a public model
-                    path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, token=False)
+                    path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, revision=LOCAL_LLM_REVISION, token=False)
                 self._probe(path)
                 # n_threads_batch (prompt processing) defaults to the host's core
                 # count, which a Space container reports far above its 2 vCPUs.
@@ -889,6 +893,12 @@ class LocalLLM:
                 # Keep both ends: context sits at the start, the question at the end
                 half = LOCAL_LLM_MAX_INPUT_CHARS // 2
                 user = f"{user[:half]}\n[...]\n{user[-half:]}"
+            system, references = ground_prompt(system, user)
+            grammar_text = reference_grammar(references, analyst=not interactive)
+            decoding = {}
+            if grammar_text:
+                from llama_cpp import LlamaGrammar
+                decoding["grammar"] = LlamaGrammar.from_string(grammar_text, verbose=False)
             if self._chatml:
                 prompt = (
                     f"<|im_start|>system\n{system}<|im_end|>\n"
@@ -898,12 +908,14 @@ class LocalLLM:
                 stream = self.llm.create_completion(
                     prompt, max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, top_k=20,
                     presence_penalty=1.5, stop=["<|im_end|>", "<|endoftext|>"], stream=True,
+                    **decoding,
                 )
                 read = lambda c: c["choices"][0].get("text") or ""
             else:
                 stream = self.llm.create_chat_completion(
                     messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
                     max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, stream=True,
+                    **decoding,
                 )
                 read = lambda c: c["choices"][0].get("delta", {}).get("content") or ""
             pieces: List[str] = []
@@ -928,12 +940,20 @@ class LocalLLM:
                     text = text[:ends[-1]].strip()
             if not text:
                 return {**base, "response": None, "error": "local LLM returned no text"}
+            text, grounding = finish_grounded_answer(text, references, analyst=not interactive)
+            if grammar_text:
+                grounding["generation_constraint"] = "reviewed_passages"
             return {
                 **base,
                 "response": text,
                 "tokens": len(pieces),
                 "elapsed_ms": round((time.monotonic() - started) * 1000),
                 "truncated": truncated,
+                "grounding": grounding,
+                "references": grounding["references"],
+                "model_generated": grounding["mode"] != "verified_reference",
+                **({"model": "verified-reference", "source": "verified_reference",
+                    "model_used": "cyberforge-ml-fallback"} if grounding["mode"] == "verified_reference" else {}),
             }
         except Exception as e:
             return {**base, "response": None, "error": f"{type(e).__name__}: {str(e)[:200]}"}
@@ -2056,7 +2076,7 @@ async def api_v2_chat(request: Request):
     Context-grounded security assistant that:
       1. Accepts a live context blob (telemetry, scan history, IOCs) and
          grounds every answer in it (RAG-lite over the current request — no
-         persistent vector store, which requires paid GPU on free tier).
+         persistent vector store; memory is owned by the caller).
       2. Translates raw ML signals / IOCs into plain human language when the
          user includes raw data and asks for an explanation.
       3. Uses the open-source model running in this Space, or the ML-powered
@@ -2232,20 +2252,29 @@ async def api_v2_chat(request: Request):
     llm_result = await run_in_threadpool(transformer_loader.security_chat, enriched_message, 600)
     if llm_result.get("response") and not llm_result.get("error"):
         text = llm_result["response"]
-        risk_level = stated_risk(text) or "low"
-        risk_score = {"critical": 85.0, "high": 70.0, "medium": 45.0, "low": 20.0}[risk_level]
+        risk_level = stated_risk(text) or "unknown"
+        risk_score = {"critical": 85.0, "high": 70.0, "medium": 45.0, "low": 20.0}.get(risk_level)
         # Override with ML scan if stronger
         if detected_risk_score > 0:
             ml_score_100 = round(detected_risk_score * 100, 1)
-            if ml_score_100 > risk_score:
+            if risk_score is None or ml_score_100 > risk_score:
                 risk_score = ml_score_100
                 risk_level = detected_risk_level
         return {
             "response": text,
-            "confidence": 0.72,
+            "confidence": None,
+            "confidence_source": "not_calibrated",
             "risk_level": risk_level,
             "risk_score": risk_score,
-            "model_used": llm_result.get("model_id", LOCAL_LLM_REPO),
+            "model_used": llm_result.get("model_used") or llm_result.get("model_id", LOCAL_LLM_REPO),
+            "model_id": llm_result.get("model_id", LOCAL_LLM_REPO),
+            "model": llm_result.get("model"),
+            "source": llm_result.get("source"),
+            "grounding": llm_result.get("grounding"),
+            "references": llm_result.get("references", []),
+            "model_generated": llm_result.get("model_generated", True),
+            "answered": True,
+            "result_kind": "reasoning_text",
             "session_id": session_id,
             "sources": sources,
             "timestamp": datetime.utcnow().isoformat(),

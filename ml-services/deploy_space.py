@@ -30,7 +30,7 @@ HUB = "https://huggingface.co"
 BASE_DIR = Path(__file__).resolve().parent
 SOURCE_DIR = BASE_DIR / "hf_space_deploy"
 BACKUP_DIR = BASE_DIR / "hf_space_clone"
-FILES = ["Dockerfile", "requirements.txt", "app.py", "url_features.py", "trainer.py"]
+FILES = ["Dockerfile", "requirements.txt", "app.py", "url_features.py", "trainer.py", "security_knowledge.py"]
 DONE_STAGES = {"RUNNING", "BUILD_ERROR", "RUNTIME_ERROR", "CONFIG_ERROR", "NO_APP_FILE", "PAUSED", "STOPPED"}
 
 

@@ -163,12 +163,12 @@ function logLine(t){
     bad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>'
   };
   const tools=[
-    {name:'DNS Resolve',icon:I.globe,ok:{label:'resolved',cls:'ok'},alt:[{label:'cname chain',cls:'info'}]},
-    {name:'Port Scan',icon:I.ports,ok:{label:'2 open',cls:'info'},alt:[{label:'5 open',cls:'warn'}]},
-    {name:'TLS Certificate',icon:I.lock,ok:{label:'valid · A+',cls:'ok'},alt:[{label:'expiring',cls:'warn'}]},
-    {name:'Security Headers',icon:I.shield,ok:{label:'pass',cls:'ok'},alt:[{label:'2 missing',cls:'warn'}]},
-    {name:'Malware Scan',icon:I.bug,ok:{label:'clean',cls:'ok'},alt:[{label:'payload flagged',cls:'bad'}]},
-    {name:'Threat Reputation',icon:I.eye,ok:{label:'trusted',cls:'ok'},alt:[{label:'blocklisted',cls:'bad'},{label:'neutral',cls:'info'}]}
+    {name:'Phishing URL model',icon:I.shield},
+    {name:'Malware URL model',icon:I.bug},
+    {name:'Web-attack URL model',icon:I.ports},
+    {name:'URL anomaly model',icon:I.eye},
+    {name:'Page content',icon:I.globe},
+    {name:'Live intelligence',icon:I.lock}
   ];
   function cfInvoke(cmd,args){
     try{ var T=(window.parent&&window.parent.__TAURI__)||window.__TAURI__;
@@ -186,25 +186,18 @@ function logLine(t){
   ).join('');
   const rows=[...elTools.children];
 
-  // map a REAL backend scan payload (data) onto the 6 tool rows
+  // Only returned model/coverage fields may produce a result badge.
   function toolResults(d){
-    d=d||{};
-    var url=d.url||'';
-    var https=/^https:/i.test(url);
-    var missing=(d.missingHeaders&&d.missingHeaders.length)||0;
-    var ext=(d.externalDomains&&d.externalDomains.length)||0;
-    var risk=+d.riskScore||0;
-    var cat=(d.category||'').toLowerCase();
-    var malicious=risk>=50||/phish|malware|malicious|scam|trojan/.test(cat);
-    var blocklisted=risk>=70||/phish|malware|malicious|blocklist/.test(cat);
-    return [
-      d.scraperSuccess===false?{label:'unreachable',cls:'bad'}:{label:'resolved',cls:'ok'},
-      {label:(ext?ext+' ext domains':'no external'),cls:(ext>8?'warn':'info')},
-      https?{label:'valid TLS',cls:'ok'}:{label:'no TLS',cls:'warn'},
-      missing?{label:missing+' missing',cls:'warn'}:{label:'headers pass',cls:'ok'},
-      malicious?{label:'flagged',cls:'bad'}:{label:'clean',cls:'ok'},
-      blocklisted?{label:(cat||'blocklisted'),cls:'bad'}:(risk>=35?{label:'suspicious',cls:'warn'}:{label:'trusted',cls:'ok'})
-    ];
+    d=d||{};var predictions=d.predictions||[],coverage=d.coverage||{};
+    var rows=['phishing_detection','malware_detection','web_attack_detection','anomaly_detection'].map(function(name){
+      var p=predictions.find(function(p){return p.model===name;});
+      if(!p)return {label:'not reported',cls:'info'};
+      if(name==='anomaly_detection')return {label:p.anomaly_margin<0?'unusual URL pattern':'typical URL pattern',cls:p.anomaly_margin<0?'warn':'info'};
+      var score=Math.round(p.threat_score*100);return {label:score+'/100 URL score',cls:score>=50?'warn':'ok'};
+    });
+    rows.push({label:coverage.page&&coverage.page!=='not observed'?'observed':'not checked',cls:'info'});
+    rows.push({label:coverage.liveThreatIntel===true?'reported':'not checked',cls:'info'});
+    return rows;
   }
   function resetRows(){
     elPct.textContent='0%'; elBar.style.width='0%'; elVerdict.className='scan-verdict';
@@ -213,24 +206,17 @@ function logLine(t){
   function applyResults(results,risk,cat){
     var worst='ok',warns=0;
     rows.forEach(function(r,i){
-      setTimeout(function(){
-        var res=results[i]||{label:'—',cls:'info'};
-        r.className='tool done'+(res.cls==='bad'?' threat':'');
-        var re=r.querySelector('.t-res'); re.textContent=res.label; re.className='t-res show '+res.cls;
-        if(res.cls==='bad')worst='bad'; else if(res.cls==='warn'){warns++; if(worst!=='bad')worst='warn';}
-        var done=i+1; elPct.textContent=Math.round(done/rows.length*100)+'%'; elBar.style.width=(done/rows.length*100)+'%';
-        if(done===rows.length) setTimeout(function(){ verdict(worst,warns,risk,cat); },360);
-      }, i*150);
+      var res=results[i]||{label:'not reported',cls:'info'};
+      r.className='tool done'+(res.cls==='bad'?' threat':'');
+      var re=r.querySelector('.t-res');re.textContent=res.label;re.className='t-res show '+res.cls;
+      if(res.cls==='bad')worst='bad';else if(res.cls==='warn'){warns++;if(worst!=='bad')worst='warn';}
     });
-  }
-  function verdict(worst,warns,risk,cat){
-    var cls,txt;
-    if(worst==='bad'){cls='bad';txt=esc((cat?String(cat).toUpperCase():'Threat')+' · risk '+(risk||0));}
-    else if(worst==='warn'){cls='warn';txt=esc(warns+' risk factor'+(warns>1?'s':'')+' · '+(risk||0));}
-    else{cls='ok';txt='No threats · safe';}
-    elVerdict.innerHTML='<span class="vi">'+VI[cls]+'</span>'+txt+'<span class="meta">'+rows.length+' checks</span>';
+    elPct.textContent='done';elBar.style.width='100%';
+    var reported=results.filter(function(r){return !/not reported|not checked/.test(r.label);}).length;
+    var cls=reported?worst:'warn';
+    var text=!reported?'No model results reported':worst==='ok'?'Low URL-model risk ? page coverage varies':'URL risk signals ? '+(risk||0)+'/100';
+    elVerdict.innerHTML='<span class="vi">'+VI[cls]+'</span>'+esc(text)+'<span class="meta">'+esc(reported)+' results reported</span>';
     elVerdict.className='scan-verdict show '+cls;
-    // Next scan is scheduled by the real-time controller (active-tab driven) below.
   }
   // No real page to scan → show an honest idle state (NEVER a placeholder URL).
   function idleScan(){
@@ -288,15 +274,15 @@ function logLine(t){
       applyResults(toolResults(d), +d.riskScore||0, d.category||'');
       showActions(url, +d.riskScore||0);
       if(typeof logLine==='function') logLine('Scanned '+((d.url||url).replace(/^https?:\/\//,'').slice(0,34))+' · risk '+(d.riskScore||0)+' · '+(d.category||'ok'));
-      endScan(url, rows.length*150+760);   // let the verdict animation play out
-    }).catch(function(){ endScan(url, 400); });
+      endScan(url, 0);   // schedule the next queued address immediately
+    }).catch(function(){ endScan(url, 0); });
   }
   function endScan(url, delay){
     setTimeout(function(){
       ctl.scanning=false; ctl.last=url; ctl.lastAt=Date.now(); ctl.current='';
       var next=ctl.queued; ctl.queued='';
       if(next && next!==url) beginScan(next);   // a tab switched-to mid-scan goes next
-    }, Math.max(300, delay||400));
+    }, Math.max(0, delay||0));
   }
   function tick(){
     getActiveUrl(function(u){

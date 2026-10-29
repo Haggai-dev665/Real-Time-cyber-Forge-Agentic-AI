@@ -1,0 +1,92 @@
+{
+  "slides": 12,
+  "guideOrder": "passed",
+  "nativeEntranceEffects": 214,
+  "diagrams": 8,
+  "diagramSkillChecks": "8/8 passed",
+  "packageRelationships": "valid",
+  "sectionGeometryAndPageNumbering": "preserved",
+  "historicalTablesPreserved": 7,
+  "newFigureCaptions": 4,
+  "notes": 12,
+  "thesisSha256": "46ea02159e81701ac4c3d4a9674915dc9431c205b0834ff115bfd754f0245608",
+  "deckSha256": "442e818d8ae88e28ba33e8a9e2880c27dca33d80e8c16bf586241b2b741d8b55",
+  "backupSha256": "44eab043d9f12606be5c9068000868e448563ff558c7d273c998c22727719177",
+  "nativeOffice": {
+    "thesis": {
+      "pages": 100,
+      "tables": 20,
+      "indexes": 1,
+      "wordVersion": "16.0",
+      "fields": "refreshed",
+      "pdf": "full-document PDF export skipped after renderer stalled"
+    },
+    "presentation": {
+      "slides": 12,
+      "powerPointVersion": "16.0",
+      "nativeRendering": "passed",
+      "details": [
+        {
+          "slide": 1,
+          "animationEffects": 8,
+          "textOverflows": []
+        },
+        {
+          "slide": 2,
+          "animationEffects": 21,
+          "textOverflows": []
+        },
+        {
+          "slide": 3,
+          "animationEffects": 17,
+          "textOverflows": []
+        },
+        {
+          "slide": 4,
+          "animationEffects": 17,
+          "textOverflows": []
+        },
+        {
+          "slide": 5,
+          "animationEffects": 17,
+          "textOverflows": []
+        },
+        {
+          "slide": 6,
+          "animationEffects": 21,
+          "textOverflows": []
+        },
+        {
+          "slide": 7,
+          "animationEffects": 34,
+          "textOverflows": []
+        },
+        {
+          "slide": 8,
+          "animationEffects": 22,
+          "textOverflows": []
+        },
+        {
+          "slide": 9,
+          "animationEffects": 21,
+          "textOverflows": []
+        },
+        {
+          "slide": 10,
+          "animationEffects": 17,
+          "textOverflows": []
+        },
+        {
+          "slide": 11,
+          "animationEffects": 10,
+          "textOverflows": []
+        },
+        {
+          "slide": 12,
+          "animationEffects": 9,
+          "textOverflows": []
+        }
+      ]
+    }
+  }
+}

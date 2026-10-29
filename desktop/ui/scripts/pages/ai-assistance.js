@@ -55,7 +55,9 @@ function deleteChat(id){ finishTypingIfAny(); chats=chats.filter(function(c){ret
   if(currentId===id) currentId=chats[0]?chats[0].id:'';
   if(!chats.length){ persist(); newChat(); return; }
   persist(); renderChatList(); renderMessages(); updateSuggest(); }
-function pushMsg(role,text){ var c=curChat(); if(!c)return; c.messages.push({role:role,text:text,at:Date.now()});
+function pushMsg(role,text,answer){ var c=curChat(); if(!c)return; var m={role:role,text:text,at:Date.now()};
+  if(role==='ai'&&answer){ var d=(answer&&answer.data)||answer; m.engine=CF.engineOf(answer); m.references=Array.isArray(d.references)?d.references.slice(0,3):[]; m.grounding=d.grounding||null; }
+  c.messages.push(m);
   if(role==='user'&&!c.title) c.title=text.slice(0,42); c.at=Date.now(); persist(); renderChatList(); }
 function renderChatList(){ var el=document.getElementById('chatList'); if(!el)return;
   if(!chats.length){ el.innerHTML='<div style="padding:16px;text-align:center;color:var(--faint);font-family:var(--mono);font-size:10.5px">No conversations yet</div>'; return; }
@@ -69,7 +71,7 @@ function renderChatList(){ var el=document.getElementById('chatList'); if(!el)re
 }
 function renderMessages(){ chat.innerHTML=''; var c=curChat();
   if(!c||!c.messages.length){ seed(); return; }
-  c.messages.forEach(function(m){ if(m.role==='user') addUser(escHtml(m.text)); else { var b=addBot(''); b.innerHTML=mdToHtml(m.text); } });
+  c.messages.forEach(function(m){ if(m.role==='user') addUser(escHtml(m.text)); else { var b=addBot(''); b.innerHTML=mdToHtml(m.text)+(m.engine?CF.engineNoteHTML(m):''); } });
   chat.scrollTop=chat.scrollHeight; }
 function updateSuggest(){ var s=document.getElementById('suggest'); if(!s)return; var c=curChat(); s.style.display=(c&&c.messages.length)?'none':'flex'; }
 
@@ -204,7 +206,7 @@ async function ask(q){
     if(!txt) txt='I couldn\'t generate a response just now. Please retry shortly.';
     stopThink();
     // the answer body goes along so the engine that produced it is shown under it
-    typeInto(b, txt, mems, body, function(){ pushMsg('ai',txt); updateModel(body); });
+    typeInto(b, txt, mems, body, function(){ pushMsg('ai',txt,body); updateModel(body); });
   }catch(e){
     stopThink();
     const offline=/no tauri|tauri-unavailable/i.test(String((e&&e.message)||e));

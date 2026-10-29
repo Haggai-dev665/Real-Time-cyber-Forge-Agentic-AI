@@ -1,0 +1,74 @@
+[
+  {
+    "slide": 1,
+    "title": "CyberForge",
+    "source": "The University of Bamenda · COLTECH · Computer Engineering",
+    "notes": "Candidate: Che Haggai Ngha Kang, UBA24PP134. Supervisor: Prof. Onabid Mathias Akong. The original thesis title-page date remains June 2026; this defence incorporates the documented 23 October 2026 implementation and Qwen release update. Explain that the current system is evidence-grounded, not a promise of universal autonomous protection."
+  },
+  {
+    "slide": 2,
+    "title": "Brief introduction",
+    "source": "Revised thesis §§1.1, 1.6, 3.2",
+    "notes": "CyberForge analyses submitted URLs and permitted browsing observations. Its architecture combines specialist analysis, model outputs, intelligence and retained context. The current desktop is Tauri 2/Rust with a Node.js backend and FastAPI inference. Observation is consent-based and platform-dependent. AI advice does not replace detector evidence or proof of enforcement."
+  },
+  {
+    "slide": 3,
+    "title": "Problem statement",
+    "source": "Revised thesis §§1.2, 4.10.2, 4.12",
+    "notes": "The original study identifies false alarms, unexplained scores and disconnected context. Current Qwen review adds a concrete reliability problem: a keyword gate passed answers containing unsupported security mechanisms. The project therefore keeps model, source and execution provenance visible. Do not suggest that all current problems were already solved by fine-tuning alone."
+  },
+  {
+    "slide": 4,
+    "title": "Research questions",
+    "source": "Thesis §1.3; validity limits in §§3.9 and 4.12",
+    "notes": "The general question is quoted in compressed form from the thesis. The four original specific questions cover decomposition/minimality, integration, aggregation and historical context. The smallest sufficient agent set remains unresolved: no controlled ablation was supplied. Memory reuse is implemented context, not evidence of online parameter learning."
+  },
+  {
+    "slide": 5,
+    "title": "Research objectives",
+    "source": "Thesis §1.4; current scope in §§4.11–4.12",
+    "notes": "The original objectives are retained. Explain each as an implemented direction rather than a universal success claim: coordinated tasks, multiple evidence views, an explicit aggregation policy and contextual intelligence. The Qwen refinement supports explanation quality; it does not retrain the URL detectors or directly establish lower false positives."
+  },
+  {
+    "slide": 6,
+    "title": "Brief literature review",
+    "source": "Thesis Chapter 2; Hu et al. (2021), arXiv:2106.09685",
+    "notes": "Sources retained from the thesis: Sommer and Paxson (2010), Outside the Closed World, IEEE S&P; Khonji et al. (2013), Phishing detection survey; Devlin et al. (2019), BERT; Wooldridge (2009), multiagent systems; Yao et al. (2023), ReAct; Strom et al. (2018), MITRE ATT&CK design. Added methodological source: Hu et al. (2021), LoRA, arXiv:2106.09685. These motivate design and do not constitute a commercial or baseline performance comparison."
+  },
+  {
+    "slide": 7,
+    "title": "Methods and materials used",
+    "source": "Revised thesis §3.2, Figure 3.1; deployment receipts, 23 October 2026",
+    "notes": "The diagram shows implemented service boundaries. Tauri 2/Rust provides the native desktop; Node.js 24/Express enforces authenticated scope; FastAPI serves inference. Qwen LoRA runs on NVIDIA L4 in separate HF Jobs, exporting accepted pinned weights. The inference Space remains cpu-basic. MongoDB, Appwrite integrations and local context have distinct storage roles. Limited CLI/MCP operations do not imply complete autonomous interfaces."
+  },
+  {
+    "slide": 8,
+    "title": "Methods and materials used",
+    "source": "Revised thesis §§3.7.5–3.7.7; train_report.json; training Job 6adaa7a3…",
+    "notes": "The initial corpus has 5,417 training, 251 validation and 487 test examples. Initial adaptation used 678 steps. V2 corrects task-balanced replay and adds reviewed references: 2,462 training, 273 validation and the retained 487 legacy test items. V2 uses LoRA rank 16, alpha 32, dropout 0.05, learning rate 0.00002, batch 2, accumulation 8, maximum length 1,024 and 100 steps on NVIDIA L4. Recorded training runtime is 412.67 seconds, excluding setup/export. Validation loss is not factual accuracy, and before/after pairs from different dataset compositions cannot be compared as a controlled improvement percentage."
+  },
+  {
+    "slide": 9,
+    "title": "Methods and materials used",
+    "source": "Revised thesis §§3.7.8–3.7.9; security_knowledge.py; release_cases.py",
+    "notes": "Current-question matching retrieves at most two references from 13 reviewed topics. GBNF constrains covered answers to full or concise reviewed passages, and a sentence checker handles unsupported or interrupted wording. Uncovered questions retain ordinary Qwen generation. The first keyword gate and later free-generation candidate were held after manual review; the 25% reference-replacement ceiling was not relaxed. Final tests include 39 original and 26 additional scenarios in two modes, totalling 130 cases, eight retrieval-negative controls and 240 legacy regression items per model. The 52 additional cases are part of 130, not extra. These are authored tests, not a blinded expert audit."
+  },
+  {
+    "slide": 10,
+    "title": "Results",
+    "source": "Revised thesis §4.10; release-constrained/494483e9…/release_report.json",
+    "notes": "The final comparison passed all eight unchanged gate checks. Both previous and V2 models with the same source constraint pass 130/130 covered factual/support checks and need zero reference replacements. This perfect bounded score is not unaided recall. The V2 regression sample has 240 items; only 87 require risk labels, with 84 correct (96.55%) compared with 83/87 for the previous adapter. Three disagreements remain. Applicable analyst answers fit 80 words and applicable memory cases contain no invented hosts. There is no statistical-significance claim. Outputs reused under exact model/seed/prompt identity are not mock data, but mixed timings are not a new latency benchmark. The historical 300-URL result remains 284/300, 94.7%, and is not this score."
+  },
+  {
+    "slide": 11,
+    "title": "Results",
+    "source": "Revised thesis §4.11; v2-promotion.json; live-client-final.log; build record",
+    "notes": "The model revision 494483e9a85362b5d0bd596f9040bbc0848c860a was loaded successfully by the Space. Backend release v53 and both chat routes were checked. The real backend ML client passed CSRF, MFA fatigue and Heartbleed tests. Observed generation times were 14.906, 14.107 and 20.298 seconds, a three-call sample only. The contextual route preserves references and reports null confidence/null risk score with unknown risk for a general question. The Windows debug desktop was compiled; 14 Python checks and 29 targeted backend/rendering tests pass, with an earlier 950-test backend run. A focused Chromium fixture tested source links and persistence. No signed-in native UI session, installer replacement or full navigation harness pass is claimed."
+  },
+  {
+    "slide": 12,
+    "title": "Conclusion",
+    "source": "Revised thesis Chapter 5; §§4.10–4.12; full references in notes",
+    "notes": "Conclude with implemented contributions and qualified evidence. CyberForge integrates specialist URL analysis, scoped workflows, separately trained Qwen LoRA, reviewed-source constraints and provenance-aware desktop chat. The present evidence supports bounded deployment behaviour. It does not establish perfect general knowledge, renewed detector accuracy, long-run uptime, complete AI CLI/MCP operation, agent minimality or packaged cross-platform protection. Next research: independent expert review, broader source coverage, uncovered-generation correction, new detector evaluation and controlled ablations. Next engineering: installer/native acceptance and fuller authorised CLI/MCP operations. References: root thesis Chapters 1–5, ml-services/llm_finetune/V2_RELEASE.md, report and source artefacts; Hu et al. (2021), https://arxiv.org/abs/2106.09685; Qwen model card https://huggingface.co/Qwen/Qwen3.5-2B; HF Jobs docs https://huggingface.co/docs/hub/en/jobs-overview. No SlidesCarnival/Pexels material is used in V4; visual palette comes from local Cyberforge-landing/cyberforge.css."
+  }
+]

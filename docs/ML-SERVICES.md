@@ -1,6 +1,6 @@
 # How CyberForge ML Services Work
 
-**Reviewed:** October 16, 2026.  
+**Reviewed:** October 23, 2026 for Qwen chat/training; detector sections retain their October 16 baseline.
 **Source baseline:** working tree at `b2a404e`, including local V1 changes.  
 **Related roadmap:** [Update Plan V2](../plan-update-v2.md).  
 **Historical experiments and live checks:** [V1 implementation log](../plan-update.md#16-implementation-log), especially 16.23, 16.29–16.34, 16.55–16.58.
@@ -17,7 +17,8 @@ The connected product uses the Hugging Face Space configured by the backend's `M
 | [hf_space_deploy/url_features.py](../ml-services/hf_space_deploy/url_features.py) | Shared feature extraction used by serving and current training |
 | [hf_space_deploy/trainer.py](../ml-services/hf_space_deploy/trainer.py) | Current four-detector training and acceptance pipeline, executed remotely in the Space |
 | [hf_space_deploy/Dockerfile](../ml-services/hf_space_deploy/Dockerfile) | Python 3.11 image; Uvicorn `app:app` on port 7860 |
-| [deploy_space.py](../ml-services/deploy_space.py) | Uploads app, features, trainer, requirements and Dockerfile; backs up deployed source |
+| [deploy_space.py](../ml-services/deploy_space.py) | Uploads app, features, trainer, reviewed knowledge library, requirements and Dockerfile; backs up deployed source |
+| [llm_finetune/](../ml-services/llm_finetune/README.md) | Separate HF Jobs pipeline for Qwen supervised LoRA training, GGUF export, evaluation and controlled promotion |
 | [train_on_space.py](../ml-services/train_on_space.py) | Operator client: starts remote training, polls status, saves a report. It does not fit models locally |
 | [backend ML configuration](../backend/src/config/ml.config.js) | Single inference destination; obsolete URL aliases do not choose another service |
 | [backend capability inventory](../backend/src/services/mlCapabilities.js) | 22 supported inference/metadata routes and 29 retired calls; owner-training routes are deliberately outside this client list |
@@ -71,7 +72,16 @@ Backend model failures now produce unavailable/unknown or partial coverage rathe
 
 ### Chat and explanation
 
-The Space's `LocalLLM` performs inference with a pretrained GGUF model through llama.cpp. It does not train or fine-tune that model. Defaults in current source:
+The October 23 Qwen V2 quality update adds reviewed local reference retrieval,
+targeted LoRA adaptation, fresh scenario evaluation and explicit reference-answer
+labels through the backend and desktop. Thirteen covered topics use constrained
+selection of reviewed passages, with primary-source links. A separate sentence
+guard substitutes a labelled reference if generation is incomplete or unsupported.
+Uncovered questions still use ordinary generation; this is not general factual
+verification or a live threat-intelligence feed. See the [V2 release record](../ml-services/llm_finetune/V2_RELEASE.md)
+for sources, learning phases, validation criteria and current deployment status.
+
+The Space's `LocalLLM` performs inference with a pretrained GGUF model through llama.cpp. It does not train or fine-tune that model. As of October 22, 2026, a separate Hugging Face Jobs workflow prepares an SFT dataset and runs Qwen LoRA training outside the inference Space. See the [training workflow](../ml-services/llm_finetune/README.md) and [run status](../ml-services/llm_finetune/TRAINING_STATUS.md). Candidate uploads do not automatically change the serving model. Defaults in current source:
 
 | Setting | Default | Practical meaning |
 | --- | --- | --- |
@@ -85,7 +95,10 @@ The Space's `LocalLLM` performs inference with a pretrained GGUF model through l
 
 `TransformerModelLoader.security_chat()` asks for a short advisory answer. Failure may produce a labelled rule-based/template response elsewhere in the stack. The backend can also use configured hosted engines, and the desktop has a separate user-key DeepSeek route. [answerEngine.js](../backend/src/services/answerEngine.js) describes the actual answer source; provider identity must survive into CLI/MCP results.
 
-The current text interface does not establish reliable structured tool calling, token streaming to clients, grounded citations, or autonomous planning. V2 adds and evaluates those contracts explicitly.
+The current text interface supplies primary-reference links for the bounded
+reviewed library. It does not establish reliable structured tool calling, token
+streaming to clients, citations for arbitrary generated claims, or autonomous
+planning. Those contracts require separate implementation and evaluation.
 
 ## 3. Models, rules, and types of learning
 
@@ -98,16 +111,16 @@ The current text interface does not establish reliable structured tool calling, 
 | `url_phishing_bert` | Inference using an externally pretrained text classifier, `elftsdmr/malware-url-detect` | Classifies URL text after protocol removal/truncation | CyberForge's active trainer does not fine-tune it; significant historical false positives |
 | `dga_detector` | Handwritten entropy/character-pattern heuristic | Scores DNS labels for generated-looking structure | No fitted DGA model in this deployed path; heuristic “confidence” is not calibrated probability |
 | IOC processing | Parsing, validation and rules | Extracts/describes domains, IP addresses and hashes | An IP/hash description is not a threat-intelligence reputation lookup |
-| Qwen chat | Inference with an externally pretrained language model | Generates explanations from supplied context | No local weight updates; prompt text cannot enforce permissions |
+| Qwen chat | Inference with a LoRA-adapted, externally pretrained language model | Explains supplied evidence; selects reviewed passages for 13 covered topics | Training runs separately in HF Jobs; uncovered generation can hallucinate; prompt text cannot enforce permissions |
 | Popularity feature | Deterministic lookup in a saved Tranco list | Supplies a model input based on domain rank | A feature, not an unconditional trusted-domain allow-list |
 
 ### Learning terms that must not be confused
 
 - **Supervised learning:** the three labelled detector fits above. The labels are data sources' judgments, not guaranteed ground truth.
 - **Unsupervised/anomaly learning:** the benign-only IsolationForest fit. Labels are used afterward to measure usefulness, not to train malicious classes.
-- **Pretraining/transfer learning:** BERT and Qwen arrive with externally trained weights. Running them is inference; CyberForge does not currently execute their pretraining or a production fine-tuning pipeline.
+- **Pretraining/transfer learning:** BERT and Qwen arrive with externally trained weights. CyberForge does not execute their pretraining. Qwen now has a separate supervised LoRA adaptation pipeline in HF Jobs; running the resulting GGUF in the Space is inference.
 - **In-context learning:** instructions/examples in a prompt can change the answer for that request. They do not save changes to model weights.
-- **Retrieval-augmented generation (planned):** retrieve authorized evidence, supply it to the model, verify citations. Adding a memory entry or embedding is not detector training.
+- **Retrieval-augmented generation:** current-question matching selects up to two reviewed references from a 13-topic library. Covered output is constrained to reviewed passages and carries source links. Broader authorized-evidence retrieval remains separate work. Adding a memory entry or embedding is not detector training.
 - **Active learning (planned):** select uncertain/disputed cases for human review before a later offline training dataset is built. A false-positive click is not automatically a trustworthy global label.
 - **Online/continual learning:** no verified automatic update of serving model weights from current product activity. V2 starts with reviewed batch retraining and controlled promotion.
 - **Reinforcement learning:** no active production reward/policy-training loop was found in the canonical serving/training path. Agent scheduling, heuristic decisions and tool execution do not constitute RL. Live security actions must not become exploration experiments.

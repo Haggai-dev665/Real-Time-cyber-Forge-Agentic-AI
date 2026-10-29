@@ -329,8 +329,8 @@
     var eyeOff='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 5.2A9.5 9.5 0 0 1 12 5c6.5 0 10 7 10 7a16 16 0 0 1-3.2 3.9M6.3 6.3A16 16 0 0 0 2 12s3.5 7 10 7a9.5 9.5 0 0 0 3-.5"/></svg>';
     b.innerHTML=
       '<div class="cf-sectn">ASSISTANT</div><div class="cf-card">'+
-        srow('Your token (optional)','Sends questions straight to DeepSeek on Hugging Face','<span class="cf-badge d" id="cfAiStat">checking…</span>')+
-        srow('Answers come from','The Analysis Agents\' open-source model, or DeepSeek directly if you save your own token below. Each answer names its agent.','<span class="rv">Analysis Agents by default</span>')+
+        srow('Your token (optional)','Used only when a direct Hugging Face provider is explicitly selected','<span class="cf-badge d" id="cfAiStat">checking…</span>')+
+        srow('Answers come from','The Analysis Agents\' grounded Qwen model by default. Saving a token does not switch providers. Each answer identifies its source and available references.','<span class="rv">Analysis Agents by default</span>')+
         '<div class="cf-srow col"><div class="l"><div class="lt">Access token</div><div class="ls">Paste a Hugging Face token (hf_…). Kept in your system credential store — sent only to Hugging Face.</div></div>'+
           '<div class="cf-inrow"><input class="cf-input" id="cfHfTok" type="password" placeholder="hf_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false"/>'+
             '<button class="cf-eye" id="cfHfEye" title="Show / hide token" type="button">'+eyeOn+'</button>'+
@@ -344,7 +344,7 @@
     function loadHf(){
       inv('hf_token_get').then(function(r){
         var ok=r&&r.configured; var s=b.querySelector('#cfAiStat');
-        if(s){ s.className='cf-badge '+(ok?'g':'r'); s.textContent=ok?'Connected':'Not connected'; }
+        if(s){ s.className='cf-badge '+(ok?'g':'r'); s.textContent=ok?'Token saved':'No optional token'; }
         var hint=b.querySelector('#cfHfHint');
         // The saved token is never sent to this page: only its masked form and source.
         if(inp){ inp.value=''; inp.placeholder=ok?'saved — paste a new token to replace it':'hf_xxxxxxxxxxxxxxxxxxxx'; }
@@ -355,7 +355,7 @@
         }else if(hint){ hint.style.display='none'; }
       }).catch(function(){
         // older build without hf_token_get → fall back to the boolean status
-        inv('hf_token_status').then(function(r){ var ok=r&&r.configured; var s=b.querySelector('#cfAiStat'); if(s){ s.className='cf-badge '+(ok?'g':'r'); s.textContent=ok?'Connected':'Not connected'; } }).catch(function(){ var s=b.querySelector('#cfAiStat'); if(s){ s.className='cf-badge d'; s.textContent='Unavailable'; } });
+        inv('hf_token_status').then(function(r){ var ok=r&&r.configured; var s=b.querySelector('#cfAiStat'); if(s){ s.className='cf-badge '+(ok?'g':'r'); s.textContent=ok?'Token saved':'No optional token'; } }).catch(function(){ var s=b.querySelector('#cfAiStat'); if(s){ s.className='cf-badge d'; s.textContent='Unavailable'; } });
       });
     }
     loadHf();

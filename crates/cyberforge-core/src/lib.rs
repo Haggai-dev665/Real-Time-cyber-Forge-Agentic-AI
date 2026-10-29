@@ -35,3 +35,4 @@ pub mod redact;
 pub mod session;
 pub mod status;
 pub mod text;
+pub mod local_ml;

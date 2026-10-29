@@ -35,7 +35,7 @@
     "srow('Allowed sites','Unblocked by you; still scanned','<span class=\"rv\" id=\"cfSecA\">\u2014</span>')",
     "srow('Analysis Agents','Phishing & IOC detection models','<span class=\"cf-badge d\" id=\"cfCMl\">checking\u2026</span>')",
     "srow('Analysis Agents','What the agents can do now, and a versioned check of one address',code(['cyberforge models status','cyberforge scan url https://example.com']))",
-    "srow('Answers come from','The Analysis Agents\\' open-source model, or DeepSeek directly if you save your own token below. Each answer names its agent.','<span class=\"rv\">Analysis Agents by default</span>')",
+    "srow('Answers come from','The Analysis Agents\\' grounded Qwen model by default. Saving a token does not switch providers. Each answer identifies its source and available references.','<span class=\"rv\">Analysis Agents by default</span>')",
     "srow('Blocked sites','Resolved to localhost via the hosts file','<span class=\"rv\" id=\"cfSecB\">\u2014</span>')",
     "srow('Check the setup','Server, credential store, sign-in and which program owns this computer\\'s state',code(['cyberforge status']))",
     "srow('Clear browser history copy','The history this app read from your browsers','<button class=\"cf-btn dng\" id=\"cfPrivHist\">Clear</button>')",
@@ -77,7 +77,7 @@
     "srow('Storage','','<span class=\"rv\" id=\"cfSySto\">\u2014</span>')",
     "srow('This computer\\'s state','Which CyberForge program owns it',code(['cyberforge broker status']))",
     "srow('Version','As the installed command reports it','<span class=\"rv\" id=\"cfCliVersion\">\u2014</span>')",
-    "srow('Your token (optional)','Sends questions straight to DeepSeek on Hugging Face','<span class=\"cf-badge d\" id=\"cfAiStat\">checking\u2026</span>')",
+    "srow('Your token (optional)','Used only when a direct Hugging Face provider is explicitly selected','<span class=\"cf-badge d\" id=\"cfAiStat\">checking\u2026</span>')",
     "sun"
   ],
   "scripts/cf-live.js": [
@@ -104,12 +104,10 @@
     "cy",
     "pts",
     "r",
-    "rows.length",
     "sw",
     "t.icon",
     "t.name",
-    "ts",
-    "txt"
+    "ts"
   ],
   "scripts/installer.js": [
     "cfMarkSVG()",
@@ -242,10 +240,6 @@
     "st.color",
     "timeAgo(new Date(a.ts).toISOString())",
     "timeAgo(p.lastTriggered)"
-  ],
-  "scripts/pages/signal-pipeline.js": [
-    "stageK",
-    "{ingest:'AGENT',analyze:'SCAN',reason:'FINDING / ALERT'}[stageK]"
   ],
   "scripts/pages/threat-alert.js": [
     "esc(t.message).replace(esc(t.host), function(){ return '<b>'+esc(t.host)+'</b>'; })"

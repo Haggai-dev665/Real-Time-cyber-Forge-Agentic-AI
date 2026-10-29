@@ -1,5 +1,5 @@
 //! Agent actions for the Agent Core screen + floating agent panel:
-//!   • `scan_url`        — real URL scan via the backend (scraper → ML → Gemini)
+//!   • `scan_url`        — warm native URL models; cloud fallback if unavailable
 //!   • `get_active_urls` — the active browser tab URL(s) so scans target what the
 //!                         user is actually browsing (macOS AppleScript)
 //!   • `get_last_scan`   — the most recent scan result (shared state → keeps the
@@ -1091,12 +1091,35 @@ pub async fn scan_url(
     state: State<'_, SharedState>,
     url: String,
     browser: Option<String>,
+    deep: Option<bool>,
 ) -> Result<Value, String> {
     let url = crate::input::text(&url, "url", 2048)?;
     let browser = crate::input::optional_text(browser.as_deref(), "browser", 64)?;
-    crate::privacy::require(crate::privacy::Feature::CloudScanning)?;
     // sign-in codes, tokens and credentials are removed before the address leaves this computer
     let url = crate::system::redact_url(&url);
+
+    let parsed=reqwest::Url::parse(&url).map_err(|_|"Enter a valid http:// or https:// URL".to_string())?;
+    if !["http","https"].contains(&parsed.scheme())||parsed.host_str().is_none(){return Err("Enter a valid http:// or https:// URL".into());}
+    crate::event_journal::publish(&app,state.inner(),"agent:activity",json!({"type":if deep.unwrap_or(false){"Cloud deep scan started"}else{"URL scan started"},"url": url,"source":"desktop"})).await;
+    // No backend request, page fetch, DNS lookup or LLM on the normal scan path.
+    // CloudScanning only gates the fallback that actually sends the URL away.
+    if !deep.unwrap_or(false) {
+    if let Ok(mut result)=crate::local_ml::scan(&url).await {
+        let elapsed=result.pointer("/data/localInferenceMs").cloned().unwrap_or(Value::Null);
+        let verdict=result.pointer("/data/verdict").cloned().unwrap_or(Value::Null);
+        let risk=result.pointer("/data/riskScore").and_then(Value::as_i64);
+        let related=crate::memory::recall(&url,4);
+        result["data"]["related"]=json!(related);
+        let memory_text=format!("On-device URL features: {} — risk {}. Page content and live intelligence were not observed.",url,risk.unwrap_or(0));
+        crate::memory::remember(&memory_text,"episodic",Some(url.clone()),Some("url-feature-assessment".into()),risk);
+        {let mut s=state.lock().await;s.last_scan=Some(result.clone());}
+        crate::event_journal::publish(&app,state.inner(),"scan:update",json!({"url":url,"verdict":verdict,"riskScore":risk,"durationMs":elapsed,"source":"local-ml","message":"On-device URL features; cloud deep scan is separate"})).await;
+        return Ok(result);
+    }
+    }
+    if let Err(e)=crate::privacy::require(crate::privacy::Feature::CloudScanning){
+        crate::event_journal::publish(&app,state.inner(),"scan:error",json!({"url":url,"message":"Cloud scan not permitted; use the local URL check or enable cloud scanning"})).await;return Err(e);
+    }
 
     let (base, headers, user_id) = {
         let s = state.lock().await;
@@ -1253,6 +1276,7 @@ pub async fn scan_url(
         s.last_scan = Some(body.clone());
     }
 
+    crate::event_journal::publish(&app,state.inner(),"scan:update",json!({"url":url,"verdict":verdict,"riskScore":final_risk,"source":"cloud-fallback","message":"Backend scan with local reinforcement"})).await;
     Ok(body)
 }
 

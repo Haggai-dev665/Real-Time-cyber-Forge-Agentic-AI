@@ -15,6 +15,13 @@ function nativeFixture() {
   window.__calls = [];
   window.__fixtureIncidents = [];
   window.__fail = false;
+  window.__localFixture = false;
+  window.__fixtureEvents = [{id:'retained-scan',type:'scan:update',source:'desktop',ts:Date.now()-5000,data:{url:'https://earlier.example.invalid/',verdict:'benign',source:'local-ml'}}];
+  const nativeListeners = new Map();
+  window.__emitNative = (name,payload) => {
+    if(name==='cf-stream'&&!window.__fixtureEvents.some(e=>e.id===payload.id))window.__fixtureEvents.push(payload);
+    (nativeListeners.get(name)||[]).forEach(fn=>fn({payload}));
+  };
   const invoke = async (cmd, args = {}) => {
     window.__calls.push({ cmd, args });
     if (window.__fail && !['auth_is_authenticated', 'auth_get_user', 'privacy_get'].includes(cmd)) throw new Error('Fixture: unavailable');
@@ -23,6 +30,8 @@ function nativeFixture() {
     if (cmd === 'get_backend_url') return 'http://127.0.0.1:1';
     if(cmd==='console_snapshot')return {version:'1.0.0-fixture',summary:{status:200,durationMs:12,fetchedAt:Date.now(),body:{success:true,data:{metrics:Object.fromEntries(['devices','onlineDevices','activeAgents','pendingApprovals','activeRuns','openFindings','urgentFindings'].map(k=>[k,{value:0,state:'ready',exact:true,scope:'fixture',observedAt:new Date().toISOString()}]))}}},ml:{status:200,durationMs:18,fetchedAt:Date.now(),body:{success:true,data:{available:true,capabilities:[{id:'detector-fixture',kind:'trained_model',readiness:'not_loaded',reason:'Fixture model is not loaded',limits:{}}]}}}};
     if(cmd==='stream_status')return {connected:false,reason:'Fixture stream disconnected'};
+    if(cmd==='stream_history')return {events:window.__fixtureEvents,limit:500,retentionMs:3600000};
+    if(cmd==='local_model_status'||cmd==='prepare_local_models')return {success:true,ready:true,state:'ready',source:'bundled-verified',modelCount:4,totalBytes:2824495,downloadedBytes:0,scope:'URL features only; fixture runtime'};
 
     if (cmd === 'privacy_get') return { decided: true, features: ['history_access', 'active_tab', 'cloud_scanning', 'llm_processing', 'sync'].map(id => ({ id, label: id, enabled: false })) };
     if (cmd === 'agent_status') return { success: true, data: { backendOk: false, mlOk: false, agentRunning: false } };
@@ -39,7 +48,7 @@ function nativeFixture() {
     if (cmd === 'memory_sync') return { success: false, message: 'Sync disabled in fixture' };
     if (cmd === 'memory_save') return { success: true };
     if (cmd === 'ml_status') return { health: { status: 'degraded' }, capabilities: { success: true, data: { available: true, serviceVersion: 'fixture', source: 'fixture', capabilities: [{ id: 'detector-fixture', kind: 'trained_model', readiness: 'not_loaded', reason: 'Fixture model is not loaded', limits: {} }] } } };
-    if (cmd === 'scan_url') return { success: true, data: { verdict: 'unknown', riskScore: 0, coverage: { page: 'not observed' } } };
+    if (cmd === 'scan_url') return window.__localFixture?{success:true,data:{verdict:'benign',riskScore:12,source:'local-ml',localInferenceMs:0.8,summary:'Fixture: URL features only; page not observed',predictions:[{model:'phishing_detection',threat_score:0.12}],coverage:{localModels:true,backendModels:false,page:'not observed'}}}:{ success: true, data: { verdict: 'unknown', riskScore: 0, coverage: { page: 'not observed' } } };
     if (cmd === 'ml_url_enrich') throw new Error('Fixture: enrichment unavailable');
     if (cmd === 'ml_ioc_scan') return { success: true, data: { parsed: true } };
     if (cmd === 'otx_fetch') return { success: true, results: [{ id: 'pulse-fixture', name: 'Public fixture pulse', tags: [], indicators: [], targeted_countries: [], attack_ids: [], malware_families: [] }] };
@@ -50,7 +59,7 @@ function nativeFixture() {
     };
     return { success: true, data: {}, policies: [], log: [], count: 0 };
   };
-  window.__TAURI__ = { core: { invoke }, event: { listen: async () => () => {} } };
+  window.__TAURI__ = { core: { invoke }, event: { listen: async (name,fn) => {if(!nativeListeners.has(name))nativeListeners.set(name,[]);nativeListeners.get(name).push(fn);return ()=>nativeListeners.set(name,nativeListeners.get(name).filter(f=>f!==fn));} } };
   window.fetch = async () => { throw new Error('Network disabled in fixture'); };
   window.EventSource = class { addEventListener() {} close() {} };
   window.WebSocket = class { addEventListener() {} close() {} };
@@ -108,6 +117,60 @@ function nativeFixture() {
       await pause(250);
       assert.deepEqual(errors, [], file + ': runtime exceptions');
     };
+    if(process.env.CYBERFORGE_TEST_EVENTS_ONLY==='1'){
+      await navigate('signal-pipeline');await pause(300);
+      assert.match(await evaluate("document.getElementById('evstream').textContent"),/earlier\.example\.invalid/,'Opening the page restores earlier native scans');
+      assert.equal(await evaluate("document.getElementById('n-analyze').textContent"),'1');
+      await evaluate("__emitNative('cf-stream',__fixtureEvents[0])");
+      assert.equal(await evaluate("document.getElementById('n-analyze').textContent"),'1','History/live race is deduplicated');
+      await evaluate("document.getElementById('pauseBtn').click();__emitNative('cf-stream',{id:'paused-scan',type:'scan:update',ts:Date.now(),source:'desktop',data:{url:'https://paused.example.invalid/',verdict:'suspicious'}})");
+      assert.doesNotMatch(await evaluate("document.getElementById('evstream').textContent"),/paused\.example/);
+      await evaluate("document.getElementById('pauseBtn').click()");
+      assert.match(await evaluate("document.getElementById('evstream').textContent"),/paused\.example/,'Resume renders the backlog');
+      await evaluate("__emitNative('cf-stream',{id:'runtime-model',type:'model:status',ts:Date.now(),source:'desktop',data:{status:'ready',message:'<img src=x onerror=alert(1)>'}})");
+      assert.equal(await evaluate("document.querySelectorAll('#evstream img').length"),0,'Native payload text stays inert');
+      assert.equal(await evaluate("document.getElementById('n-ingest').textContent"),'1','Model lifecycle activity is visible');
+      await evaluate("document.getElementById('eventFilter').value='paused';document.getElementById('eventFilter').dispatchEvent(new Event('input'))");
+      assert.equal(await evaluate("document.querySelectorAll('#evstream .evr').length"),1);
+      await evaluate("document.getElementById('eventFilter').value='';document.getElementById('reloadEvents').click()");await pause(100);
+      assert.equal(await evaluate("document.getElementById('n-analyze').textContent"),'2');
+      for(const [width,height] of [[1440,900],[1024,768],[640,720]]){
+        await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await pause(100);
+        assert.equal(await evaluate("document.querySelector('main').scrollWidth>document.querySelector('main').clientWidth+2"),false,'Event page has no horizontal overflow at '+width);
+      }
+      await navigate('analyzer');await evaluate('__localFixture=true;analyzeUrl("https://example.invalid/","example.invalid")');
+      assert.equal(await evaluate("__calls.filter(c=>c.cmd==='ml_url_enrich').length"),0,'Quick scan must not wait for cloud enrichment');
+      assert.equal(await evaluate("__calls.filter(c=>c.cmd==='resolve_ip').length"),0,'Quick scan must not wait for DNS');
+      assert.match(await evaluate("document.getElementById('resBody').textContent"),/local-ml/);
+      assert.match(await evaluate("document.getElementById('resBody').textContent"),/Run cloud deep scan/);
+      await evaluate("document.querySelector('#resBody button').click()");await pause(100);
+      assert.equal(await evaluate("__calls.filter(c=>c.cmd==='ml_url_enrich').length"),1,'Cloud enrichment is an explicit action');
+      assert.equal(await evaluate("__calls.filter(c=>c.cmd==='scan_url'&&c.args.deep===true).length"),1,'Deep scan explicitly requests the page/orchestrator path');
+      await navigate('model-inference');await pause(100);
+      assert.match(await evaluate("document.getElementById('localModelState').textContent"),/4 native detectors/);
+      assert.deepEqual(errors,[]);console.log('PASS native event restoration, deduplication, pause/backlog, safe payloads, filtering, responsive layout, quick local scan and explicit cloud enrichment');
+      await send('Browser.close');return;
+    }
+    if (process.env.CYBERFORGE_TEST_ASSISTANT_ONLY === '1') {
+      await navigate('ai-assistance');
+      const state = await evaluate(`(()=>{
+        const body={model_generated:false,engine:{id:'ml-service-reference',kind:'fixed-text',label:'Reviewed security reference'},references:[{title:'OWASP CSRF prevention',url:'https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html'}]};
+        newChat();pushMsg('ai','Reviewed reference answer',body);renderMessages();
+        const bubble=document.getElementById('chat').querySelector('.bubble');
+        return {short:CF.engineShort(body),note:bubble.textContent,links:[...bubble.querySelectorAll('a')].map(a=>({href:a.href,rel:a.rel})),stored:loadChats()[0].messages[0].references.length,overflow:document.querySelector('main').scrollWidth>document.querySelector('main').clientWidth+2};
+      })()`);
+      assert.equal(state.short, 'reviewed reference');
+      assert.match(state.note, /Reviewed security reference/);
+      assert.match(state.note, /OWASP CSRF prevention/);
+      assert.equal(state.links.length, 1);
+      assert.equal(state.stored, 1);
+      assert.match(state.links[0].rel, /noopener/);
+      assert.equal(state.overflow, false);
+      assert.deepEqual(errors, []);
+      console.log('PASS assistant reference rendering, source labels, links and layout');
+      await send('Browser.close');
+      return;
+    }
     const files = ['threat-overview','devices','agents','scheduled','ai-assistance','memory','analyzer','sandbox','alerts-evidence','investigations','incident-timeline','security-functions','reports','browser-intelligence','web-history','threat-globe','agent-core','signal-pipeline','model-inference'];
     for (const file of (process.env.CYBERFORGE_TEST_PAGES?process.env.CYBERFORGE_TEST_PAGES.split(','):files)) {
       await navigate(file);

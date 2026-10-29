@@ -39,6 +39,7 @@
   let connected = false;
   let reason = 'not started';
   let unlisten = [];
+  let ready = Promise.resolve();
 
   function setStatus(isUp, why) {
     const text = why || (isUp ? 'connected' : 'not connected');
@@ -67,7 +68,7 @@
   }
 
   function keep(promise) {
-    Promise.resolve(promise).then((off) => {
+    return Promise.resolve(promise).then((off) => {
       if (typeof off !== 'function') return;
       if (started) unlisten.push(off);
       else off(); // stopped before the listener was registered
@@ -76,24 +77,25 @@
 
   const realtime = {
     start() {
-      if (started) return;
+      if (started) return ready;
       const T = runtime();
       if (!T || !T.event || typeof T.event.listen !== 'function') {
         setStatus(false, 'no live feed outside the desktop app');
         return;
       }
       started = true;
-      keep(T.event.listen('cf-stream', (e) => dispatch(e && e.payload)));
+      ready = Promise.all([keep(T.event.listen('cf-stream', (e) => dispatch(e && e.payload))),
       keep(T.event.listen('cf-stream-status', (e) => {
         const s = (e && e.payload) || {};
         setStatus(!!s.connected, s.reason);
-      }));
+      }))]);
       // The feed may have connected before this page loaded.
       if (T.core && typeof T.core.invoke === 'function') {
         T.core.invoke('stream_status')
           .then((s) => setStatus(!!(s && s.connected), s && s.reason))
           .catch(() => setStatus(false, 'the live feed is not available in this build'));
       }
+      return ready;
     },
     /** Stop listening on this page. The native connection stays open for the other pages. */
     stop() {
@@ -109,6 +111,7 @@
     },
     get connected() { return connected; },
     get reason() { return reason; },
+    get ready() { return ready; },
   };
 
   // expose

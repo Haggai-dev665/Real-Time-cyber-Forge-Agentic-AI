@@ -5,3 +5,6 @@ template/
 _template-static.pptx
 photos/*
 !photos/credits.json
+.diagram-skill-install/
+_diagnostic-v4-*.docx
+_thesis-v4-reviewed.docx

@@ -78,9 +78,13 @@ function renderReport(o){
 }
 
 /* ---------- analysis routes (best-effort; never hard-fails) ---------- */
-async function analyzeUrl(url, label){
-  var scan=await be(cfInvoke('scan_url',{url:url}));
-  var enrich=await be(cfInvoke('ml_url_enrich',{url:url}));
+var lastLocalAssessment=null;
+async function analyzeUrl(url, label, deep){
+  var replies=await Promise.all([be(cfInvoke('scan_url',{url:url,deep:!!deep})),deep?be(cfInvoke('ml_url_enrich',{url:url})):Promise.resolve(null)]);
+  var scan=replies[0],enrich=replies[1];
+  const pageScanFailed=deep&&(!scan||scan.success===false);
+  if(pageScanFailed&&lastLocalAssessment&&lastLocalAssessment.url===url)scan=lastLocalAssessment.result;
+  if(!deep&&scan&&scan.data&&scan.data.source==='local-ml')lastLocalAssessment={url:url,result:scan};
   var d=(scan&&scan.data)||{};
   var risk=Number.isFinite(d.riskScore)?Math.round(d.riskScore):null, cat=d.category||'unknown';
   var signals=Array.isArray(d.signals)?d.signals:[];
@@ -94,6 +98,7 @@ async function analyzeUrl(url, label){
   var cov=d.coverage||{};
 
   var engines=[{name:'CyberForge Orchestrator',icon:ICO.orch,score:unknown?null:risk,status:unknown?'na':statOf(risk),note:unknown?'nothing could be checked':cat}];
+  (d.predictions||[]).forEach(function(p){var score=Math.round(p.threat_score*100);engines.push({name:p.model,icon:ICO.ens,score:score,status:statOf(score),note:p.model==='anomaly_detection'?'on-device anomaly signal; not a probability':'on-device trained URL classifier'});});
   if(backend!=null) engines.push({name:'Server reputation',icon:ICO.rep,score:backend,status:statOf(backend),note:'cloud threat-intel'});
   if(bert!=null) engines.push({name:'BERT URL classifier',icon:ICO.bert,score:Math.round(bert*100),status:statOf(Math.round(bert*100)),note:'transformer model'});
   if(dga!=null) engines.push({name:'DGA domain detector',icon:ICO.dga,score:Math.round(dga*100),status:statOf(Math.round(dga*100)),note:'entropy + pattern'});
@@ -106,11 +111,11 @@ async function analyzeUrl(url, label){
   if(phishWhy) signals.push('Possible phishing technique, not confirmed: '+phishWhy[0]+' in the findings.');
   if(evadeWhy) signals.push('Possible evasion technique, not confirmed: '+evadeWhy[0]+' in the signals.');
   var host=label; try{ host=new URL(url).hostname; }catch(e){}
-  var ipr=await be(cfInvoke('resolve_ip',{host:host}));
+  var ipr=deep?await be(cfInvoke('resolve_ip',{host:host})):null;
   var note=unknown?'Neither the Analysis Agents nor the page itself could be checked, so there is no verdict for this address.'
-    :(enrich?null:'Cloud Agents enrichment was unavailable — verdict from the orchestrator + local analysis.');
+    :(deep&&(!enrich||pageScanFailed)?'Cloud deep scan did not complete or was not permitted. Showing available model evidence; check cloud-scanning settings and coverage.':d.source==='local-ml'?d.summary:(enrich?null:'Cloud enrichment was not used or was unavailable. Coverage is listed below.'));
   renderReport({label:label,risk:unknown?null:overall,status:unknown?'na':null,verdict:unknown?'Not enough evidence':verdictOf(overall),engines:engines,signals:signals,note:note,intel:[
-    ['Type','URL'],['Host',host],
+    ['Type','URL'],['Host',host],['Inference',d.source||'backend'],['Local inference',Number.isFinite(d.localInferenceMs)?d.localInferenceMs.toFixed(2)+' ms':'not used'],
     ['Page',cov.page||'—', cov.page==='not observed'?'bad':''],
     ['Reputation',d.conflictingEvidence?'well-known site, but flagged':(d.reputation==='well_known'?'well-known site':d.reputation==='user_content'?'user-content host':'no reputation'), d.conflictingEvidence?'bad':''],
     ['Primary IP',(ipr&&ipr.success&&ipr.ip)||'—'],
@@ -122,6 +127,12 @@ async function analyzeUrl(url, label){
     ['Coverage',Object.keys(cov).map(function(k){return k+': '+cov[k];}).join('; ')||'not supplied'],
     ['Agents flagged',engines.filter(function(e){return e.status==='mal'||e.status==='sus';}).length+' / '+engines.length]
   ]});
+  if(!deep){
+    var button=document.createElement('button');button.className='btn-refresh';button.type='button';button.textContent='Run cloud deep scan';
+    button.title='Send this URL to the backend for BERT and live enrichment. Requires cloud scanning permission.';
+    button.addEventListener('click',async function(){button.disabled=true;button.textContent='Running cloud deep scan…';try{await analyzeUrl(url,label,true);}finally{button.disabled=false;}});
+    document.getElementById('resBody').prepend(button);
+  }
 }
 async function analyzeIocScan(args, label, type){
   var sc=await be(cfInvoke('ml_ioc_scan',args));

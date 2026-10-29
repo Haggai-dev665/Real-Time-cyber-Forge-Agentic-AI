@@ -27,7 +27,7 @@
   radial-gradient(700px 300px at 50% 0%,rgba(245,166,35,.06),transparent 60%),
   linear-gradient(rgba(120,150,190,.04) 1px,transparent 1px);background-size:100% 100%,28px 28px}
 
-.cols3{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;height:calc(100% - 280px);min-height:0}
+.cols3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:14px;min-height:300px}
 .stage-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start}
 .sc{padding:14px 15px}
 .sc .sch{display:flex;align-items:center;gap:9px;margin-bottom:12px}
@@ -45,7 +45,11 @@
 .sc .util i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--amber),var(--amber-2));transition:width 1s ease}
 
 .evlog{display:flex;flex-direction:column;min-height:0}
-.evstream{overflow-y:auto;font-family:var(--mono);font-size:11px}
+.evstream{overflow-y:auto;max-height:460px;font-family:var(--mono);font-size:11px}
+.event-controls{display:flex;gap:10px;padding:10px;flex-wrap:wrap}
+.event-controls input{min-width:140px;flex:1;background:var(--tile);color:var(--text);border:1px solid var(--border-2);border-radius:7px;padding:8px}
+@media(max-width:1150px){.cols3{grid-template-columns:minmax(0,1fr)}.kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.evr,.stage.on .node::after{animation:none}}
 .evr{display:flex;align-items:center;gap:10px;padding:8px 13px;border-bottom:1px solid var(--border);animation:evin .4s ease}
 @keyframes evin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 .evr .et{color:var(--faint);font-size:9.5px;flex:none;width:54px}
@@ -90,20 +94,20 @@
 
         <!-- KPIs -->
         <div class="kpi-row">
-          <div class="card kpi"><div class="kl">Event Rate</div><div class="kv accent-amber" id="kAgent events" style="color:var(--amber-2)">—</div><div class="kd">events per second, last 10 s</div></div>
+          <div class="card kpi"><div class="kl">Event Rate</div><div class="kv accent-amber" id="kIngest" style="color:var(--amber-2)">—</div><div class="kd">events per second, last 10 s</div></div>
           <div class="card kpi"><div class="kl">Server round trip</div><div class="kv" style="color:var(--cyan)" id="kLat">—</div><div class="kd">latest status check</div></div>
           <div class="card kpi"><div class="kl">Server</div><div class="kv" style="color:var(--green)" id="kBack">—</div><div class="kd">reachable from this computer</div></div>
           <div class="card kpi"><div class="kl">Threats</div><div class="kv" id="kEnrich">—</div><div class="kd">on your account</div></div>
         </div>
-        <div class="pipe-note">Each event below is one the server sent to this app (agent activity, a scan result, a threat or an alert). Counts start when this page opens.</div>
+        <div class="pipe-note">Actual desktop and backend activity, including scans, model setup and connection changes. Up to 500 events from the last hour survive page navigation in memory; account events are isolated by sign-in.</div>
 
         <!-- HERO PIPELINE -->
         <div class="card pipe-hero">
           <div class="hero-bg"></div>
-          <p class="cf-context-note">These counters are independent event types received in this window. They do not prove processing stages or end-to-end coverage.</p><div class="pipe-row" id="pipeRow">
+          <p class="cf-context-note">Counts group retained activity by type; they do not measure complete workflow coverage.</p><div class="pipe-row" id="pipeRow">
             <div class="stage on" data-stage="ingest">
               <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
-              <div class="sname">Agent events</div><div class="scount">0</div><div class="smeta">agent activity</div>
+              <div class="sname">Agent &amp; runtime</div><div class="scount">0</div><div class="smeta">agent, model and service activity</div>
             </div>
             <div class="stage on" data-stage="analyze">
               <div class="node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
@@ -125,6 +129,7 @@
           </div>
           <div class="card evlog">
             <div class="panel-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Live Event Flow<span class="right" id="flowCount">0 events</span></div>
+            <div class="event-controls"><input id="eventFilter" type="search" aria-label="Filter events" placeholder="Filter activity, URL or source…"/><button class="btn-refresh" id="reloadEvents" type="button">Reload history</button></div>
             <div class="evstream" id="evstream"></div>
           </div>
         </div>

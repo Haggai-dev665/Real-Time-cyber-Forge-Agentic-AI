@@ -1,0 +1,67 @@
+CYBERFORGE - THESIS DEFENCE V5
+
+Open: CyberForge - Thesis Defence v5.pptx
+Use Slide Show (F5) in Microsoft PowerPoint for the original native animations.
+The companion PDF and PNG overview are static previews; they do not animate.
+
+V5 is derived directly from "CyberForge - Thesis Defence v3.pptx".
+It retains the original embedded Oswald / Titillium Web fonts, font sizes,
+charcoal and lime colours, photos, shape groups, rich entrance sequences,
+animated diagrams, moving literature timeline, reference roll and Morph.
+Animation trees and run-style properties are checked against the actual V3
+package, and all six embedded font files are unchanged. V3 is preserved.
+
+15 SLIDES, FOLLOWING THE DEFENCE GUIDE
+01  Title
+02  Brief introduction
+03  Problem statement
+04  Research questions
+05  Research objectives
+06  Brief literature review (animated timeline, including LoRA)
+07  Methods and materials - system architecture
+08  Methods and materials - specialist agent pipeline
+09  Methods and materials - current desktop and software/hardware
+10  Methods and materials - Qwen fine-tuning and five training/release phases
+11  Methods and materials - evaluation and acceptance design
+12  Results - training outcomes and bounded release comparison
+13  Results - integration checks and desktop acceptance scope
+14  Conclusion
+15  Questions, animated references and credits
+
+FINE-TUNING CONTENT
+The completed NVIDIA L4 answer-token LoRA update is reported, including the
+2,462 / 273 V2 train-validation split, retained 487 legacy test items, rank16,
+learning rate0.00002, effective batch16 and100 training steps. Training time
+412.67s and validation loss0.136654 ->0.066537 measure target fit, not accuracy.
+Speaker notes also explain the initial678-step SFT, hyperparameters, pinned
+model revisions, GGUF export and separate GPU training / CPU serving paths.
+
+The final130/130 covered factual/support score uses reviewed-reference passage
+selection with GBNF; both previous and V2 models reach it under the same policy.
+V2 risk agreement is84/87 (96.55%), compared with83/87 (95.40%). No statistical
+superiority, unaided-recall accuracy or fresh URL benchmark is claimed.
+Manual-review rejections and the failed43.08% fallback stage are explained.
+
+The release evidence is read from existing project records, principally
+ml-services/llm_finetune/V2_RELEASE.md and TRAINING_STATUS.md. These are saved
+release checks, not a new availability probe or a new fine-tuning run.
+The model was not retrained to prepare this presentation.
+
+The thesis's historical94.7% URL result is explicitly labelled as not re-run.
+The current desktop section distinguishes source/build/browser verification
+from pending signed-in native acceptance and installer replacement.
+
+REPRODUCE
+python presentations/build_defence_v5.py
+powershell -NoProfile -ExecutionPolicy Bypass -File presentations/review_defence_v5.ps1
+python presentations/validate_defence_v5.py
+
+Native PowerPoint is required for the render/export step. Do not rebuild V5
+while someone has V5 open for editing. Full evidence/provenance is in the
+PowerPoint speaker notes and the release records.
+
+Template and photo credits remain on slide15, as in V3. New technical sources:
+Hu et al.(2021), LoRA: https://arxiv.org/abs/2106.09685
+Qwen: https://huggingface.co/Qwen/Qwen3.5-2B
+HF Jobs: https://huggingface.co/docs/hub/en/jobs-overview
+GBNF: https://github.com/ggml-org/llama.cpp/blob/master/grammars/README.md

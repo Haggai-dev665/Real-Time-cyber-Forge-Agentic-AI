@@ -59,6 +59,8 @@ PHISHING_COLLECTION = "Mitake/PhishingURLsANDBenignURLs"     # ~886k URLs: benig
 URL_COLLECTION = "bgspaditya/byt-malicious-url-treatment"   # ~640k URLs; used for its malware URLs and some benign ones
 PHISHING_REFERENCE = "pirocheto/phishing-url"                 # 11k balanced full URLs, CC-BY-4.0, with its own test split
 POPULAR_SITES = "phl-ldm/tranco_top_million"                  # landing pages of top-million sites, CC-BY-4.0 (one small file of it)
+PHISHING_FEDERATED = "flwrlabs/fed-phishing-urls"             # ~1.1M URLs merged and de-duplicated from two public collections, Apache-2.0, with a test split
+PHISHING_PAGES = "it4lia/PhiUSIIL_cleaned"                    # PhiUSIIL (UCI): ~100k phishing URLs reported Oct 2022 to May 2023, CC-BY-4.0
 ATTACK_PAYLOADS = "shengqin/web-attacks"                      # SQL-injection and XSS payloads, and normal strings
 # The Tranco list of most-visited sites, by its permanent ID (the list the
 # popular-sites crawl above was made from), for the domain-popularity feature.
@@ -70,6 +72,14 @@ DEFAULTS = {
     "popular_sample": 60000,            # landing pages of popular sites
     "phishing_sample": 120000,
     "malware_sample": 30000,
+    # Two more phishing collections, added November 2026 and left out by default (0).
+    # Dry runs on 2026-11-17 with 100000 / 150000 / 80000 did not beat the run without
+    # them: the held-out false-positive rate rose from 0.019 to 0.029-0.053 and recall
+    # on the outside test sets moved by a few points either way. The collections
+    # disagree with the older ones about what a benign URL looks like.
+    "federated_benign_sample": 0,
+    "federated_phishing_sample": 0,
+    "pages_phishing_sample": 0,         # PhiUSIIL phishing only: its legitimate rows are all bare home pages
     "attack_benign_sample": 40000,
     "test_fraction": 0.2,
     "max_iter": 300,
@@ -222,6 +232,24 @@ def load_phishing_reference(token: Optional[str]) -> Dict[str, Dict[str, List[st
         frame = pd.read_parquet(path, columns=["url", "status"])
         out[split] = {status: clean_urls(frame.loc[frame["status"] == status, "url"].tolist()) for status in ("legitimate", "phishing")}
     return out
+
+
+def load_phishing_federated(token: Optional[str]) -> Dict[str, Dict[str, List[str]]]:
+    """{"train": {"benign", "phishing"}, "test": {...}} from the collection's own splits."""
+    out = {}
+    for split in ("train", "test"):
+        path = _download(PHISHING_FEDERATED, lambda name, split=split: name.startswith(f"data/{split}-") and name.endswith(".parquet"), token)[0]
+        frame = pd.read_parquet(path, columns=["url", "label"])
+        out[split] = {"benign": clean_urls(frame.loc[frame["label"] == 0, "url"].tolist()),
+                      "phishing": clean_urls(frame.loc[frame["label"] == 1, "url"].tolist())}
+    return out
+
+
+def load_phishing_pages(token: Optional[str]) -> List[str]:
+    """The phishing URLs of PhiUSIIL (label 0 there means phishing)."""
+    path = _download(PHISHING_PAGES, lambda name: name.endswith("metadata.parquet"), token)[0]
+    frame = pd.read_parquet(path, columns=["phiusiil_url", "label_int"])
+    return clean_urls(frame.loc[frame["label_int"] == 0, "phiusiil_url"].tolist())
 
 
 def load_payloads(token: Optional[str]) -> Dict[str, List[str]]:
@@ -542,6 +570,12 @@ def run_training(options: Dict, token: Optional[str], model_repo: str, progress:
     collection = load_url_collection(token)
     reference = load_phishing_reference(token)
     popular = load_popular_sites(token)
+    use_federated = settings["federated_benign_sample"] > 0 or settings["federated_phishing_sample"] > 0
+    empty = {"benign": [], "phishing": []}
+    # The federated collection's test split is always read: it is a second outside
+    # yardstick, measured the same way whether or not its train split is used.
+    federated = load_phishing_federated(token) if "phishing_detection" in wanted or use_federated else {"train": empty, "test": empty}
+    pages = load_phishing_pages(token) if settings["pages_phishing_sample"] > 0 and "phishing_detection" in wanted else []
     payloads = load_payloads(token) if "web_attack_detection" in wanted else {"attack": [], "normal": []}
     reputation = load_popular_domains(settings["popular_domains"], popular)
     global POPULAR
@@ -553,6 +587,9 @@ def run_training(options: Dict, token: Optional[str], model_repo: str, progress:
         PHISHING_REFERENCE: {"revision": _revision(PHISHING_REFERENCE, token),
                              "rows": {split: {status: len(urls) for status, urls in parts.items()} for split, parts in reference.items()}},
         POPULAR_SITES: {"revision": _revision(POPULAR_SITES, token), "rows": {"landing pages": len(popular)}},
+        PHISHING_FEDERATED: {"revision": _revision(PHISHING_FEDERATED, token),
+                             "rows": {split: {kind: len(urls) for kind, urls in parts.items()} for split, parts in federated.items()}},
+        PHISHING_PAGES: {"revision": _revision(PHISHING_PAGES, token), "rows": {"phishing": len(pages)}},
         ATTACK_PAYLOADS: {"revision": _revision(ATTACK_PAYLOADS, token), "rows": {kind: len(texts) for kind, texts in payloads.items()}},
     }
 
@@ -563,6 +600,7 @@ def run_training(options: Dict, token: Optional[str], model_repo: str, progress:
 
     # URLs of the reference test split must not be trained on.
     reference_test = {bare_url(url).lower() for part in reference["test"].values() for url in part}
+    reference_test |= {bare_url(url).lower() for part in federated["test"].values() for url in part}
     keep = lambda urls: [url for url in urls if bare_url(url).lower() not in reference_test]  # noqa: E731
 
     # Benign URLs of several shapes, so that no model can tell benign from
@@ -574,6 +612,8 @@ def run_training(options: Dict, token: Optional[str], model_repo: str, progress:
         "popular sites": keep(sample(popular, settings["popular_sample"])),
         "reference, legitimate": keep(reference["train"]["legitimate"]),
     }
+    if settings["federated_benign_sample"] > 0:
+        benign["federated collection, benign"] = keep(sample(federated["train"]["benign"], settings["federated_benign_sample"]))
     all_benign = [url for urls in benign.values() for url in urls]
 
     results: Dict[str, Dict] = {}
@@ -584,9 +624,22 @@ def run_training(options: Dict, token: Optional[str], model_repo: str, progress:
             "phishing collection, phishing": keep(sample(phishing["phishing"], settings["phishing_sample"])),
             "reference, phishing": keep(reference["train"]["phishing"]),
         }
+        if settings["federated_phishing_sample"] > 0:
+            positives["federated collection, phishing"] = keep(sample(federated["train"]["phishing"], settings["federated_phishing_sample"]))
+        if pages:
+            positives["PhiUSIIL, phishing"] = keep(sample(pages, settings["pages_phishing_sample"]))
+        # Outside test sets must not share a site with the training rows either,
+        # or a memorised site would count as a detection.
+        trained_sites = {registered_domain(url) for urls in list(positives.values()) + list(benign.values()) for url in urls}
+        unseen = lambda urls: [url for url in urls if registered_domain(url) not in trained_sites]  # noqa: E731
         results["phishing_detection"] = train_classifier(
             "phishing_detection", positives, benign, lexical, settings,
-            extra_tests={PHISHING_REFERENCE + " (test split)": {"negatives": reference["test"]["legitimate"], "positives": reference["test"]["phishing"]}})
+            extra_tests={
+                PHISHING_REFERENCE + " (test split)": {"negatives": reference["test"]["legitimate"], "positives": reference["test"]["phishing"]},
+                PHISHING_FEDERATED + " (test split)": {"negatives": federated["test"]["benign"], "positives": federated["test"]["phishing"]},
+                PHISHING_FEDERATED + " (test split, sites not in the training rows)": {
+                    "negatives": unseen(federated["test"]["benign"]), "positives": unseen(federated["test"]["phishing"])},
+            })
 
     if "malware_detection" in wanted:
         progress("training malware_detection")

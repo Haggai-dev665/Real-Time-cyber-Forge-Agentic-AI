@@ -21,6 +21,7 @@ import { API_BASE_URL } from '../api/config';
 import { endpoints } from '../api/endpoints';
 import { useApi } from '../hooks/useApi';
 import type { DeviceCommand, DeviceEnrollmentCode, DeviceRecord } from '../api/types';
+import { ThisPhoneCard } from './ThisPhoneCard';
 
 const CONNECTION_COLOR: Record<string, string> = {
   online: colors.green,
@@ -75,6 +76,7 @@ export function DevicesSection() {
         />
       </Card>
 
+      {isGuest ? null : <ThisPhoneCard />}
       {isGuest ? null : <WorkspaceDevices />}
     </>
   );

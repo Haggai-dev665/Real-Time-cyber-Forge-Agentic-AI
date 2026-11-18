@@ -19,6 +19,8 @@ var ICO={
   bert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>',
   dga:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4c8 4 8 12 16 16M20 4C12 8 12 16 4 20"/></svg>',
   ens:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 17l9 5 9-5"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/></svg>',
+  ioc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v3M11 14h.01M20 20l-3.5-3.5"/></svg>',
   ai:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/></svg>'
 };
 
@@ -170,5 +172,90 @@ async function analyze(){
 }
 goBtn.addEventListener('click',analyze);
 input.addEventListener('keydown',function(e){ if(e.key==='Enter') analyze(); });
+
+/* ---------- file scan (drop or choose a file) ---------- */
+var fileCard=document.getElementById('anFile'), fileInput=document.getElementById('afInput'), fileSteps=document.getElementById('afSteps');
+var fileBusy=false;
+function fmtSize(n){ n=+n||0; return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB'; }
+function step(name){
+  fileSteps.hidden=false;
+  var order=['read','hash','send','model'], at=order.indexOf(name);
+  fileSteps.querySelectorAll('span').forEach(function(el){ var i=order.indexOf(el.dataset.s); el.className=(name==='done'||i<at)?'done':(i===at?'on':''); });
+}
+function fileReport(r){
+  var local=r.local||{}, scan=r.scan;
+  var basics=[['Type','File'],['Name',r.name||'file'],['Size',fmtSize(local.size)],['Kind',local.kind||'unknown'],['SHA-256 (computed on this computer)',local.sha256||'—']];
+  if(!scan){
+    renderReport({label:r.name||'file',risk:null,status:'na',verdict:'Not sent for analysis',signals:[],note:r.notSent||'The file was not sent.',intel:basics,
+      engines:[{name:'File malware model',icon:ICO.file,score:null,status:'na',note:'not run: the file stayed on this computer'}]});
+    return;
+  }
+  var fm=(scan.mlReport&&scan.mlReport.model_predictions&&scan.mlReport.model_predictions.file_malware)||{};
+  var scored=fm.verdict==='threat'||fm.verdict==='benign';
+  var fmScore=scored&&fm.score!=null?Math.round(fm.score*100):null;
+  var iocs=Array.isArray(scan.iocs)?scan.iocs:[], tech=(scan.mitre&&Array.isArray(scan.mitre.techniques))?scan.mitre.techniques:[];
+  var high=iocs.filter(function(i){return i&&i.severity==='high';}).length;
+  var st={malicious:'mal',suspicious:'sus',clean:'clean'}[scan.verdict]||'na';
+  var engines=[
+    {name:'File malware model',icon:ICO.file,score:fmScore,status:fm.verdict==='threat'?'mal':fm.verdict==='benign'?'clean':'na',
+     note:scored?('decision point '+Math.round((+fm.decision_threshold||0)*100)):(fm.verdict==='unsupported'?'not a Windows program':'no verdict')},
+    {name:'Indicators in the file',icon:ICO.ioc,score:null,status:high?'sus':'clean',note:iocs.length+' found, '+high+' high severity'},
+    {name:'Technique hints',icon:ICO.orch,score:null,status:tech.length?'sus':'clean',note:tech.length?(tech.length+' possible, not confirmed'):'none matched'}
+  ];
+  var signals=(Array.isArray(scan.findings)?scan.findings:[]).slice(0,6).map(String);
+  tech.slice(0,4).forEach(function(t){ signals.push('Possible technique, not confirmed: '+[t.id||t.technique_id,t.name].filter(Boolean).join(' ')+(t.tactic?' ('+t.tactic+')':'')); });
+  var reason=fm.verdict_reason?String(fm.verdict_reason):'';
+  renderReport({label:r.name||'file',risk:fmScore,status:st,
+    verdict:{malicious:'Malicious',suspicious:'Suspicious',clean:'No threat found'}[scan.verdict]||'No verdict',
+    engines:engines,signals:signals,
+    note:(reason?reason.charAt(0).toUpperCase()+reason.slice(1)+'. ':'')+'The file was parsed on the server, not run.',
+    intel:basics.concat([
+      ['Model score',fm.score==null?'—':(+fm.score).toFixed(3)+' (threat at '+(+fm.decision_threshold||0).toFixed(3)+')',fm.verdict==='threat'?'bad':(fm.verdict==='benign'?'good':'')],
+      ['Model time',fm.processing_time_ms!=null?Math.round(fm.processing_time_ms)+' ms':'—'],
+      ['Round trip',r.roundTripMs!=null?(r.roundTripMs/1000).toFixed(1)+' s':'—'],
+      ['Indicators',String(iocs.length)],
+      ['Checked at',new Date().toLocaleString()],
+      ['Scan ID',scan.id||'not supplied']
+    ])});
+}
+async function scanFile(file){
+  if(!file||fileBusy) return;
+  if(file.size>25*1024*1024){ fileReport({name:file.name,local:{size:file.size,kind:'not read'},scan:null,notSent:'The file is larger than 25 MB, the most the scanner takes.'}); return; }
+  fileBusy=true; fileCard.classList.add('busy'); document.getElementById('afTitle').textContent=file.name;
+  document.getElementById('resEmpty').style.display='none';
+  document.getElementById('resBody').textContent='';
+  var sending=0, scoring=0;
+  try{
+    step('read'); var bytes=new Uint8Array(await file.arrayBuffer());
+    step('hash');
+    sending=setTimeout(function(){ step('send'); },250); scoring=setTimeout(function(){ step('model'); },1400);
+    var r=await CF.invoke('scan_file',bytes,{headers:{'x-cf-file-name':encodeURIComponent(file.name)}});
+    clearTimeout(sending); clearTimeout(scoring);
+    step('done'); fileReport(r||{});
+  }catch(e){
+    clearTimeout(sending); clearTimeout(scoring);
+    fileSteps.hidden=true;
+    document.getElementById('resBody').innerHTML='<div class="res-empty">Could not scan the file: '+esc(String((e&&e.message)||e))+'</div>';
+  }finally{
+    fileBusy=false; fileCard.classList.remove('busy'); document.getElementById('afTitle').textContent='Scan another file'; fileInput.value='';
+  }
+}
+document.getElementById('afPick').addEventListener('click',function(e){ e.stopPropagation(); fileInput.click(); });
+fileCard.addEventListener('click',function(){ if(!fileBusy) fileInput.click(); });
+fileCard.addEventListener('keydown',function(e){ if((e.key==='Enter'||e.key===' ')&&e.target===fileCard){ e.preventDefault(); fileInput.click(); } });
+fileInput.addEventListener('change',function(){ scanFile(fileInput.files&&fileInput.files[0]); });
+// The whole page takes a dropped file; the card shows where it lands.
+var dragDepth=0;
+function hasFiles(e){ return !!(e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>=0); }
+document.addEventListener('dragenter',function(e){ if(!hasFiles(e)) return; dragDepth++; fileCard.classList.add('over'); });
+document.addEventListener('dragleave',function(e){ if(!hasFiles(e)) return; dragDepth=Math.max(0,dragDepth-1); if(!dragDepth) fileCard.classList.remove('over'); });
+document.addEventListener('dragover',function(e){ if(hasFiles(e)){ e.preventDefault(); e.dataTransfer.dropEffect='copy'; } });
+document.addEventListener('drop',function(e){ if(!hasFiles(e)) return; e.preventDefault(); e.stopPropagation(); dragDepth=0; fileCard.classList.remove('over'); scanFile(e.dataTransfer.files[0]); },true);
+// Arrived from the tray menu or the command palette: show where the file goes.
+function pointAtFileCard(){ fileCard.scrollIntoView({block:'nearest',behavior:'smooth'}); fileCard.focus({preventScroll:true}); fileCard.classList.remove('flash'); void fileCard.offsetWidth; fileCard.classList.add('flash'); }
+if(location.hash==='#scan-file') pointAtFileCard();
+window.addEventListener('cf:scan-file',pointAtFileCard);
+// An address passed in (command palette): analyse it straight away.
+(function(){ try{ var q=new URLSearchParams(location.search).get('q'); if(q){ input.value=q.slice(0,2048); refreshType(); analyze(); } }catch(e){} })();
 
 cfInvoke('ml_status').then(function(r){ var ok=r&&(r.health||r.transformers); var b=document.getElementById('mlState'); if(b) b.textContent= ok?'Agents online':'Agents offline'; }).catch(function(){ var b=document.getElementById('mlState'); if(b)b.textContent='Agents offline'; });

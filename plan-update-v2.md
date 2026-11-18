@@ -1178,3 +1178,227 @@ The server needs no deploy: it runs on the user's computer and calls the existin
   - every workspace page paints its final layout first, crossfades with the chrome held still, and honours reduced motion;
   - the live sections use the real commands, telemetry and events, contain no sample data, and handle Privacy-off.
 - **Gate:** 948 tests.
+
+### November 16, 2026 — Space benchmark (live, direct to the Space)
+
+**State:** healthy; fine-tuned `Che237/cyberforge-qwen3.5-2b-v2-GGUF@494483e` loaded with no error; 4 trained models, DGA rules, reputation list and reasoning model ready; BERT loads on first use; a request without the service key gets 401.
+
+**URL analysis (24 addresses, sequential):** p50 325 ms, p95 369 ms; a 20-address batch in 1.5 s. All 12 benign addresses (including Google, Microsoft and PayPal sign-in pages) were judged benign and all 11 hostile ones threat. `https://bit.ly/3xYzAbC` was judged threat at 99.8 although its destination is unknown.
+
+**Chat (interactive priority, 6 questions):** 5.1 s for a greeting, 9.3–17.1 s for answers of 29–55 words, about 4 tokens per second on the 2 vCPUs. The two answers that used a reviewed reference (SQL injection, SSRF) were correct. Of the four without one, one stated a false fact (said the flagged address "points straight at an executable file"; it does not) and two were muddled.
+
+**Against targets:** URL speed meets the 4 s target; chat does not. Held-out phishing recall remains 0.677 at a 2% false-positive rate (training report of October 13), below the 0.80 coverage criterion.
+
+**Not measured:** the extra hop through the backend to the desktop, and concurrent load.
+
+### November 16–17, 2026 — Space on a T4 GPU; file malware model for Windows programs
+
+**Decided by the owner:** T4-small GPU that sleeps after 1 hour idle ($0.0067 per minute while awake, from the Hub's price list); a trained model for Windows programs for file scanning.
+
+**GPU runtime:**
+- **Failed first attempt:** compiling llama-cpp-python 0.3.36 with CUDA inside the Space image hit the build limit ("Job timeout") and left the Space not serving for several minutes. It was rolled back with `deploy_space.py --rollback`.
+- **What works:** `ml-services/gpu_runtime/build_job.py` compiles the wheel once as a Hugging Face Job (CUDA 12.4, `GGML_NATIVE=off`) and publishes it to `Che237/cyberforge-models/runtime/`. The Dockerfile downloads it at a pinned commit into `/opt/llama-cuda`, with NVIDIA's `cuda-runtime`, `cublas` and `nccl` wheels in `/opt/cuda-pkgs`. The CPU wheel stays installed.
+- **`app.py`:** uses the CUDA build only when the host has an NVIDIA driver and a child-process probe loads the model on the GPU; otherwise it records `gpu_error` and loads on CPU. After a GPU load it runs one warm-up generation (the first generation costs about 56 s on a T4). `/health` reports `accelerator`.
+- **Preflight before deploying (`gpu_runtime/preflight_job.py`, a T4 Job):** repeats the image's install steps, loads the chat model both ways and runs the file scanner. It found a missing `libnccl.so.2`, the warm-up cost, and an invalid PE wrongly scored. Measured: 110 tokens per second on the GPU after warm-up, about 10 on that job's 4 vCPUs.
+- **Live:** Space commit `2e64d2f`, hardware `t4-small`, sleep 3,600 s, `accelerator: cuda`.
+
+**Benchmark, same script as before (direct to the Space):**
+- Chat: 0.8–3.3 s per answer (was 9.3–17.1 s); greetings about 1 s (was 5.1 s). The first chat after start took 23 s once.
+- URL analysis: p50 255 ms, p95 286 ms (was 325 / 369 ms); batch of 20 in 1.5 s.
+
+**File malware model:**
+- **Model:** the EMBER2024 benchmark PE classifier (LightGBM, Apache-2.0, trained by the dataset's authors on 2.6 million files) with the `thrember` extractor at a pinned commit (`signify==0.7.1` pinned; later releases break its import). Not trained by CyberForge.
+- **Measured (`ml-services/file_malware/evaluate_job.py`, a CPU Job):** threshold 0.689 chosen for a 1% false-positive rate on the first 6 held-out test weeks; on the last 6 weeks (210,000 files newer than all training data) recall 0.962, false-positive rate 0.0121, precision 0.988, AUC 0.998. By type: Win32 0.950 / 0.006, Win64 0.973 / 0.008, .NET 0.968 / 0.025. Challenge set (malware antivirus products first missed): 2,635 of 4,868 detected (0.541). Published to `Che237/cyberforge-models/file_malware/` at `4111c0b`.
+- **Space:** `file_scan.py` and `POST /api/v2/file-scan` (raw bytes, up to 26 MB on that route only). Verdicts: threat, benign, unsupported (not a PE), unknown (model unavailable or not a valid PE). The file is parsed, never run, never kept. Listed in the capability report as `file_malware_pe`.
+- **Backend (not deployed yet):** `fileMalwareScan.js` sends only files with an MZ header and checks the versioned record; `sandboxAnalysisService.analyzeFile` uses the model's verdict in place of the metadata estimate when it answers.
+- **Live on the Space:** 7-Zip (0.6 MB) benign in 0.49 s of server time, PuTTY (1.7 MB) benign in 1.36 s; text unsupported; random MZ bytes unknown; no service key 401; 27 MB refused 413; other routes still refuse 300 KB.
+- **Checks:** `file-malware-scan.test.js` (5 tests); the gate harness knows the per-route limit. Gate: 955 tests.
+
+**Not done:** more phishing datasets and retraining; more reviewed chat references; no malicious sample was scanned live (none is kept or downloaded here).
+
+### November 17, 2026 — More phishing data tried; not put into service
+
+**Added to `trainer.py`:** two more phishing collections, each switchable by a setting: `flwrlabs/fed-phishing-urls` (Apache-2.0, 1.1 million URLs, its own test split) and the phishing URLs of `it4lia/PhiUSIIL_cleaned` (CC-BY-4.0). The first collection's test split is now a second outside yardstick, also reported for sites absent from the training rows.
+
+**Four dry runs on the Space (nothing uploaded; threshold target 2% false positives):**
+
+| Run | Held-out recall / FPR | pirocheto test recall / FPR | Federated test recall / FPR (AUC) |
+|---|---|---|---|
+| Current recipe | 0.716 / 0.019 | 0.661 / 0.016 | 0.641 / 0.015 (0.943) |
+| + federated | 0.650 / 0.048 | 0.703 / 0.026 | 0.690 / 0.023 (0.964) |
+| + PhiUSIIL | 0.594 / 0.029 | 0.659 / 0.028 | 0.650 / 0.019 (0.959) |
+| + both | 0.573 / 0.053 | 0.658 / 0.024 | 0.662 / 0.020 (0.963) |
+
+- **Result:** no run beat the current recipe. The extra recall came with more false alarms, and the gate rejected the run with both (5.3% false positives on held-out sites). Every run still flags the Google Drive share link and the Google sign-in link.
+- **Decision:** the model in service is unchanged (trained October 13). The new sources stay in the trainer with a default of 0.
+- **Reading:** the collections disagree about benign URLs (false alarms on the older benign set rose from 1.5% to 7–8%). More URL lists do not move a model that only reads the address; the next gain needs page content or host signals, not more lists.
+- Space commit after this work: trainer deployed, GPU and file scan unchanged.
+
+### November 17, 2026 — Backend file scan live; desktop tray, file scanning, command palette, motion
+
+**Backend file scan, live (after the owner's deploy):** a throwaway `cf-selftest-*` account uploaded through `/api/sandbox/analyze/file`:
+- PuTTY (1.7 MB): model `benign`, 0.454, 6.7 s round trip.
+- A text file: `unsupported`. Random bytes behind an MZ header: `unknown`.
+- The account was then deleted through `/api/v1/me/delete-account` (3 scans removed); signing in again gave 401.
+
+**Desktop (not yet rebuilt into an installer):**
+- **File scanning on Analyze.** Drop a file anywhere on the page, or choose one. The new command `scan_file` takes the bytes as the raw request body, with the name in the `x-cf-file-name` header. It hashes the file locally (SHA-256, kind, size) and uploads it only with the cloud-scanning permission and a sign-in. Without them the report shows the local facts and why nothing was sent. The report shows the file model's verdict, score and threshold, the indicators and the technique hints. Limit: 25 MB, as on the server. The window's own drag-and-drop is off (`dragDropEnabled: false`) so pages receive dropped files; other pages stop a drop and point to Analyze.
+- **System tray (`tray.rs`, Tauri `tray-icon` feature).** Menu: Open, Scan a file…, "Keep protecting when the window is closed" (on by default), "Start with Windows" (the current user's Run key, with `--background`), Quit.
+  - Closing the window hides it to the tray only when the icon exists and the setting is on.
+  - The window starts hidden and is shown unless Windows started the app in the background.
+- **Background protection.** While the window is hidden or minimised, a native watcher scans the active tab with the on-device models. It runs at most once a minute per address and goes through `get_active_urls` (active-tab permission). The page-driven panel is throttled when hidden, which is why this is native.
+  - Above the usual alert bar (`alert_floor`), it opens the existing alert window, saying only the address was checked.
+  - The 3-second telemetry broadcast does no work while the window is hidden.
+- **Speed.** The app wakes the ML service at launch (backend `/api/cyberforge-ml/health`), so the Space's wake-up overlaps with sign-in instead of the first answer. The price is that each app start keeps the T4 awake for at least an hour.
+- **Command palette (`cf-palette.js`, all 18 workspace pages).** Ctrl+K opens it: every sidebar page, actions (scan a file, look up a domain, settings, sidebar, reduce animations, reload), recents and fuzzy search. A typed address becomes "Analyze …". It is built from DOM nodes and text only. The domain lookup moved from Ctrl+K to `/`. Notices (`CFNotice`) for short messages.
+- **Motion and design (`cf-navigation.css`).** Content rises into place in a short stagger, buttons answer a press, focus is always visible, and cards, scrollbars and a skeleton shimmer are styled. All of it is off under the app's "reduce animations" setting and the system preference.
+
+**Bugs found while testing:**
+- The footer's request observer (`cf-console.js`) re-wrapped `CF.invoke` with two arguments, dropping request headers; the file name would have been lost. Fixed.
+- `upload-and-quota.test.js` sent its sample program to the live ML service (the file-model client was not mocked), so it failed when the Space was slow. Now mocked.
+
+**Checks:**
+- `desktop-tray-and-files.test.js` (17, including the start-up entry removed on uninstall) is new, and `scan_file` is on the privacy contract's gated list.
+- Gate: 971 tests. `cargo test --workspace` passes, including 4 new `file_scan` tests.
+- `npm run test:navigation` (headless Chromium with stubbed native commands) now covers file drop, report, palette, `/`, drop guard and the tray hand-off. Three of its assertions were stale from earlier work and were brought up to date: 14 sidebar links, the `{authenticated}` reply shape, and "unreachable" wording. The floating button opens the agent panel, not the Assistant.
+
+**Not verified:** the tray, close-to-tray, autostart and background watcher run only in the built app; they compile and are covered statically, but nobody has clicked them yet.
+
+### November 17, 2026 — Live Agent: the agent checks a page in its own browser while you watch
+
+**Asked by the owner:** a screen where the agent browses the page you have open, in real time, clicking and verifying like a person with a mouse.
+
+**What it is (`live_browse.rs`, `pages/live-browser.html`, sidebar → Security → Live Agent):**
+- **The browser.** The agent starts its own headless Chrome, Edge, Brave or Chromium with a new, empty profile (no sign-ins, cookies or extensions), listening on 127.0.0.1 only. It drives the browser over the DevTools protocol, using the new `tokio-tungstenite` dependency.
+- **The picture.** The page is streamed as it is drawn (`Page.startScreencast`, about 10 frames a second). The cursor, highlight box, label and click ripple are drawn on top at the real coordinates the agent reports.
+- **What it does.** It opens the page and runs the on-device URL models on the final address. It reads the page's forms, password fields, links, buttons, frames and scripts, and checks the content with the existing page heuristics. Then it moves a real mouse (14 steps over about 0.45 s) to up to 9 elements and acts on each:
+  - password fields: inspected, never typed into;
+  - links: those whose text names another site first, then script links, sign-in and payment words, other sites;
+  - up to 2 buttons outside sign-in forms.
+- **Clicks.** Each link or button is hovered (the address is re-read: a link that changes on hover is reported), then clicked. After the page has loaded, any main-frame navigation is stopped (`Fetch.failRequest`) and its destination recorded. That is how "the link says paypal.com but goes to X" and "the script swapped the address on click" are caught.
+- **Refused.** New windows (`window.open` is replaced), downloads and dialogs. The agent never types or submits.
+- **Verdict.** The highest of: the URL models, the content score, and the findings (serious 75, warning 45). The result goes to the event stream as `scan:update` (`source: live-agent-browser`).
+- **Which page.** The active browser tab when one is in front; otherwise the page most recently opened in any browser, from a fresh small history read (`live_browse_recent`, needs the history permission); or an address typed in. "Follow my browsing" checks the next new page when a run ends. Leaving the screen stops the browser.
+- **Limits.** Sign-in codes are removed from the address first (`redact_url`). Addresses on this computer or the local network are refused, including names that resolve to them. Two minutes per run. Nothing is sent to CyberForge.
+
+**Verified:**
+- **Real Edge, local trap page** (`the_agent_catches_a_deceptive_page_in_a_real_browser`, ignored by default, about 18 s; run it with `cargo test -p cyberforge-console live_browse -- --ignored`). It caught the password form posting to another site, the password asked for without https, the link saying paypal.com that goes elsewhere, the link swapped by script on click, and the download button's destination. It streamed 11 frames and deleted the agent's profile afterwards.
+- **Screenshots of the real run replayed into the screen** show the stream, cursor, highlight, steps and verdict as designed.
+- **Tests:** `desktop-live-agent.test.js` (7); `test:navigation` covers the page (15 sidebar links, cursor lands on the reported point, ripple, findings, older-run events ignored, verdict). Gate: 979 tests.
+
+**Not verified:** the screen inside the built app with your own browsing (needs a rebuild).
+
+### November 17, 2026 — Live Agent faster with more evidence; assistant thinks, streams and stays accurate
+
+**Asked by the owner:** the Live Agent's mouse was very slow and it collected too little; the assistant needed better thinking, a better chat style and accurate answers.
+
+**Live Agent (`live_browse.rs`, `live-browser.html/js`):**
+- **Speed:** scrolls only when the element is off-screen (instantly); glides in about 0.16 s (was 0.45 s); hovers 0.12 s (was 0.35 s); waits at most 0.7 s for a click's effect (was 1.6 s); streams about 20 frames a second (was 10); the cursor animation matches. Up to 12 elements per run. The trap page: 5 elements in 11.5 to 14 s (was 4 in 17.5 s).
+- **Evidence (new Evidence tab):** server address, HTTP status, TLS issuer and certificate age, security headers, requests by host, requests to raw IPs, WebSockets, cookies of the sites contacted, page elements, hidden inputs, scripts and frames from other sites, script obfuscation counts, downloads.
+- **New findings:**
+  - page code that sends data to Telegram bots, Discord webhooks or form-collection services;
+  - ClickFix lures (a clipboard write plus "Win+R / paste / PowerShell" instructions);
+  - obfuscated scripts and program downloads;
+  - punycode addresses;
+  - brand impersonation (28 brands, including MTN and Orange Money): a brand named in the address, or claimed in the title, headings or logos, while off the brand's own site; serious when the page also asks for a password.
+- **With cloud scanning allowed:** the domain's registration date (public RDAP; under 7 days is serious, under 30 a warning) and the server's URL models. Without it, nothing about the address leaves the computer.
+- **Verified:** the real-Edge trap test now also checks the Telegram exfiltration, ClickFix, PayPal impersonation and program-download findings, and the HTTP, request and encryption facts. Two bugs it showed were fixed: the browser's own cookies were being counted, and the site of an IP address was shown as "0.1". The overlay now follows any change in the screen's size (a ResizeObserver; the browser check caught the drift).
+
+**Assistant:**
+- **Space (`app.py`):**
+  - Thinking: for real questions (not small talk) the model reasons first, up to 448 tokens and half the time budget, and the reasoning is returned (`thinking`, `thinking_ms`).
+  - History: earlier turns go as real chat turns (up to 6).
+  - Streaming: `stream: true` returns server-sent events.
+  - A new chat-style prompt: direct answer first, short sections, bold key terms, a next step, nothing invented.
+  - Context 8,192 tokens; answers up to 900 tokens; input up to 6,000 characters.
+- **Grounding (`security_knowledge.py`):** 47 reviewed references (was 13). The 34 new ones cite CISA, NIST, MITRE ATT&CK, OWASP, IC3, dmarc.org and the NCSC; each source address was checked to load (FTC and FBI pages refused automated requests and were not used). The assistant is no longer forced to copy reviewed passages:
+  - it writes in its own words with the reviewed facts as context;
+  - an answer that misses core facts gets them added under "From the reviewed sources";
+  - an answer stating something a reference rules out (for example "pay the ransom") is replaced by the reviewed facts.
+  Scan explanations (analyst mode) keep the reviewed-passage constraint.
+- **Backend:** `POST /api/cyberforge-ml/v2/security-chat/stream` relays the reasoning and the answer as they arrive and labels the engine on the final event. When the model does not answer, it says so with the reason. History is bounded to 8 turns of 2,000 characters, and the stream is marked no-transform so compression does not hold it back. The JSON route also passes history and thinking.
+- **Desktop:**
+  - `ml_security_chat_stream` (LlmProcessing permission) reads the stream byte-safely and forwards it as `cf-chat-stream`; it falls back to the JSON route while the backend lacks the stream route.
+  - The page shows a live "Thinking" panel that folds to "Thought for N s", the answer rendered as it arrives, numbered lists and italics, and Copy and Regenerate.
+  - History is sent as turns; reasoning is kept with saved messages.
+- **Tests:** `assistant-stream.test.js` (5); the priority harness gained the new settings; route guards cover 63 routes; the privacy contract gates the new command; the reviewed HTML writes are recorded. The browser check covers the reasoning panel, the streamed answer, numbered steps, actions and history on a follow-up. Gate: 985 tests.
+
+**Not done yet:** the Space was found **paused** (not asleep: a paused Space does not wake on requests; no reason recorded). It was not restarted without the owner. Once it is running: measure the current assistant (`chat_eval.js`: 26 questions with required facts, a follow-up that needs history), deploy, and measure again. The backend deploy is the owner's.
+
+### November 18, 2026 — ML service back on the T4 with the new assistant; live integration verified
+
+**Space:** it had been paused because the account's prepaid credits ran out (restart returned 402). The owner added credits; it was restarted on `t4-small` (CUDA, model loaded in 169 s). The new code was deployed (commit `0fb7d6f`, then `feef337` with two fixes below); the previous live files are backed up in `ml-services/hf_space_clone/3ced4a033599/`.
+
+**Assistant, same 26 questions before and after (automatic required-fact check):**
+
+| | Before (old Space code) | After (thinking, history, 47 references) |
+| --- | ---: | ---: |
+| Questions passing the automatic check | 18 / 26 | 22–23 / 26 |
+| Answers using reviewed sources | 2 / 26 | 23 / 26 |
+| Typical answer length | ~40 words | ~65 words |
+| Median time to the full answer | 0.9 s | 6.0 s (about 4.3 s of it thinking; streamed) |
+
+The remaining automatic failures were read by hand and are correct answers that the strict word patterns do not match (a greeting without the word "help"; "change it straight away" instead of "change your password"; a follow-up that explained smishing without naming phishing). Answers vary slightly between runs (sampling).
+
+Two fixes from that review (`security_knowledge.py`): only the most specific reference can add a "From the reviewed sources" supplement (a broader second topic no longer appends unrelated basics), and the model is told never to write "the reviewed facts say".
+
+**Integration:** `backend/scripts/check-ml-integration.js` calls every ML-service feature the desktop uses through the backend's own clients; all 9 passed on the live Space:
+- status (fine-tuned Qwen on CUDA) and capabilities (9);
+- BERT URL classifier, DGA detector, deep scan, IOC scan;
+- assistant as JSON and as a stream (thinking, answer, final; history used);
+- file-malware model (`notepad.exe` benign, 0.029).
+
+Every user-facing Space route is reached from a desktop screen. `explain` and `batch-analyze` are developer routes with no screen.
+
+**Backend hardening (needs a backend deploy):** the stream route now passes on an ML service's plain JSON answer instead of reporting "no answer", for example when an older Space version is running. One new test; gate 986 tests.
+
+### November 18, 2026 — Phone sync and depth; live agents on the Live Agent screen; assistant answers without the engine footer
+
+**Asked by the owner:**
+- the mobile app's syncing and deeper features;
+- the desktop assistant without "Answered by: Qwen" under each answer, and with better-structured answers;
+- the eight analysis agents working in real time on the Live Agent screen;
+- the phone's layout, where the bottom tabs and other parts were hidden.
+
+**Phone: sync (DEV-01/02/04/05, F17, account isolation)**
+- **The phone enrolls itself** (`src/device/`, `DeviceContext`): its own Ed25519 key in the system keystore, a `this_device` code claimed with a signed proof, then approval against the key fingerprint (on the phone or the desktop). Signed heartbeats go every 2 minutes while the app is open, reporting what the phone confirms (alerts, approvals, live feed, network capture). Revocation and approval on another device are picked up.
+- **Compatibility test:** `mobile-device-protocol.test.js` signs a claim and a heartbeat with the phone's `protocol.ts` (run by Node's type stripping) and verifies them with `deviceService`'s own functions: claim, heartbeat, a tampered body that is refused, and the fingerprint.
+- **Capture outbox (F17):**
+  - flows are redacted, then kept in the account's outbox on the phone;
+  - a failed upload stays and is retried with backoff (8 s doubling to 5 minutes), up to 1,000 records, with the overflow counted;
+  - turning sync off empties the outbox;
+  - uploads carry the enrolled device ID instead of `mobile`;
+  - Settings shows what is waiting, what was dropped and the last error, with "Upload now".
+- **Alerts sync:** findings in every state, with Open/Closed filters. The finding workflow (acknowledge, investigate, resolve, false positive, reopen) is on the phone through `PUT /api/threats/:id/state`, with the backend's guidance and timeline. The backend now emits `threat:update` (to the owning account only), so a decision on one device appears on the others live.
+- **Offline copy:** alerts, recent scans and memories are kept per account and shown, marked as offline copies, when the backend cannot be reached. Everything the phone keeps is keyed by account and removed at sign-out.
+
+**Phone: features**
+- **Scan a link:**
+  - the eight agents run on an address (`POST /api/orchestrator/analyze`), showing the verdict and risk, findings, each agent's result or failure, IOCs, ATT&CK hints and the summary;
+  - recent scans, including the desktop's, are listed;
+  - it is gated by a new **Cloud scanning** control, matching the desktop (consent version 2, so everyone decides again);
+  - a `cyberforge://screen/scan?url=…` link fills the address in but does not scan.
+- **Assistant:**
+  - streamed answers with a thinking panel, and the conversation sent as history;
+  - Markdown formatting, conversations saved per account, New chat and Stop;
+  - "Ask the assistant" buttons from alerts and scans.
+- **Memory:** the memories the desktop synced, with the backend's similarity search, replacing server counters.
+
+**Phone: layout**
+- **The cause:** the tab bar had a fixed 78-point height and padding, so on Android's edge-to-edge display (SDK 54) the system navigation bar covered it. Content padding was a fixed 110 points, and sub-screens ignored the bottom inset.
+- **The fix:** `src/components/layout.ts` derives the tab bar height from the safe-area inset, and the tab bar, `Screen` and the sub-screens use it. Tab items flex, and their labels cap their font scaling. Sub-screens avoid the keyboard and the assistant follows its newest message. Onboarding scrolls on small screens and with large text.
+- **Verified by:** the mobile typecheck. It has not yet been seen on a phone.
+
+**Desktop**
+- **Assistant:** no "Answered by" line under answers. The engine stays in the side panel ("Last answer by"), and answers show only their sources, now including the 34 new reference sites (CISA, IC3, NCSC, dmarc.org, owasp.org, FIRST, CVE), whose links were dropped before. `mdToHtml` builds real paragraphs, turns bold-only and short "Title:" lines into subheadings, and sets the reviewed-sources supplement apart as a note. Text is still escaped first.
+- **Live Agent:** each run starts the eight analysis agents on the same address. A new **Agents** tab fills in live: each agent by stage goes waiting, then working, then finished with its finding and time (or failed with the reason), then the Reporter, the verdict, the risk, the summary and the findings. The result is added to the Evidence tab.
+  - Backend: `analyze()` takes a progress callback, and a new `POST /api/orchestrator/analyze/stream` sends server-sent events; the scraper's raw page data stays on the server.
+  - Desktop: `agents_analyze_stream`, gated by Cloud scanning.
+  - Checks: the browser check covers the working state and the final state, and orchestrator tests cover the event order and the stripped data.
+
+**Gate:** 992 backend tests, the Rust workspace tests, the mobile typecheck, and the desktop browser check.
+
+**Needs the owner:**
+- a backend deploy (the stream route, `threat:update`, the agent progress events);
+- a desktop build;
+- an Expo build, to see the phone's layout and enrollment on a device.

@@ -288,12 +288,114 @@ router.post('/v2/dga-detect', async (req, res) => {
     }
 });
 
+/** The conversation so far, as the ML service takes it: at most 8 turns, roles user|assistant, 2,000 characters each. */
+function chatHistory(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.slice(-8)
+        .filter(turn => turn && typeof turn === 'object' && typeof turn.content === 'string' && turn.content.trim())
+        .map(turn => ({ role: turn.role === 'assistant' ? 'assistant' : 'user', content: turn.content.slice(0, 2000) }));
+}
+const THINK_MODES = new Set(['auto', 'on', 'off']);
+const thinkMode = value => (THINK_MODES.has(value) ? value : undefined);
+const answerTokens = value => Math.min(1200, Math.max(16, Number.isFinite(+value) && +value > 0 ? Math.round(+value) : 700));
+
+/** What the assistant says when the model was asked and did not finish (shared by both chat routes). */
+function noAnswer(reason) {
+    return {
+        success: true, answered: false, reason, model: 'none',
+        response: `The Analysis Agents' language model did not answer this time (${reason}). Try again in a moment, or ask something shorter.`,
+        engine: ENGINES.noAnswer()
+    };
+}
+
+/**
+ * @route   POST /api/cyberforge-ml/v2/security-chat/stream
+ * @desc    The assistant's answer as it is written (server-sent events): the
+ *          model's reasoning ({type:"thinking", delta}), then the answer
+ *          ({type:"answer", delta}), then {type:"final", result} with the
+ *          checked answer and the engine that produced it. The final answer
+ *          can differ from the streamed text: the ML service adds or substitutes
+ *          reviewed facts when the model's answer misses or contradicts them.
+ * @body    { query: string, history?: [{role, content}], think?: "auto"|"on"|"off", max_tokens?: number }
+ */
+router.post('/v2/security-chat/stream', async (req, res) => {
+    const { query } = req.body || {};
+    if (!query || typeof query !== 'string') return res.status(400).json({ error: 'query required' });
+    if (query.length > 32000) return res.status(400).json({ error: 'query is longer than 32000 characters' });
+    res.status(200);
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    // no-transform: the compression middleware must not hold the stream back
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
+    const send = event => res.write(`data: ${JSON.stringify(event)}\n\n`);
+    let finished = false;
+    const finish = result => { if (finished) return; finished = true; send({ type: 'final', result }); res.end(); };
+    let upstream;
+    try {
+        upstream = await cyberforgeML.securityChatStream(query, {
+            maxTokens: answerTokens(req.body.max_tokens), history: chatHistory(req.body.history), think: thinkMode(req.body.think) || 'auto'
+        });
+    } catch (error) {
+        return finish(noAnswer('the ML service could not be reached'));
+    }
+    if (!upstream || upstream.status !== 200 || !upstream.data || typeof upstream.data.on !== 'function') {
+        if (upstream && upstream.data && typeof upstream.data.resume === 'function') upstream.data.resume();
+        return finish(noAnswer(`the ML service answered ${upstream ? upstream.status : 'nothing'}`));
+    }
+    // An ML service without streaming answers with one JSON body: pass that answer on whole.
+    const type = String((upstream.headers && upstream.headers['content-type']) || '');
+    if (!type.includes('event-stream')) {
+        let body = '';
+        upstream.data.on('data', chunk => { body += chunk.toString('utf8'); });
+        upstream.data.on('error', () => finish(noAnswer('the connection to the ML service was lost')));
+        upstream.data.on('end', () => {
+            let result = null;
+            try { result = JSON.parse(body); } catch (_) { /* not JSON */ }
+            if (!result || result.answered === false || chatNeedsFallback(result)) {
+                const reason = result && typeof result.error === 'string' && result.error ? result.error.slice(0, 200) : 'no reason given';
+                return finish(noAnswer(reason));
+            }
+            finish({ ...result, engine: engineOfSpaceAnswer(result) });
+        });
+        return;
+    }
+    // the person left: stop reading, so the ML service can stop writing
+    res.on('close', () => { if (!finished && typeof upstream.data.destroy === 'function') upstream.data.destroy(); });
+    let buffer = '';
+    upstream.data.on('data', chunk => {
+        buffer += chunk.toString('utf8');
+        let at;
+        while ((at = buffer.indexOf('\n\n')) >= 0) {
+            const block = buffer.slice(0, at);
+            buffer = buffer.slice(at + 2);
+            const line = block.split('\n').find(l => l.startsWith('data: '));
+            if (!line) continue;
+            let event;
+            try { event = JSON.parse(line.slice(6)); } catch (_) { continue; }
+            if (event.type === 'final') {
+                const result = event.result && typeof event.result === 'object' ? event.result : {};
+                if (result.answered === false || !result.response) {
+                    const reason = typeof result.error === 'string' && result.error ? result.error.slice(0, 200) : 'no reason given';
+                    finish(noAnswer(reason));
+                } else {
+                    finish({ ...result, engine: engineOfSpaceAnswer(result) });
+                }
+            } else if ((event.type === 'thinking' || event.type === 'answer') && typeof event.delta === 'string') {
+                send({ type: event.type, delta: event.delta });
+            }
+        }
+    });
+    upstream.data.on('end', () => finish(noAnswer('the answer stopped before it was finished')));
+    upstream.data.on('error', () => finish(noAnswer('the connection to the ML service was lost')));
+});
+
 /**
  * @route   POST /api/cyberforge-ml/v2/security-chat
  * @desc    Cybersecurity Q&A, answered by the open-source model in the ML
  *          service, or by its rule-based summary, or by the backend's
  *          reference text. Every answer carries `engine`: which of these it was.
- * @body    { query: string, max_tokens?: number }
+ * @body    { query: string, max_tokens?: number, history?: [{role, content}], think?: "auto"|"on"|"off" }
  */
 router.post('/v2/security-chat', async (req, res) => {
     try {
@@ -301,7 +403,7 @@ router.post('/v2/security-chat', async (req, res) => {
         if (!query) return res.status(400).json({ error: 'query required' });
         let result;
         try {
-            result = await cyberforgeML.securityChat(query, max_tokens);
+            result = await cyberforgeML.securityChat(query, max_tokens, 40, { history: chatHistory(req.body.history), think: thinkMode(req.body.think) });
         } catch (svcErr) {
             result = null; // upstream threw → fall through to KB guidance
         }

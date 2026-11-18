@@ -230,7 +230,7 @@
     });
     document.addEventListener('keydown',function(e){
       if(e.key==='Escape') closeDD();
-      if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')){ e.preventDefault(); var i=document.getElementById('cfSearch'); if(i){ i.focus(); i.select&&i.select(); } }
+      var t=e.target||{}; if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||'')&&!t.isContentEditable){ e.preventDefault(); var i=document.getElementById('cfSearch'); if(i){ i.focus(); i.select&&i.select(); } }
     });
   }
 

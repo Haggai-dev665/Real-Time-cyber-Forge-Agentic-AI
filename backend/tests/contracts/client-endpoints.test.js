@@ -90,14 +90,14 @@ test('every client default and the deploy manifest name the same backend', () =>
 
 function mobileCalls() {
   const source = read('mobile-app/src/api/endpoints.ts');
-  const starts = [...source.matchAll(/\bapi\.(get|post)\b/g)];
+  const starts = [...source.matchAll(/\bapi\.(get|post|put|del)\b/g)];
   return starts.map((match, index) => {
     const call = source.slice(match.index, index + 1 < starts.length ? starts[index + 1].index : source.length);
     // a simple `${value}` in the path is a parameter, read as `:param`; any other
     // `${…}` (such as an optional query string) ends the path, as does `?`
     const literal = call.match(/[`'"](\/[^`'"?]*)/)[1];
     return {
-      method: match[1],
+      method: match[1] === 'del' ? 'delete' : match[1],
       route: literal.replace(/\$\{\s*[\w.()]+\s*\}/g, ':param').split('${')[0],
       anonymous: /anonymous:\s*true/.test(call)
     };

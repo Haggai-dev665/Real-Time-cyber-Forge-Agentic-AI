@@ -487,42 +487,64 @@ class AgentOrchestrator {
 
     /**
      * Analyze a URL through the 8-agent DAG. Returns the full report.
+     *
+     * `onProgress`, when given, is called as the work happens, so a screen can
+     * show the agents working: {type:'stage', stage, agents} when a stage
+     * starts, {type:'agent_start', agent, stage} as each agent starts, and
+     * {type:'agent', agent, stage, status, latencyMs, result|error} as each one
+     * finishes (its internal data removed). A failing callback never stops the
+     * analysis.
      */
-    async analyze({ url, sessionId, userId }) {
+    async analyze({ url, sessionId, userId }, onProgress = null) {
         if (!url) throw new Error('url required');
         const startedAt = Date.now();
+        const tell = event => { try { if (onProgress) onProgress(event); } catch (_) { /* a screen's problem is not the analysis's */ } };
+        const run = (stage, name, input) => {
+            tell({ type: 'agent_start', agent: name, stage, role: this.agents[name].role });
+            return this.agents[name].execute(input).then(r => {
+                tell({ type: 'agent', stage, ...publicAgentResult(r) });
+                return r;
+            });
+        };
 
         // ── Stage 1: parallel, no deps ──
+        tell({ type: 'stage', stage: 1, agents: ['url_classifier', 'dga_detector', 'web_scraper', 'memory'] });
         const stage1 = await Promise.all([
-            this.agents.url_classifier.execute({ url }),
-            this.agents.dga_detector.execute({ url }),
-            this.agents.web_scraper.execute({ url }),
-            this.agents.memory.execute({ url, sessionId, userId }),
+            run(1, 'url_classifier', { url }),
+            run(1, 'dga_detector', { url }),
+            run(1, 'web_scraper', { url }),
+            run(1, 'memory', { url, sessionId, userId }),
         ]);
         const s1 = Object.fromEntries(stage1.map(r => [r.agent, r]));
 
         // ── Stage 2: depends on scraper output ──
         const scraperResult = s1.web_scraper?.status === 'ok' ? s1.web_scraper.result : null;
+        tell({ type: 'stage', stage: 2, agents: ['ioc_extractor', 'behavioral'] });
         const stage2 = await Promise.all([
-            this.agents.ioc_extractor.execute({ url, scraperResult }),
-            this.agents.behavioral.execute({ scraperResult }),
+            run(2, 'ioc_extractor', { url, scraperResult }),
+            run(2, 'behavioral', { scraperResult }),
         ]);
         const s2 = Object.fromEntries(stage2.map(r => [r.agent, r]));
 
         // ── Stage 3: depends on IOCs ──
         const iocResult = s2.ioc_extractor?.status === 'ok' ? s2.ioc_extractor.result : null;
+        tell({ type: 'stage', stage: 3, agents: ['mitre_mapper', 'threat_intel'] });
         const stage3 = await Promise.all([
-            this.agents.mitre_mapper.execute({ url, scraperResult, iocResult }),
-            this.agents.threat_intel.execute({ iocResult }),
+            run(3, 'mitre_mapper', { url, scraperResult, iocResult }),
+            run(3, 'threat_intel', { iocResult }),
         ]);
         const s3 = Object.fromEntries(stage3.map(r => [r.agent, r]));
+        tell({ type: 'stage', stage: 4, agents: ['reporter'] });
 
         const allAgents = { ...s1, ...s2, ...s3 };
 
         // ── Reporter: aggregate + persist ──
+        tell({ type: 'agent_start', agent: 'reporter', stage: 4, role: this.agents.reporter.role });
         const reporterResult = await this.agents.reporter.execute({
             url, sessionId, userId, agents: allAgents,
         });
+        // the report itself is the final answer; this only says the reporter finished
+        tell({ type: 'agent', agent: 'reporter', stage: 4, role: this.agents.reporter.role, status: reporterResult.status, latencyMs: reporterResult.latencyMs, ...(reporterResult.status === 'ok' ? {} : { error: reporterResult.error }) });
         const finalReport = reporterResult.status === 'ok'
             ? reporterResult.result
             : { error: reporterResult.error, partial: allAgents };
@@ -579,5 +601,26 @@ class AgentOrchestrator {
     }
 }
 
+/**
+ * An agent's result as a screen may see it: without the scraper's raw page
+ * data or other internal fields (those starting with "_"), and bounded in size.
+ */
+function publicAgentResult(r) {
+    const out = { agent: r.agent, role: r.role, status: r.status, latencyMs: r.latencyMs };
+    if (r.status !== 'ok') return { ...out, error: r.error || 'failed' };
+    const result = {};
+    for (const [key, value] of Object.entries(r.result || {})) {
+        if (key.startsWith('_') || key === 'aiContext') continue;
+        result[key] = value;
+    }
+    let text = JSON.stringify(result);
+    if (text.length > 4000) {
+        // keep the headline fields; drop long lists
+        for (const key of Object.keys(result)) if (Array.isArray(result[key]) && result[key].length > 5) result[key] = result[key].slice(0, 5);
+        text = JSON.stringify(result);
+    }
+    return { ...out, result: text.length > 6000 ? { truncated: true } : result };
+}
+
 const agentOrchestrator = new AgentOrchestrator();
-module.exports = { AgentOrchestrator, agentOrchestrator };
+module.exports = { AgentOrchestrator, agentOrchestrator, publicAgentResult };

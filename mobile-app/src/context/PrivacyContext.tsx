@@ -12,11 +12,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const CONSENT_VERSION = 1;
+// 2: "Cloud scanning" added (scanning an address you choose); everyone decides again.
+export const CONSENT_VERSION = 2;
 const STORAGE_KEY = 'cf_privacy';
 const MAX_LOG = 50;
 
-export type PrivacyFeature = 'capture' | 'capture_sync' | 'llm_processing';
+export type PrivacyFeature = 'capture' | 'capture_sync' | 'cloud_scanning' | 'llm_processing';
 
 export const PRIVACY_FEATURES: Array<{ id: PrivacyFeature; label: string; detail: string }> = [
   {
@@ -30,6 +31,12 @@ export const PRIVACY_FEATURES: Array<{ id: PrivacyFeature; label: string; detail
     label: 'Sync captures to your account',
     detail:
       'Sends captured requests (host, address with sign-in codes and tokens removed, method, status, sizes, app) to the CyberForge backend, so your desktop can see them.',
+  },
+  {
+    id: 'cloud_scanning',
+    label: 'Cloud scanning',
+    detail:
+      "Sends an address you choose to scan to the CyberForge backend, which runs its eight analysis agents on it: the ML service's models, a rendered-page scanner and AlienVault OTX. Only addresses you scan are sent.",
   },
   {
     id: 'llm_processing',
@@ -68,7 +75,7 @@ interface PrivacyContextValue {
 }
 
 const EMPTY: Stored = { consentVersion: CONSENT_VERSION, decidedAt: null, choices: {}, log: [] };
-const OFF: Record<PrivacyFeature, boolean> = { capture: false, capture_sync: false, llm_processing: false };
+const OFF: Record<PrivacyFeature, boolean> = { capture: false, capture_sync: false, cloud_scanning: false, llm_processing: false };
 
 const Ctx = createContext<PrivacyContextValue | null>(null);
 
@@ -77,6 +84,7 @@ function current(stored: Stored): Record<PrivacyFeature, boolean> {
   return {
     capture: stored.choices.capture === true,
     capture_sync: stored.choices.capture_sync === true,
+    cloud_scanning: stored.choices.cloud_scanning === true,
     llm_processing: stored.choices.llm_processing === true,
   };
 }

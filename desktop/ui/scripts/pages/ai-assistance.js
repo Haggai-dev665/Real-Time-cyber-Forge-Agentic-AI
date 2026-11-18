@@ -24,21 +24,33 @@ function addBot(html){
   return b;
 }
 
-/* lightweight, safe markdown -> HTML (escape first, then format) */
+/* lightweight, safe markdown -> HTML (escape first, then format).
+   Structure: consecutive text lines form one paragraph; a line that is only bold
+   text, or a short "Title:" line, is a subheading; lists, headings, rules and
+   code blocks as usual; the ML service's "From the reviewed sources" supplement
+   is set apart as a note. */
 function mdToHtml(raw){
-  const lines=escHtml(raw).split('\n'); const out=[]; let inList=false,inCode=false,code=[];
-  const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
-  const closeList=()=>{ if(inList){ out.push('</ul>'); inList=false; } };
-  for(const ln of lines){
-    if(/^```/.test(ln)){ if(inCode){ out.push('<div class="codeline">'+code.join('\n')+'</div>'); code=[]; inCode=false; } else { closeList(); inCode=true; } continue; }
-    if(inCode){ code.push(ln); continue; }
-    const h=ln.match(/^#{1,6}\s+(.+)$/); if(h){ closeList(); out.push('<div class="md-h">'+inline(h[1])+'</div>'); continue; }
-    const li=ln.match(/^\s*(?:[-*]|\d+\.)\s+(.+)$/); if(li){ if(!inList){ out.push('<ul>'); inList=true; } out.push('<li>'+inline(li[1])+'</li>'); continue; }
-    closeList();
-    if(ln.trim()==='') out.push('<br>'); else out.push('<div>'+inline(ln)+'</div>');
+  const lines=escHtml(raw).replace(/\r/g,'').split('\n'); const out=[]; let list=null,inCode=false,code=[],para=[];
+  const inline=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g,'$1<i>$2</i>').replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  const closeList=()=>{ if(list){ out.push('</'+list+'>'); list=null; } };
+  const openList=kind=>{ if(list!==kind){ closeList(); out.push('<'+kind+'>'); list=kind; } };
+  const flushPara=()=>{ if(para.length){ out.push('<p>'+inline(para.join(' '))+'</p>'); para=[]; } };
+  const block=html=>{ flushPara(); closeList(); out.push(html); };
+  for(const raw of lines){
+    const ln=raw.replace(/\s+$/,'');
+    if(/^\s*```/.test(ln)){ if(inCode){ out.push('<div class="codeline">'+code.join('\n')+'</div>'); code=[]; inCode=false; } else { flushPara(); closeList(); inCode=true; } continue; }
+    if(inCode){ code.push(raw); continue; }
+    if(ln.trim()===''){ flushPara(); closeList(); continue; }
+    const h=ln.match(/^\s*#{1,6}\s+(.+)$/); if(h){ block('<div class="md-h">'+inline(h[1])+'</div>'); continue; }
+    if(/^\s*(?:-{3,}|\*{3,})\s*$/.test(ln)){ block('<hr>'); continue; }
+    const note=ln.match(/^\s*\*\*From the reviewed sources:\*\*\s*(.+)$/); if(note){ block('<div class="md-note"><b>From the reviewed sources</b> '+inline(note[1])+'</div>'); continue; }
+    const sub=ln.match(/^\s*\*\*([^*]{1,80}?):?\*\*:?\s*$/)||ln.match(/^\s*([A-Z][^.!?:]{1,48}):\s*$/); if(sub){ block('<div class="md-sub">'+inline(sub[1])+'</div>'); continue; }
+    const ol=ln.match(/^\s*\d+[.)]\s+(.+)$/); if(ol){ flushPara(); openList('ol'); out.push('<li>'+inline(ol[1])+'</li>'); continue; }
+    const li=ln.match(/^\s*[-*•]\s+(.+)$/); if(li){ flushPara(); openList('ul'); out.push('<li>'+inline(li[1])+'</li>'); continue; }
+    closeList(); para.push(ln.trim());
   }
   if(inCode) out.push('<div class="codeline">'+code.join('\n')+'</div>');
-  closeList(); return out.join('');
+  flushPara(); closeList(); return out.join('');
 }
 
 /* ============================ CHAT STORE (local, persisted) ============================ */
@@ -56,7 +68,8 @@ function deleteChat(id){ finishTypingIfAny(); chats=chats.filter(function(c){ret
   if(!chats.length){ persist(); newChat(); return; }
   persist(); renderChatList(); renderMessages(); updateSuggest(); }
 function pushMsg(role,text,answer){ var c=curChat(); if(!c)return; var m={role:role,text:text,at:Date.now()};
-  if(role==='ai'&&answer){ var d=(answer&&answer.data)||answer; m.engine=CF.engineOf(answer); m.references=Array.isArray(d.references)?d.references.slice(0,3):[]; m.grounding=d.grounding||null; }
+  if(role==='ai'&&answer){ var d=(answer&&answer.data)||answer; m.engine=CF.engineOf(answer); m.references=Array.isArray(d.references)?d.references.slice(0,3):[]; m.grounding=d.grounding||null;
+    if(typeof d.thinking==='string'&&d.thinking){ m.thinking=d.thinking.slice(0,4000); m.thinkingMs=+d.thinking_ms||null; } }
   c.messages.push(m);
   if(role==='user'&&!c.title) c.title=text.slice(0,42); c.at=Date.now(); persist(); renderChatList(); }
 function renderChatList(){ var el=document.getElementById('chatList'); if(!el)return;
@@ -71,7 +84,7 @@ function renderChatList(){ var el=document.getElementById('chatList'); if(!el)re
 }
 function renderMessages(){ chat.innerHTML=''; var c=curChat();
   if(!c||!c.messages.length){ seed(); return; }
-  c.messages.forEach(function(m){ if(m.role==='user') addUser(escHtml(m.text)); else { var b=addBot(''); b.innerHTML=mdToHtml(m.text)+(m.engine?CF.engineNoteHTML(m):''); } });
+  c.messages.forEach(function(m){ if(m.role==='user') addUser(escHtml(m.text)); else { var b=addBot(''); b.innerHTML=mdToHtml(m.text)+CF.referenceNoteHTML(m); if(m.thinking) b.insertBefore(thoughtPanel(m.thinking,m.thinkingMs,false).el,b.firstChild); } });
   chat.scrollTop=chat.scrollHeight; }
 function updateSuggest(){ var s=document.getElementById('suggest'); if(!s)return; var c=curChat(); s.style.display=(c&&c.messages.length)?'none':'flex'; }
 
@@ -175,7 +188,7 @@ function finishTyping(){
   var s=typingState; typingState=null;
   var html=(s.mems&&s.mems.length?memChipHTML(s.mems.length):'')+mdToHtml(s.full);
   // which engine produced this answer, as reported by whoever answered (s.fallback carries the answer body)
-  html+=CF.engineNoteHTML(s.fallback);
+  html+=CF.referenceNoteHTML(s.fallback);
   s.b.innerHTML=html;
   var threat=threatCandidate(s.mems); if(threat) appendThreatActions(s.b, threat);
   chat.scrollTop=chat.scrollHeight;
@@ -191,30 +204,101 @@ function updateModel(body){ var nice=CF.engineShort(body), full=CF.engineLabel(b
   if(modelBadge){ modelBadge.textContent=nice; modelBadge.title=full; } if(ctxModel){ ctxModel.textContent=nice; ctxModel.title=full; }
   var sb=document.getElementById('sbEngine'); if(sb) sb.textContent='assistant: '+nice; }
 
-async function ask(q){
+/* ============================ STREAMED ANSWERS ============================
+   The assistant reasons first on real questions (a "Thinking" panel that fills as it
+   reasons and folds to "Thought for N s"), then writes the answer, shown as it arrives.
+   The final answer comes back checked: it can carry reviewed facts the stream did not. */
+function el(tag,cls,text){ var e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+function thoughtPanel(text,ms,live){
+  var d=el('details','thought'+(live?'':' done')); d.open=!!live;
+  var sum=el('summary'); var eq=el('span','eq'); for(var i=0;i<5;i++) eq.appendChild(el('i'));
+  var label=el('span','tl',live?'Thinking…':'Thought'+(ms?' for '+(ms/1000).toFixed(1)+' s':''));
+  sum.appendChild(eq); sum.appendChild(label); sum.appendChild(el('span','chev','›'));
+  var body=el('div','thought-body',text||'');
+  d.appendChild(sum); d.appendChild(body);
+  return { el:d, body:body, done:function(seconds){ d.open=false; d.classList.add('done'); label.textContent='Thought for '+seconds.toFixed(1)+' s'; } };
+}
+var liveStreams={};
+if(window.CF&&CF.listen) CF.listen('cf-chat-stream',function(p){ var l=p&&liveStreams[p.id]; if(l) l.push(p.type,String(p.delta==null?'':p.delta)); });
+function liveAnswer(b){
+  b.textContent='';
+  var t0=Date.now(), tAnswer=0, thinking='', text='', raf=0;
+  var thought=thoughtPanel('',null,true); b.appendChild(thought.el);
+  var ans=el('div','answer-live'); var cursor=el('span','tcursor'); ans.appendChild(cursor); b.appendChild(ans);
+  function paint(){ raf=0; ans.innerHTML=mdToHtml(text); ans.appendChild(cursor); chat.scrollTop=chat.scrollHeight; }
+  return {
+    push:function(type,delta){
+      if(type==='thinking'){ thinking+=delta; thought.body.textContent=thinking; thought.body.scrollTop=thought.body.scrollHeight; chat.scrollTop=chat.scrollHeight; return; }
+      if(type!=='answer') return;
+      if(!tAnswer){ tAnswer=Date.now(); if(thinking) thought.done((tAnswer-t0)/1000); else thought.el.remove(); }
+      text+=delta; if(!raf) raf=requestAnimationFrame(paint);
+    },
+    finish:function(body,mems){
+      if(raf) cancelAnimationFrame(raf);
+      var d=(body&&body.data)||body||{};
+      var final=d.response||d.answer||d.text||d.reply||text||'I couldn\'t generate a response just now. Please retry shortly.';
+      var reasoning=(typeof d.thinking==='string'&&d.thinking)||thinking;
+      if(reasoning){
+        if(!thought.el.parentNode) b.insertBefore(thought.el,b.firstChild);
+        thought.body.textContent=reasoning;
+        thought.done(d.thinking_ms!=null?d.thinking_ms/1000:((tAnswer||Date.now())-t0)/1000);
+      }else if(thought.el.parentNode) thought.el.remove();
+      ans.className='';
+      ans.innerHTML=(mems&&mems.length?memChipHTML(mems.length):'')+mdToHtml(final)+CF.referenceNoteHTML(body);
+      return final;
+    }
+  };
+}
+function messageActions(bubble,q,final){
+  var row=el('div','msg-actions');
+  var copy=el('button',null,'Copy'); copy.type='button';
+  copy.addEventListener('click',function(){ try{ navigator.clipboard.writeText(final).then(function(){ copy.textContent='Copied'; setTimeout(function(){ copy.textContent='Copy'; },1400); }); }catch(e){} });
+  var again=el('button',null,'Regenerate'); again.type='button';
+  again.addEventListener('click',function(){
+    if(busy) return; var c=curChat(); if(c&&c.messages.length&&c.messages[c.messages.length-1].role==='ai'){ c.messages.pop(); persist(); }
+    var m=bubble.closest('.msg'); if(m) m.remove(); ask(q,true);
+  });
+  row.appendChild(copy); row.appendChild(again); bubble.appendChild(row);
+}
+/* The conversation so far, as real turns (the question itself goes separately). */
+function chatHistory(){
+  var c=curChat(); if(!c||!c.messages) return [];
+  return c.messages.slice(0,-1).slice(-6).map(function(m){ return {role:m.role==='user'?'user':'assistant', content:clipText(m.text,1500)}; });
+}
+function buildQuery(q, mems){
+  if(!mems||!mems.length) return q;
+  var c=mems._counts||{};
+  var ctx=mems.slice(0,MAX_MEMORIES).map(function(m,i){ return (i+1)+'. ['+m.category+'] '+clipText(m.text,MAX_MEMORY_CHARS); }).join('\n');
+  return 'My CyberForge memory ('+(c.total||mems.length)+' items; the most relevant shown). Use it only if it helps answer, and cite hosts, verdicts and risk scores from it; never invent scans, threats or detections:\n'+ctx+'\n\nMy question: '+q;
+}
+
+async function ask(q, again){
   if(busy) return; busy=true;
   finishTypingIfAny();
-  addUser(escHtml(q)); pushMsg('user',q); updateSuggest();
-  const b=addBot(thinkingHTML());
-  const stopThink=rotateThinking(b);
+  if(!again){ addUser(escHtml(q)); pushMsg('user',q); updateSuggest(); }
+  const b=addBot('');
+  const live=liveAnswer(b);
+  const id='a'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   try{
     const found=wantsMemory(q)?await gatherMemory(q):[];
     const mems=found.slice(0,MAX_MEMORIES); mems._counts=found._counts;  // the ones actually sent
-    const body=await CF.ml.chat(buildAugmented(q,mems), 400);
-    const d=(body&&body.data)||body||{};
-    let txt=d.response||d.answer||d.text||d.output||d.reply||body.response||body.message||'';
-    if(!txt) txt='I couldn\'t generate a response just now. Please retry shortly.';
-    stopThink();
+    liveStreams[id]=live;
+    let body;
+    try{ body=await CF.invoke('ml_security_chat_stream',{ query:buildQuery(q,mems), history:chatHistory(), think:'auto', requestId:id }); }
+    finally{ delete liveStreams[id]; }
     // the answer body goes along so the engine that produced it is shown under it
-    typeInto(b, txt, mems, body, function(){ pushMsg('ai',txt,body); updateModel(body); });
+    const final=live.finish(body,mems);
+    pushMsg('ai',final,body); updateModel(body);
+    messageActions(b,q,final);
+    var threat=threatCandidate(mems); if(threat) appendThreatActions(b, threat);
+    chat.scrollTop=chat.scrollHeight;
   }catch(e){
-    stopThink();
-    const offline=/no tauri|tauri-unavailable/i.test(String((e&&e.message)||e));
-    b.innerHTML= offline
+    const why=String((e&&e.message)||e);
+    const offline=/no tauri|tauri-unavailable/i.test(why);
+    b.textContent= offline
       ? 'The AI service is only available inside the desktop app (Tauri bridge not found).'
-      : 'I hit an error reaching the assistant. Please retry shortly.';
-    busy=false;
-  }
+      : /privacy|allow|permission|sign in/i.test(why) ? why : 'I hit an error reaching the assistant. Please retry shortly.';
+  }finally{ busy=false; }
 }
 const input=document.getElementById('msgInput'), send=document.getElementById('sendBtn');
 function submit(){ const v=input.value.trim(); if(!v)return; input.value=''; ask(v); }

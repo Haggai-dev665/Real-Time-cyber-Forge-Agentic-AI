@@ -23,6 +23,7 @@ import { LiveFeedProvider } from '../src/context/LiveFeedContext';
 import { AlertsProvider } from '../src/context/AlertsContext';
 import { VpnProvider } from '../src/context/VpnContext';
 import { PrivacyProvider } from '../src/context/PrivacyContext';
+import { DeviceProvider } from '../src/context/DeviceContext';
 import { colors } from '../src/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -52,6 +53,7 @@ export default function RootLayout() {
         <AuthProvider>
           <PrivacyProvider>
           <LiveFeedProvider>
+            <DeviceProvider>
             <AlertsProvider>
             <VpnProvider>
             <StatusBar style="light" />
@@ -74,6 +76,7 @@ export default function RootLayout() {
             </Stack>
             </VpnProvider>
             </AlertsProvider>
+            </DeviceProvider>
           </LiveFeedProvider>
           </PrivacyProvider>
         </AuthProvider>

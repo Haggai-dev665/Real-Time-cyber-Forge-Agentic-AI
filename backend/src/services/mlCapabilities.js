@@ -27,7 +27,8 @@ const SUPPORTED_ML_ROUTES = [
   ['POST', '/api/v2/batch-analyze'],
   ['GET', '/api/v2/explain/:modelName'],
   ['POST', '/api/v2/ioc-scan'],
-  ['POST', '/api/v2/url-enrich']
+  ['POST', '/api/v2/url-enrich'],
+  ['POST', '/api/v2/file-scan']
 ];
 
 /**

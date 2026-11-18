@@ -1,0 +1,29 @@
+CYBERFORGE - THESIS DEFENCE V8
+
+Open: CyberForge - Thesis Defence v8.pptx  (V5, V6 and V7 are unchanged)
+Speaker notes: CyberForge - Thesis Defence v8 - Speaker notes.md (not in the deck)
+Use Slide Show (F5). On the rebuilt slides nothing moves on a timer: each part
+appears only when you click, so you can talk for as long as you need.
+
+CHANGES FROM V7 (17 slides)
+06  Brief literature review 1 of 2: four eras of detection research (rules and
+    features, classical ML, deep learning, specialised signals), 12 works with
+    their findings and each era's limit. Click once per era. The scrolling
+    timeline is removed.
+07  NEW - Brief literature review 2 of 2: threat intelligence (4 works), agents
+    and language models (4 works), each tied to the part of CyberForge that
+    uses it, and the four research gaps of thesis §2.10 with CyberForge's
+    response. Click per column, then per gap.
+08  System architecture: click once per tier, then once for the training lane.
+09  "Eight-agent pipeline" is now "Multi-agent architecture": orchestrator
+    (input, scheduling, isolation, honest failure, output), three stages with
+    their real data dependencies drawn as arrows, the service each agent calls,
+    why a dependency graph, the data passed between stages, the results bus
+    and the Reporter's five steps (weigh, adjust, decide, explain, store).
+    Click once per stage, once for the design notes, once for the Reporter.
+10  What each agent does: Stage 1 cards, then Stages 2-3, then the Reporter, on click.
+--  Every literature work cited is on the reference roll of the final slide.
+
+REPRODUCE
+Superseded by V9: build_defence_v9.py builds V9 (see READ-ME-V9.txt).
+The V8 file and its notes are kept as delivered.

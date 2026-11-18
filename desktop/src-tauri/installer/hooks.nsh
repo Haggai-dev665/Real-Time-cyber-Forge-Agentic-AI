@@ -24,4 +24,7 @@
   nsExec::Exec 'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$INSTDIR\installer\path-remove.ps1"'
   Pop $0
   DetailPrint "cyberforge CLI off PATH: exit $0"
+  ; The tray's "Start with Windows" entry (src/tray.rs), so no start-up entry
+  ; is left pointing at a removed program.
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "CyberForge"
 !macroend

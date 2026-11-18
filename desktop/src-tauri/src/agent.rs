@@ -691,7 +691,7 @@ fn html_to_text(html: &str) -> String {
 }
 
 /// Risk (0..=100) inferred from page content + signals.
-fn content_phish_signals(html: &str) -> (i64, Vec<String>) {
+pub(crate) fn content_phish_signals(html: &str) -> (i64, Vec<String>) {
     let h = html.to_lowercase();
     let mut risk = 0i64;
     let mut sig: Vec<String> = Vec::new();
@@ -928,7 +928,7 @@ async fn reinforce_scan(url: &str, backend_risk: i64, backend_cat: &str) -> (i64
 /// Build (or replace) the always-on-top threat-alert popup so the user sees it
 /// over their browser even when CyberForge is minimized. Window creation is
 /// dispatched to the main thread (a requirement on some platforms).
-fn show_threat_alert(app: &tauri::AppHandle) {
+pub(crate) fn show_threat_alert(app: &tauri::AppHandle) {
     let app = app.clone();
     let _ = app.clone().run_on_main_thread(move || {
         use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
@@ -1653,4 +1653,44 @@ pub async fn auth_google(state: State<'_, SharedState>) -> Result<Value, String>
     }
 
     Ok(body)
+}
+
+/// While the window is hidden in the tray nobody sees the agent panel, so a
+/// background scan that crosses the usual alert bar (`alert_floor`) opens the
+/// same always-on-top alert as a cloud scan. The message says what was checked:
+/// the background path runs the on-device URL models only.
+pub(crate) async fn alert_from_background(app: &tauri::AppHandle, state: &SharedState, url: &str, result: &Value) {
+    let risk = result.pointer("/data/riskScore").and_then(Value::as_i64).unwrap_or(0);
+    let host = scan_host(url);
+    if host.is_empty() || risk < alert_floor(host_reputation(&host)) {
+        return;
+    }
+    let category = result.pointer("/data/category").and_then(Value::as_str).unwrap_or("suspicious").to_string();
+    let signals = result.pointer("/data/signals").cloned().unwrap_or_else(|| json!([]));
+    let fire = {
+        let mut s = state.lock().await;
+        let now = Instant::now();
+        let recent = s.alerted_hosts.get(&host).map(|t| now.duration_since(*t) < Duration::from_secs(600)).unwrap_or(false);
+        if recent {
+            false
+        } else {
+            s.alerted_hosts.insert(host.clone(), now);
+            s.pending_threat = Some(json!({
+                "host": host.clone(),
+                "url": url,
+                "risk": risk,
+                "category": category,
+                "message": format!(
+                    "While CyberForge was running in the tray, the on-device check rated {} {} / 100. Only the address was checked, not the page. What would you like to do?",
+                    host, risk
+                ),
+                "signals": signals,
+                "source": "background-local",
+            }));
+            true
+        }
+    };
+    if fire {
+        show_threat_alert(app);
+    }
 }

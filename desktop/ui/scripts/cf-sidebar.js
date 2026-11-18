@@ -35,6 +35,7 @@
   I.chat=svg('<path d="M21 15a3 3 0 0 1-3 3H8l-5 3V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3Z"/><path d="M7 8h10M7 12h7"/>');
   I.browser=svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M7 5.5h.01M10 5.5h.01"/>');
   I.memory=svg('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>');
+  I.live=svg('<rect x="3" y="4" width="18" height="15" rx="2"/><path d="M3 8h18"/><path d="m11 11 6 2.2-2.6 1-1 2.6Z"/>');
   I.gear=svg('<path d="m9 3-1 3-3 1v3l-2 2 2 2v3l3 1 1 3h6l1-3 3-1v-3l2-2-2-2V7l-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/>');
   const groups=[
     ['Workspace',[
@@ -45,6 +46,7 @@
     ]],
     ['Security',[
       ['analyzer','Analyze','analyzer.html',I.search],
+      ['livebrowser','Live Agent','live-browser.html',I.live],
       ['alerts','Alerts & Incidents','alerts-evidence.html',I.bell],
       ['security','Protection','security-functions.html',I.shield],
       ['reports','Reports','reports.html',I.doc]

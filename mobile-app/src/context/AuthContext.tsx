@@ -2,12 +2,14 @@
  * Authentication state: holds the JWT + user, persists to secure storage, and
  * exposes login / register / guest / logout. "Guest" mode skips auth and relies
  * on the backend's public endpoints (orchestrator, OTX, sandbox, health).
+ * Signing out also removes what the phone kept for the account (src/api/userStore.ts).
  */
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { endpoints } from '../api/endpoints';
 import { getItem, setItem, deleteItem, TOKEN_KEY, USER_KEY } from '../api/storage';
 import type { AuthUser } from '../api/types';
 import { ApiError } from '../api/client';
+import { clearAccount } from '../api/userStore';
 
 interface AuthState {
   ready: boolean;
@@ -92,7 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await Promise.all([deleteItem(TOKEN_KEY), deleteItem(USER_KEY), deleteItem(GUEST_FLAG)]);
+    // what the phone kept for this account (cache, conversations, capture outbox) goes with the session
+    const userJson = await getItem(USER_KEY);
+    const leaving = userJson ? (JSON.parse(userJson) as AuthUser).id : null;
+    await Promise.all([deleteItem(TOKEN_KEY), deleteItem(USER_KEY), deleteItem(GUEST_FLAG), leaving ? clearAccount(leaving) : Promise.resolve()]);
     setState({ ready: true, token: null, user: null, isGuest: false, signedIn: false });
   }, []);
 

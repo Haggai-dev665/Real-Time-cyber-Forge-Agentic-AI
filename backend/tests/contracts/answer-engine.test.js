@@ -112,7 +112,11 @@ test('no screen or command names an engine that did not answer', () => {
   const assistant = read('desktop/ui/pages/ai-assistance.html');
   expect(assistant).not.toMatch(/id="modelBadge">DeepSeek</);
   expect(assistant).not.toMatch(/id="ctxModel">DeepSeek</);
-  expect(assistant).toMatch(/CF\.engineNoteHTML\(/);
+  // the owner asked for no "Answered by" line under each answer: the answer shows its
+  // sources, and the engine that answered is reported in the session panel instead
+  expect(assistant).not.toMatch(/CF\.engineNoteHTML\(/);
+  expect(assistant).toMatch(/CF\.referenceNoteHTML\(body\)/);
+  expect(assistant).toMatch(/function updateModel\(body\)\{ var nice=CF\.engineShort\(body\), full=CF\.engineLabel\(body\);/);
   expect(read('desktop/ui/scripts/cf-header.js')).not.toMatch(/DeepSeek-V3<\/span>/);
   expect(read('desktop/ui/pages/agent-core.html')).toMatch(/CF\.engineLabel\(o\.body\)/);
   // and the backend no longer calls anything "ZySec"

@@ -109,12 +109,27 @@ class CyberForgeMLService {
         return this._callTransformerEndpoint('/api/v2/dga-detect', { domain });
     }
 
-    async securityChat(query, maxTokens = 512, timeBudgetS = 40) {
+    async securityChat(query, maxTokens = 512, timeBudgetS = 40, { history, think } = {}) {
         // The request waits up to 60 s (_callTransformerEndpoint), so the model may
-        // take 40 s: on the ML service's CPU, reading a long prompt alone takes ~15 s.
-        // A person is waiting on this answer (the assistant): it goes before the
-        // background explanations of scans, which give way to it on the ML service.
-        return this._callTransformerEndpoint('/api/v2/security-chat', { query, max_tokens: maxTokens, time_budget_s: timeBudgetS, priority: 'interactive' });
+        // take 40 s. A person is waiting on this answer (the assistant): it goes
+        // before the background explanations of scans, which give way to it on the
+        // ML service. `history` is the conversation so far ([{role, content}]);
+        // `think` ("auto" | "on" | "off") lets the model reason before answering.
+        return this._callTransformerEndpoint('/api/v2/security-chat', {
+            query, max_tokens: maxTokens, time_budget_s: timeBudgetS, priority: 'interactive',
+            ...(Array.isArray(history) && history.length ? { history } : {}), ...(think ? { think } : {})
+        });
+    }
+
+    /**
+     * The assistant's answer as it is written: the ML service's server-sent
+     * events ({type: "thinking"|"answer", delta} then {type: "final", result}).
+     * Resolves to the axios response; its `data` is the readable stream.
+     */
+    async securityChatStream(query, { maxTokens = 700, timeBudgetS = 45, history = [], think = 'auto' } = {}) {
+        return axios.post(`${this.hfSpaceUrl}/api/v2/security-chat`, {
+            query, max_tokens: maxTokens, time_budget_s: timeBudgetS, priority: 'interactive', history, think, stream: true
+        }, { responseType: 'stream', timeout: 90000, headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' }, validateStatus: () => true });
     }
 
     async iocScan(indicators = {}) {

@@ -23,7 +23,8 @@ resolver = "2"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+# `tray-icon`: the system tray icon and menu (src/tray.rs).
+tauri = { version = "2", features = ["tray-icon"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Shared native services, also used by the cyberforge CLI (crates/cyberforge-core).
@@ -57,6 +58,10 @@ getrandom = "0.3"
 # Device identity (device.rs): this installation's Ed25519 key. Already in the
 # build through rustls, so nothing new is downloaded.
 ring = "0.17"
+# Live agent browser (live_browse.rs): the Chrome DevTools Protocol over a
+# WebSocket to a headless browser on 127.0.0.1 only, so no TLS features.
+tokio-tungstenite = { version = "0.26", default-features = false, features = ["connect", "handshake"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 
 # Windows-only: read the foreground window title so we can identify the active
 # browser tab the user is actually looking at (priority target for real-time

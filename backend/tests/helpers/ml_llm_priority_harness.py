@@ -17,7 +17,8 @@ from typing import Dict, List, Optional
 SETTINGS = {"LOCAL_LLM_REPO", "LOCAL_LLM_FILE", "LOCAL_LLM_MAX_TOKENS", "LOCAL_LLM_TEMPERATURE",
             "LOCAL_LLM_REVISION",
             "LOCAL_LLM_MAX_INPUT_CHARS", "LOCAL_LLM_TIME_BUDGET_S", "LOCAL_LLM_MAX_TIME_BUDGET_S",
-            "LOCAL_LLM_QUEUE_TIMEOUT_S", "LOCAL_LLM_INTERACTIVE_WAIT_S"}
+            "LOCAL_LLM_QUEUE_TIMEOUT_S", "LOCAL_LLM_INTERACTIVE_WAIT_S",
+            "LOCAL_LLM_THINK_TOKENS", "LOCAL_LLM_HISTORY_TURNS", "LOCAL_LLM_HISTORY_CHARS"}
 
 
 class FakeModel:
@@ -35,12 +36,12 @@ class FakeModel:
 
 def load(source_path):
     sys.path.insert(0, str(Path(source_path).resolve().parent))
-    from security_knowledge import ground_prompt, finish_grounded_answer, reference_grammar
+    from security_knowledge import ground_prompt, finish_grounded_answer, reference_grammar, question_text
     tree = ast.parse(open(source_path, encoding="utf-8").read())
     picked = [n for n in tree.body if (isinstance(n, ast.ClassDef) and n.name == "LocalLLM")
               or (isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in SETTINGS for t in n.targets))]
     namespace = {"os": __import__("os"), "re": re, "time": time, "threading": threading, "Dict": Dict, "List": List,
-                 "ground_prompt": ground_prompt, "finish_grounded_answer": finish_grounded_answer, "reference_grammar": reference_grammar,
+                 "ground_prompt": ground_prompt, "finish_grounded_answer": finish_grounded_answer, "reference_grammar": reference_grammar, "question_text": question_text,
                  "Optional": Optional, "logger": None, "hf_hub_download": None, "subprocess": None, "sys": sys}
     exec(compile(ast.Module(body=picked, type_ignores=[]), source_path, "exec"), namespace)
     return namespace

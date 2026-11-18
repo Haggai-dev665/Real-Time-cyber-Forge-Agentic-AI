@@ -1,0 +1,23 @@
+CYBERFORGE - THESIS DEFENCE V6
+
+Open: CyberForge - Thesis Defence v6.pptx  (V5 is unchanged)
+Use Slide Show (F5) in Microsoft PowerPoint for the native animations and Morph.
+
+CHANGES FROM V5 (16 slides)
+08  Eight-agent pipeline: MITRE Mapper moved to Stage 3, next to Threat
+    Intelligence. In backend/src/services/agentOrchestrator.js both run after
+    the IOC Extractor because both need its IOCs. Speaker notes corrected too.
+09  NEW - What each agent does: one card per specialist agent with its stage,
+    what it does, what it outputs and how many risk points it can add, and a
+    Reporter strip (points capped at 100, history multiplier, verdict cut-offs
+    65 / 35 / 15, "unknown" instead of "clean" when the page was not observed).
+    Speaker notes give the full spoken explanation. Built from slide 8's own card
+    groups, so fonts, colours and entrance animations match.
+16  Thank-you photo replaced by a tech photo: monitors showing a security alert
+    (Pexels 5380651, Tima Miroshnichenko, already credited), cropped and toned
+    like the other photos. Credits line updated to V6.
+    Methods counters now read "1 OF 6" ... "6 OF 6"; page numbers follow.
+
+REPRODUCE
+Superseded by V7: build_defence_v7.py builds V7, which contains every V6 change
+(see READ-ME-V7.txt). The V6 file itself is kept as delivered.

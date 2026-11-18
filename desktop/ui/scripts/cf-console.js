@@ -28,10 +28,11 @@
     return text;
   }
   // Observe requests, never their input bodies/tokens. Page readers share this bridge.
-  CF.invoke=function(cmd,args){
+  CF.invoke=function(cmd,args,options){
     args=args||{};const epoch=generation,started=Date.now(),token=Symbol(cmd),active=isAction(cmd,args);
     if(active){state.pending.set(token,{label:cmd.replace(/_/g,' '),started});render();}
-    return Promise.resolve().then(()=>original(cmd,args)).then(r=>{
+    // `options` carries request headers (a scanned file's name); it is passed on untouched.
+    return Promise.resolve().then(()=>original(cmd,args,options)).then(r=>{
       if(epoch!==generation)return r;
       if(cmd==='auth_logout'){clear();return r;}
       if(cmd==='privacy_get'||cmd==='privacy_set')state.privacy=r;

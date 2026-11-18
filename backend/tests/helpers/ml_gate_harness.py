@@ -12,7 +12,7 @@ import json
 import sys
 from typing import Optional
 
-GATE_NAMES = {"PUBLIC_PATHS", "OWNER_PATHS", "SERVICE_KEY_HEADER", "BodyTooLarge",
+GATE_NAMES = {"PUBLIC_PATHS", "FILE_SCAN_PATH", "OWNER_PATHS", "SERVICE_KEY_HEADER", "BodyTooLarge",
               "service_key_valid", "_reply", "ServiceGate"}
 
 
@@ -32,7 +32,9 @@ def load_gate(source_path, key, max_bytes):
     if missing:
         raise SystemExit(json.dumps({"error": f"not found in app.py: {sorted(missing)}"}))
     namespace = {"hmac": hmac, "json": json, "Optional": Optional,
-                 "ML_SERVICE_KEY": key, "ML_MAX_BODY_BYTES": max_bytes}
+                 "ML_SERVICE_KEY": key, "ML_MAX_BODY_BYTES": max_bytes,
+                 # the file-scan route alone may take a larger body
+                 "FILE_SCAN_MAX_BYTES": max_bytes * 4}
     exec(compile(ast.Module(body=picked, type_ignores=[]), source_path, "exec"), namespace)
     return namespace
 

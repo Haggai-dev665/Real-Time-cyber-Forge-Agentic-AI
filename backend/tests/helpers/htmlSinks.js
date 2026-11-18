@@ -12,7 +12,7 @@ const parser = require('@babel/parser');
 // review can say why it is safe (an icon constant, SVG geometry, a count).
 
 const ESCAPERS = new Set(['esc', 'escHtml', 'escapeHtml', 'tq', 'safe', 'e', 'h']);
-const ESCAPING_MEMBERS = new Set(['esc', 'engineNoteHTML']); // CF.esc, and CF.engineNoteHTML, which escapes inside
+const ESCAPING_MEMBERS = new Set(['esc', 'engineNoteHTML', 'referenceNoteHTML']); // CF.esc, and CF.engineNoteHTML and CF.referenceNoteHTML, which escape inside
 const NUMERIC = new Set(['toFixed', 'round', 'floor', 'ceil', 'min', 'max', 'abs']);
 
 function sourceFiles(dir) {

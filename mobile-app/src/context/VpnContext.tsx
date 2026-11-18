@@ -9,7 +9,11 @@
  *
  * Privacy (SEC-07, src/context/PrivacyContext.tsx): capture starts only when
  * "Capture network traffic" is on; flows are sent only while sync is on, and
- * turning sync off drops everything waiting to be sent. Addresses have sign-in
+ * turning sync off drops everything waiting to be sent. Waiting captures are
+ * kept, already redacted, in this account's outbox on the phone (F17): a failed
+ * upload stays there and is retried with backoff, the outbox is bounded and
+ * what it had to drop is counted, and signing out removes it. Uploads carry
+ * the phone's enrolled device ID once it is approved. Addresses have sign-in
  * codes and tokens removed before they leave the phone (src/utils/redact.ts;
  * the backend removes them again). The native engine is not given the session
  * token: it never sends anything itself.
@@ -34,10 +38,15 @@ import type { NetworkCaptureRecord } from '../api/types';
 import { useAuth } from './AuthContext';
 import { usePrivacy } from './PrivacyContext';
 import { redactUrl } from '../utils/redact';
+import { usePhoneDevice } from './DeviceContext';
+import { readJson, writeJson, removeKey } from '../api/userStore';
 
 const MAX_BUFFER = 300; // live flows kept in memory for the UI
 const FLUSH_EVERY_MS = 8000; // batch-push cadence
 const FLUSH_AT = 25; // …or when this many flows are queued
+const MAX_OUTBOX = 1000; // redacted records kept on the phone while uploads fail
+const BATCH = 200; // records per upload
+const OUTBOX = 'capture_outbox';
 
 interface VpnContextValue {
   supported: boolean;
@@ -47,6 +56,10 @@ interface VpnContextValue {
   syncedCount: number;
   /** Whether captures are being sent to the account (the privacy control). */
   syncing: boolean;
+  /** Captures waiting in the outbox, how many it had to drop, and the last upload error. */
+  outbox: { pending: number; dropped: number; lastError: string | null; nextRetryAt: number | null };
+  /** Upload what is waiting now, without waiting for the next attempt. */
+  retrySync: () => Promise<void>;
   start: () => Promise<void>;
   stop: () => Promise<void>;
   installCa: () => Promise<void>;
@@ -66,6 +79,21 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<VpnState>(INITIAL);
   const [flows, setFlows] = useState<NetworkFlow[]>([]);
   const [syncedCount, setSyncedCount] = useState(0);
+  const { activeDeviceId } = usePhoneDevice();
+  const deviceRef = useRef<string | null>(activeDeviceId);
+  deviceRef.current = activeDeviceId;
+
+  // Redacted records waiting to be uploaded, kept on the phone for this account.
+  const outbox = useRef<NetworkCaptureRecord[]>([]);
+  const failures = useRef(0);
+  const retryAt = useRef(0);
+  const [outboxState, setOutboxState] = useState({ pending: 0, dropped: 0, lastError: null as string | null, nextRetryAt: null as number | null });
+  const persistOutbox = useCallback((userId: string | null) => {
+    setOutboxState((o) => ({ ...o, pending: outbox.current.length }));
+    if (!userId) return;
+    if (outbox.current.length) void writeJson(userId, OUTBOX, outbox.current);
+    else void removeKey(userId, OUTBOX);
+  }, []);
 
   // Pending flows awaiting a batched push to the backend.
   const queue = useRef<NetworkFlow[]>([]);
@@ -75,6 +103,25 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     auth.current = { token, userId: user?.id ?? null, isGuest };
   }, [token, user, isGuest]);
+
+  // Each account has its own outbox: load it when the account changes.
+  const accountId = user?.id ?? null;
+  useEffect(() => {
+    outbox.current = [];
+    failures.current = 0;
+    retryAt.current = 0;
+    setOutboxState({ pending: 0, dropped: 0, lastError: null, nextRetryAt: null });
+    if (!accountId || isGuest) return;
+    let cancelled = false;
+    void readJson<NetworkCaptureRecord[]>(accountId, OUTBOX).then((saved) => {
+      if (cancelled || !Array.isArray(saved)) return;
+      outbox.current = saved.slice(-MAX_OUTBOX);
+      setOutboxState((o) => ({ ...o, pending: outbox.current.length }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId, isGuest]);
 
   // Subscribe to native flow + status events for the lifetime of the provider.
   useEffect(() => {
@@ -106,24 +153,52 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
       queue.current = [];
       return;
     }
-    if (queue.current.length === 0) return;
-    const batch = queue.current.splice(0, queue.current.length);
-    const records: NetworkCaptureRecord[] = batch.map(toRecord);
-    try {
-      const res = await endpoints.pushNetworkCapture(records, 'mobile');
-      const stored = res?.data?.stored ?? records.length;
-      setSyncedCount((n) => n + stored);
-    } catch {
-      // On failure, drop the batch rather than growing unbounded. The native
-      // engine keeps no copy, so those flows are not sent later.
+    // new captures join the outbox, redacted; the oldest are dropped past the limit, and counted
+    if (queue.current.length) {
+      outbox.current.push(...queue.current.splice(0, queue.current.length).map(toRecord));
+      const over = outbox.current.length - MAX_OUTBOX;
+      if (over > 0) {
+        outbox.current.splice(0, over);
+        setOutboxState((o) => ({ ...o, dropped: o.dropped + over }));
+      }
+      persistOutbox(userId);
     }
-  }, [allowsNow]);
+    if (outbox.current.length === 0 || Date.now() < retryAt.current) return;
+    const records = outbox.current.slice(0, BATCH);
+    try {
+      const res = await endpoints.pushNetworkCapture(records, deviceRef.current ?? 'mobile');
+      const stored = res?.data?.stored ?? records.length;
+      // the account may have changed or sync been turned off meanwhile
+      if (auth.current.userId !== userId || !allowsNow('capture_sync')) return;
+      outbox.current.splice(0, records.length);
+      failures.current = 0;
+      retryAt.current = 0;
+      setSyncedCount((n) => n + stored);
+      setOutboxState((o) => ({ ...o, lastError: null, nextRetryAt: null }));
+      persistOutbox(userId);
+    } catch (e) {
+      // kept for a later attempt, with growing waits (8 s, 16 s, … up to 5 minutes)
+      failures.current += 1;
+      const wait = Math.min(5 * 60 * 1000, FLUSH_EVERY_MS * 2 ** (failures.current - 1));
+      retryAt.current = Date.now() + wait;
+      setOutboxState((o) => ({ ...o, lastError: e instanceof Error ? e.message : 'Upload failed', nextRetryAt: retryAt.current }));
+    }
+  }, [allowsNow, persistOutbox]);
+
+  const retrySync = useCallback(async () => {
+    retryAt.current = 0;
+    await flush();
+  }, [flush]);
 
   // Turning sync off drops the flows waiting to be sent.
   const syncing = privacy.allows('capture_sync');
   useEffect(() => {
     if (!syncing) queue.current = [];
-  }, [syncing]);
+    if (!syncing && outbox.current.length) {
+      outbox.current = [];
+      persistOutbox(auth.current.userId);
+    }
+  }, [syncing, persistOutbox]);
 
   useEffect(() => {
     if (!isSupported) return;
@@ -185,8 +260,8 @@ export function VpnProvider({ children }: { children: React.ReactNode }) {
   const clear = useCallback(() => setFlows([]), []);
 
   const value = useMemo<VpnContextValue>(
-    () => ({ supported: isSupported, state, flows, syncedCount, syncing, start, stop, installCa, refreshCa, clear }),
-    [state, flows, syncedCount, syncing, start, stop, installCa, refreshCa, clear]
+    () => ({ supported: isSupported, state, flows, syncedCount, syncing, outbox: outboxState, retrySync, start, stop, installCa, refreshCa, clear }),
+    [state, flows, syncedCount, syncing, outboxState, retrySync, start, stop, installCa, refreshCa, clear]
   );
 
   return <VpnCtx.Provider value={value}>{children}</VpnCtx.Provider>;

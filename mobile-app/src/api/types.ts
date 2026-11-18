@@ -27,6 +27,10 @@ export interface ThreatStats {
 export interface Threat {
   _id?: string;
   id?: string;
+  threatId?: string;
+  timeline?: Array<{ timestamp?: string; event?: string; details?: string }>;
+  guidance?: { whyItMatters?: string; nextStep?: string; occurrences?: number };
+  occurrences?: number;
   type?: string;
   title?: string;
   severity?: 'low' | 'medium' | 'high' | 'critical';
@@ -94,12 +98,79 @@ export interface SandboxScan {
   createdAt?: string | number;
 }
 
+export interface AnswerEngine {
+  id?: string;
+  kind?: string;
+  label?: string;
+  model?: string | null;
+}
+
+export interface AnswerReference {
+  id?: string;
+  title?: string;
+  url?: string;
+}
+
 export interface SecurityChatResponse {
   success?: boolean;
   response?: string;
   answer?: string;
   model?: string;
   fallback?: boolean;
+  answered?: boolean;
+  reason?: string;
+  engine?: AnswerEngine;
+  references?: AnswerReference[];
+  thinking?: string | null;
+  thinking_ms?: number | null;
+}
+
+/** The finding workflow's actions (backend findingService TRANSITIONS). */
+export type FindingAction = 'acknowledge' | 'investigate' | 'resolve' | 'false_positive' | 'reopen';
+
+/** One agent's part of a scan report (AgentBase.execute in the backend). */
+export interface ScanAgentResult {
+  agent: string;
+  role?: string;
+  status: 'ok' | 'failed';
+  latencyMs?: number;
+  result?: Record<string, unknown>;
+  error?: string;
+}
+
+/** The orchestrator's full report for one address (ReportAgent). */
+export interface ScanReport {
+  id: string;
+  url: string;
+  verdict: 'malicious' | 'suspicious' | 'low-risk' | 'clean' | 'unknown' | string;
+  riskScore: number;
+  evidenceStatus?: string;
+  coverage?: { rendered_page?: string; reason?: string | null; gaps?: string[]; agents_failed?: string[] };
+  summary?: string;
+  summaryEngine?: AnswerEngine | null;
+  findings?: string[];
+  agents?: Record<string, ScanAgentResult>;
+  iocs?: Array<{ type: string; value: string; severity?: string; source?: string }>;
+  mitre?: Array<{ id?: string; techniqueId?: string; name?: string; tactic?: string }>;
+  createdAt?: string;
+}
+
+/** A memory the desktop synced to the account (backend models/SyncedMemory.js). */
+export interface SyncedMemory {
+  id: string;
+  text: string;
+  kind?: 'episodic' | 'semantic' | 'procedural' | string;
+  url?: string | null;
+  category?: string | null;
+  risk?: number | null;
+  ts?: number | string;
+  score?: number;
+}
+
+export interface DeviceHeartbeatResult {
+  accepted: boolean;
+  serverTime: string;
+  device?: DeviceRecord;
 }
 
 /* ---------------- network capture (mobile VPN) ---------------- */

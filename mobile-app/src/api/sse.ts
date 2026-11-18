@@ -13,6 +13,7 @@ import { API_BASE_URL } from './config';
 export const SSE_EVENTS = [
   'connected',
   'threat:new',
+  'threat:update',
   'alert:new',
   'scan:update',
   'scan:explanation',
@@ -75,5 +76,70 @@ export function openStream(token: string | null, handlers: StreamHandlers): () =
   return () => {
     es.removeAllEventListeners();
     es.close();
+  };
+}
+
+/* ---------------- the assistant's streamed answer ---------------- */
+
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatStreamHandlers {
+  onThinking: (delta: string) => void;
+  onAnswer: (delta: string) => void;
+  /** The checked answer (with its engine and references), or a no-answer result. */
+  onFinal: (result: Record<string, unknown>) => void;
+  onError: (message: string, status?: number) => void;
+}
+
+/**
+ * Ask the assistant and receive its reasoning and answer as they are written
+ * (POST /api/cyberforge-ml/v2/security-chat/stream, server-sent events). The
+ * session goes in the Authorization header, never in the address. Returns a
+ * function that stops the request.
+ */
+export function openChatStream(
+  token: string | null,
+  request: { query: string; history: ChatTurn[]; think: 'auto' | 'on' | 'off' },
+  handlers: ChatStreamHandlers,
+): () => void {
+  let done = false;
+  const es = new EventSource(`${API_BASE_URL}/api/cyberforge-ml/v2/security-chat/stream`, {
+    method: 'POST',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+    pollingInterval: 0, // one answer: no reconnect
+    timeout: 0,
+  });
+  const finish = () => {
+    done = true;
+    es.removeAllEventListeners();
+    es.close();
+  };
+  es.addEventListener('message', (event) => {
+    const raw = (event as { data?: string | null }).data;
+    if (!raw) return;
+    try {
+      const evt = JSON.parse(raw) as { type?: string; delta?: string; result?: Record<string, unknown> };
+      if (evt.type === 'thinking' && typeof evt.delta === 'string') handlers.onThinking(evt.delta);
+      else if (evt.type === 'answer' && typeof evt.delta === 'string') handlers.onAnswer(evt.delta);
+      else if (evt.type === 'final') {
+        handlers.onFinal(evt.result ?? {});
+        finish();
+      }
+    } catch {
+      /* a malformed line is skipped */
+    }
+  });
+  es.addEventListener('error', (event) => {
+    if (done) return;
+    const e = event as { message?: string; xhrStatus?: number };
+    handlers.onError(e.message || 'The connection to the assistant was lost', e.xhrStatus);
+    finish();
+  });
+  return () => {
+    if (!done) finish();
   };
 }

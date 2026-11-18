@@ -12,30 +12,39 @@ import { getItem, TOKEN_KEY } from './storage';
 export class ApiError extends Error {
   status: number;
   rateLimited: boolean;
-  constructor(message: string, status: number) {
+  /** The backend's error code, when it sent one (for example DEVICE_REVOKED). */
+  code: string | null;
+  constructor(message: string, status: number, code: string | null = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.rateLimited = status === 429;
+    this.code = code;
   }
 }
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
+  /** The exact body text to send, for requests signed over their bytes (device requests). */
+  rawBody?: string;
+  /** Extra headers, such as a device request's signature headers. */
+  headers?: Record<string, string>;
   /** Skip attaching the bearer token (for public/auth endpoints). */
   anonymous?: boolean;
   signal?: AbortSignal;
 }
 
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, anonymous = false, signal } = opts;
+  const { method = 'GET', body, rawBody, anonymous = false, signal } = opts;
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'User-Agent': USER_AGENT,
+    ...(opts.headers ?? {}),
   };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const payload = rawBody !== undefined ? rawBody : body !== undefined ? JSON.stringify(body) : undefined;
+  if (payload !== undefined) headers['Content-Type'] = 'application/json';
   if (!anonymous) {
     const token = await getItem(TOKEN_KEY);
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -46,7 +55,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     res = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: payload,
       signal,
     });
   } catch (e) {
@@ -78,7 +87,8 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       (json as { message?: string; error?: string } | null)?.message ||
       (json as { error?: string } | null)?.error ||
       `HTTP ${res.status}`;
-    throw new ApiError(msg, res.status);
+    const code = (json as { code?: unknown } | null)?.code;
+    throw new ApiError(msg, res.status, typeof code === 'string' ? code : null);
   }
 
   return json as T;
@@ -89,6 +99,8 @@ export const api = {
     request<T>(path, { ...opts, method: 'GET' }),
   post: <T>(path: string, body?: unknown, opts?: Omit<RequestOptions, 'method'>) =>
     request<T>(path, { ...opts, method: 'POST', body }),
+  put: <T>(path: string, body?: unknown, opts?: Omit<RequestOptions, 'method'>) =>
+    request<T>(path, { ...opts, method: 'PUT', body }),
   del: <T>(path: string, opts?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...opts, method: 'DELETE' }),
 };

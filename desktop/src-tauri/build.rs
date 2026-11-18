@@ -45,6 +45,8 @@ const COMMANDS: &[&str] = &[
     "memory_list",
     "memory_sync",
     "ml_security_chat",
+    "ml_security_chat_stream",
+    "agents_analyze_stream",
     "ml_classify_url",
     "ml_detect_dga",
     "ml_ioc_scan",
@@ -99,6 +101,10 @@ const COMMANDS: &[&str] = &[
     "privacy_set",
     "privacy_clear_history",
     "privacy_clear_memory",
+    "scan_file",
+    "live_browse_start",
+    "live_browse_stop",
+    "live_browse_recent",
 ];
 
 fn main() {

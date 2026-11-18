@@ -370,7 +370,10 @@ describe('the AI assistant is a conversation first', () => {
 
   test('the ML service answers the assistant as a chat assistant, and background work as an analyst', () => {
     const app = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'ml-services', 'hf_space_deploy', 'app.py'), 'utf8');
-    expect(app).toMatch(/ASSISTANT_PROMPT = \([\s\S]*?reply "\s*"to greetings and small talk/);
+    expect(app).toMatch(/ASSISTANT_PROMPT = \([\s\S]*?Reply to greetings, thanks and small talk in one or two warm sentences/);
+    // it never claims checks that are not in the message, and does not invent specifics
+    expect(app).toMatch(/ASSISTANT_PROMPT = \([\s\S]*?never claim to have checked anything that "\s*"is not in the message/);
+    expect(app).toMatch(/ASSISTANT_PROMPT = \([\s\S]*?never invent CVE numbers, statistics/);
     expect(app).toContain('system = self.ASSISTANT_PROMPT if interactive else self.SYSTEM_PROMPT');
   });
 });

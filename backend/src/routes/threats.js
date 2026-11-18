@@ -11,6 +11,7 @@ const Threat = require('../models/Threat');
 const { ownedThreatFilter } = require('../services/threatOwnership');
 const { notCarriedOut } = require('../middleware/notImplemented');
 const findings = require('../services/findingService');
+const realtimeBus = require('../services/realtimeBus');
 const { requireWorkspace } = require('../middleware/workspace');
 
 const router = express.Router();
@@ -222,6 +223,11 @@ router.put('/:threatId/state',
   asyncHandler(async (req, res) => {
     try {
       const updated = await findings.transition(req.user, req.params.threatId, req.body.action, req.body.note, req);
+      // the account's other devices (phone, desktop) update without polling; delivered to this account only
+      realtimeBus.emit('threat:update', {
+        userId: String(req.user.userId), id: String(updated._id), threatId: updated.threatId,
+        status: updated.status, severity: updated.severity, action: req.body.action
+      });
       res.json({ success: true, data: { threatId: updated.threatId, status: updated.status, severity: updated.severity, occurrences: updated.occurrences, timeline: updated.timeline } });
     } catch (error) {
       if (error instanceof findings.FindingError) return res.status(error.status).json({ success: false, code: error.code, message: error.message });

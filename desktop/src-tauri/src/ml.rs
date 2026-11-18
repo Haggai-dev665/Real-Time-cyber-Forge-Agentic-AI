@@ -38,7 +38,7 @@ async fn ctx(state: &SharedState) -> (String, Vec<(String, String)>) {
 }
 
 /// POST `body` to a backend ML path and return the parsed JSON.
-async fn ml_post(
+pub(crate) async fn ml_post(
     state: &SharedState,
     path: &str,
     body: Value,
@@ -172,6 +172,176 @@ pub async fn ml_security_chat(
         75,
     )
     .await
+}
+
+/// One server-sent event block (`data: {...}`), or None.
+fn sse_event(block: &[u8]) -> Option<Value> {
+    let text = std::str::from_utf8(block).ok()?;
+    let line = text.lines().find(|l| l.starts_with("data: "))?;
+    serde_json::from_str(&line[6..]).ok()
+}
+
+/// Earlier turns for the assistant: the last 8, roles user|assistant, 2,000 characters each.
+fn chat_turns(history: Option<Value>) -> Vec<Value> {
+    let all = history.and_then(|h| h.as_array().cloned()).unwrap_or_default();
+    let start = all.len().saturating_sub(8);
+    all.into_iter()
+        .skip(start)
+        .filter_map(|t| {
+            let content = t.get("content")?.as_str()?.trim().to_string();
+            if content.is_empty() {
+                return None;
+            }
+            let role = if t.get("role").and_then(Value::as_str) == Some("assistant") { "assistant" } else { "user" };
+            Some(json!({ "role": role, "content": content.chars().take(2000).collect::<String>() }))
+        })
+        .collect()
+}
+
+/// The assistant's answer as it is written. Each piece goes to the main window
+/// as a `cf-chat-stream` event ({id, type: "thinking"|"answer", delta}); the
+/// checked final answer is returned. A backend without the stream route yet
+/// answers through the plain chat route (`streamed: false`).
+#[tauri::command]
+pub async fn ml_security_chat_stream(
+    app: tauri::AppHandle,
+    state: State<'_, SharedState>,
+    query: String,
+    history: Option<Value>,
+    think: Option<String>,
+    request_id: String,
+) -> Result<Value, String> {
+    crate::privacy::require(crate::privacy::Feature::LlmProcessing)?;
+    let query = crate::input::text(&query, "query", 32_000)?;
+    let id: String = request_id.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_').take(64).collect();
+    if id.is_empty() {
+        return Err("request_id is required".into());
+    }
+    let think = match think.as_deref() {
+        Some("on") => "on",
+        Some("off") => "off",
+        _ => "auto",
+    };
+    let turns = chat_turns(history);
+    let body = json!({ "query": query, "history": turns, "think": think, "max_tokens": 700 });
+    let (base, headers) = ctx(state.inner()).await;
+    let req = crate::http::client_with_timeout(Duration::from_secs(120))
+        .post(format!("{base}/api/cyberforge-ml/v2/security-chat/stream"))
+        .header("Accept", "text/event-stream")
+        .json(&body);
+    let mut resp = authed(req, &headers).send().await.map_err(crate::http::error_chain)?;
+    if resp.status().as_u16() == 404 {
+        let mut answer = ml_post(state.inner(), "/api/cyberforge-ml/v2/security-chat", body, 75).await?;
+        answer["streamed"] = json!(false);
+        return Ok(answer);
+    }
+    if !resp.status().is_success() {
+        return Err(format!("The assistant is unavailable (HTTP {}).", resp.status().as_u16()));
+    }
+    use tauri::Emitter;
+    // bytes, not text: a character can be split across two chunks
+    let mut buffer: Vec<u8> = Vec::new();
+    let mut last: Option<Value> = None;
+    while let Some(chunk) = resp.chunk().await.map_err(crate::http::error_chain)? {
+        buffer.extend_from_slice(&chunk);
+        while let Some(at) = buffer.windows(2).position(|w| w == b"\n\n") {
+            let block: Vec<u8> = buffer.drain(..at + 2).collect();
+            let Some(event) = sse_event(&block) else { continue };
+            match event["type"].as_str() {
+                Some(kind @ ("thinking" | "answer")) => {
+                    let _ = app.emit_to("main", "cf-chat-stream", json!({ "id": id, "type": kind, "delta": event["delta"] }));
+                }
+                Some("final") => last = Some(event["result"].clone()),
+                _ => {}
+            }
+        }
+    }
+    let mut answer = last.ok_or("The answer stopped before it was finished.")?;
+    answer["streamed"] = json!(true);
+    Ok(answer)
+}
+
+/// The eight analysis agents on one address, reported as they work. Each
+/// event of the backend's stream ({type: "stage" | "agent_start" | "agent"})
+/// goes to the main window as `cf-agents-stream` ({id, event}); the final
+/// report is returned. A backend without the stream route answers through
+/// the plain route (`streamed: false`, no live events).
+#[tauri::command]
+pub async fn agents_analyze_stream(
+    app: tauri::AppHandle,
+    state: State<'_, SharedState>,
+    url: String,
+    request_id: String,
+) -> Result<Value, String> {
+    crate::privacy::require(crate::privacy::Feature::CloudScanning)?;
+    let url = crate::input::text(&url, "url", 2048)?;
+    let id: String = request_id.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_').take(64).collect();
+    if id.is_empty() {
+        return Err("request_id is required".into());
+    }
+    let body = json!({ "url": url });
+    let (base, headers) = ctx(state.inner()).await;
+    let req = crate::http::client_with_timeout(Duration::from_secs(150))
+        .post(format!("{base}/api/orchestrator/analyze/stream"))
+        .header("Accept", "text/event-stream")
+        .json(&body);
+    let mut resp = authed(req, &headers).send().await.map_err(crate::http::error_chain)?;
+    if resp.status().as_u16() == 404 {
+        let answer = ml_post(state.inner(), "/api/orchestrator/analyze", body, 150).await?;
+        let mut report = answer.get("report").cloned().unwrap_or(answer);
+        report["streamed"] = json!(false);
+        return Ok(report);
+    }
+    if !resp.status().is_success() {
+        let status = resp.status().as_u16();
+        let detail = resp.text().await.unwrap_or_default();
+        let message = serde_json::from_str::<Value>(&detail).ok()
+            .and_then(|v| v.get("message").or_else(|| v.get("error")).and_then(Value::as_str).map(str::to_string))
+            .unwrap_or_else(|| format!("HTTP {status}"));
+        return Err(format!("The analysis agents are unavailable: {message}"));
+    }
+    use tauri::Emitter;
+    let mut buffer: Vec<u8> = Vec::new();
+    let mut report: Option<Value> = None;
+    while let Some(chunk) = resp.chunk().await.map_err(crate::http::error_chain)? {
+        buffer.extend_from_slice(&chunk);
+        while let Some(at) = buffer.windows(2).position(|w| w == b"\n\n") {
+            let block: Vec<u8> = buffer.drain(..at + 2).collect();
+            let Some(event) = sse_event(&block) else { continue };
+            match event["type"].as_str() {
+                Some("stage" | "agent_start" | "agent") => {
+                    let _ = app.emit_to("main", "cf-agents-stream", json!({ "id": id, "event": event }));
+                }
+                Some("final") => report = Some(event["report"].clone()),
+                Some("error") => {
+                    return Err(format!("The analysis failed: {}", event["message"].as_str().unwrap_or("no reason given")));
+                }
+                _ => {}
+            }
+        }
+    }
+    let mut report = report.ok_or("The analysis stopped before it was finished.")?;
+    report["streamed"] = json!(true);
+    Ok(report)
+}
+
+#[cfg(test)]
+mod stream_tests {
+    use super::*;
+
+    #[test]
+    fn events_and_turns_are_read_safely() {
+        assert_eq!(sse_event(b"data: {\"type\":\"answer\",\"delta\":\"h\xc3\xa9\"}\n\n").unwrap()["delta"], "hé");
+        assert!(sse_event(b": comment\n\n").is_none());
+        assert!(sse_event(b"data: {broken\n\n").is_none());
+        let history = json!((0..12).map(|i| json!({ "role": if i % 2 == 0 { "system" } else { "assistant" }, "content": format!("turn {i}") })).collect::<Vec<_>>());
+        let turns = chat_turns(Some(history));
+        assert_eq!(turns.len(), 8);
+        assert_eq!(turns[0]["content"], "turn 4");
+        assert!(turns.iter().all(|t| t["role"] == "user" || t["role"] == "assistant"));
+        assert_eq!(chat_turns(Some(json!([{ "role": "user", "content": "x".repeat(5000) }])))[0]["content"].as_str().unwrap().len(), 2000);
+        assert!(chat_turns(Some(json!("not a list"))).is_empty());
+    }
 }
 
 /// Store the HF Inference token in the system credential store. Called from the

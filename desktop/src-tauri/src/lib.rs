@@ -30,7 +30,10 @@ mod privacy;
 mod state;
 mod stream;
 mod event_journal;
+mod file_scan;
+mod live_browse;
 mod system;
+mod tray;
 #[cfg(test)]
 mod acl_tests;
 
@@ -95,6 +98,8 @@ pub fn run() {
             memory::memory_sync,
             // ML capabilities (DeepSeek chat, BERT URL, DGA, IOC scan, AI Deep Scan)
             ml::ml_security_chat,
+            ml::ml_security_chat_stream,
+            ml::agents_analyze_stream,
             ml::ml_classify_url,
             ml::ml_detect_dga,
             ml::ml_ioc_scan,
@@ -154,7 +159,23 @@ pub fn run() {
             privacy::privacy_set,
             privacy::privacy_clear_history,
             privacy::privacy_clear_memory,
+            // Analyze: scan a file the user dropped or picked
+            file_scan::scan_file,
+            // Live Agent: the agent checks a page in its own browser, streamed to the window
+            live_browse::live_browse_start,
+            live_browse::live_browse_stop,
+            live_browse::live_browse_recent,
         ])
+        // Closing the main window keeps the app protecting from the tray
+        // (tray.rs), when the tray icon exists and the user has not turned it off.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && crate::tray::ready() && crate::tray::close_to_tray() {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             // `Manager` provides `get_webview_window` (debug devtools) and
             // `state` (telemetry broadcaster below).
@@ -164,6 +185,34 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 window.open_devtools();
             }
+
+            // The tray icon, then the window: it starts hidden (tauri.conf.json)
+            // and is shown unless Windows started the app in the background,
+            // which only happens when the tray icon is there to bring it back.
+            if let Err(e) = crate::tray::install(app) {
+                eprintln!("CyberForge: tray icon unavailable: {e}");
+            }
+            if let Some(window) = app.get_webview_window("main") {
+                if !(crate::tray::started_in_background() && crate::tray::ready()) {
+                    let _ = window.show();
+                    let _ = window.maximize();
+                    let _ = window.set_focus();
+                }
+            }
+            crate::tray::start_watcher(app.handle().clone());
+
+            // Wake the ML service while the user gets started: it sleeps after an
+            // hour idle and takes a minute or two to come back, so the first
+            // assistant answer or deep scan would otherwise wait for it.
+            let warm_state = app.state::<Arc<Mutex<AppState>>>().inner().clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(4)).await;
+                let base = warm_state.lock().await.backend_url.clone();
+                let _ = crate::http::client_with_timeout(std::time::Duration::from_secs(90))
+                    .get(format!("{base}/api/cyberforge-ml/health"))
+                    .send()
+                    .await;
+            });
 
             // Prepare the per-user data directory + crucial editable files so
             // everything the app needs exists right after installation
@@ -201,6 +250,12 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 use tauri::Emitter;
                 loop {
+                    // Nobody sees the telemetry while the window is in the tray:
+                    // skip the work and look again in a few seconds.
+                    if crate::tray::main_hidden(&handle) {
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                        continue;
+                    }
                     let sys = crate::system::system_data(&shared).await;
                     let browsers = crate::system::browsers_data(&shared).await;
                     let status = crate::metrics::status_data(&shared).await;

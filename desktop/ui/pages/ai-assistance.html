@@ -75,6 +75,13 @@
 .bubble code{font-family:var(--mono);font-size:11.5px;background:rgba(8,12,20,.6);border:1px solid var(--border);border-radius:5px;padding:1px 5px;color:var(--cyan)}
 .bubble a{color:var(--cyan)}
 .bubble>div{margin:3px 0}
+.bubble p{margin:0 0 10px;line-height:1.7}
+.bubble p:last-child{margin-bottom:0}
+.bubble .md-sub{font-weight:600;color:var(--text);margin:12px 0 5px;font-size:13px;letter-spacing:.1px}
+.bubble .md-sub:first-child,.bubble .md-h:first-child{margin-top:0}
+.bubble .md-note{margin:12px 0 2px;padding:9px 12px;border-left:2px solid rgba(43,212,238,.45);background:rgba(43,212,238,.06);border-radius:0 8px 8px 0;font-size:12px;color:var(--dim);line-height:1.6}
+.bubble .md-note b{color:var(--cyan)}
+.bubble ul+p,.bubble ol+p{margin-top:10px}
 .bubble ul{margin:6px 0 4px}
 
 
@@ -134,6 +141,32 @@
 .chatrow .ct{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
 .chatrow .del{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--faint);flex:none;border:1px solid transparent}
 .chatrow .del:hover{color:var(--red);background:rgba(244,73,94,.12);border-color:rgba(244,73,94,.25)}
+/* streamed answers: the reasoning panel, the live answer, message actions */
+.thought{margin:-2px 0 10px;border:1px solid var(--border);border-radius:10px;background:rgba(8,12,20,.35);overflow:hidden;animation:rvIn .3s cubic-bezier(.2,.9,.25,1)}
+.thought summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;padding:7px 11px;font:11px var(--mono);color:var(--amber-2);user-select:none}
+.thought summary::-webkit-details-marker{display:none}
+.thought summary .eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px}
+.thought summary .eq i{width:2.5px;height:4px;border-radius:2px;background:var(--amber-2);animation:eqp 1s ease-in-out infinite}
+.thought summary .eq i:nth-child(2n){background:var(--cyan);animation-delay:.15s}
+.thought summary .eq i:nth-child(3){animation-delay:.3s}
+.thought.done summary{color:var(--faint)}
+.thought.done summary .eq{display:none}
+.thought summary .chev{margin-left:auto;transition:transform .2s;font-size:14px;line-height:1}
+.thought[open] summary .chev{transform:rotate(90deg)}
+.thought-body{padding:2px 12px 10px;font-size:11.5px;line-height:1.6;color:var(--faint);white-space:pre-wrap;max-height:220px;overflow-y:auto;font-style:italic}
+.answer-live{min-height:18px}
+.msg.ai .bubble:has(.answer-live){min-width:min(460px,100%)}
+.msg-actions{display:flex;gap:6px;margin-top:10px;opacity:.35;transition:opacity .2s}
+.msg.ai:hover .msg-actions,.msg-actions:focus-within{opacity:1}
+.msg-actions button{font:600 10.5px var(--mono);color:var(--faint);background:transparent;border:1px solid var(--border-2);border-radius:6px;padding:3px 9px;cursor:pointer;transition:color .15s,border-color .15s}
+.msg-actions button:hover{color:var(--text);border-color:rgba(43,212,238,.4)}
+.bubble ol{margin:7px 0 2px 2px;list-style:none;counter-reset:n;display:flex;flex-direction:column;gap:6px;padding:0}
+.bubble li{display:block!important;position:relative;padding-left:18px}
+.bubble li::before{position:absolute;left:0;top:0}
+.bubble ol li{counter-increment:n;font-size:12.5px;color:var(--dim);padding-left:22px}
+.bubble ol li::before{content:counter(n) ".";color:var(--amber-2);font-family:var(--mono);font-size:11px;top:1px}
+.bubble i{color:var(--text);font-style:italic}
+.bubble hr{border:0;border-top:1px solid var(--border);margin:10px 0}
 </style>
 <link rel="stylesheet" href="../styles/cf-console.css" />
 <!-- The shell layout is known before the first paint, and that paint waits for the
@@ -206,6 +239,7 @@
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-palette.js"></script>
 <script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
 <script src="../scripts/cf-report.js"></script>

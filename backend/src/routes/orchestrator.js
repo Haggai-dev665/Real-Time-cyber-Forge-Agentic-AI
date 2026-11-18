@@ -48,6 +48,36 @@ router.post('/analyze', analysisQuota(), async (req, res) => {
 });
 
 /**
+ * POST /api/orchestrator/analyze/stream
+ * Body: { url, sessionId? }
+ * The same analysis, reported as it happens (server-sent events) so a screen
+ * can show the agents working: {type:'stage'}, {type:'agent_start'},
+ * {type:'agent'} for each agent as it finishes, then {type:'final', report}
+ * (or {type:'error', message}). The user is the session's, as for /analyze.
+ */
+router.post('/analyze/stream', analysisQuota(), async (req, res) => {
+    const { url, sessionId, userId } = req.body || {};
+    if (!url || typeof url !== 'string') return res.status(400).json({ error: 'url required' });
+    res.status(200);
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    // no-transform: the compression middleware must not hold the stream back
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
+    let open = true;
+    res.on('close', () => { open = false; });
+    const send = event => { if (open) res.write(`data: ${JSON.stringify(event)}\n\n`); };
+    try {
+        const report = await agentOrchestrator.analyze({ url, sessionId, userId }, send);
+        send({ type: 'final', report });
+    } catch (e) {
+        console.error('[orchestrator] streamed analyze failed:', e);
+        send({ type: 'error', message: String(e.message || 'analysis failed').slice(0, 300) });
+    }
+    if (open) res.end();
+});
+
+/**
  * GET /api/orchestrator/recent?limit=20
  * Returns recent report summaries (for live dashboard).
  */

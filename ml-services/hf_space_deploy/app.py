@@ -38,7 +38,7 @@ from huggingface_hub import HfApi, hf_hub_download, upload_file
 # FastAPI for REST endpoints
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
 logging.basicConfig(level=logging.INFO)
@@ -66,16 +66,40 @@ HF_MODEL_REPO = os.environ.get("HF_MODEL_REPO", "Che237/cyberforge-models")
 # It replaces Gemini and needs no API key or credit. Any GGUF chat model can be
 # set here; on the free cpu-basic tier (2 vCPU) stay around 2B parameters or the
 # answers will not fit inside the callers' timeouts.
-from security_knowledge import ground_prompt, finish_grounded_answer, reference_grammar
+from security_knowledge import ground_prompt, finish_grounded_answer, reference_grammar, question_text
+from file_scan import file_malware, FILE_SCAN_MAX_BYTES
 
 LOCAL_LLM_REPO = os.environ.get("LOCAL_LLM_REPO", "unsloth/Qwen3.5-2B-GGUF")
 LOCAL_LLM_REVISION = os.environ.get("LOCAL_LLM_REVISION") or None
 LOCAL_LLM_FILE = os.environ.get("LOCAL_LLM_FILE", "Qwen3.5-2B-Q4_K_M.gguf")
-LOCAL_LLM_CTX = int(os.environ.get("LOCAL_LLM_CTX", "4096"))
+LOCAL_LLM_CTX = int(os.environ.get("LOCAL_LLM_CTX", "8192"))
 LOCAL_LLM_THREADS = int(os.environ.get("LOCAL_LLM_THREADS", "2"))
-LOCAL_LLM_MAX_TOKENS = int(os.environ.get("LOCAL_LLM_MAX_TOKENS", "320"))
+# The CUDA build of llama.cpp and the CUDA libraries it links (see the Dockerfile).
+# Used only when the host provides an NVIDIA driver; otherwise the CPU wheel is.
+LLAMA_CUDA_DIR = os.environ.get("LLAMA_CUDA_DIR", "/opt/llama-cuda")
+CUDA_LIBS_DIRS = [d for d in os.environ.get("CUDA_LIBS_DIRS", "/opt/cuda-pkgs/nvidia/cuda_runtime/lib:/opt/cuda-pkgs/nvidia/nccl/lib:/opt/cuda-pkgs/nvidia/cublas/lib").split(":") if d]
+LOCAL_LLM_GPU = os.environ.get("LOCAL_LLM_GPU", "auto").lower()  # auto | off
+
+
+def gpu_runtime_present() -> bool:
+    """Whether this machine has an NVIDIA driver and the image has the CUDA build."""
+    if LOCAL_LLM_GPU == "off" or not os.path.isdir(os.path.join(LLAMA_CUDA_DIR, "llama_cpp")):
+        return False
+    try:
+        import ctypes
+        ctypes.CDLL("libcuda.so.1")
+        return True
+    except OSError:
+        return False
+LOCAL_LLM_MAX_TOKENS = int(os.environ.get("LOCAL_LLM_MAX_TOKENS", "900"))
+# The assistant may reason before it answers (Qwen3.5 thinking mode): at most this
+# many tokens of reasoning, then the answer. About 4 s on the T4.
+LOCAL_LLM_THINK_TOKENS = int(os.environ.get("LOCAL_LLM_THINK_TOKENS", "448"))
+# Earlier turns of the conversation, sent as real chat turns.
+LOCAL_LLM_HISTORY_TURNS = int(os.environ.get("LOCAL_LLM_HISTORY_TURNS", "6"))
+LOCAL_LLM_HISTORY_CHARS = int(os.environ.get("LOCAL_LLM_HISTORY_CHARS", "1200"))
 LOCAL_LLM_TEMPERATURE = float(os.environ.get("LOCAL_LLM_TEMPERATURE", "0.3"))
-LOCAL_LLM_MAX_INPUT_CHARS = int(os.environ.get("LOCAL_LLM_MAX_INPUT_CHARS", "2400"))
+LOCAL_LLM_MAX_INPUT_CHARS = int(os.environ.get("LOCAL_LLM_MAX_INPUT_CHARS", "6000"))
 LOCAL_LLM_TIME_BUDGET_S = float(os.environ.get("LOCAL_LLM_TIME_BUDGET_S", "17"))
 # A caller with a longer timeout of its own may ask for more time, up to this.
 # Reading the prompt counts: on this CPU a 2,000-character prompt alone takes
@@ -784,8 +808,11 @@ class LocalLLM:
     def __init__(self):
         self.llm = None
         self.error: Optional[str] = None
+        self.accelerator = "cpu"
+        self.gpu_error: Optional[str] = None
         self._chatml = False
         self._prefill = ""
+        self._can_think = False
         self._load_lock = threading.Lock()
         self._gen_lock = threading.Lock()
         self._waiting_lock = threading.Lock()
@@ -803,6 +830,9 @@ class LocalLLM:
             "loaded": self.ready,
             "loading": self._load_lock.locked(),
             "error": self.error,
+            # "cuda" only when the model was actually loaded onto a GPU
+            "accelerator": self.accelerator if self.ready else None,
+            "gpu_error": self.gpu_error,
         }
 
     def load(self):
@@ -811,23 +841,46 @@ class LocalLLM:
             if self.llm is not None or self.error:
                 return self.llm
             try:
-                from llama_cpp import Llama
                 try:
                     path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, revision=LOCAL_LLM_REVISION, token=HF_TOKEN or None)
                 except Exception:
                     # A stale HF_TOKEN must not block the download of a public model
                     path = hf_hub_download(repo_id=LOCAL_LLM_REPO, filename=LOCAL_LLM_FILE, revision=LOCAL_LLM_REVISION, token=False)
-                self._probe(path)
+                gpu = False
+                if gpu_runtime_present():
+                    # Try the CUDA build in a child process first; if it cannot load the
+                    # model on the GPU, say why and carry on with the CPU wheel.
+                    try:
+                        self._probe(path, gpu=True)
+                        gpu = True
+                    except Exception as e:
+                        self.gpu_error = f"{type(e).__name__}: {str(e)[:300]}"
+                        logger.error(f"GPU build unusable, using CPU: {self.gpu_error}")
+                if gpu:
+                    import ctypes
+                    for lib in ("libcudart.so.12", "libnccl.so.2", "libcublasLt.so.12", "libcublas.so.12"):
+                        found = next((os.path.join(d, lib) for d in CUDA_LIBS_DIRS if os.path.exists(os.path.join(d, lib))), lib)
+                        ctypes.CDLL(found, mode=ctypes.RTLD_GLOBAL)
+                    sys.path.insert(0, LLAMA_CUDA_DIR)
+                else:
+                    self._probe(path)
+                from llama_cpp import Llama
                 # n_threads_batch (prompt processing) defaults to the host's core
                 # count, which a Space container reports far above its 2 vCPUs.
                 llm = Llama(model_path=path, n_ctx=LOCAL_LLM_CTX, n_threads=LOCAL_LLM_THREADS,
-                            n_threads_batch=LOCAL_LLM_THREADS, verbose=False)
+                            n_threads_batch=LOCAL_LLM_THREADS, n_gpu_layers=-1 if gpu else 0, verbose=False)
+                if gpu:
+                    # The first generation on a GPU pays a one-time warm-up of about a minute
+                    # (measured on a T4); pay it here, before the model is reported ready.
+                    llm.create_completion("Hi", max_tokens=4)
+                self.accelerator = "cuda" if gpu else "cpu"
                 template = str((llm.metadata or {}).get("tokenizer.chat_template", ""))
                 self._chatml = "<|im_start|>" in template
                 # Qwen3.5 answers directly when the assistant turn opens with an
                 # empty think block; this is what its template emits for
                 # enable_thinking=False.
                 self._prefill = "<think>\n\n</think>\n\n" if "<think>" in template else ""
+                self._can_think = self._chatml and "<think>" in template
                 self.llm = llm
                 logger.info(f"✅ Local LLM loaded: {LOCAL_LLM_REPO}/{LOCAL_LLM_FILE}")
             except Exception as e:
@@ -836,16 +889,21 @@ class LocalLLM:
             return self.llm
 
     @staticmethod
-    def _probe(path: str) -> None:
+    def _probe(path: str, gpu: bool = False) -> None:
         """Load the model once in a child process. A native crash there (for
         example a CPU instruction the prebuilt wheel needs but this machine
-        lacks) raises here instead of killing the API process."""
+        lacks, or a CUDA build that cannot reach the GPU) raises here instead
+        of killing the API process."""
         code = (
             "import sys; from llama_cpp import Llama; "
-            "m = Llama(model_path=sys.argv[1], n_ctx=256, n_threads=1, n_threads_batch=1, verbose=False); "
+            f"m = Llama(model_path=sys.argv[1], n_ctx=256, n_threads=1, n_threads_batch=1, n_gpu_layers={-1 if gpu else 0}, verbose=False); "
             "m.create_completion('Hi', max_tokens=1)"
         )
-        r = subprocess.run([sys.executable, "-c", code, path], capture_output=True, text=True, timeout=300)
+        env = dict(os.environ)
+        if gpu:
+            env["PYTHONPATH"] = LLAMA_CUDA_DIR + os.pathsep + env.get("PYTHONPATH", "")
+            env["LD_LIBRARY_PATH"] = os.pathsep.join(CUDA_LIBS_DIRS + [env.get("LD_LIBRARY_PATH", "")])
+        r = subprocess.run([sys.executable, "-c", code, path], capture_output=True, text=True, timeout=300, env=env)
         if r.returncode != 0:
             raise RuntimeError(f"llama.cpp probe exited with {r.returncode}: {(r.stderr or '')[-200:]}")
 
@@ -868,43 +926,98 @@ class LocalLLM:
                 self._interactive_waiting -= 1
         return time.monotonic() - asked if got else None
 
-    def chat(self, system: str, user: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False) -> Dict:
+    # Greetings, thanks and "what can you do" are answered at once, without reasoning.
+    SMALL_TALK = re.compile(r"^\W*(?:hi|hello|hey|yo|hiya|good (?:morning|afternoon|evening)|thanks?|thank you|ok(?:ay)?|cool|great|nice|bye|goodbye|who are you|what can you do)\b.{0,40}$", re.I | re.S)
+
+    @classmethod
+    def wants_thinking(cls, question: str, think: str) -> bool:
+        """think: "on", "off" or "auto" (reason about real questions, not small talk)."""
+        if think == "on":
+            return True
+        if think != "auto":
+            return False
+        q = (question or "").strip()
+        return len(q.split()) >= 5 and not cls.SMALL_TALK.match(q)
+
+    def chat(self, system: str, user: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False,
+             history: Optional[List[Dict]] = None, think: str = "off") -> Dict:
+        result: Dict = {}
+        for kind, value in self.generate(system, user, max_tokens, time_budget_s, interactive, history, think):
+            if kind == "final":
+                result = value
+        return result
+
+    def generate(self, system: str, user: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False,
+                 history: Optional[List[Dict]] = None, think: str = "off"):
+        """Yield ("thinking", text) and ("answer", text) as the model writes, then ("final", result)."""
         base = {"model": "local-llm", "source": self.SOURCE, "model_id": LOCAL_LLM_REPO}
         budget = LOCAL_LLM_TIME_BUDGET_S if time_budget_s is None else max(5.0, min(float(time_budget_s), LOCAL_LLM_MAX_TIME_BUDGET_S))
         if self.llm is None:
             if self._load_lock.locked():
-                return {**base, "response": None, "error": "local LLM is still loading"}
+                yield ("final", {**base, "response": None, "error": "local LLM is still loading"})
+                return
             self.load()
         if self.llm is None:
-            return {**base, "response": None, "error": self.error or "local LLM not loaded"}
+            yield ("final", {**base, "response": None, "error": self.error or "local LLM not loaded"})
+            return
         waited = self._acquire(interactive, budget)
         if waited is None:
-            return {**base, "response": None, "error": "local LLM is busy with another request"}
+            yield ("final", {**base, "response": None, "error": "local LLM is busy with another request"})
+            return
         # The time spent waiting comes out of the budget: the caller is waiting too.
         budget = max(5.0, budget - waited)
         started = time.monotonic()
         stream = None
+        thinking = ""
+        thinking_ms = None
         try:
             max_tokens = max(16, min(int(max_tokens), LOCAL_LLM_MAX_TOKENS))
             # The chat markers are structural: drop them from untrusted text
-            system = system.replace("<|im_start|>", "").replace("<|im_end|>", "")
-            user = user.replace("<|im_start|>", "").replace("<|im_end|>", "")
+            clean = lambda t: str(t or "").replace("<|im_start|>", "").replace("<|im_end|>", "").replace("<think>", "").replace("</think>", "")
+            system = clean(system)
+            user = clean(user)
             if len(user) > LOCAL_LLM_MAX_INPUT_CHARS:
                 # Keep both ends: context sits at the start, the question at the end
                 half = LOCAL_LLM_MAX_INPUT_CHARS // 2
                 user = f"{user[:half]}\n[...]\n{user[-half:]}"
-            system, references = ground_prompt(system, user)
-            grammar_text = reference_grammar(references, analyst=not interactive)
+            turns = []
+            for item in (history or [])[-LOCAL_LLM_HISTORY_TURNS:]:
+                text_ = clean(item.get("content"))[:LOCAL_LLM_HISTORY_CHARS].strip()
+                if text_:
+                    turns.append(("assistant" if item.get("role") == "assistant" else "user", text_))
+            system, references = ground_prompt(system, user, interactive=interactive)
+            # The assistant answers in its own words and is checked afterwards; analyst
+            # explanations stay bounded to the reviewed passages.
+            grammar_text = None if interactive else reference_grammar(references, analyst=True)
             decoding = {}
             if grammar_text:
                 from llama_cpp import LlamaGrammar
                 decoding["grammar"] = LlamaGrammar.from_string(grammar_text, verbose=False)
+            reasoning = self._can_think and self.wants_thinking(question_text(user), think)
             if self._chatml:
-                prompt = (
-                    f"<|im_start|>system\n{system}<|im_end|>\n"
-                    f"<|im_start|>user\n{user}<|im_end|>\n"
-                    f"<|im_start|>assistant\n{self._prefill}"
-                )
+                convo = "".join(f"<|im_start|>{role}\n{content}<|im_end|>\n" for role, content in turns)
+                head = f"<|im_start|>system\n{system}<|im_end|>\n{convo}<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n"
+                if reasoning:
+                    # 1. reasoning, bounded in tokens and in time (at most half the budget)
+                    t0 = time.monotonic()
+                    stream = self.llm.create_completion(
+                        head + "<think>\n", max_tokens=LOCAL_LLM_THINK_TOKENS, temperature=0.6, top_p=0.95, top_k=20,
+                        stop=["</think>", "<|im_end|>", "<|endoftext|>"], stream=True)
+                    for chunk in stream:
+                        piece = chunk["choices"][0].get("text") or ""
+                        if piece:
+                            thinking += piece
+                            yield ("thinking", piece)
+                        if time.monotonic() - started > budget * 0.5 or (not interactive and self._interactive_waiting):
+                            break
+                    if hasattr(stream, "close"):
+                        stream.close()
+                    stream = None
+                    thinking_ms = round((time.monotonic() - t0) * 1000)
+                    prompt = head + "<think>\n" + thinking.strip() + "\n</think>\n\n"
+                else:
+                    prompt = head + self._prefill
+                # 2. the answer (the prompt prefix is cached by llama.cpp, so it is not read again)
                 stream = self.llm.create_completion(
                     prompt, max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, top_k=20,
                     presence_penalty=1.5, stop=["<|im_end|>", "<|endoftext|>"], stream=True,
@@ -912,16 +1025,19 @@ class LocalLLM:
                 )
                 read = lambda c: c["choices"][0].get("text") or ""
             else:
+                messages = [{"role": "system", "content": system}] + [{"role": r, "content": c} for r, c in turns] + [{"role": "user", "content": user}]
                 stream = self.llm.create_chat_completion(
-                    messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-                    max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, stream=True,
+                    messages=messages, max_tokens=max_tokens, temperature=LOCAL_LLM_TEMPERATURE, top_p=0.8, stream=True,
                     **decoding,
                 )
                 read = lambda c: c["choices"][0].get("delta", {}).get("content") or ""
             pieces: List[str] = []
             truncated = False
             for chunk in stream:
-                pieces.append(read(chunk))
+                piece = read(chunk)
+                pieces.append(piece)
+                if piece:
+                    yield ("answer", piece)
                 if chunk["choices"][0].get("finish_reason") == "length":
                     truncated = True
                 if time.monotonic() - started > budget:
@@ -939,29 +1055,32 @@ class LocalLLM:
                 if ends and ends[-1] > len(text) * 0.4:
                     text = text[:ends[-1]].strip()
             if not text:
-                return {**base, "response": None, "error": "local LLM returned no text"}
+                yield ("final", {**base, "response": None, "error": "local LLM returned no text"})
+                return
             text, grounding = finish_grounded_answer(text, references, analyst=not interactive)
             if grammar_text:
                 grounding["generation_constraint"] = "reviewed_passages"
-            return {
+            yield ("final", {
                 **base,
                 "response": text,
                 "tokens": len(pieces),
                 "elapsed_ms": round((time.monotonic() - started) * 1000),
                 "truncated": truncated,
+                "thinking": thinking.strip()[:4000] or None,
+                "thinking_ms": thinking_ms,
+                "history_turns": len(turns),
                 "grounding": grounding,
                 "references": grounding["references"],
                 "model_generated": grounding["mode"] != "verified_reference",
                 **({"model": "verified-reference", "source": "verified_reference",
                     "model_used": "cyberforge-ml-fallback"} if grounding["mode"] == "verified_reference" else {}),
-            }
+            })
         except Exception as e:
-            return {**base, "response": None, "error": f"{type(e).__name__}: {str(e)[:200]}"}
+            yield ("final", {**base, "response": None, "error": f"{type(e).__name__}: {str(e)[:200]}"})
         finally:
             if stream is not None and hasattr(stream, "close"):
                 stream.close()
             self._gen_lock.release()
-
 
 local_llm = LocalLLM()
 
@@ -1117,21 +1236,31 @@ class TransformerModelLoader:
     # conversation first. The analyst prompt above stays for background
     # explanations of scans, alerts and reports.
     ASSISTANT_PROMPT = (
-        "You are the CyberForge assistant, a friendly, helpful chat assistant built into "
-        "the CyberForge security app. Talk naturally, like a normal chat assistant: reply "
-        "to greetings and small talk briefly and warmly, and offer to help. Answer security "
-        "questions clearly and concisely, in plain sentences, using a short list only for "
-        "steps. When the message includes the user's CyberForge memory, use it only if it "
-        "helps answer. Never claim to have scanned, detected or checked anything that is "
-        "not in the message; if something has not been checked, say so."
+        "You are the CyberForge assistant, a friendly security expert built into the CyberForge app. "
+        "Write like a helpful expert in a chat. Start with a direct answer in one or two sentences, then give "
+        "the details that matter: short paragraphs, bullet points for lists, numbered steps for procedures, and "
+        "**bold** for the key terms. Keep answers focused, usually 80 to 220 words, and longer only when the user "
+        "asks for depth. Reply to greetings, thanks and small talk in one or two warm sentences and offer help. "
+        "Be accurate: if you are unsure, say so; never invent CVE numbers, statistics, versions, dates, product "
+        "names, scan results or detections. When the message includes the user's CyberForge memory or scans, base "
+        "the answer on them and quote hosts, verdicts and scores exactly; never claim to have checked anything that "
+        "is not in the message. Use the earlier turns of the conversation to understand follow-up questions. When "
+        "it helps, end with one clear next step."
     )
 
-    def security_chat(self, query: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False) -> Dict:
+    def security_chat(self, query: str, max_tokens: int = 512, time_budget_s: Optional[float] = None, interactive: bool = False,
+                      history: Optional[List[Dict]] = None, think: str = "off") -> Dict:
         """Cybersecurity Q&A, answered by the open-source model running inside
         this Space (free, no API key). `interactive` when a person is waiting:
         then it is a conversation (ASSISTANT_PROMPT), not an analyst's report."""
         system = self.ASSISTANT_PROMPT if interactive else self.SYSTEM_PROMPT
-        return local_llm.chat(system, query, max_tokens=max_tokens, time_budget_s=time_budget_s, interactive=interactive)
+        return local_llm.chat(system, query, max_tokens=max_tokens, time_budget_s=time_budget_s, interactive=interactive,
+                              history=history if interactive else None, think=think if interactive else "off")
+
+    def security_chat_stream(self, query: str, max_tokens: int, time_budget_s: Optional[float], history: Optional[List[Dict]], think: str):
+        """The assistant's answer as it is written (interactive only)."""
+        return local_llm.generate(self.ASSISTANT_PROMPT, query, max_tokens=max_tokens, time_budget_s=time_budget_s,
+                                  interactive=True, history=history, think=think)
 
     def status(self) -> Dict:
         return {
@@ -1229,6 +1358,8 @@ async def measure_requests(request: Request, call_next):
 
 
 PUBLIC_PATHS = {"/", "/health"}
+# The one route that takes a file: its body may be as large as a scanned file.
+FILE_SCAN_PATH = "/api/v2/file-scan"
 # These check the owner's Hugging Face token themselves (owner_token below).
 OWNER_PATHS = {"/api/admin/train", "/api/admin/train/status"}
 
@@ -1269,11 +1400,12 @@ class ServiceGate:
                 return await _reply(send, 503, "This service has no service key configured", "SERVICE_KEY_NOT_CONFIGURED")
             if not service_key_valid(headers.get(SERVICE_KEY_HEADER.encode())):
                 return await _reply(send, 401, "A valid service key is required", "SERVICE_KEY_REQUIRED")
+        limit = FILE_SCAN_MAX_BYTES if path == FILE_SCAN_PATH else ML_MAX_BODY_BYTES
         stated = headers.get(b"content-length")
         if stated is not None:
             try:
-                if int(stated) > ML_MAX_BODY_BYTES:
-                    return await _reply(send, 413, f"Request body is over {ML_MAX_BODY_BYTES} bytes", "BODY_TOO_LARGE")
+                if int(stated) > limit:
+                    return await _reply(send, 413, f"Request body is over {limit} bytes", "BODY_TOO_LARGE")
             except ValueError:
                 return await _reply(send, 400, "Content-Length must be a number", "BAD_CONTENT_LENGTH")
         received = 0
@@ -1284,7 +1416,7 @@ class ServiceGate:
             message = await receive()
             if message["type"] == "http.request":
                 received += len(message.get("body", b""))
-                if received > ML_MAX_BODY_BYTES:
+                if received > limit:
                     raise BodyTooLarge()
             return message
 
@@ -1299,7 +1431,7 @@ class ServiceGate:
         except BodyTooLarge:
             if started:
                 raise
-            await _reply(send, 413, f"Request body is over {ML_MAX_BODY_BYTES} bytes", "BODY_TOO_LARGE")
+            await _reply(send, 413, f"Request body is over {limit} bytes", "BODY_TOO_LARGE")
 
 
 # Added last, so it runs first: before CORS and every route.
@@ -1650,7 +1782,8 @@ async def api_v2_dga_detect(request: Request):
 @api.post("/api/v2/security-chat")
 async def api_v2_security_chat(request: Request):
     """Cybersecurity Q&A, answered by the open-source model running in this Space.
-    Body: { "query": "...", "max_tokens": 512 }"""
+    Body: { "query": "...", "max_tokens": 512, "priority": "interactive", "history": [{role, content}],
+            "think": "auto"|"on"|"off", "stream": true }"""
     body = await json_object(request)
     query = text_field(body, "query")
     if not query:
@@ -1661,12 +1794,39 @@ async def api_v2_security_chat(request: Request):
     # "interactive" only when a person is waiting on the answer (the assistant);
     # anything else is background work and gives way to it.
     interactive = text_field(body, "priority") == "interactive"
-    result = await run_in_threadpool(transformer_loader.security_chat, query, max_tokens, budget, interactive)
+    # The conversation so far ([{role, content}]) and whether to reason first
+    # ("auto" reasons about real questions, not small talk). Assistant only.
+    history = dicts_in(list_field(body, "history"))[-LOCAL_LLM_HISTORY_TURNS:]
+    think = text_field(body, "think") if text_field(body, "think") in ("on", "off", "auto") else ("auto" if interactive else "off")
+    if interactive and body.get("stream") is True:
+        # Server-sent events: {"type":"thinking"|"answer","delta":...} as the model
+        # writes, then {"type":"final","result":{...}} with the checked answer.
+        def events():
+            for kind, value in transformer_loader.security_chat_stream(query, max_tokens, budget, history, think):
+                if kind == "final":
+                    answered = bool(value.get("response")) and not value.get("error")
+                    value = {**value, "answered": answered, "result_kind": "reasoning_text", **({} if answered else {"response": None})}
+                    yield "data: " + json.dumps({"type": "final", "result": value}) + "\n\n"
+                else:
+                    yield "data: " + json.dumps({"type": kind, "delta": value}) + "\n\n"
+        return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    result = await run_in_threadpool(transformer_loader.security_chat, query, max_tokens, budget, interactive, history, think)
     if result.get("error"):
         # No made-up analysis in its place: the rule-based summary keyword-matches
         # the whole prompt (context included) and is not an answer to a question.
         return {**result, "response": None, "answered": False, "result_kind": "reasoning_text"}
     return {**result, "answered": True, "result_kind": "reasoning_text"}
+
+
+@api.post("/api/v2/file-scan")
+async def api_v2_file_scan(request: Request):
+    """Static malware scoring of one file. Body: the file's bytes (application/octet-stream).
+    Windows programs get a verdict from the trained model; other files are 'unsupported'.
+    The file is parsed, never run, and not kept."""
+    data = await request.body()
+    if not data:
+        return JSONResponse(status_code=400, content={"detail": "the request body is the file's bytes", "code": "FILE_REQUIRED"})
+    return await run_in_threadpool(file_malware.scan, data)
 
 
 CAPABILITIES_SCHEMA = "cyberforge.ml.capabilities.v1"
@@ -1759,6 +1919,19 @@ def capability_report() -> Dict:
                     "interactive_wait_seconds": LOCAL_LLM_INTERACTIVE_WAIT_S,
                     "concurrent_generations": 1,
                 },
+            },
+            {
+                "id": "file_malware_pe",
+                "kind": "trained_model",
+                "readiness": "ready" if file_malware.ready else ("failed" if file_malware.error else "not_loaded"),
+                "reason": file_malware.error or (None if file_malware.ready else "loads in the background after start"),
+                "model": "EMBER2024 benchmark PE classifier (LightGBM), trained by the dataset's authors",
+                "applies_to": "Windows programs (PE files); static analysis only, the file is never run",
+                "answers_without_model": "unknown",
+                "decision_threshold": file_malware.threshold,
+                "measured": file_malware.status().get("holdout"),
+                "routes": [FILE_SCAN_PATH],
+                "limits": {"max_file_bytes": FILE_SCAN_MAX_BYTES},
             },
         ],
         "limits": {"max_body_bytes": ML_MAX_BODY_BYTES, "batch_max_urls": BATCH_MAX_URLS},
@@ -2387,6 +2560,7 @@ logger.info("🚀 Initializing CyberForge AI services...")
 ml_loader.initialize()
 # Load the chat model in the background so the API answers health checks at once
 threading.Thread(target=local_llm.load, name="local-llm-loader", daemon=True).start()
+threading.Thread(target=file_malware.load, args=(HF_MODEL_REPO, HF_TOKEN), name="file-malware-loader", daemon=True).start()
 logger.info("✅ Services initialized")
 
 app = api

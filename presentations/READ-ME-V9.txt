@@ -1,0 +1,24 @@
+CYBERFORGE - THESIS DEFENCE V9
+
+Open: CyberForge - Thesis Defence v9.pptx  (earlier versions are unchanged)
+Speaker notes: CyberForge - Thesis Defence v9 - Speaker notes.md (not in the deck)
+
+CHANGES FROM V8 (17 slides)
+06  Brief literature review 1 of 2: the evolution from common chatbots to
+    agentic AI (rule-based chatbots, large language models, instruction-tuned
+    assistants, reasoning and tools, agentic AI) and what makes AI agentic
+    (planning, tool use and action, memory, oversight). 10 clicks.
+07  Brief literature review 2 of 2: multi-agent architecture (cooperating
+    agents, coordination patterns, LLM multi-agent frameworks, CyberForge's
+    graph) and AI and agentic AI in cybersecurity (ML detection, shared threat
+    knowledge, LLM agents in security, new risks, the gap). 9 clicks.
+11  Hardware line: inference now on an NVIDIA T4 GPU Space; notes updated.
+17  Reference roll: 14 added works, alphabetical (38 entries).
+--  Notes rewritten for slides 6, 7 and 11. Full citations of the 14 added
+    works are at the end of the notes file; they are not yet in thesis
+    Chapter 2.
+
+REPRODUCE
+python presentations/build_defence_v9.py      (also writes the notes .md)
+powershell -NoProfile -ExecutionPolicy Bypass -File presentations/review_defence_v9.ps1
+Native render: 17 slides, 0 text-fit findings; previews in previews-v9-native/.

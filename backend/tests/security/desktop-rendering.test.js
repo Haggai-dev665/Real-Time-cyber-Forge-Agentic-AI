@@ -125,7 +125,10 @@ describe('outside text is rendered as text', () => {
     const html = mdToHtml('See [the report](https://example.com/"onmouseover="alert(1)) and <img src=x onerror=alert(1)>');
     expect(html).toContain('href="https://example.com/&quot;onmouseover=&quot;alert(1"');
     expect(isInert(html)).toBe(true);
-    expect(mdToHtml('**bold** and `code`')).toBe('<div><b>bold</b> and <code>code</code></div>');
+    expect(mdToHtml('**bold** and `code`')).toBe('<p><b>bold</b> and <code>code</code></p>');
+    // lines of one paragraph join; a bold-only line is a subheading; an injected tag stays text there too
+    expect(mdToHtml('one\ntwo\n\n**Signs**\n- a')).toBe('<p>one two</p><div class="md-sub">Signs</div><ul><li>a</li></ul>');
+    expect(isInert(mdToHtml('**<img src=x onerror=alert(1)>**'))).toBe(true);
   });
 });
 

@@ -1,0 +1,14 @@
+# check-ml-integration.js run 2026-11-18T22:42:58Z against https://che237-cyberforge.hf.space (program: C:/Windows/System32/notepad.exe)
+🤖 CyberForge ML Service initialized
+   Heuristic Models: phishing_detection, malware_detection, anomaly_detection, web_attack_detection
+   Transformer Models: url_phishing_bert, dga_detector, security_llm
+PASS  ML service status                                 724 ms  [status bar, loading screen]  chat model Che237/cyberforge-qwen3.5-2b-v2-GGUF on cuda
+PASS  Capability report                                 230 ms  [Model capabilities page]  9 capabilities
+PASS  BERT URL classifier                              5224 ms  [Analyze (deep scan), agents]  MALWARE (91.63)
+PASS  DGA detector                                      218 ms  [Browser Activity, agents]  generated (70)
+PASS  Deep scan (URL models + BERT + DGA)               320 ms  [Analyze]  risk critical (86.5), with BERT, DGA and ML components
+PASS  IOC scan                                          338 ms  [Analyze]  keys: ioc_results, summary, ai_analysis, timestamp
+PASS  Assistant (JSON)                                23280 ms  [Agent panel, Agent Core]  ml-service-model, retrieved_context, 23074 ms
+PASS  Assistant (streamed, with thinking and history)   9785 ms  [AI Assistant]  577 events (thinking, answer, final), thought 5903 ms, 2 history turns
+PASS  File malware model                               1925 ms  [Analyze (file scan)]  benign (0.028866)
+all 9 checks passed

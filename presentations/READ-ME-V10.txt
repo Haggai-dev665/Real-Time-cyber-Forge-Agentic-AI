@@ -1,0 +1,30 @@
+CYBERFORGE - THESIS DEFENCE V10
+
+Open: CyberForge - Thesis Defence v10.pptx  (V9 is unchanged)
+Speaker notes: CyberForge - Thesis Defence v10 - Speaker notes.md
+
+CHANGES FROM V9 (17 slides; only slides 13-16 differ)
+13  Evaluation design: the V2 release test (23 Oct) and a fresh test of the
+    live assistant (18 Nov, 33 questions x 2 runs), and the two serving
+    policies (release: GBNF passages; live: own words, checked after).
+14  Top row = live assistant today: 57/66 automatic, 58/66 correct on review,
+    46/50 library topics, 7/10 outside the library, 5.9 s median, 47 topics.
+    Training outcomes and release comparison kept, labelled as release.
+15  Re-run 18 Nov: live ML features 9/9, backend gate 992/992, Oct-23
+    grounding contracts 10/14, live assistant answers 66/66, backend v55,
+    desktop browser check 20 pages.
+16  Phishing-URL model in service 86.5% on 71,691 held-out URLs (replaces the
+    historical 94.7%, which is named as such), 58/66, 84/87 (release), 9/9;
+    limits and next steps updated.
+
+EVIDENCE (in the repo)
+ml-services/eval/assistant_cases.json, assistant_eval.mjs
+ml-services/eval/results/assistant-2026-11-18T22-43-58.json/.md/.review.md
+ml-services/eval/results/integration-2026-11-18.txt
+URL models: <model>/metadata.json in Che237/cyberforge-models (trained 2026-10-13)
+
+REPRODUCE
+ML_SERVICE_KEY=... node ml-services/eval/assistant_eval.mjs --runs 2   (Space must be awake)
+python presentations/build_defence_v10.py
+powershell -NoProfile -ExecutionPolicy Bypass -File presentations/review_defence_v10.ps1
+Native render: 17 slides, 0 text-fit findings; previews in previews-v10-native/.

@@ -1402,3 +1402,28 @@ Every user-facing Space route is reached from a desktop screen. `explain` and `b
 - a backend deploy (the stream route, `threat:update`, the agent progress events);
 - a desktop build;
 - an Expo build, to see the phone's layout and enrollment on a device.
+
+### November 18, 2026 — Fresh evaluation of the live model; defence deck V10 (slides 13–16)
+
+**Asked by the owner:** slides 13 onwards showed stale figures that did not match the current model.
+
+**New, committed evaluation** (`ml-services/eval/`): `assistant_eval.mjs` sends `assistant_cases.json` (33 questions: 25 library topics, 5 outside the library, 2 follow-ups needing history, a greeting) to the live Space exactly as the assistant does (streamed, think=auto). It scores the model's own words separately from the served answer (which can carry a "From the reviewed sources" supplement), and saves every answer to `results/`. Run on V2 GGUF `494483e` (CUDA, T4), 2 runs:
+
+| | Result |
+| --- | ---: |
+| Answered | 66/66 |
+| Automatic required-fact check, own words | 57/66 (86.4%) |
+| Correct on review (every answer read; `.review.md`) | 58/66 (87.9%) |
+| Library topics, correct | 46/50 |
+| Outside the library, correct | 7/10 |
+| Right reference retrieved | 44/50 (22 of 25 questions; misses: MFA fatigue, sextortion, passwords) |
+| Forbidden statements | 0 |
+| Median full answer / thinking / 90th percentile | 5.9 s / 4.5 s / 6.6 s |
+
+Wrong answers: MFA-fatigue ×2 and sextortion ×2 (retrieval misses), Log4Shell ×2 (wrong CVE; wrong versions), a repetition loop on the smishing follow-up and on SIM swap. The review was done by the Claude Code session, not blind.
+
+**Re-run the same day:** `check-ml-integration.js` 9/9 (`results/integration-2026-11-18.txt`); backend gate 992/992; desktop browser check passed on 20 pages; Heroku is at v55. The URL models in service (trained 2026-10-13, confirmed by `/health`) have site-disjoint held-out results in their `metadata.json`: phishing 86.5% accuracy on 71,691 URLs (precision 95.2%, recall 67.7%, false positives 2.1%, AUC 0.956), malware-URL 98.4%, web-attack 99.8%.
+
+**Found:** the October release grounding contracts (`llm_finetune/test_grounding.py`, `test_contracts.py`) pass 10 of 14 against today's code. Three failures are the intended November policy changes. One is a real gap: with 47 references, 349 of 1,081 two-reference pairs have no reviewed passage within the 80-word analyst budget, so `reference_grammar` raises and a scan explanation retrieving such a pair fails. Not fixed (needs a Space deploy; the owner's call).
+
+**Deck:** `presentations/build_defence_v10.py` writes *CyberForge - Thesis Defence v10.pptx* and its notes from V9, changing slides 13–16 only. The build asserts the figures against the saved results. Native render: 17 slides, 0 text-fit findings.

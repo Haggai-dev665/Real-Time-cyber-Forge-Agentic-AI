@@ -77,6 +77,11 @@
           </div>
         </div>
 
+        <section class="card" style="padding:16px;margin-bottom:14px" aria-labelledby="localModelTitle">
+          <div class="panel-head"><span id="localModelTitle">On-device ML pack</span><button class="btn-refresh right" id="prepareLocalModels" type="button">Verify / retry download</button></div>
+          <p id="localModelState" role="status">Checking local detectors…</p>
+          <p id="localModelDetails" style="color:var(--dim);overflow-wrap:anywhere">Readiness is reported by the native runtime.</p>
+        </section>
         <div class="kpi-row" style="margin-bottom:14px">
           <div class="card kpi"><div class="kl">Scans seen</div><div class="kv" style="color:var(--amber-2)" id="kIps">0</div><div class="kd">on the live feed since this page opened</div></div>
           <div class="card kpi"><div class="kl">Analysis Agents</div><div class="kv" style="color:var(--cyan)" id="kLat">—</div><div class="kd" id="kLatNote">not checked yet</div></div>
@@ -121,6 +126,7 @@
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-palette.js"></script>
 <script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
 <script src="../scripts/pages/model-inference.js"></script>

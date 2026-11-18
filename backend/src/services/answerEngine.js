@@ -13,12 +13,14 @@
  */
 
 const ENGINES = {
-  spaceModel: model => ({
+  spaceModel: (model, reviewedPassages = false) => ({
     id: 'ml-service-model',
     kind: 'language-model',
     where: 'CyberForge Analysis Agents',
     model: model || 'open-source model',
-    label: `${shortName(model) || 'Open-source model'} (open-source, in the CyberForge Analysis Agents)`
+    label: reviewedPassages
+      ? `${shortName(model) || 'Open-source model'} selects reviewed security passages`
+      : `${shortName(model) || 'Open-source model'} (open-source, in the CyberForge Analysis Agents)`
   }),
   spaceRules: () => ({
     id: 'ml-service-rules',
@@ -26,6 +28,13 @@ const ENGINES = {
     where: 'CyberForge Analysis Agents',
     model: null,
     label: 'Rule-based summary from the Analysis Agents: no language model answered'
+  }),
+  verifiedReference: () => ({
+    id: 'ml-service-reference',
+    kind: 'fixed-text',
+    where: 'CyberForge Analysis Agents',
+    model: null,
+    label: 'Reviewed security reference (generated wording could not be verified)'
   }),
   // The model was asked and did not finish (busy, out of time, no text). The
   // answer says so instead of offering a summary in its place.
@@ -69,8 +78,9 @@ function shortName(model) {
 /** The engine of an answer from the ML service's chat route, from what that answer says about itself. */
 function engineOfSpaceAnswer(answer) {
   if (!answer || typeof answer !== 'object') return ENGINES.unknown();
+  if (answer.grounding?.mode === 'verified_reference' && answer.model_generated === false) return ENGINES.verifiedReference();
   if (answer.model_used === 'cyberforge-ml-fallback') return ENGINES.spaceRules();
-  if (answer.source === 'space_local_llamacpp' || answer.model === 'local-llm') return ENGINES.spaceModel(answer.model_id);
+  if (answer.source === 'space_local_llamacpp' || answer.model === 'local-llm') return ENGINES.spaceModel(answer.model_id, answer.grounding?.generation_constraint === 'reviewed_passages');
   if (answer.model === 'cyberforge-kb') return ENGINES.knowledgeBase();
   return ENGINES.unknown();
 }

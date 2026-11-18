@@ -32,6 +32,14 @@ tldextract>=5.1.0
 --only-binary llama-cpp-python
 llama-cpp-python==0.3.36
 
+# File malware model (Windows programs): the EMBER2024 feature extractor, pinned to a
+# commit, and LightGBM for the published classifier. Files are parsed, never run.
+lightgbm>=4.6.0
+pefile>=2024.8.26
+# thrember imports a name that later signify releases removed
+signify==0.7.1
+thrember @ git+https://github.com/FutureComputing4AI/EMBER2024.git@0ef753e81d98bf209f71b03cd331dfc190b5b54d
+
 # Data handling
 datasets>=2.20.0
 pyarrow>=17.0.0

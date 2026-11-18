@@ -181,6 +181,8 @@ Only one CyberForge program at a time changes this computer's device state, host
 local memory and privacy settings. See [`desktop/BUILD.md`](desktop/BUILD.md).
 Read [How ML services work](docs/ML-SERVICES.md) for the active models, training phases,
 learning methods, evaluation limits, and proposed improvements.
+Read [Desktop events and local inference](docs/DESKTOP-LOCAL-ML.md) for the native
+detector pack, installation download, offline recovery, Event Stream and validation.
 
 Backend startup requires a generated `JWT_SECRET`; see `backend/.env.example`. The staged
 implementation and current limitations are tracked in [plan-update.md](plan-update.md#12-milestones-dependencies-and-implementation-order).

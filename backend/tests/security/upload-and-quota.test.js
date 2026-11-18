@@ -22,6 +22,12 @@ jest.mock('../../src/services/redis', () => ({
 jest.mock('../../src/services/cyberforgeMLService', () => ({
   cyberforgeML: { analyzeUrl: jest.fn(), predict: jest.fn() }
 }));
+// The file malware model is a network call to the ML service; these tests are
+// about the upload route, so it answers "no verdict" without leaving the process.
+jest.mock('../../src/services/fileMalwareScan', () => ({
+  ...jest.requireActual('../../src/services/fileMalwareScan'),
+  scanFile: jest.fn(async () => ({ verdict: 'unknown', verdict_reason: 'not called in tests' }))
+}));
 
 const express = require('express');
 const User = require('../../src/models/User');

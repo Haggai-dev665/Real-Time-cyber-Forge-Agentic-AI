@@ -1,0 +1,376 @@
+{
+  "source_sha256": "44eab043d9f12606be5c9068000868e448563ff558c7d273c998c22727719177",
+  "output_sha256": "57908a51cdba515535096967844d784914df6eb8375872eb16a50e6bcf413613",
+  "backup": "presentations\\Che Haggai Ngha Kang - Before V4 update.docx",
+  "date": "2026-10-23",
+  "paragraph_changes": [
+    {
+      "original_index": 39,
+      "before": "CyberForge is a web-threat analysis and user-protection research system that combines specialised analysers, contextual evidence and human-readable explanations. The original prototype coordinated eight specialist agents through a three-stage directed acyclic graph, followed by a Reporter. Its reported evaluation on 300 URLs (150 benign and 150 harmful) yielded 94.7% accuracy, 97.9% precision, 91.3% recall and a 2.0% false-positive rate, with mean end-to-end latency of 4.05 seconds. These are retained as historical prototype results, not measurements of the revised implementation. A source review dated 18 October 2026 identifies the current implementation as a Tauri 2/Rust desktop, a Node.js 24/Express backend, a FastAPI Hugging Face service, a shared Rust core, a scoped CLI and a grant-controlled stdio MCP adapter. The ML service combines supervised gradient-boosted URL classifiers, unsupervised IsolationForest scoring, externally pretrained BERT and Qwen inference, and explicit heuristic fallbacks. Current controls include consent-based collection, authenticated workspace access, device enrollment and signed commands, evidence records, and capability-aware status reporting. Memory supplies retrieval context; it does not update model weights. The current implementation requires fresh held-out evaluation and packaged/live-service acceptance before historical performance can be attributed to it.",
+      "after": "CyberForge integrates specialised URL-security analysers, contextual evidence and human-readable explanations. Its historical prototype reported 284 correct decisions on 300 selected URLs (94.7% accuracy), a 2.0% false-positive rate and 4.05-second mean end-to-end latency; these measurements have not been reproduced for the revised system. The implementation reviewed on 23 October 2026 uses a Tauri 2/Rust desktop, a Node.js 24/Express backend and a FastAPI Hugging Face inference service. Three supervised URL classifiers, an unsupervised anomaly detector, pretrained BERT inference and rule-based extraction remain distinct components. Qwen3.5-2B was adapted through supervised low-rank fine-tuning in separate NVIDIA L4 Hugging Face Jobs, then exported as Q4_K_M GGUF. A targeted 100-step update used 2,462 training and 273 validation examples. The accepted serving pipeline adds a 13-topic reviewed reference library and constrained passage selection. It passed 130 of 130 covered factual/support checks; this measures bounded reference use rather than unaided factual recall. On a 240-item regression sample, 84 of 87 applicable risk labels matched authored targets (96.55%). The pinned model and both chat routes were verified live, while the Windows desktop was built and its reference interface checked in a browser fixture. Historical detection accuracy, current language-model evaluation and software verification are reported separately. Remaining limitations include uncovered-question hallucinations, limited independent evaluation, incomplete CLI/MCP feature coverage and unverified packaged cross-platform behaviour."
+    },
+    {
+      "original_index": 43,
+      "before": "CyberForge est un système de recherche consacré à l’analyse des menaces web et à la protection des utilisateurs. Le prototype initial coordonnait huit agents spécialisés dans un graphe orienté acyclique en trois étapes, suivi d’un agent rapporteur. L’évaluation historique de 300 URL (150 légitimes et 150 malveillantes) rapporte une exactitude de 94,7 %, une précision de 97,9 %, un rappel de 91,3 %, un taux de faux positifs de 2,0 % et une latence moyenne de 4,05 secondes. Ces résultats ne constituent pas une nouvelle évaluation du système révisé. La revue du code du 18 octobre 2026 identifie un client Tauri 2/Rust, un backend Node.js 24/Express, un service FastAPI sur Hugging Face, un noyau Rust partagé, une interface en ligne de commande et un adaptateur MCP stdio soumis à autorisation. Le service ML associe classification supervisée, détection non supervisée d’anomalies, inférence avec BERT et Qwen préentraînés et heuristiques explicitement identifiées. La collecte dépend du consentement; les actions et les données sont soumises à des contrôles d’accès. La mémoire conserve du contexte sans réentraîner les modèles. Une nouvelle évaluation indépendante et des essais de la version installée restent nécessaires avant de généraliser les résultats historiques à cette version.",
+      "after": "CyberForge associe des analyseurs spécialisés de sécurité des URL, des données contextuelles et des explications lisibles. Le prototype historique rapporte 284 classifications correctes sur 300 URL sélectionnées (94,7 %), un taux de faux positifs de 2,0 % et une latence moyenne de 4,05 secondes; ces résultats ne sont pas une nouvelle évaluation du système révisé. La version examinée le 23 octobre 2026 comprend un client Tauri 2/Rust, un backend Node.js 24/Express et un service FastAPI sur Hugging Face. Qwen3.5-2B a été adapté par apprentissage supervisé LoRA dans des tâches Hugging Face séparées, sur GPU NVIDIA L4, puis exporté au format GGUF Q4_K_M. La mise à jour ciblée utilise 2 462 exemples d’entraînement et 273 de validation sur 100 étapes. Le pipeline retenu ajoute une bibliothèque de références vérifiées couvrant 13 thèmes et une génération limitée à des passages approuvés. Les 130 contrôles factuels et de support sont réussis; ils mesurent cette extraction contrainte, et non la connaissance factuelle autonome. Sur 240 exemples de régression, 84 des 87 niveaux de risque applicables correspondent aux cibles rédigées (96,55 %). Le modèle déployé et les deux routes de dialogue ont été vérifiés en ligne; le client Windows a été compilé et son interface de références testée dans un navigateur contrôlé. Les performances historiques, l’évaluation du modèle et les vérifications logicielles restent distinctes. Les réponses hors bibliothèque, l’évaluation indépendante et la validation multiplateforme demeurent limitées."
+    },
+    {
+      "original_index": 159,
+      "before": "Historical observations are retained as contextual evidence for later analysis. This memory and retrieval mechanism is distinct from learning model parameters. Current collection and cloud processing are independently consent-gated. The original URL experiment is reported in Chapter 4; the October 2026 source revision is documented in Chapter 3 and Appendix C and has not been assigned new detection-performance figures.",
+      "after": "Historical observations are retained as contextual evidence. Memory retrieval does not update weights. Model adaptation now occurs through a separate, supervised Qwen LoRA workflow in Hugging Face Jobs. Chapter 4 distinguishes historical detection measurements from the October 2026 language-model evaluation and current implementation verification."
+    },
+    {
+      "original_index": 194,
+      "before": "Evaluation is separated into historical detection measurements, current source-level implementation evidence and future release acceptance. The 300-URL experiment remains the only detection-performance dataset summarised here. No new commercial comparison, cross-platform benchmark, production uptime measurement or model-quality result is inferred from the current code.",
+      "after": "Evaluation comprises three evidence categories: the historical 300-URL experiment, the current Qwen training and release evaluation, and software/integration checks. They have different datasets, denominators and purposes. No commercial comparison, cross-platform benchmark or production uptime guarantee is inferred from a model-quality score or successful build."
+    },
+    {
+      "original_index": 257,
+      "before": "URLNet (Le et al., 2018) and Transformer-based representations illustrate learning directly from URL text. CyberForge retains an externally pretrained BERT URL-classification path (elftsdmr/malware-url-detect); the active trainer does not fine-tune it. The current implementation additionally trains three HistGradientBoostingClassifier models for phishing, malware-serving URLs and web-attack payloads, plus an IsolationForest on benign examples. The dissertation contribution remains system integration and evaluation, not a claim of novel Transformer training.",
+      "after": "URLNet (Le et al., 2018) and BERT (Devlin et al., 2019) illustrate learned URL/text representations. CyberForge uses an externally pretrained BERT URL classifier and separately fitted gradient-boosted URL models. Its new language-model adaptation applies low-rank supervised updates to Qwen rather than proposing a novel Transformer architecture. LoRA freezes the pretrained base and learns smaller update matrices (Hu et al., 2021). This reduces the adaptation burden, but validation loss and fluent explanations still require task-specific evaluation."
+    },
+    {
+      "original_index": 311,
+      "before": "Language models generate advisory explanations from supplied context. The current Space defaults to a pretrained Qwen3.5-2B GGUF model through llama.cpp. Backend provider routes and a separate user-key desktop path may also produce answers. Responses must retain their engine attribution; fluent reasoning text is not independent detector evidence or proof of an executed action.",
+      "after": "Language models provide advisory explanations from supplied evidence. The deployed Space now loads a supervised LoRA-adapted Qwen3.5-2B GGUF model at an immutable revision. For 13 reviewed security topics, retrieval and a decoding grammar constrain answers to approved reference passages; other questions use ordinary generation. Response metadata identifies the model, reference sources and any substituted reference answer. An explanation is not independent detector evidence or proof of an executed action."
+    },
+    {
+      "original_index": 312,
+      "before": "The original prototype used a Gemini-to-Mistral-to-template explanation fallback. Current routing includes the in-Space Qwen model and configured backend or user-key providers. Missing, busy or failed models must be reported honestly, with any rule-based summary identified explicitly. The original provider ordering is retained only as historical experimental context.",
+      "after": "The historical prototype used Gemini, Mistral and a template fallback. Current desktop chat defaults to the authenticated backend Qwen route, even when an optional Hugging Face token is stored. The separate direct-provider path requires explicit configuration. Busy, failed or timed-out generation is reported honestly, and reviewed-reference substitution is distinguished from model-selected passages and unrelated rule/template summaries."
+    },
+    {
+      "original_index": 339,
+      "before": "This chapter explains how CyberForge was designed, built, and tested. It focuses on the methods used to turn the ideas from previous chapters into a working system. It also explains the tools, architecture, and steps followed during development. The goal of this chapter is to show clearly how each part of the system works and how all parts connect together to form a complete working cybersecurity platform.",
+      "after": "This chapter presents the architecture, materials and methods of CyberForge as reviewed on 23 October 2026. It separates URL-detection models, advisory language-model adaptation and application control workflows. The new methods include a reproducible Hugging Face Jobs pipeline, supervised Qwen LoRA training, GGUF export, reference-grounded inference and explicit release criteria. The historical eight-specialist design remains part of the research context rather than a claim that every current route executes the same pipeline."
+    },
+    {
+      "original_index": 341,
+      "before": "To make the system easy to understand, this chapter breaks the design into different sections. Each section explains one part of the system in detail. The architecture section shows how the whole system is structured in layers. The use-case section explains what happens when a user visits a URL and how the system responds step by step. The class-diagram section explains the internal structure of the main backend component, especially the orchestrator that controls all agents. The flow chart shows how the process pipeline works.",
+      "after": "The architecture, user interactions, decision flow and representative class relationships are shown in Figures 3.1–3.4. Separate diagrams explain offline Qwen training and runtime reference grounding. These views distinguish implemented service boundaries and permissions without treating planned CLI/MCP operations or unrestricted autonomous action as completed features."
+    },
+    {
+      "original_index": 345,
+      "before": "Finally, the chapter explains how the system is evaluated. This includes how performance is measured, how accuracy is tested, and how the system is assessed in real browsing conditions. The evaluation results are discussed in Chapter 4.",
+      "after": "Evaluation records the historical URL experiment separately from the current Qwen scenario and regression suites. Software tests, browser-fixture checks, desktop compilation and authenticated live service calls establish narrower implementation claims. Chapter 4 reports each result with its applicable denominator, source artefact and limitations."
+    },
+    {
+      "original_index": 348,
+      "before": "The current architecture separates clients, native services, authenticated backend control, ML inference and storage. This chapter distinguishes the original eight-specialist research workflow from the later source implementation reviewed on 18 October 2026. Implementation evidence does not establish deployed availability or reproduce the historical experiment.",
+      "after": "The implementation separates desktop/native services, authenticated backend control, ML inference, persistent evidence and offline model training. The reviewed live release uses a FastAPI Space for CPU inference and separate Hugging Face Jobs for NVIDIA L4 LoRA training. Figure 3.1 makes this training/inference boundary explicit. Source availability, a successful build, live route verification and installed-product acceptance are treated as different evidence levels."
+    },
+    {
+      "original_index": 353,
+      "before": "Inference layer: canonical FastAPI Hugging Face service with trained URL models, BERT, DGA rules, Qwen explanation inference and versioned capability/analysis contracts.",
+      "after": "Inference and training layer: FastAPI Space serving fitted URL detectors, externally pretrained BERT and adapted Qwen V2; separate Hugging Face Jobs prepare data, train adapters, export GGUF and compare candidates."
+    },
+    {
+      "original_index": 358,
+      "before": "Figure 3.1: Revised source architecture (18 October 2026). Implemented interfaces and service boundaries are distinguished from production deployment acceptance.",
+      "after": "Figure 3.1: Current architecture and deployment boundaries. The authenticated backend calls the inference Space; separate Hugging Face Jobs publish accepted, pinned model artefacts. Source: current implementation and release receipts, 23 October 2026."
+    },
+    {
+      "original_index": 363,
+      "before": "The canonical ML service is ml-services/hf_space_deploy/app.py. It serves FastAPI routes and loads three supervised gradient-boosted URL classifiers, an unsupervised IsolationForest, an optional pretrained BERT classifier and a pretrained GGUF language model. DGA detection uses entropy and character-pattern rules. A capability report identifies loaded, loading, failed or unavailable components; unavailable models are not presented as successful inference.",
+      "after": "The canonical service is ml-services/hf_space_deploy/app.py. Three supervised HistGradientBoostingClassifier models and a benign-only IsolationForest analyse URL features; BERT is a separate externally pretrained URL classifier. Qwen V2 provides advisory chat through llama-cpp-python. DGA and IOC functions use explicit rules. Capability metadata distinguishes loaded, loading, failed and unavailable components. Qwen training runs in separate Jobs; the existing four-detector owner-training route is a different mechanism."
+    },
+    {
+      "original_index": 364,
+      "before": "Current explanations can use in-Space Qwen inference, configured backend providers or a separate desktop user-key route. Engine attribution and failure states are carried into responses. Reasoning endpoints do not execute the actions they describe, and deterministic signed evidence exports remain distinct from AI-written narratives.",
+      "after": "Desktop explanations default to the backend Qwen service. Current-question matching retrieves at most two references from a 13-topic editorial library. Covered answers use constrained selection of reviewed sentences; an interrupted or unsupported answer may be replaced by an explicitly labelled reference response. Citations and engine metadata survive backend forwarding and saved conversations. Other generation remains unverified; signed evidence exports remain distinct from AI-written narratives."
+    },
+    {
+      "original_index": 367,
+      "before": "This separation supports inspectable evidence and bounded authority. Detection, proposal, approval, command delivery and verified application are separate events. Current header/footer telemetry reports service and data freshness independently, avoiding fabricated healthy states.",
+      "after": "Detection, proposal, approval, command delivery and verified application remain separate events. Shared desktop headers and footers report service readiness, stream state, data age and operations from available responses, with unavailable or stale states where appropriate. They do not turn a successful HTTP response into proof of complete protection."
+    },
+    {
+      "original_index": 378,
+      "before": "The original prototype measured approximately four seconds per URL. The revised implementation needs fresh latency measurements on a named deployment and workload; modularity alone does not prove real-time performance.",
+      "after": "The original prototype reported a 4.05-second mean per URL. Three live Qwen V2 requests took 14.906, 14.107 and 20.298 seconds during the recorded integration check; these measure chat generation on that deployment, not the original URL pipeline or an operational latency distribution. Separate workloads cannot be compared as a before/after speed improvement."
+    },
+    {
+      "original_index": 382,
+      "before": "Figure 3.2: Use-case diagram for the principal interaction, in which a user browses a URL and the system automatically analyses it.",
+      "after": "Figure 3.2: Current principal user interactions: permitted URL submission, evidence inspection, AI assistance and explicitly approved supported actions. Training remains a separate owner operation."
+    },
+    {
+      "original_index": 383,
+      "before": "The use-case diagram illustrates how different users and system components interact within the CyberForge platform. The main purpose of the diagram is to show the activities that take place when a user browses a website and the system automatically analyses that website to determine whether it is safe or potentially harmful. The diagram also shows how different services work together to generate a final security report and alert the user when threats are detected.",
+      "after": "The use-case view identifies what a verified user may request and where the request is serviced. Browsing observation is optional and platform-dependent; manual analysis is also available. Viewing evidence, asking a question and approving a supported device action are different interactions, each retaining its scope and privacy controls."
+    },
+    {
+      "original_index": 397,
+      "before": "Figure 3.3: Revised decision flow: consent and authentication, selected analysis path, source-labelled evidence, explicit action approval and verified receipts. Cached context is not a guaranteed safe verdict.",
+      "after": "Figure 3.3: Analysis-to-action decision flow. Permission checks precede analysis; a source-labelled result does not become an applied action without approval, a supported adapter and an execution receipt."
+    },
+    {
+      "original_index": 421,
+      "before": "Figure 3.4: Original specialist-orchestrator conceptual class diagram. The current shared Rust core, device/agent control plane and CLI/MCP adapters are additional modules described in Appendix C; this figure is not a complete class diagram of the revised system.",
+      "after": "Figure 3.4: Representative current specialist-orchestrator classes and inheritance. AgentBase, AgentOrchestrator and three concrete specialists are shown; the remaining specialists and separate control-plane modules are omitted for readability."
+    },
+    {
+      "original_index": 422,
+      "before": "AgentOrchestrator. The central coordinator. It holds a registry of specialist agents and the reporter. Its analyse method constructs a new ScanContext, dispatches the three DAG stages in sequence (each stage internally parallel), and invokes the reporter to aggregate. It also maintains an in-memory ring buffer of the most recent fifty reports, exposed via the /api/orchestrator/recent endpoint for the dashboard.",
+      "after": "AgentOrchestrator coordinates the registered specialist instances. Its analyze method accepts a URL and scoped identifiers, dispatches dependent stages and invokes ReportAgent. Recent in-process report buffers are caches, not durable audit records. The figure represents this implemented class family, not the complete desktop or control-plane object model."
+    },
+    {
+      "original_index": 423,
+      "before": "BaseAgent. The abstract superclass from which all specialist agents inherit. It defines the execute(ctx) contract and a small protected helper, _timed, that wraps an asynchronous operation with start-time and end-time bookkeeping so that every agent automatically reports its own latency.",
+      "after": "AgentBase is the implemented specialist superclass. Its execute(input) wrapper records timing and handles the result of the subclass _run(input) method. URLClassifierAgent, DGADetectorAgent, WebScraperAgent, MemoryAgent, IOCExtractorAgent, BehavioralAgent, MITREMapperAgent, ThreatIntelAgent and ReportAgent implement the corresponding specialist work; the Reporter follows the eight analysers."
+    },
+    {
+      "original_index": 425,
+      "before": "WebScraperAgent. Calls the third-party WebScrapper.live API. Its outputa ScrapeResult carrying the DOM, network requests, console logs, response headers, and security headers is written into the Scan Context. scrape slot and consumed by the Stage 2 agents.",
+      "after": "WebScraperAgent requests page evidence from the configured scraper integration. Returned content and metadata are passed as result records to the content-dependent specialists. A successful fetch does not itself establish malware execution, complete network coverage or a dynamically isolated virtual-machine sandbox."
+    },
+    {
+      "original_index": 434,
+      "before": "Scan Context. A plain-data carrier that flows through the entire pipeline. Each agent reads from earlier slots and writes into its own slot. The context’s final state is the input to the Reporter.",
+      "after": "Per-stage result objects carry data between specialist calls. These plain records should not be mistaken for a newly implemented ScanContext class. The orchestrator passes scraped evidence and extracted indicators to the consumers that require them, then supplies available results to the Reporter."
+    },
+    {
+      "original_index": 438,
+      "before": "The original dissertation reports development on an Apple-silicon MacBook with 16 GB RAM and macOS Sonoma 14.6. This is retained as historical hardware context. The current source revision was inspected in a Windows workspace, but no new hardware benchmark or deployed CPU/GPU specification was measured for this revision. Model hosting configuration must not be treated as proof of current hardware capacity.",
+      "after": "Historical development hardware was reported as an Apple-silicon MacBook with 16 GB RAM and macOS Sonoma 14.6. The current desktop was built in a Windows workspace. Recorded Qwen training used an NVIDIA L4 in Hugging Face Jobs; evaluation used CPU-upgrade, while the inference Space retained cpu-basic. These are recorded environments, not comparative hardware benchmarks or a claim of cross-platform release acceptance."
+    },
+    {
+      "original_index": 448,
+      "before": "transformers 4.40+ (Python)",
+      "after": "transformers 5.20.2, peft 0.21.2 and accelerate 1.15.0 in the recorded Qwen GPU job; inference requirements are maintained separately by the Space."
+    },
+    {
+      "original_index": 450,
+      "before": "huggingface_hub 0.26+ for model/data artefacts; llama-cpp-python 0.3.36 for in-process GGUF language-model inference.",
+      "after": "huggingface_hub 2.2.0 in the job launcher and llama-cpp-python 0.3.36 for the evaluated GGUF serving runtime."
+    },
+    {
+      "original_index": 456,
+      "before": "Hugging Face Spaces. Canonical FastAPI inference and owner-triggered training source; backend requests use ML_SERVICE_URL and service authentication. Training currently shares the serving process rather than an isolated durable worker.",
+      "after": "Hugging Face Spaces and Jobs. The Space serves canonical FastAPI inference with service authentication. Separate private, revision-pinned CPU/GPU Jobs prepare and adapt Qwen. The existing owner-triggered four-detector trainer remains a distinct in-Space path and is not described as the LoRA workflow."
+    },
+    {
+      "original_index": 460,
+      "before": "Explanation inference. Default in-Space Qwen3.5-2B-Q4_K_M GGUF through llama.cpp; configured backend providers may also be used.",
+      "after": "Explanation inference. Deployed CyberForge Qwen3.5-2B V2 in Q4_K_M GGUF, loaded by immutable revision; reviewed-topic extraction and source verification supplement the weights."
+    },
+    {
+      "original_index": 461,
+      "before": "Additional explanation paths. The desktop has a separate user-key provider path. Current response attribution, rather than an assumed Gemini/Mistral order, identifies the engine that answered.",
+      "after": "Additional explanation paths. Optional configured backend providers and an explicitly selected direct desktop provider remain separate paths. Storing an optional token does not automatically replace the backend Qwen default. Responses identify the engine that actually answered."
+    },
+    {
+      "original_index": 464,
+      "before": "Externally pretrained artefacts: elftsdmr/malware-url-detect for the BERT path and unsloth/Qwen3.5-2B-GGUF for default Space reasoning. They are used for inference; the active trainer does not fine-tune these models.",
+      "after": "Pretrained sources: Qwen/Qwen3.5-2B at a pinned revision supplies the LoRA base; elftsdmr/malware-url-detect supplies the separate BERT URL path. The Qwen adapter is trained by the new workflow; BERT is not fine-tuned by that workflow. The earlier public Unsloth GGUF is retained as a historical baseline and rollback default, not the current live V2 weights."
+    },
+    {
+      "original_index": 478,
+      "before": "The original development narrative reports deployment and representative-URL checks after each iteration. No such deployment is performed by the present document revision, and historical checks do not certify the current working tree.",
+      "after": "Later implementation work added the authenticated desktop console, private service contracts and the Qwen Jobs pipeline. The recorded October 2026 sequence comprises CPU data preparation, a two-step GPU smoke test, full LoRA training, targeted V2 refinement, quantisation, scenario/regression evaluation, manual rejection of unsupported wording and controlled promotion of the final serving pipeline. Each stage has a saved receipt and immutable source or model revision."
+    },
+    {
+      "original_index": 488,
+      "before": "Table 3.1 presents the complete eight-agent pipeline used in CyberForge.",
+      "after": "Table 3.3 presents the retained eight-specialist pipeline and final Reporter. It is separate from the Qwen training configuration and release gates in Tables 3.1 and 3.2."
+    },
+    {
+      "original_index": 490,
+      "before": "Table 3.1: The CyberForge eight-agent analysis pipeline",
+      "after": "Table 3.3: The retained CyberForge eight-agent analysis pipeline and final Reporter."
+    },
+    {
+      "original_index": 484,
+      "before": "The original prototype exercised Gemini exhaustion, Mistral fallback and a rule-based final response. These are historical verification observations. Current tests must instead exercise the actual configured Qwen/backend/user-key paths, busy/time-budget behaviour and unavailable states, while checking engine attribution and preventing advisory text from being labelled as executed work.",
+      "after": "The current verification exercises the deployed Qwen path, references, ordinary chat, analyst chat and contextual chat. It checks source labels, null uncalibrated confidence, supported wording, persistence of citations and busy/time-budget behavior. A model-selection response and a fixed reference replacement are labelled differently. Successful generation is not treated as evidence that a URL was scanned or an action applied."
+    },
+    {
+      "original_index": 498,
+      "before": "The system is evaluated in Chapter 4 against four criteria:",
+      "after": "The evaluation uses separate protocols for historical classification, current language-model behaviour and implementation verification. The four original criteria below are retained as historical targets. The additional Qwen method samples 240 legacy regression items and 65 reviewed security scenarios in both modes (130 scenario-mode cases), with eight retrieval-negative controls. Current inference controls and both model revisions are held explicit in the comparison."
+    },
+    {
+      "original_index": 503,
+      "before": "Chapter 4 retains the original measurements. The supplied thesis does not include a complete raw per-URL result log, a reproducible split manifest or a controlled single-model ablation. Consequently, the revision does not claim to reproduce those measurements or establish statistical superiority. Source-contract tests of current features are evidence of implementation behaviour, not replacement detection experiments.",
+      "after": "The original experiment has no complete raw per-URL log or reproducible split manifest in the supplied thesis, so its figures remain reported historical results. Current Qwen outputs and reports are preserved separately. They establish bounded task behaviour, not refreshed URL-detection accuracy, commercial superiority, calibrated probabilities or a controlled agent ablation."
+    },
+    {
+      "original_index": 506,
+      "before": "This chapter preserves results reported for the original research prototype. It does not present a new evaluation of the October 2026 source revision. The figures and screenshots are historical artefacts; current client layouts, engine routing and feature availability have changed.",
+      "after": "This chapter separates the reported historical URL experiment from the new Qwen fine-tuning, constrained-generation evaluation and current desktop/service verification. Tables 4.1–4.8 and Figures 4.1–4.13 remain historical records or interface illustrations. Sections 4.10–4.12 add the measured October 2026 results and their limitations; current performance is not inferred from old screenshots or old provider ratings."
+    },
+    {
+      "original_index": 510,
+      "before": "The original application screenshots are retained as historical interface illustrations, not proof that their displayed counters were measured in the 300-URL experiment or that every control was operational. Current claims are grounded in the source inventory in Appendix C. New end-to-end and held-out measurements are required for the revised system.",
+      "after": "Historical screenshots are retained to preserve the development record, with explicit historical captions. Current navigation, model routing, reference persistence and readiness controls are documented separately from those images. The release record includes real authenticated inference responses, browser-fixture checks and a Windows debug build; it does not include a driven, signed-in native desktop acceptance session."
+    },
+    {
+      "original_index": 521,
+      "before": "Figure 4.1 is the original desktop dashboard screenshot. The revised console now obtains scoped counts, backend/stream state and per-capability ML readiness from actual responses, with freshness and unavailable/stale labels. Screenshot counters are not additional experimental observations.",
+      "after": "Figure 4.1 is a historical dashboard illustration. The current sidebar separates Workspace, Security, Explore and Diagnostics. Shared console controls obtain scoped counts, backend/event-stream state and per-model readiness, retaining freshness and unavailable states. Displayed screenshot counters are not additional experimental observations."
+    },
+    {
+      "original_index": 524,
+      "before": "Figure 4.2 shows the Agent Core screen while the eight-agent pipeline processes a URL, with each agent’s live status and the streamed reasoning of the orchestrator.",
+      "after": "Figure 4.2 is a historical Agent Core view. The current UI separates user-facing Agents and schedules from the Local runtime diagnostic screen; it does not imply that every durable run is an unrestricted eight-agent or LLM-planned workflow."
+    },
+    {
+      "original_index": 547,
+      "before": "The model-inference screen of the desktop application, shown in Figure 4.5, reports the live readiness of the detection engines behind these agents, while Figure 4.6 shows the signal-pipeline view that traces each scan signal from capture to verdict.",
+      "after": "Figures 4.5 and 4.6 illustrate earlier model and signal views. Their current destinations are Model capabilities and Event stream under Diagnostics. The capability response describes individual readiness and limits rather than representing every component as trained, available or calibrated."
+    },
+    {
+      "original_index": 553,
+      "before": "The historical explanation experiment used Gemini with Mistral and rule-based fallback. The current Space uses Qwen by default and retains engine-labelled alternative paths. Table 4.6 therefore evaluates the former explanation setup and must not be assigned to the current model.",
+      "after": "Table 4.6 retains the historical Gemini/Mistral explanation ratings. The current adapted Qwen pipeline was evaluated with explicit scenarios, regression items, source-support checks and recorded live calls, reported in Section 4.10. Historical 1-to-10 ratings are not Qwen accuracy scores."
+    },
+    {
+      "original_index": 558,
+      "before": "The written report appears inside the sandbox’s detailed report panel, and the user can ask follow-up questions in the AI Assistant. Figure 4.7 shows the sandbox analysis view in which the verdict, detection signals, and detection breakdown are presented side by side, and Figure 4.8 shows the AI Assistant answering follow-up questions grounded in the system’s memory.",
+      "after": "The historical analysis and assistant views are retained in Figures 4.7 and 4.8. In the current console, Analyze groups URL inspection rather than claiming virtual-machine malware detonation. The AI Assistant routes through the backend Qwen service by default and stores engine and reference metadata with messages, restoring primary-source links when a conversation is reopened."
+    },
+    {
+      "original_index": 567,
+      "before": "Redis caching was especially helpful: about 15 % of all queries were repeat visits, and these returned in under 100 ms because the system reused the saved result instead of running the full pipeline again. This both speeds things up and lowers the load on the paid AI services.",
+      "after": "The original text attributed repeat responses below 100 ms and a 15% repeat share to caching. No raw workload or trace log is supplied for that claim. It is retained as a historical report, not a newly measured characteristic of the current Qwen or desktop paths."
+    },
+    {
+      "original_index": 582,
+      "before": "Table 4.8 checks the results against the original goals of the project.",
+      "after": "Table 4.8 reviews the original objectives against historical evidence. Unsupported reliability and explanation claims are qualified rather than converted into current acceptance results. The new model and desktop checks have separate criteria and denominators in Sections 4.10 and 4.11."
+    },
+    {
+      "original_index": 586,
+      "before": "The historical 300-URL experiment supports a reported 94.7% accuracy and 2.0% false-positive rate on that selected set. The architecture combines several inspectable signals, but no controlled single-model comparison establishes superiority or the smallest sufficient agent set. The 4.05-second mean is close to, but above, the original strict four-second warm target.",
+      "after": "The reported historical confusion counts support 94.7% accuracy and 2.0% false positives on the selected 300-URL set. They do not identify which component caused each error or establish agent superiority. The 4.05-second historical mean exceeds the strict 4.00-second warm target. These historical observations must remain distinct from the current Qwen and implementation results that follow."
+    },
+    {
+      "original_index": 587,
+      "before": "Future work should examine the 13 false negatives and three false positives with per-detector evidence, validate on larger temporally held-out samples and benchmark the current deployment. The present revision also documents implemented access and privacy controls; their packaged/live acceptance and adversarial assurance remain separate tasks.",
+      "after": "The subsequent results examine supervised adaptation and controlled inference rather than re-running the URL experiment. No new URL-detection accuracy, operational uptime or cross-platform release result is inferred. The remaining original false positives and false negatives require per-indicator evidence and an independent re-evaluation."
+    },
+    {
+      "original_index": 590,
+      "before": "This dissertation presents the design and historical evaluation of CyberForge and a source-grounded revision of its current implementation. Eight specialist analyses and reporting provide the research architecture; later work adds Tauri/Rust clients, authenticated workspace control, durable agent/device workflows, a private ML service and limited CLI/MCP integration. These implementation changes do not retroactively change the original experimental baseline.",
+      "after": "This dissertation presents CyberForge's specialist analysis design, historical URL experiment and current evidence-grounded implementation. The updated system includes a Tauri/Rust desktop, authenticated backend workflows, a private inference service and a separately trained Qwen LoRA adapter. The contribution is an inspectable integration of models, contextual evidence, explanations and bounded authority rather than a claim of unrestricted autonomous protection."
+    },
+    {
+      "original_index": 592,
+      "before": "The current source implements many controls recommended after the original prototype, including verified identity/workspace checks, independent privacy choices, service authentication, device signing and explicit action states. Remaining work is to demonstrate those controls in packaged releases and live services, evaluate detector quality on independent data and close the feature gaps identified in Appendix C.",
+      "after": "The October 2026 release adds recorded NVIDIA L4 fine-tuning, private pinned artefacts, explicit release gates and reviewed-topic constrained generation. All 130 covered factual/support checks passed under the final constraint; 84/87 applicable regression risk labels agreed with authored targets. Both chat routes were checked live and the Windows desktop was built. These results support bounded deployment claims while leaving independent factual assessment, uncovered generation, detector re-evaluation and packaged cross-platform acceptance open."
+    },
+    {
+      "original_index": 597,
+      "before": "Model quality and training. Expand temporal/domain-held-out evaluation, measure false positives on legitimate login and shared-hosting sites, and isolate training from inference with durable jobs and controlled model promotion. User feedback should enter a reviewed labelled dataset; automatic online retraining is not currently implemented and should not ingest untrusted feedback unchecked.",
+      "after": "Model quality and training. Extend independent, temporal and domain-held-out evaluation, review the three remaining risk-label disagreements and improve uncovered generation. Qwen training is already isolated in Hugging Face Jobs with revision-pinned promotion and preserved rejection reports; extend comparable isolation and atomic publication to the existing detector-training workflow. Reviewed user feedback may support later supervised batches, but no automatic online retraining is established."
+    },
+    {
+      "original_index": 600,
+      "before": "Future research should run longer deployments with raw measurement logs, compare agent ablations, test current models on independent regional and hosted-phishing corpora, and evaluate explanation quality with a defined blinded protocol. Product work includes isolated training, richer grounded AI CLI operations, broader MCP transports/tools, packaged mobile/native-capture acceptance and optional integration with a genuine dynamic-execution sandbox. The existing companion and limited stdio MCP/CLI source should not be described as either wholly absent or fully complete.",
+      "after": "Future research should investigate causal agent ablations, larger regional/hosted-phishing corpora, blinded explanation assessments and a broader reviewed-reference library. Product work includes fuller AI CLI/MCP coverage, packaged desktop/mobile acceptance and verified action rollback. The completed Qwen Jobs workflow and limited stdio CLI/MCP surface should neither be described as absent nor overstated as complete autonomous operation."
+    },
+    {
+      "original_index": 634,
+      "before": "Appendix C: Current implementation and evidence boundary (18 October 2026)",
+      "after": "Appendix C: Current implementation and evidence boundary (23 October 2026)"
+    },
+    {
+      "original_index": 636,
+      "before": "This revision is based on the local working tree, not a clean release tag or a production deployment. The original title-page date and historical experimental tables are retained. The original DOCX is preserved byte-for-byte in presentations/Che Haggai Ngha Kang - Original backup.docx. Source paths below are primary implementation evidence; planned features are not treated as delivered.",
+      "after": "This revision uses the current source and the saved October 2026 training, evaluation and deployment receipts. The original title page and historical experimental tables are retained. A separate pre-V4 DOCX backup preserves the immediately preceding document. Model-quality artefacts, live route evidence, compilation and browser-fixture results are identified separately; planned capabilities are not treated as delivered."
+    },
+    {
+      "original_index": 638,
+      "before": "Desktop: Tauri 2/Rust with a static HTML/CSS/JavaScript UI, OS credential storage, native telemetry and authenticated event streaming. Five independent privacy controls govern history, active-tab observation, cloud scanning, language-model processing and sync. Shared headers/footers obtain backend counts and ML capability states, report request age and operations, and provide refresh, filtering and diagnostics. Sources: desktop/src-tauri/Cargo.toml; src/privacy.rs; src/console.rs; desktop/ui/scripts/cf-console.js.",
+      "after": "Desktop: Tauri 2/Rust with static HTML/CSS/JavaScript, OS credential storage, native telemetry and authenticated event streaming. The 14 sidebar destinations are grouped into Workspace, Security, Explore and Diagnostics; Settings adds privacy, diagnostics and integrations controls. Headers/footers expose live response states and freshness. The Assistant defaults to backend Qwen, retains primary-reference metadata and restores it with saved conversations. Sources: cf-sidebar.js, cf-console.js, cf-header.js, cyberforge-shared.js, pages/ai-assistance.js and src-tauri/src/ml.rs."
+    },
+    {
+      "original_index": 644,
+      "before": "Transfer/pretrained inference: BERT URL classification uses an externally trained artefact; Qwen3.5-2B GGUF generates advisory text through llama.cpp. Neither is fine-tuned by the current trainer. DGA is an entropy/character-pattern heuristic, IOC extraction uses rules, and memory is retrieval/context. No reinforcement learning or automatic online weight updates are established by the active source.",
+      "after": "Supervised language-model adaptation: Qwen3.5-2B is now fine-tuned by LoRA in separate HF Jobs and served as a pinned GGUF. BERT remains externally pretrained inference. Reference retrieval and grammar constraints shape covered responses without changing weights; DGA/IOC logic remains rule-based. No reinforcement-learning or automatic online-weight-update loop is established."
+    },
+    {
+      "original_index": 651,
+      "before": "Phase 5 — publish accepted artefacts. Upload only accepted models with their metadata through the owner-authorised training path and load the available artefacts for inference. The current training job runs in a background thread in the serving process; independent durable workers, immutable whole-bundle promotion and robust rollback require further work. No training run or deployment was performed for this revision.",
+      "after": "Phase 5 — publish accepted detector artefacts. The existing detector trainer publishes accepted models and metadata through owner-authorised routes. Qwen has a distinct Jobs-based workflow: prepare, smoke-test, train/refine, merge/quantise, compare, review and pin an accepted model revision. Its recorded deployment includes model health and both chat routes. This completed Qwen process does not imply that every detector publication path now has independent durable workers or atomic whole-bundle rollback."
+    },
+    {
+      "original_index": 654,
+      "before": "Current source-contract, security and responsive-interface checks are implementation evidence, not a repeat of the 300-URL experiment. Current model quality, operational uptime, packaged cross-platform behaviour, data-retention handling and end-to-end enforcement require separately recorded tests. Report evaluation set manifests, raw predictions, named model versions, workload/hardware, service configuration and confidence intervals in future experiments.",
+      "after": "Current Qwen evidence is summarised in Sections 4.10–4.12: 130 constrained scenario-mode checks, 240 regression items with 87 applicable risk labels, saved actual answers and live route receipts. The Windows build and controlled browser test establish narrower implementation properties; cross-platform installed behaviour, long-run uptime, action enforcement and an independent expert factual benchmark remain unestablished by this release."
+    }
+  ],
+  "new_blocks": [
+    "3.7.5 Qwen training data and partitioning",
+    "The initial SFT corpus contains 5,417 training, 251 validation and 487 test examples. It combines public URL samples scored by the deployed detectors, owner-pro",
+    "For V2, task-balanced replay limits most training families to 100 records and corrects wording that had conflated supervised classifiers with the separate anoma",
+    "Prompt uniqueness, message roles, non-empty answers, system-prompt consistency and analyst word budgets are validated before allocating a GPU. Exact release-sce",
+    "3.7.6 Supervised low-rank adaptation",
+    "LoRA adapts a pretrained model by learning low-rank update matrices while retaining the base weights (Hu et al., 2021). CyberForge trains text answers against t",
+    "The initial NVIDIA L4 run uses two epochs and 678 optimisation steps. V2 resumes the previous adapter at a pinned revision for a targeted 100-step update at a l",
+    "Table 3.1: Recorded Qwen V2 refinement configuration (source: train_report.json).",
+    "ParameterRecorded valueBaseQwen/Qwen3.5-2B; immutable base revisionInitial adapterPrevious CyberForge adapter, revision 9fcfd481…Training / validation2,462 / 27",
+    "3.7.7 Export, evaluation and controlled promotion",
+    "Figure 3.5 separates offline adaptation from inference. Revision-pinned source and data bundles are uploaded to private repositories; credentials travel through",
+    "",
+    "Figure 3.5: Qwen supervised adaptation, GGUF export, evaluated release and evidence preservation. The inference Space does not train during a chat request.",
+    "The selected adapter is merged into the pinned base and exported to GGUF, then importance-quantised to Q4_K_M. The llama.cpp revision is matched to the Space ru",
+    "Promotion requires both the fixed automatic gate and review of actual answers. Rejected reports remain preserved. The accepted Space configuration pins reposito",
+    "3.7.8 Reviewed-reference retrieval and constrained decoding",
+    "The editorial library contains 13 short security summaries with primary links from OWASP, MITRE ATT&CK, NIST, OpenSSL and the US Postal Inspection Service. Curr",
+    "",
+    "Figure 3.6: Runtime grounding. Covered topics use constrained selection of reviewed passages; uncovered requests use ordinary Qwen generation and retain its lim",
+    "Initial prompt grounding and keyword checks did not prevent unsupported clauses. The final policy uses a GBNF grammar to restrict covered output to complete rev",
+    "Responses expose the knowledge revision, primary-reference links and generation_constraint=reviewed_passages. Model-selected passages, fixed reference replaceme",
+    "3.7.9 Release evaluation design and fixed gates",
+    "The original scenario set contains 39 reviewed prompts in analyst and assistant modes (78 cases), frozen before V2 training. After manual review, 26 additional ",
+    "A stratified 240-item sample from the 487 legacy test items measures risk formatting, authored-target agreement, concision, unverified indicators and remembered",
+    "Table 3.2: Fixed Qwen release gates (source: release_cases.py; unchanged after results).",
+    "MeasureAcceptance conditionFinal factual checksAt least 95% in all and additional scenariosRaw core-fact pattern checksAt least 80%; not an independent factual ",
+    "The final grammar changes the interpretation of a factual pass: it establishes supported extraction from the reviewed library, not unaided model recall. Compari",
+    "4.10 Qwen fine-tuning and release results",
+    "4.10.1 Training progression",
+    "The recorded initial LoRA run completed 678 steps on NVIDIA L4. V2 continued the saved adapter for 100 targeted steps using the corrected, task-balanced corpus.",
+    "Table 4.9: Recorded Qwen training progression (source: initial and V2 train_report.json artefacts).",
+    "MeasureInitial SFTTargeted V2Training / validation records5,417 / 2512,462 / 273Optimisation steps678 (2 epochs)100 targeted stepsLearning rate0.00010.00002Vali",
+    "The two before/after loss pairs use different training/validation compositions and cannot be interpreted as a controlled cross-run improvement percentage. Runti",
+    "4.10.2 Rejected candidates and interpretation of the final pass",
+    "The first V2 keyword-based release gate passed, but manual answer review found unsupported claims about CSRF, prepared statements, password managers, cryptojack",
+    "",
+    "Figure 4.14: Reference-replacement rate for the same V2 weights: sentence checking alone versus final constrained passage generation. The change is a serving co",
+    "The final comparison regenerated all 130 covered cases per model with the exact serving grammar. It passed all eight fixed gate checks. Every final candidate ra",
+    "Table 4.10: Final serving-policy comparison (source: release-constrained/494483e9…/release_report.json).",
+    "MeasurePrevious adapterQwen V2Covered factual/support cases130 / 130130 / 130Additional cases (subset of 130)52 / 5252 / 52Correct topic retrieval130 / 130130 /",
+    "Each model has 240 regression items; measures apply to their relevant subsets. The V2 risk metric is agreement with authored targets, not detector classificatio",
+    "4.10.3 Deployed model and actual service responses",
+    "The accepted weights are pinned in Che237/cyberforge. The recorded health response identifies the V2 repository, GGUF filename and exact weight revision, with l",
+    "",
+    "Figure 4.15: Recorded authenticated MFA-fatigue response from the deployed service, with reviewed-reference provenance. The panel reproduces an actual archived ",
+    "The backend ML client used by the desktop route answered CSRF, MFA fatigue and Heartbleed checks against V2, with correct primary-reference identifiers. Observe",
+    "The analyst security-chat route returned supported MFA-fatigue text, references, the reviewed_passages constraint and fewer than 80 words. The contextual chat r",
+    "4.11 Current desktop implementation and verification",
+    "The current Windows client is Tauri 2/Rust with an HTML/CSS/JavaScript renderer. The revised sidebar has 14 destinations; Settings contains additional configura",
+    "Table 4.11: Current desktop workspace and functional scope (source: sidebar, native commands and shared console components).",
+    "AreaImplemented functions and evidence boundaryWorkspaceOverview, Devices, Agents and AI Assistant; scoped counts, enrolled-device workflows, fixed-template run",
+    "Table 4.12: Verification evidence and its limits (sources: release log, test records and build artefact).",
+    "EvidenceObserved resultWhat it establishesPython contracts / grounding14 tests passedPrompt, source, metadata and CPU-stage contracts.Backend targeted checks29 ",
+    "The executable is desktop/src-tauri/target/debug/cyberforge-console.exe. Its SHA-256 is recorded in the release receipt. It was rebuilt, not installed over an e",
+    "4.12 Validity, limitations and summary",
+    "The training targets and security scenarios are authored within the project. The added scenarios were written after manual review, and are not an independently ",
+    "The evidence supports a deployed, revision-pinned Qwen pipeline, bounded reviewed-topic explanations and functioning backend/desktop integration contracts. It d",
+    "ggml-org. (2026). GBNF grammar guide [Software documentation]. llama.cpp. https://github.com/ggml-org/llama.cpp/blob/master/grammars/README.md",
+    "Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., & Chen, W. (2021). LoRA: Low-rank adaptation of large language models (arXiv:2106.09",
+    "Hugging Face. (2026). Jobs overview [Technical documentation]. https://huggingface.co/docs/hub/en/jobs-overview",
+    "Qwen Team. (2026). Qwen3.5-2B [Model card]. Hugging Face. https://huggingface.co/Qwen/Qwen3.5-2B",
+    "C.6 Qwen release provenance",
+    "Base revision: Qwen/Qwen3.5-2B@15852e8c16360a2fea060d615a32b45270f8a8fc. Initial adapter: 9fcfd481271b09218de9e1bd0c7e7b224c58dd41. Accepted V2 weights: Che237/",
+    "Training Job: 6adaa7a3c191903149a77fb1. Final evaluation Job: 6adac192925af0e27d4f9a58. Evaluated source bundle: Che237/cyberforge-llm-sft-v2@ca4729eabf8b1bd02e",
+    "Local evidence: ml-services/llm_finetune/V2_RELEASE.md; TRAINING_STATUS.md; MODEL_CARD.md; runs/v2-promotion.json; runs/live-client-final.log; saved raw/served ",
+    "The full inference pipeline, not the bare GGUF alone, is the accepted factual-use unit. Rejected keyword and free-generation reports remain available under sepa"
+  ],
+  "replaced_diagrams": 4,
+  "added_figures": 4,
+  "layout": "Original section geometry, styles, numbering, headers/footers and historical confusion tables retained.",
+  "final_output_sha256": "46ea02159e81701ac4c3d4a9674915dc9431c205b0834ff115bfd754f0245608",
+  "native_office_refreshed": true
+}

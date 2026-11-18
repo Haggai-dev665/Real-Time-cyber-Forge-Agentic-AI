@@ -22,6 +22,7 @@ export interface SectionMeta {
 
 export const SECTIONS: Record<string, SectionMeta> = {
   assistant: { title: 'AI Assistant', sub: 'ask about threats and your findings', icon: 'spark', color: colors.amber2 },
+  scan: { title: 'Scan a link', sub: 'eight agents check an address', icon: 'search', color: colors.cyan },
   sandbox: { title: 'Sandbox', sub: 'static URL and file analysis', icon: 'flask', color: colors.cyan },
   devices: { title: 'Devices', sub: 'enrolled devices and approvals', icon: 'desktop', color: colors.green },
   agents: { title: 'Agents', sub: 'proposals to approve, pause', icon: 'bot', color: colors.amber2 },
@@ -32,13 +33,13 @@ export const SECTIONS: Record<string, SectionMeta> = {
   pipeline: { title: 'Signal Pipeline', sub: 'ingest, analyse, reason', icon: 'activity', color: colors.sage },
   models: { title: 'Models', sub: 'the ML service and its models', icon: 'brain', color: colors.blue },
   tasks: { title: 'Tasks', sub: 'agent tasks', icon: 'list', color: colors.sage },
-  memory: { title: 'Memory', sub: 'what the agent remembers', icon: 'box', color: colors.sage },
+  memory: { title: 'Memory', sub: 'what your desktop synced', icon: 'box', color: colors.sage },
   settings: { title: 'Settings', sub: 'account and app', icon: 'gear', color: colors.dim },
 };
 
 /** Shown as tiles at the top of Explore. */
 // Capture is featured only in a build that can capture (see src/native/vpn.ts).
-export const FEATURED: string[] = ['assistant', 'agents', 'devices', ...(captureAvailable ? ['vpn'] : [])];
+export const FEATURED: string[] = ['scan', 'assistant', 'agents', 'devices', ...(captureAvailable ? ['vpn'] : [])];
 
 /** Every other screen, listed below. */
 export const REST: string[] = Object.keys(SECTIONS).filter((key) => !FEATURED.includes(key));

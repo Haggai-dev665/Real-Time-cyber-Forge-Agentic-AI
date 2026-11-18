@@ -4,6 +4,23 @@ buildSidebar('models');
 buildFooter({items:[{txt:'Service metadata',cls:'sb-cyan'},{txt:'Per-capability readiness',cls:'sb-green'},{txt:'Agents: checking…',id:'sbMl'}]});
 fitWindow('win');
 
+async function refreshLocalModels(){
+  try{
+    const s=await CF.invoke('local_model_status');
+    document.getElementById('localModelState').textContent=(s.ready?'Ready · '+s.modelCount+' native detectors':'Not ready')+' · '+(s.state||'unknown');
+    const progress=Number.isFinite(s.totalBytes)?((s.downloadedBytes||0)/1048576).toFixed(2)+' / '+(s.totalBytes/1048576).toFixed(2)+' MiB downloaded':'';
+    document.getElementById('localModelDetails').textContent=[s.source,progress,s.scope,s.revision?'Pinned HF revision '+s.revision:null,s.error].filter(Boolean).join(' · ');
+  }catch(e){document.getElementById('localModelState').textContent='Local model runtime unavailable: '+String(e.message||e);}
+}
+document.getElementById('prepareLocalModels').addEventListener('click',async function(){
+  this.disabled=true;this.textContent='Preparing models…';
+  try{const result=await CF.invoke('prepare_local_models');if(result&&!result.ready)throw new Error(result.error||'Models not ready');}
+  catch(e){document.getElementById('localModelState').textContent=String(e.message||e);}
+  finally{this.disabled=false;this.textContent='Verify / retry download';await refreshLocalModels();}
+});
+window.addEventListener('cf:event',e=>{if(e.detail&&e.detail.type==='model:status')refreshLocalModels();});
+refreshLocalModels();
+
 function renderCapabilities(response){
   const box=document.getElementById('models'); box.textContent='';
   const data=response&&response.success===true&&response.data;

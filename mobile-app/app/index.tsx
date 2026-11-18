@@ -5,7 +5,7 @@
  * redirected straight to the dashboard.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Animated, Easing, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,6 +44,8 @@ export default function Connect() {
   return (
     <SafeAreaView style={styles.root}>
       <LinearGradient colors={['#0c1726', colors.bg]} style={StyleSheet.absoluteFill} />
+      {/* scrolls on small screens and with large text, so the buttons are never pushed off-screen */}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} bounces={false}>
 
       {/* header */}
       <View style={styles.header}>
@@ -62,6 +64,7 @@ export default function Connect() {
       {step === 'checking' && <Checking />}
       {step === 'connected' && <Connected />}
       {step === 'error' && <ErrorState message={errMsg} onRetry={check} />}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -207,7 +210,8 @@ function BigButton({ icon, label, onPress }: { icon: IconName; label: string; on
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 22, paddingBottom: 28 },
+  root: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flexGrow: 1, paddingHorizontal: 22, paddingBottom: 28 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 24, marginBottom: 8 },
   brand: { fontFamily: fonts.sansBold, fontSize: 17, color: colors.text },
   brandSub: { fontFamily: fonts.mono, fontSize: 9, color: colors.faint, letterSpacing: 0.5 },

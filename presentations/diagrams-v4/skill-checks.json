@@ -1,0 +1,50 @@
+[
+  {
+    "file": "architecture.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\architecture.html",
+    "error": ""
+  },
+  {
+    "file": "class-model.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\class-model.html",
+    "error": ""
+  },
+  {
+    "file": "decision-flow.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\decision-flow.html",
+    "error": ""
+  },
+  {
+    "file": "grounding.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\grounding.html",
+    "error": ""
+  },
+  {
+    "file": "live-response.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\live-response.html",
+    "error": ""
+  },
+  {
+    "file": "quality-results.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\quality-results.html",
+    "error": ""
+  },
+  {
+    "file": "training.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\training.html",
+    "error": ""
+  },
+  {
+    "file": "use-cases.html",
+    "passed": true,
+    "output": "OK presentations\\diagrams-v4\\use-cases.html",
+    "error": ""
+  }
+]

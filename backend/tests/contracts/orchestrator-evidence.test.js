@@ -147,3 +147,29 @@ test('strong evidence from the URL models still decides when the page was not ob
   expect(report.verdict).toBe('suspicious');
   expect(report.evidenceStatus).toBe('unavailable');
 });
+
+// The Live Agent screen shows the agents working as they go (analyze/stream).
+test('the analysis reports each stage and each agent as it happens, without internal page data', async () => {
+  const events = [];
+  const report = await orchestrator.analyze({ url: TARGET, sessionId: null, userId: null }, e => events.push(e));
+  const stages = events.filter(e => e.type === 'stage').map(e => e.stage);
+  expect(stages).toEqual([1, 2, 3, 4]);
+  const finished = events.filter(e => e.type === 'agent').map(e => e.agent);
+  expect(finished.sort()).toEqual(['behavioral', 'dga_detector', 'ioc_extractor', 'memory', 'mitre_mapper', 'reporter', 'threat_intel', 'url_classifier', 'web_scraper'].sort());
+  // every agent starts before it finishes, and a stage's agents finish before the next stage starts
+  for (const name of finished) expect(events.findIndex(e => e.type === 'agent_start' && e.agent === name)).toBeLessThan(events.findIndex(e => e.type === 'agent' && e.agent === name));
+  expect(events.findIndex(e => e.type === 'agent' && e.agent === 'web_scraper')).toBeLessThan(events.findIndex(e => e.type === 'stage' && e.stage === 2));
+  // the scraper's raw page data stays on the server
+  const scraper = events.find(e => e.type === 'agent' && e.agent === 'web_scraper');
+  expect(scraper.status).toBe('ok');
+  expect(Object.keys(scraper.result).some(k => k.startsWith('_') || k === 'aiContext')).toBe(false);
+  expect(JSON.stringify(events).length).toBeLessThan(80000);
+  // the reporter's event says it finished; the report is the final answer
+  expect(events.find(e => e.type === 'agent' && e.agent === 'reporter')).not.toHaveProperty('result');
+  expect(report.verdict).toBeDefined();
+});
+
+test('a failing progress callback does not stop the analysis', async () => {
+  const report = await orchestrator.analyze({ url: TARGET, sessionId: null, userId: null }, () => { throw new Error('screen gone'); });
+  expect(report.verdict).toBeDefined();
+});

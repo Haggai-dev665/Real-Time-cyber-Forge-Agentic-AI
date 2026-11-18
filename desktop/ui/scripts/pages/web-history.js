@@ -45,7 +45,8 @@ function scanRow(row, btn){
     var col=risk>=70?'var(--red)':risk>=40?'var(--amber)':unknown?'var(--faint)':'var(--green)';
     var bg=risk>=70?'rgba(244,73,94,.14)':risk>=40?'var(--amber-dim)':unknown?'rgba(255,255,255,.06)':'rgba(67,224,138,.14)';
     var v=row.querySelector('[data-verdict]');
-    v.textContent=unknown?'NOT CHECKED':((risk>=70?'THREAT ':risk>=40?'SUSPECT ':'CLEAN ')+risk);
+    v.textContent=unknown?'NOT CHECKED':((d.source==='local-ml'?(risk>=50?'URL RISK ':'LOW URL RISK '):(risk>=70?'THREAT ':risk>=40?'SUSPECT ':'CLEAN '))+risk);
+    v.title=d.source==='local-ml'?'On-device URL features only; page content and live intelligence were not checked.':(d.summary||'');
     v.style.color=col; v.style.background=bg; v.classList.add('show');
     btn.textContent='Re-scan'; btn.classList.remove('busy');btn.disabled=false;
     scanned++; if(risk>=50) threats++;

@@ -1,0 +1,58 @@
+[
+  {
+    "slug": "architecture",
+    "title": "System architecture and deployment boundaries",
+    "type": "architecture",
+    "width": 960,
+    "height": 600
+  },
+  {
+    "slug": "use-cases",
+    "title": "Principal user interactions",
+    "type": "architecture",
+    "width": 960,
+    "height": 600
+  },
+  {
+    "slug": "decision-flow",
+    "title": "Analysis, approval and verified outcome",
+    "type": "flowchart",
+    "width": 960,
+    "height": 720
+  },
+  {
+    "slug": "class-model",
+    "title": "Specialist-orchestrator class model",
+    "type": "uml-class",
+    "width": 960,
+    "height": 720
+  },
+  {
+    "slug": "training",
+    "title": "Qwen adaptation and controlled release",
+    "type": "architecture",
+    "width": 960,
+    "height": 720
+  },
+  {
+    "slug": "grounding",
+    "title": "Reference-grounded inference at runtime",
+    "type": "flowchart",
+    "width": 960,
+    "height": 720
+  },
+  {
+    "slug": "quality-results",
+    "title": "Constrained generation resolved unsupported wording",
+    "type": "bar",
+    "width": 960,
+    "height": 600
+  },
+  {
+    "slug": "live-response",
+    "title": "Recorded live response and preserved provenance",
+    "type": "data-flow",
+    "width": 960,
+    "height": 600
+  }
+]

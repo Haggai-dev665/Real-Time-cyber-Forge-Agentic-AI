@@ -23,13 +23,14 @@ import sys
 from pathlib import Path
 
 import torch
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi, snapshot_download
 from peft import LoraConfig, PeftModel, get_peft_model
 from transformers import (AutoModelForImageTextToText, AutoTokenizer, Trainer, TrainerCallback,
                           TrainingArguments)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from serving import prompt_text  # noqa: E402
+from validate_data import validate
 
 BASE = "Qwen/Qwen3.5-2B"
 # Every linear layer of the language model; nothing in model.visual
@@ -47,6 +48,8 @@ def encode(tok, row, max_len: int):
     system, user, answer = (m["content"] for m in row["messages"])
     prompt = tok(prompt_text(system, user), add_special_tokens=False)["input_ids"]
     target = tok(answer + "<|im_end|>", add_special_tokens=False)["input_ids"]
+    if len(target) >= max_len - 1:
+        raise ValueError(f"Answer exceeds token budget for row {row.get('id', '?')}")
     if len(prompt) + len(target) > max_len:
         # long prompts lose their middle, as at serving time; the answer is never cut
         keep = max_len - len(target)
@@ -82,12 +85,25 @@ class LogFile(TrainerCallback):
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps({"step": state.global_step, "epoch": state.epoch, **(logs or {})}) + "\n")
 
+    def on_save(self, args, state, control, **kw):
+        # Preserve the latest complete Trainer checkpoint before a timeout or
+        # hard kill can discard the Job's ephemeral disk.
+        repo = os.environ.get("MODEL_REPO")
+        if repo and state.is_world_process_zero:
+            checkpoint = Path(args.output_dir) / f"checkpoint-{state.global_step}"
+            HfApi().upload_folder(repo_id=repo, folder_path=checkpoint,
+                                  path_in_repo=f"recovery/{os.environ.get('STAGE', 'train')}",
+                                  commit_message=f"Recoverable checkpoint at step {state.global_step}")
+
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="data")
     ap.add_argument("--out", default="runs/cf-qwen35-2b")
     ap.add_argument("--base", default=BASE)
+    ap.add_argument("--revision", default=os.environ.get("BASE_REVISION"))
+    ap.add_argument("--adapter", help="existing adapter repository for a targeted update")
+    ap.add_argument("--adapter-revision")
     ap.add_argument("--epochs", type=float, default=2.0)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--rank", type=int, default=16)
@@ -100,7 +116,10 @@ def main():
     ap.add_argument("--max-steps", type=int, default=-1, help="stop early (smoke tests)")
     ap.add_argument("--limit", type=int, default=0, help="use only this many training rows (smoke tests)")
     ap.add_argument("--no-merge", action="store_true")
+    ap.add_argument("--resume", help="local path to a complete Trainer checkpoint")
     args = ap.parse_args()
+    validate(args.data)
+    torch.manual_seed(42)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -109,7 +128,7 @@ def main():
     dtype = torch.bfloat16 if (bf16 or not cuda) else torch.float16
 
     # ---- 1. tokenize -------------------------------------------------------
-    tok = AutoTokenizer.from_pretrained(args.base)
+    tok = AutoTokenizer.from_pretrained(args.base, revision=args.revision)
     data = Path(args.data)
     train_rows, val_rows = load_rows(data / "train.jsonl"), load_rows(data / "val.jsonl")
     if args.limit:
@@ -122,11 +141,13 @@ def main():
           f"max {lengths[-1]}; answer tokens {answer_tokens}", flush=True)
 
     # ---- 2. model + LoRA ---------------------------------------------------
-    model = AutoModelForImageTextToText.from_pretrained(args.base, dtype=dtype)
+    model = AutoModelForImageTextToText.from_pretrained(args.base, revision=args.revision, dtype=dtype)
     model.config.use_cache = False
     lora = LoraConfig(r=args.rank, lora_alpha=args.alpha, lora_dropout=args.dropout, bias="none",
                       target_modules=TARGETS, task_type="CAUSAL_LM")
-    model = get_peft_model(model, lora)
+    model = (PeftModel.from_pretrained(model, args.adapter, revision=args.adapter_revision,
+                                      subfolder="adapter", is_trainable=True)
+             if args.adapter else get_peft_model(model, lora))
     model.print_trainable_parameters()
 
     # ---- 3. train ----------------------------------------------------------
@@ -166,7 +187,7 @@ def main():
                       data_collator=Collate(tok.pad_token_id), callbacks=[LogFile(out / "train_log.jsonl")])
     base_eval = trainer.evaluate()
     print(f"validation loss before training: {base_eval['eval_loss']:.4f}", flush=True)
-    result = trainer.train()
+    result = trainer.train(resume_from_checkpoint=args.resume)
     final_eval = trainer.evaluate()
     print(f"validation loss after training (best checkpoint): {final_eval['eval_loss']:.4f}", flush=True)
 
@@ -188,13 +209,13 @@ def main():
     del trainer, model
     if cuda:
         torch.cuda.empty_cache()
-    base = AutoModelForImageTextToText.from_pretrained(args.base, dtype=torch.bfloat16)
+    base = AutoModelForImageTextToText.from_pretrained(args.base, revision=args.revision, dtype=torch.bfloat16)
     merged = PeftModel.from_pretrained(base, str(adapter)).merge_and_unload()
     merged_dir = out / "merged"
     merged.save_pretrained(merged_dir, safe_serialization=True)
     tok.save_pretrained(merged_dir)
     # the processor and template files the GGUF converter and llama.cpp read
-    src = Path(snapshot_download(args.base, allow_patterns=["*.json", "*.jinja", "*.txt"]))
+    src = Path(snapshot_download(args.base, revision=args.revision, allow_patterns=["*.json", "*.jinja", "*.txt"]))
     # (only these kinds: the cache folder also links the base weights, which must
     # not land beside the merged ones)
     for f in src.iterdir():

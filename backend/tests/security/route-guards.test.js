@@ -91,8 +91,8 @@ afterAll(async () => {
 });
 beforeEach(() => User.findById.mockResolvedValue(member));
 
-test('the seven formerly open route groups define the 62 routes this suite covers', () => {
-  expect(guardedRoutes).toHaveLength(62);
+test('the seven formerly open route groups define the 64 routes this suite covers', () => {
+  expect(guardedRoutes).toHaveLength(64);
 });
 
 test.each(guardedRoutes)('$method $url rejects a request with no session', async ({ method, url }) => {

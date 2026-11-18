@@ -96,6 +96,30 @@
 .srow .si b{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow .si span{font-family:var(--mono);font-size:9px;color:var(--faint)}
 .srow .sv{font-family:var(--mono);font-size:10px;font-weight:700;flex:none}
+
+/* ── file scan ── */
+.an-file{position:relative;display:flex;align-items:center;gap:16px;padding:16px 18px;border-style:dashed;border-color:var(--border-2);cursor:pointer;overflow:hidden;
+  transition:border-color .2s,background .2s,transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+.an-file:hover,.an-file:focus-visible{border-color:rgba(43,212,238,.45);background:rgba(43,212,238,.035);outline:none}
+.an-file.over{border-color:var(--cyan);background:rgba(43,212,238,.08);transform:scale(1.008);box-shadow:0 0 0 4px rgba(43,212,238,.12),0 10px 30px -12px rgba(43,212,238,.45)}
+.an-file.flash{animation:af-flash 1.2s ease 2}
+@keyframes af-flash{0%,100%{box-shadow:none}40%{box-shadow:0 0 0 4px rgba(43,212,238,.25)}}
+.af-ico{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--cyan);background:var(--cyan-dim);border:1px solid rgba(43,212,238,.3);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.af-ico svg{width:22px;height:22px}
+.an-file.over .af-ico{transform:translateY(-3px) scale(1.06)}
+.af-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.af-text b{font-size:14px;font-weight:600}
+.af-text span{font-size:11.5px;color:var(--dim);line-height:1.5}
+.af-pick{height:36px;padding:0 16px;border-radius:9px;border:1px solid rgba(43,212,238,.4);background:transparent;color:var(--cyan);font:600 12.5px var(--sans);cursor:pointer;flex:none;transition:background .15s,transform .12s}
+.af-pick:hover{background:rgba(43,212,238,.1)} .af-pick:active{transform:scale(.97)}
+.af-run{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(43,212,238,.12);opacity:0;transition:opacity .2s}
+.af-run i{position:absolute;top:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:af-run 1.1s ease-in-out infinite}
+@keyframes af-run{from{left:-35%}to{left:100%}}
+.an-file.busy{cursor:progress} .an-file.busy .af-run{opacity:1} .an-file.busy .af-pick{opacity:.5;pointer-events:none}
+.af-steps{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.af-steps span{font-family:var(--mono);font-size:9.5px;letter-spacing:.4px;padding:3px 8px;border-radius:5px;border:1px solid var(--border-2);color:var(--faint);transition:color .2s,border-color .2s,background .2s}
+.af-steps span.on{color:var(--cyan);border-color:rgba(43,212,238,.45);background:var(--cyan-dim)}
+.af-steps span.done{color:var(--green);border-color:rgba(67,224,138,.35)}
 </style>
 <link rel="stylesheet" href="../styles/cf-console.css" />
 <!-- The shell layout is known before the first paint, and that paint waits for the
@@ -136,14 +160,23 @@
               </div>
             </div>
 
+            <div class="card an-file" id="anFile" tabindex="0" role="button" aria-label="Scan a file: drop it here or press Enter to choose one">
+              <div class="af-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M12 11.5 9.5 12.5v1.8c0 1.7 1.1 2.8 2.5 3.2 1.4-.4 2.5-1.5 2.5-3.2v-1.8Z"/></svg></div>
+              <div class="af-text"><b id="afTitle">Scan a file</b><span id="afHint">Drop a file anywhere on this page, or choose one. Windows programs (.exe, .dll) get a verdict from the trained file model. The file is analysed on the server and never run. Up to 25 MB.</span>
+                <div class="af-steps" id="afSteps" hidden><span data-s="read">Read</span><span data-s="hash">Hash</span><span data-s="send">Send</span><span data-s="model">Analyse</span></div></div>
+              <button class="af-pick" id="afPick" type="button">Choose a file</button>
+              <input type="file" id="afInput" hidden />
+              <div class="af-run" aria-hidden="true"><i></i></div>
+            </div>
+
             <div class="card result" id="result" style="flex:1;min-height:0;overflow-y:auto">
-              <div class="res-empty" id="resEmpty">Enter a URL, domain, IP or hash and press <b>Analyze</b> to run the available checks. Results show what was checked and what remains unknown.</div>
+              <div class="res-empty" id="resEmpty">Enter a URL, domain, IP or hash and press <b>Analyze</b>, or drop a file above, to run the available checks. Results show what was checked and what remains unknown.</div>
               <div id="resBody"></div>
             </div>
           </div>
 
           <div class="col">
-            <div class="card cf-context-note"><b>Checks and evidence</b><p>URL and domain scans report available checks, signals, coverage and host references. IP and hash inspection may only parse an indicator; a missing reputation verdict is unknown.</p><p>File execution is unavailable: no virtual machine runs here. Technique suggestions are evidence-linked hints, not confirmed techniques.</p><p>Analysis starts only when you submit an indicator. For collected browsing records and individual rescans, open <a href="web-history.html">Browser Activity → History &amp; scans</a>. Use <a href="agents.html">Agents</a> for scheduled work.</p></div>
+            <div class="card cf-context-note"><b>Checks and evidence</b><p>URL and domain scans report available checks, signals, coverage and host references. IP and hash inspection may only parse an indicator; a missing reputation verdict is unknown.</p><p>Files are analysed statically: the trained model reads a Windows program's structure, and the server looks for indicators in the content. Nothing is executed, and no virtual machine runs here. Technique suggestions are evidence-linked hints, not confirmed techniques.</p><p>Analysis starts only when you submit an indicator. For collected browsing records and individual rescans, open <a href="web-history.html">Browser Activity → History &amp; scans</a>. Use <a href="agents.html">Agents</a> for scheduled work.</p></div>
           </div>
         </div>
       </main>
@@ -159,6 +192,7 @@
 <script src="../scripts/cf-live.js"></script>
 <script src="../scripts/cf-header.js"></script>
 <script src="../scripts/cf-sidebar.js"></script>
+<script src="../scripts/cf-palette.js"></script>
 <script src="../scripts/cf-console.js"></script>
 <script src="../scripts/cf-footer.js"></script>
 <script src="../scripts/pages/analyzer.js"></script>

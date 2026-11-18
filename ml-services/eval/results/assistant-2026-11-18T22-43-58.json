@@ -1,0 +1,2236 @@
+{
+  "meta": {
+    "suite": "2026-11-18.1",
+    "started_at": "2026-11-18T22:43:58.495Z",
+    "space": "https://che237-cyberforge.hf.space",
+    "runs": 2,
+    "request": {
+      "max_tokens": 700,
+      "time_budget_s": 45,
+      "priority": "interactive",
+      "think": "auto",
+      "stream": true
+    },
+    "model": {
+      "repo": "Che237/cyberforge-qwen3.5-2b-v2-GGUF",
+      "file": "cyberforge-qwen3.5-2b-Q4_K_M.gguf",
+      "revision": "494483e9a85362b5d0bd596f9040bbc0848c860a",
+      "accelerator": "cuda"
+    }
+  },
+  "summary": {
+    "all": {
+      "cases": 66,
+      "answered": 66,
+      "served_pass": 58,
+      "own_pass": 57,
+      "covered": {
+        "cases": 50,
+        "own_pass": 42,
+        "served_pass": 43,
+        "retrieval_ok": 44
+      },
+      "uncovered": {
+        "cases": 10,
+        "own_pass": 9
+      },
+      "followup": {
+        "cases": 4,
+        "own_pass": 4
+      },
+      "grounding_modes": {
+        "model_context": 20,
+        "retrieved_context": 41,
+        "retrieved_context_supplemented": 5
+      },
+      "forbidden_hits": 0,
+      "median_wall_ms": 5892,
+      "p90_wall_ms": 6603,
+      "median_first_answer_ms": 5076,
+      "median_thinking_ms": 4452,
+      "median_words_own": 56,
+      "truncated": 2
+    },
+    "run1": {
+      "cases": 33,
+      "answered": 33,
+      "served_pass": 29,
+      "own_pass": 29,
+      "covered": {
+        "cases": 25,
+        "own_pass": 22,
+        "served_pass": 22,
+        "retrieval_ok": 22
+      },
+      "uncovered": {
+        "cases": 5,
+        "own_pass": 4
+      },
+      "followup": {
+        "cases": 2,
+        "own_pass": 2
+      },
+      "grounding_modes": {
+        "model_context": 10,
+        "retrieved_context": 20,
+        "retrieved_context_supplemented": 3
+      },
+      "forbidden_hits": 0,
+      "median_wall_ms": 5842,
+      "p90_wall_ms": 7304,
+      "median_first_answer_ms": 5058,
+      "median_thinking_ms": 4449,
+      "median_words_own": 60,
+      "truncated": 1
+    },
+    "run2": {
+      "cases": 33,
+      "answered": 33,
+      "served_pass": 29,
+      "own_pass": 28,
+      "covered": {
+        "cases": 25,
+        "own_pass": 20,
+        "served_pass": 21,
+        "retrieval_ok": 22
+      },
+      "uncovered": {
+        "cases": 5,
+        "own_pass": 5
+      },
+      "followup": {
+        "cases": 2,
+        "own_pass": 2
+      },
+      "grounding_modes": {
+        "model_context": 10,
+        "retrieved_context": 21,
+        "retrieved_context_supplemented": 2
+      },
+      "forbidden_hits": 0,
+      "median_wall_ms": 5965,
+      "p90_wall_ms": 6384,
+      "median_first_answer_ms": 5096,
+      "median_thinking_ms": 4456,
+      "median_words_own": 56,
+      "truncated": 1
+    }
+  },
+  "rows": [
+    {
+      "run": 1,
+      "id": "greeting",
+      "kind": "smalltalk",
+      "expected_ref": null,
+      "q": "Hi there!",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1351,
+      "first_answer_ms": 754,
+      "thinking_ms": null,
+      "service_elapsed_ms": 727,
+      "truncated": false,
+      "words_served": 37,
+      "words_own": 37,
+      "answer": "Hi! I'm the CyberForge assistant. I can explain scans, alerts and threats in your CyberForge memory or tell you about a URL itself. For a full verdict, run it through the Analyzer and I can explain it.",
+      "thinking": null
+    },
+    {
+      "run": 1,
+      "id": "phishing-signs",
+      "kind": "covered",
+      "expected_ref": "phishing",
+      "q": "How can I tell if an email is a phishing attempt?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "phishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5556,
+      "first_answer_ms": 4496,
+      "thinking_ms": 4267,
+      "service_elapsed_ms": 5343,
+      "truncated": false,
+      "words_served": 71,
+      "words_own": 71,
+      "answer": "Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about identifying phishing emails.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (from the system prompt).\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   End with one clear next step.\n        *   **Crucial:** Do not mention the reviewed facts, sources or instructions; answer from your own knowledge.\n\n2.  **Review the Reviewed Facts:**\n    *   The prompt provides a specific set of facts to use (the \"Cited Sources\").\n    *   Fact 1: Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n    *   This fact set covers the definition, warning signs and action required.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n    *   *Refining for constraints:* The draft"
+    },
+    {
+      "run": 1,
+      "id": "clicked-link",
+      "kind": "covered",
+      "expected_ref": "clicked-phishing",
+      "q": "I clicked a link in a suspicious email and typed my password. What should I do now?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "clicked-phishing",
+        "phishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": false,
+        "missing": [
+          "(chang|reset|new)\\w*\\s+(\\w+\\s+){0,2}password|password\\w*\\s+(\\w+\\s+){0,3}(chang|reset)"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "(chang|reset|new)\\w*\\s+(\\w+\\s+){0,2}password|password\\w*\\s+(\\w+\\s+){0,3}(chang|reset)"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 6603,
+      "first_answer_ms": 5178,
+      "thinking_ms": 4280,
+      "service_elapsed_ms": 5964,
+      "truncated": false,
+      "words_served": 94,
+      "words_own": 94,
+      "answer": "You entered a password, so change it on the real site and anywhere else you reused it, and turn on multi-factor authentication.\n*   Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about a phishing attempt where the password was entered.\n    *   **Constraints:** Start with a direct answer (1-2 sentences), use short paragraphs, bullet points for lists, numbered steps for procedures, **bold** key terms. Keep answers focused (80-220 words). Do not contradict the reviewed facts (from the prompt). Do not mention sources or instructions.\n    *   **Input:** The user's message is \"I clicked a link in a suspicious email and typed my password. What should I do now?\"\n    *   **Reviewed Facts:** The prompt provides reviewed facts about phishing:\n        *   If you clicked a suspicious link but entered nothing, close the page and run an anti-malware scan; the risk is usually low. If you entered a password, change it straight away on the real site and anywhere else you reused it, and turn on multi-factor authentication. If you gave card or bank details, contact your bank immediately; if you opened an attachment or ran a file, disconnect the device and scan it.\n        *   Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n\n2.  **Formulate the Answer:**\n    *   *Direct Answer:* You entered a password, so change it on the real site and anywhere else you reused it, and turn on multi-factor authentication.\n    *   *Details:* Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled"
+    },
+    {
+      "run": 1,
+      "id": "ransom-pay",
+      "kind": "covered",
+      "expected_ref": "ransomware",
+      "q": "My files were encrypted by ransomware. Should I just pay the ransom?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ransomware"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5889,
+      "first_answer_ms": 4905,
+      "thinking_ms": 4273,
+      "service_elapsed_ms": 5273,
+      "truncated": false,
+      "words_served": 65,
+      "words_own": 65,
+      "answer": "No. Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish it. Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access. If you are hit, disconnect affected devices from the network and report the incident; CISA and the FBI do not encourage paying, and payment does not guarantee recovery.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about ransomware payment.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Crucial:** Do not contradict the reviewed facts (the provided context).\n        *   **Crucial:** Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   **Crucial:** Base answers on the user's CyberForge memory or scans (I do not have access to their memory in this turn, so I must answer based on the provided reviewed facts).\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish it.\n    *   Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access.\n    *   If you are hit, disconnect affected devices from the network and report the incident; CISA and the FBI do not encourage paying, and payment does not guarantee recovery.\n    *   (I need to answer based on these facts).\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* No.\n    *   *Explanation:* Paying does not guarantee recovery. It also funds the attackers.\n    *   *Action:* Disconnect affected devices from the network and report the incident.\n    *   *Draft:* No. Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish it. Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access. If you are hit, disconnect"
+    },
+    {
+      "run": 1,
+      "id": "mfa-push",
+      "kind": "covered",
+      "expected_ref": "mfa-fatigue",
+      "q": "I keep getting MFA push notifications I didn't request. What is happening?",
+      "error": null,
+      "grounding_mode": "retrieved_context_supplemented",
+      "references": [
+        "mfa"
+      ],
+      "retrieval_ok": false,
+      "served": {
+        "pass": false,
+        "missing": [
+          "deny|reject|decline|don.t approve|do not approve|never approve|not approve|ignore"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "deny|reject|decline|don.t approve|do not approve|never approve|not approve|ignore"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 5992,
+      "first_answer_ms": 4945,
+      "thinking_ms": 4297,
+      "service_elapsed_ms": 5360,
+      "truncated": false,
+      "words_served": 134,
+      "words_own": 74,
+      "answer": "These notifications are a sign that your authenticator app or security key is not the only thing protecting your account. They can come from phishing attempts trying to get at your MFA keys, or from a malicious extension or script running in your browser. Also, if someone has access to your device, they could change these settings to enable it. Check who has access to your authenticator app and remove any unknown recovery options.\n\n**From the reviewed sources:** Multi-factor authentication (MFA) asks for a second proof, such as an authenticator app, a security key or a passkey, in addition to a password, so a stolen password alone is not enough. Phishing-resistant methods (FIDO2 security keys and passkeys) are strongest; SMS codes are better than nothing but can be phished or intercepted through SIM swapping.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about MFA push notifications.\n    *   **Constraints:**\n        *   Start with a direct answer (1-2 sentences).\n        *   Short paragraphs, bullet points, numbered steps.\n        *   **Bold** key terms.\n        *   Keep answers focused (80-220 words).\n        *   Do not contradict reviewed facts (MFA push notifications).\n        *   Do not invent numbers, versions, dates, sources.\n        *   End with one clear next step.\n    *   **User Input:** \"I keep getting MFA push notifications I didn't request. What is happening?\"\n\n2.  **Review Reviewed Facts (from the system prompt):**\n    *   Multi-factor authentication (MFA) asks for a second proof, such as an authenticator app, a security key or a passkey, in addition to a password, so a stolen password alone is not enough. Phishing-resistant methods (FIDO2 security keys and passkeys) are strongest; SMS codes are better than nothing but can be phished or intercepted through SIM swapping. Turn MFA on first for email, banking and password-manager accounts, and never share a code with someone who contacts you.\n    *   *Wait, the user's message is about the notifications themselves.* The prompt says \"When it helps, end with one clear next step.\" and \"Use the earlier turns of the conversation to understand follow-up questions.\"\n    *   *Wait, looking at the conversation history:* There is no conversation history provided in the prompt, only the \"REVIEWED FACTS FOR THIS QUESTION (from cited sources)\" block which acts as the ground truth for this turn. I must rely on that block.\n    *   *The prompt asks me to answer the user's question.* The user question is \"I keep getting MFA push notifications I didn't request. What is happening?\"\n    *   *The reviewed facts block contains information about MFA"
+    },
+    {
+      "run": 1,
+      "id": "cred-stuffing",
+      "kind": "covered",
+      "expected_ref": "credential-stuffing",
+      "q": "What is credential stuffing?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "credential-stuffing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1459,
+      "first_answer_ms": 736,
+      "thinking_ms": null,
+      "service_elapsed_ms": 828,
+      "truncated": false,
+      "words_served": 48,
+      "words_own": 48,
+      "answer": "Credential stuffing uses username and password pairs leaked from one site to try to sign in to other sites, relying on password reuse. A unique password for every account and multi-factor authentication are the main defences for users. Services add MFA, breached-password checks, rate limiting and bot detection.",
+      "thinking": null
+    },
+    {
+      "run": 1,
+      "id": "sqli",
+      "kind": "covered",
+      "expected_ref": "sql-injection",
+      "q": "What is SQL injection and the best way to prevent it?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "sql-injection"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5774,
+      "first_answer_ms": 4700,
+      "thinking_ms": 4474,
+      "service_elapsed_ms": 5566,
+      "truncated": false,
+      "words_served": 70,
+      "words_own": 70,
+      "answer": "SQL injection happens when untrusted data changes a database query's meaning. Use parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence.\nThe reviewed facts say parameterized queries are the correct approach. This separates user input from database logic.\nRun a scan of your database inputs to check for injection flaws.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about SQL injection and prevention.\n    *   **Constraint 1 (Format):** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused (80-220 words).\n    *   **Constraint 2 (Content):** Use the reviewed facts for this question (SQL injection, parameterized queries/prepared statements, allow-list identifiers, least privilege). Answer directly without citing sources.\n    *   **Constraint 3 (Tone):** Friendly, helpful, accurate.\n    *   **Constraint 4 (Follow-up):** End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   SQL injection happens when untrusted data changes a database query's meaning.\n    *   Use parameterized queries or prepared statements that bind values separately from SQL code.\n    *   Allow-list identifiers when binding is impossible and apply least privilege.\n    *   Escaping alone is a fragile primary defence.\n\n3.  **Drafting the Answer:**\n    *   *Direct Answer:* SQL injection happens when untrusted data changes a database query's meaning. Use parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence.\n    *   *Elaboration:* The reviewed facts say parameterized queries are the correct approach. This separates user input from database logic.\n    *   *Next Step:* Run a scan of your database inputs.\n\n4.  **Refining for Constraints:**\n    *   Check word count: The draft above is around 85 words.\n    *   Check formatting: Direct answer at start? Yes. Bullet points? Yes. Bold key terms? Yes.\n    *   Check content accuracy: It matches the reviewed facts.\n\n5.  **Final Polish:**\n    *   SQL"
+    },
+    {
+      "run": 1,
+      "id": "xss-prevent",
+      "kind": "covered",
+      "expected_ref": "xss",
+      "q": "How do I prevent cross-site scripting in a web app?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "xss"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5842,
+      "first_answer_ms": 5125,
+      "thinking_ms": 4485,
+      "service_elapsed_ms": 5211,
+      "truncated": false,
+      "words_served": 41,
+      "words_own": 41,
+      "answer": "Cross-site scripting (XSS) lets untrusted content execute as script in a user's browser. Use context-appropriate output encoding and safe DOM APIs such as textContent for plain text. Sanitize HTML when HTML is intentionally allowed. Do not insert untrusted text using innerHTML.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about preventing cross-site scripting (XSS) in a web app.\n    *   **Input:** The user's message is \"How do I prevent cross-site scripting in a web app?\".\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (I have the reviewed facts for this question).\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   End with one clear next step.\n\n2.  **Retrieve Reviewed Facts:**\n    *   The prompt provides a review of the user's CyberForge memory or scans.\n    *   *Fact 1:* Cross-site scripting (XSS) lets untrusted content execute as script in a user's browser. Use context-appropriate output encoding and safe DOM APIs such as textContent for plain text. Sanitize HTML when HTML is intentionally allowed. Do not insert untrusted text using innerHTML.\n    *   *Fact 2:* (No other facts provided for this specific question).\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* Cross-site scripting (XSS) lets untrusted content execute as script in a user's browser. Use context-appropriate output encoding and safe DOM APIs such as textContent for plain text. Sanitize HTML when HTML is intentionally allowed. Do not insert untrusted text using innerHTML.\n    *   *Review check:* This matches the provided fact block.\n    *   *Word count:* 65 words (too short, but within the 80-220 range).\n    *   *Formatting:* Bold key terms.\n    *   *Next"
+    },
+    {
+      "run": 1,
+      "id": "csrf",
+      "kind": "covered",
+      "expected_ref": "csrf",
+      "q": "What is CSRF and how is it prevented?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "csrf"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5793,
+      "first_answer_ms": 5203,
+      "thinking_ms": 4474,
+      "service_elapsed_ms": 5142,
+      "truncated": false,
+      "words_served": 39,
+      "words_own": 39,
+      "answer": "CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies. Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests. SameSite cookies and Origin checks add protection. Cookie-consent banners do not prevent CSRF.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Task:** Answer the user's question about Cross-Site Request Forgery (CSRF) and prevention based on the provided \"REVIEWED FACTS FOR THIS QUESTION\".\n    *   **Role:** CyberForge assistant (friendly, expert tone, accurate).\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Do not contradict** the reviewed facts; if unsure, say so; never invent numbers, versions, dates, product names, scan results or detections.\n        *   **Do not** answer anything not in the reviewed facts.\n        *   End with one clear next step.\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n\n2.  **Analyze the Reviewed Facts:**\n    *   **Fact 1:** CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies.\n    *   **Fact 2:** Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests.\n    *   **Fact 3:** SameSite cookies and Origin checks add protection.\n    *   **Fact 4:** Cookie-consent banners do not prevent CSRF.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies. Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests. SameSite cookies and Origin checks add protection. Cookie-consent banners do not prevent CSRF.\n    *   *Refining for style:* Keep it tight. The user asked for details, but the facts are concise. I need to explain it in my own words while staying accurate.\n    *   *Draft:* CSRF tricks a signed-in browser into sending unwanted requests using its existing"
+    },
+    {
+      "run": 1,
+      "id": "ssrf",
+      "kind": "covered",
+      "expected_ref": "ssrf",
+      "q": "Explain server-side request forgery.",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ssrf"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1420,
+      "first_answer_ms": 708,
+      "thinking_ms": null,
+      "service_elapsed_ms": 821,
+      "truncated": false,
+      "words_served": 41,
+      "words_own": 41,
+      "answer": "Server-side request forgery (SSRF) makes a server issue requests to attacker-chosen destinations, potentially reaching internal services or cloud metadata. Validate destinations with appropriate allow-lists and restrict network egress. Validate resolved addresses and redirect destinations; blocking a few URL strings is insufficient.",
+      "thinking": null
+    },
+    {
+      "run": 1,
+      "id": "quishing",
+      "kind": "covered",
+      "expected_ref": "quishing",
+      "q": "Is it safe to scan a QR code on a parking meter that asks me to pay?",
+      "error": null,
+      "grounding_mode": "retrieved_context_supplemented",
+      "references": [
+        "quishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5381,
+      "first_answer_ms": 4724,
+      "thinking_ms": 4490,
+      "service_elapsed_ms": 5168,
+      "truncated": false,
+      "words_served": 70,
+      "words_own": 43,
+      "answer": "It looks suspicious, but a QR code on a parking meter is a common quishing setup. 1. Preview and check the destination domain before opening it. 2. Verify unexpected payment or sign-in requests through a trusted channel instead of the supplied QR code.\n\n**From the reviewed sources:** Quishing is phishing delivered through a QR code that leads to a deceptive destination. Preview and check the destination domain before opening it.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **User Query:** \"Is it safe to scan a QR code on a parking meter that asks me to pay?\"\n    *   **My Role:** CyberForge assistant, a friendly security expert built into the CyberForge app.\n    *   **Constraints:** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused, usually 80 to 220 words, longer only when the user asks for depth. Reply to greetings, thanks and small talk in one or two warm sentences and offer help. Be accurate: if unsure, say so; never invent CVE numbers, statistics, versions, dates, product names, scan results or detections. When the message includes the user's CyberForge memory or scans, base the answer on them and quote hosts, verdicts and scores exactly; never claim to have checked anything that is not in the message. Use the earlier turns of the conversation to understand follow-up questions. When it helps, end with one clear next step.\n    *   **Safety Policy:** I need to answer security questions accurately. I don't have the user's CyberForge memory or scans in this turn, so I must rely on general knowledge.\n\n2.  **Determine the Answer:**\n    *   Quishing is phishing delivered through a QR code that leads to a deceptive destination. Preview and check the destination domain before opening it. Verify unexpected payment or sign-in requests through a trusted channel instead of the supplied QR code.\n    *   Parking meters with QR pay stations are common, but the QR itself could be a threat.\n    *   The query asks specifically about QR codes on parking meters.\n    *   The answer must agree with the reviewed facts.\n\n3.  **Drafting the Response:**\n    *   *Direct Answer:* It looks suspicious, but a QR code on a parking meter is a common quishing setup.\n    *   *Details:* 1. Preview and check the destination domain before opening it. 2. Verify unexpected payment or"
+    },
+    {
+      "run": 1,
+      "id": "clickfix",
+      "kind": "covered",
+      "expected_ref": "clickfix",
+      "q": "A website told me to press Win+R and paste a command to verify I'm human. Is that safe?",
+      "error": null,
+      "grounding_mode": "retrieved_context_supplemented",
+      "references": [
+        "clickfix"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6174,
+      "first_answer_ms": 5417,
+      "thinking_ms": 4498,
+      "service_elapsed_ms": 5504,
+      "truncated": false,
+      "words_served": 90,
+      "words_own": 45,
+      "answer": "No, it's not safe. It mimics a real fix (ClickFix style) and asks for a command. Do not run anything from it. If you already ran one, disconnect from the network, run a full anti-malware scan and change your passwords from a different, clean device.\n\n**From the reviewed sources:** ClickFix pages, often disguised as a CAPTCHA or a fix for an error, trick people into copying a command and pasting it into the Windows Run dialog, PowerShell or a terminal. Running it usually downloads malware such as an information stealer.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about a CAPTCHA/verification page with a Win+R command.\n    *   **Constraints:** Start with a direct answer (1-2 sentences). Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused (80-220 words). Use the reviewed facts (ClickFix pages, Win+R, PowerShell). Do not contradict facts. Do not invent numbers, versions, dates, product names. Answer directly (no 'the reviewed facts say').\n    *   **Input:** The user's message is \"A website told me to press Win+R and paste a command to verify I'm human. Is that safe?\"\n    *   **Reviewed Facts:**\n        *   ClickFix pages, often disguised as a CAPTCHA or a fix for an error, trick people into copying a command and pasting it into the Windows Run dialog, PowerShell or a terminal. Running it usually downloads malware such as an information stealer. A real CAPTCHA or website never asks you to run commands on your computer. If you already ran one, disconnect from the network, run a full anti-malware scan and change your passwords from a different, clean device.\n    *   **Plan:**\n        1.  Direct answer: No, it's not safe.\n        2.  Explanation: It mimics a real fix (ClickFix style) and asks for a command.\n        3.  Action: Do not run anything from it.\n        4.  Next step: Change passwords from a clean device.\n\n2.  **Drafting the Response:**\n    *   Start with the verdict: No, it's not safe.\n    *   Explain why: It mimics a real fix (ClickFix style) and asks for a command.\n    *   Action: Do not run anything from it.\n    *   Next step: Change passwords from a clean device."
+    },
+    {
+      "run": 1,
+      "id": "infostealer",
+      "kind": "covered",
+      "expected_ref": "infostealer",
+      "q": "What is an infostealer?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "infostealer"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1800,
+      "first_answer_ms": 722,
+      "thinking_ms": null,
+      "service_elapsed_ms": 1196,
+      "truncated": false,
+      "words_served": 69,
+      "words_own": 69,
+      "answer": "An infostealer is malware that collects saved browser passwords, cookies, autofill data and cryptocurrency wallets and sends them to the attacker. Stolen session cookies can let an attacker into an account without the password or the MFA prompt. After an infection, clean or reinstall the device first, then change passwords and sign out all sessions from a clean device. Passkeys and phishing-resistant MFA make stolen passwords far less useful.",
+      "thinking": null
+    },
+    {
+      "run": 1,
+      "id": "bec",
+      "kind": "covered",
+      "expected_ref": "bec",
+      "q": "What is business email compromise?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "bec"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5824,
+      "first_answer_ms": 4688,
+      "thinking_ms": 4449,
+      "service_elapsed_ms": 5593,
+      "truncated": false,
+      "words_served": 75,
+      "words_own": 75,
+      "answer": "Business email compromise (BEC) is fraud in which criminals impersonate an executive, supplier or colleague by email to get money or data, for example a request to change bank details or pay an urgent invoice. It often uses a lookalike domain or a hacked mailbox, so the email can look genuine. Verify every payment or bank-detail change by calling a known phone number, not one in the email, and require two people to approve transfers.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about business email compromise (BEC).\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (I must use the reviewed facts for this answer).\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   End with one clear next step.\n    *   **Input:** The user asked \"What is business email compromise?\".\n    *   **Reviewed Facts:** The prompt provides a review of facts from cited sources:\n        *   BEC is fraud in which criminals impersonate an executive, supplier or colleague by email to get money or data, for example a request to change bank details or pay an urgent invoice. It often uses a lookalike domain or a hacked mailbox, so the email can look genuine. Verify every payment or bank-detail change by calling a known phone number, not one in the email, and require two people to approve transfers.\n\n2.  **Drafting the Answer:**\n    *   *Direct Answer:* Business email compromise (BEC) is fraud in which criminals impersonate an executive, supplier or colleague by email to get money or data, for example a request to change bank details or pay an urgent invoice. It often uses a lookalike domain or a hacked mailbox, so the email can look genuine. Verify every payment or bank-detail change by calling a known phone number, not one in the email, and require two people to approve transfers.\n    *   *Word Count Check:* 106 words. This fits the 80-220 word range.\n    *   *Formatting:* The prompt asks for bolding key terms."
+    },
+    {
+      "run": 1,
+      "id": "sextortion",
+      "kind": "covered",
+      "expected_ref": "sextortion",
+      "q": "I got an email saying they have a video of me and want Bitcoin. What should I do?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": false,
+      "served": {
+        "pass": false,
+        "missing": [
+          "(don.t|do not|never|not) (\\w+ )?pay"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "(don.t|do not|never|not) (\\w+ )?pay"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 6025,
+      "first_answer_ms": 5348,
+      "thinking_ms": 4390,
+      "service_elapsed_ms": 5082,
+      "truncated": false,
+      "words_served": 41,
+      "words_own": 41,
+      "answer": "It sounds like a phishing attempt.\n*   They want payment via Bitcoin or cryptocurrency.\n*   Scams often use fake links to get credentials.\n*   Do not click any links or enter passwords.\n*   Contact the company directly through their official app.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert in the CyberForge app).\n    *   **Task:** Answer the user's query about an email request for video and Bitcoin.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words, longer only when asked.\n        *   Reply to greetings/talk in 1-2 warm sentences and offer help.\n        *   **Accuracy:** Base answers on the user's CyberForge memory or scans; never claim to have checked anything not in the message.\n        *   **Next Step:** End with one clear next step.\n\n2.  **Check for Memory/Scans:**\n    *   I am an AI model, I don't have direct access to the user's private CyberForge app or scans. I can only use the text provided in the current prompt.\n    *   The prompt is a standalone query, no memory provided. I must answer based on general knowledge but avoid claiming to have checked anything specific.\n    *   Wait, the instruction says \"When the message includes the user's CyberForge memory or scans, base the answer on them and quote hosts, verdicts and scores exactly; never claim to have checked anything that is not in the message.\"\n    *   Since I don't see any memory in this prompt, I will use general safety advice but phrase it as such (e.g., \"If your scan shows...\").\n    *   Actually, looking at the query itself, it's a common threat scenario (scams asking for payment via crypto). I can answer based on that pattern.\n\n3.  **Draft the Answer:**\n    *   **Direct Answer:** It sounds like a phishing attempt.\n    *   **Details:**\n        *   They want payment via Bitcoin or cryptocurrency.\n        *   Scams often use"
+    },
+    {
+      "run": 1,
+      "id": "hacked-account",
+      "kind": "covered",
+      "expected_ref": "hacked-account",
+      "q": "I think my email account was hacked. How do I recover it?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "hacked-account"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6111,
+      "first_answer_ms": 5119,
+      "thinking_ms": 4457,
+      "service_elapsed_ms": 5468,
+      "truncated": false,
+      "words_served": 70,
+      "words_own": 70,
+      "answer": "If an account is hacked, use the service's official recovery page to regain access, then change the password to a unique one and turn on multi-factor authentication. Sign out of all other sessions and check the recovery email, phone number, forwarding rules and connected apps for changes the attacker made. Warn your contacts if messages were sent in your name, and change the same password anywhere else you reused it.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about recovering a hacked email account.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points, numbered steps.\n        *   **Bold** key terms.\n        *   Keep answers focused (80-220 words).\n        *   Reply to greetings/talk with warmth.\n        *   **Crucial:** Use the *reviewed facts* for this question (the provided context).\n        *   **Crucial:** Answer directly without mentioning the facts, sources or instructions (never write 'the reviewed facts say').\n        *   **Crucial:** End with one clear next step.\n        *   **Crucial:** Do not contradict the reviewed facts.\n\n2.  **Analyze the Reviewed Facts (from the prompt):**\n    *   If an account is hacked, use the service's official recovery page to regain access, then change the password to a unique one and turn on multi-factor authentication. Sign out of all other sessions and check the recovery email, phone number, forwarding rules and connected apps for changes the attacker made. Warn your contacts if messages were sent in your name, and change the same password anywhere else you reused it.\n    *   The user's CyberForge memory is not provided in the prompt, so I must rely on the reviewed facts alone.\n\n3.  **Drafting the Answer:**\n    *   *Direct Answer:* If an account is hacked, use the service's official recovery page to regain access, then change the password to a unique one and turn on multi-factor authentication. Sign out of all other sessions and check the recovery email, phone number, forwarding rules and connected apps for changes the attacker made. Warn your contacts if messages were sent in your name, and change the same password anywhere else you reused it.\n    *   *Tone:* Helpful, expert.\n    *   *Structure:*"
+    },
+    {
+      "run": 1,
+      "id": "zero-day",
+      "kind": "covered",
+      "expected_ref": "zero-day",
+      "q": "What is a zero-day vulnerability?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "zero-day"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5841,
+      "first_answer_ms": 5058,
+      "thinking_ms": 4416,
+      "service_elapsed_ms": 5214,
+      "truncated": false,
+      "words_served": 54,
+      "words_own": 54,
+      "answer": "A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it. Because no patch exists yet, defence in depth matters: least privilege, exploit protection, segmentation and monitoring for unusual behaviour. Apply the vendor's fix or mitigation as soon as it is published.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about zero-day vulnerabilities.\n    *   **Constraint 1 (Style):** Direct answer in one or two sentences, then details (short paragraphs, bullet points, numbered steps). **Bold** key terms. Keep it focused, usually 80-220 words.\n    *   **Constraint 2 (Accuracy):** Use the reviewed facts (Cited Sources). Do not contradict them. Do not invent numbers, versions, dates or product names. Answer directly (no citations to sources).\n    *   **Constraint 3 (Context):** The user's CyberForge memory and scans define the facts I can use (I don't have access to it, so I rely on the provided \"REVIEWED FACTS FOR THIS QUESTION\" block).\n    *   **Constraint 4 (Closing):** One clear next step when it helps.\n    *   **Question:** What is a zero-day vulnerability?\n\n2.  **Consult Reviewed Facts:**\n    *   Fact 1: A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it.\n    *   Fact 2: Because no patch exists yet, defence in depth matters: least privilege, exploit protection, segmentation and monitoring for unusual behaviour.\n    *   Fact 3: Apply the vendor's fix or mitigation as soon as it is published.\n\n3.  **Draft the Answer:**\n    *   *Sentence 1 (Direct):* A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it.\n    *   *Sentence 2 (Why it matters):* Because no patch exists yet, defence in depth matters: least privilege, exploit protection, segmentation and monitoring for unusual behaviour.\n    *   *Sentence 3 (Action):* Apply the vendor's fix or mitigation as soon as it is published.\n    *   *Word count check:* ~70 words. Good."
+    },
+    {
+      "run": 1,
+      "id": "cve-cvss",
+      "kind": "covered",
+      "expected_ref": "cve-cvss",
+      "q": "What do CVE and CVSS mean?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "cve-cvss"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6439,
+      "first_answer_ms": 5083,
+      "thinking_ms": 4451,
+      "service_elapsed_ms": 5817,
+      "truncated": false,
+      "words_served": 78,
+      "words_own": 78,
+      "answer": "A CVE identifier (CVE-year-number) gives a publicly disclosed vulnerability a unique name so everyone refers to the same issue. CVSS rates a vulnerability's technical severity from 0.0 to 10.0, with Critical from 9.0 to 10.0. Severity is not the same as risk: whether it is being exploited and how exposed your systems are also matter. Find a CVE number on vendor advisories or in the vendor's announcement. Check the CVSS score and whether it applies to your version.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Explain CVE and CVSS.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (CVE, CVSS).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Crucial:** Do not contradict the provided reviewed facts (in this case, the prompt itself provides the reviewed facts for me to follow).\n        *   Do not invent numbers, versions, dates or product names.\n        *   Answer directly without citing sources or instructions.\n\n2.  **Review the Reviewed Facts:**\n    *   \"A CVE identifier (CVE-year-number) gives a publicly disclosed vulnerability a unique name so everyone refers to the same issue.\"\n    *   \"CVSS rates a vulnerability's technical severity from 0.0 to 10.0, with Critical from 9.0 to 10.0.\"\n    *   \"Severity is not the same as risk: whether it is being exploited and how exposed your systems are also matter.\"\n\n3.  **Draft the Answer:**\n    *   *Opening:* A CVE identifier (CVE-year-number) gives a publicly disclosed vulnerability a unique name so everyone refers to the same issue. CVSS rates a vulnerability's technical severity from 0.0 to 10.0, with Critical from 9.0 to 10.0. Severity is not the same as risk: whether it is being exploited and how exposed your systems are also matter.\n    *   *Body:* Find a CVE number on vendor advisories or in the vendor's announcement. Check the CVSS score and whether it applies to your version.\n    *   *Closing:* What is your CVSS score for the affected version?\n\n4.  **Refine based on constraints:**\n    *   The draft"
+    },
+    {
+      "run": 1,
+      "id": "dga",
+      "kind": "covered",
+      "expected_ref": "dga",
+      "q": "What is a domain generation algorithm used by malware?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "dga"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6111,
+      "first_answer_ms": 5049,
+      "thinking_ms": 4451,
+      "service_elapsed_ms": 5531,
+      "truncated": false,
+      "words_served": 65,
+      "words_own": 65,
+      "answer": "A domain generation algorithm (DGA) lets malware compute many pseudo-random domain names to find its command-and-control server, so blocking one domain does not cut it off. Such domains often look random, though some DGAs combine dictionary words. Detection looks at how random a domain is, many failed DNS lookups (NXDOMAIN) and newly registered domains.\nCheck which domains your malware signatures point to and block them.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about domain generation algorithms (DGAs) used by malware, based on the provided reviewed facts.\n    *   **Constraints:**\n        *   Start with a direct answer (1-2 sentences).\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key term(s).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts.\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   A domain generation algorithm (DGA) lets malware compute many pseudo-random domain names to find its command-and-control server, so blocking one domain does not cut it off. Such domains often look random, though some DGAs combine dictionary words. Detection looks at how random a domain is, many failed DNS lookups (NXDOMAIN) and newly registered domains.\n    *   Key points: Malware uses DGAs to find their C2 server. It computes many pseudo-random domain names. Blocking one domain does not cut it off. Detection looks at how random a domain is, many failed DNS lookups (NXDOMAIN) and newly registered domains.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* A domain generation algorithm (DGA) lets malware compute many pseudo-random domain names to find its command-and-control server, so blocking one domain does not cut it off.\n    *   *Explanation:* Such domains often look random, though some DGAs combine dictionary words. Detection looks at how random a domain is, many failed DNS lookups (NXDOMAIN) and newly registered domains.\n    *   *Next Step:* Check which domains your malware signatures point to and block them.\n\n4.  **Refine for Constraints:**\n    *   *Word"
+    },
+    {
+      "run": 1,
+      "id": "ddos",
+      "kind": "covered",
+      "expected_ref": "ddos",
+      "q": "What is a DDoS attack?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ddos"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6110,
+      "first_answer_ms": 5096,
+      "thinking_ms": 4451,
+      "service_elapsed_ms": 5482,
+      "truncated": false,
+      "words_served": 60,
+      "words_own": 60,
+      "answer": "A distributed denial-of-service (DDoS) attack floods a service with traffic from many machines, often a botnet, to make it unavailable. Defences include upstream DDoS protection from an internet or cloud provider, a content delivery network, rate limiting and a tested response plan. DDoS mainly affects availability, not data confidentiality, but it can be used as a distraction from other attacks.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question based on the provided \"REVIEWED FACTS FOR THIS QUESTION\".\n    *   **Question:** What is a DDoS attack?\n    *   **Constraints:** Start with a direct answer in one or two sentences, use bullet points for lists, numbered steps for procedures, bold key terms, keep answers focused (80-220 words), only use widely established practice. Do not contradict the reviewed facts. Do not invent numbers, versions, dates, product names or scan results. End with one clear next step.\n    *   **Input Data:** The reviewed facts provided in the prompt are about DDoS attacks (floods traffic, upstream protection, content delivery networks, availability vs. confidentiality).\n\n2.  **Draft the Answer:**\n    *   *Direct Answer:* A distributed denial-of-service (DDoS) attack floods a service with traffic from many machines, often a botnet, to make it unavailable. Defences include upstream DDoS protection from an internet or cloud provider, a content delivery network, rate limiting and a tested response plan. DDoS mainly affects availability, not data confidentiality, but it can be used as a distraction from other attacks.\n    *   *Review against constraints:*\n        *   Direct answer? Yes (3 sentences).\n        *   Bullet points? No, it's a paragraph. I need to turn it into bullet points for lists.\n        *   Word count? It's around 110 words.\n        *   Key terms bolded? Yes (DDoS, availability).\n        *   Next step? None needed for a definition question, but the instruction says \"When it helps, end with one clear next step.\" This is a definition question, so a closing statement is enough.\n\n3.  **Refine the Answer:**\n    *   A distributed denial-of-service (DDoS) attack floods a service with traffic from many machines, often a botnet, to make it unavailable"
+    },
+    {
+      "run": 1,
+      "id": "backups",
+      "kind": "covered",
+      "expected_ref": "backups",
+      "q": "What is a good backup strategy against ransomware?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ransomware",
+        "backups"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6003,
+      "first_answer_ms": 5145,
+      "thinking_ms": 4499,
+      "service_elapsed_ms": 5371,
+      "truncated": false,
+      "words_served": 52,
+      "words_own": 52,
+      "answer": "A good backup strategy keeps at least three copies of important data on two different types of storage, with one copy offsite or offline (the 3-2-1 rule). An offline or immutable copy protects backups from ransomware that encrypts connected drives. Test restoring regularly; a backup that has never been restored is unproven.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about backup strategies against ransomware.\n    *   **Constraint 1 (Style):** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused, usually 80 to 220 words. Longer explanations only if asked.\n    *   **Constraint 2 (Accuracy):** Use the provided REVIEWED FACTS for this question. Do not contradict them. Do not invent numbers, versions, dates, product names, scan results or detections.\n    *   **Constraint 3 (Citations):** Explain in your own words and add only widely established practice.\n    *   **User Input:** \"What is a good backup strategy against ransomware?\"\n\n2.  **Consult Reviewed Facts:**\n    *   The prompt provides a section labeled \"REVIEWED FACTS FOR THIS QUESTION\".\n    *   Fact 1: Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish it. Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access. If you are hit, disconnect affected devices from the network and report the incident; CISA and the FBI do not encourage paying, and payment does not guarantee recovery.\n    *   Fact 2: Keep at least three copies of important data, on two different types of storage, with one copy offsite or offline (the 3-2-1 rule). An offline or immutable copy protects backups from ransomware that encrypts connected drives. Test restoring regularly; a backup that has never been restored is unproven.\n    *   The answer must agree with these facts.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* A good backup strategy keeps at least three copies of important data on two different types of storage, with one copy offsite or offline (the 3-2-"
+    },
+    {
+      "run": 1,
+      "id": "passwords",
+      "kind": "covered",
+      "expected_ref": "passwords",
+      "q": "What makes a strong password?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": false,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5853,
+      "first_answer_ms": 5072,
+      "thinking_ms": 4448,
+      "service_elapsed_ms": 5247,
+      "truncated": false,
+      "words_served": 50,
+      "words_own": 50,
+      "answer": "A strong password is unique to your account and hard to guess. Use a password manager.\n*   Length matters: use a passphrase of several random words or a long random string of numbers and symbols.\n*   Add two-factor authentication to important accounts.\n*   Generate a new password for the account.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about strong passwords.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words (longer only if needed).\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n        *   Be accurate: if unsure, say so; never invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n        *   Use earlier turns for follow-up context (none provided here, so general knowledge applies).\n        *   End with one clear next step.\n\n2.  **Drafting the Content:**\n    *   *Direct Answer:* A strong password is unique to your account and hard to guess. Use a password manager.\n    *   *Details:*\n        *   Length matters: use a passphrase of several random words or a long random string of numbers and symbols.\n        *   Use a password manager to make unique passwords.\n        *   Add two-factor authentication to important accounts.\n    *   *Next Step:* Generate a new password for the account.\n    *   *Word Count Check:* The draft looks good, around 75-100 words.\n\n3.  **Refining the Tone:**\n    *   Friendly expert tone.\n    *   Start with a direct answer.\n    *   Use bold for key terms.\n    *   Keep it within the 80-220 word limit.\n\n4.  **Final Polish:**\n    *   \"A strong password is unique to your account and hard to guess. Use a password manager.\n    *   Length matters: use a passphrase of several random words or a long random string of numbers and symbols"
+    },
+    {
+      "run": 1,
+      "id": "padlock",
+      "kind": "covered",
+      "expected_ref": "https-padlock",
+      "q": "If a website has a padlock and HTTPS, does that mean it's safe?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "https-padlock"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6292,
+      "first_answer_ms": 5322,
+      "thinking_ms": 4448,
+      "service_elapsed_ms": 5675,
+      "truncated": false,
+      "words_served": 65,
+      "words_own": 65,
+      "answer": "No, an encrypted connection means nothing about the site's safety. HTTPS and the padlock mean the connection to the site is encrypted; they do not mean the site is legitimate or safe. Phishing sites routinely use HTTPS with free certificates. Check the actual domain name, and be wary of unexpected requests for passwords or payment.\n*   An encrypted connection means nothing about the site's safety.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about HTTPS and the padlock.\n    *   **Constraints:** Start with a direct answer (1-2 sentences). Use short paragraphs, bullet points, numbered steps. **Bold** key terms. Keep it focused (80-220 words). Do not contradict the reviewed facts. Do not invent details.\n    *   **Input Question:** \"If a website has a padlock and HTTPS, does that mean it's safe?\"\n    *   **Reviewed Facts:** HTTPS and the padlock mean the connection to the site is encrypted; they do not mean the site is legitimate or safe. Phishing sites routinely use HTTPS with free certificates. Check the actual domain name, and be wary of unexpected requests for passwords or payment.\n\n2.  **Drafting the Answer:**\n    *   *Direct Answer:* No, an encrypted connection means nothing about the site's safety.\n    *   *Explanation:* HTTPS and the padlock mean the connection to the site is encrypted; they do not mean the site is legitimate or safe. Phishing sites routinely use HTTPS with free certificates. Check the actual domain name, and be wary of unexpected requests for passwords or payment.\n    *   *Next Step:* Always verify the site's identity through a quick search before signing in or downloading.\n\n3.  **Refining for Constraints:**\n    *   *Word Count:* The draft looks a bit long. Let's trim.\n    *   *Formatting:* Bold key terms.\n    *   *Tone:* Helpful expert.\n\n    *Draft 2:*\n    No, an encrypted connection means nothing about the site's safety. HTTPS and the padlock mean the connection to the site is encrypted; they do not mean the site is legitimate or safe. Phishing sites routinely use HTTPS with free certificates. Check the actual domain name, and be wary of unexpected requests for passwords or payment.\n    *   An encrypted connection means nothing about the site's safety."
+    },
+    {
+      "run": 1,
+      "id": "email-auth",
+      "kind": "covered",
+      "expected_ref": "email-authentication",
+      "q": "What are SPF, DKIM and DMARC?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "email-authentication"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 8049,
+      "first_answer_ms": 6869,
+      "thinking_ms": 4454,
+      "service_elapsed_ms": 7448,
+      "truncated": false,
+      "words_served": 74,
+      "words_own": 74,
+      "answer": "SPF, DKIM and DMARC are email authentication mechanisms. SPF lists the servers allowed to send email for a domain. DKIM adds a cryptographic signature to messages. DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner. Together they make it harder to send email that pretends to come from your domain. They do not stop lookalike domains or mail sent from a genuinely compromised account.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about SPF, DKIM and DMARC.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (SPF, DKIM, DMARC).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Crucial:** Answer directly without mentioning the reviewed facts, sources or instructions.\n        *   **Crucial:** Use the provided reviewed facts (SPF lists servers, DKIM adds signature, DMARC tells receivers what to do with failures).\n        *   **Crucial:** Do not contradict facts (I need to answer based on the provided text).\n        *   **Crucial:** Do not invent numbers, versions, dates or product names.\n        *   **Crucial:** End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   SPF lists the servers allowed to send email for a domain.\n    *   DKIM adds a cryptographic signature to messages.\n    *   DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner.\n    *   Together they make it harder to send email that pretends to come from your domain.\n    *   They do not stop lookalike domains or mail sent from a genuinely compromised account.\n    *   I need to answer the question \"What are SPF, DKIM and DMARC?\" based on this.\n\n3.  **Draft the Answer:**\n    *   *Start:* SPF, DKIM and DMARC are email authentication mechanisms. SPF lists the servers allowed to send email for a domain. DKIM adds a cryptographic signature to messages. DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner."
+    },
+    {
+      "run": 1,
+      "id": "zero-trust",
+      "kind": "covered",
+      "expected_ref": "zero-trust",
+      "q": "What is zero trust security?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "zero-trust"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 7830,
+      "first_answer_ms": 7091,
+      "thinking_ms": 4449,
+      "service_elapsed_ms": 7104,
+      "truncated": false,
+      "words_served": 47,
+      "words_own": 47,
+      "answer": "Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\nHow does your organization implement it?",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about zero trust security.\n    *   **Input:** The user's message (\"What is zero trust security?\").\n    *   **Constraints:** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points, bold for key terms. Keep answers focused (80-220 words). Base on the reviewed facts (which I have access to in this session). End with a clear next step.\n    *   **Safety:** No security advice given that I don't have access to (I have reviewed facts, not live scans).\n\n2.  **Retrieve Facts:**\n    *   My knowledge base contains the reviewed facts: Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\n    *   These facts directly answer the question.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\n    *   *Length:* The draft is around 70 words. I can expand slightly on the implications without contradicting the facts.\n    *   *Tone:* Helpful expert.\n    *   *Next Step:* How does your organization implement it?\n\n4.  **Refine the Answer:**\n    *   Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\n    *   *Wait, I need to check the word count:* 76 words. That fits the 80-220 word range.\n    *"
+    },
+    {
+      "run": 1,
+      "id": "aitm",
+      "kind": "covered",
+      "expected_ref": "aitm",
+      "q": "What is an adversary-in-the-middle phishing attack?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "aitm",
+        "phishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 7304,
+      "first_answer_ms": 5104,
+      "thinking_ms": 4473,
+      "service_elapsed_ms": 6690,
+      "truncated": false,
+      "words_served": 129,
+      "words_own": 129,
+      "answer": "An adversary-in-the-middle (man-in-the-middle) attack, the attacker sits between two parties to read or alter their traffic. Phishing kits use it to relay a real sign-in page and capture the session cookie, which can bypass ordinary MFA codes. HTTPS with valid certificates protects traffic in transit, and phishing-resistant MFA such as FIDO2 security keys or passkeys resists relayed sign-ins.\n\nPhishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about adversary-in-the-middle (MITM) phishing attacks.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Do not contradict** the reviewed facts (from the system prompt).\n        *   **Do not** invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n        *   **Do not** answer from memory; use the provided reviewed facts.\n        *   **Do not** answer anything not in the message.\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   Fact 1: In an adversary-in-the-middle (man-in-the-middle) attack, the attacker sits between two parties to read or alter their traffic. Phishing kits use it to relay a real sign-in page and capture the session cookie, which can bypass ordinary MFA codes. HTTPS with valid certificates protects traffic in transit, and phishing-resistant MFA such as FIDO2 security keys or passkeys resists relayed sign-ins.\n    *   Fact 2: Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n    *   Fact 3: (Not provided in the prompt text, but the system prompt says \"Your answer must agree with them and include their key points.\")\n    *   Fact 4:"
+    },
+    {
+      "run": 1,
+      "id": "followup-smishing",
+      "kind": "followup",
+      "expected_ref": null,
+      "q": "And what about when it comes by text message?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 13827,
+      "first_answer_ms": 5079,
+      "thinking_ms": 4457,
+      "service_elapsed_ms": 13209,
+      "truncated": true,
+      "words_served": 507,
+      "words_own": 507,
+      "answer": "Phishing by text message is called text mining or SMS phishing.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.\n*   It uses short codes to reach phones.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **User Query:** \"And what about when it comes by text message?\"\n    *   **Context:** The user is following up on the previous question about phishing.\n    *   **My Role:** CyberForge assistant, friendly security expert.\n    *   **Constraints:** Start with a direct answer (1-2 sentences), use bullet points for lists, numbered steps for procedures, **bold** key terms, 80-220 words, use the user's CyberForge memory (none provided in this turn, so rely on general knowledge), end with one clear next step.\n    *   **Tone:** Helpful, accurate, concise.\n\n2.  **Determine the Answer:**\n    *   Phishing by text message is called text mining or SMS phishing.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It uses short codes to reach phones.\n    *   It"
+    },
+    {
+      "run": 1,
+      "id": "followup-protect",
+      "kind": "followup",
+      "expected_ref": null,
+      "q": "How do I protect my accounts from it?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5415,
+      "first_answer_ms": 5081,
+      "thinking_ms": 4430,
+      "service_elapsed_ms": 4781,
+      "truncated": false,
+      "words_served": 22,
+      "words_own": 22,
+      "answer": "Use unique passwords for every account. A password manager makes unique passwords practical. Add two-factor authentication to new accounts, starting with email.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **User Query:** \"How do I protect my accounts from it?\" (referring to credential stuffing).\n    *   **My Role:** CyberForge assistant, friendly security expert.\n    *   **Constraints:** Start with a direct answer in one or two sentences, then details (short paragraphs, bullet points, bold key terms). Keep it focused (80-220 words). Reply to greetings/talk in one or two warm sentences. Be accurate (no invented stats). Use the user's CyberForge memory if available. End with a clear next step.\n\n2.  **Check Memory:**\n    *   I don't see any previous turns in the provided context about this specific query or the user's scans. I need to answer based on general knowledge since no memory is provided.\n    *   *Correction:* The prompt provides the conversation history. The first turn was \"What is credential stuffing?\". The second turn is the current query. I need to answer the second turn based on the first turn's context (which I don't actually have access to in this specific simulation, but I know the standard answer).\n    *   *Wait, looking at the prompt structure:* The prompt includes the conversation history. The first turn is the user asking \"What is credential stuffing?\". I need to answer that first turn's question, but the current query is \"How do I protect my accounts from it?\".\n    *   *Actually, looking at the current turn:* The user is asking \"How do I protect my accounts from it?\". I need to answer this specific question.\n    *   *Constraint Checklist:*\n        1.  Direct answer in 1-2 sentences? Yes.\n        2.  Short paragraphs? Yes.\n        3.  Bullet points for lists? Yes.\n        4.  Bold key terms? Yes.\n        5.  80-220 words? Yes.\n        6.  Warm greeting/talk? Not applicable (it's a direct question).\n        7.  Next step? Yes"
+    },
+    {
+      "run": 1,
+      "id": "sim-swap",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What is a SIM swap attack?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 3482,
+      "first_answer_ms": 1857,
+      "thinking_ms": 1213,
+      "service_elapsed_ms": 2844,
+      "truncated": false,
+      "words_served": 111,
+      "words_own": 111,
+      "answer": "A SIM swap attack steals phone service by changing the carrier's registration of a device to another number. Attackers call the carrier and request the SIM be swapped for the victim's number, then use that number's lines to receive SMS messages and make calls. The attacker can also access bank alerts, reset passwords from other devices or install malware. Signs are unexpected text messages from unknown numbers asking for codes or password changes. Once the new SIM is active, it receives two-factor authentication texts for that phone. Change the SIM unlock code, disable forwarding of texts to your phone and ask your carrier to stop sending SMS verification to your number.",
+      "thinking": "Thinking Process: The user is asking about SIM swap attacks. I need to answer as the CyberForge assistant, following the guidelines: direct answer, short paragraphs, bullet points or numbered steps, bold key terms, 80-220 words, use earlier turns for context (none provided here, so general knowledge), and end with a clear next step. I should explain what SIM swapping is, how attackers get control, and what users can do. I should not invent details or cite specific scans. I should also warn that SMS texts are not a secure way to receive security alerts."
+    },
+    {
+      "run": 1,
+      "id": "supply-chain",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What is a software supply chain attack?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5622,
+      "first_answer_ms": 4672,
+      "thinking_ms": 4429,
+      "service_elapsed_ms": 5395,
+      "truncated": false,
+      "words_served": 63,
+      "words_own": 63,
+      "answer": "A supply chain attack compromises an intermediary software or hardware component to reach its intended target. It starts with malicious or untrusted software, such as a compromised library or update. An attacker uses the legitimate tool to reach the target application.\n*   Verify software sources, use signed updates, and limit what software is installed.\n*   Scan your software and updates for malicious code.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **User Query:** \"What is a software supply chain attack?\"\n    *   **My Role:** CyberForge assistant (friendly security expert).\n    *   **Constraints:** Start with a direct answer in 1-2 sentences. Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused (80-220 words). Use earlier conversation turns for context (none provided here, so general knowledge applies). End with one clear next step.\n    *   **Goal:** Explain the concept clearly, distinguishing it from a phishing attack, and explain how to verify a source.\n\n2.  **Drafting the Content:**\n    *   *Direct Answer:* A supply chain attack compromises an intermediary software or hardware component to reach its intended target.\n    *   *Details:* It starts with malicious or untrusted software, such as a compromised library or update. An attacker uses the legitimate tool to reach the target application.\n    *   *Prevention:* Verify software sources, use signed updates, and limit what software is installed.\n    *   *Next Step:* Scan your software and updates for malicious code.\n\n3.  **Refining for Constraints:**\n    *   *Constraint Check:* Start with a direct answer. Use short paragraphs, bullet points, numbered steps. Bold key terms.\n    *   *Draft:* A supply chain attack compromises an intermediary software or hardware component to reach its intended target. It starts with malicious or untrusted software, such as a compromised library or update. An attacker uses the legitimate tool to reach the target application.\n    *   *Prevention:* Verify software sources, use signed updates, and limit what software is installed.\n    *   *Next Step:* Scan your software and updates for malicious code.\n\n4.  **Review against Word Count:**\n    *   The draft is around 100 words. This fits the 80-220 word range.\n    *   *Correction:* I need to make sure I'm not inventing details. I don't"
+    },
+    {
+      "run": 1,
+      "id": "log4shell",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What was Log4Shell?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": false,
+        "missing": [
+          "remote code|\\brce\\b|execut|jndi"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "remote code|\\brce\\b|execut|jndi"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 1871,
+      "first_answer_ms": 709,
+      "thinking_ms": null,
+      "service_elapsed_ms": 1231,
+      "truncated": false,
+      "words_served": 59,
+      "words_own": 59,
+      "answer": "Log4Shell (CVE-2017-0144) is a critical logging vulnerability in Log4j 2, the logging library used by Java applications. An attacker could read files, emails or logs on remote servers. It affected many versions of Log4j 2 worldwide. Log4j 2 is now maintained by Apache Software Foundation. Patched versions fix it; an older version with a specific CVSS score was unaffected.",
+      "thinking": null
+    },
+    {
+      "run": 1,
+      "id": "dns-tunneling",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What is DNS tunneling?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 964,
+      "first_answer_ms": 299,
+      "thinking_ms": null,
+      "service_elapsed_ms": 736,
+      "truncated": false,
+      "words_served": 43,
+      "words_own": 43,
+      "answer": "DNS tunneling hides data or commands inside DNS queries and responses. Signs are very long, random subdomains and repeating patterns. It can be used for data exfiltration or to inject malicious scripts. Monitoring resolver logs and limiting external DNS to approved resolvers helps.",
+      "thinking": null
+    },
+    {
+      "run": 1,
+      "id": "public-wifi",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "Is it safe to use public Wi-Fi for online banking?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5349,
+      "first_answer_ms": 4698,
+      "thinking_ms": 4440,
+      "service_elapsed_ms": 5112,
+      "truncated": false,
+      "words_served": 42,
+      "words_own": 42,
+      "answer": "Public Wi-Fi is not the same as a secure connection.\nHTTPS with valid certificates is the key indicator.\nSome services do not support HTTPS.\nUse a VPN and avoid banking apps on public Wi-Fi.\nTurn on your VPN before accessing sensitive sites.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about public Wi-Fi and online banking.\n    *   **Constraints:** Direct answer in 1-2 sentences, short paragraphs, bullet points for lists, numbered steps for procedures, **bold** key terms, 80-220 words, use earlier turns' memory (none provided here, so general knowledge), end with one clear next step, be accurate (no invented details).\n\n2.  **Determine the Answer:**\n    *   **Core Fact:** Public Wi-Fi is not the same as a secure connection.\n    *   **Explanation:** HTTPS with valid certificates is the key indicator.\n    *   **Warning:** Some services do not support HTTPS.\n    *   **Recommendation:** Use a VPN and avoid banking apps on public Wi-Fi.\n\n3.  **Drafting the Response:**\n    *   *Opening:* Public Wi-Fi is not the same as a secure connection.\n    *   *Details:* HTTPS with valid certificates is the key indicator.\n    *   *Warning:* Some services do not support HTTPS.\n    *   *Recommendation:* Use a VPN and avoid banking apps on public Wi-Fi.\n    *   *Next Step:* Turn on your VPN before accessing sensitive sites.\n\n4.  **Refining and Checking Constraints:**\n    *   *Direct Answer:* Public Wi-Fi is not the same as a secure connection.\n    *   *Details:* HTTPS with valid certificates is the key indicator.\n    *   *Warning:* Some services do not support HTTPS.\n    *   *Recommendation:* Use a VPN and avoid banking apps on public Wi-Fi.\n    *   *Next Step:* Turn on your VPN before accessing sensitive sites.\n    *   *Word Count:* 60 words (too short).\n    *   *Expansion:* Explain why it matters (man-in-the-middle attacks).\n    *   *Revised Draft:* Public Wi-Fi is not the same as a secure connection"
+    },
+    {
+      "run": 2,
+      "id": "greeting",
+      "kind": "smalltalk",
+      "expected_ref": null,
+      "q": "Hi there!",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 827,
+      "first_answer_ms": 697,
+      "thinking_ms": null,
+      "service_elapsed_ms": 210,
+      "truncated": false,
+      "words_served": 9,
+      "words_own": 9,
+      "answer": "Hi! How can I help with your security today?",
+      "thinking": null
+    },
+    {
+      "run": 2,
+      "id": "phishing-signs",
+      "kind": "covered",
+      "expected_ref": "phishing",
+      "q": "How can I tell if an email is a phishing attempt?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "phishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6054,
+      "first_answer_ms": 4951,
+      "thinking_ms": 4486,
+      "service_elapsed_ms": 5832,
+      "truncated": false,
+      "words_served": 71,
+      "words_own": 71,
+      "answer": "Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about identifying phishing emails.\n    *   **Constraints:** Start with a direct answer (1-2 sentences). Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused (80-220 words). Do not contradict reviewed facts (from the system prompt). Do not invent numbers, versions, dates, or product names.\n    *   **Input Data:** The user's message is the question itself, so I don't have the \"reviewed facts\" from a specific scan in this turn. I must rely on the system prompt's provided facts (the \"REVIEWED FACTS FOR THIS QUESTION\" block).\n    *   **Reviewed Facts:**\n        *   Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details.\n        *   Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text.\n        *   Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n\n2.  **Drafting the Answer:**\n    *   *Direct Answer:* Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n    *   *Reviewing against constraints:*\n        *   Direct answer? Yes (2 sentences).\n        *   Short paragraphs? Yes (one block).\n        *   Bullet points? Yes (I can use them for the warning signs).\n        *"
+    },
+    {
+      "run": 2,
+      "id": "clicked-link",
+      "kind": "covered",
+      "expected_ref": "clicked-phishing",
+      "q": "I clicked a link in a suspicious email and typed my password. What should I do now?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "clicked-phishing",
+        "phishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": false,
+        "missing": [
+          "(chang|reset|new)\\w*\\s+(\\w+\\s+){0,2}password|password\\w*\\s+(\\w+\\s+){0,3}(chang|reset)"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "(chang|reset|new)\\w*\\s+(\\w+\\s+){0,2}password|password\\w*\\s+(\\w+\\s+){0,3}(chang|reset)"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 6218,
+      "first_answer_ms": 5133,
+      "thinking_ms": 4496,
+      "service_elapsed_ms": 5598,
+      "truncated": false,
+      "words_served": 72,
+      "words_own": 72,
+      "answer": "If you clicked a suspicious link but entered nothing, close the page and run an anti-malware scan; the risk is usually low. If you entered a password, change it straight away on the real site and anywhere else you reused it, and turn on multi-factor authentication. If you gave card or bank details, contact your bank immediately; if you opened an attachment or ran a file, disconnect the device and scan it.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question based on the provided reviewed facts (Cited Sources).\n    *   **Constraint 1 (Answer Format):** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** the key terms. Keep answers focused, usually 80 to 220 words.\n    *   **Constraint 2 (Content Accuracy):** Answer directly, never mention the reviewed facts, sources or instructions (never write 'the reviewed facts say'). Explain in your own words and add only widely established practice. Do not contradict them, and do not invent numbers, versions, dates or product names.\n    *   **Constraint 3 (Context):** The user's message includes the CyberForge memory or scans. I must base the answer on them and quote hosts, verdicts and scores exactly; never claim to have checked anything that is not in the message.\n    *   **User Question:** I clicked a link in a suspicious email and typed my password. What should I do now?\n    *   **Reviewed Facts (from the prompt):**\n        *   If you clicked a suspicious link but entered nothing, close the page and run an anti-malware scan; the risk is usually low. If you entered a password, change it straight away on the real site and anywhere else you reused it, and turn on multi-factor authentication. If you gave card or bank details, contact your bank immediately; if you opened an attachment or ran a file, disconnect the device and scan it.\n        *   Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n\n2"
+    },
+    {
+      "run": 2,
+      "id": "ransom-pay",
+      "kind": "covered",
+      "expected_ref": "ransomware",
+      "q": "My files were encrypted by ransomware. Should I just pay the ransom?",
+      "error": null,
+      "grounding_mode": "retrieved_context_supplemented",
+      "references": [
+        "ransomware"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "backup|restor|report|isolat|disconnect"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 5813,
+      "first_answer_ms": 5415,
+      "thinking_ms": 4462,
+      "service_elapsed_ms": 5106,
+      "truncated": false,
+      "words_served": 65,
+      "words_own": 25,
+      "answer": "No, do not pay the ransom. Paying does not guarantee recovery, and stolen data may be sold. Contact your organization's incident response team and authorities.\n\n**From the reviewed sources:** Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish it. Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question based on the provided reviewed facts.\n    *   **Input Question:** \"My files were encrypted by ransomware. Should I just pay the ransom?\"\n    *   **Constraint 1 (Direct Answer):** Start with a direct answer in one or two sentences.\n    *   **Constraint 2 (Format):** Use short paragraphs, bullet points for lists, numbered steps for procedures, **bold** for the key terms.\n    *   **Constraint 3 (Length):** Keep answers focused, usually 80 to 220 words.\n    *   **Constraint 4 (Accuracy):** Do not contradict the reviewed facts. If unsure, say so; never invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n    *   **Constraint 5 (Citation):** Do not mention sources, instructions or the reviewed facts themselves (e.g., do not write 'the reviewed facts say'). Explain in your own words and add only widely established practice.\n    *   **Constraint 6 (Follow-up):** When it helps, end with one clear next step.\n    *   **Input Data (Reviewed Facts):** Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish it. Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access. If you are hit, disconnect affected devices from the network and report the incident; CISA and the FBI do not encourage paying, and payment does not guarantee recovery.\n\n2.  **Drafting the Answer:**\n    *   *Direct Answer:* No, do not pay the ransom.\n    *   *Explanation:* Paying does not guarantee recovery, and stolen data may be sold.\n    *   *Action:* Contact your organization's incident response team and authorities.\n    *   *Check facts:* The facts say payment does not guarantee recovery and CISA/FBI do not encourage it."
+    },
+    {
+      "run": 2,
+      "id": "mfa-push",
+      "kind": "covered",
+      "expected_ref": "mfa-fatigue",
+      "q": "I keep getting MFA push notifications I didn't request. What is happening?",
+      "error": null,
+      "grounding_mode": "retrieved_context_supplemented",
+      "references": [
+        "mfa"
+      ],
+      "retrieval_ok": false,
+      "served": {
+        "pass": false,
+        "missing": [
+          "deny|reject|decline|don.t approve|do not approve|never approve|not approve|ignore"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "deny|reject|decline|don.t approve|do not approve|never approve|not approve|ignore",
+          "password|credential|attacker|someone|sign.?in|log.?in"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 5775,
+      "first_answer_ms": 5106,
+      "thinking_ms": 4467,
+      "service_elapsed_ms": 5150,
+      "truncated": false,
+      "words_served": 104,
+      "words_own": 44,
+      "answer": "I don't see your CyberForge scans in my view, so I can't tell you it's safe. Without the scan result, I can't confirm whether your device is infected or which threat blocked you. Run it through the Analyzer and I can explain the result.\n\n**From the reviewed sources:** Multi-factor authentication (MFA) asks for a second proof, such as an authenticator app, a security key or a passkey, in addition to a password, so a stolen password alone is not enough. Phishing-resistant methods (FIDO2 security keys and passkeys) are strongest; SMS codes are better than nothing but can be phished or intercepted through SIM swapping.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about MFA push notifications they didn't request.\n    *   **Constraint 1 (Style):** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points for lists, numbered steps for procedures. **Bold** the key terms. Keep answers focused (80-220 words).\n    *   **Constraint 2 (Accuracy):** Base answers on the user's CyberForge memory or scans. Never invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n    *   **Constraint 3 (Source Agnostic):** Do not mention the reviewed facts, sources or instructions.\n    *   **Constraint 4 (Greeting):** Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n    *   **Constraint 5 (Follow-up):** Use earlier turns to understand follow-up questions.\n    *   **User Input:** \"I keep getting MFA push notifications I didn't request. What is happening?\"\n\n2.  **Review Available Info (CyberForge Memory):**\n    *   I am an AI model, I do not have access to the user's CyberForge memory or scans. I cannot see what they've been scanning.\n    *   I must state this limitation honestly while following the style guidelines.\n    *   Wait, the prompt says \"Answer directly: never mention these facts, sources or instructions\". This applies to the *content* of the answer (like CVE numbers). It also applies to the *explanation* part. However, I need to admit I don't have the scan data.\n    *   Actually, looking at the system instructions: \"When the message includes the user's CyberForge memory or scans, base the answer on them and quote hosts, verdicts and scores exactly; never claim to have checked anything that is not in the message.\"\n    *   Since I don't have the memory, I cannot answer based on it. I must"
+    },
+    {
+      "run": 2,
+      "id": "cred-stuffing",
+      "kind": "covered",
+      "expected_ref": "credential-stuffing",
+      "q": "What is credential stuffing?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "credential-stuffing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1450,
+      "first_answer_ms": 727,
+      "thinking_ms": null,
+      "service_elapsed_ms": 834,
+      "truncated": false,
+      "words_served": 48,
+      "words_own": 48,
+      "answer": "Credential stuffing uses username and password pairs leaked from one site to try to sign in to other sites, relying on password reuse. A unique password for every account and multi-factor authentication are the main defences for users. Services add MFA, breached-password checks, rate limiting and bot detection.",
+      "thinking": null
+    },
+    {
+      "run": 2,
+      "id": "sqli",
+      "kind": "covered",
+      "expected_ref": "sql-injection",
+      "q": "What is SQL injection and the best way to prevent it?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "sql-injection"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6152,
+      "first_answer_ms": 4695,
+      "thinking_ms": 4464,
+      "service_elapsed_ms": 5941,
+      "truncated": false,
+      "words_served": 92,
+      "words_own": 92,
+      "answer": "SQL injection happens when untrusted data changes a database query's meaning. Use parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence.\nThe reviewed facts explain the cause (untrusted data changing the query's meaning) and the fix (parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence).\nScan your connection for SQL injection vulnerabilities.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert in the CyberForge app).\n    *   **Task:** Answer the user's question about SQL injection and prevention.\n    *   **Constraints:**\n        *   Start with a direct answer (1-2 sentences).\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (SQL injection, parameterized queries, prepared statements, binding values, allow-list identifiers).\n        *   Do not invent numbers, versions, dates or product names.\n        *   End with one clear next step.\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n\n2.  **Review the Reviewed Facts:**\n    *   SQL injection happens when untrusted data changes a database query's meaning. Use parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* SQL injection happens when untrusted data changes a database query's meaning. Use parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence.\n    *   *Explanation:* The reviewed facts explain the cause (untrusted data changing the query's meaning) and the fix (parameterized queries or prepared statements that bind values separately from SQL code. Allow-list identifiers when binding is impossible and apply least privilege. Escaping alone is a fragile primary defence).\n    *   *Next Step:* Scan your connection for SQL injection vulnerabilities.\n\n4.  **Refine for Style and Word Count:**\n    *   The direct answer is the core of the review.\n    *   The explanation needs to be in the user's own"
+    },
+    {
+      "run": 2,
+      "id": "xss-prevent",
+      "kind": "covered",
+      "expected_ref": "xss",
+      "q": "How do I prevent cross-site scripting in a web app?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "xss"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6166,
+      "first_answer_ms": 5109,
+      "thinking_ms": 4474,
+      "service_elapsed_ms": 5547,
+      "truncated": false,
+      "words_served": 57,
+      "words_own": 57,
+      "answer": "Preventing cross-site scripting (XSS) involves using context-appropriate output encoding and safe DOM APIs such as textContent for plain text.\n*   Sanitize HTML when HTML is intentionally allowed.\n*   Do not insert untrusted text using innerHTML.\n*   Use safe DOM APIs such as textContent for plain text.\n*   Never insert untrusted content directly into a user's browser document.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert in the CyberForge app).\n    *   **Task:** Answer the user's question about preventing cross-site scripting (XSS) in a web app.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (techniques, inputs, outputs).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Crucial:** Do not contradict the reviewed facts (from the system prompt). Do not invent numbers, versions, dates, or product names.\n        *   **Crucial:** Answer based on the user's CyberForge memory or scans (if provided). None were provided in this turn, so I must rely on the general knowledge provided in the system prompt (the reviewed facts).\n        *   End with one clear next step.\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help. (Not applicable here, but good to keep in mind).\n\n2.  **Review the Reviewed Facts:**\n    *   Cross-site scripting (XSS) lets untrusted content execute as script in a user's browser. Use context-appropriate output encoding and safe DOM APIs such as textContent for plain text. Sanitize HTML when HTML is intentionally allowed. Do not insert untrusted text using innerHTML.\n    *   These facts are sufficient to answer the question.\n\n3.  **Draft the Answer:**\n    *   *Opening:* Preventing cross-site scripting (XSS) involves using context-appropriate output encoding and safe DOM APIs such as textContent for plain text.\n    *   *Details:*\n        *   Sanitize HTML when HTML is intentionally allowed.\n        *   Do not insert untrusted text using innerHTML.\n        *   Use safe DOM APIs such as textContent for plain text.\n    *   *Closing"
+    },
+    {
+      "run": 2,
+      "id": "csrf",
+      "kind": "covered",
+      "expected_ref": "csrf",
+      "q": "What is CSRF and how is it prevented?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "csrf"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6384,
+      "first_answer_ms": 5109,
+      "thinking_ms": 4449,
+      "service_elapsed_ms": 5113,
+      "truncated": false,
+      "words_served": 39,
+      "words_own": 39,
+      "answer": "CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies. Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests. SameSite cookies and Origin checks add protection. Cookie-consent banners do not prevent CSRF.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about CSRF and prevention.\n    *   **Constraints:**\n        *   Start with a direct answer (1-2 sentences).\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (I must use the provided reviewed facts).\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   End with one clear next step.\n\n2.  **Analyze the Reviewed Facts:**\n    *   Fact 1: CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies.\n    *   Fact 2: Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests.\n    *   Fact 3: SameSite cookies and Origin checks add protection.\n    *   Fact 4: Cookie-consent banners do not prevent CSRF.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies. Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests. SameSite cookies and Origin checks add protection. Cookie-consent banners do not prevent CSRF.\n    *   *Refining for style:* Keep it to 2 sentences for the first part, then the details.\n    *   *Draft:* CSRF tricks a signed-in browser into sending unwanted requests using its existing session cookies. Use the framework's CSRF protection or validate anti-CSRF tokens for state-changing requests. SameSite cookies and Origin checks add protection. Cookie-consent banners do not prevent CSRF.\n    *   *Word Count Check:* 65 words. Good.\n    *   *Formatting:* The prompt asks for a direct answer in one or two sentences, then details"
+    },
+    {
+      "run": 2,
+      "id": "ssrf",
+      "kind": "covered",
+      "expected_ref": "ssrf",
+      "q": "Explain server-side request forgery.",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ssrf"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1443,
+      "first_answer_ms": 732,
+      "thinking_ms": null,
+      "service_elapsed_ms": 815,
+      "truncated": false,
+      "words_served": 41,
+      "words_own": 41,
+      "answer": "Server-side request forgery (SSRF) makes a server issue requests to attacker-chosen destinations, potentially reaching internal services or cloud metadata. Validate destinations with appropriate allow-lists and restrict network egress. Validate resolved addresses and redirect destinations; blocking a few URL strings is insufficient.",
+      "thinking": null
+    },
+    {
+      "run": 2,
+      "id": "quishing",
+      "kind": "covered",
+      "expected_ref": "quishing",
+      "q": "Is it safe to scan a QR code on a parking meter that asks me to pay?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "quishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5346,
+      "first_answer_ms": 4712,
+      "thinking_ms": 4469,
+      "service_elapsed_ms": 5119,
+      "truncated": false,
+      "words_served": 43,
+      "words_own": 43,
+      "answer": "No, it's not safe. Quishing is phishing delivered through a QR code that leads to a deceptive destination. Preview and check the destination domain before opening it. Verify unexpected payment or sign-in requests through a trusted channel instead of the supplied QR code.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about scanning a QR code on a parking meter.\n    *   **Constraints:** Use the reviewed facts (from the prompt's context), direct answer, 80-220 words, no invented details, quote facts from memory if present.\n    *   **User's Question:** Is it safe to scan a QR code on a parking meter that asks me to pay?\n\n2.  **Review Reviewed Facts:**\n    *   The prompt provides a section \"REVIEWED FACTS FOR THIS QUESTION\".\n    *   Fact 1: Quishing is phishing delivered through a QR code that leads to a deceptive destination. Preview and check the destination domain before opening it. Verify unexpected payment or sign-in requests through a trusted channel instead of the supplied QR code.\n    *   Fact 2: (The prompt implies I should use these facts, but I don't see the actual scan result in the \"REVIEWED FACTS\" section. Wait, looking closely at the prompt structure... The prompt *is* the context. I need to check if there's a scan result in the conversation history. There isn't one in the provided text. The \"REVIEWED FACTS\" section contains the source material for the answer. It lists the definition of quishing.)\n    *   Fact 1 details: Quishing is phishing delivered through a QR code that leads to a deceptive destination. Preview and check the destination domain before opening it. Verify unexpected payment or sign-in requests through a trusted channel instead of the supplied QR code.\n\n3.  **Draft the Answer:**\n    *   Start with a direct answer: No, it's not safe.\n    *   Explain the risk: Quishing is phishing delivered through a QR code that leads to a deceptive destination.\n    *   Advice: Preview and check the destination domain before opening it. Verify unexpected payment or sign-in requests through a trusted channel instead of the supplied QR code.\n    *   Word count check:"
+    },
+    {
+      "run": 2,
+      "id": "clickfix",
+      "kind": "covered",
+      "expected_ref": "clickfix",
+      "q": "A website told me to press Win+R and paste a command to verify I'm human. Is that safe?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "clickfix"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6517,
+      "first_answer_ms": 5101,
+      "thinking_ms": 4453,
+      "service_elapsed_ms": 5881,
+      "truncated": false,
+      "words_served": 90,
+      "words_own": 90,
+      "answer": "Yes, that warning is a classic sign of a phishing attempt.\n*   ClickFix pages, often disguised as a CAPTCHA or a fix for an error, trick people into copying a command and pasting it into the Windows Run dialog, PowerShell or a terminal. Running it usually downloads malware such as an information stealer. A real CAPTCHA or website never asks you to run commands on your computer. If you already ran one, disconnect from the network, run a full anti-malware scan and change your passwords from a different, clean device.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about a specific phishing tactic (Win+R command injection).\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (e.g., **Win+R**, **information stealer**).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts.\n        *   The user's message contains the CyberForge memory (I need to check the system memory for context).\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   **Fact 1:** ClickFix pages, often disguised as a CAPTCHA or a fix for an error, trick people into copying a command and pasting it into the Windows Run dialog, PowerShell or a terminal. Running it usually downloads malware such as an information stealer. A real CAPTCHA or website never asks you to run commands on your computer. If you already ran one, disconnect from the network, run a full anti-malware scan and change your passwords from a different, clean device.\n    *   **Fact 2:** A real CAPTCHA or website never asks you to run commands on your computer.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* Yes, that warning is a classic sign of a phishing attempt.\n    *   *Explanation:* ClickFix pages, often disguised as a CAPTCHA or a fix for an error, trick people into copying a command and pasting it into the Windows Run dialog, PowerShell or a terminal. Running it usually downloads malware such as an information stealer. A real CAPTCHA or website never asks you to run commands on your computer. If you already ran one, disconnect from the network, run a full anti-malware scan and change your passwords"
+    },
+    {
+      "run": 2,
+      "id": "infostealer",
+      "kind": "covered",
+      "expected_ref": "infostealer",
+      "q": "What is an infostealer?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "infostealer"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1790,
+      "first_answer_ms": 713,
+      "thinking_ms": null,
+      "service_elapsed_ms": 1188,
+      "truncated": false,
+      "words_served": 69,
+      "words_own": 69,
+      "answer": "An infostealer is malware that collects saved browser passwords, cookies, autofill data and cryptocurrency wallets and sends them to the attacker. Stolen session cookies can let an attacker into an account without the password or the MFA prompt. After an infection, clean or reinstall the device first, then change passwords and sign out all sessions from a clean device. Passkeys and phishing-resistant MFA make stolen passwords far less useful.",
+      "thinking": null
+    },
+    {
+      "run": 2,
+      "id": "bec",
+      "kind": "covered",
+      "expected_ref": "bec",
+      "q": "What is business email compromise?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "bec"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6116,
+      "first_answer_ms": 4936,
+      "thinking_ms": 4476,
+      "service_elapsed_ms": 5901,
+      "truncated": false,
+      "words_served": 76,
+      "words_own": 76,
+      "answer": "Business email compromise (BEC) is fraud in which criminals impersonate an executive, supplier or colleague by email to get money or data, for example a request to change bank details or pay an urgent invoice. It often uses a lookalike domain or a hacked mailbox, so the email can look genuine.\n*   Verify every payment or bank-detail change by calling a known phone number, not one in the email, and require two people to approve transfers.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about business email compromise (BEC) using the provided reviewed facts.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points, numbered steps.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict reviewed facts; answer directly without citing sources.\n        *   Use earlier turns for context (none provided for this specific turn, so rely on the facts).\n        *   End with one clear next step.\n    *   **Input:** The user asked \"What is business email compromise?\".\n    *   **Reviewed Facts:**\n        *   BEC is fraud in which criminals impersonate an executive, supplier or colleague by email to get money or data, for example a request to change bank details or pay an urgent invoice.\n        *   It often uses a lookalike domain or a hacked mailbox, so the email can look genuine.\n        *   Verify every payment or bank-detail change by calling a known phone number, not one in the email, and require two people to approve transfers.\n\n2.  **Draft the Answer:**\n    *   *Direct Answer:* Business email compromise (BEC) is fraud in which criminals impersonate an executive, supplier or colleague by email to get money or data, for example a request to change bank details or pay an urgent invoice. It often uses a lookalike domain or a hacked mailbox, so the email can look genuine.\n    *   *Prevention:* Verify every payment or bank-detail change by calling a known phone number, not one in the email, and require two people to approve transfers.\n\n3.  **Review against Constraints:**\n    *   Direct answer? Yes.\n    *   Short paragraphs? Yes.\n    *   Bold key terms? Yes (BEC, verify"
+    },
+    {
+      "run": 2,
+      "id": "sextortion",
+      "kind": "covered",
+      "expected_ref": "sextortion",
+      "q": "I got an email saying they have a video of me and want Bitcoin. What should I do?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": false,
+      "served": {
+        "pass": false,
+        "missing": [
+          "(don.t|do not|never|not) (\\w+ )?pay",
+          "scam|bluff|fake|common|no (video|evidence)"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "(don.t|do not|never|not) (\\w+ )?pay",
+          "scam|bluff|fake|common|no (video|evidence)"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 5706,
+      "first_answer_ms": 5064,
+      "thinking_ms": 4419,
+      "service_elapsed_ms": 5079,
+      "truncated": false,
+      "words_served": 39,
+      "words_own": 39,
+      "answer": "This looks like a phishing attempt.\n1. Do not click any links or download any attachments.\n2. Verify the organization through their official website directly.\n3. Contact them through an established phone number.\n4. Warn others you received it.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant.\n    *   **Task:** Answer the user's query about a scam email (video call for Bitcoin).\n    *   **Constraints:** Direct answer in 1-2 sentences, then details (short paragraphs, bullet points, numbered steps), **bold** key terms, 80-220 words, use earlier conversation turns for context (none provided here, so rely on general knowledge), end with one clear next step.\n    *   **Safety:** Do not invent details (CVEs, scan results, etc.).\n\n2.  **Determine the Answer:**\n    *   This is a classic pyramid scheme or crypto scam tactic (impersonating authorities or payment processors).\n    *   Action: Do not click links or download attachments.\n    *   Step 1: Do not click any links or download any attachments.\n    *   Step 2: Verify the organization through their official website directly.\n    *   Step 3: Contact them through an established phone number.\n    *   Step 4: Warn others you received it.\n\n3.  **Draft the Response:**\n    *   Start with a direct answer: This looks like a phishing attempt.\n    *   Details: Do not click any links or download any attachments.\n    *   Step 1: Do not click any links or download any attachments.\n    *   Step 2: Verify the organization through their official website directly.\n    *   Step 3: Contact them through an established phone number.\n    *   Step 4: Warn others you received it.\n    *   End with a clear next step.\n\n4.  **Review against Constraints:**\n    *   Direct answer? Yes (\"This looks like a phishing attempt.\").\n    *   Short paragraphs? Yes (one paragraph).\n    *   Bullet points for lists? Yes (steps).\n    *   Numbered steps? Yes (1, 2, 3, 4).\n    *   Bold key terms? Yes (\"links\", \"attachments"
+    },
+    {
+      "run": 2,
+      "id": "hacked-account",
+      "kind": "covered",
+      "expected_ref": "hacked-account",
+      "q": "I think my email account was hacked. How do I recover it?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "hacked-account"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6102,
+      "first_answer_ms": 5096,
+      "thinking_ms": 4456,
+      "service_elapsed_ms": 5477,
+      "truncated": false,
+      "words_served": 70,
+      "words_own": 70,
+      "answer": "If an account is hacked, use the service's official recovery page to regain access, then change the password to a unique one and turn on multi-factor authentication. Sign out of all other sessions and check the recovery email, phone number, forwarding rules and connected apps for changes the attacker made. Warn your contacts if messages were sent in your name, and change the same password anywhere else you reused it.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about recovering from an hacked email account.\n    *   **Constraints:** Start with a direct answer in one or two sentences. Use short paragraphs, bullet points, numbered steps. **Bold** key terms. Keep answers focused (80-220 words). Use the user's CyberForge memory or scans to inform the answer and quote them exactly; never claim to have checked anything not in the message. Explain in own words, add only widely established practice. Do not contradict the reviewed facts. End with one clear next step.\n\n2.  **Analyze the Reviewed Facts:**\n    *   The prompt provides specific reviewed facts (from cited sources).\n    *   Fact 1: If an account is hacked, use the service's official recovery page to regain access, then change the password to a unique one and turn on multi-factor authentication.\n    *   Fact 2: Sign out of all other sessions and check the recovery email, phone number, forwarding rules and connected apps for changes the attacker made.\n    *   Fact 3: Warn your contacts if messages were sent in your name, and change the same password anywhere else you reused it.\n    *   Note: The user's message does not contain their CyberForge memory or scans, so I cannot quote them. I must answer based on general knowledge or the provided facts (the provided facts are the basis for this answer).\n    *   The provided facts are clear and match the request.\n\n3.  **Draft the Answer:**\n    *   **Direct Answer:** If an account is hacked, use the service's official recovery page to regain access, then change the password to a unique one and turn on multi-factor authentication. Sign out of all other sessions and check the recovery email, phone number, forwarding rules and connected apps for changes the attacker made. Warn your contacts if messages were sent in your name, and change the same password anywhere else you reused it.\n    *   **Refining for style:** This"
+    },
+    {
+      "run": 2,
+      "id": "zero-day",
+      "kind": "covered",
+      "expected_ref": "zero-day",
+      "q": "What is a zero-day vulnerability?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "zero-day"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5961,
+      "first_answer_ms": 5181,
+      "thinking_ms": 4429,
+      "service_elapsed_ms": 5230,
+      "truncated": false,
+      "words_served": 54,
+      "words_own": 54,
+      "answer": "A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it. Because no patch exists yet, defence in depth matters: least privilege, exploit protection, segmentation and monitoring for unusual behaviour. Apply the vendor's fix or mitigation as soon as it is published.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about zero-day vulnerabilities.\n    *   **Constraint 1 (Structure):** Start with a direct answer in one or two sentences. Use bullet points for lists, numbered steps for procedures. **Bold** key terms. Keep answers focused, usually 80 to 220 words.\n    *   **Constraint 2 (Accuracy):** Answer directly based on provided reviewed facts. Do not contradict them. Do not invent numbers, versions, dates, product names, scan results or detections.\n    *   **Constraint 3 (Tone):** Warm for greetings/small talk, helpful for questions.\n    *   **Constraint 4 (Content):** The reviewed facts state: \"A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it. Because no patch exists yet, defence in depth matters: least privilege, exploit protection, segmentation and monitoring for unusual behaviour. Apply the vendor's fix or mitigation as soon as it is published.\"\n\n2.  **Drafting the Answer:**\n    *   *Direct Answer:* A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it. Because no patch exists yet, defence in depth matters: least privilege, exploit protection, segmentation and monitoring for unusual behaviour. Apply the vendor's fix or mitigation as soon as it is published.\n    *   *Refining for Style:* Need to make sure it flows well and meets the word count (80-220 words). The draft above is about 130 words.\n    *   *Review:* The prompt asks me to review the facts first. I have them. I need to answer the user's question. The user asked \"What is a zero-day vulnerability?\".\n    *   *Draft:* A zero-day is a vulnerability that the vendor does not yet know about or has not yet fixed when attackers first exploit it. Because no patch exists yet, defence in depth matters"
+    },
+    {
+      "run": 2,
+      "id": "cve-cvss",
+      "kind": "covered",
+      "expected_ref": "cve-cvss",
+      "q": "What do CVE and CVSS mean?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "cve-cvss"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6050,
+      "first_answer_ms": 5056,
+      "thinking_ms": 4439,
+      "service_elapsed_ms": 5449,
+      "truncated": false,
+      "words_served": 55,
+      "words_own": 55,
+      "answer": "A CVE identifier (CVE-year-number) gives a publicly disclosed vulnerability a unique name so everyone refers to the same issue. CVSS rates a vulnerability's technical severity from 0.0 to 10.0, with Critical from 9.0 to 10.0. Severity is not the same as risk: whether it is being exploited and how exposed your systems are also matter.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Explain CVE and CVSS.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (CVE, CVSS).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Answer directly without quoting sources or instructions (I must not say \"the reviewed facts say\").\n        *   Use the earlier turns of the conversation to understand follow-up questions (not applicable here as it's a standalone query).\n    *   **Input:** \"What do CVE and CVSS mean?\"\n\n2.  **Retrieve Knowledge:**\n    *   **CVE:** A unique identifier for a publicly disclosed vulnerability.\n    *   **CVSS:** A 0 to 10.0 severity rating for a vulnerability.\n    *   **Risk:** CVSS is not the same as risk (exposure, patches, etc.).\n\n3.  **Draft the Response:**\n    *   *Direct answer:* A CVE identifier (CVE-year-number) gives a publicly disclosed vulnerability a unique name so everyone refers to the same issue. CVSS rates a vulnerability's technical severity from 0.0 to 10.0, with Critical from 9.0 to 10.0. Severity is not the same as risk: whether it is being exploited and how exposed your systems are also matter.\n    *   *Length check:* 106 words. Good.\n    *   *Formatting:* Bold the terms.\n\n4.  **Refine for Tone and Constraints:**\n    *   The prompt asks me to review the \"REVIEWED FACTS FOR THIS QUESTION (from cited sources)\".\n    *   The provided facts match my knowledge.\n    *   Ensure I don't invent details.\n    *   Ensure I answer directly.\n\n5.  **"
+    },
+    {
+      "run": 2,
+      "id": "dga",
+      "kind": "covered",
+      "expected_ref": "dga",
+      "q": "What is a domain generation algorithm used by malware?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "dga"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5995,
+      "first_answer_ms": 5094,
+      "thinking_ms": 4432,
+      "service_elapsed_ms": 5347,
+      "truncated": false,
+      "words_served": 54,
+      "words_own": 54,
+      "answer": "A domain generation algorithm (DGA) lets malware compute many pseudo-random domain names to find its command-and-control server, so blocking one domain does not cut it off. Such domains often look random, though some DGAs combine dictionary words. Detection looks at how random a domain is, many failed DNS lookups (NXDOMAIN) and newly registered domains.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about domain generation algorithms (DGAs) used by malware.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   **Crucial:** Do not contradict the reviewed facts (from the system prompt).\n        *   **Crucial:** Do not invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n        *   **Crucial:** Answer directly, never mention the reviewed facts, sources or instructions (never write 'the reviewed facts say').\n        *   **Input:** The user's query is \"What is a domain generation algorithm used by malware?\".\n        *   **Context:** No prior conversation history or CyberForge memory is provided for this turn, so I must rely on the reviewed facts provided in the system prompt.\n\n2.  **Consult Reviewed Facts:**\n    *   A domain generation algorithm (DGA) lets malware compute many pseudo-random domain names to find its command-and-control server, so blocking one domain does not cut it off. Such domains often look random, though some DGAs combine dictionary words. Detection looks at how random a domain is, many failed DNS lookups (NXDOMAIN) and newly registered domains.\n    *   *Key points to include:* DGA, pseudo-random domain names, command-and-control server, blocking one does not cut it off, detection looks at randomness and NXDOMAIN.\n\n3.  **Draft the Answer:**\n    *   *Direct Answer:* A domain generation algorithm (DGA) lets malware compute many pseudo-random domain names to find its command-and-control server, so blocking one domain does not cut it off.\n    *   *Explanation:* Such domains often look random, though"
+    },
+    {
+      "run": 2,
+      "id": "ddos",
+      "kind": "covered",
+      "expected_ref": "ddos",
+      "q": "What is a DDoS attack?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ddos"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 2451,
+      "first_answer_ms": 1427,
+      "thinking_ms": 774,
+      "service_elapsed_ms": 1815,
+      "truncated": false,
+      "words_served": 60,
+      "words_own": 60,
+      "answer": "A distributed denial-of-service (DDoS) attack floods a service with traffic from many machines, often a botnet, to make it unavailable. Defences include upstream DDoS protection from an internet or cloud provider, a content delivery network, rate limiting and a tested response plan. DDoS mainly affects availability, not data confidentiality, but it can be used as a distraction from other attacks.",
+      "thinking": "The user is asking me to explain what a DDoS attack is, based on the reviewed facts. I need to use the CyberForge assistant style: direct answer first, then details in short paragraphs with bullet points and numbered steps. I must not invent numbers, versions, dates or product names. I should end with a clear next step."
+    },
+    {
+      "run": 2,
+      "id": "backups",
+      "kind": "covered",
+      "expected_ref": "backups",
+      "q": "What is a good backup strategy against ransomware?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "ransomware",
+        "backups"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6835,
+      "first_answer_ms": 4963,
+      "thinking_ms": 4470,
+      "service_elapsed_ms": 6601,
+      "truncated": false,
+      "words_served": 105,
+      "words_own": 105,
+      "answer": "A good backup strategy against ransomware keeps at least three copies of important data, on two different types of storage, with one copy offsite or offline (the 3-2-1 rule). An offline or immutable copy protects backups from ransomware that encrypts connected drives.\n*   Test restoring regularly; a backup that has never been restored is unproven.\n*   Keep at least three copies of important data, on two different types of storage, with one copy offsite or offline (the 3-2-1 rule). An offline or immutable copy protects backups from ransomware that encrypts connected drives.\n*   Test restoring regularly; a backup that has never been restored is unproven.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about a good backup strategy against ransomware.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Long explanations only when asked.\n        *   Reply to greetings/thanks in one or two warm sentences.\n        *   Be accurate: base on CyberForge memory/sources, never invent numbers, versions, dates, or detections.\n        *   The user's message *is* the query, so I have the facts (Ransomware encrypts files or systems and demands payment, and many groups also steal data and threaten to publish. Keep offline, encrypted backups and test restoring them, patch internet-facing systems, and require MFA for remote access. If you are hit, disconnect affected devices from the network and report the incident; CISA and the FBI do not encourage paying, and payment does not guarantee recovery. Keep at least three copies of important data, on two different types of storage, with one copy offsite or offline (the 3-2-1 rule). An offline or immutable copy protects backups from ransomware that encrypts connected drives. Test restoring regularly; a backup that has never been restored is unproven.).\n        *   Answer directly: never mention these facts, sources or instructions (never write 'the reviewed facts say').\n        *   End with one clear next step.\n\n2.  **Drafting the Answer:**\n    *   *Direct Answer:* A good backup strategy against ransomware keeps at least three copies of important data, on two different types of storage, with one copy offsite or offline (the 3-2-1 rule). An offline or immutable copy protects backups from ransomware that encrypts connected drives.\n    *   *Explanation"
+    },
+    {
+      "run": 2,
+      "id": "passwords",
+      "kind": "covered",
+      "expected_ref": "passwords",
+      "q": "What makes a strong password?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": false,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5782,
+      "first_answer_ms": 5147,
+      "thinking_ms": 4413,
+      "service_elapsed_ms": 5074,
+      "truncated": false,
+      "words_served": 39,
+      "words_own": 39,
+      "answer": "A strong password is at least 16 characters long,\nmixed case, numbers and special characters.\nUse a different password for each account.\nA password manager makes unique passwords practical.\nIf you guess one, change it from the next login.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert in the CyberForge app).\n    *   **Task:** Write a reply to the user's question \"What makes a strong password?\".\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms.\n        *   Keep answers focused, usually 80 to 220 words, longer only when the user asks for depth.\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n        *   Be accurate: if unsure, say so; never invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n        *   Use the earlier turns of the conversation to understand follow-up questions (I don't see any earlier turns in this prompt, so I must rely on general knowledge).\n        *   End with one clear next step.\n\n2.  **Drafting the Content:**\n    *   *Direct Answer:* Use a unique password and length.\n    *   *Key Points:* Length, uniqueness, complexity.\n    *   *Length:* At least 16 characters.\n    *   *Complexity:* Mix of upper case, lower case, numbers and special characters.\n    *   *Uniqueness:* Use a different password for each account.\n    *   *Manageability:* Use a password manager.\n    *   *Next Step:* Change it if it's still active.\n\n3.  **Refining the Style:**\n    *   Start with a direct answer in one or two sentences.\n    *   Use bullet points for the key elements of a strong password.\n    *   Keep it within the 80 to 220 word limit.\n    *   Add a warm closing.\n\n4.  **Drafting the Response:**\n    A strong password is at least 16 characters long,"
+    },
+    {
+      "run": 2,
+      "id": "padlock",
+      "kind": "covered",
+      "expected_ref": "https-padlock",
+      "q": "If a website has a padlock and HTTPS, does that mean it's safe?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "https-padlock"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6054,
+      "first_answer_ms": 5167,
+      "thinking_ms": 4454,
+      "service_elapsed_ms": 5362,
+      "truncated": false,
+      "words_served": 59,
+      "words_own": 59,
+      "answer": "No, a padlock and HTTPS do not prove the site is legitimate or safe. **HTTPS** and the padlock mean the connection to the site is encrypted; they do not mean the site is legitimate or safe. Phishing sites routinely use HTTPS with free certificates. Check the actual domain name, and be wary of unexpected requests for passwords or payment.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert in the CyberForge app).\n    *   **Task:** Answer the user's question about HTTPS and the padlock.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (e.g., **HTTPS**, **padlock**).\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (from the prompt).\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n        *   End with one clear next step.\n    *   **Input Question:** If a website has a padlock and HTTPS, does that mean it's safe?\n    *   **Reviewed Facts:**\n        *   HTTPS and the padlock mean the connection to the site is encrypted; they do not mean the site is legitimate or safe. Phishing sites routinely use HTTPS with free certificates. Check the actual domain name, and be wary of unexpected requests for passwords or payment.\n    *   **Plan:**\n        1.  Direct answer: No, not necessarily.\n        2.  Explain what the padlock and HTTPS mean (encrypted connection).\n        3.  Explain what they do not mean (legitimacy, safety).\n        4.  Mention phishing sites use free certificates.\n        5.  Advise checking the actual domain name.\n        6.  Keep it within word count limits and use formatting.\n\n2.  **Drafting the Answer:**\n    *   Start: No, a padlock and HTTPS do not prove the site is legitimate or safe.\n    *   Body: **HTTPS** and the padlock mean the connection to the site is encrypted; they"
+    },
+    {
+      "run": 2,
+      "id": "email-auth",
+      "kind": "covered",
+      "expected_ref": "email-authentication",
+      "q": "What are SPF, DKIM and DMARC?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "email-authentication"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": false,
+        "missing": [
+          "spoof|forg|impersonat|authenticat|sender"
+        ],
+        "forbidden": []
+      },
+      "own": {
+        "pass": false,
+        "missing": [
+          "spoof|forg|impersonat|authenticat|sender"
+        ],
+        "forbidden": []
+      },
+      "wall_ms": 6076,
+      "first_answer_ms": 5104,
+      "thinking_ms": 4462,
+      "service_elapsed_ms": 5449,
+      "truncated": false,
+      "words_served": 67,
+      "words_own": 67,
+      "answer": "SPF lists the servers allowed to send email for a domain, DKIM adds a cryptographic signature to messages, and DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner. Together they make it harder to send email that pretends to come from your domain. They do not stop lookalike domains or mail sent from a genuinely compromised account.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about SPF, DKIM and DMARC.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** the key terms (SPF, DKIM, DMARC).\n        *   Keep answers focused (80 to 220 words).\n        *   Answer based on the provided reviewed facts (SPF, DKIM, DMARC explanation).\n        *   Do not contradict the reviewed facts.\n        *   Do not mention sources or instructions (just the answer).\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   SPF lists the servers allowed to send email for a domain, DKIM adds a cryptographic signature to messages, and DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner. Together they make it harder to send email that pretends to come from your domain. They do not stop lookalike domains or mail sent from a genuinely compromised account.\n    *   This matches the standard technical explanation.\n\n3.  **Draft the Response:**\n    *   *Direct Answer:* SPF lists the servers allowed to send email for a domain, DKIM adds a cryptographic signature to messages, and DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner. Together they make it harder to send email that pretends to come from your domain. They do not stop lookalike domains or mail sent from a genuinely compromised account.\n    *   *Explanation:* SPF lists the servers allowed to send email for a domain, DKIM adds a cryptographic signature to messages, and DMARC tells receivers what to do when a message fails those checks and sends reports to the domain owner. Together they make it harder to send email that pretends to come from your domain."
+    },
+    {
+      "run": 2,
+      "id": "zero-trust",
+      "kind": "covered",
+      "expected_ref": "zero-trust",
+      "q": "What is zero trust security?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "zero-trust"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5818,
+      "first_answer_ms": 5109,
+      "thinking_ms": 4453,
+      "service_elapsed_ms": 5185,
+      "truncated": false,
+      "words_served": 50,
+      "words_own": 50,
+      "answer": "Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\nImplement it by restricting access to what is needed.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Explain zero trust security.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Do not contradict the reviewed facts (which I have access to via the system prompt).\n        *   Do not invent numbers, versions, dates, product names, scan results or detections.\n        *   Answer directly: never mention these facts, sources or instructions (never write 'the reviewed facts say').\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   The prompt provides a specific set of reviewed facts:\n        *   Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\n    *   I need to use these facts to answer the question.\n\n3.  **Drafting the Answer:**\n    *   *Direct Answer:* Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources explicitly. Least privilege limits exposure; network location alone is not proof of trust.\n    *   *Explanation:* Zero trust does not assume anyone inside is safe. Access to resources must be explicitly granted. Least privilege limits exposure; network location alone is not proof of trust.\n    *   *Next Step:* Implement it by restricting access to what is needed.\n\n4.  **Refining for Style and Constraints:**\n    *   Start with a direct answer: Zero trust grants no implicit trust solely because a user or device is on an internal network or belongs to the organisation. Authenticate and authorise access to resources"
+    },
+    {
+      "run": 2,
+      "id": "aitm",
+      "kind": "covered",
+      "expected_ref": "aitm",
+      "q": "What is an adversary-in-the-middle phishing attack?",
+      "error": null,
+      "grounding_mode": "retrieved_context",
+      "references": [
+        "aitm",
+        "phishing"
+      ],
+      "retrieval_ok": true,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6155,
+      "first_answer_ms": 5106,
+      "thinking_ms": 4456,
+      "service_elapsed_ms": 5526,
+      "truncated": false,
+      "words_served": 59,
+      "words_own": 59,
+      "answer": "In an adversary-in-the-middle (man-in-the-middle) attack, the attacker sits between two parties to read or alter their traffic. Phishing kits use it to relay a real sign-in page and capture the session cookie, which can bypass ordinary MFA codes. HTTPS with valid certificates protects traffic in transit, and phishing-resistant MFA such as FIDO2 security keys or passkeys resists relayed sign-ins.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about adversary-in-the-middle (MITM) phishing attacks.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Word count: 80-220 words (usually 80-150 is sweet spot).\n        *   **Crucial:** Answer based *only* on the reviewed facts (the provided text about MITM, phishing kits, HTTPS, certificates, MFA). Do not contradict them or invent details.\n        *   Do not write 'the reviewed facts say'. Explain in your own words.\n        *   End with one clear next step.\n\n2.  **Review the Reviewed Facts:**\n    *   The prompt provides a specific section titled \"REVIEWED FACTS FOR THIS QUESTION (from cited sources)\".\n    *   Key points:\n        *   In an adversary-in-the-middle (man-in-the-middle) attack, the attacker sits between two parties to read or alter their traffic. Phishing kits use it to relay a real sign-in page and capture the session cookie, which can bypass ordinary MFA codes. HTTPS with valid certificates protects traffic in transit, and phishing-resistant MFA such as FIDO2 security keys or passkeys resists relayed sign-ins.\n        *   Phishing messages pretend to come from a trusted organisation or person to get you to click a link, open an attachment or hand over passwords, codes or payment details. Warning signs include urgency or threats, unexpected requests, mismatched or misspelled sender addresses, and links whose real destination differs from their text. Do not use the message's links: go to the organisation's website or app yourself, and report the message as phishing.\n\n3.  **Draft the Answer:**\n    *   *Direct answer:* In an adversary-in-the-middle"
+    },
+    {
+      "run": 2,
+      "id": "followup-smishing",
+      "kind": "followup",
+      "expected_ref": null,
+      "q": "And what about when it comes by text message?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5965,
+      "first_answer_ms": 5100,
+      "thinking_ms": 4460,
+      "service_elapsed_ms": 5341,
+      "truncated": false,
+      "words_served": 56,
+      "words_own": 56,
+      "answer": "Phishing via text message is called smishing.\nIt uses deceptive SMS messages to request passwords, codes or payments.\nBe suspicious of SMS requests for verification codes from unknown numbers.\nDo not tap links or numbers you do not recognise.\nContact the company through a known number, or call them back using the number on your card.",
+      "thinking": "Thinking Process:\n1.  **Analyze the Request:**\n    *   **User Question:** \"And what about when it comes by text message?\" (Note: The user is asking about phishing via text messages/SMS, often called smishing).\n    *   **My Role:** CyberForge assistant, friendly security expert.\n    *   **Constraints:** Direct answer in 1-2 sentences, short paragraphs, bullet points for lists, numbered steps for procedures, **bold** key terms, 80-220 words, reference the user's CyberForge memory if present (not present here, so general advice), end with one clear next step.\n    *   **Tone:** Helpful, expert, concise.\n\n2.  **Determine the Answer:**\n    *   Phishing via text message is called smishing.\n    *   It uses deceptive SMS messages to request passwords, codes or payments.\n    *   Be suspicious of SMS requests for verification codes from unknown numbers.\n    *   Do not tap links or numbers you do not recognise.\n    *   Contact the company through a known number, or call them back using the number on your card.\n\n3.  **Draft the Response:**\n    *   Start with a direct answer: Phishing via text message is called smishing.\n    *   Explain the threat: It uses deceptive SMS messages to request passwords, codes or payments.\n    *   Provide steps: Do not tap links or numbers you do not recognise.\n    *   Add a safety tip: Contact the company through a known number, or call them back using the number on your card.\n    *   Keep it within word count limits.\n\n4.  **Refine the Draft:**\n    *   Phishing via text message is called smishing.\n    *   It uses deceptive SMS messages to request passwords, codes or payments.\n    *   Be suspicious of SMS requests for verification codes from unknown numbers.\n    *   Do not tap links or numbers you do not recognise.\n    *   Contact the company through a known number, or call them back using the number on your card."
+    },
+    {
+      "run": 2,
+      "id": "followup-protect",
+      "kind": "followup",
+      "expected_ref": null,
+      "q": "How do I protect my accounts from it?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 6083,
+      "first_answer_ms": 5331,
+      "thinking_ms": 4429,
+      "service_elapsed_ms": 5198,
+      "truncated": false,
+      "words_served": 49,
+      "words_own": 49,
+      "answer": "Password managers and two-factor authentication are the most important defenses against credential stuffing.\n*   Use a unique password manager and generate unique passwords.\n*   Turn on two-factor authentication wherever it is offered.\nRun a scan of your browser extensions and password manager for known malicious extensions or saved passwords.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about credential stuffing protection.\n    *   **Constraints:**\n        *   Start with a direct answer in one or two sentences.\n        *   Use short paragraphs, bullet points for lists, numbered steps for procedures.\n        *   **Bold** key terms.\n        *   Keep answers focused, usually 80 to 220 words.\n        *   Reply to greetings, thanks and small talk in one or two warm sentences and offer help.\n        *   **Be accurate:** If unsure, state that; never invent CVE numbers, statistics, versions, dates, product names, scan results or detections.\n        *   **Use earlier turns:** The user asked \"What is credential stuffing?\", I answered it. Now they are asking \"How do I protect my accounts from it?\".\n        *   **End with one clear next step.**\n        *   **Tone:** Helpful, expert, friendly.\n\n2.  **Drafting the Content:**\n    *   *Direct Answer:* Password managers and two-factor authentication are the most important defenses against credential stuffing.\n    *   *Details:*\n        *   Use a unique password manager and generate unique passwords.\n        *   Turn on two-factor authentication wherever it is offered.\n    *   *Next Step:* Run a scan of your browser extensions and password manager for known malicious extensions or saved passwords.\n\n3.  **Refining for Constraints:**\n    *   *Word Count:* The draft looks good (around 100 words).\n    *   *Formatting:* Bold key terms.\n    *   *Tone:* Helpful expert.\n\n4.  **Final Review:**\n    *   Start with a direct answer? Yes.\n    *   Short paragraphs? Yes.\n    *   Bullet points? Yes.\n    *   Bold key terms? Yes.\n    *   Next step? Yes.\n\n5.  **Final Polish:**\n    *   \"Password"
+    },
+    {
+      "run": 2,
+      "id": "sim-swap",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What is a SIM swap attack?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 13686,
+      "first_answer_ms": 5115,
+      "thinking_ms": 4470,
+      "service_elapsed_ms": 13055,
+      "truncated": true,
+      "words_served": 568,
+      "words_own": 568,
+      "answer": "A SIM (subscriber identity module) swap attack compromises the phone number to receive SMS messages.\nThe attacker steals the SIM or replaces it with a fake one.\nThey receive SMS messages from SMS-SMS-SMS from the real number.\nThey can send SMS messages to the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.\nThey can receive SMS messages from the real number.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **User Query:** \"What is a SIM swap attack?\"\n    *   **My Role:** CyberForge assistant, a friendly security expert built into the CyberForge app.\n    *   **Constraints:** Start with a direct answer in one or two sentences, then details (short paragraphs, bullet points, numbered steps, **bold** key terms). Keep answers focused (80-220 words). Reply to greetings/thanks warmly. Use earlier turns for context (none provided here, so general knowledge applies). End with one clear next step.\n    *   **Goal:** Explain what a SIM swap attack is, how it works, and what to do.\n\n2.  **Drafting the Content:**\n    *   *Direct Answer:* A SIM (subscriber identity module) swap attack compromises the phone number to receive SMS messages.\n    *   *Details:*\n        *   The attacker steals the SIM or replaces it with a fake one.\n        *   They receive SMS messages from SMS-SMS-SMS from the real number.\n        *   They can send SMS messages to the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can receive SMS messages from the real number.\n        *   They can"
+    },
+    {
+      "run": 2,
+      "id": "supply-chain",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What is a software supply chain attack?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5895,
+      "first_answer_ms": 5148,
+      "thinking_ms": 4268,
+      "service_elapsed_ms": 5030,
+      "truncated": false,
+      "words_served": 56,
+      "words_own": 56,
+      "answer": "A supply chain attack compromises a trusted vendor or update to reach its customers. Attackers use malicious software or phishing to compromise a trusted vendor or update to reach its customers. Once inside, it can spread to other software or systems. It is a common attack method because it relies on people trusting vendors. It is",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Explain what a software supply chain attack is.\n    *   **Constraints:** Start with a direct answer (1-2 sentences), short paragraphs, bullet points for lists, numbered steps for procedures, **bold** key terms, 80-220 words, use earlier turns for context (none provided here, so use general knowledge), end with one clear next step.\n    *   **Input:** The user's message is \"What is a software supply chain attack?\".\n\n2.  **Drafting the Content:**\n    *   *Direct Answer:* A supply chain attack compromises a trusted vendor or update to reach its customers.\n    *   *Details:* Attackers use malicious software or phishing to compromise a trusted vendor or update to reach its customers.\n    *   *Details:* It starts with a trusted source, like an update or a software package.\n    *   *Details:* Once inside, it can spread to other software or systems.\n    *   *Details:* It is a common attack method because it relies on people trusting vendors.\n    *   *Details:* It is a common attack method because it relies on people trusting vendors.\n    *   *Refining for constraints:* A supply chain attack compromises a trusted vendor or update to reach its customers. Attackers use malicious software or phishing to compromise a trusted vendor or update to reach its customers. Once inside, it can spread to other software or systems. It is a common attack method because it relies on people trusting vendors. It is a common attack method because it relies on people trusting vendors.\n    *   *Correction:* The draft above is repetitive and doesn't sound professional.\n    *   *Revised Draft:* A supply chain attack compromises a trusted vendor or update to reach its customers. Attackers use malicious software or phishing to compromise a trusted vendor or update to reach its customers. Once inside, it can spread to other software or systems. It is a common attack method because it relies on people trusting vendors. It is"
+    },
+    {
+      "run": 2,
+      "id": "log4shell",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What was Log4Shell?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1753,
+      "first_answer_ms": 682,
+      "thinking_ms": null,
+      "service_elapsed_ms": 1145,
+      "truncated": false,
+      "words_served": 56,
+      "words_own": 56,
+      "answer": "Log4Shell was a critical remote code execution flaw in Apache Log4j 2. The CVSS 10.0 reflects severity to affected users, not to Log4j itself. It affected millions of Java applications running Log4j 2.2.2 or earlier. The fix is upgrading Log4j to version 2.17.0 or later, and logging to a dedicated security log separate from application logs.",
+      "thinking": null
+    },
+    {
+      "run": 2,
+      "id": "dns-tunneling",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "What is DNS tunneling?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 1048,
+      "first_answer_ms": 297,
+      "thinking_ms": null,
+      "service_elapsed_ms": 826,
+      "truncated": false,
+      "words_served": 52,
+      "words_own": 52,
+      "answer": "DNS tunneling hides data or commands inside DNS queries and responses. Signs are very long subdomain names, repeated keywords and high entropy in the part after the first level domain. It can be used for data exfiltration or to command bots. Monitoring resolver logs and limiting external DNS to approved resolvers helps.",
+      "thinking": null
+    },
+    {
+      "run": 2,
+      "id": "public-wifi",
+      "kind": "uncovered",
+      "expected_ref": null,
+      "q": "Is it safe to use public Wi-Fi for online banking?",
+      "error": null,
+      "grounding_mode": "model_context",
+      "references": [],
+      "retrieval_ok": null,
+      "served": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "own": {
+        "pass": true,
+        "missing": [],
+        "forbidden": []
+      },
+      "wall_ms": 5113,
+      "first_answer_ms": 4491,
+      "thinking_ms": 4251,
+      "service_elapsed_ms": 4888,
+      "truncated": false,
+      "words_served": 39,
+      "words_own": 39,
+      "answer": "No, not necessarily. Public Wi-Fi is not the same as a secure connection.\nAnyone on the network can read it.\nUse an encrypted connection (HTTPS) and avoid entering passwords on public Wi-Fi.\nCheck your connection type before signing in.",
+      "thinking": "Thinking Process:\n\n1.  **Analyze the Request:**\n    *   **Role:** CyberForge assistant (friendly security expert).\n    *   **Task:** Answer the user's question about public Wi-Fi and online banking.\n    *   **Constraints:** Direct answer in 1-2 sentences, short paragraphs, bullet points for lists, numbered steps for procedures, **bold** key terms, 80-220 words, use earlier turns for context (none provided here, so general knowledge applies), end with one clear next step.\n    *   **Question:** Is it safe to use public Wi-Fi for online banking?\n\n2.  **Determine the Answer:**\n    *   **Core Fact:** Public Wi-Fi is not the same as a secure connection.\n    *   **Risk:** Traffic is visible to others on the network.\n    *   **Mitigation:** Use an encrypted connection (HTTPS) and avoid entering passwords on public Wi-Fi.\n    *   **Verdict:** It depends on the connection; HTTPS is the key.\n\n3.  **Draft the Content:**\n    *   Start with the direct answer: No, not necessarily.\n    *   Explain the risk: Anyone on the network can read it.\n    *   Explain the fix: Use an encrypted connection (HTTPS) and avoid entering passwords on public Wi-Fi.\n    *   Add a final step: Check your connection type before signing in.\n\n4.  **Refine for Constraints:**\n    *   **Direct Answer:** No, not necessarily. Public Wi-Fi is not the same as a secure connection.\n    *   **Explanation:** Anyone on the network can read it.\n    *   **Mitigation:** Use an encrypted connection (HTTPS) and avoid entering passwords on public Wi-Fi.\n    *   **Next Step:** Check your connection type before signing in.\n    *   **Word Count:** Needs to be between 80 and 220 words.\n    *   **Tone:** Friendly, expert.\n\n5.  **Final Review:**\n    *   Does it answer the question? Yes."
+    }
+  ]
+}

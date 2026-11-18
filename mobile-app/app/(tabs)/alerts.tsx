@@ -10,10 +10,12 @@ import { colors, fonts, severityColor, tint } from '../../src/theme';
 import { Screen } from '../../src/components/Screen';
 import { TopBar, Pill, Loading, EmptyState } from '../../src/components/ui';
 import { Icon, IconName } from '../../src/components/Icon';
-import { useAlerts, NormalizedAlert } from '../../src/context/AlertsContext';
+import { useAlerts, NormalizedAlert, OPEN_STATES } from '../../src/context/AlertsContext';
 import { timeAgo } from '../../src/utils/format';
 
 const FILTERS: Array<[string, string]> = [
+  ['open', 'Open'],
+  ['closed', 'Closed'],
   ['all', 'All'],
   ['critical', 'Critical'],
   ['browser', 'Browser'],
@@ -28,11 +30,17 @@ const CAT_ICON: Record<NormalizedAlert['category'], IconName> = {
 
 export default function Alerts() {
   const router = useRouter();
-  const { alerts, loading, error, rateLimited, refresh } = useAlerts();
-  const [filter, setFilter] = useState('all');
+  const { alerts, loading, error, rateLimited, refresh, stale, loadedAt } = useAlerts();
+  const [filter, setFilter] = useState('open');
 
   const list = useMemo(
-    () => alerts.filter((a) => filter === 'all' || a.severity === filter || a.category === filter),
+    () =>
+      alerts.filter((a) => {
+        const isOpen = OPEN_STATES.includes(a.status);
+        if (filter === 'open') return isOpen;
+        if (filter === 'closed') return !isOpen;
+        return filter === 'all' || a.severity === filter || a.category === filter;
+      }),
     [alerts, filter]
   );
 
@@ -40,7 +48,7 @@ export default function Alerts() {
 
   return (
     <Screen refreshing={loading} onRefresh={refresh}>
-      <TopBar title="Alerts" sub={`${unread} unread · live`} live />
+      <TopBar title="Alerts" sub={`${unread} new · ${stale && loadedAt ? `offline copy from ${timeAgo(loadedAt)} ago` : 'live'}`} live={!stale} />
 
       <ScrollView
         horizontal
@@ -70,8 +78,8 @@ export default function Alerts() {
         ) : list.length === 0 ? (
           <EmptyState
             icon="shieldCheck"
-            title={filter === 'all' ? 'No active alerts' : 'Nothing matches this filter'}
-            hint={filter === 'all' ? 'You’re all clear. New alerts arrive here live.' : undefined}
+            title={filter === 'open' ? 'No open alerts' : filter === 'closed' ? 'Nothing closed yet' : 'Nothing matches this filter'}
+            hint={filter === 'open' ? 'You’re all clear. New alerts arrive here live.' : undefined}
           />
         ) : (
           list.map((a) => (
@@ -95,6 +103,9 @@ export default function Alerts() {
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
                   <Pill label={a.severity} color={severityColor[a.severity]} />
+                  {!OPEN_STATES.includes(a.status) || a.status === 'investigating' ? (
+                    <Pill label={a.status.replace('_', ' ')} color={a.status === 'investigating' ? colors.amber2 : colors.green} />
+                  ) : null}
                   <Text style={styles.atime}>{timeAgo(a.ts)} ago</Text>
                 </View>
               </View>

@@ -90,9 +90,10 @@ CF._tauri = function(){
 };
 
 /* invoke a Rust command; rejects if the bridge isn't present (browser preview) */
-CF.invoke = function(cmd, args){
+CF.invoke = function(cmd, args, options){
   var T = CF._tauri();
-  if (T && T.core && T.core.invoke) { try { return T.core.invoke(cmd, args||{}); } catch(e){ return Promise.reject(e); } }
+  // `args` may be a Uint8Array: it is then sent as the raw request body (file scans).
+  if (T && T.core && T.core.invoke) { try { return T.core.invoke(cmd, args||{}, options); } catch(e){ return Promise.reject(e); } }
   return Promise.reject(new Error('tauri-unavailable'));
 };
 
@@ -128,12 +129,24 @@ CF.preGet = function(key, maxAgeMs){
 CF.engineOf = function(body){ var d=(body&&body.data)||body||{}; return d.engine||(body&&body.engine)||null; };
 CF.engineLabel = function(body){ var e=CF.engineOf(body); return (e&&e.label)||'Agent not reported'; };
 CF.engineShort = function(body){ var e=CF.engineOf(body); if(!e) return 'unknown';
+  if(e.id==='ml-service-reference') return 'reviewed reference';
   if(e.kind==='fixed-text') return 'no model (fixed text)';
   return String(e.model||e.id||'model').split('/').pop().replace(/-GGUF$/i,''); };
+CF.referenceNoteHTML = function(body){
+  // the source sites of the ML service's reviewed references (ml-services/hf_space_deploy/security_knowledge.py)
+  var d=(body&&body.data)||body||{}, refs=d.references||[], allowed=['attack.mitre.org','cheatsheetseries.owasp.org','csrc.nist.gov','dmarc.org','owasp.org','pages.nist.gov','www.cisa.gov','www.cve.org','www.ic3.gov','www.ncsc.gov.uk','www.openssl-library.org','www.uspis.gov'];
+  if(!Array.isArray(refs)) return '';
+  var links=refs.slice(0,3).map(function(ref){
+    try{ var u=new URL(ref.url); if(u.protocol!=='https:'||u.username||u.password||allowed.indexOf(u.hostname)===-1) return '';
+      return '<a href="'+CF.esc(u.href)+'" target="_blank" rel="noopener noreferrer">'+CF.esc(ref.title||u.hostname)+'</a>';
+    }catch(e){return '';}
+  }).filter(Boolean);
+  return links.length?'<div class="kb-note" style="margin-top:10px">Sources: '+links.join(' · ')+'</div>':'';
+};
 CF.engineNoteHTML = function(body){ var e=CF.engineOf(body);
   var text=(e&&e.label)||'Agent not reported';
-  var warn=!e||e.kind!=='language-model';
-  return '<div class="kb-note" style="margin-top:9px">'+(warn?'⚠ ':'')+'Answered by: '+String(text).replace(/[<>&]/g,'')+'</div>'; };
+  var warn=!e||(e.kind!=='language-model'&&e.id!=='ml-service-reference');
+  return '<div class="kb-note" style="margin-top:9px">'+(warn?'⚠ ':'')+'Answered by: '+String(text).replace(/[<>&]/g,'')+'</div>'+CF.referenceNoteHTML(body); };
 
 CF.ml = {
   chat:       function(query, maxTokens){ return CF.invoke('ml_security_chat', { query: query, maxTokens: maxTokens||512 }); },

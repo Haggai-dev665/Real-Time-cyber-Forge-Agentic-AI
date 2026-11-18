@@ -17,6 +17,7 @@ const { workspaceRepository } = require('../repositories/workspaceRepository');
 const { workspaceIdFor } = require('./workspaceService');
 const audit = require('./auditLogService');
 const { safeFilename, describeContent } = require('./uploadPolicy');
+const fileMalware = require('./fileMalwareScan');
 const { integritySigner, verifySignature } = require('./integrityKey');
 const { hashOf } = require('../utils/canonical');
 const AuditEvent = require('../models/AuditEvent');
@@ -304,6 +305,20 @@ class SandboxAnalysisService {
             model_predictions: { malware_detection: mlPrediction },
         };
 
+        // 2b. Windows programs: the trained file model's verdict (static; the file is not run).
+        //     When it answers, it replaces the metadata estimate above as the ML result.
+        const fileModel = await fileMalware.scanFile(buffer);
+        mlReport.model_predictions.file_malware = fileModel;
+        if (fileModel.verdict === 'threat' || fileModel.verdict === 'benign') {
+            const threat = fileModel.verdict === 'threat';
+            mlReport.aggregate = {
+                blended_threat_score: fileModel.score,
+                overall_risk_level: threat ? 'high' : 'low',
+                recommended_action: threat ? 'block' : 'allow',
+                source: 'file_malware model',
+            };
+        }
+
         // 3. MITRE mapping — include actual file text content (capped) so keyword
         //    matching can fire on suspicious payloads even when ML metadata is clean.
         const findings = [...this._fileFindings(filename, buffer, iocs), ...content.findings];
@@ -319,10 +334,8 @@ class SandboxAnalysisService {
 
         // 4. Verdict escalation — ML alone misses content-only threats. Use a combined
         //    signal: high-confidence MITRE matches OR many high-severity IOCs OR many findings.
-        const escalatedVerdict = this._escalateVerdict(
-            this._verdict(mlReport.aggregate),
-            { iocs, mitre, findings }
-        );
+        const modelVerdict = fileModel.verdict === 'threat' ? 'malicious' : fileModel.verdict === 'benign' ? 'clean' : this._verdict(mlReport.aggregate);
+        const escalatedVerdict = this._escalateVerdict(modelVerdict, { iocs, mitre, findings });
 
         const scan = {
             id,

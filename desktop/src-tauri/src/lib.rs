@@ -1,10 +1,9 @@
 //! CyberForge — AI Security Console
 //!
 //! Tauri desktop shell that serves the static CyberForge UI (HTML/CSS/JS in `../ui`).
-//! The only piece wired to the backend is authentication: `auth_login` /
-//! `auth_register` (and friends) call `https://…herokuapp.com/api/auth/*` from
-//! Rust and persist the session token in the OS keychain. The frontend invokes
-//! them via `window.__TAURI__.core.invoke(...)`.
+//! Rust owns authentication, local URL inference, the account-isolated activity
+//! journal, backend requests and device services. The frontend invokes commands
+//! through Tauri; credentials remain in the OS keychain.
 
 mod agent;
 mod account_api;
@@ -24,12 +23,17 @@ mod ownership;
 mod session_renewal;
 mod metrics;
 mod ml;
+mod local_ml;
 mod console;
 mod policy;
 mod privacy;
 mod state;
 mod stream;
+mod event_journal;
+mod file_scan;
+mod live_browse;
 mod system;
+mod tray;
 #[cfg(test)]
 mod acl_tests;
 
@@ -52,6 +56,7 @@ pub fn run() {
             commands::auth_is_authenticated,
             commands::credential_storage_status,
             stream::stream_status,
+            event_journal::stream_history,
             commands::get_backend_url,
             integrations::cli_status,
             integrations::mcp_grants,
@@ -93,11 +98,15 @@ pub fn run() {
             memory::memory_sync,
             // ML capabilities (DeepSeek chat, BERT URL, DGA, IOC scan, AI Deep Scan)
             ml::ml_security_chat,
+            ml::ml_security_chat_stream,
+            ml::agents_analyze_stream,
             ml::ml_classify_url,
             ml::ml_detect_dga,
             ml::ml_ioc_scan,
             ml::ml_url_enrich,
             ml::ml_status,
+            local_ml::local_model_status,
+            local_ml::prepare_local_models,
             console::console_snapshot,
             ml::set_hf_token,
             ml::hf_token_status,
@@ -150,7 +159,23 @@ pub fn run() {
             privacy::privacy_set,
             privacy::privacy_clear_history,
             privacy::privacy_clear_memory,
+            // Analyze: scan a file the user dropped or picked
+            file_scan::scan_file,
+            // Live Agent: the agent checks a page in its own browser, streamed to the window
+            live_browse::live_browse_start,
+            live_browse::live_browse_stop,
+            live_browse::live_browse_recent,
         ])
+        // Closing the main window keeps the app protecting from the tray
+        // (tray.rs), when the tray icon exists and the user has not turned it off.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main" && crate::tray::ready() && crate::tray::close_to_tray() {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
             // `Manager` provides `get_webview_window` (debug devtools) and
             // `state` (telemetry broadcaster below).
@@ -161,10 +186,41 @@ pub fn run() {
                 window.open_devtools();
             }
 
+            // The tray icon, then the window: it starts hidden (tauri.conf.json)
+            // and is shown unless Windows started the app in the background,
+            // which only happens when the tray icon is there to bring it back.
+            if let Err(e) = crate::tray::install(app) {
+                eprintln!("CyberForge: tray icon unavailable: {e}");
+            }
+            if let Some(window) = app.get_webview_window("main") {
+                if !(crate::tray::started_in_background() && crate::tray::ready()) {
+                    let _ = window.show();
+                    let _ = window.maximize();
+                    let _ = window.set_focus();
+                }
+            }
+            crate::tray::start_watcher(app.handle().clone());
+
+            // Wake the ML service while the user gets started: it sleeps after an
+            // hour idle and takes a minute or two to come back, so the first
+            // assistant answer or deep scan would otherwise wait for it.
+            let warm_state = app.state::<Arc<Mutex<AppState>>>().inner().clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(4)).await;
+                let base = warm_state.lock().await.backend_url.clone();
+                let _ = crate::http::client_with_timeout(std::time::Duration::from_secs(90))
+                    .get(format!("{base}/api/cyberforge-ml/health"))
+                    .send()
+                    .await;
+            });
+
             // Prepare the per-user data directory + crucial editable files so
             // everything the app needs exists right after installation
             // (app-config dir, hf_config.json template, README). Idempotent.
             crate::system::prepare_filesystem(&app.handle());
+            // Load verified native detectors, then cache the pinned HF artifact.
+            // This runs off the UI thread and does not wait for backend sign-in.
+            crate::local_ml::start(app.handle().clone());
 
             // One owner per user of this computer's state (ownership.rs). Only the
             // owner runs the device loop: two would reuse device sequence numbers.
@@ -194,6 +250,12 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 use tauri::Emitter;
                 loop {
+                    // Nobody sees the telemetry while the window is in the tray:
+                    // skip the work and look again in a few seconds.
+                    if crate::tray::main_hidden(&handle) {
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                        continue;
+                    }
                     let sys = crate::system::system_data(&shared).await;
                     let browsers = crate::system::browsers_data(&shared).await;
                     let status = crate::metrics::status_data(&shared).await;
@@ -267,3 +329,6 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running the CyberForge desktop application");
 }
+
+/// NSIS post-install entry point; downloads model data without opening a window.
+pub fn prepare_local_models_headless() -> bool { local_ml::bootstrap() }

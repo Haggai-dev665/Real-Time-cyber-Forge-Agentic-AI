@@ -20,6 +20,11 @@ import type {
   AccountDataScope,
   AccountDataDeleteResult,
   AccountDeletionReceipt,
+  Threat,
+  FindingAction,
+  ScanReport,
+  SyncedMemory,
+  DeviceHeartbeatResult,
 } from './types';
 
 interface Envelope<T> {
@@ -54,7 +59,22 @@ export const endpoints = {
     return api.get<ThreatsResponse>(`/api/threats${qs ? `?${qs}` : ''}`);
   },
 
+  /** One finding with its timeline and guidance (why it matters, next step). */
+  threat: (threatId: string) =>
+    api.get<Envelope<{ threat: Threat }>>(`/api/threats/${encodeURIComponent(threatId)}`),
+
+  /** Move a finding through its workflow (DET-02); every device of the account sees the change. */
+  findingTransition: (threatId: string, action: FindingAction, note?: string) =>
+    api.put<Envelope<{ threatId: string; status: string; severity: string }>>(
+      `/api/threats/${encodeURIComponent(threatId)}/state`,
+      { action, ...(note ? { note } : {}) }
+    ),
+
   /* ---------------- orchestrator (Agent) ---------------- */
+  /** Run the eight analysis agents on an address the user chose (sends that address). */
+  orchestratorAnalyze: (url: string) =>
+    api.post<{ success: boolean; report: ScanReport }>('/api/orchestrator/analyze', { url }),
+
   orchestratorStats: () =>
     api.get<{ success: boolean; stats: OrchestratorStats }>('/api/orchestrator/stats'),
   orchestratorAgents: () =>
@@ -81,6 +101,14 @@ export const endpoints = {
   /* ---------------- browser intelligence ---------------- */
   browserSnapshot: () =>
     api.get<Envelope<Record<string, unknown>>>('/api/browser-intelligence/snapshot'),
+
+  /* ---------------- synced memory (what the desktop copies to the account) ---------------- */
+  memories: (limit = 60) =>
+    api.get<Envelope<{ total: number; episodic: number; semantic: number; procedural: number; memories: SyncedMemory[]; retentionDays?: number }>>(
+      `/api/memory?limit=${limit}`
+    ),
+  memorySearch: (query: string, topK = 12) =>
+    api.post<Envelope<{ results: SyncedMemory[] }>>('/api/memory/search', { query, topK }),
 
   /* ---------------- ML inference ---------------- */
   mlHealth: () => api.get<Record<string, unknown>>('/api/cyberforge-ml/health'),
@@ -111,8 +139,19 @@ export const endpoints = {
   /* ---------------- devices (DEV-01/02): the phone as the approving companion ---------------- */
   devices: () => api.get<Envelope<{ devices: DeviceRecord[]; total: number }>>('/api/v1/devices?limit=200'),
 
-  /** A one-time code for another device to claim; it expires in 10 minutes. */
-  deviceEnrollmentCreate: () => api.post<Envelope<DeviceEnrollmentCode>>('/api/v1/device-enrollments', { flow: 'pair' }),
+  /** A one-time code: for another device to claim (`pair`), or for this phone (`this_device`). It expires in 10 minutes. */
+  deviceEnrollmentCreate: (flow: 'pair' | 'this_device' = 'pair', platform?: string) =>
+    api.post<Envelope<DeviceEnrollmentCode>>('/api/v1/device-enrollments', { flow, ...(platform ? { platform } : {}) }),
+
+  /** This phone claims a code with its own key (src/device/protocol.ts signs the body). */
+  deviceClaim: (body: Record<string, unknown>) =>
+    api.post<Envelope<DeviceRecord>>('/api/v1/device-enrollments/claim', body),
+
+  device: (deviceId: string) => api.get<Envelope<DeviceRecord>>(`/api/v1/devices/${encodeURIComponent(deviceId)}`),
+
+  /** A heartbeat signed by this phone's key over the exact body text (see src/device/identity.ts). */
+  deviceHeartbeat: (deviceId: string, rawBody: string, headers: Record<string, string>) =>
+    api.post<Envelope<DeviceHeartbeatResult>>(`/api/v1/devices/${encodeURIComponent(deviceId)}/heartbeat`, undefined, { rawBody, headers }),
 
   /** Approve a device that claimed a code, naming the fingerprint compared on both screens. */
   deviceApprove: (deviceId: string, keyFingerprint: string) =>

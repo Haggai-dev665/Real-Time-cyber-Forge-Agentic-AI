@@ -32,6 +32,10 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 test('the ML service\'s answers are named for what produced them', () => {
+  expect(engineOfSpaceAnswer({ ...SPACE_MODEL, grounding: { generation_constraint: 'reviewed_passages' } }))
+    .toMatchObject({ kind: 'language-model', label: 'Qwen3.5-2B selects reviewed security passages' });
+  expect(engineOfSpaceAnswer({ ...SPACE_MODEL, model_generated: false, grounding: { mode: 'verified_reference' } }))
+    .toMatchObject({ id: 'ml-service-reference', kind: 'fixed-text' });
   expect(engineOfSpaceAnswer(SPACE_MODEL)).toEqual({
     id: 'ml-service-model', kind: 'language-model', where: 'CyberForge Analysis Agents', model: 'unsloth/Qwen3.5-2B-GGUF',
     label: 'Qwen3.5-2B (open-source, in the CyberForge Analysis Agents)'
@@ -80,6 +84,10 @@ describe('the chat route the desktop falls back to', () => {
   });
 
   test.each([
+    ['its factual check uses a reviewed reference', () => axios.post.mockResolvedValue({ data: {
+      ...SPACE_MODEL, model_generated: false, grounding: { mode: 'verified_reference' },
+      references: [{ title: 'OWASP', url: 'https://cheatsheetseries.owasp.org/' }]
+    } }), 'ml-service-reference'],
     ['the ML service\'s model answers', () => axios.post.mockResolvedValue({ data: SPACE_MODEL }), 'ml-service-model'],
     ['only its rule-based summary answers', () => axios.post.mockResolvedValue({ data: SPACE_RULES }), 'ml-service-rules'],
     ['its model is asked and does not finish', () => axios.post.mockResolvedValue({ data: SPACE_NO_ANSWER }), 'ml-service-no-answer'],
@@ -91,6 +99,7 @@ describe('the chat route the desktop falls back to', () => {
     expect(response.status).toBe(200);
     expect(response.body.engine.id).toBe(id);
     expect(typeof response.body.engine.label).toBe('string');
+    if (id === 'ml-service-reference') expect(response.body.references[0].title).toBe('OWASP');
   });
 });
 
@@ -103,7 +112,11 @@ test('no screen or command names an engine that did not answer', () => {
   const assistant = read('desktop/ui/pages/ai-assistance.html');
   expect(assistant).not.toMatch(/id="modelBadge">DeepSeek</);
   expect(assistant).not.toMatch(/id="ctxModel">DeepSeek</);
-  expect(assistant).toMatch(/CF\.engineNoteHTML\(/);
+  // the owner asked for no "Answered by" line under each answer: the answer shows its
+  // sources, and the engine that answered is reported in the session panel instead
+  expect(assistant).not.toMatch(/CF\.engineNoteHTML\(/);
+  expect(assistant).toMatch(/CF\.referenceNoteHTML\(body\)/);
+  expect(assistant).toMatch(/function updateModel\(body\)\{ var nice=CF\.engineShort\(body\), full=CF\.engineLabel\(body\);/);
   expect(read('desktop/ui/scripts/cf-header.js')).not.toMatch(/DeepSeek-V3<\/span>/);
   expect(read('desktop/ui/pages/agent-core.html')).toMatch(/CF\.engineLabel\(o\.body\)/);
   // and the backend no longer calls anything "ZySec"

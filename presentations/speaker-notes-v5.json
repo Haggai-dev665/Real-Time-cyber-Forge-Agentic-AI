@@ -1,0 +1,77 @@
+[
+  {
+    "slide": 1,
+    "v3_source": 1,
+    "notes": "Good morning. This is CyberForge, a real-time agentic AI system for web threat detection and user protection, supervised by Professor Onabid Mathias Akong. This fifteen-slide defence follows the requested eight-part guide. The dissertation's June 2026 title information is retained; implementation and training evidence has been updated through 23 October 2026. The exact V3 template, fonts and native animation sequences are retained."
+  },
+  {
+    "slide": 2,
+    "v3_source": 2,
+    "notes": "The scope is URL and web-context security. Specialist analyses supply evidence to an aggregator and Reporter; this is not a formal consensus protocol and does not guarantee protection. Current implementation adds a fine-tuned Qwen assistant, with reviewed source links on covered security questions. Kernel, firmware and enterprise lateral movement are outside the evaluated scope."
+  },
+  {
+    "slide": 3,
+    "v3_source": 3,
+    "notes": "The first problem is false alarms and their effect on trust. The early development offset is a historical debugging example, not a current defect. The second problem is inspectable explanations: a probability alone does not show sources or evidence. The third is integrating detection, state, failures and cross-device workflows. This is the motivation for this project, not a claim that no competing open-source system exists."
+  },
+  {
+    "slide": 4,
+    "v3_source": 4,
+    "notes": "The general question and four specific questions are retained from the thesis: decomposition, integration, aggregation, and historical context. A smallest-agent-set comparison and a controlled memory ablation have not been completed, so those research questions are not claimed to be conclusively answered."
+  },
+  {
+    "slide": 5,
+    "v3_source": 5,
+    "notes": "The general objective is to design, implement and evaluate CyberForge end to end. The specific objectives map to the four research questions. Implementation evidence does not by itself prove optimality or superiority. CLI and MCP are scoped interfaces, not a certified complete autonomous AI CLI or an unrestricted agent server."
+  },
+  {
+    "slide": 6,
+    "v3_source": 6,
+    "notes": "This is V3's animated literature timeline. Rules and URL features lead to learned representations and agent workflows. Hu et al. (2021), LoRA, is added to explain the parameter-efficient Qwen update: https://arxiv.org/abs/2106.09685. Devlin et al. (2019) supports the pretrained BERT category; Yao et al. (2023) is conceptual agent-workflow background. CyberForge uses a staged DAG, not a claim to implement every ReAct feature. The research gap is inspectable integration with transparent failure and source states."
+  },
+  {
+    "slide": 7,
+    "v3_source": 8,
+    "notes": "Four layers remain: client, native/backend control, inference, and persistence/intelligence. The desktop calls authenticated Node/Express routes, which call the Hugging Face FastAPI Space. Covered factual chat uses the pinned Qwen V2 GGUF plus the current-question reference retriever and constrained passage selection. Training runs in separate Hugging Face Jobs on an L4; the inference Space remains cpu-basic. MongoDB, selected Appwrite integration, local storage and AlienVault OTX have distinct roles. This architecture diagram does not claim all clients have equivalent acceptance coverage."
+  },
+  {
+    "slide": 8,
+    "v3_source": 9,
+    "notes": "Eight specialist analyses plus a Reporter retain the three-stage DAG: URL classification, domain heuristic, page retrieval and memory; then IOC extraction, behaviour rules and MITRE mapping; then threat intelligence enrichment. The current ReportAgent uses a weighted evidence sum, not the thesis's historical 0.6 mean plus 0.4 maximum formula. Missing services and coverage are explicit. The Qwen assistant route is separate from the detector pipeline; training the chat model is not evidence of better URL classification."
+  },
+  {
+    "slide": 9,
+    "v3_source": 10,
+    "notes": "Materials and current desktop state: Tauri 2/Rust with HTML/CSS/JavaScript, Node.js 24/Express and FastAPI; llama-cpp-python 0.3.36 serves Q4_K_M. Fourteen sidebar destinations are grouped as Workspace (Overview, Devices, Agents, AI Assistant), Security (Analyze, Alerts & Incidents, Protection, Reports), Explore (Browser Activity, Threat Intelligence), and Diagnostics (Local runtime, Event stream, Model capabilities, Memory), with separate settings panels. Header/footer controls use real backend/session/stream/model state, including unavailable and unknown states. Qwen is the default authenticated backend chat provider; optional direct DeepSeek requires an explicit environment setting. References and engine labels persist in saved conversations. CLI/MCP expose limited shared Rust operations and grant-scoped stdio tools. The installed application was not replaced and a signed-in native desktop acceptance session was not driven."
+  },
+  {
+    "slide": 10,
+    "v3_source": 12,
+    "notes": "The diagram separates four learning categories. Three supervised HistGradientBoosting URL classifiers cover phishing, malware-serving URLs and web attack payloads. A benign-only IsolationForest supplies anomaly signals. External pretrained BERT is not fine-tuned in this work. Qwen3.5-2B has supervised answer-token LoRA adaptation; rules, retrieval and memory do not update weights and there is no reinforcement learning. Initial SFT used 5,417 train / 251 validation / 487 test examples, two epochs and 678 L4 steps; validation loss was 2.623355 to 0.067666. V2 starts from that adapter and uses 2,462 train / 273 validation / 487 retained test examples, including balanced replay and reviewed reference instructions. The V2 recipe is rank 16, alpha 32, dropout 0.05, learning rate 0.00002, microbatch 2 with accumulation 8 (effective 16), max sequence 1,024 and 100 L4 steps. Only answer tokens contribute to the objective; base, vision and embedding weights remain frozen. Training took 412.6691 seconds, excluding environment setup and export. Adapter merge and Q4_K_M GGUF export are followed by evaluation of the actual quantized artifact. The different datasets mean the initial and V2 loss pairs are not a controlled cross-run accuracy comparison. Sources: ml-services/llm_finetune/V2_RELEASE.md, TRAINING_STATUS.md; Hugging Face job 6adaa7a3c191903149a77fb1; pinned base Qwen/Qwen3.5-2B@15852e8c16360a2fea060d615a32b45270f8a8fc."
+  },
+  {
+    "slide": 11,
+    "v3_source": 13,
+    "notes": "The final factual suite has 39 original questions in two modes (78) plus 26 additional questions in two modes (52), making 130 cases. The 52 additional cases are included in the 130, not a separate total to add again. Eight negative retrieval controls check that irrelevant memories and URL scans do not trigger factual references. Regression uses 240 legacy items per model, with only 87 eligible risk-label items. The original 487-item test split is retained; the release comparison evaluates a 240-item subset. Thresholds were fixed, and actual answers were reviewed after automated checks. The first keyword gate passed but manual review rejected unsupported clauses. A whole-sentence guard follow-up then needed 56/130 reference replacements (43.08%), exceeding the unchanged 25% ceiling. The final policy 2026-10-23.3 retrieves up to two current-question references from a thirteen-topic reviewed primary-source library, then uses GBNF decoding to select reviewed full or concise passages. This serving-policy change is separate from the completed weight update. Both comparison models receive the same constraint. These are author-reviewed open-book tests, not an independent blinded benchmark. Sources: V2_RELEASE.md; final job https://huggingface.co/jobs/Che237/6adac192925af0e27d4f9a58; grammar documentation https://github.com/ggml-org/llama.cpp/blob/master/grammars/README.md."
+  },
+  {
+    "slide": 12,
+    "v3_source": 14,
+    "notes": "V2 training loss fell from 0.1366536319 to 0.0665373579 after 100 steps in 412.6691 training seconds. Loss measures fit to supplied answer targets, not factual accuracy. Final serving-policy comparison: BOTH previous and V2 adapters achieved 130/130 covered support/core-fact checks and correct retrieval, with 0/130 explicit reference substitutions and zero matched harmful-answer patterns. Thus the constrained factual score cannot be attributed to fine-tuning alone. Risk-label agreement was 83/87 (95.40%) for the previous adapter and 84/87 (96.55%) for V2: one additional agreed label, with three V2 disagreements remaining. All eight fixed acceptance checks passed; applicable analyst answers met the 80-word budget and applicable memory checks invented no hosts. Each model had 240 regression items. Of these, 214 outputs could be reused only where immutable weights, seed and the entire serialized prompt matched with no reference decoding; 26 changed inputs were regenerated. Mixed timings are not a new latency benchmark. The reviewed library has thirteen topics; uncovered questions use ordinary generation and can still hallucinate. The legacy uncovered XSS recommendation about parameterisation remains a known issue. The historical thesis URL set gave 284/300 correct (94.7%), TP137/TN147/FP3/FN13, mean4.05s; those raw logs were not reproduced and these are not current model results. Sources: V2_RELEASE.md and final constrained release report. Candidate weights Che237/cyberforge-qwen3.5-2b-v2-GGUF@494483e9a85362b5d0bd596f9040bbc0848c860a."
+  },
+  {
+    "slide": 13,
+    "v3_source": 15,
+    "notes": "These bars show pass counts within different verification suites; they do not estimate end-user accuracy or prove all desktop workflows. Fourteen Python grounding/contract checks and twenty-nine focused backend/source/rendering checks passed; the earlier full backend suite passed950. Three real backend ML-client calls (CSRF, MFA fatigue, Heartbleed) passed against the pinned V2; observed generation times14.906,14.107,20.298seconds are just three observations, not a latency SLA. Both /api/v2/security-chat and /api/v2/chat passed live provenance checks. General questions correctly return confidence/risk_score null and risk_level unknown. Space /health showed the pinned model loaded with loading false/error null; Space source f79b9e8cd3c2f0fb98851789ca1124c3ce4ee930 and Heroku v53 commit a89fc37f2d327c68346ad1603ebfe39e4e317b09. This records the saved release checks, not a new live availability probe today. Rust offline check/build and the focused Chromium assistant fixture passed; the old full-navigation assertion is stale and not claimed passing. Debug desktop build is available; installer replacement and a signed-in native desktop acceptance session remain undone. CLI and grant-scoped MCP are limited, not a completed unrestricted autonomous AI product."
+  },
+  {
+    "slide": 14,
+    "v3_source": 18,
+    "notes": "The contribution is an integrated evidence-labelled web-security workflow and a fine-tuned Qwen assistant with source-constrained covered answers. The old detector benchmark is distinct: historical284/300 correct, not re-run here; 4.05seconds missed a strict4.00second warm target. Current covered factual checks130/130 come from reviewed passages and grammar under both models, not general model accuracy. V2 risk agreement84/87 differs by only one item from the previous adapter, without an independent significance claim. The remaining work is independent blind evaluation, ablations, broader source coverage, uncovered-answer correction, and signed-in native desktop/installer acceptance. No claim of universal protection, complete autonomous CLI/MCP, or production-wide reliability is made."
+  },
+  {
+    "slide": 15,
+    "v3_source": 20,
+    "notes": "Thank you. Questions and discussion. V3's original animated references roll and template/photo credits are retained. Added technical references include Hu et al.(2021), LoRA; the Qwen3.5-2B model card; Hugging Face Jobs documentation; and llama.cpp GBNF grammars. Local evidence is ml-services/llm_finetune/V2_RELEASE.md, TRAINING_STATUS.md and MODEL_CARD.md. This V5 uses the original V3 embedded Oswald/Titillium Web fonts, rich animation timelines and Morph transitions. Full immutable revisions and evaluation caveats are in these notes and the release records."
+  }
+]

@@ -16,6 +16,7 @@
     "allow-auth-is-authenticated",
     "allow-credential-storage-status",
     "allow-stream-status",
+    "allow-stream-history",
     "allow-get-backend-url",
     "allow-cli-status",
     "allow-mcp-grants",
@@ -47,11 +48,15 @@
     "allow-memory-list",
     "allow-memory-sync",
     "allow-ml-security-chat",
+    "allow-ml-security-chat-stream",
+    "allow-agents-analyze-stream",
     "allow-ml-classify-url",
     "allow-ml-detect-dga",
     "allow-ml-ioc-scan",
     "allow-ml-url-enrich",
     "allow-ml-status",
+    "allow-local-model-status",
+    "allow-prepare-local-models",
     "allow-console-snapshot",
     "allow-set-hf-token",
     "allow-hf-token-status",
@@ -98,6 +103,10 @@
     "allow-privacy-get",
     "allow-privacy-set",
     "allow-privacy-clear-history",
-    "allow-privacy-clear-memory"
+    "allow-privacy-clear-memory",
+    "allow-scan-file",
+    "allow-live-browse-start",
+    "allow-live-browse-stop",
+    "allow-live-browse-recent"
   ]
 }

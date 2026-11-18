@@ -54,6 +54,20 @@ const isInert = html => (html.match(/<[a-z][^>]*>/gi) || [])
   .map(tag => tag.replace(/"[^"]*"|'[^']*'/g, '""'))
   .every(tag => !/^<(img|svg|script|iframe)\b/i.test(tag) && !/\son[a-z]+\s*=/i.test(tag));
 
+test('assistant reference links admit only reviewed HTTPS hosts and escape titles', () => {
+  const context = vm.createContext({ CF: { esc: appEscaper() }, URL });
+  const source = read('scripts/cyberforge-shared.js').match(/CF\.referenceNoteHTML = function\(body\)\{[\s\S]*?\n\};/)[0];
+  vm.runInContext(source, context);
+  const render = context.CF.referenceNoteHTML;
+  expect(render({ references: [{ url: 'javascript:alert(1)', title: 'bad' }] })).toBe('');
+  expect(render({ references: [{ url: 'https://attack.mitre.org.evil.example/', title: 'bad' }] })).toBe('');
+  expect(render({ references: [{ url: 'https://user:secret@attack.mitre.org/', title: 'bad' }] })).toBe('');
+  const result = render({ references: [{ url: 'https://attack.mitre.org/techniques/T1621/', title: '<script>alert(1)</script>' }] });
+  expect(result).toContain('rel="noopener noreferrer"');
+  expect(result).toContain('&lt;script&gt;');
+  expect(isInert(result)).toBe(true);
+});
+
 describe('the content policy', () => {
   const csp = JSON.parse(fs.readFileSync(path.join(desktop, 'src-tauri/tauri.conf.json'), 'utf8')).app.security.csp;
   const directive = name => (csp.split(';').map(part => part.trim()).find(part => part.startsWith(`${name} `)) || '').split(/\s+/).slice(1);
@@ -111,7 +125,10 @@ describe('outside text is rendered as text', () => {
     const html = mdToHtml('See [the report](https://example.com/"onmouseover="alert(1)) and <img src=x onerror=alert(1)>');
     expect(html).toContain('href="https://example.com/&quot;onmouseover=&quot;alert(1"');
     expect(isInert(html)).toBe(true);
-    expect(mdToHtml('**bold** and `code`')).toBe('<div><b>bold</b> and <code>code</code></div>');
+    expect(mdToHtml('**bold** and `code`')).toBe('<p><b>bold</b> and <code>code</code></p>');
+    // lines of one paragraph join; a bold-only line is a subheading; an injected tag stays text there too
+    expect(mdToHtml('one\ntwo\n\n**Signs**\n- a')).toBe('<p>one two</p><div class="md-sub">Signs</div><ul><li>a</li></ul>');
+    expect(isInert(mdToHtml('**<img src=x onerror=alert(1)>**'))).toBe(true);
   });
 });
 

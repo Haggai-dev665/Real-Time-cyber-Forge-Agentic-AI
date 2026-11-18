@@ -4,3 +4,8 @@ runs/
 eval*/
 *.gguf
 llama.cpp/
+!README.md
+!MODEL_CARD.md
+!TRAINING_STATUS.md
+!EVALUATION_REVIEW.md
+!V2_RELEASE.md

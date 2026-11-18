@@ -1,7 +1,7 @@
 //! Shared application state for the CyberForge console.
 //!
-//! Currently this only tracks the authenticated session. Auth is the single
-//! piece of the app wired to the backend; everything else renders statically.
+//! Session, native telemetry caches and the latest real scan result, shared by
+//! commands, background services and desktop UI surfaces.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

@@ -1,0 +1,10420 @@
+[
+  {
+    "source_slide": 1,
+    "texts": [
+      {
+        "id": 3,
+        "name": "Fade edge",
+        "text": "",
+        "xywh": [
+          11.6,
+          0.0,
+          1.6,
+          11.25
+        ]
+      },
+      {
+        "id": 4,
+        "name": "Title panel light",
+        "text": "",
+        "xywh": [
+          0.9,
+          2.35,
+          11.6,
+          5.6
+        ]
+      },
+      {
+        "id": 5,
+        "name": "Title panel",
+        "text": "",
+        "xywh": [
+          0.9,
+          2.35,
+          11.6,
+          5.6
+        ]
+      },
+      {
+        "id": 8,
+        "name": "Institution 3",
+        "text": "THE UNIVERSITY OF BAMENDA\nCollege of Technology  ·  Department of Computer Engineering",
+        "xywh": [
+          2.25,
+          0.72,
+          8.5,
+          1.0
+        ]
+      },
+      {
+        "id": 9,
+        "name": "Kicker 4",
+        "text": "MASTER'S DISSERTATION DEFENCE",
+        "xywh": [
+          1.65,
+          2.85,
+          10.2,
+          0.45
+        ]
+      },
+      {
+        "id": 10,
+        "name": "Deck title 5",
+        "text": "CYBERFORGE",
+        "xywh": [
+          1.55,
+          3.25,
+          10.4,
+          1.9
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Deck subtitle 6",
+        "text": "A real-time agentic AI system for web threat detection and user protection",
+        "xywh": [
+          1.65,
+          5.2,
+          10.2,
+          1.3
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Rule 7",
+        "text": "",
+        "xywh": [
+          1.65,
+          6.75,
+          1.2,
+          0.09
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Candidate 8",
+        "text": "CHE HAGGAI NGHA KANG  ·  UBA24PP134",
+        "xywh": [
+          1.65,
+          6.95,
+          10.0,
+          0.6
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Supervisor 9",
+        "text": "Supervisor: Prof. Onabid Mathias Akong, Associate Professor\nMaster's in Computer Engineering — Information Technology and Cyber Security  ·  June 2026",
+        "xywh": [
+          0.95,
+          8.45,
+          10.8,
+          1.5
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 2,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          17.68,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          17.24,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          16.8,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          16.36,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.92,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "01 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 10",
+        "text": "01  ·  BRIEF INTRODUCTION",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 11",
+        "text": "BRIEF INTRODUCTION",
+        "xywh": [
+          1.1,
+          0.92,
+          11.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 12",
+        "text": "Why web-threat detection needs more than one model",
+        "xywh": [
+          1.1,
+          2.0,
+          11.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §1.1 Background of the Study",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "02",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Point n 13",
+        "text": "01",
+        "xywh": [
+          1.1,
+          2.79,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Point 14",
+        "text": "THE BROWSER IS THE ATTACK SURFACE\nPhishing, drive-by downloads, credential theft and malicious ads, as the boundary moved from firewall to browser (Provos et al., 2007; Khonji et al., 2013).",
+        "xywh": [
+          2.15,
+          2.85,
+          9.9,
+          1.75
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Point n 15",
+        "text": "02",
+        "xywh": [
+          1.1,
+          4.65,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Point 16",
+        "text": "SIGNATURES FALL BEHIND\nFast-changing domains, hidden payloads and short-lived infrastructure defeat signature-based tools.",
+        "xywh": [
+          2.15,
+          4.71,
+          9.9,
+          1.75
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Point n 17",
+        "text": "03",
+        "xywh": [
+          1.1,
+          6.51,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Point 18",
+        "text": "DETECTION GREW SMARTER\nMachine learning, then deep learning and Transformers that read URLs in context (Devlin et al., 2019).",
+        "xywh": [
+          2.15,
+          6.57,
+          9.9,
+          1.75
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Point n 19",
+        "text": "04",
+        "xywh": [
+          1.1,
+          8.37,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Point 20",
+        "text": "FROM ONE MODEL TO AGENTS\nSpecialised agents for detection, extraction, analysis and reporting, reasoning step by step like analysts (Yao et al., 2023).",
+        "xywh": [
+          2.15,
+          8.43,
+          9.9,
+          1.75
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Study light",
+        "text": "",
+        "xywh": [
+          12.75,
+          5.75,
+          6.15,
+          4.6
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Study",
+        "text": "",
+        "xywh": [
+          12.75,
+          5.75,
+          6.15,
+          4.6
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Study label",
+        "text": "THE PRESENT STUDY",
+        "xywh": [
+          13.15,
+          6.0,
+          5.4,
+          0.42
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Study title",
+        "text": "CYBERFORGE",
+        "xywh": [
+          13.15,
+          6.4,
+          5.4,
+          0.85
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Study body",
+        "text": "A multi-platform, agent-based system that analyses URLs in real time and protects users while they browse. Specialised agents classify the URL, analyse the domain, inspect behaviour, look up threat intelligence and map attacker techniques, then agree one verdict.",
+        "xywh": [
+          13.15,
+          7.3,
+          5.45,
+          2.9
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 3,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          17.68,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          17.24,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          16.8,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          16.36,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "02 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 22",
+        "text": "02  ·  PROBLEM STATEMENT",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 23",
+        "text": "PROBLEM STATEMENT",
+        "xywh": [
+          1.1,
+          0.92,
+          17.8,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 24",
+        "text": "Three persistent problems limit AI threat detection for ordinary users and small teams",
+        "xywh": [
+          1.1,
+          2.0,
+          17.8,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §1.2 Problem Statement",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "03",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          4.15,
+          5.6
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          4.15,
+          5.6
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Card num",
+        "text": "01",
+        "xywh": [
+          1.42,
+          3.07,
+          3.51,
+          0.8
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Card title",
+        "text": "TOO MANY FALSE ALARMS",
+        "xywh": [
+          1.42,
+          3.87,
+          3.51,
+          0.996
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Card body",
+        "text": "Single-model URL classifiers are prone to false positives. An early CyberForge heuristic rated every URL, google.com included, \"medium risk\" because of a +0.5 offset. Alert fatigue makes users ignore real threats.",
+        "xywh": [
+          1.42,
+          4.906,
+          3.51,
+          3.284
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          5.55,
+          2.85,
+          4.15,
+          5.6
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          5.55,
+          2.85,
+          4.15,
+          5.6
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Card num",
+        "text": "02",
+        "xywh": [
+          5.87,
+          3.07,
+          3.51,
+          0.8
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Card title",
+        "text": "A NUMBER, NOT A STORY",
+        "xywh": [
+          5.87,
+          3.87,
+          3.51,
+          0.996
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Card body",
+        "text": "A classifier gives a probability, but cannot list the indicators of compromise on the page, map script activity to a MITRE technique, or link the domain to earlier threat reports.",
+        "xywh": [
+          5.87,
+          4.906,
+          3.51,
+          3.284
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          10.0,
+          2.85,
+          4.15,
+          5.6
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          10.0,
+          2.85,
+          4.15,
+          5.6
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Card num",
+        "text": "03",
+        "xywh": [
+          10.32,
+          3.07,
+          3.51,
+          0.8
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Card title",
+        "text": "NO OPEN, CONNECTED SYSTEM",
+        "xywh": [
+          10.32,
+          3.87,
+          3.51,
+          0.996
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Card body",
+        "text": "No widely deployed open system fans one browser event out to specialised analysers, keeps the result, reuses past visits and shows it on desktop and mobile. SOAR does, at enterprise cost.",
+        "xywh": [
+          10.32,
+          4.906,
+          3.51,
+          3.284
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Answer light",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.8,
+          17.8,
+          1.45
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Answer",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.8,
+          17.8,
+          1.45
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Answer text",
+        "text": "CyberForge answers with specialist analysis, inspectable evidence and controlled sharing of results",
+        "xywh": [
+          1.7,
+          8.8,
+          16.6,
+          1.45
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 4,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          17.68,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          17.24,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          16.8,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "03 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 29",
+        "text": "03  ·  RESEARCH QUESTIONS",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 30",
+        "text": "RESEARCH QUESTIONS",
+        "xywh": [
+          1.1,
+          0.92,
+          17.8,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Source",
+        "text": "Thesis §1.3 Research Questions",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Page",
+        "text": "04",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 16,
+        "name": "GRQ light",
+        "text": "",
+        "xywh": [
+          6.1,
+          2.3,
+          12.8,
+          2.45
+        ]
+      },
+      {
+        "id": 17,
+        "name": "GRQ",
+        "text": "",
+        "xywh": [
+          6.1,
+          2.3,
+          12.8,
+          2.45
+        ]
+      },
+      {
+        "id": 18,
+        "name": "GRQ label",
+        "text": "GENERAL QUESTION",
+        "xywh": [
+          6.55,
+          2.52,
+          6.0,
+          0.4
+        ]
+      },
+      {
+        "id": 19,
+        "name": "GRQ text",
+        "text": "How can a multi-agent AI system, organised as a network of specialised analysers, be designed to provide real-time and explainable threat intelligence and protection for URLs and web resources across different platforms?",
+        "xywh": [
+          6.55,
+          2.92,
+          11.9,
+          1.75
+        ]
+      },
+      {
+        "id": 21,
+        "name": "RQ n 32",
+        "text": "RQ1",
+        "xywh": [
+          6.1,
+          5.05,
+          1.3,
+          0.9
+        ]
+      },
+      {
+        "id": 22,
+        "name": "RQ key 33",
+        "text": "DECOMPOSITION",
+        "xywh": [
+          7.45,
+          5.1,
+          3.0,
+          0.7
+        ]
+      },
+      {
+        "id": 23,
+        "name": "RQ text 34",
+        "text": "How can URL analysis be divided among different AI agents, and what is the smallest set of agents needed for a reliable threat assessment?",
+        "xywh": [
+          10.55,
+          5.07,
+          8.35,
+          1.25
+        ]
+      },
+      {
+        "id": 25,
+        "name": "RQ n 36",
+        "text": "RQ2",
+        "xywh": [
+          6.1,
+          6.41,
+          1.3,
+          0.9
+        ]
+      },
+      {
+        "id": 26,
+        "name": "RQ key 37",
+        "text": "INTEGRATION",
+        "xywh": [
+          7.45,
+          6.46,
+          3.0,
+          0.7
+        ]
+      },
+      {
+        "id": 27,
+        "name": "RQ text 38",
+        "text": "How can URL classification, behavioural analysis, IOC extraction, MITRE ATT&CK mapping and threat-intelligence lookup be combined into one consistent, accurate system?",
+        "xywh": [
+          10.55,
+          6.43,
+          8.35,
+          1.25
+        ]
+      },
+      {
+        "id": 29,
+        "name": "RQ n 40",
+        "text": "RQ3",
+        "xywh": [
+          6.1,
+          7.77,
+          1.3,
+          0.9
+        ]
+      },
+      {
+        "id": 30,
+        "name": "RQ key 41",
+        "text": "AGGREGATION",
+        "xywh": [
+          7.45,
+          7.82,
+          3.0,
+          0.7
+        ]
+      },
+      {
+        "id": 31,
+        "name": "RQ text 42",
+        "text": "What method can combine the agents' results to reduce false alarms while still identifying serious threats when strong evidence is available?",
+        "xywh": [
+          10.55,
+          7.79,
+          8.35,
+          1.25
+        ]
+      },
+      {
+        "id": 33,
+        "name": "RQ n 44",
+        "text": "RQ4",
+        "xywh": [
+          6.1,
+          9.13,
+          1.3,
+          0.9
+        ]
+      },
+      {
+        "id": 34,
+        "name": "RQ key 45",
+        "text": "HISTORICAL CONTEXT",
+        "xywh": [
+          7.45,
+          9.18,
+          3.0,
+          0.7
+        ]
+      },
+      {
+        "id": 35,
+        "name": "RQ text 46",
+        "text": "How can historical browsing information improve detection, identify recurring malicious activity and strengthen protection over time?",
+        "xywh": [
+          10.55,
+          9.15,
+          8.35,
+          1.25
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 5,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          17.68,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          17.24,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "04 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 47",
+        "text": "04  ·  RESEARCH OBJECTIVES",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 48",
+        "text": "RESEARCH OBJECTIVES",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Source",
+        "text": "Thesis §1.4 Objectives of the Study",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Page",
+        "text": "05",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 16,
+        "name": "GO light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.3,
+          12.05,
+          2.4
+        ]
+      },
+      {
+        "id": 17,
+        "name": "GO",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.3,
+          12.05,
+          2.4
+        ]
+      },
+      {
+        "id": 18,
+        "name": "GO label",
+        "text": "GENERAL OBJECTIVE",
+        "xywh": [
+          1.55,
+          2.5,
+          6.0,
+          0.4
+        ]
+      },
+      {
+        "id": 19,
+        "name": "GO text",
+        "text": "Design, implement and evaluate a multi-platform AI-driven system that monitors URLs in real time, detects and explains threats with cooperating agents, and gives timely alerts and protective feedback while keeping historical context and threat records.",
+        "xywh": [
+          1.55,
+          2.9,
+          11.2,
+          1.75
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.0,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.0,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Card label",
+        "text": "OBJECTIVE 1  →  RQ1",
+        "xywh": [
+          1.42,
+          5.3,
+          5.21,
+          0.38
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Card title",
+        "text": "MULTI-AGENT FRAMEWORK",
+        "xywh": [
+          1.42,
+          5.72,
+          5.21,
+          0.496
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Card body",
+        "text": "Decompose URL analysis into coordinated tasks for reliable real-time assessments.",
+        "xywh": [
+          1.42,
+          6.256,
+          5.21,
+          0.984
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.3,
+          5.0,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.3,
+          5.0,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Card label",
+        "text": "OBJECTIVE 2  →  RQ2",
+        "xywh": [
+          7.62,
+          5.3,
+          5.21,
+          0.38
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Card title",
+        "text": "UNIFIED DETECTION",
+        "xywh": [
+          7.62,
+          5.72,
+          5.21,
+          0.496
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Card body",
+        "text": "Combine content, behaviour, structure and threat intelligence for accuracy and consistency.",
+        "xywh": [
+          7.62,
+          6.256,
+          5.21,
+          0.984
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.72,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.72,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Card label",
+        "text": "OBJECTIVE 3  →  RQ3",
+        "xywh": [
+          1.42,
+          8.02,
+          5.21,
+          0.38
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Card title",
+        "text": "DECISION AGGREGATION",
+        "xywh": [
+          1.42,
+          8.44,
+          5.21,
+          0.496
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Card body",
+        "text": "Cut false alerts while strong malicious indicators still trigger immediate warnings.",
+        "xywh": [
+          1.42,
+          8.976,
+          5.21,
+          0.984
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.3,
+          7.72,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.3,
+          7.72,
+          5.85,
+          2.5
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Card label",
+        "text": "OBJECTIVE 4  →  RQ4",
+        "xywh": [
+          7.62,
+          8.02,
+          5.21,
+          0.38
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Card title",
+        "text": "CONTEXTUAL INTELLIGENCE",
+        "xywh": [
+          7.62,
+          8.44,
+          5.21,
+          0.496
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Card body",
+        "text": "Link current URL behaviour with known attack patterns and external threat databases.",
+        "xywh": [
+          7.62,
+          8.976,
+          5.21,
+          0.984
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 6,
+    "texts": [
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis Chapter 2 (§2.2–2.9); full references on the final slide",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "06",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Stage light",
+        "text": "",
+        "xywh": [
+          1.1,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Stage",
+        "text": "",
+        "xywh": [
+          1.1,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Stage title",
+        "text": "RULES & FEATURES",
+        "xywh": [
+          1.3,
+          4.4,
+          3.825,
+          0.6
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Stage ref",
+        "text": "Mohammad et al., 2014",
+        "xywh": [
+          1.3,
+          4.96,
+          3.825,
+          0.45
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Stage light",
+        "text": "",
+        "xywh": [
+          5.625,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Stage",
+        "text": "",
+        "xywh": [
+          5.625,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Stage title",
+        "text": "CLASSICAL ML",
+        "xywh": [
+          5.825,
+          4.4,
+          3.825,
+          0.6
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Stage ref",
+        "text": "Sahingoz et al., 2019",
+        "xywh": [
+          5.825,
+          4.96,
+          3.825,
+          0.45
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Stage light",
+        "text": "",
+        "xywh": [
+          10.15,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Stage",
+        "text": "",
+        "xywh": [
+          10.15,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Stage title",
+        "text": "DEEP LEARNING",
+        "xywh": [
+          10.35,
+          4.4,
+          3.825,
+          0.6
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Stage ref",
+        "text": "Le et al., 2018; Devlin et al., 2019",
+        "xywh": [
+          10.35,
+          4.96,
+          3.825,
+          0.45
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Stage light",
+        "text": "",
+        "xywh": [
+          14.675,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Stage",
+        "text": "",
+        "xywh": [
+          14.675,
+          4.35,
+          4.225,
+          1.15
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Stage title",
+        "text": "HYBRID + AGENTS",
+        "xywh": [
+          14.875,
+          4.4,
+          3.825,
+          0.6
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Stage ref",
+        "text": "Khonji et al., 2013; Yao et al., 2023",
+        "xywh": [
+          14.875,
+          4.96,
+          3.825,
+          0.45
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Year",
+        "text": "2007",
+        "xywh": [
+          1.48,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Work author",
+        "text": "PROVOS ET AL.",
+        "xywh": [
+          1.4,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Work finding",
+        "text": "Drive-by downloads on 1.3% of sampled pages; predicted short-lived domains and polymorphic scripts.",
+        "xywh": [
+          1.4,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          5.02,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Year",
+        "text": "2010",
+        "xywh": [
+          5.4,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          5.02,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          5.02,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Work author",
+        "text": "SOMMER & PAXSON",
+        "xywh": [
+          5.32,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Work finding",
+        "text": "ML for intrusion detection must handle costly errors and be interpretable.",
+        "xywh": [
+          5.32,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          8.94,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Year",
+        "text": "2012",
+        "xywh": [
+          9.32,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          8.94,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          8.94,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Work author",
+        "text": "ANTONAKAKIS ET AL.",
+        "xywh": [
+          9.24,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Work finding",
+        "text": "DGA domains look random: high entropy, few vowels, digit mixing.",
+        "xywh": [
+          9.24,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          12.86,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Year",
+        "text": "2013",
+        "xywh": [
+          13.24,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 58,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          12.86,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          12.86,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 60,
+        "name": "Work author",
+        "text": "KHONJI ET AL.",
+        "xywh": [
+          13.16,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Work finding",
+        "text": "Survey of 70+ phishing works: combine lexical, content and reputation features.",
+        "xywh": [
+          13.16,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          16.78,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 63,
+        "name": "Year",
+        "text": "2016",
+        "xywh": [
+          17.16,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 64,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          16.78,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 65,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          16.78,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 66,
+        "name": "Work author",
+        "text": "LIAO ET AL.",
+        "xywh": [
+          17.08,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 67,
+        "name": "Work finding",
+        "text": "Automatic IOC discovery from open threat reports; STIX/TAXII sharing.",
+        "xywh": [
+          17.08,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 68,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          20.7,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 69,
+        "name": "Year",
+        "text": "2018",
+        "xywh": [
+          21.08,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 70,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          20.7,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 71,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          20.7,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 72,
+        "name": "Work author",
+        "text": "STROM ET AL.",
+        "xywh": [
+          21.0,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 73,
+        "name": "Work finding",
+        "text": "MITRE ATT&CK: a shared language for attacker tactics and techniques.",
+        "xywh": [
+          21.0,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 74,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          24.62,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 75,
+        "name": "Year",
+        "text": "2018",
+        "xywh": [
+          25.0,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 76,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          24.62,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 77,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          24.62,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 78,
+        "name": "Work author",
+        "text": "LE ET AL.",
+        "xywh": [
+          24.92,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 79,
+        "name": "Work finding",
+        "text": "URLNet learns URL representations directly from raw text.",
+        "xywh": [
+          24.92,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 80,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          28.54,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 81,
+        "name": "Year",
+        "text": "2019",
+        "xywh": [
+          28.92,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 82,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          28.54,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 83,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          28.54,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 84,
+        "name": "Work author",
+        "text": "DEVLIN ET AL.",
+        "xywh": [
+          28.84,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 85,
+        "name": "Work finding",
+        "text": "BERT: pre-train, then fine-tune; security-adapted variants followed.",
+        "xywh": [
+          28.84,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 86,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          32.46,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 87,
+        "name": "Year",
+        "text": "2023",
+        "xywh": [
+          32.84,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 88,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          32.46,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 89,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          32.46,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 90,
+        "name": "Work author",
+        "text": "YAO ET AL.",
+        "xywh": [
+          32.76,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 91,
+        "name": "Work finding",
+        "text": "ReAct: reason, act, observe, repeat — the loop behind agents.",
+        "xywh": [
+          32.76,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 92,
+        "name": "Year dot",
+        "text": "",
+        "xywh": [
+          36.38,
+          6.45,
+          0.25,
+          0.25
+        ]
+      },
+      {
+        "id": 93,
+        "name": "Year",
+        "text": "2023",
+        "xywh": [
+          36.76,
+          6.2,
+          1.6,
+          0.6
+        ]
+      },
+      {
+        "id": 94,
+        "name": "Work light",
+        "text": "",
+        "xywh": [
+          36.38,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 95,
+        "name": "Work",
+        "text": "",
+        "xywh": [
+          36.38,
+          7.05,
+          3.6,
+          3.3
+        ]
+      },
+      {
+        "id": 96,
+        "name": "Work author",
+        "text": "PARK ET AL.",
+        "xywh": [
+          36.68,
+          7.27,
+          3.0,
+          0.6
+        ]
+      },
+      {
+        "id": 97,
+        "name": "Work finding",
+        "text": "Generative Agents: memory keeps agents consistent over time.",
+        "xywh": [
+          36.68,
+          7.87,
+          3.0,
+          2.35
+        ]
+      },
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          17.68,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "05 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 54",
+        "text": "05  ·  BRIEF LITERATURE REVIEW  ·  1 OF 2",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 55",
+        "text": "BRIEF LITERATURE REVIEW",
+        "xywh": [
+          1.1,
+          0.92,
+          13.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 56",
+        "text": "From rules to learning to cooperating agents",
+        "xywh": [
+          1.1,
+          2.0,
+          13.0,
+          0.55
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 7,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          17.68,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "05 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 62",
+        "text": "05  ·  BRIEF LITERATURE REVIEW  ·  2 OF 2",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 63",
+        "text": "RESEARCH GAPS",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 64",
+        "text": "Five gaps between research ideas and working systems",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §2.10 Research Gaps",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "07",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Gap n 65",
+        "text": "G1",
+        "xywh": [
+          1.1,
+          2.85,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Gap 66",
+        "text": "FEW COMPLETE MULTI-AGENT SECURITY SYSTEMS\nFrameworks show the idea; few open systems apply it end to end.",
+        "xywh": [
+          2.1,
+          2.85,
+          6.6,
+          1.45
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Answer light",
+        "text": "",
+        "xywh": [
+          8.85,
+          2.93,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Answer",
+        "text": "",
+        "xywh": [
+          8.85,
+          2.93,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Answer text",
+        "text": "A full working pipeline of connected agents",
+        "xywh": [
+          9.15,
+          2.93,
+          4.3,
+          1.12
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Gap n 68",
+        "text": "G2",
+        "xywh": [
+          1.1,
+          4.35,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Gap 69",
+        "text": "MODEL AND SERVICE FAILURE\nSystems rarely say when a model or service did not answer.",
+        "xywh": [
+          2.1,
+          4.35,
+          6.6,
+          1.45
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Answer light",
+        "text": "",
+        "xywh": [
+          8.85,
+          4.43,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Answer",
+        "text": "",
+        "xywh": [
+          8.85,
+          4.43,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Answer text",
+        "text": "Capability readiness, explicit unknown states",
+        "xywh": [
+          9.15,
+          4.43,
+          4.3,
+          1.12
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Gap n 71",
+        "text": "G3",
+        "xywh": [
+          1.1,
+          5.85,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Gap 72",
+        "text": "ACCURACY OVER REAL FALSE ALARMS\nLab scores hide how often safe sites are flagged (Sommer & Paxson, 2010).",
+        "xywh": [
+          2.1,
+          5.85,
+          6.6,
+          1.45
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Answer light",
+        "text": "",
+        "xywh": [
+          8.85,
+          5.93,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Answer",
+        "text": "",
+        "xywh": [
+          8.85,
+          5.93,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Answer text",
+        "text": "Multi-signal aggregation for few false alarms",
+        "xywh": [
+          9.15,
+          5.93,
+          4.3,
+          1.12
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Gap n 74",
+        "text": "G4",
+        "xywh": [
+          1.1,
+          7.35,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Gap 75",
+        "text": "HISTORICAL CONTEXT UNUSED\nPast observations are rarely reused later (Park et al., 2023).",
+        "xywh": [
+          2.1,
+          7.35,
+          6.6,
+          1.45
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Answer light",
+        "text": "",
+        "xywh": [
+          8.85,
+          7.43,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Answer",
+        "text": "",
+        "xywh": [
+          8.85,
+          7.43,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Answer text",
+        "text": "Memory supplies prior verdicts as context",
+        "xywh": [
+          9.15,
+          7.43,
+          4.3,
+          1.12
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Gap n 77",
+        "text": "G5",
+        "xywh": [
+          1.1,
+          8.85,
+          1.0,
+          0.8
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Gap 78",
+        "text": "HARD TO REPRODUCE\nPrivate data, closed systems, costly infrastructure.",
+        "xywh": [
+          2.1,
+          8.85,
+          6.6,
+          1.45
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Answer light",
+        "text": "",
+        "xywh": [
+          8.85,
+          8.93,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Answer",
+        "text": "",
+        "xywh": [
+          8.85,
+          8.93,
+          4.85,
+          1.12
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Answer text",
+        "text": "Public tools and modular, testable services",
+        "xywh": [
+          9.15,
+          8.93,
+          4.3,
+          1.12
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 8,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "06 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 80",
+        "text": "06  ·  METHODS AND MATERIALS USED  ·  1 OF 6",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 81",
+        "text": "SYSTEM ARCHITECTURE",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 82",
+        "text": "Four layers with a clear data flow",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §3.2 System Architecture, Figure 3.1",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "08",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Layer light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Layer",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Layer key bg",
+        "text": "",
+        "xywh": [
+          1.35,
+          3.1,
+          2.75,
+          1.22
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Layer key",
+        "text": "CLIENT",
+        "xywh": [
+          1.4,
+          3.1,
+          2.65,
+          1.22
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Layer text",
+        "text": "Tauri 2 desktop · React Native/Expo companion · scoped Rust CLI · grant-controlled MCP tools",
+        "xywh": [
+          4.35,
+          2.97,
+          5.3,
+          1.5
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Layer light",
+        "text": "",
+        "xywh": [
+          1.1,
+          4.75,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Layer",
+        "text": "",
+        "xywh": [
+          1.1,
+          4.75,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Layer key bg",
+        "text": "",
+        "xywh": [
+          1.35,
+          5.0,
+          2.75,
+          1.22
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Layer key",
+        "text": "NATIVE & BACKEND CONTROL",
+        "xywh": [
+          1.4,
+          5.0,
+          2.65,
+          1.22
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Layer text",
+        "text": "Shared Rust services, OS keyring, local ownership · Node.js 24/Express: authentication, workspaces, device and agent workflows",
+        "xywh": [
+          4.35,
+          4.87,
+          5.3,
+          1.5
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Layer light",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.65,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Layer",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.65,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Layer key bg",
+        "text": "",
+        "xywh": [
+          1.35,
+          6.9,
+          2.75,
+          1.22
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Layer key",
+        "text": "INFERENCE",
+        "xywh": [
+          1.4,
+          6.9,
+          2.65,
+          1.22
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Layer text",
+        "text": "FastAPI on Hugging Face Spaces: trained URL models, BERT, DGA rules, Qwen explanations, versioned contracts",
+        "xywh": [
+          4.35,
+          6.77,
+          5.3,
+          1.5
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Layer light",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.55,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Layer",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.55,
+          8.75,
+          1.72
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Layer key bg",
+        "text": "",
+        "xywh": [
+          1.35,
+          8.8,
+          2.75,
+          1.22
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Layer key",
+        "text": "PERSISTENCE & INTELLIGENCE",
+        "xywh": [
+          1.4,
+          8.8,
+          2.65,
+          1.22
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Layer text",
+        "text": "MongoDB records, selected Appwrite integrations, local stores and caches · AlienVault OTX, page fetching",
+        "xywh": [
+          4.35,
+          8.67,
+          5.3,
+          1.5
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Flow light",
+        "text": "",
+        "xywh": [
+          10.25,
+          2.85,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Flow",
+        "text": "",
+        "xywh": [
+          10.25,
+          2.85,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Flow text",
+        "text": "ADDRESS\nmanual, or a consented observation",
+        "xywh": [
+          10.5,
+          3.03,
+          3.4,
+          1.2
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Flow light",
+        "text": "",
+        "xywh": [
+          10.25,
+          4.75,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Flow",
+        "text": "",
+        "xywh": [
+          10.25,
+          4.75,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Flow text",
+        "text": "PRIVACY & SESSION CHECKS\nin the native layer",
+        "xywh": [
+          10.5,
+          4.93,
+          3.4,
+          1.2
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Flow light",
+        "text": "",
+        "xywh": [
+          10.25,
+          6.65,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Flow",
+        "text": "",
+        "xywh": [
+          10.25,
+          6.65,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Flow text",
+        "text": "BACKEND ROUTES\npick the analysis service",
+        "xywh": [
+          10.5,
+          6.83,
+          3.4,
+          1.2
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Flow light",
+        "text": "",
+        "xywh": [
+          10.25,
+          8.55,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Flow",
+        "text": "",
+        "xywh": [
+          10.25,
+          8.55,
+          3.9,
+          1.5
+        ]
+      },
+      {
+        "id": 58,
+        "name": "Flow text",
+        "text": "LABELLED RESULT\nwith coverage and failures",
+        "xywh": [
+          10.5,
+          8.73,
+          3.4,
+          1.2
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 9,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "06 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 94",
+        "text": "06  ·  METHODS AND MATERIALS USED  ·  2 OF 6",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 95",
+        "text": "EIGHT-AGENT PIPELINE",
+        "xywh": [
+          1.1,
+          0.92,
+          13.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 96",
+        "text": "A three-stage directed acyclic graph, then a Reporter",
+        "xywh": [
+          1.1,
+          2.0,
+          13.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §3.8, Table 3.1; historical blend Eq. 3.1",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "09",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Stage head light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.9,
+          4.25,
+          1.25
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Stage head",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.9,
+          4.25,
+          1.25
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Stage head text",
+        "text": "STAGE 1\nURL & context, in parallel",
+        "xywh": [
+          1.35,
+          2.95,
+          3.75,
+          1.15
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          1.1,
+          4.4,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          1.1,
+          4.4,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          1.32,
+          4.7,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Agent text",
+        "text": "URL CLASSIFIER\nBERT label + confidence",
+        "xywh": [
+          1.6,
+          4.5,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.76,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.76,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          1.32,
+          6.06,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Agent text",
+        "text": "DGA DETECTOR\nentropy, character patterns",
+        "xywh": [
+          1.6,
+          5.86,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.12,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.12,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          1.32,
+          7.42,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Agent text",
+        "text": "WEB SCRAPER\ncontent, scripts, headers",
+        "xywh": [
+          1.6,
+          7.22,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.48,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.48,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          1.32,
+          8.78,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Agent text",
+        "text": "MEMORY READER\npast visits and verdicts",
+        "xywh": [
+          1.6,
+          8.58,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Stage head light",
+        "text": "",
+        "xywh": [
+          5.77,
+          2.9,
+          4.25,
+          1.25
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Stage head",
+        "text": "",
+        "xywh": [
+          5.77,
+          2.9,
+          4.25,
+          1.25
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Stage head text",
+        "text": "STAGE 2\nonce the page is scraped",
+        "xywh": [
+          6.02,
+          2.95,
+          3.75,
+          1.15
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          5.77,
+          4.4,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          5.77,
+          4.4,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          5.99,
+          4.7,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Agent text",
+        "text": "IOC EXTRACTOR\n10 patterns: IPs, URLs, hashes, CVEs",
+        "xywh": [
+          6.27,
+          4.5,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          5.77,
+          5.76,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          5.77,
+          5.76,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          5.99,
+          6.06,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Agent text",
+        "text": "BEHAVIOURAL ANALYSER\neval/atob, hidden forms, trackers",
+        "xywh": [
+          6.27,
+          5.86,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          5.77,
+          7.12,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          5.77,
+          7.12,
+          4.25,
+          1.2
+        ]
+      },
+      {
+        "id": 58,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          5.99,
+          7.42,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Agent text",
+        "text": "MITRE MAPPER\n20 signals → ATT&CK",
+        "xywh": [
+          6.27,
+          7.22,
+          3.55,
+          1.05
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Stage head light",
+        "text": "",
+        "xywh": [
+          10.44,
+          2.9,
+          3.9,
+          1.25
+        ]
+      },
+      {
+        "id": 63,
+        "name": "Stage head",
+        "text": "",
+        "xywh": [
+          10.44,
+          2.9,
+          3.9,
+          1.25
+        ]
+      },
+      {
+        "id": 64,
+        "name": "Stage head text",
+        "text": "STAGE 3\nneeds the extracted IOCs",
+        "xywh": [
+          10.69,
+          2.95,
+          3.4,
+          1.15
+        ]
+      },
+      {
+        "id": 66,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          10.44,
+          4.4,
+          3.9,
+          1.2
+        ]
+      },
+      {
+        "id": 67,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          10.44,
+          4.4,
+          3.9,
+          1.2
+        ]
+      },
+      {
+        "id": 68,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          10.66,
+          4.7,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 69,
+        "name": "Agent text",
+        "text": "THREAT INTELLIGENCE\nAlienVault OTX reputation",
+        "xywh": [
+          10.94,
+          4.5,
+          3.2,
+          1.05
+        ]
+      },
+      {
+        "id": 72,
+        "name": "Stage head light",
+        "text": "",
+        "xywh": [
+          14.76,
+          2.9,
+          3.9,
+          1.25
+        ]
+      },
+      {
+        "id": 73,
+        "name": "Stage head",
+        "text": "",
+        "xywh": [
+          14.76,
+          2.9,
+          3.9,
+          1.25
+        ]
+      },
+      {
+        "id": 74,
+        "name": "Stage head text",
+        "text": "REPORTER\ncombines every result",
+        "xywh": [
+          15.01,
+          2.95,
+          3.4,
+          1.15
+        ]
+      },
+      {
+        "id": 76,
+        "name": "Agent light",
+        "text": "",
+        "xywh": [
+          14.76,
+          4.4,
+          3.9,
+          1.2
+        ]
+      },
+      {
+        "id": 77,
+        "name": "Agent",
+        "text": "",
+        "xywh": [
+          14.76,
+          4.4,
+          3.9,
+          1.2
+        ]
+      },
+      {
+        "id": 78,
+        "name": "Agent tick",
+        "text": "",
+        "xywh": [
+          14.98,
+          4.7,
+          0.1,
+          0.6
+        ]
+      },
+      {
+        "id": 79,
+        "name": "Agent text",
+        "text": "REPORTER AGENT\nrisk score, verdict, explanation, stored report",
+        "xywh": [
+          15.26,
+          4.5,
+          3.2,
+          1.05
+        ]
+      },
+      {
+        "id": 81,
+        "name": "Formula light",
+        "text": "",
+        "xywh": [
+          1.1,
+          9.55,
+          17.8,
+          0.9
+        ]
+      },
+      {
+        "id": 82,
+        "name": "Formula",
+        "text": "",
+        "xywh": [
+          1.1,
+          9.55,
+          17.8,
+          0.9
+        ]
+      },
+      {
+        "id": 83,
+        "name": "Formula text",
+        "text": "Historical blend (Eq. 3.1)   risk = 0.6 × mean agent score + 0.4 × maximum agent score   — one strong signal still raises the verdict",
+        "xywh": [
+          1.6,
+          9.55,
+          16.8,
+          0.9
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 10,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "06 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 114",
+        "text": "06  ·  METHODS AND MATERIALS USED  ·  3 OF 6",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 115",
+        "text": "MATERIALS",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 116",
+        "text": "Software, libraries, services, data and hardware",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §3.6 Materials; Appendix C.3",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "10",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Card label",
+        "text": "SOFTWARE",
+        "xywh": [
+          1.42,
+          3.15,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Card title",
+        "text": "TAURI 2 / RUST DESKTOP",
+        "xywh": [
+          1.42,
+          3.57,
+          5.71,
+          0.496
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Card body",
+        "text": "Node.js 24 + Express 4 backend · Python FastAPI on Hugging Face Spaces · React Native / Expo companion · Rust core, CLI and MCP",
+        "xywh": [
+          1.42,
+          4.106,
+          5.71,
+          1.634
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.8,
+          2.85,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.8,
+          2.85,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Card label",
+        "text": "KEY LIBRARIES",
+        "xywh": [
+          8.12,
+          3.15,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Card title",
+        "text": "TRANSFORMERS 4.40+",
+        "xywh": [
+          8.12,
+          3.57,
+          5.71,
+          0.496
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Card body",
+        "text": "scikit-learn 1.8.0 · torch 2.2+ · llama-cpp-python 0.3.36 · huggingface_hub · pandas, NumPy · axios · node-appwrite",
+        "xywh": [
+          8.12,
+          4.106,
+          5.71,
+          1.634
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.2,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.2,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Card label",
+        "text": "SERVICES",
+        "xywh": [
+          1.42,
+          6.5,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Card title",
+        "text": "HUGGING FACE SPACES",
+        "xywh": [
+          1.42,
+          6.92,
+          5.71,
+          0.496
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Card body",
+        "text": "MongoDB/Mongoose · Appwrite · AlienVault OTX · WebScrapper.live · Qwen3.5-2B GGUF via llama.cpp",
+        "xywh": [
+          1.42,
+          7.456,
+          5.71,
+          1.634
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.8,
+          6.2,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.8,
+          6.2,
+          6.35,
+          3.15
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Card label",
+        "text": "DATA & MODELS",
+        "xywh": [
+          8.12,
+          6.5,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Card title",
+        "text": "BERT MALWARE-URL-DETECT",
+        "xywh": [
+          8.12,
+          6.92,
+          5.71,
+          0.496
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Card body",
+        "text": "Qwen3.5-2B GGUF · MITRE ATT&CK v15 · OTX pulses · public phishing, malware-URL, Tranco top-1M and web-attack corpora",
+        "xywh": [
+          8.12,
+          7.456,
+          5.71,
+          1.634
+        ]
+      },
+      {
+        "id": 41,
+        "name": "HW light",
+        "text": "",
+        "xywh": [
+          1.1,
+          9.55,
+          13.05,
+          0.9
+        ]
+      },
+      {
+        "id": 42,
+        "name": "HW",
+        "text": "",
+        "xywh": [
+          1.1,
+          9.55,
+          13.05,
+          0.9
+        ]
+      },
+      {
+        "id": 43,
+        "name": "HW text",
+        "text": "Hardware   Original development: Apple-silicon MacBook, 16 GB RAM, macOS Sonoma 14.6",
+        "xywh": [
+          1.55,
+          9.55,
+          12.2,
+          0.9
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 11,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "06 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 122",
+        "text": "06  ·  METHODS AND MATERIALS USED  ·  4 OF 6",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 123",
+        "text": "DEVELOPMENT & CALIBRATION",
+        "xywh": [
+          1.1,
+          0.92,
+          13.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 124",
+        "text": "Seven deployable iterations, then calibration",
+        "xywh": [
+          1.1,
+          2.0,
+          13.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §3.7 Methodology; Appendix A",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "11",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 18,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          1.874,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 19,
+        "name": "It n",
+        "text": "1",
+        "xywh": [
+          1.874,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 20,
+        "name": "It title",
+        "text": "FOUNDATION",
+        "xywh": [
+          1.1,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 21,
+        "name": "It text",
+        "text": "repos, Heroku and Space, Appwrite, ML stub",
+        "xywh": [
+          1.12,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 23,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          4.443,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 24,
+        "name": "It n",
+        "text": "2",
+        "xywh": [
+          4.443,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 25,
+        "name": "It title",
+        "text": "SINGLE CLASSIFIER",
+        "xywh": [
+          3.669,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 26,
+        "name": "It text",
+        "text": "scraper → classifier → Gemini → alert",
+        "xywh": [
+          3.689,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 28,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          7.011,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 29,
+        "name": "It n",
+        "text": "3",
+        "xywh": [
+          7.011,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 30,
+        "name": "It title",
+        "text": "FALSE-POSITIVE FIX",
+        "xywh": [
+          6.237,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 31,
+        "name": "It text",
+        "text": "+0.5 offset removed; model consensus",
+        "xywh": [
+          6.257,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 33,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          9.58,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 34,
+        "name": "It n",
+        "text": "4",
+        "xywh": [
+          9.58,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 35,
+        "name": "It title",
+        "text": "SANDBOX",
+        "xywh": [
+          8.806,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 36,
+        "name": "It text",
+        "text": "IOC extractor, MITRE mapper, evidence locker",
+        "xywh": [
+          8.826,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 38,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          12.149,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 39,
+        "name": "It n",
+        "text": "5",
+        "xywh": [
+          12.149,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 40,
+        "name": "It title",
+        "text": "TRANSFORMERS",
+        "xywh": [
+          11.374,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 41,
+        "name": "It text",
+        "text": "BERT URL classifier, entropy DGA",
+        "xywh": [
+          11.394,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 43,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          14.717,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 44,
+        "name": "It n",
+        "text": "6",
+        "xywh": [
+          14.717,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 45,
+        "name": "It title",
+        "text": "AGENTIC DAG",
+        "xywh": [
+          13.943,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 46,
+        "name": "It text",
+        "text": "eight agents, memory, LLM fallback",
+        "xywh": [
+          13.963,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 48,
+        "name": "It dot",
+        "text": "",
+        "xywh": [
+          17.286,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 49,
+        "name": "It n",
+        "text": "7",
+        "xywh": [
+          17.286,
+          3.03,
+          0.84,
+          0.84
+        ]
+      },
+      {
+        "id": 50,
+        "name": "It title",
+        "text": "UI INTEGRATION",
+        "xywh": [
+          16.511,
+          4.05,
+          2.389,
+          0.62
+        ]
+      },
+      {
+        "id": 51,
+        "name": "It text",
+        "text": "desktop polling, agent grid, dashboard",
+        "xywh": [
+          16.531,
+          4.68,
+          2.349,
+          1.4
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.25,
+          5.7,
+          4.05
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.25,
+          5.7,
+          4.05
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Card label",
+        "text": "CALIBRATION 1",
+        "xywh": [
+          1.42,
+          6.55,
+          5.06,
+          0.38
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Card title",
+        "text": "RISK-SCORE CALIBRATION",
+        "xywh": [
+          1.42,
+          6.97,
+          5.06,
+          0.496
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Card body",
+        "text": "7 researcher-labelled URLs, from google.com to paypa1-secure-login.tk; the +0.5 offset removed and thresholds adjusted. A development check, not held-out evidence.",
+        "xywh": [
+          1.42,
+          7.506,
+          5.06,
+          2.534
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.15,
+          6.25,
+          5.7,
+          4.05
+        ]
+      },
+      {
+        "id": 60,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.15,
+          6.25,
+          5.7,
+          4.05
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Card label",
+        "text": "CALIBRATION 2",
+        "xywh": [
+          7.47,
+          6.55,
+          5.06,
+          0.38
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Card title",
+        "text": "DGA HEURISTIC CALIBRATION",
+        "xywh": [
+          7.47,
+          6.97,
+          5.06,
+          0.496
+        ]
+      },
+      {
+        "id": 63,
+        "name": "Card body",
+        "text": "30 legitimate and generated-looking domains; empirical threshold 0.45 on entropy and character patterns.",
+        "xywh": [
+          7.47,
+          7.506,
+          5.06,
+          2.534
+        ]
+      },
+      {
+        "id": 65,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          13.2,
+          6.25,
+          5.7,
+          4.05
+        ]
+      },
+      {
+        "id": 66,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          13.2,
+          6.25,
+          5.7,
+          4.05
+        ]
+      },
+      {
+        "id": 67,
+        "name": "Card label",
+        "text": "CALIBRATION 3",
+        "xywh": [
+          13.52,
+          6.55,
+          5.06,
+          0.38
+        ]
+      },
+      {
+        "id": 68,
+        "name": "Card title",
+        "text": "LLM FALLBACK VERIFICATION",
+        "xywh": [
+          13.52,
+          6.97,
+          5.06,
+          0.496
+        ]
+      },
+      {
+        "id": 69,
+        "name": "Card body",
+        "text": "Gemini exhaustion → Mistral fallback → rule-based response, each exercised in the prototype.",
+        "xywh": [
+          13.52,
+          7.506,
+          5.06,
+          2.534
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 12,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "06 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 136",
+        "text": "06  ·  METHODS AND MATERIALS USED  ·  5 OF 6",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 137",
+        "text": "LEARNING & TRAINING",
+        "xywh": [
+          1.1,
+          0.92,
+          13.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 138",
+        "text": "Four kinds of learning, five training phases",
+        "xywh": [
+          1.1,
+          2.0,
+          13.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis Appendix C.3–C.4; §2.3.3",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "12",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Card label",
+        "text": "SUPERVISED",
+        "xywh": [
+          1.42,
+          3.15,
+          3.547,
+          0.38
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Card title",
+        "text": "THREE GRADIENT-BOOSTED CLASSIFIERS",
+        "xywh": [
+          1.42,
+          3.57,
+          3.547,
+          0.858
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Card body",
+        "text": "Phishing, malware-serving URLs and web-attack payloads (SQLi/XSS), with scikit-learn.",
+        "xywh": [
+          1.42,
+          4.468,
+          3.547,
+          1.872
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          5.637,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          5.637,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Card label",
+        "text": "UNSUPERVISED",
+        "xywh": [
+          5.957,
+          3.15,
+          3.547,
+          0.38
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Card title",
+        "text": "ANOMALY DETECTION",
+        "xywh": [
+          5.957,
+          3.57,
+          3.547,
+          0.479
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Card body",
+        "text": "IsolationForest on benign URL features: 200 trees, contamination 0.02. Anomaly is not proof of harm.",
+        "xywh": [
+          5.957,
+          4.089,
+          3.547,
+          2.251
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          10.175,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          10.175,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Card label",
+        "text": "PRETRAINED",
+        "xywh": [
+          10.495,
+          3.15,
+          3.547,
+          0.38
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Card title",
+        "text": "BERT AND QWEN",
+        "xywh": [
+          10.495,
+          3.57,
+          3.547,
+          0.479
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Card body",
+        "text": "External BERT URL classifier; Qwen3.5-2B explanations through llama.cpp. Used, not fine-tuned.",
+        "xywh": [
+          10.495,
+          4.089,
+          3.547,
+          2.251
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          14.712,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          14.712,
+          2.85,
+          4.188,
+          3.75
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Card label",
+        "text": "RULES & RETRIEVAL",
+        "xywh": [
+          15.032,
+          3.15,
+          3.547,
+          0.38
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Card title",
+        "text": "HEURISTICS AND MEMORY",
+        "xywh": [
+          15.032,
+          3.57,
+          3.547,
+          0.479
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Card body",
+        "text": "Entropy DGA rules, regex IOC extraction, memory as context. No online weight updates.",
+        "xywh": [
+          15.032,
+          4.089,
+          3.547,
+          2.251
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Phase light",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Phase",
+        "text": "",
+        "xywh": [
+          1.1,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Phase n",
+        "text": "1",
+        "xywh": [
+          1.4,
+          7.05,
+          1.2,
+          0.95
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Phase title",
+        "text": "COLLECT & CLEAN",
+        "xywh": [
+          1.4,
+          8.0,
+          2.72,
+          0.62
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Phase text",
+        "text": "public corpora, normalise, de-duplicate",
+        "xywh": [
+          1.4,
+          8.62,
+          2.72,
+          1.55
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Phase light",
+        "text": "",
+        "xywh": [
+          4.72,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Phase",
+        "text": "",
+        "xywh": [
+          4.72,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Phase n",
+        "text": "2",
+        "xywh": [
+          5.02,
+          7.05,
+          1.2,
+          0.95
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Phase title",
+        "text": "FEATURES & SPLIT",
+        "xywh": [
+          5.02,
+          8.0,
+          2.72,
+          0.62
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Phase text",
+        "text": "shared features; domain-grouped 20% test, 10% thresholds",
+        "xywh": [
+          5.02,
+          8.62,
+          2.72,
+          1.55
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Phase light",
+        "text": "",
+        "xywh": [
+          8.34,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Phase",
+        "text": "",
+        "xywh": [
+          8.34,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Phase n",
+        "text": "3",
+        "xywh": [
+          8.64,
+          7.05,
+          1.2,
+          0.95
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Phase title",
+        "text": "FIT",
+        "xywh": [
+          8.64,
+          8.0,
+          2.72,
+          0.62
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Phase text",
+        "text": "≤300 iterations, learning rate 0.1, 31 leaves, seed 42",
+        "xywh": [
+          8.64,
+          8.62,
+          2.72,
+          1.55
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Phase light",
+        "text": "",
+        "xywh": [
+          11.96,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 60,
+        "name": "Phase",
+        "text": "",
+        "xywh": [
+          11.96,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Phase n",
+        "text": "4",
+        "xywh": [
+          12.26,
+          7.05,
+          1.2,
+          0.95
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Phase title",
+        "text": "THRESHOLDS",
+        "xywh": [
+          12.26,
+          8.0,
+          2.72,
+          0.62
+        ]
+      },
+      {
+        "id": 63,
+        "name": "Phase text",
+        "text": "at a 2% false-positive target, then held-out check",
+        "xywh": [
+          12.26,
+          8.62,
+          2.72,
+          1.55
+        ]
+      },
+      {
+        "id": 65,
+        "name": "Phase light",
+        "text": "",
+        "xywh": [
+          15.58,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 66,
+        "name": "Phase",
+        "text": "",
+        "xywh": [
+          15.58,
+          6.95,
+          3.32,
+          3.35
+        ]
+      },
+      {
+        "id": 67,
+        "name": "Phase n",
+        "text": "5",
+        "xywh": [
+          15.88,
+          7.05,
+          1.2,
+          0.95
+        ]
+      },
+      {
+        "id": 68,
+        "name": "Phase title",
+        "text": "PUBLISH",
+        "xywh": [
+          15.88,
+          8.0,
+          2.72,
+          0.62
+        ]
+      },
+      {
+        "id": 69,
+        "name": "Phase text",
+        "text": "only accepted models, with their metadata",
+        "xywh": [
+          15.88,
+          8.62,
+          2.72,
+          1.55
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 13,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          18.12,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "06 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 148",
+        "text": "06  ·  METHODS AND MATERIALS USED  ·  6 OF 6",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 149",
+        "text": "EVALUATION DESIGN",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 150",
+        "text": "300 URLs and four criteria set before testing",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §3.9 Evaluation Methodology; §4.3",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "13",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Set light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          5.6,
+          7.45
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Set",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          5.6,
+          7.45
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Big",
+        "text": "300",
+        "xywh": [
+          1.55,
+          2.95,
+          5.0,
+          1.85
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Big label",
+        "text": "URLS EVALUATED",
+        "xywh": [
+          1.55,
+          4.85,
+          5.0,
+          0.6
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Set label 152",
+        "text": "Benign websites",
+        "xywh": [
+          1.55,
+          5.8,
+          3.6,
+          0.45
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Set bar track 153",
+        "text": "",
+        "xywh": [
+          1.55,
+          6.3,
+          3.9,
+          0.34
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Set bar 154",
+        "text": "",
+        "xywh": [
+          1.55,
+          6.3,
+          3.9,
+          0.34
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Set value 155",
+        "text": "150",
+        "xywh": [
+          5.55,
+          6.16,
+          1.0,
+          0.55
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Set label 156",
+        "text": "Phishing websites",
+        "xywh": [
+          1.55,
+          7.0,
+          3.6,
+          0.45
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Set bar track 157",
+        "text": "",
+        "xywh": [
+          1.55,
+          7.5,
+          2.6,
+          0.34
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Set bar 158",
+        "text": "",
+        "xywh": [
+          1.55,
+          7.5,
+          2.6,
+          0.34
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Set value 159",
+        "text": "100",
+        "xywh": [
+          4.25,
+          7.36,
+          1.0,
+          0.55
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Set label 160",
+        "text": "Malware / DGA domains",
+        "xywh": [
+          1.55,
+          8.2,
+          3.6,
+          0.45
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Set bar track 161",
+        "text": "",
+        "xywh": [
+          1.55,
+          8.7,
+          1.3,
+          0.34
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Set bar 162",
+        "text": "",
+        "xywh": [
+          1.55,
+          8.7,
+          1.3,
+          0.34
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Set value 163",
+        "text": "50",
+        "xywh": [
+          2.95,
+          8.56,
+          1.0,
+          0.55
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Positive 164",
+        "text": "Positive class = the 150 harmful URLs",
+        "xywh": [
+          1.55,
+          9.45,
+          5.0,
+          0.6
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.1,
+          2.85,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.1,
+          2.85,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Card title",
+        "text": "FUNCTIONAL CORRECTNESS",
+        "xywh": [
+          7.42,
+          3.15,
+          6.41,
+          0.462
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Card body",
+        "text": "Every agent returns its documented shape; the Reporter matches the expected verdicts.",
+        "xywh": [
+          7.42,
+          3.652,
+          6.41,
+          0.658
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.1,
+          4.75,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.1,
+          4.75,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Card title",
+        "text": "FALSE-POSITIVE RATE",
+        "xywh": [
+          7.42,
+          5.05,
+          6.41,
+          0.462
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Card body",
+        "text": "Common benign sites (google.com, github.com, wikipedia.org…) judged clean or low risk 100% of the time.",
+        "xywh": [
+          7.42,
+          5.552,
+          6.41,
+          0.658
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.1,
+          6.65,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.1,
+          6.65,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Card title",
+        "text": "TRUE-POSITIVE COVERAGE",
+        "xywh": [
+          7.42,
+          6.95,
+          6.41,
+          0.462
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Card body",
+        "text": "Curated phishing URLs judged suspicious or malicious at least 80% of the time.",
+        "xywh": [
+          7.42,
+          7.452,
+          6.41,
+          0.658
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.1,
+          8.55,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.1,
+          8.55,
+          7.05,
+          1.72
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Card title",
+        "text": "END-TO-END LATENCY",
+        "xywh": [
+          7.42,
+          8.85,
+          6.41,
+          0.462
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Card body",
+        "text": "Mean over 100 requests: at most 10 s from a cold start, 4 s when warm.",
+        "xywh": [
+          7.42,
+          9.352,
+          6.41,
+          0.658
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 14,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          17.26,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "07 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 169",
+        "text": "07  ·  RESULTS  ·  1 OF 4",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 170",
+        "text": "DETECTION PERFORMANCE",
+        "xywh": [
+          1.1,
+          0.92,
+          13.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 171",
+        "text": "300-URL evaluation of the prototype",
+        "xywh": [
+          1.1,
+          2.0,
+          13.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis Tables 4.3 and 4.4 (historical prototype results)",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "14",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Metric light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Metric",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Metric value",
+        "text": "94.7%",
+        "xywh": [
+          1.2,
+          2.98,
+          2.517,
+          1.05
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Metric key",
+        "text": "ACCURACY",
+        "xywh": [
+          1.2,
+          4.0,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Metric text",
+        "text": "284 of 300 correct",
+        "xywh": [
+          1.2,
+          4.5,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Metric light",
+        "text": "",
+        "xywh": [
+          4.117,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Metric",
+        "text": "",
+        "xywh": [
+          4.117,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Metric value",
+        "text": "97.9%",
+        "xywh": [
+          4.217,
+          2.98,
+          2.517,
+          1.05
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Metric key",
+        "text": "PRECISION",
+        "xywh": [
+          4.217,
+          4.0,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Metric text",
+        "text": "alerts that were right",
+        "xywh": [
+          4.217,
+          4.5,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Metric light",
+        "text": "",
+        "xywh": [
+          7.133,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Metric",
+        "text": "",
+        "xywh": [
+          7.133,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Metric value",
+        "text": "91.3%",
+        "xywh": [
+          7.233,
+          2.98,
+          2.517,
+          1.05
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Metric key",
+        "text": "RECALL",
+        "xywh": [
+          7.233,
+          4.0,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Metric text",
+        "text": "harmful sites caught",
+        "xywh": [
+          7.233,
+          4.5,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Metric light",
+        "text": "",
+        "xywh": [
+          10.15,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Metric",
+        "text": "",
+        "xywh": [
+          10.15,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Metric value",
+        "text": "98.0%",
+        "xywh": [
+          10.25,
+          2.98,
+          2.517,
+          1.05
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Metric key",
+        "text": "SPECIFICITY",
+        "xywh": [
+          10.25,
+          4.0,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Metric text",
+        "text": "safe sites left alone",
+        "xywh": [
+          10.25,
+          4.5,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Metric light",
+        "text": "",
+        "xywh": [
+          13.167,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Metric",
+        "text": "",
+        "xywh": [
+          13.167,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Metric value",
+        "text": "94.5%",
+        "xywh": [
+          13.267,
+          2.98,
+          2.517,
+          1.05
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Metric key",
+        "text": "F1 SCORE",
+        "xywh": [
+          13.267,
+          4.0,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Metric text",
+        "text": "precision–recall balance",
+        "xywh": [
+          13.267,
+          4.5,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Metric light",
+        "text": "",
+        "xywh": [
+          16.183,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Metric",
+        "text": "",
+        "xywh": [
+          16.183,
+          2.85,
+          2.717,
+          2.45
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Metric value",
+        "text": "2.0%",
+        "xywh": [
+          16.283,
+          2.98,
+          2.517,
+          1.05
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Metric key",
+        "text": "FP RATE",
+        "xywh": [
+          16.283,
+          4.0,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Metric text",
+        "text": "3 of 150 benign",
+        "xywh": [
+          16.283,
+          4.5,
+          2.517,
+          0.55
+        ]
+      },
+      {
+        "id": 53,
+        "name": "CM label 178",
+        "text": "CONFUSION MATRIX",
+        "xywh": [
+          1.1,
+          5.7,
+          7.0,
+          0.45
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Cell light",
+        "text": "",
+        "xywh": [
+          3.0,
+          6.25,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Cell",
+        "text": "",
+        "xywh": [
+          3.0,
+          6.25,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Cell value",
+        "text": "137",
+        "xywh": [
+          3.0,
+          6.37,
+          2.8,
+          1.0
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Cell key",
+        "text": "True positives",
+        "xywh": [
+          3.0,
+          7.35,
+          2.8,
+          0.55
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Cell light",
+        "text": "",
+        "xywh": [
+          6.0,
+          6.25,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 60,
+        "name": "Cell",
+        "text": "",
+        "xywh": [
+          6.0,
+          6.25,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Cell value",
+        "text": "13",
+        "xywh": [
+          6.0,
+          6.37,
+          2.8,
+          1.0
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Cell key",
+        "text": "False negatives",
+        "xywh": [
+          6.0,
+          7.35,
+          2.8,
+          0.55
+        ]
+      },
+      {
+        "id": 64,
+        "name": "Cell light",
+        "text": "",
+        "xywh": [
+          3.0,
+          8.3,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 65,
+        "name": "Cell",
+        "text": "",
+        "xywh": [
+          3.0,
+          8.3,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 66,
+        "name": "Cell value",
+        "text": "3",
+        "xywh": [
+          3.0,
+          8.42,
+          2.8,
+          1.0
+        ]
+      },
+      {
+        "id": 67,
+        "name": "Cell key",
+        "text": "False positives",
+        "xywh": [
+          3.0,
+          9.4,
+          2.8,
+          0.55
+        ]
+      },
+      {
+        "id": 69,
+        "name": "Cell light",
+        "text": "",
+        "xywh": [
+          6.0,
+          8.3,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 70,
+        "name": "Cell",
+        "text": "",
+        "xywh": [
+          6.0,
+          8.3,
+          2.8,
+          1.85
+        ]
+      },
+      {
+        "id": 71,
+        "name": "Cell value",
+        "text": "147",
+        "xywh": [
+          6.0,
+          8.42,
+          2.8,
+          1.0
+        ]
+      },
+      {
+        "id": 72,
+        "name": "Cell key",
+        "text": "True negatives",
+        "xywh": [
+          6.0,
+          9.4,
+          2.8,
+          0.55
+        ]
+      },
+      {
+        "id": 74,
+        "name": "Axis 183",
+        "text": "Actual harmful",
+        "xywh": [
+          1.1,
+          6.65,
+          1.8,
+          1.0
+        ]
+      },
+      {
+        "id": 75,
+        "name": "Axis 184",
+        "text": "Actual benign",
+        "xywh": [
+          1.1,
+          8.7,
+          1.8,
+          1.0
+        ]
+      },
+      {
+        "id": 76,
+        "name": "Cat label 185",
+        "text": "DETECTION BY CATEGORY",
+        "xywh": [
+          9.5,
+          5.7,
+          7.0,
+          0.45
+        ]
+      },
+      {
+        "id": 77,
+        "name": "Cat name 186",
+        "text": "Safe (benign) websites    147 / 150",
+        "xywh": [
+          9.5,
+          6.3,
+          7.0,
+          0.5
+        ]
+      },
+      {
+        "id": 78,
+        "name": "Cat bar track 187",
+        "text": "",
+        "xywh": [
+          9.5,
+          6.9,
+          7.3,
+          0.4
+        ]
+      },
+      {
+        "id": 79,
+        "name": "Cat bar 188",
+        "text": "",
+        "xywh": [
+          9.5,
+          6.9,
+          7.154,
+          0.4
+        ]
+      },
+      {
+        "id": 80,
+        "name": "Cat pct 189",
+        "text": "98.0%",
+        "xywh": [
+          16.95,
+          6.72,
+          1.9,
+          0.7
+        ]
+      },
+      {
+        "id": 81,
+        "name": "Cat name 190",
+        "text": "Phishing websites    92 / 100",
+        "xywh": [
+          9.5,
+          7.65,
+          7.0,
+          0.5
+        ]
+      },
+      {
+        "id": 82,
+        "name": "Cat bar track 191",
+        "text": "",
+        "xywh": [
+          9.5,
+          8.25,
+          7.3,
+          0.4
+        ]
+      },
+      {
+        "id": 83,
+        "name": "Cat bar 192",
+        "text": "",
+        "xywh": [
+          9.5,
+          8.25,
+          6.716,
+          0.4
+        ]
+      },
+      {
+        "id": 84,
+        "name": "Cat pct 193",
+        "text": "92.0%",
+        "xywh": [
+          16.95,
+          8.07,
+          1.9,
+          0.7
+        ]
+      },
+      {
+        "id": 85,
+        "name": "Cat name 194",
+        "text": "Malware and DGA domains    45 / 50",
+        "xywh": [
+          9.5,
+          9.0,
+          7.0,
+          0.5
+        ]
+      },
+      {
+        "id": 86,
+        "name": "Cat bar track 195",
+        "text": "",
+        "xywh": [
+          9.5,
+          9.6,
+          7.3,
+          0.4
+        ]
+      },
+      {
+        "id": 87,
+        "name": "Cat bar 196",
+        "text": "",
+        "xywh": [
+          9.5,
+          9.6,
+          6.57,
+          0.4
+        ]
+      },
+      {
+        "id": 88,
+        "name": "Cat pct 197",
+        "text": "90.0%",
+        "xywh": [
+          16.95,
+          9.42,
+          1.9,
+          0.7
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 15,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          17.26,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "07 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 198",
+        "text": "07  ·  RESULTS  ·  2 OF 4",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 199",
+        "text": "PROCESSING SPEED",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 200",
+        "text": "Where the 4.05 seconds go",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis Tables 4.1 and 4.2 (historical prototype results)",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "15",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 16,
+        "name": "Speed label 201",
+        "text": "STAGE 1 · URL & CONTEXT",
+        "xywh": [
+          1.1,
+          2.95,
+          4.6,
+          0.55
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Speed bar track 202",
+        "text": "",
+        "xywh": [
+          5.8,
+          3.05,
+          5.4,
+          0.42
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Speed bar 203",
+        "text": "",
+        "xywh": [
+          5.8,
+          3.05,
+          3.279,
+          0.42
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Speed value 204",
+        "text": "850 ms   21%",
+        "xywh": [
+          11.35,
+          2.93,
+          2.8,
+          0.6
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Speed label 205",
+        "text": "STAGE 2 · CONTENT ANALYSIS",
+        "xywh": [
+          1.1,
+          4.0,
+          4.6,
+          0.55
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Speed bar track 206",
+        "text": "",
+        "xywh": [
+          5.8,
+          4.1,
+          5.4,
+          0.42
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Speed bar 207",
+        "text": "",
+        "xywh": [
+          5.8,
+          4.1,
+          4.629,
+          0.42
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Speed value 208",
+        "text": "1,200 ms   30%",
+        "xywh": [
+          11.35,
+          3.98,
+          2.8,
+          0.6
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Speed label 209",
+        "text": "STAGE 3 · THREAT INTELLIGENCE",
+        "xywh": [
+          1.1,
+          5.05,
+          4.6,
+          0.55
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Speed bar track 210",
+        "text": "",
+        "xywh": [
+          5.8,
+          5.15,
+          5.4,
+          0.42
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Speed bar 211",
+        "text": "",
+        "xywh": [
+          5.8,
+          5.15,
+          2.314,
+          0.42
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Speed value 212",
+        "text": "600 ms   15%",
+        "xywh": [
+          11.35,
+          5.03,
+          2.8,
+          0.6
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Speed label 213",
+        "text": "REPORTER · REPORT GENERATION",
+        "xywh": [
+          1.1,
+          6.1,
+          4.6,
+          0.55
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Speed bar track 214",
+        "text": "",
+        "xywh": [
+          5.8,
+          6.2,
+          5.4,
+          0.42
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Speed bar 215",
+        "text": "",
+        "xywh": [
+          5.8,
+          6.2,
+          5.4,
+          0.42
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Speed value 216",
+        "text": "1,400 ms   34%",
+        "xywh": [
+          11.35,
+          6.08,
+          2.8,
+          0.6
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Total light",
+        "text": "",
+        "xywh": [
+          14.45,
+          2.75,
+          4.45,
+          4.15
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Total",
+        "text": "",
+        "xywh": [
+          14.45,
+          2.75,
+          4.45,
+          4.15
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Total label",
+        "text": "MEAN END TO END",
+        "xywh": [
+          14.8,
+          2.95,
+          3.8,
+          0.45
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Total value",
+        "text": "4.05 s",
+        "xywh": [
+          14.8,
+          3.35,
+          3.9,
+          1.4
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Total text",
+        "text": "Warm target 4.00 s: missed by 0.05 s\nCached repeat visits: under 100 ms, about 15% of queries",
+        "xywh": [
+          14.8,
+          4.85,
+          3.8,
+          1.9
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Agents label 218",
+        "text": "SLOWEST AGENT IN EACH STAGE",
+        "xywh": [
+          1.1,
+          7.15,
+          8.0,
+          0.45
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Card num",
+        "text": "720 ms",
+        "xywh": [
+          1.42,
+          7.92,
+          3.585,
+          0.8
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Card title",
+        "text": "URL CLASSIFIER",
+        "xywh": [
+          1.42,
+          8.72,
+          3.585,
+          0.462
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Card body",
+        "text": "BERT, Stage 1",
+        "xywh": [
+          1.42,
+          9.222,
+          3.585,
+          0.818
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          5.625,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          5.625,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Card num",
+        "text": "900 ms",
+        "xywh": [
+          5.945,
+          7.92,
+          3.585,
+          0.8
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Card title",
+        "text": "WEB SCRAPER",
+        "xywh": [
+          5.945,
+          8.72,
+          3.585,
+          0.462
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Card body",
+        "text": "page acquisition",
+        "xywh": [
+          5.945,
+          9.222,
+          3.585,
+          0.818
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          10.15,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          10.15,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Card num",
+        "text": "600 ms",
+        "xywh": [
+          10.47,
+          7.92,
+          3.585,
+          0.8
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Card title",
+        "text": "THREAT INTELLIGENCE",
+        "xywh": [
+          10.47,
+          8.72,
+          3.585,
+          0.462
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Card body",
+        "text": "OTX lookups",
+        "xywh": [
+          10.47,
+          9.222,
+          3.585,
+          0.818
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          14.675,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 58,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          14.675,
+          7.7,
+          4.225,
+          2.6
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Card num",
+        "text": "1,400 ms",
+        "xywh": [
+          14.995,
+          7.92,
+          3.585,
+          0.8
+        ]
+      },
+      {
+        "id": 60,
+        "name": "Card title",
+        "text": "REPORTER",
+        "xywh": [
+          14.995,
+          8.72,
+          3.585,
+          0.462
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Card body",
+        "text": "scoring and explanation",
+        "xywh": [
+          14.995,
+          9.222,
+          3.585,
+          0.818
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 16,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          17.26,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "07 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 223",
+        "text": "07  ·  RESULTS  ·  3 OF 4",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 224",
+        "text": "RELIABILITY",
+        "xywh": [
+          1.1,
+          0.92,
+          13.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 225",
+        "text": "How dependably each agent and service answered",
+        "xywh": [
+          1.1,
+          2.0,
+          13.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis Tables 4.5 and 4.7 (historical test period; return-success and uptime, not accuracy)",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "16",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 16,
+        "name": "Rel label 226",
+        "text": "AGENT RELIABILITY · USABLE RESULT, NOT A TIMEOUT OR ERROR",
+        "xywh": [
+          1.1,
+          2.8,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Rel name 227",
+        "text": "URL CLASSIFIER",
+        "xywh": [
+          1.1,
+          3.35,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Rel bar track 228",
+        "text": "",
+        "xywh": [
+          4.6,
+          3.48,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Rel bar 229",
+        "text": "",
+        "xywh": [
+          4.6,
+          3.48,
+          4.75,
+          0.32
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Rel value 230",
+        "text": "99.5%",
+        "xywh": [
+          9.75,
+          3.35,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Rel name 231",
+        "text": "DGA DETECTOR",
+        "xywh": [
+          1.1,
+          4.09,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Rel bar track 232",
+        "text": "",
+        "xywh": [
+          4.6,
+          4.22,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Rel bar 233",
+        "text": "",
+        "xywh": [
+          4.6,
+          4.22,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Rel value 234",
+        "text": "100%",
+        "xywh": [
+          9.75,
+          4.09,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Rel name 235",
+        "text": "WEB SCRAPER",
+        "xywh": [
+          1.1,
+          4.83,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Rel bar track 236",
+        "text": "",
+        "xywh": [
+          4.6,
+          4.96,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Rel bar 237",
+        "text": "",
+        "xywh": [
+          4.6,
+          4.96,
+          3.0,
+          0.32
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Rel value 238",
+        "text": "96%",
+        "xywh": [
+          9.75,
+          4.83,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Rel name 239",
+        "text": "MEMORY READER",
+        "xywh": [
+          1.1,
+          5.57,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Rel bar track 240",
+        "text": "",
+        "xywh": [
+          4.6,
+          5.7,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Rel bar 241",
+        "text": "",
+        "xywh": [
+          4.6,
+          5.7,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Rel value 242",
+        "text": "100%",
+        "xywh": [
+          9.75,
+          5.57,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Rel name 243",
+        "text": "IOC EXTRACTOR",
+        "xywh": [
+          1.1,
+          6.31,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Rel bar track 244",
+        "text": "",
+        "xywh": [
+          4.6,
+          6.44,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Rel bar 245",
+        "text": "",
+        "xywh": [
+          4.6,
+          6.44,
+          4.5,
+          0.32
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Rel value 246",
+        "text": "99%",
+        "xywh": [
+          9.75,
+          6.31,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Rel name 247",
+        "text": "BEHAVIOURAL ANALYSER",
+        "xywh": [
+          1.1,
+          7.05,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Rel bar track 248",
+        "text": "",
+        "xywh": [
+          4.6,
+          7.18,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Rel bar 249",
+        "text": "",
+        "xywh": [
+          4.6,
+          7.18,
+          4.25,
+          0.32
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Rel value 250",
+        "text": "98.5%",
+        "xywh": [
+          9.75,
+          7.05,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Rel name 251",
+        "text": "MITRE MAPPER",
+        "xywh": [
+          1.1,
+          7.79,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Rel bar track 252",
+        "text": "",
+        "xywh": [
+          4.6,
+          7.92,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Rel bar 253",
+        "text": "",
+        "xywh": [
+          4.6,
+          7.92,
+          4.5,
+          0.32
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Rel value 254",
+        "text": "99%",
+        "xywh": [
+          9.75,
+          7.79,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Rel name 255",
+        "text": "THREAT-INTEL ENRICHER",
+        "xywh": [
+          1.1,
+          8.53,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Rel bar track 256",
+        "text": "",
+        "xywh": [
+          4.6,
+          8.66,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Rel bar 257",
+        "text": "",
+        "xywh": [
+          4.6,
+          8.66,
+          2.5,
+          0.32
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Rel value 258",
+        "text": "95%",
+        "xywh": [
+          9.75,
+          8.53,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Rel name 259",
+        "text": "REPORTER",
+        "xywh": [
+          1.1,
+          9.27,
+          3.4,
+          0.55
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Rel bar track 260",
+        "text": "",
+        "xywh": [
+          4.6,
+          9.4,
+          5.0,
+          0.32
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Rel bar 261",
+        "text": "",
+        "xywh": [
+          4.6,
+          9.4,
+          4.9,
+          0.32
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Rel value 262",
+        "text": "99.8%",
+        "xywh": [
+          9.75,
+          9.27,
+          1.3,
+          0.55
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Scale 263",
+        "text": "scale 90% → 100%",
+        "xywh": [
+          4.6,
+          9.96,
+          5.0,
+          0.4
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Svc label 264",
+        "text": "EXTERNAL SERVICES · UPTIME · FALLBACK",
+        "xywh": [
+          11.5,
+          2.8,
+          7.0,
+          0.45
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Service light",
+        "text": "",
+        "xywh": [
+          11.5,
+          3.35,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Service",
+        "text": "",
+        "xywh": [
+          11.5,
+          3.35,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Svc name",
+        "text": "HEROKU BACKEND",
+        "xywh": [
+          11.85,
+          3.35,
+          3.2,
+          1.0
+        ]
+      },
+      {
+        "id": 58,
+        "name": "Svc up",
+        "text": "99.9%",
+        "xywh": [
+          15.05,
+          3.35,
+          1.3,
+          1.0
+        ]
+      },
+      {
+        "id": 59,
+        "name": "Svc fb",
+        "text": "desktop retries",
+        "xywh": [
+          16.4,
+          3.35,
+          2.25,
+          1.0
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Service light",
+        "text": "",
+        "xywh": [
+          11.5,
+          4.48,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Service",
+        "text": "",
+        "xywh": [
+          11.5,
+          4.48,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 63,
+        "name": "Svc name",
+        "text": "HUGGING FACE SPACE",
+        "xywh": [
+          11.85,
+          4.48,
+          3.2,
+          1.0
+        ]
+      },
+      {
+        "id": 64,
+        "name": "Svc up",
+        "text": "99.2%",
+        "xywh": [
+          15.05,
+          4.48,
+          1.3,
+          1.0
+        ]
+      },
+      {
+        "id": 65,
+        "name": "Svc fb",
+        "text": "cached or heuristic result",
+        "xywh": [
+          16.4,
+          4.48,
+          2.25,
+          1.0
+        ]
+      },
+      {
+        "id": 67,
+        "name": "Service light",
+        "text": "",
+        "xywh": [
+          11.5,
+          5.61,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 68,
+        "name": "Service",
+        "text": "",
+        "xywh": [
+          11.5,
+          5.61,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 69,
+        "name": "Svc name",
+        "text": "ALIENVAULT OTX",
+        "xywh": [
+          11.85,
+          5.61,
+          3.2,
+          1.0
+        ]
+      },
+      {
+        "id": 70,
+        "name": "Svc up",
+        "text": "97.5%",
+        "xywh": [
+          15.05,
+          5.61,
+          1.3,
+          1.0
+        ]
+      },
+      {
+        "id": 71,
+        "name": "Svc fb",
+        "text": "scan continues unenriched",
+        "xywh": [
+          16.4,
+          5.61,
+          2.25,
+          1.0
+        ]
+      },
+      {
+        "id": 73,
+        "name": "Service light",
+        "text": "",
+        "xywh": [
+          11.5,
+          6.74,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 74,
+        "name": "Service",
+        "text": "",
+        "xywh": [
+          11.5,
+          6.74,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 75,
+        "name": "Svc name",
+        "text": "GOOGLE GEMINI",
+        "xywh": [
+          11.85,
+          6.74,
+          3.2,
+          1.0
+        ]
+      },
+      {
+        "id": 76,
+        "name": "Svc up",
+        "text": "98.0%",
+        "xywh": [
+          15.05,
+          6.74,
+          1.3,
+          1.0
+        ]
+      },
+      {
+        "id": 77,
+        "name": "Svc fb",
+        "text": "Mistral, then rules",
+        "xywh": [
+          16.4,
+          6.74,
+          2.25,
+          1.0
+        ]
+      },
+      {
+        "id": 79,
+        "name": "Service light",
+        "text": "",
+        "xywh": [
+          11.5,
+          7.87,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 80,
+        "name": "Service",
+        "text": "",
+        "xywh": [
+          11.5,
+          7.87,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 81,
+        "name": "Svc name",
+        "text": "APPWRITE CLOUD",
+        "xywh": [
+          11.85,
+          7.87,
+          3.2,
+          1.0
+        ]
+      },
+      {
+        "id": 82,
+        "name": "Svc up",
+        "text": "99.7%",
+        "xywh": [
+          15.05,
+          7.87,
+          1.3,
+          1.0
+        ]
+      },
+      {
+        "id": 83,
+        "name": "Svc fb",
+        "text": "kept locally, synced later",
+        "xywh": [
+          16.4,
+          7.87,
+          2.25,
+          1.0
+        ]
+      },
+      {
+        "id": 85,
+        "name": "Service light",
+        "text": "",
+        "xywh": [
+          11.5,
+          9.0,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 86,
+        "name": "Service",
+        "text": "",
+        "xywh": [
+          11.5,
+          9.0,
+          7.4,
+          1.0
+        ]
+      },
+      {
+        "id": 87,
+        "name": "Svc name",
+        "text": "REDIS CACHE",
+        "xywh": [
+          11.85,
+          9.0,
+          3.2,
+          1.0
+        ]
+      },
+      {
+        "id": 88,
+        "name": "Svc up",
+        "text": "99.9%",
+        "xywh": [
+          15.05,
+          9.0,
+          1.3,
+          1.0
+        ]
+      },
+      {
+        "id": 89,
+        "name": "Svc fb",
+        "text": "full pipeline instead",
+        "xywh": [
+          16.4,
+          9.0,
+          2.25,
+          1.0
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 17,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          18.56,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          17.26,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "07 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 271",
+        "text": "07  ·  RESULTS  ·  4 OF 4",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 272",
+        "text": "EXPLANATIONS & OBJECTIVES",
+        "xywh": [
+          1.1,
+          0.92,
+          14.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 273",
+        "text": "Explanation quality and every objective against its target",
+        "xywh": [
+          1.1,
+          2.0,
+          14.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis Tables 4.6 and 4.8; Figure 4.3 (historical interface)",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "17",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 16,
+        "name": "Exp label 274",
+        "text": "AI-WRITTEN EXPLANATIONS · MANUAL 1–10 RATINGS",
+        "xywh": [
+          1.1,
+          2.8,
+          8.0,
+          0.45
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Exp name 275",
+        "text": "FACTUAL ACCURACY\ncorrect MITRE techniques and IOCs",
+        "xywh": [
+          1.1,
+          3.4,
+          4.0,
+          0.95
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Exp bar track 276",
+        "text": "",
+        "xywh": [
+          5.2,
+          3.6,
+          3.3,
+          0.36
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Exp bar 277",
+        "text": "",
+        "xywh": [
+          5.2,
+          3.6,
+          3.135,
+          0.36
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Exp value 278",
+        "text": "9.5",
+        "xywh": [
+          8.65,
+          3.42,
+          1.2,
+          0.7
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Exp name 279",
+        "text": "READABILITY\na non-expert could follow it",
+        "xywh": [
+          1.1,
+          4.6,
+          4.0,
+          0.95
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Exp bar track 280",
+        "text": "",
+        "xywh": [
+          5.2,
+          4.8,
+          3.3,
+          0.36
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Exp bar 281",
+        "text": "",
+        "xywh": [
+          5.2,
+          4.8,
+          2.97,
+          0.36
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Exp value 282",
+        "text": "9.0",
+        "xywh": [
+          8.65,
+          4.62,
+          1.2,
+          0.7
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Exp name 283",
+        "text": "USEFULNESS OF ADVICE\nclear next steps",
+        "xywh": [
+          1.1,
+          5.8,
+          4.0,
+          0.95
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Exp bar track 284",
+        "text": "",
+        "xywh": [
+          5.2,
+          6.0,
+          3.3,
+          0.36
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Exp bar 285",
+        "text": "",
+        "xywh": [
+          5.2,
+          6.0,
+          2.904,
+          0.36
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Exp value 286",
+        "text": "8.8",
+        "xywh": [
+          8.65,
+          5.82,
+          1.2,
+          0.7
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Exp name 287",
+        "text": "SPEED\nGemini ≈1.2 s, Mistral ≈2.0 s",
+        "xywh": [
+          1.1,
+          7.0,
+          4.0,
+          0.95
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Exp bar track 288",
+        "text": "",
+        "xywh": [
+          5.2,
+          7.2,
+          3.3,
+          0.36
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Exp bar 289",
+        "text": "",
+        "xywh": [
+          5.2,
+          7.2,
+          2.805,
+          0.36
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Exp value 290",
+        "text": "8.5",
+        "xywh": [
+          8.65,
+          7.02,
+          1.2,
+          0.7
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Alert caption 292",
+        "text": "The prototype's real-time alert, with Block, Protect and Allow. A historical interface illustration from the thesis.",
+        "xywh": [
+          3.85,
+          8.35,
+          5.8,
+          1.6
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Obj label 293",
+        "text": "OBJECTIVES MET · TABLE 4.8",
+        "xywh": [
+          10.4,
+          2.8,
+          8.0,
+          0.45
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Objective light",
+        "text": "",
+        "xywh": [
+          10.4,
+          3.4,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Objective",
+        "text": "",
+        "xywh": [
+          10.4,
+          3.4,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Obj text",
+        "text": "REAL-TIME ANALYSIS\nwarm mean ≤ 4.00 s",
+        "xywh": [
+          10.75,
+          3.48,
+          4.3,
+          1.06
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Obj result",
+        "text": "4.05 s",
+        "xywh": [
+          14.95,
+          3.4,
+          1.9,
+          1.22
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Chip",
+        "text": "NOT MET",
+        "xywh": [
+          17.381,
+          3.78,
+          1.169,
+          0.46
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Objective light",
+        "text": "",
+        "xywh": [
+          10.4,
+          4.78,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Objective",
+        "text": "",
+        "xywh": [
+          10.4,
+          4.78,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Obj text",
+        "text": "ACCURATE DETECTION\nabove 90% accuracy",
+        "xywh": [
+          10.75,
+          4.86,
+          4.3,
+          1.06
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Obj result",
+        "text": "94.7%",
+        "xywh": [
+          14.95,
+          4.78,
+          1.9,
+          1.22
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Chip",
+        "text": "MET",
+        "xywh": [
+          17.759,
+          5.16,
+          0.791,
+          0.46
+        ]
+      },
+      {
+        "id": 48,
+        "name": "Objective light",
+        "text": "",
+        "xywh": [
+          10.4,
+          6.16,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Objective",
+        "text": "",
+        "xywh": [
+          10.4,
+          6.16,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Obj text",
+        "text": "FEW FALSE ALARMS\nkeep false alarms low",
+        "xywh": [
+          10.75,
+          6.24,
+          4.3,
+          1.06
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Obj result",
+        "text": "2.0%",
+        "xywh": [
+          14.95,
+          6.16,
+          1.9,
+          1.22
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Chip",
+        "text": "MET",
+        "xywh": [
+          17.759,
+          6.54,
+          0.791,
+          0.46
+        ]
+      },
+      {
+        "id": 54,
+        "name": "Objective light",
+        "text": "",
+        "xywh": [
+          10.4,
+          7.54,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 55,
+        "name": "Objective",
+        "text": "",
+        "xywh": [
+          10.4,
+          7.54,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 56,
+        "name": "Obj text",
+        "text": "CLEAR EXPLANATIONS\nreadable by non-experts",
+        "xywh": [
+          10.75,
+          7.62,
+          4.3,
+          1.06
+        ]
+      },
+      {
+        "id": 57,
+        "name": "Obj result",
+        "text": "9.0 / 10",
+        "xywh": [
+          14.95,
+          7.54,
+          1.9,
+          1.22
+        ]
+      },
+      {
+        "id": 58,
+        "name": "Chip",
+        "text": "MET",
+        "xywh": [
+          17.759,
+          7.92,
+          0.791,
+          0.46
+        ]
+      },
+      {
+        "id": 60,
+        "name": "Objective light",
+        "text": "",
+        "xywh": [
+          10.4,
+          8.92,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 61,
+        "name": "Objective",
+        "text": "",
+        "xywh": [
+          10.4,
+          8.92,
+          8.5,
+          1.22
+        ]
+      },
+      {
+        "id": 62,
+        "name": "Obj text",
+        "text": "RELIABLE INTEGRATIONS\nstable cloud services",
+        "xywh": [
+          10.75,
+          9.0,
+          4.3,
+          1.06
+        ]
+      },
+      {
+        "id": 63,
+        "name": "Obj result",
+        "text": "97.5%+",
+        "xywh": [
+          14.95,
+          8.92,
+          1.9,
+          1.22
+        ]
+      },
+      {
+        "id": 64,
+        "name": "Chip",
+        "text": "MET",
+        "xywh": [
+          17.759,
+          9.3,
+          0.791,
+          0.46
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 18,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          17.7,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          17.26,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "08 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 299",
+        "text": "08  ·  CONCLUSION",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 300",
+        "text": "CONCLUSION",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 301",
+        "text": "What the study shows, and what it does not",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §5.1 Conclusion; §4.9",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "18",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Big light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Big",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Big value",
+        "text": "284/300",
+        "xywh": [
+          1.35,
+          2.95,
+          2.538,
+          1.15
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Big key",
+        "text": "URLs classified correctly",
+        "xywh": [
+          1.35,
+          4.1,
+          2.538,
+          1.0
+        ]
+      },
+      {
+        "id": 22,
+        "name": "Big light",
+        "text": "",
+        "xywh": [
+          4.438,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Big",
+        "text": "",
+        "xywh": [
+          4.438,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Big value",
+        "text": "137",
+        "xywh": [
+          4.688,
+          2.95,
+          2.538,
+          1.15
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Big key",
+        "text": "harmful URLs detected",
+        "xywh": [
+          4.688,
+          4.1,
+          2.538,
+          1.0
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Big light",
+        "text": "",
+        "xywh": [
+          7.775,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 28,
+        "name": "Big",
+        "text": "",
+        "xywh": [
+          7.775,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Big value",
+        "text": "3",
+        "xywh": [
+          8.025,
+          2.95,
+          2.538,
+          1.15
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Big key",
+        "text": "benign URLs falsely flagged",
+        "xywh": [
+          8.025,
+          4.1,
+          2.538,
+          1.0
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Big light",
+        "text": "",
+        "xywh": [
+          11.112,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Big",
+        "text": "",
+        "xywh": [
+          11.112,
+          2.85,
+          3.038,
+          2.35
+        ]
+      },
+      {
+        "id": 34,
+        "name": "Big value",
+        "text": "4.05 s",
+        "xywh": [
+          11.362,
+          2.95,
+          2.538,
+          1.15
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Big key",
+        "text": "mean end-to-end analysis",
+        "xywh": [
+          11.362,
+          4.1,
+          2.538,
+          1.0
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.55,
+          4.117,
+          4.75
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.55,
+          4.117,
+          4.75
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Card num",
+        "text": "01",
+        "xywh": [
+          1.42,
+          5.77,
+          3.477,
+          0.8
+        ]
+      },
+      {
+        "id": 40,
+        "name": "Card title",
+        "text": "CONTRIBUTION",
+        "xywh": [
+          1.42,
+          6.57,
+          3.477,
+          0.496
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Card body",
+        "text": "Eight specialist analyses and a Reporter combine complementary evidence into one inspectable, explained verdict, with few false alarms.",
+        "xywh": [
+          1.42,
+          7.106,
+          3.477,
+          2.934
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          5.567,
+          5.55,
+          4.117,
+          4.75
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          5.567,
+          5.55,
+          4.117,
+          4.75
+        ]
+      },
+      {
+        "id": 45,
+        "name": "Card num",
+        "text": "02",
+        "xywh": [
+          5.887,
+          5.77,
+          3.477,
+          0.8
+        ]
+      },
+      {
+        "id": 46,
+        "name": "Card title",
+        "text": "WHAT IT DOES NOT PROVE",
+        "xywh": [
+          5.887,
+          6.57,
+          3.477,
+          0.496
+        ]
+      },
+      {
+        "id": 47,
+        "name": "Card body",
+        "text": "No single-model ablation: no proof of superiority to one model, universal protection or current production performance.",
+        "xywh": [
+          5.887,
+          7.106,
+          3.477,
+          2.934
+        ]
+      },
+      {
+        "id": 49,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          10.033,
+          5.55,
+          4.117,
+          4.75
+        ]
+      },
+      {
+        "id": 50,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          10.033,
+          5.55,
+          4.117,
+          4.75
+        ]
+      },
+      {
+        "id": 51,
+        "name": "Card num",
+        "text": "03",
+        "xywh": [
+          10.353,
+          5.77,
+          3.477,
+          0.8
+        ]
+      },
+      {
+        "id": 52,
+        "name": "Card title",
+        "text": "WHERE IT IS NOW",
+        "xywh": [
+          10.353,
+          6.57,
+          3.477,
+          0.496
+        ]
+      },
+      {
+        "id": 53,
+        "name": "Card body",
+        "text": "Verified identity and workspaces, five privacy choices, service authentication, device signing and explicit action states.",
+        "xywh": [
+          10.353,
+          7.106,
+          3.477,
+          2.934
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 19,
+    "texts": [
+      {
+        "id": 2,
+        "name": "!!seg8",
+        "text": "",
+        "xywh": [
+          17.7,
+          0.62,
+          1.2,
+          0.13
+        ]
+      },
+      {
+        "id": 3,
+        "name": "!!seg7",
+        "text": "",
+        "xywh": [
+          17.26,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 4,
+        "name": "!!seg6",
+        "text": "",
+        "xywh": [
+          16.82,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 5,
+        "name": "!!seg5",
+        "text": "",
+        "xywh": [
+          16.38,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 6,
+        "name": "!!seg4",
+        "text": "",
+        "xywh": [
+          15.94,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 7,
+        "name": "!!seg3",
+        "text": "",
+        "xywh": [
+          15.5,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 8,
+        "name": "!!seg2",
+        "text": "",
+        "xywh": [
+          15.06,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 9,
+        "name": "!!seg1",
+        "text": "",
+        "xywh": [
+          14.62,
+          0.62,
+          0.34,
+          0.13
+        ]
+      },
+      {
+        "id": 10,
+        "name": "!!segno",
+        "text": "08 / 08",
+        "xywh": [
+          11.82,
+          0.47,
+          2.65,
+          0.42
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Kicker 309",
+        "text": "08  ·  CONCLUSION",
+        "xywh": [
+          1.1,
+          0.5,
+          9.0,
+          0.45
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Title 310",
+        "text": "RECOMMENDATIONS",
+        "xywh": [
+          1.1,
+          0.92,
+          12.0,
+          1.15
+        ]
+      },
+      {
+        "id": 13,
+        "name": "Subtitle 311",
+        "text": "And perspectives for future research",
+        "xywh": [
+          1.1,
+          2.0,
+          12.0,
+          0.55
+        ]
+      },
+      {
+        "id": 14,
+        "name": "Source",
+        "text": "Thesis §5.2 Recommendations; §5.3 Perspectives",
+        "xywh": [
+          1.1,
+          10.62,
+          15.8,
+          0.38
+        ]
+      },
+      {
+        "id": 15,
+        "name": "Page",
+        "text": "19",
+        "xywh": [
+          16.9,
+          10.62,
+          2.0,
+          0.38
+        ]
+      },
+      {
+        "id": 17,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 18,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          2.85,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 19,
+        "name": "Card label",
+        "text": "RECOMMENDATION 1",
+        "xywh": [
+          1.42,
+          3.15,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 20,
+        "name": "Card title",
+        "text": "SECURITY ASSURANCE",
+        "xywh": [
+          1.42,
+          3.57,
+          5.71,
+          0.479
+        ]
+      },
+      {
+        "id": 21,
+        "name": "Card body",
+        "text": "Test account switching, grant revocation, hostile input, replay, expiry and elevation prompts in the packaged product.",
+        "xywh": [
+          1.42,
+          4.089,
+          5.71,
+          0.951
+        ]
+      },
+      {
+        "id": 23,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.8,
+          2.85,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 24,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.8,
+          2.85,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 25,
+        "name": "Card label",
+        "text": "RECOMMENDATION 2",
+        "xywh": [
+          8.12,
+          3.15,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 26,
+        "name": "Card title",
+        "text": "PRIVACY & RETENTION",
+        "xywh": [
+          8.12,
+          3.57,
+          5.71,
+          0.479
+        ]
+      },
+      {
+        "id": 27,
+        "name": "Card body",
+        "text": "Validate the five consent categories, URL redaction, deletion and sync withdrawal across every client.",
+        "xywh": [
+          8.12,
+          4.089,
+          5.71,
+          0.951
+        ]
+      },
+      {
+        "id": 29,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.5,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 30,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          1.1,
+          5.5,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 31,
+        "name": "Card label",
+        "text": "RECOMMENDATION 3",
+        "xywh": [
+          1.42,
+          5.8,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 32,
+        "name": "Card title",
+        "text": "MODEL QUALITY",
+        "xywh": [
+          1.42,
+          6.22,
+          5.71,
+          0.479
+        ]
+      },
+      {
+        "id": 33,
+        "name": "Card body",
+        "text": "Temporal and domain-held-out evaluation; isolated training; reviewed feedback, never unchecked retraining.",
+        "xywh": [
+          1.42,
+          6.739,
+          5.71,
+          0.951
+        ]
+      },
+      {
+        "id": 35,
+        "name": "Card light",
+        "text": "",
+        "xywh": [
+          7.8,
+          5.5,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 36,
+        "name": "Card",
+        "text": "",
+        "xywh": [
+          7.8,
+          5.5,
+          6.35,
+          2.45
+        ]
+      },
+      {
+        "id": 37,
+        "name": "Card label",
+        "text": "RECOMMENDATION 4",
+        "xywh": [
+          8.12,
+          5.8,
+          5.71,
+          0.38
+        ]
+      },
+      {
+        "id": 38,
+        "name": "Card title",
+        "text": "ACTION SCOPE",
+        "xywh": [
+          8.12,
+          6.22,
+          5.71,
+          0.479
+        ]
+      },
+      {
+        "id": 39,
+        "name": "Card body",
+        "text": "Verified rollback before broader automatic response; grow CLI and MCP only with permission contracts.",
+        "xywh": [
+          8.12,
+          6.739,
+          5.71,
+          0.951
+        ]
+      },
+      {
+        "id": 41,
+        "name": "Persp light",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.25,
+          13.05,
+          2.05
+        ]
+      },
+      {
+        "id": 42,
+        "name": "Persp",
+        "text": "",
+        "xywh": [
+          1.1,
+          8.25,
+          13.05,
+          2.05
+        ]
+      },
+      {
+        "id": 43,
+        "name": "Persp label",
+        "text": "PERSPECTIVES",
+        "xywh": [
+          1.55,
+          8.42,
+          6.0,
+          0.42
+        ]
+      },
+      {
+        "id": 44,
+        "name": "Persp text",
+        "text": "Longer deployments with raw logs · agent ablations · independent regional and hosted-phishing corpora · a blinded explanation study · isolated training · richer CLI and MCP tools · packaged mobile capture · a real dynamic-execution sandbox",
+        "xywh": [
+          1.55,
+          8.85,
+          12.2,
+          1.35
+        ]
+      }
+    ]
+  },
+  {
+    "source_slide": 20,
+    "texts": [
+      {
+        "id": 3,
+        "name": "Thanks light",
+        "text": "",
+        "xywh": [
+          8.2,
+          1.1,
+          6.4,
+          5.2
+        ]
+      },
+      {
+        "id": 4,
+        "name": "Thanks",
+        "text": "",
+        "xywh": [
+          8.2,
+          1.1,
+          6.4,
+          5.2
+        ]
+      },
+      {
+        "id": 5,
+        "name": "Thanks title",
+        "text": "THANK YOU",
+        "xywh": [
+          8.6,
+          1.4,
+          5.8,
+          1.9
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Thanks sub",
+        "text": "QUESTIONS AND DISCUSSION",
+        "xywh": [
+          8.65,
+          3.3,
+          5.7,
+          0.7
+        ]
+      },
+      {
+        "id": 7,
+        "name": "Thanks text",
+        "text": "Che Haggai Ngha Kang  ·  UBA24PP134\nSupervisor: Prof. Onabid Mathias Akong\nThe University of Bamenda  ·  College of Technology",
+        "xywh": [
+          8.65,
+          4.2,
+          5.7,
+          1.9
+        ]
+      },
+      {
+        "id": 9,
+        "name": "Credits 318",
+        "text": "CREDITS\nTemplate: \"Dark Modern Tech Startup Brand\" by SlidesCarnival (slidescarnival.com), CC BY 4.0, adapted.\nPhotos from Pexels (pexels.com/license) by Antoni Shkraba, Elif Gökçe, Kindel Media, Markus Spiske, Nathan Thomas, Rafael Minguet Delgado, Ron Lach, Saksham Choudhary, Sora Shimazaki, Tara Winstead, Tima Miroshnichenko, cottonbro studio, panumas nikhomkhai and other Pexels photographers.\nInterface illustration: the thesis, Figure 4.3.",
+        "xywh": [
+          8.2,
+          6.75,
+          6.4,
+          3.6
+        ]
+      },
+      {
+        "id": 10,
+        "name": "References roll 319",
+        "text": "REFERENCES\n\nAnderson & Roth (2018) — EMBER\nAntonakakis et al. (2012) — DGA-based malware\nBarnum (2012) — STIX\nBrown et al. (2020) — few-shot language models\nBuczak & Guven (2016) — ML for intrusion detection\nCockburn (2001) — Writing effective use cases\nDevlin et al. (2019) — BERT\nEgele et al. (2012) — dynamic malware analysis\nKhonji et al. (2013) — phishing detection survey\nLe et al. (2018) — URLNet\nLiao et al. (2016) — IOC discovery\nMohammad et al. (2014) — phishing websites\nPark et al. (2023) — Generative Agents\nProvos et al. (2007) — The ghost in the browser\nRussell & Norvig (2020) — AI: A Modern Approach\nSahingoz et al. (2019) — ML phishing detection\nSommer & Paxson (2010) — Outside the closed world\nStrom et al. (2018) — MITRE ATT&CK\nTounsi & Rais (2018) — threat intelligence survey\nVaswani et al. (2017) — Attention is all you need\nWei et al. (2022) — chain-of-thought prompting\nWillems et al. (2007) — CWSandbox\nWooldridge (2009) — multiagent systems\nYao et al. (2023) — ReAct",
+        "xywh": [
+          14.85,
+          1.1,
+          4.95,
+          9.3
+        ]
+      }
+    ]
+  }
+]

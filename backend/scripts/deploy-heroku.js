@@ -58,10 +58,18 @@ function main(argv) {
   // The token travels as a request header, so it is not written to git config
   // and does not appear in the push output.
   const basic = Buffer.from(`:${herokuToken()}`).toString('base64');
+  const configCount = Number(process.env.GIT_CONFIG_COUNT) || 0;
   const push = spawnSync('git', [
-    '-c', 'credential.helper=', '-c', `http.extraHeader=Authorization: Basic ${basic}`,
+    '-c', 'credential.helper=',
+    ...(process.platform === 'win32' ? ['-c', 'http.sslBackend=openssl'] : []),
     'push', '--force', `https://git.heroku.com/${app}.git`, `${commit}:refs/heads/main`
-  ], { cwd: workspace, stdio: 'inherit' });
+  ], { cwd: workspace, stdio: 'inherit', env: { ...process.env,
+    GIT_CONFIG_COUNT: String(configCount + 2),
+    [`GIT_CONFIG_KEY_${configCount}`]: 'http.extraHeader',
+    [`GIT_CONFIG_VALUE_${configCount}`]: `Authorization: Basic ${basic}`,
+    [`GIT_CONFIG_KEY_${configCount + 1}`]: 'safe.directory',
+    [`GIT_CONFIG_VALUE_${configCount + 1}`]: workspace.replace(/\\/g, '/')
+  } });
   if (push.status !== 0) throw new Error('The push or the Heroku build failed; see the output above.');
   console.log(`\nDeployed. Check: heroku logs --tail -a ${app}`);
 }

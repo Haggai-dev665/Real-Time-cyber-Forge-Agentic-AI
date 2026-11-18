@@ -232,6 +232,7 @@ thesis/
 !/desktop/BUILD.md
 !/docs/RECOVERY.md
 !/docs/ML-SERVICES.md
+!/docs/DESKTOP-LOCAL-ML.md
 
 # Demo videos — host on YouTube / GitHub Releases, never commit (GitHub rejects pushes >100MB)
 demo/*.mp4

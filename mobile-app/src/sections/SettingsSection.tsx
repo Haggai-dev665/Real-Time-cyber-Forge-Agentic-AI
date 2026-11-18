@@ -43,7 +43,7 @@ export function SettingsSection() {
   const router = useRouter();
   const { user, isGuest, logout } = useAuth();
   const privacy = usePrivacy();
-  const { syncedCount } = useVpn();
+  const { syncedCount, outbox, retrySync } = useVpn();
   const [prefs, setPrefs] = useState<Record<string, boolean>>(
     Object.fromEntries(PREFS) as Record<string, boolean>
   );
@@ -175,6 +175,21 @@ export function SettingsSection() {
           : `Not chosen yet · consent version ${privacy.consentVersion}`}
         {privacy.choices.capture_sync ? ` · ${syncedCount} captures sent this session` : ''}
       </Text>
+      {privacy.choices.capture_sync && (outbox.pending > 0 || outbox.dropped > 0 || outbox.lastError) ? (
+        <Card style={{ marginTop: 10, padding: 13 }}>
+          <Text style={styles.privLabel}>Capture outbox</Text>
+          <Text style={styles.privDetail}>
+            {outbox.pending} waiting to upload{outbox.dropped ? ` · ${outbox.dropped} dropped because the outbox was full` : ''}
+            {outbox.lastError ? ` · last upload failed: ${outbox.lastError}` : ''}
+            {outbox.nextRetryAt ? ` · next try ${new Date(outbox.nextRetryAt).toLocaleTimeString()}` : ''}
+          </Text>
+          {outbox.pending > 0 ? (
+            <Pressable accessibilityRole="button" onPress={() => void retrySync()} style={{ marginTop: 8 }}>
+              <Text style={[styles.privLabel, { color: colors.amber2 }]}>Upload now</Text>
+            </Pressable>
+          ) : null}
+        </Card>
+      ) : null}
       {privacy.log.length > 0 ? (
         <Card style={{ marginTop: 10 }}>
           {privacy.log.slice(0, 5).map((c, i) => (

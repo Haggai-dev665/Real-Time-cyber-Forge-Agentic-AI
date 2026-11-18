@@ -11,11 +11,14 @@ const src = path.resolve(__dirname, '../../../desktop/src-tauri/src');
 // command → the control it must check
 const GATED = {
   scan_url: 'CloudScanning',
+  scan_file: 'CloudScanning',
   ml_classify_url: 'CloudScanning',
   ml_detect_dga: 'CloudScanning',
   ml_ioc_scan: 'CloudScanning',
   ml_url_enrich: 'CloudScanning',
   ml_security_chat: 'LlmProcessing',
+  ml_security_chat_stream: 'LlmProcessing',
+  agents_analyze_stream: 'CloudScanning',
   memory_sync: 'Sync',
   browser_intel_report: 'Sync'
 };

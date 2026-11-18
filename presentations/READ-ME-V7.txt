@@ -1,0 +1,25 @@
+CYBERFORGE - THESIS DEFENCE V7
+
+Open: CyberForge - Thesis Defence v7.pptx  (V5 and V6 are unchanged)
+Speaker notes: CyberForge - Thesis Defence v7 - Speaker notes.md
+Use Slide Show (F5) in Microsoft PowerPoint for the native animations and Morph.
+
+CHANGES FROM V5 (16 slides)
+07  System architecture redrawn: four tiers (user's device, backend, ML service,
+    data and intelligence), four named components in each, request/response
+    arrows between tiers, the Live Agent, Agent Orchestrator and Qwen assistant
+    highlighted, and an offline-training lane (curate, LoRA on NVIDIA L4, export
+    and gate, publish a pinned revision). The tiers fly in and the training
+    steps rise in, using the slide's original animation sequence.
+08  Eight-agent pipeline: MITRE Mapper moved to Stage 3, next to Threat
+    Intelligence (agentOrchestrator.js runs both after the IOC Extractor).
+09  NEW - What each agent does: one card per specialist agent (stage, what it
+    does, what it outputs, risk points) and the Reporter's scoring rules.
+16  Thank-you photo: monitors showing a security alert (Pexels 5380651,
+    Tima Miroshnichenko, already credited), toned like the other photos.
+--  Speaker notes removed from the deck and moved, slide by slide, into the
+    Markdown file above. Methods counters read "1 OF 6" ... "6 OF 6".
+
+REPRODUCE
+Superseded by V8: build_defence_v8.py builds V8, which contains every V7 change
+(see READ-ME-V8.txt). The V7 file and its notes are kept as delivered.

@@ -34,7 +34,8 @@ from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from serving import GENERATION, prompt_text, stated_risk, strip_think  # noqa: E402
+from serving import GENERATION, PROMPTS, clean_user_text, prompt_text, stated_risk, strip_think  # noqa: E402
+from security_knowledge import ground_prompt, reference_grammar, retrieve
 
 LEVEL = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 HOST = re.compile(r"\b((?:[a-z0-9-]+\.)+[a-z]{2,}|\d{1,3}(?:\.\d{1,3}){3})\b", re.I)
@@ -51,7 +52,13 @@ def load_model(spec: str, threads: int):
 
 def generate(llm, system: str, user: str, max_tokens: int):
     t = time.monotonic()
-    out = llm.create_completion(prompt_text(system, user), max_tokens=max_tokens, **GENERATION)
+    _, cleaned = clean_user_text(system, user)
+    grammar_text = reference_grammar(retrieve(cleaned), analyst=system == PROMPTS['analyst'])
+    decoding = {}
+    if grammar_text:
+        from llama_cpp import LlamaGrammar
+        decoding['grammar'] = LlamaGrammar.from_string(grammar_text, verbose=False)
+    out = llm.create_completion(prompt_text(system, user), max_tokens=max_tokens, **GENERATION, **decoding)
     text = strip_think(out["choices"][0]["text"])
     return text, time.monotonic() - t, out["usage"]["completion_tokens"]
 
@@ -117,7 +124,8 @@ def score(row, answer: str):
         m["risk_line"] = said is None
     nums = numbers(answer)
     if nums:
-        vals = prompt_values(user)
+        grounded_system, _ = ground_prompt(system, user)
+        vals = prompt_values(grounded_system + "\n" + user)
         m["ungrounded_nums"] = not all(grounded(n, vals) for n in nums)
     else:
         m["ungrounded_nums"] = False
@@ -187,24 +195,29 @@ def main():
     report = {"data": args.data, "items": len(rows), "models": {}}
     for spec in args.model:
         name, path = spec.split("=", 1)
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", name):
+            raise ValueError("Model labels must be simple filenames")
+        (out / f"answers_{name}.jsonl").write_text("", encoding="utf-8")
         llm = load_model(path, args.threads)
         results = []
         for i, row in enumerate(rows):
+            llm.set_seed(args.seed + i)
             system, user = row["messages"][0]["content"], row["messages"][1]["content"]
             answer, seconds, n = generate(llm, system, user, args.max_tokens)
             results.append({"id": row["id"], "family": row["family"], "answer": answer, "seconds": round(seconds, 2),
                             "tokens": n, "metrics": score(row, answer)})
+            with (out / f"answers_{name}.jsonl").open("a", encoding="utf-8") as f:
+                f.write(json.dumps(results[-1], ensure_ascii=False) + "\n")
             if (i + 1) % 20 == 0:
                 print(f"[{name}] {i + 1}/{len(rows)}", flush=True)
-        with (out / f"answers_{name}.jsonl").open("w", encoding="utf-8") as f:
-            for r in results:
-                f.write(json.dumps(r, ensure_ascii=False) + "\n")
         families = defaultdict(list)
         for r in results:
             families[r["family"].split("_")[0]].append(r)
         report["models"][name] = {"path": path, "overall": summarize(results),
                                   "by_family": {k: summarize(v) for k, v in sorted(families.items())}}
+        llm.close()
         del llm
+        (out / "report.partial.json").write_text(json.dumps(report, indent=1))
     (out / "report.json").write_text(json.dumps(report, indent=1))
 
     names = list(report["models"])

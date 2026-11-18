@@ -1,0 +1,144 @@
+﻿{
+    "slides":  17,
+    "powerPointVersion":  "16.0",
+    "nativeRendering":  "passed",
+    "outputPdf":  "CyberForge - Thesis Defence v10 - Preview.pdf",
+    "details":  [
+                    {
+                        "slide":  1,
+                        "animationEffects":  10,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  2,
+                        "animationEffects":  16,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  3,
+                        "animationEffects":  7,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  4,
+                        "animationEffects":  18,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  5,
+                        "animationEffects":  7,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  6,
+                        "animationEffects":  10,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  7,
+                        "animationEffects":  9,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  8,
+                        "animationEffects":  11,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  9,
+                        "animationEffects":  5,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  10,
+                        "animationEffects":  9,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  11,
+                        "animationEffects":  8,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  12,
+                        "animationEffects":  12,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  13,
+                        "animationEffects":  21,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  14,
+                        "animationEffects":  30,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  15,
+                        "animationEffects":  26,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  16,
+                        "animationEffects":  10,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    },
+                    {
+                        "slide":  17,
+                        "animationEffects":  6,
+                        "transition":  3954,
+                        "textOverflows":  [
+
+                                          ]
+                    }
+                ]
+}

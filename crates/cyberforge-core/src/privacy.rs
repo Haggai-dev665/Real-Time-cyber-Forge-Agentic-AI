@@ -37,7 +37,7 @@ pub const FEATURES: &[(Feature, &str, &str, &str)] = &[
     (Feature::ActiveTab, "active_tab", "Watch the active tab",
      "Reads the address in the browser tab you are looking at, so the agent can offer to scan it as you browse. Nothing leaves this computer because of this alone."),
     (Feature::CloudScanning, "cloud_scanning", "Cloud scanning",
-     "Sends each address you scan, with sign-in codes and tokens removed, to the CyberForge backend. It checks the address with the ML service on Hugging Face and may load the page with the page scanner. Without this, scans and URL checks are not available."),
+     "Allows cloud deep scans and cloud fallback: sends an address, with sign-in codes and tokens removed, to the CyberForge backend and Hugging Face ML service, and may load the page. On-device URL-feature checks work without this permission."),
     (Feature::LlmProcessing, "llm_processing", "Assistant (language model)",
      "Sends your assistant questions, and the findings they refer to, to a language model: the ML service's model on Hugging Face through the backend, or DeepSeek on Hugging Face if you saved your own token."),
     (Feature::Sync, "sync", "Sync to your account",

@@ -1,0 +1,101 @@
+﻿{
+    "thesis":  {
+                   "pages":  100,
+                   "tables":  20,
+                   "indexes":  1,
+                   "wordVersion":  "16.0",
+                   "fields":  "refreshed",
+                   "pdf":  "full-document PDF export skipped after renderer stalled"
+               },
+    "presentation":  {
+                         "slides":  12,
+                         "powerPointVersion":  "16.0",
+                         "nativeRendering":  "passed",
+                         "details":  [
+                                         {
+                                             "slide":  1,
+                                             "animationEffects":  8,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  2,
+                                             "animationEffects":  21,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  3,
+                                             "animationEffects":  17,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  4,
+                                             "animationEffects":  17,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  5,
+                                             "animationEffects":  17,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  6,
+                                             "animationEffects":  21,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  7,
+                                             "animationEffects":  34,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  8,
+                                             "animationEffects":  22,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  9,
+                                             "animationEffects":  21,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  10,
+                                             "animationEffects":  17,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  11,
+                                             "animationEffects":  10,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         },
+                                         {
+                                             "slide":  12,
+                                             "animationEffects":  9,
+                                             "textOverflows":  [
+
+                                                               ]
+                                         }
+                                     ]
+                     }
+}

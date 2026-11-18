@@ -28,10 +28,11 @@
     return text;
   }
   // Observe requests, never their input bodies/tokens. Page readers share this bridge.
-  CF.invoke=function(cmd,args){
+  CF.invoke=function(cmd,args,options){
     args=args||{};const epoch=generation,started=Date.now(),token=Symbol(cmd),active=isAction(cmd,args);
     if(active){state.pending.set(token,{label:cmd.replace(/_/g,' '),started});render();}
-    return Promise.resolve().then(()=>original(cmd,args)).then(r=>{
+    // `options` carries request headers (a scanned file's name); it is passed on untouched.
+    return Promise.resolve().then(()=>original(cmd,args,options)).then(r=>{
       if(epoch!==generation)return r;
       if(cmd==='auth_logout'){clear();return r;}
       if(cmd==='privacy_get'||cmd==='privacy_set')state.privacy=r;
@@ -111,8 +112,9 @@
     set('ccEvents','Events: '+(state.stream.connected?'connected':(/did not accept the session/.test(state.stream.reason||'')?'sign in again':'offline')),state.stream.connected?'ok':'warn');
     const ev=document.getElementById('ccEvents');if(ev)ev.title=state.stream.connected?'Live events connected':'Live events: '+(state.stream.reason||'not connected');
     const be=document.getElementById('ccBackend');if(be)be.title=state.summaryMissing?'The server answers, but this server version has no console summary yet (deploy the latest server).':'Server: '+state.backend;
-    const mlNode=document.getElementById('ccMl');if(mlNode)mlNode.title=state.mlReason||('Analysis Agents: '+state.ml);
-    set('ccMl','Agents: '+(entries?(fresh('ml')?ready+'/'+entries.length+' ready':'stale'):state.ml),entries&&fresh('ml')&&ready===entries.length?'ok':'warn');
+    const local=state.localMl;
+    const mlNode=document.getElementById('ccMl');if(mlNode)mlNode.title=(local&&local.ready?'On-device URL detectors ready; ':'Local detectors not ready; ')+(state.mlReason||'Cloud agents: '+state.ml);
+    set('ccMl',(local&&local.ready?'Local: '+local.modelCount+' · Cloud: ':'Cloud agents: ')+(entries?(fresh('ml')?ready+'/'+entries.length+' ready':'stale'):state.ml),local&&local.ready||entries&&fresh('ml')&&ready===entries.length?'ok':'warn');
     set('ccUpdated','Data: '+age(state.pageAt));
     const active=[...state.pending.values()];
     const op=active.length?active[0].label+' · waiting '+Math.floor((Date.now()-active[0].started)/1000)+'s'+(active.length>1?' +'+(active.length-1):''):state.operation?state.operation.text:'No operation in progress';
@@ -139,6 +141,7 @@
   function renderDetails(){const box=document.getElementById('ccDetailsBody');if(!box)return;box.replaceChildren();
     const summary=state.snapshot&&state.snapshot.summary,ml=state.snapshot&&state.snapshot.ml,report=capabilities();
     box.append(detail('Scope',state.account&&state.account.name||'Signed-in account; local data stays on this installation'),detail('This installation',state.device&&state.device.state||'Unknown'),detail('Server',state.backend+' · last response '+age(sourceTime('summary'))),detail('Server response duration',summary&&summary.durationMs!=null?summary.durationMs+' ms (native round trip)':'Not measured'),detail('Event stream',(state.stream.connected?'Connected':'Disconnected')+' · '+(state.stream.reason||'')+' · last event '+age(state.lastEvent)),detail('Events observed',state.eventCount+' in this page session'),detail('Agents report',state.ml+' · '+age(sourceTime('ml'))),detail('Agents response duration',ml&&ml.durationMs!=null?ml.durationMs+' ms (server round trip, not inference latency)':'Not measured'));
+    if(state.localMl)box.append(detail('On-device ML',String(state.localMl.modelCount||0)+' detectors · '+(state.localMl.state||'unknown')+' · '+(state.localMl.source||'not loaded')));
     if(report){for(const c of report.capabilities||[])box.append(detail(c.id,c.kind+' · '+c.readiness+(c.model?' · '+c.model:'')+(c.reason?' · '+c.reason:'')+(c.answersWithoutModel?' · fallback: '+c.answersWithoutModel:'')));
       if(report.operational){for(const [k,v] of Object.entries(report.operational))box.append(detail('Space '+k,v));}
       box.append(detail('Training',report.training&&report.training.note||'No training metadata'));
@@ -161,9 +164,11 @@
     // Existing page-specific live writers keep their IDs in an accessible detail region.
     const legacy=el('div','cc-legacy');legacy.hidden=true;for(const item of options&&options.items||[])if(item.id){const n=el('span','');n.id=item.id;legacy.append(n);}host.append(legacy);
   }
-  const refreshers={devices:'refresh',agents:'refresh',scheduled:'load','alerts-evidence':'loadRealAlerts',investigations:'loadInvestigations','incident-timeline':'loadIncidentGroups','web-history':'load','model-inference':'refreshStatus','threat-overview':'refreshCoverage',reports:'reportsKpis','signal-pipeline':'tele'};
+  const refreshers={devices:'refresh',agents:'refresh',scheduled:'load','alerts-evidence':'loadRealAlerts',investigations:'loadInvestigations','incident-timeline':'loadIncidentGroups','web-history':'load','model-inference':'refreshStatus','threat-overview':'refreshCoverage',reports:'reportsKpis','signal-pipeline':'refreshEventPage'};
   const filters={devices:'.dv-row:not(.dv-head)',agents:'.ag-item',memory:'.mrow','alerts-evidence':'.al',investigations:'#cases .cs', 'threat-globe':'.atk','web-history':'.hrow'};
   function mount(){
+    const localStatus=()=>original('local_model_status').then(s=>{state.localMl=s;render();}).catch(()=>{});
+    localStatus();window.addEventListener('cf:event',e=>{if(e.detail&&e.detail.type==='model:status')localStatus();});
     const top=document.getElementById('topbar');if(!top)return;
     top.querySelectorAll('.tb-status,.pill-threats').forEach(n=>n.remove());
     const scope=button('Account & device','monitor',open,'cc-scope');scope.id='ccScope';scope.title='Account and this installation; page controls define filtering';top.querySelector('.brand').after(scope);

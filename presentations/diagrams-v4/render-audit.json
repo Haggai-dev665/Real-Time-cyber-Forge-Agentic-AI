@@ -1,0 +1,90 @@
+[
+  {
+    "slug": "architecture",
+    "pixels": [
+      2880,
+      1800
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "use-cases",
+    "pixels": [
+      2880,
+      1800
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "decision-flow",
+    "pixels": [
+      2880,
+      2160
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "class-model",
+    "pixels": [
+      2880,
+      2160
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "training",
+    "pixels": [
+      2880,
+      2160
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "grounding",
+    "pixels": [
+      2880,
+      2160
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "quality-results",
+    "pixels": [
+      2880,
+      1800
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  },
+  {
+    "slug": "live-response",
+    "pixels": [
+      2880,
+      1800
+    ],
+    "textBounds": "passed",
+    "fonts": [
+      "Arial, sans-serif"
+    ]
+  }
+]

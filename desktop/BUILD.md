@@ -250,6 +250,19 @@ Nothing is signed as configured:
 | `HF_TOKEN` | A Hugging Face token for the assistant, used instead of the saved one |
 | `HF_CONFIG` | Path to a JSON file holding such a token (`{"active": "hf_…"}`). For development; the file is read and never changed |
 
+Command-line flag: `--background` starts the app in the system tray with no window (the "Start with Windows" entry passes it). It applies only when the tray icon could be created; otherwise the window opens as usual.
+
+## The tray and background protection
+
+The app has a tray icon (`src-tauri/src/tray.rs`). Its menu opens the window, scans a file, quits, and holds two settings:
+
+- **Keep protecting when the window is closed** (on by default; saved in `desktop.json` in the app's data folder). Closing the window then hides it to the tray. While the window is hidden or minimised, a native watcher scans the active browser tab with the on-device models, at most once a minute per address and only with the active-tab permission. A result above the usual alert level opens the alert window.
+- **Start with Windows**: an entry named `CyberForge` under the current user's `Run` key. Turning the setting off removes the entry, and so does uninstalling (`installer/hooks.nsh`).
+
+## The Live Agent screen
+
+The agent checks a page in its own browser while you watch (`src-tauri/src/live_browse.rs`). It needs Chrome, Edge, Brave or Chromium installed; set `CYBERFORGE_AGENT_BROWSER` to a browser executable to choose one. Each run uses a new, empty profile in the system temp folder, which is deleted when the run ends. The agent moves the mouse and clicks, but never types or submits, and a click that would leave the page is stopped and its destination recorded. Its real-browser test is skipped by default: `cargo test -p cyberforge-console live_browse -- --ignored`.
+
 ## Where credentials are kept
 
 The session token and the Hugging Face token are kept in the operating

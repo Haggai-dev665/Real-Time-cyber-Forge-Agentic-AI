@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "repo": "Che237/cyberforge-models",
+  "revision": "ac88d5a8fe57c665a6c701ab26f67a7967b48674",
+  "path": "desktop/core-v1.json.gz",
+  "sha256": "3f7e1359cfa46360c781cad77d1f8749c4ae091f74e95fa4e6b3f1085d5a4332",
+  "bytes": 2824495,
+  "sourceRevision": "298f585f6e9f869636cc491dcde22f108d9b51b6",
+  "models": [
+    "phishing_detection",
+    "malware_detection",
+    "web_attack_detection",
+    "anomaly_detection"
+  ]
+}

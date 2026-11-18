@@ -41,6 +41,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "./plugins/with-android-packaging",
       [
         "expo-splash-screen",
         {
@@ -48,13 +49,18 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 160
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "https://cyberforge-f3249b5a0919.herokuapp.com"
+      "apiBaseUrl": "https://cyberforge-f3249b5a0919.herokuapp.com",
+      "router": {},
+      "eas": {
+        "projectId": "dd78fa76-5248-40a3-9c67-e6daeecb03a4"
+      }
     }
   }
 }
